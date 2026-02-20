@@ -5,9 +5,10 @@ import RoomCard from './RoomCard';
 
 interface Props {
   rooms: Room[];
+  onRoomClick?: (room: Room) => void;
 }
 
-export default function HotelGrid({ rooms }: Props) {
+export default function HotelGrid({ rooms, onRoomClick }: Props) {
   const floors = [3, 2, 1]; // top floor first
 
   const available = rooms.filter((r) => r.status === 'available').length;
@@ -53,7 +54,7 @@ export default function HotelGrid({ rooms }: Props) {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
               {floorRooms.map((room) => (
-                <RoomCard key={room.id} room={room} />
+                <RoomCard key={room.id} room={room} onClick={onRoomClick} />
               ))}
             </div>
           </div>

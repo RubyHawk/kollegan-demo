@@ -11,6 +11,9 @@ export interface Room {
   guestName?: string;
   lockedAt?: string;
   bookedAt?: string;
+  checkIn?: string;
+  checkOut?: string;
+  calendarEventId?: string;
 }
 
 export interface ActivityEvent {

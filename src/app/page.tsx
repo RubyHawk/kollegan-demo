@@ -6,12 +6,14 @@ import HotelGrid from '@/app/components/HotelGrid';
 import ActivityLog from '@/app/components/ActivityLog';
 import CallIndicator from '@/app/components/CallIndicator';
 import MajaContact from '@/app/components/MajaContact';
+import BookingDialog from '@/app/components/BookingDialog';
 
 export default function HomePage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [activities, setActivities] = useState<ActivityEvent[]>([]);
   const [onCall, setOnCall] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   useEffect(() => {
     const es = new EventSource('/api/sse');
@@ -34,6 +36,8 @@ export default function HomePage() {
       } else if (msg.type === 'room_update') {
         const updated = msg.payload as Room;
         setRooms((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+        // Keep dialog in sync if viewing the updated room
+        setSelectedRoom((prev) => (prev?.id === updated.id ? updated : prev));
       } else if (msg.type === 'activity') {
         setActivities((prev) => [msg.payload as ActivityEvent, ...prev].slice(0, 50));
       } else if (msg.type === 'call_status') {
@@ -46,6 +50,12 @@ export default function HomePage() {
 
   const handleReset = useCallback(async () => {
     await fetch('/api/rooms', { method: 'DELETE' });
+  }, []);
+
+  const handleRoomClick = useCallback((room: Room) => {
+    // Don't open dialog for locked rooms (active call in progress)
+    if (room.status === 'locked') return;
+    setSelectedRoom(room);
   }, []);
 
   return (
@@ -95,7 +105,7 @@ export default function HomePage() {
         {rooms.length > 0 && (
           <div className="flex gap-6 items-start">
             <div className="flex-1 min-w-0">
-              <HotelGrid rooms={rooms} />
+              <HotelGrid rooms={rooms} onRoomClick={handleRoomClick} />
             </div>
 
             <aside className="w-72 shrink-0 sticky top-8">
@@ -119,13 +129,22 @@ export default function HomePage() {
               <span>Bokad &amp; bekräftad</span>
             </div>
             <div className="ml-auto text-cream-600">
-              Ring <span className="text-gold-400 font-mono">Maja</span> på Vapi för att boka
+              Klicka på ett rum för att boka eller se detaljer
             </div>
           </footer>
         )}
       </div>
 
       <MajaContact />
+
+      {/* Booking dialog */}
+      {selectedRoom && (
+        <BookingDialog
+          room={selectedRoom}
+          onClose={() => setSelectedRoom(null)}
+          onBooked={() => setSelectedRoom(null)}
+        />
+      )}
     </main>
   );
 }

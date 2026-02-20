@@ -9,6 +9,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, message: 'room_id krävs.' }, { status: 400 });
   }
 
-  const result = cancelBooking(String(room_id));
+  const result = await cancelBooking(String(room_id));
   return NextResponse.json(result, { status: result.success ? 200 : 409 });
 }
