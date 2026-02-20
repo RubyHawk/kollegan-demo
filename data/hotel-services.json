@@ -1,0 +1,198 @@
+{
+  "restaurants": [
+    {
+      "id": "restaurang-kronan",
+      "name": "Restaurang Kronan",
+      "description": "Skandinavisk fine dining med säsongsbetonade råvaror och smakfulla kreationer av vår köksmästare.",
+      "cuisineType": "Skandinavisk fine dining",
+      "openingHours": {
+        "default": "Mån–Fre 18–22, Lör–Sön 11–14 & 18–22"
+      },
+      "services": [
+        "middag"
+      ],
+      "menuHighlights": [
+        {
+          "name": "3-rätters signaturgsmeny",
+          "price": 695
+        },
+        {
+          "name": "Vegetarisk meny",
+          "price": 595
+        },
+        {
+          "name": "Vinpaket (3 glas)",
+          "price": 395
+        }
+      ],
+      "isActive": true
+    },
+    {
+      "id": "baren-bistron",
+      "name": "Baren & Bistron",
+      "description": "Avslappnad bar och bistro med klassiska cocktails, hantverksöl och lätta rätter i en varm atmosfär.",
+      "cuisineType": "Bar & bistro",
+      "openingHours": {
+        "default": "Mån–Sön 12–24"
+      },
+      "services": [
+        "lunch",
+        "middag",
+        "bar"
+      ],
+      "menuHighlights": [
+        {
+          "name": "Signaturcocktail \"Kronan\"",
+          "price": 165
+        },
+        {
+          "name": "Dagens rätt (lunch)",
+          "price": 185
+        },
+        {
+          "name": "Charkuteriboard",
+          "price": 225
+        }
+      ],
+      "isActive": true
+    },
+    {
+      "id": "rumsservice",
+      "name": "Rumsservice",
+      "description": "Beställ mat och dryck direkt till ditt rum — tillgängligt nästan dygnet runt för din bekvämlighet.",
+      "cuisineType": "Rumsservice",
+      "openingHours": {
+        "default": "Dagligen 06–23"
+      },
+      "services": [
+        "frukost",
+        "lunch",
+        "middag",
+        "rumsservice"
+      ],
+      "menuHighlights": [
+        {
+          "name": "Frukostbricka",
+          "price": 175
+        },
+        {
+          "name": "Club sandwich",
+          "price": 195
+        },
+        {
+          "name": "Flaska vin",
+          "price": 395
+        }
+      ],
+      "isActive": true
+    }
+  ],
+  "activities": [
+    {
+      "id": "spa-wellness",
+      "name": "Spa & Wellness",
+      "description": "Lyxigt spa med pool, bastu, ångbad och ett brett utbud av behandlingar för kropp och själ.",
+      "category": "wellness",
+      "openingHours": {
+        "default": "Dagligen 07–21"
+      },
+      "price": "Ingår för svitrumsgäster · Övriga från 195 kr/dag",
+      "bookingRequired": false,
+      "isActive": true
+    },
+    {
+      "id": "gym-fitness",
+      "name": "Gym & Fitness",
+      "description": "Modernt välutrustat gym med fri vikter, cardiomaskineri och träningsrum. Öppet dygnet runt.",
+      "category": "fitness",
+      "openingHours": {
+        "default": "Dygnet runt"
+      },
+      "price": "Kostnadsfritt för hotelgäster",
+      "bookingRequired": false,
+      "isActive": true
+    },
+    {
+      "id": "cykeluthyrning",
+      "name": "Cykeluthyrning",
+      "description": "Utforska Stockholm på en av våra elcyklar eller standardcyklar. Kartor och rekommenderade rutter ingår.",
+      "category": "transport",
+      "openingHours": {
+        "default": "Dagligen 08–18"
+      },
+      "price": "Elcykel 250 kr/dag · Standardcykel 150 kr/dag",
+      "bookingRequired": false,
+      "isActive": true
+    },
+    {
+      "id": "konferensrum",
+      "name": "Konferensrum & Möteslokaler",
+      "description": "Tre fullt utrustade konferensrum för allt från interna möten till större konferenser. Catering tillgängligt.",
+      "category": "konferens",
+      "openingHours": {
+        "default": "Mån–Fre 07–22, Lör–Sön 08–20"
+      },
+      "price": "Litet rum från 1 500 kr/halvdag · Stort rum från 3 500 kr/halvdag",
+      "bookingRequired": true,
+      "isActive": true
+    },
+    {
+      "id": "guided-stadstur",
+      "name": "Guided Stadstur",
+      "description": "Upplev Stockholms historia och kultur med vår kunniga guide. Turen tar ca 2 timmar och startar i hotellets lobby.",
+      "category": "kultur",
+      "openingHours": {
+        "default": "Dagligen avgångar 10:00 & 14:00"
+      },
+      "price": "295 kr/person · Barn under 12 år gratis",
+      "bookingRequired": true,
+      "isActive": true
+    }
+  ],
+  "amenities": [
+    {
+      "id": "hotelbutiken",
+      "name": "Hotelbutiken",
+      "type": "kiosk",
+      "description": "Välsorterad hotelbutik med snacks, drycker, tidningar, souvenirer och toalettartiklar.",
+      "openingHours": {
+        "default": "Dagligen 07–22"
+      },
+      "pricing": "Löpande priser",
+      "isActive": true
+    },
+    {
+      "id": "parkering",
+      "name": "Hotellets Parkering",
+      "type": "parkering",
+      "description": "Säker underjordisk parkering direkt under hotellet. Direkttillgång via hiss till alla hotellets våningar.",
+      "openingHours": {
+        "default": "Dygnet runt"
+      },
+      "pricing": "350 kr/dygn · Föranmälan rekommenderas",
+      "isActive": true
+    },
+    {
+      "id": "valet-parkering",
+      "name": "Valet Parkering",
+      "type": "service",
+      "description": "Lämna bilen direkt vid hotellets entré och låt oss ta hand om resten. Bilen hämtas på önskad tid.",
+      "openingHours": {
+        "default": "Dagligen 07–23"
+      },
+      "pricing": "500 kr/dygn",
+      "isActive": true
+    },
+    {
+      "id": "bagageförvaring",
+      "name": "Bagageförvaring",
+      "type": "service",
+      "description": "Förvara ditt bagage säkert hos oss — perfekt för tidig ankomst eller sen avresa.",
+      "openingHours": {
+        "default": "Dygnet runt, reception bemannad 06–23"
+      },
+      "pricing": "Kostnadsfritt för hotelgäster",
+      "isActive": true
+    }
+  ]
+}
