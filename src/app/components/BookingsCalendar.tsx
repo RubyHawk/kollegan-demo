@@ -14,10 +14,10 @@ const TYPE_LABELS: Record<string, string> = {
   Svit: 'Svit',
 };
 
-const ROOM_COLORS: Record<string, { bar: string; text: string; bg: string }> = {
-  Enkel: { bar: 'bg-emerald-400', text: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
-  Dubbel: { bar: 'bg-blue-400', text: 'text-blue-700 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30' },
-  Svit: { bar: 'bg-violet-400', text: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/30' },
+const ROOM_COLORS: Record<string, { bar: string; text: string; bg: string; border: string }> = {
+  Enkel:  { bar: 'bg-emerald-400', text: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30', border: 'border-l-emerald-400' },
+  Dubbel: { bar: 'bg-blue-400',    text: 'text-blue-700 dark:text-blue-400',       bg: 'bg-blue-50 dark:bg-blue-900/30',       border: 'border-l-blue-400'    },
+  Svit:   { bar: 'bg-violet-400',  text: 'text-violet-700 dark:text-violet-400',   bg: 'bg-violet-50 dark:bg-violet-900/30',   border: 'border-l-violet-500'  },
 };
 
 const DAYS_TO_SHOW = 14;
@@ -88,69 +88,92 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
         </div>
         <p className="text-[var(--text-secondary)] font-medium">Inga bokningar just nu</p>
         <p className="text-[var(--text-muted)] text-sm mt-1.5 max-w-xs mx-auto">
-          Klicka på ett tillgängligt rum för att skapa en bokning, eller ring Maja för att boka via röst.
+          Klicka på ett tillgängligt rum för att skapa en bokning, eller ring Kollegan för att boka via röst.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Booking summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {bookedRooms.map((room) => {
-          const colors = ROOM_COLORS[room.type] || ROOM_COLORS.Enkel;
-          const nights = room.checkIn && room.checkOut ? daysBetween(room.checkIn, room.checkOut) : null;
+    <div className="space-y-8">
+      {/* ── Booking summary cards ── */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest">Aktiva bokningar</span>
+          <span className="text-xs text-[var(--text-muted)] bg-[var(--surface-alt)] border border-[var(--border)] rounded-full px-2 py-0.5">
+            {bookedRooms.length}
+          </span>
+        </div>
 
-          return (
-            <button
-              key={room.id}
-              onClick={() => onRoomClick?.(room)}
-              className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 text-left hover:shadow-lg hover:border-[var(--text-muted)] transition-all group hover:scale-[1.01] active:scale-[0.98]"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className={['w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm', colors.bg, colors.text].join(' ')}>
-                  {room.id}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                    {room.guestName}
-                  </p>
-                  <p className="text-xs text-[var(--text-muted)]">
-                    {TYPE_LABELS[room.type]}
-                  </p>
-                </div>
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {bookedRooms.map((room) => {
+            const colors = ROOM_COLORS[room.type] || ROOM_COLORS.Enkel;
+            const nights = room.checkIn && room.checkOut ? daysBetween(room.checkIn, room.checkOut) : null;
 
-              {room.checkIn && room.checkOut ? (
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-[var(--text-secondary)]">
-                    {formatDateNice(room.checkIn)}
-                  </span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                    <polyline points="12 5 19 12 12 19" />
-                  </svg>
-                  <span className="text-[var(--text-secondary)]">
-                    {formatDateNice(room.checkOut)}
-                  </span>
+            return (
+              <button
+                key={room.id}
+                onClick={() => onRoomClick?.(room)}
+                className={[
+                  'bg-[var(--surface)] border border-[var(--border)] border-l-[3px] rounded-2xl p-4 text-left',
+                  'hover:shadow-md transition-all active:scale-[0.98]',
+                  colors.border,
+                ].join(' ')}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={['w-11 h-11 rounded-xl flex items-center justify-center font-bold text-base shrink-0 font-heading', colors.bg, colors.text].join(' ')}>
+                    {room.id}
+                  </div>
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate leading-tight">
+                      {room.guestName}
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                      {TYPE_LABELS[room.type]}
+                    </p>
+                  </div>
                   {nights !== null && (
-                    <span className="ml-auto text-[var(--text-muted)] bg-[var(--surface-alt)] rounded-md px-2 py-0.5">
-                      {nights} {nights === 1 ? 'natt' : 'nätter'}
-                    </span>
+                    <div className="shrink-0 text-right">
+                      <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">{nights}</span>
+                      <p className="text-[10px] text-[var(--text-muted)] leading-none mt-0.5">{nights === 1 ? 'natt' : 'nätter'}</p>
+                    </div>
                   )}
                 </div>
-              ) : (
-                <p className="text-xs text-[var(--text-muted)]">Inga datum angivna</p>
-              )}
-            </button>
-          );
-        })}
+
+                {room.checkIn && room.checkOut && (
+                  <div className="mt-3 pt-3 border-t border-[var(--border-light)] flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)] shrink-0">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    <span className="font-medium">{formatDateNice(room.checkIn)}</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)] shrink-0">
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                    <span className="font-medium">{formatDateNice(room.checkOut)}</span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Calendar timeline */}
+      {/* ── Calendar timeline ── */}
       <div>
-        <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-3">Tidslinje — nästa 14 dagar</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest">Tidslinje</span>
+            <span className="text-xs text-[var(--text-muted)] bg-[var(--surface-alt)] border border-[var(--border)] rounded-full px-2 py-0.5">
+              14 dagar
+            </span>
+          </div>
+          <span className="text-[11px] text-[var(--text-muted)]">Klicka på en bokning för detaljer</span>
+        </div>
+
         <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
           <div className="overflow-x-auto calendar-scroll">
             <div className="min-w-[800px]">
@@ -242,7 +265,7 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
                         >
                           <div
                             className={[
-                              'w-full h-full rounded-lg flex items-center px-3 shadow-sm transition-all group-hover/bar:shadow-md group-hover/bar:scale-y-110',
+                              'w-full h-full rounded-lg flex items-center px-3 shadow-sm transition-all group-hover/bar:shadow-md group-hover/bar:brightness-105',
                               colors.bar,
                             ].join(' ')}
                           >
