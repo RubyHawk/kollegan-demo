@@ -1,0 +1,135 @@
+{
+  "_comment": "Grand Hotel Kollegan — Vapi Assistant Configuration",
+  "_instructions": [
+    "1. Go to https://dashboard.vapi.ai and create a new Assistant",
+    "2. Paste the systemPrompt from 'model.systemPrompt' below",
+    "3. Add the four tools from 'tools' array — set each server.url to your n8n webhook URL",
+    "4. Set transcriber language to 'sv' (Swedish)",
+    "5. Choose a Swedish-capable voice (see 'voice' section below)",
+    "6. Save and assign a phone number to the assistant",
+    "7. Set NEXTJS_BASE_URL in your n8n environment variables"
+  ],
+
+  "name": "Maja — Grand Hotel Kollegan",
+
+  "firstMessage": "Välkommen till Grand Hotel Kollegan, det är Maja i receptionen. Hur kan jag hjälpa dig idag?",
+
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "temperature": 0.7,
+    "systemPrompt": "Du är Maja, en professionell och vänlig receptionist på Grand Hotel Kollegan. Du pratar alltid svenska med gästerna och är hjälpsam, kortfattad och tydlig.\n\nHotellets rum:\n- Våning 1: Rum 101, 102 (Enkelt), 103, 104 (Dubbelt)\n- Våning 2: Rum 201, 202 (Enkelt), 203, 204 (Dubbelt), 205 (Svit)\n- Våning 3: Rum 301 (Dubbelt), 302, 303 (Svit)\n\nDitt arbetsflöde för bokning:\n1. Fråga vilken typ av rum gästen önskar (Enkelt, Dubbelt eller Svit)\n2. Hämta tillgängliga rum med get_available_rooms\n3. Presentera alternativen kort och tydligt\n4. Låt gästen välja ett rum\n5. Lås rummet med lock_room (detta syns direkt på hotellets skärm)\n6. Fråga efter gästens fullständiga namn\n7. Bekräfta bokningen med confirm_booking\n8. Tacka gästen och önska dem välkommen\n\nDitt arbetsflöde för avbokning:\n1. Fråga vilket rumsnummer gästen vill avboka\n2. Avboka med cancel_booking\n3. Bekräfta avbokningen och önska gästen välkommen åter\n\nViktiga regler:\n- Håll svaren korta (max 2–3 meningar per tur)\n- Bekräfta alltid bokningen med gästens namn innan samtalet avslutas\n- Om ett rum inte är tillgängligt, föreslå ett alternativ\n- Var alltid artig och professionell"
+  },
+
+  "transcriber": {
+    "provider": "deepgram",
+    "model": "nova-2",
+    "language": "sv"
+  },
+
+  "voice": {
+    "_options": "Choose one of the following Swedish voice options:",
+    "option_azure": {
+      "provider": "azure",
+      "voiceId": "sv-SE-SofiaNeural",
+      "_note": "Recommended: Clear Swedish female voice, no extra account needed if Vapi supports Azure TTS"
+    },
+    "option_elevenlabs": {
+      "provider": "elevenlabs",
+      "_note": "Use ElevenLabs with a Swedish voice cloned or selected from their library. Requires ElevenLabs API key in Vapi."
+    },
+    "option_openai": {
+      "provider": "openai",
+      "voiceId": "shimmer",
+      "_note": "OpenAI TTS — not native Swedish but usable for demo purposes"
+    }
+  },
+
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_available_rooms",
+        "description": "Hämtar alla tillgängliga rum på Grand Hotel Kollegan. Returnerar rumsnummer, typ (Enkel/Dubbel/Svit) och våning.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      },
+      "server": {
+        "url": "YOUR_N8N_WEBHOOK_URL_HERE",
+        "_note": "Replace with your n8n webhook URL after importing the workflow"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "lock_room",
+        "description": "Låser ett specifikt rum tillfälligt under pågående samtal. Rummet visas direkt som 'reserveras' på hotellets skärm. Måste göras innan confirm_booking.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "room_id": {
+              "type": "string",
+              "description": "Rumsnumret som ska låsas, t.ex. '101', '205', '302'"
+            }
+          },
+          "required": ["room_id"]
+        }
+      },
+      "server": {
+        "url": "YOUR_N8N_WEBHOOK_URL_HERE"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "confirm_booking",
+        "description": "Bekräftar och slutför bokningen av ett låst rum med gästens namn. Rummet markeras som bokat och grås ut på hotellets skärm.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "room_id": {
+              "type": "string",
+              "description": "Rumsnumret som ska bokas"
+            },
+            "guest_name": {
+              "type": "string",
+              "description": "Gästens fullständiga namn"
+            }
+          },
+          "required": ["room_id", "guest_name"]
+        }
+      },
+      "server": {
+        "url": "YOUR_N8N_WEBHOOK_URL_HERE"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "cancel_booking",
+        "description": "Avbokar ett rum (oavsett om det är låst eller bokat) och gör det tillgängligt igen. Rummet visas direkt som tillgängligt på hotellets skärm.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "room_id": {
+              "type": "string",
+              "description": "Rumsnumret som ska avbokas"
+            }
+          },
+          "required": ["room_id"]
+        }
+      },
+      "server": {
+        "url": "YOUR_N8N_WEBHOOK_URL_HERE"
+      }
+    }
+  ],
+
+  "endCallFunctionEnabled": true,
+  "recordingEnabled": false,
+  "maxDurationSeconds": 300,
+  "silenceTimeoutSeconds": 30
+}

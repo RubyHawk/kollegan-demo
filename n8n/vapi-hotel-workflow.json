@@ -1,0 +1,257 @@
+{
+  "name": "Vapi Hotel Receptionist — Grand Hotel Kollegan",
+  "nodes": [
+    {
+      "id": "n1",
+      "name": "Vapi Tool Call Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vapi-hotel",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "n2",
+      "name": "Extract Tool Info",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 300],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "toolName",
+              "value": "={{ $json.message.toolCallList[0].name }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "toolArgs",
+              "value": "={{ $json.message.toolCallList[0].arguments }}",
+              "type": "object"
+            },
+            {
+              "id": "a3",
+              "name": "toolCallId",
+              "value": "={{ $json.message.toolCallList[0].id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n3",
+      "name": "Route by Tool",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [720, 300],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "rules": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.toolName }}",
+                    "rightValue": "get_available_rooms",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "get_available_rooms"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.toolName }}",
+                    "rightValue": "lock_room",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "lock_room"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.toolName }}",
+                    "rightValue": "confirm_booking",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "confirm_booking"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.toolName }}",
+                    "rightValue": "cancel_booking",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancel_booking"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n4",
+      "name": "GET Available Rooms",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 100],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.NEXTJS_BASE_URL }}/api/rooms/available",
+        "options": {}
+      }
+    },
+    {
+      "id": "n5",
+      "name": "POST Lock Room",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 260],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEXTJS_BASE_URL }}/api/rooms/lock",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ room_id: $('Extract Tool Info').item.json.toolArgs.room_id }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "n6",
+      "name": "POST Confirm Booking",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 420],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEXTJS_BASE_URL }}/api/rooms/confirm",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ room_id: $('Extract Tool Info').item.json.toolArgs.room_id, guest_name: $('Extract Tool Info').item.json.toolArgs.guest_name }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "n7",
+      "name": "POST Cancel Booking",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 580],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NEXTJS_BASE_URL }}/api/rooms/cancel",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ room_id: $('Extract Tool Info').item.json.toolArgs.room_id }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "n8",
+      "name": "Format Vapi Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1200, 300],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "results",
+              "value": "={{ [{ toolCallId: $('Extract Tool Info').item.json.toolCallId, result: JSON.stringify($json) }] }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n9",
+      "name": "Respond to Vapi",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1440, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ results: $json.results }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Vapi Tool Call Webhook": {
+      "main": [[{ "node": "Extract Tool Info", "type": "main", "index": 0 }]]
+    },
+    "Extract Tool Info": {
+      "main": [[{ "node": "Route by Tool", "type": "main", "index": 0 }]]
+    },
+    "Route by Tool": {
+      "get_available_rooms": [[{ "node": "GET Available Rooms", "type": "main", "index": 0 }]],
+      "lock_room": [[{ "node": "POST Lock Room", "type": "main", "index": 0 }]],
+      "confirm_booking": [[{ "node": "POST Confirm Booking", "type": "main", "index": 0 }]],
+      "cancel_booking": [[{ "node": "POST Cancel Booking", "type": "main", "index": 0 }]]
+    },
+    "GET Available Rooms": {
+      "main": [[{ "node": "Format Vapi Response", "type": "main", "index": 0 }]]
+    },
+    "POST Lock Room": {
+      "main": [[{ "node": "Format Vapi Response", "type": "main", "index": 0 }]]
+    },
+    "POST Confirm Booking": {
+      "main": [[{ "node": "Format Vapi Response", "type": "main", "index": 0 }]]
+    },
+    "POST Cancel Booking": {
+      "main": [[{ "node": "Format Vapi Response", "type": "main", "index": 0 }]]
+    },
+    "Format Vapi Response": {
+      "main": [[{ "node": "Respond to Vapi", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "pinData": {}
+}

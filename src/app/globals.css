@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  --color-gray-950: #030712;
+  --color-green-950: #052e16;
+  --color-yellow-950: #422006;
+  --color-red-950: #450a0a;
+}
+
+/* Locked room pulse animation */
+@keyframes room-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Call indicator glow */
+@keyframes call-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+.room-locked {
+  animation: room-pulse 2s ease-in-out infinite;
+}
+
+.status-ping {
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.call-indicator {
+  animation: call-glow 2s ease-in-out infinite;
+}
+
+body {
+  background: #030712;
+  color: #f9fafb;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
