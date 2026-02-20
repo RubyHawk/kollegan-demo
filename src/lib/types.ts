@@ -45,3 +45,54 @@ export interface RoomStore {
   recentActivity: ActivityEvent[];
   onCall: boolean;
 }
+
+/* ───── Hotel Services ───── */
+
+export interface OpeningHours {
+  default?: string;   // "Mån–Fre 18–22, Lör–Sön 11–14 & 18–22"
+  weekdays?: string;
+  weekends?: string;
+}
+
+export interface MenuHighlight {
+  name: string;
+  price: number;
+}
+
+export type RestaurantService = 'frukost' | 'lunch' | 'middag' | 'bar' | 'rumsservice';
+
+export interface Restaurant {
+  id: string;
+  name: string;
+  description: string;
+  cuisineType: string;
+  openingHours: OpeningHours;
+  services: RestaurantService[];
+  menuHighlights: MenuHighlight[];
+  isActive: boolean;
+}
+
+export type ActivityCategory = 'wellness' | 'fitness' | 'transport' | 'konferens' | 'kultur' | 'övrigt';
+
+export interface HotelActivity {
+  id: string;
+  name: string;
+  description: string;
+  category: ActivityCategory;
+  openingHours: OpeningHours;
+  price: string;
+  bookingRequired: boolean;
+  isActive: boolean;
+}
+
+export type AmenityType = 'kiosk' | 'parkering' | 'service' | 'övrigt';
+
+export interface Amenity {
+  id: string;
+  name: string;
+  type: AmenityType;
+  description: string;
+  openingHours: OpeningHours;
+  pricing: string;
+  isActive: boolean;
+}

@@ -6,11 +6,12 @@ import HotelGrid from '@/app/components/HotelGrid';
 import BookingsCalendar from '@/app/components/BookingsCalendar';
 import ActivityLog from '@/app/components/ActivityLog';
 import CallIndicator from '@/app/components/CallIndicator';
-import MajaContact from '@/app/components/MajaContact';
-import BookingDialog from '@/app/components/BookingDialog';
+import KolleganContact from '@/app/components/KolleganContact';
+import RoomDetailModal from '@/app/components/RoomDetailModal';
+import HotelInfoTab from '@/app/components/HotelInfoTab';
 import ThemeToggle from '@/app/components/ThemeToggle';
 
-type Tab = 'available' | 'booked' | 'activity';
+type Tab = 'available' | 'booked' | 'activity' | 'hotel-info';
 
 /* ───── Animated number counter ───── */
 function AnimatedNumber({ value, duration = 600 }: { value: number; duration?: number }) {
@@ -132,6 +133,16 @@ const NAV_ITEMS: { key: Tab; label: string; icon: React.ReactNode }[] = [
       </svg>
     ),
   },
+  {
+    key: 'hotel-info',
+    label: 'Hotellinfo',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+    ),
+  },
 ];
 
 export default function HomePage() {
@@ -143,6 +154,7 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<Tab>('available');
   const [showSplash, setShowSplash] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hotelServiceCount, setHotelServiceCount] = useState(0);
 
   /* ── SSE ── */
   useEffect(() => {
@@ -197,6 +209,7 @@ export default function HomePage() {
     available: availableCount + lockedCount,
     booked: bookedCount,
     activity: activities.length,
+    'hotel-info': hotelServiceCount,
   };
 
   return (
@@ -419,9 +432,9 @@ export default function HomePage() {
             {/* Divider */}
             <div className="mx-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
 
-            {/* Maja section */}
+            {/* Kollegan section */}
             <div className="p-4">
-              <MajaContact variant="sidebar" />
+              <KolleganContact variant="sidebar" />
             </div>
           </aside>
 
@@ -483,6 +496,13 @@ export default function HomePage() {
                 <ActivityLog activities={activities} />
               </div>
             )}
+
+            {/* ── Hotellinfo Tab ── */}
+            {activeTab === 'hotel-info' && (
+              <div key="hotel-info" className="tab-content-enter">
+                <HotelInfoTab onCountChange={setHotelServiceCount} />
+              </div>
+            )}
           </main>
         </div>
 
@@ -526,7 +546,7 @@ export default function HomePage() {
       </div>
 
       {selectedRoom && (
-        <BookingDialog
+        <RoomDetailModal
           room={selectedRoom}
           onClose={() => setSelectedRoom(null)}
           onBooked={() => setSelectedRoom(null)}

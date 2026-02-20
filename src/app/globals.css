@@ -358,6 +358,28 @@ input:focus-visible {
   box-shadow: 0 0 16px 2px rgba(248, 113, 113, 0.3);
 }
 
+/* ───── Room Detail Modal ───── */
+@keyframes room-detail-enter {
+  0% { opacity: 0; transform: translateY(20px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.room-detail-enter {
+  animation: room-detail-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ───── Service card hover reveal ───── */
+.service-card-actions {
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.service-card:hover .service-card-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* ───── Base ───── */
 body {
   background: var(--page-bg);
