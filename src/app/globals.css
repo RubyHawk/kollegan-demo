@@ -1,26 +1,51 @@
 @import "tailwindcss";
 
 @theme {
-  --color-gray-950: #030712;
-  --color-green-950: #052e16;
-  --color-yellow-950: #422006;
-  --color-red-950: #450a0a;
+  --color-navy-950: #0B1121;
+  --color-navy-900: #131C2E;
+  --color-navy-800: #1A2540;
+  --color-navy-700: #1E293B;
+
+  --color-gold-500: #C9A84C;
+  --color-gold-400: #D4B96A;
+  --color-gold-600: #8B7A3E;
+  --color-gold-900: #3D3420;
+  --color-gold-950: #2A2210;
+
+  --color-cream-100: #F5F0E8;
+  --color-cream-400: #9B917F;
+  --color-cream-600: #5C5549;
+
+  --color-emerald-950: #0A2A1B;
+  --color-emerald-800: #1B5E3B;
+  --color-emerald-400: #6EE7A0;
+  --color-emerald-500: #4ADE6F;
+
+  --color-burgundy-950: #2A1015;
+  --color-burgundy-800: #991B1B;
+  --color-burgundy-400: #F87171;
 }
 
-/* Locked room pulse animation */
+/* Locked room gold pulse */
 @keyframes room-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  50% { opacity: 0.75; }
+}
+
+/* Gold shimmer for locked rooms */
+@keyframes gold-shimmer {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.2); }
+  50% { box-shadow: 0 0 12px 2px rgba(201, 168, 76, 0.15); }
 }
 
 /* Call indicator glow */
 @keyframes call-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
-  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(248, 113, 113, 0); }
 }
 
 .room-locked {
-  animation: room-pulse 2s ease-in-out infinite;
+  animation: gold-shimmer 2.5s ease-in-out infinite;
 }
 
 .status-ping {
@@ -32,7 +57,11 @@
 }
 
 body {
-  background: #030712;
-  color: #f9fafb;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  background: #0B1121;
+  color: #F5F0E8;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-heading {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
 }
