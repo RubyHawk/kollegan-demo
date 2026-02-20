@@ -130,7 +130,7 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen grid grid-rows-[auto_1fr_auto]">
       {/* ───── Header ───── */}
       <header className="bg-[var(--surface)] border-b border-[var(--border)] relative">
         <div className="max-w-7xl mx-auto px-6 py-6">
@@ -453,7 +453,7 @@ export default function HomePage() {
       </div>
 
       {/* ───── Footer ───── */}
-      <footer className="border-t border-[var(--border)] mt-12 bg-[var(--surface)]">
+      <footer className="border-t border-[var(--border)] bg-[var(--surface)]">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="flex items-center gap-3">
