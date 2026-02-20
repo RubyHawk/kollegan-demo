@@ -89,11 +89,11 @@ export default function BookingDialog({ room, onClose, onBooked }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/60 backdrop-blur-sm dialog-overlay-enter"
       onClick={onClose}
     >
       <div
-        className="bg-[var(--surface)] rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-[var(--border)]"
+        className="bg-[var(--surface)] rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-[var(--border)] dialog-content-enter"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
@@ -150,14 +150,14 @@ export default function BookingDialog({ room, onClose, onBooked }: Props) {
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 text-sm text-[var(--text-secondary)] bg-[var(--surface-alt)] hover:bg-[var(--border)] rounded-xl py-3 font-medium transition-colors"
+                className="flex-1 text-sm text-[var(--text-secondary)] bg-[var(--surface-alt)] hover:bg-[var(--border)] rounded-xl py-3 font-medium transition-all active:scale-95"
               >
                 Stäng
               </button>
               <button
                 onClick={handleCancel}
                 disabled={loading}
-                className="flex-1 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-800 rounded-xl py-3 font-medium transition-colors disabled:opacity-50"
+                className="flex-1 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-800 rounded-xl py-3 font-medium transition-all active:scale-95 disabled:opacity-50"
               >
                 {loading ? 'Avbokar...' : 'Avboka'}
               </button>
@@ -207,14 +207,14 @@ export default function BookingDialog({ room, onClose, onBooked }: Props) {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 text-sm text-[var(--text-secondary)] bg-[var(--surface-alt)] hover:bg-[var(--border)] rounded-xl py-3 font-medium transition-colors"
+                className="flex-1 text-sm text-[var(--text-secondary)] bg-[var(--surface-alt)] hover:bg-[var(--border)] rounded-xl py-3 font-medium transition-all active:scale-95"
               >
                 Avbryt
               </button>
               <button
                 type="submit"
                 disabled={loading || !guestName.trim()}
-                className="flex-1 text-sm text-white bg-stone-800 dark:bg-slate-200 dark:text-slate-800 hover:bg-stone-900 dark:hover:bg-white rounded-xl py-3 font-semibold transition-colors disabled:opacity-40"
+                className="flex-1 text-sm text-white bg-stone-800 dark:bg-slate-200 dark:text-slate-800 hover:bg-stone-900 dark:hover:bg-white rounded-xl py-3 font-semibold transition-all active:scale-95 disabled:opacity-40"
               >
                 {loading ? 'Bokar...' : 'Boka rum'}
               </button>

@@ -29,7 +29,7 @@ export default function RoomCard({ room, onClick }: Props) {
       onClick={() => onClick?.(room)}
       disabled={isLocked}
       className={[
-        'relative w-full text-left rounded-2xl p-5 transition-all duration-300 border group',
+        'relative w-full text-left rounded-2xl p-5 transition-all duration-300 border group hover:scale-[1.02] active:scale-[0.98]',
         isAvailable &&
           'bg-[var(--surface)] border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-lg hover:shadow-emerald-50 dark:hover:shadow-emerald-900/20 cursor-pointer',
         isLocked &&
