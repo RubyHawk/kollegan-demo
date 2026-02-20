@@ -495,23 +495,6 @@ export default function HomePage() {
             {/* ── Activity Tab ── */}
             {rooms.length > 0 && activeTab === 'activity' && (
               <div key="activity" className="tab-content-enter">
-                {/* Stats grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                  {([
-                    { label: 'Bokningar',   count: activities.filter(e => e.type === 'room_confirmed').length,  dot: 'bg-emerald-500' },
-                    { label: 'Avbokningar', count: activities.filter(e => e.type === 'room_cancelled').length,  dot: 'bg-red-500'     },
-                    { label: 'Samtal',      count: activities.filter(e => e.type === 'call_started').length,    dot: 'bg-amber-500'   },
-                    { label: 'Sökningar',   count: activities.filter(e => e.type === 'rooms_queried').length,   dot: 'bg-[var(--text-muted)]' },
-                  ] as const).map(({ label, count, dot }) => (
-                    <div key={label} className="bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3">
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <div className={`w-1.5 h-1.5 rounded-full ${dot}`} />
-                        <span className="text-xs text-[var(--text-muted)]">{label}</span>
-                      </div>
-                      <span className="text-2xl font-bold tabular-nums text-[var(--text-primary)]">{count}</span>
-                    </div>
-                  ))}
-                </div>
                 <ActivityLog activities={activities} />
               </div>
             )}
