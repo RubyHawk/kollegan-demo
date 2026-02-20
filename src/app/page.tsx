@@ -48,27 +48,27 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white">
+    <main className="min-h-screen bg-navy-950 text-cream-100">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+        <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-10">
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-3xl font-bold tracking-tight">Grand Hotel Kollegan</h1>
-              <span className="text-2xl">🏨</span>
-            </div>
-            <p className="text-gray-500 text-sm">Realtidsvy — receptionsöversikt</p>
+            <h1 className="font-heading text-3xl font-bold tracking-tight text-cream-100">
+              Grand Hotel Kollegan
+            </h1>
+            <div className="w-12 h-0.5 bg-gold-500 mt-2 mb-1.5 rounded-full" />
+            <p className="text-cream-400 text-sm">Realtidsvy — receptionsöversikt</p>
           </div>
 
           <div className="flex flex-col sm:items-end gap-3">
             <CallIndicator onCall={onCall} />
 
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 text-xs text-gray-600">
+              <div className="flex items-center gap-1.5 text-xs text-cream-600">
                 <div
                   className={[
                     'w-1.5 h-1.5 rounded-full',
-                    connected ? 'bg-green-500' : 'bg-red-600',
+                    connected ? 'bg-gold-500' : 'bg-burgundy-400',
                   ].join(' ')}
                 />
                 {connected ? 'Live' : 'Frånkopplad'}
@@ -76,7 +76,7 @@ export default function HomePage() {
 
               <button
                 onClick={handleReset}
-                className="text-xs text-gray-600 hover:text-gray-400 border border-gray-800 hover:border-gray-700 rounded-lg px-3 py-1.5 transition-colors"
+                className="text-xs text-cream-400 hover:text-gold-400 border border-navy-700 hover:border-gold-600 rounded-lg px-3 py-1.5 transition-colors"
               >
                 Återställ rum
               </button>
@@ -85,8 +85,8 @@ export default function HomePage() {
         </header>
 
         {rooms.length === 0 && (
-          <div className="text-center py-20 text-gray-700">
-            <div className="text-4xl mb-3">📡</div>
+          <div className="text-center py-20 text-cream-600">
+            <div className="w-6 h-6 border-2 border-gold-600 border-t-gold-400 rounded-full animate-spin mx-auto mb-4" />
             <p className="text-sm">Ansluter till realtidsström...</p>
           </div>
         )}
@@ -104,21 +104,21 @@ export default function HomePage() {
         )}
 
         {rooms.length > 0 && (
-          <footer className="mt-8 pt-6 border-t border-gray-900 flex flex-wrap gap-6 text-xs text-gray-600">
+          <footer className="mt-10 pt-6 border-t border-navy-700 flex flex-wrap gap-6 text-xs text-cream-600">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-green-800" />
+              <div className="w-3 h-3 rounded bg-emerald-800" />
               <span>Tillgänglig</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-yellow-800" />
+              <div className="w-3 h-3 rounded bg-gold-900 border border-gold-600" />
               <span>Reserveras (pågående samtal)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-gray-700" />
+              <div className="w-3 h-3 rounded bg-navy-800" />
               <span>Bokad &amp; bekräftad</span>
             </div>
-            <div className="ml-auto">
-              Ring <span className="text-gray-400 font-mono">Maja</span> på Vapi för att boka
+            <div className="ml-auto text-cream-600">
+              Ring <span className="text-gold-400 font-mono">Maja</span> på Vapi för att boka
             </div>
           </footer>
         )}
