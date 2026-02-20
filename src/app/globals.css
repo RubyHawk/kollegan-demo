@@ -39,16 +39,44 @@
 }
 
 .dark {
-  --page-bg: #0F172A;
-  --surface: #1E293B;
-  --surface-alt: #1A2332;
-  --surface-hover: #263348;
-  --border: #334155;
-  --border-light: #1E293B;
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --dot-color: rgba(100, 116, 139, 0.15);
+  --page-bg: #121212;
+  --surface: #1C1C1C;
+  --surface-alt: #161616;
+  --surface-hover: #262626;
+  --border: #2E2E2E;
+  --border-light: #1C1C1C;
+  --text-primary: #ECECEC;
+  --text-secondary: #999999;
+  --text-muted: #666666;
+  --dot-color: rgba(102, 102, 102, 0.1);
+}
+
+/* ───── Splash screen ───── */
+@keyframes splash-enter {
+  0% { opacity: 0; transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes splash-exit {
+  0% { opacity: 1; }
+  100% { opacity: 0; pointer-events: none; }
+}
+
+@keyframes splash-icon-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(212, 168, 67, 0.3); }
+  50% { transform: scale(1.05); box-shadow: 0 0 30px 8px rgba(212, 168, 67, 0.15); }
+}
+
+.splash-enter {
+  animation: splash-enter 0.6s ease-out both;
+}
+
+.splash-exit {
+  animation: splash-exit 0.5s ease-in both;
+}
+
+.splash-icon-pulse {
+  animation: splash-icon-pulse 2s ease-in-out infinite;
 }
 
 /* ───── Fade-in-up (stat cards, general entrance) ───── */

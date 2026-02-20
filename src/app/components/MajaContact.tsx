@@ -16,7 +16,11 @@ interface Message {
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
 const VAPI_ASSISTANT_ID = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID || '';
 
-export default function MajaContact() {
+interface MajaContactProps {
+  variant?: 'floating' | 'sidebar';
+}
+
+export default function MajaContact({ variant = 'floating' }: MajaContactProps) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>('idle');
   const [callStatus, setCallStatus] = useState<CallStatus>('idle');
@@ -29,12 +33,10 @@ export default function MajaContact() {
   const vapiRef = useRef<Vapi | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeTranscript]);
 
-  // Initialize Vapi
   const getVapi = useCallback(() => {
     if (!vapiRef.current && VAPI_PUBLIC_KEY) {
       vapiRef.current = new Vapi(VAPI_PUBLIC_KEY);
@@ -62,17 +64,9 @@ export default function MajaContact() {
         }, 2000);
       });
 
-      vapiRef.current.on('speech-start', () => {
-        setIsMajaSpeaking(true);
-      });
-
-      vapiRef.current.on('speech-end', () => {
-        setIsMajaSpeaking(false);
-      });
-
-      vapiRef.current.on('volume-level', (level: number) => {
-        setVolumeLevel(level);
-      });
+      vapiRef.current.on('speech-start', () => setIsMajaSpeaking(true));
+      vapiRef.current.on('speech-end', () => setIsMajaSpeaking(false));
+      vapiRef.current.on('volume-level', (level: number) => setVolumeLevel(level));
 
       vapiRef.current.on('message', (msg: Record<string, unknown>) => {
         if (msg.type === 'transcript') {
@@ -156,7 +150,6 @@ export default function MajaContact() {
       { id: crypto.randomUUID(), role: 'user', text, timestamp: new Date() },
     ]);
 
-    // Simulate Maja's response for chat mode (without Vapi call)
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
@@ -170,14 +163,12 @@ export default function MajaContact() {
     }, 1200);
   }, [chatInput]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       vapiRef.current?.stop();
     };
   }, []);
 
-  // --- Volume bars for voice visualization ---
   const volumeBars = Array.from({ length: 5 }, (_, i) => {
     const threshold = i * 0.15;
     const active = volumeLevel > threshold && callStatus === 'active';
@@ -194,9 +185,223 @@ export default function MajaContact() {
     );
   });
 
+  /* ═══════ Messages list (shared between both variants) ═══════ */
+  const messagesList = (maxH: string) => (
+    <div className={`flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-[120px] ${maxH}`}>
+      {messages.map((msg) => (
+        <div
+          key={msg.id}
+          className={['flex', msg.role === 'user' ? 'justify-end' : 'justify-start'].join(' ')}
+        >
+          <div
+            className={[
+              'max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed',
+              msg.role === 'maja'
+                ? 'bg-navy-800 text-cream-100 rounded-bl-sm'
+                : 'bg-gold-900 text-gold-400 rounded-br-sm',
+            ].join(' ')}
+          >
+            {msg.role === 'maja' && (
+              <span className="block text-gold-500 font-semibold text-[10px] mb-0.5 uppercase tracking-wide">Maja</span>
+            )}
+            {msg.text}
+          </div>
+        </div>
+      ))}
+
+      {activeTranscript && (
+        <div className="flex justify-start">
+          <div className="max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed bg-navy-800 text-cream-400 rounded-bl-sm italic opacity-60">
+            <span className="block text-gold-500 font-semibold text-[10px] mb-0.5 uppercase tracking-wide not-italic">Maja</span>
+            {activeTranscript}...
+          </div>
+        </div>
+      )}
+
+      {mode === 'call' && isMajaSpeaking && (
+        <div className="flex justify-start">
+          <div className="flex gap-1 items-center px-3 py-2.5 bg-navy-800 rounded-2xl rounded-bl-sm">
+            <div className="maja-typing-dot" style={{ animationDelay: '0s' }} />
+            <div className="maja-typing-dot" style={{ animationDelay: '0.15s' }} />
+            <div className="maja-typing-dot" style={{ animationDelay: '0.3s' }} />
+          </div>
+        </div>
+      )}
+
+      <div ref={messagesEndRef} />
+    </div>
+  );
+
+  /* ═══════ SIDEBAR VARIANT ═══════ */
+  if (variant === 'sidebar') {
+    return (
+      <div className="bg-navy-900 rounded-xl overflow-hidden border border-navy-700">
+        {/* Compact header */}
+        <div className="bg-gradient-to-r from-navy-800 to-navy-900 px-3 py-2.5 flex items-center gap-2">
+          <div className="relative">
+            <div
+              className={[
+                'w-8 h-8 rounded-full bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center',
+                isMajaSpeaking ? 'maja-speaking-glow' : '',
+              ].join(' ')}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0B1121" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <div className={['absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-[1.5px] border-navy-800', callStatus === 'active' ? 'bg-emerald-500' : 'bg-gold-500'].join(' ')} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-cream-100 font-heading font-semibold text-xs">Maja</h3>
+            <p className="text-cream-400 text-[10px] truncate">
+              {callStatus === 'connecting' && 'Ansluter...'}
+              {callStatus === 'active' && (isMajaSpeaking ? 'Talar...' : 'Lyssnar...')}
+              {callStatus === 'ended' && 'Avslutat'}
+              {callStatus === 'idle' && mode === 'chat' && 'Chatt'}
+              {callStatus === 'idle' && mode === 'idle' && 'Receptionist'}
+            </p>
+          </div>
+          {(mode === 'call' || mode === 'chat') && (
+            <button
+              onClick={() => {
+                if (callStatus === 'active') endCall();
+                setMode('idle');
+                setMessages([]);
+              }}
+              className="text-cream-600 hover:text-cream-100 transition-colors p-0.5"
+              aria-label="Stäng"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Voice visualization */}
+        {mode === 'call' && callStatus === 'active' && (
+          <div className="px-3 py-2 border-t border-navy-700 flex items-center justify-center gap-2 bg-navy-800/50">
+            <div className="flex items-end gap-1 h-6">{volumeBars}</div>
+            <span className="text-[10px] text-cream-400">
+              {isMajaSpeaking ? 'Maja talar' : 'Din tur'}
+            </span>
+          </div>
+        )}
+
+        {/* Connecting */}
+        {mode === 'call' && callStatus === 'connecting' && (
+          <div className="px-3 py-4 border-t border-navy-700 flex flex-col items-center gap-2 bg-navy-800/50">
+            <div className="maja-connecting-rings" style={{ width: 40, height: 40 }}>
+              <div className="maja-ring maja-ring-1" />
+              <div className="maja-ring maja-ring-2" />
+              <div className="w-3 h-3 rounded-full bg-gold-500" />
+            </div>
+            <span className="text-[10px] text-cream-400">Ansluter...</span>
+          </div>
+        )}
+
+        {/* Idle: action buttons */}
+        {mode === 'idle' && (
+          <div className="px-3 py-3 space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={startCall}
+                className="group flex items-center justify-center gap-1.5 bg-navy-800 hover:bg-navy-700 border border-navy-700 hover:border-gold-600 rounded-lg px-2 py-2 transition-all"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6EE7A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                <span className="text-[11px] font-medium text-cream-100 group-hover:text-gold-400">Ring</span>
+              </button>
+              <button
+                onClick={() => {
+                  setMode('chat');
+                  setMessages([
+                    {
+                      id: crypto.randomUUID(),
+                      role: 'maja',
+                      text: 'Hej! Skriv ditt meddelande så hjälper jag dig.',
+                      timestamp: new Date(),
+                    },
+                  ]);
+                }}
+                className="group flex items-center justify-center gap-1.5 bg-navy-800 hover:bg-navy-700 border border-navy-700 hover:border-gold-600 rounded-lg px-2 py-2 transition-all"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                <span className="text-[11px] font-medium text-cream-100 group-hover:text-gold-400">Chatta</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Messages */}
+        {(mode === 'call' || mode === 'chat') && messagesList('max-h-[220px]')}
+
+        {/* Chat input */}
+        {mode === 'chat' && (
+          <div className="border-t border-navy-700 px-3 py-2">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                sendChat();
+              }}
+              className="flex gap-1.5"
+            >
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Skriv..."
+                className="flex-1 bg-navy-800 border border-navy-700 rounded-lg px-2.5 py-1.5 text-[11px] text-cream-100 placeholder-cream-600 focus:outline-none focus:border-gold-600 transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={!chatInput.trim()}
+                className="bg-gold-500 hover:bg-gold-400 disabled:bg-navy-700 disabled:text-cream-600 text-navy-950 rounded-lg px-2 py-1.5 transition-colors"
+                aria-label="Skicka"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Call end button */}
+        {mode === 'call' && callStatus === 'active' && (
+          <div className="border-t border-navy-700 px-3 py-2 flex justify-center">
+            <button
+              onClick={endCall}
+              className="flex items-center gap-1.5 bg-burgundy-800 hover:bg-burgundy-400 text-cream-100 rounded-full px-4 py-1.5 transition-colors text-xs maja-hangup-btn"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+              Avsluta
+            </button>
+          </div>
+        )}
+
+        {/* Call ended */}
+        {mode === 'call' && callStatus === 'ended' && (
+          <div className="border-t border-navy-700 px-3 py-2 text-center">
+            <p className="text-cream-400 text-[10px]">Samtalet avslutat</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /* ═══════ FLOATING VARIANT (original) ═══════ */
   return (
     <>
-      {/* Floating contact button */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
@@ -204,37 +409,28 @@ export default function MajaContact() {
           aria-label="Kontakta Maja"
         >
           <div className="relative">
-            {/* Pulse rings */}
             <div className="absolute inset-0 rounded-full bg-gold-500/20 maja-fab-ping" />
             <div className="absolute inset-0 rounded-full bg-gold-500/10 maja-fab-ping" style={{ animationDelay: '0.5s' }} />
-
-            {/* Avatar */}
             <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/25 group-hover:shadow-gold-500/40 group-hover:scale-105 transition-all duration-300">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0B1121" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
-              {/* Online dot */}
               <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[var(--page-bg)]">
                 <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
               </div>
             </div>
           </div>
-
-          {/* Label */}
           <div className="absolute -top-8 right-0 bg-stone-800 border border-stone-700 rounded-lg px-3 py-1 text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg">
             Prata med Maja
           </div>
         </button>
       )}
 
-      {/* Expanded panel */}
       {open && (
         <div className="fixed bottom-6 right-6 z-50 w-[360px] maja-panel-enter">
           <div className="bg-navy-900 border border-navy-700 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 48px)' }}>
-            {/* Header */}
             <div className="bg-gradient-to-r from-navy-800 to-navy-900 border-b border-navy-700 px-5 py-4 flex items-center gap-3 shrink-0">
-              {/* Maja avatar */}
               <div className="relative">
                 <div
                   className={[
@@ -247,12 +443,7 @@ export default function MajaContact() {
                     <circle cx="12" cy="7" r="4" />
                   </svg>
                 </div>
-                <div
-                  className={[
-                    'absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-navy-800',
-                    callStatus === 'active' ? 'bg-emerald-500' : 'bg-gold-500',
-                  ].join(' ')}
-                />
+                <div className={['absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-navy-800', callStatus === 'active' ? 'bg-emerald-500' : 'bg-gold-500'].join(' ')} />
               </div>
 
               <div className="flex-1 min-w-0">
@@ -285,22 +476,16 @@ export default function MajaContact() {
               </button>
             </div>
 
-            {/* Voice visualization (during call) */}
             {mode === 'call' && callStatus === 'active' && (
               <div className="px-5 py-4 border-b border-navy-700 flex items-center justify-center gap-3 bg-navy-800/50">
-                <div className="flex items-end gap-1 h-8">
-                  {volumeBars}
-                </div>
+                <div className="flex items-end gap-1 h-8">{volumeBars}</div>
                 <div className="flex items-center gap-2">
                   <div className={['w-2 h-2 rounded-full', isMajaSpeaking ? 'bg-gold-400 maja-speak-dot' : 'bg-cream-600'].join(' ')} />
-                  <span className="text-xs text-cream-400">
-                    {isMajaSpeaking ? 'Maja talar' : 'Din tur att prata'}
-                  </span>
+                  <span className="text-xs text-cream-400">{isMajaSpeaking ? 'Maja talar' : 'Din tur att prata'}</span>
                 </div>
               </div>
             )}
 
-            {/* Connecting animation */}
             {mode === 'call' && callStatus === 'connecting' && (
               <div className="px-5 py-8 border-b border-navy-700 flex flex-col items-center gap-3 bg-navy-800/50">
                 <div className="maja-connecting-rings">
@@ -313,11 +498,9 @@ export default function MajaContact() {
               </div>
             )}
 
-            {/* Mode selector (idle) */}
             {mode === 'idle' && (
               <div className="px-5 py-6 space-y-4">
                 <div className="text-center">
-                  {/* Large avatar */}
                   <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center mb-3 maja-avatar-breathe">
                     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0B1121" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -332,7 +515,6 @@ export default function MajaContact() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {/* Call button */}
                   <button
                     onClick={startCall}
                     className="group flex flex-col items-center gap-2 bg-navy-800 hover:bg-navy-700 border border-navy-700 hover:border-gold-600 rounded-xl px-4 py-4 transition-all duration-200"
@@ -345,7 +527,6 @@ export default function MajaContact() {
                     <span className="text-xs font-medium text-cream-100 group-hover:text-gold-400 transition-colors">Ring Maja</span>
                   </button>
 
-                  {/* Chat button */}
                   <button
                     onClick={() => {
                       setMode('chat');
@@ -371,56 +552,8 @@ export default function MajaContact() {
               </div>
             )}
 
-            {/* Messages area (call transcript or chat) */}
-            {(mode === 'call' || mode === 'chat') && (
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-[200px] max-h-[340px]">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={['flex', msg.role === 'user' ? 'justify-end' : 'justify-start'].join(' ')}
-                  >
-                    <div
-                      className={[
-                        'max-w-[80%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed',
-                        msg.role === 'maja'
-                          ? 'bg-navy-800 text-cream-100 rounded-bl-sm'
-                          : 'bg-gold-900 text-gold-400 rounded-br-sm',
-                      ].join(' ')}
-                    >
-                      {msg.role === 'maja' && (
-                        <span className="block text-gold-500 font-semibold text-[10px] mb-0.5 uppercase tracking-wide">Maja</span>
-                      )}
-                      {msg.text}
-                    </div>
-                  </div>
-                ))}
+            {(mode === 'call' || mode === 'chat') && messagesList('max-h-[340px]')}
 
-                {/* Partial transcript */}
-                {activeTranscript && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[80%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed bg-navy-800 text-cream-400 rounded-bl-sm italic opacity-60">
-                      <span className="block text-gold-500 font-semibold text-[10px] mb-0.5 uppercase tracking-wide not-italic">Maja</span>
-                      {activeTranscript}...
-                    </div>
-                  </div>
-                )}
-
-                {/* Maja typing indicator */}
-                {mode === 'call' && isMajaSpeaking && (
-                  <div className="flex justify-start">
-                    <div className="flex gap-1 items-center px-3.5 py-3 bg-navy-800 rounded-2xl rounded-bl-sm">
-                      <div className="maja-typing-dot" style={{ animationDelay: '0s' }} />
-                      <div className="maja-typing-dot" style={{ animationDelay: '0.15s' }} />
-                      <div className="maja-typing-dot" style={{ animationDelay: '0.3s' }} />
-                    </div>
-                  </div>
-                )}
-
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-
-            {/* Chat input (chat mode only) */}
             {mode === 'chat' && (
               <div className="border-t border-navy-700 px-4 py-3 shrink-0">
                 <form
@@ -452,7 +585,6 @@ export default function MajaContact() {
               </div>
             )}
 
-            {/* Call controls */}
             {mode === 'call' && callStatus === 'active' && (
               <div className="border-t border-navy-700 px-5 py-4 shrink-0 flex justify-center">
                 <button
@@ -468,7 +600,6 @@ export default function MajaContact() {
               </div>
             )}
 
-            {/* Back button (chat mode) */}
             {mode === 'chat' && (
               <div className="border-t border-navy-700 px-4 py-2 shrink-0 flex items-center gap-2">
                 <button
@@ -496,7 +627,6 @@ export default function MajaContact() {
               </div>
             )}
 
-            {/* Call ended state */}
             {mode === 'call' && callStatus === 'ended' && (
               <div className="border-t border-navy-700 px-5 py-4 shrink-0 text-center">
                 <p className="text-cream-400 text-xs">Samtalet har avslutats</p>
