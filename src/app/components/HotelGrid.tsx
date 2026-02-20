@@ -9,50 +9,22 @@ interface Props {
 }
 
 export default function HotelGrid({ rooms, onRoomClick }: Props) {
-  const floors = [3, 2, 1]; // top floor first
-
-  const available = rooms.filter((r) => r.status === 'available').length;
-  const locked = rooms.filter((r) => r.status === 'locked').length;
-  const booked = rooms.filter((r) => r.status === 'booked').length;
+  const floors = [3, 2, 1];
 
   return (
     <div className="space-y-8">
-      {/* Summary bar */}
-      <div className="flex gap-4 text-sm">
-        <div className="flex items-center gap-2 bg-emerald-950 border border-emerald-800 rounded-lg px-3 py-1.5">
-          <div className="w-2 h-2 rounded-full bg-emerald-400" />
-          <span className="text-emerald-400">
-            <span className="font-bold">{available}</span> tillgängliga
-          </span>
-        </div>
-        {locked > 0 && (
-          <div className="flex items-center gap-2 bg-gold-950 border border-gold-600 rounded-lg px-3 py-1.5">
-            <div className="w-2 h-2 rounded-full bg-gold-500 animate-ping" />
-            <span className="text-gold-400">
-              <span className="font-bold">{locked}</span> reserveras
-            </span>
-          </div>
-        )}
-        <div className="flex items-center gap-2 bg-navy-900 border border-navy-700 rounded-lg px-3 py-1.5">
-          <div className="w-2 h-2 rounded-full bg-cream-600" />
-          <span className="text-cream-400">
-            <span className="font-bold">{booked}</span> bokade
-          </span>
-        </div>
-      </div>
-
-      {/* Floors */}
       {floors.map((floor) => {
         const floorRooms = rooms.filter((r) => r.floor === floor);
+        if (floorRooms.length === 0) return null;
         return (
           <div key={floor}>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-xs font-bold text-cream-400 uppercase tracking-widest font-heading">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-xs font-semibold text-stone-400 uppercase tracking-widest">
                 Våning {floor}
               </span>
-              <div className="flex-1 h-px bg-navy-700" />
+              <div className="flex-1 h-px bg-stone-200" />
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {floorRooms.map((room) => (
                 <RoomCard key={room.id} room={room} onClick={onRoomClick} />
               ))}
