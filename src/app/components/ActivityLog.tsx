@@ -54,53 +54,68 @@ const EVENT_ICONS: Record<ActivityEvent['type'], ReactNode> = {
 };
 
 const EVENT_COLORS: Record<ActivityEvent['type'], string> = {
-  call_started: 'text-blue-400',
-  call_ended: 'text-cream-400',
-  rooms_queried: 'text-purple-400',
-  room_locked: 'text-gold-400',
-  room_confirmed: 'text-emerald-400',
-  room_cancelled: 'text-burgundy-400',
-  info: 'text-cream-400',
+  call_started: 'text-blue-500 bg-blue-50',
+  call_ended: 'text-stone-500 bg-stone-100',
+  rooms_queried: 'text-violet-500 bg-violet-50',
+  room_locked: 'text-amber-600 bg-amber-50',
+  room_confirmed: 'text-emerald-600 bg-emerald-50',
+  room_cancelled: 'text-red-500 bg-red-50',
+  info: 'text-stone-500 bg-stone-100',
+};
+
+const EVENT_TEXT_COLORS: Record<ActivityEvent['type'], string> = {
+  call_started: 'text-blue-700',
+  call_ended: 'text-stone-600',
+  rooms_queried: 'text-violet-700',
+  room_locked: 'text-amber-700',
+  room_confirmed: 'text-emerald-700',
+  room_cancelled: 'text-red-700',
+  info: 'text-stone-600',
 };
 
 export default function ActivityLog({ activities }: Props) {
   return (
-    <div className="bg-navy-900 rounded-xl border border-navy-700 flex flex-col h-full">
-      <div className="px-4 py-3 border-b border-navy-700 shrink-0">
-        <h2 className="text-xs font-bold text-gold-500 uppercase tracking-widest font-heading">
-          Aktivitetslogg
-        </h2>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 max-h-[600px]">
-        {activities.length === 0 && (
-          <p className="text-cream-600 text-xs text-center mt-10 leading-relaxed">
-            Inga aktiviteter än.
-            <br />
-            Ring Maja för att börja!
-          </p>
-        )}
-
-        {activities.map((event) => (
-          <div key={event.id} className="flex gap-2.5 text-xs group">
-            <span className={['shrink-0 mt-0.5 leading-none', EVENT_COLORS[event.type]].join(' ')}>
-              {EVENT_ICONS[event.type] ?? EVENT_ICONS.info}
-            </span>
-            <div className="min-w-0">
-              <p className={['font-medium leading-snug', EVENT_COLORS[event.type]].join(' ')}>
-                {event.message}
-              </p>
-              <p className="text-cream-600 mt-0.5">
-                {new Date(event.timestamp).toLocaleTimeString('sv-SE', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                })}
-              </p>
-            </div>
+    <div className="space-y-3">
+      {activities.length === 0 && (
+        <div className="text-center py-16">
+          <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-3">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
           </div>
-        ))}
-      </div>
+          <p className="text-stone-400 text-sm">Inga aktiviteter än</p>
+          <p className="text-stone-300 text-xs mt-1">Ring Maja för att börja!</p>
+        </div>
+      )}
+
+      {activities.map((event) => (
+        <div
+          key={event.id}
+          className="flex gap-3 items-start bg-white rounded-xl border border-stone-200 px-4 py-3 transition-all hover:shadow-sm"
+        >
+          <div
+            className={[
+              'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
+              EVENT_COLORS[event.type],
+            ].join(' ')}
+          >
+            {EVENT_ICONS[event.type] ?? EVENT_ICONS.info}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className={['text-sm font-medium leading-snug', EVENT_TEXT_COLORS[event.type]].join(' ')}>
+              {event.message}
+            </p>
+            <p className="text-stone-400 text-xs mt-1">
+              {new Date(event.timestamp).toLocaleTimeString('sv-SE', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              })}
+            </p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

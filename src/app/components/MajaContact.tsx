@@ -215,14 +215,14 @@ export default function MajaContact() {
                 <circle cx="12" cy="7" r="4" />
               </svg>
               {/* Online dot */}
-              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border-2 border-navy-950">
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#F8F7F4]">
                 <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
               </div>
             </div>
           </div>
 
           {/* Label */}
-          <div className="absolute -top-8 right-0 bg-navy-800 border border-navy-700 rounded-lg px-3 py-1 text-xs text-cream-100 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+          <div className="absolute -top-8 right-0 bg-stone-800 border border-stone-700 rounded-lg px-3 py-1 text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-lg">
             Prata med Maja
           </div>
         </button>
