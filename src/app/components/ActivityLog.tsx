@@ -77,22 +77,25 @@ export default function ActivityLog({ activities }: Props) {
   return (
     <div className="space-y-3">
       {activities.length === 0 && (
-        <div className="text-center py-16">
-          <div className="w-12 h-12 rounded-full bg-[var(--surface-alt)] flex items-center justify-center mx-auto mb-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
+        <div className="text-center py-20">
+          <div className="w-16 h-16 rounded-2xl bg-[var(--surface-alt)] flex items-center justify-center mx-auto mb-4 float-animation">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
-          <p className="text-[var(--text-muted)] text-sm">Inga aktiviteter än</p>
-          <p className="text-[var(--text-muted)] text-xs mt-1 opacity-60">Ring Maja för att börja!</p>
+          <p className="text-[var(--text-secondary)] font-medium">Inga aktiviteter än</p>
+          <p className="text-[var(--text-muted)] text-sm mt-1.5 max-w-xs mx-auto">
+            Ring Maja eller boka ett rum manuellt för att se aktiviteten loggas här i realtid.
+          </p>
         </div>
       )}
 
-      {activities.map((event) => (
+      {activities.map((event, index) => (
         <div
           key={event.id}
-          className="flex gap-3 items-start bg-[var(--surface)] rounded-xl border border-[var(--border)] px-4 py-3 transition-all hover:shadow-sm"
+          className="flex gap-3 items-start bg-[var(--surface)] rounded-xl border border-[var(--border)] px-4 py-3 transition-all hover:shadow-sm slide-in-left"
+          style={{ animationDelay: `${Math.min(index * 40, 400)}ms` }}
         >
           <div
             className={[

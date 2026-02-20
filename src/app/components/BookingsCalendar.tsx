@@ -78,7 +78,7 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
   if (bookedRooms.length === 0) {
     return (
       <div className="text-center py-20">
-        <div className="w-16 h-16 rounded-2xl bg-[var(--surface-alt)] flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-2xl bg-[var(--surface-alt)] flex items-center justify-center mx-auto mb-4 float-animation">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
             <line x1="16" y1="2" x2="16" y2="6" />
@@ -87,8 +87,8 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
           </svg>
         </div>
         <p className="text-[var(--text-secondary)] font-medium">Inga bokningar just nu</p>
-        <p className="text-[var(--text-muted)] text-sm mt-1">
-          Klicka på ett tillgängligt rum för att skapa en bokning
+        <p className="text-[var(--text-muted)] text-sm mt-1.5 max-w-xs mx-auto">
+          Klicka på ett tillgängligt rum för att skapa en bokning, eller ring Maja för att boka via röst.
         </p>
       </div>
     );
@@ -106,7 +106,7 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
             <button
               key={room.id}
               onClick={() => onRoomClick?.(room)}
-              className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 text-left hover:shadow-lg hover:border-[var(--text-muted)] transition-all group"
+              className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 text-left hover:shadow-lg hover:border-[var(--text-muted)] transition-all group hover:scale-[1.01] active:scale-[0.98]"
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className={['w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm', colors.bg, colors.text].join(' ')}>
@@ -233,7 +233,7 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
 
                       {isBooked && barSpan > 0 && (
                         <div
-                          className="absolute top-2 bottom-2 flex items-center cursor-pointer group/bar"
+                          className="absolute top-2 bottom-2 flex items-center cursor-pointer group/bar booking-bar-tooltip"
                           style={{
                             left: `${(barStart / DAYS_TO_SHOW) * 100}%`,
                             width: `${(barSpan / DAYS_TO_SHOW) * 100}%`,
@@ -242,13 +242,23 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
                         >
                           <div
                             className={[
-                              'w-full h-full rounded-lg flex items-center px-3 shadow-sm transition-shadow group-hover/bar:shadow-md',
+                              'w-full h-full rounded-lg flex items-center px-3 shadow-sm transition-all group-hover/bar:shadow-md group-hover/bar:scale-y-110',
                               colors.bar,
                             ].join(' ')}
                           >
                             <span className="text-xs font-semibold text-white truncate drop-shadow-sm">
                               {room.guestName}
                             </span>
+                          </div>
+                          {/* Tooltip */}
+                          <div className="tooltip-content">
+                            <div className="font-semibold">{room.guestName}</div>
+                            {room.checkIn && room.checkOut && (
+                              <div className="opacity-80 mt-0.5">
+                                {formatDateNice(room.checkIn)} → {formatDateNice(room.checkOut)}
+                                {' · '}{daysBetween(room.checkIn, room.checkOut)} {daysBetween(room.checkIn, room.checkOut) === 1 ? 'natt' : 'nätter'}
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}

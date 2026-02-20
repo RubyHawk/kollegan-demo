@@ -29,7 +29,7 @@ export default function HotelGrid({ rooms, onRoomClick }: Props) {
               <span className="text-[10px] text-[var(--text-muted)] bg-[var(--surface-alt)] border border-[var(--border)] rounded-full px-2 py-0.5">
                 {floorRooms.length} rum
               </span>
-              <div className="flex-1 h-px bg-[var(--border)]" />
+              <div className="flex-1 h-px bg-gradient-to-r from-[var(--border)] via-[var(--border)] to-transparent" />
               <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)]">
                 <span className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
