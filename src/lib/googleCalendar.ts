@@ -1,4 +1,5 @@
 import { google, calendar_v3 } from 'googleapis';
+import { GoogleAuth } from 'google-auth-library';
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 
@@ -11,9 +12,13 @@ function getCalendarClient(): calendar_v3.Calendar | null {
     return null;
   }
 
-  const auth = new google.auth.JWT({
-    email,
-    key: key.replace(/\\n/g, '\n'),
+  // GoogleAuth with credentials is compatible with Node 18+/OpenSSL 3.
+  // google.auth.JWT uses a legacy code path that triggers ERR_OSSL_UNSUPPORTED.
+  const auth = new GoogleAuth({
+    credentials: {
+      client_email: email,
+      private_key: key.replace(/\\n/g, '\n'),
+    },
     scopes: SCOPES,
   });
 
