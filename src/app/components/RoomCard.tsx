@@ -1,95 +1,130 @@
 'use client';
 
 import { Room } from '@/lib/types';
+import { getRoomMeta, AMENITY_ICONS, AmenityDef } from '@/lib/roomMeta';
 
 interface Props {
   room: Room;
   onClick?: (room: Room) => void;
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  Enkel: 'Enkelt rum',
-  Dubbel: 'Dubbelrum',
-  Svit: 'Svit',
-};
-
-const TYPE_ICONS: Record<string, string> = {
-  Enkel: '1',
-  Dubbel: '2',
-  Svit: 'S',
-};
+function AmenityIcon({ amenity }: { amenity: AmenityDef }) {
+  return (
+    <div title={amenity.label} className="flex items-center justify-center w-6 h-6 rounded-md bg-[var(--surface-alt)] text-[var(--text-muted)]">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d={AMENITY_ICONS[amenity.key]} />
+      </svg>
+    </div>
+  );
+}
 
 export default function RoomCard({ room, onClick }: Props) {
   const isAvailable = room.status === 'available';
   const isLocked = room.status === 'locked';
   const isBooked = room.status === 'booked';
+  const meta = getRoomMeta(room.id, room.type);
+
+  const TYPE_LABELS: Record<string, string> = {
+    Enkel: 'Enkelt rum',
+    Dubbel: 'Dubbelrum',
+    Svit: 'Svit',
+  };
+
+  const typeColors: Record<string, string> = {
+    Enkel: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400',
+    Dubbel: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400',
+    Svit: 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400',
+  };
 
   return (
     <button
       onClick={() => onClick?.(room)}
       disabled={isLocked}
       className={[
-        'relative w-full text-left rounded-2xl p-5 transition-all duration-300 border group hover:scale-[1.02] active:scale-[0.98]',
-        isAvailable &&
-          'bg-[var(--surface)] border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-lg hover:shadow-emerald-50 dark:hover:shadow-emerald-900/20 cursor-pointer',
-        isLocked &&
-          'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 room-locked cursor-not-allowed',
-        isBooked &&
-          'bg-[var(--surface)] border-indigo-200 dark:border-indigo-800 hover:border-indigo-400 dark:hover:border-indigo-600 hover:shadow-lg hover:shadow-indigo-50 dark:hover:shadow-indigo-900/20 cursor-pointer',
+        'relative w-full text-left rounded-2xl p-5 transition-all duration-300 border group',
+        !isLocked && 'hover:scale-[1.02] active:scale-[0.98] cursor-pointer',
+        isAvailable && 'bg-[var(--surface)] border-[var(--border)] hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-lg hover:shadow-emerald-50/80 dark:hover:shadow-emerald-900/10',
+        isLocked && 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 room-locked cursor-not-allowed',
+        isBooked && 'bg-[var(--surface)] border-[var(--border)] hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg hover:shadow-indigo-50/80 dark:hover:shadow-indigo-900/10',
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      <div className="flex items-start justify-between">
-        <div className="text-2xl font-bold tracking-tight text-[var(--text-primary)] font-heading">
-          {room.id}
+      {/* Top row: status + type badge */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5">
+          {isAvailable && (
+            <>
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Ledigt</span>
+            </>
+          )}
+          {isLocked && (
+            <>
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-500 status-ping" />
+              <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">Reserveras</span>
+            </>
+          )}
+          {isBooked && (
+            <>
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+              <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Bokat</span>
+            </>
+          )}
         </div>
-        <div
-          className={[
-            'w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold',
-            isAvailable && 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400',
-            isLocked && 'bg-amber-200 dark:bg-amber-800/40 text-amber-800 dark:text-amber-400',
-            isBooked && 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-        >
-          {TYPE_ICONS[room.type] ?? '?'}
+        <div className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${typeColors[room.type] ?? 'bg-stone-100 text-stone-600'}`}>
+          {room.type}
         </div>
       </div>
 
-      <div className="text-xs text-[var(--text-muted)] mt-1 font-medium">
-        {TYPE_LABELS[room.type] ?? room.type}
+      {/* Room number (large serif) */}
+      <div className="font-heading text-3xl font-bold text-[var(--text-primary)] leading-none mb-0.5">
+        {room.id}
+      </div>
+      <div className="text-xs font-medium text-[var(--text-muted)] mb-3">
+        {TYPE_LABELS[room.type] ?? room.type} · Våning {room.floor}
       </div>
 
-      <div className="mt-4">
-        {isAvailable && (
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Tillgänglig</span>
-          </div>
-        )}
-        {isLocked && (
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-amber-500 status-ping" />
-            <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Reserveras...</span>
-          </div>
-        )}
-        {isBooked && (
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-indigo-500" />
-              <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 truncate max-w-[140px]">
-                {room.guestName ?? 'Bokad'}
-              </span>
-            </div>
-            {room.checkIn && room.checkOut && (
-              <p className="text-[11px] text-[var(--text-muted)] pl-3.5">
-                {formatDateShort(room.checkIn)} — {formatDateShort(room.checkOut)}
-              </p>
-            )}
-          </div>
-        )}
+      {/* Description (hover reveal) */}
+      <div className="overflow-hidden transition-all duration-300 max-h-0 group-hover:max-h-12 opacity-0 group-hover:opacity-100 mb-0 group-hover:mb-3">
+        <p className="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-2">
+          {meta.description}
+        </p>
+      </div>
+
+      {/* Booking info (if booked) */}
+      {isBooked && (
+        <div className="mb-3 space-y-0.5">
+          <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{room.guestName ?? 'Bokad'}</p>
+          {room.checkIn && room.checkOut && (
+            <p className="text-[11px] text-[var(--text-muted)]">
+              {formatDateShort(room.checkIn)} — {formatDateShort(room.checkOut)}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Bottom row: amenity icons + price */}
+      <div className="flex items-center justify-between mt-auto pt-3 border-t border-[var(--border-light)]">
+        <div className="flex items-center gap-1">
+          {meta.amenities.slice(0, 3).map((a) => (
+            <AmenityIcon key={a.key} amenity={a} />
+          ))}
+          {meta.amenities.length > 3 && (
+            <span className="text-[10px] text-[var(--text-muted)] ml-0.5">+{meta.amenities.length - 3}</span>
+          )}
+        </div>
+        <div className="text-right">
+          <span className="text-xs font-semibold text-[var(--text-primary)]">{meta.price.toLocaleString('sv-SE')} kr</span>
+          <span className="text-[10px] text-[var(--text-muted)]">/natt</span>
+        </div>
+      </div>
+
+      {/* Size + view (very small, bottom) */}
+      <div className="flex items-center gap-1 mt-1.5">
+        <span className="text-[10px] text-[var(--text-muted)]">{meta.size} m²</span>
+        <span className="text-[10px] text-[var(--text-muted)]">·</span>
+        <span className="text-[10px] text-[var(--text-muted)]">{meta.view}</span>
       </div>
     </button>
   );

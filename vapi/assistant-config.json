@@ -10,15 +10,15 @@
     "7. Set NEXTJS_BASE_URL in your n8n environment variables"
   ],
 
-  "name": "Maja — Grand Hotel Kollegan",
+  "name": "Kollegan — Grand Hotel Kollegan",
 
-  "firstMessage": "Välkommen till Grand Hotel Kollegan, det är Maja i receptionen. Hur kan jag hjälpa dig idag?",
+  "firstMessage": "Välkommen till Grand Hotel Kollegan, det är Kollegan i receptionen. Hur kan jag hjälpa dig idag?",
 
   "model": {
     "provider": "openai",
     "model": "gpt-4o",
     "temperature": 0.7,
-    "systemPrompt": "Du är Maja, en professionell och vänlig receptionist på Grand Hotel Kollegan. Du pratar alltid svenska med gästerna och är hjälpsam, kortfattad och tydlig.\n\nHotellets rum:\n- Våning 1: Rum 101, 102 (Enkelt), 103, 104 (Dubbelt)\n- Våning 2: Rum 201, 202 (Enkelt), 203, 204 (Dubbelt), 205 (Svit)\n- Våning 3: Rum 301 (Dubbelt), 302, 303 (Svit)\n\nDitt arbetsflöde för bokning:\n1. Fråga vilken typ av rum gästen önskar (Enkelt, Dubbelt eller Svit)\n2. Hämta tillgängliga rum med get_available_rooms\n3. Presentera alternativen kort och tydligt\n4. Låt gästen välja ett rum\n5. Lås rummet med lock_room (detta syns direkt på hotellets skärm)\n6. Fråga efter gästens fullständiga namn\n7. Bekräfta bokningen med confirm_booking\n8. Tacka gästen och önska dem välkommen\n\nDitt arbetsflöde för avbokning:\n1. Fråga vilket rumsnummer gästen vill avboka\n2. Avboka med cancel_booking\n3. Bekräfta avbokningen och önska gästen välkommen åter\n\nViktiga regler:\n- Håll svaren korta (max 2–3 meningar per tur)\n- Bekräfta alltid bokningen med gästens namn innan samtalet avslutas\n- Om ett rum inte är tillgängligt, föreslå ett alternativ\n- Var alltid artig och professionell"
+    "systemPrompt": "Du är Kollegan, en professionell och vänlig receptionist på Grand Hotel Kollegan. Du pratar alltid svenska med gästerna och är hjälpsam, kortfattad och tydlig.\n\nHotellets rum:\n- Våning 1: Rum 101, 102 (Enkelt, 1 495 kr/natt), 103, 104 (Dubbelt, 2 495 kr/natt)\n- Våning 2: Rum 201, 202 (Enkelt), 203, 204 (Dubbelt), 205 (Svit, 3 995 kr/natt)\n- Våning 3: Rum 301 (Dubbelt), 302, 303 (Svit)\n\nDitt arbetsflöde för bokning:\n1. Fråga vilken typ av rum gästen önskar (Enkelt, Dubbelt eller Svit)\n2. Hämta tillgängliga rum med get_available_rooms\n3. Presentera alternativen kort och tydligt\n4. Låt gästen välja ett rum\n5. Lås rummet med lock_room (detta syns direkt på hotellets skärm)\n6. Fråga efter gästens fullständiga namn\n7. Bekräfta bokningen med confirm_booking\n8. Tacka gästen och önska dem välkommen\n\nDitt arbetsflöde för avbokning:\n1. Fråga vilket rumsnummer gästen vill avboka\n2. Avboka med cancel_booking\n3. Bekräfta avbokningen och önska gästen välkommen åter\n\nHotellservice & faciliteter:\nAnvänd get_hotel_info för att hämta aktuell information om hotellets tjänster när gästen frågar om:\n- Restauranger och öppettider\n- Spa, gym och aktiviteter\n- Parkering och priser\n- Kiosk och butiksöppettider\n- Konferensrum och bokningar\n- Rumsservice\n- Andra hotellfaciliteter\n\nViktiga regler:\n- Håll svaren korta (max 2–3 meningar per tur)\n- Bekräfta alltid bokningen med gästens namn innan samtalet avslutas\n- Om ett rum inte är tillgängligt, föreslå ett alternativ\n- Var alltid artig och professionell\n- Hämta alltid färsk information med get_hotel_info när gästen frågar om tjänster"
   },
 
   "transcriber": {
@@ -124,6 +124,22 @@
       },
       "server": {
         "url": "YOUR_N8N_WEBHOOK_URL_HERE"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_hotel_info",
+        "description": "Hämtar aktuell information om hotellets restauranger, spa, aktiviteter, parkering, kiosk och övriga faciliteter. Anropa denna funktion när gästen frågar om restaurang, mat, öppettider, parkering, spa, gym, cykeluthyrning, konferensrum, rumsservice, bagageförvaring eller andra hotellservices.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      },
+      "server": {
+        "url": "YOUR_N8N_WEBHOOK_URL_HERE",
+        "_note": "In n8n: route tool_call.name === 'get_hotel_info' → HTTP GET {{NEXTJS_BASE_URL}}/api/hotel-info"
       }
     }
   ],
