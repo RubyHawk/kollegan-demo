@@ -41,11 +41,11 @@ export default function RoomCard({ room, onClick }: Props) {
       onClick={() => onClick?.(room)}
       disabled={isLocked}
       className={[
-        'relative w-full text-left rounded-2xl p-5 transition-all duration-300 border group',
-        !isLocked && 'hover:scale-[1.02] active:scale-[0.98] cursor-pointer',
-        isAvailable && 'bg-[var(--surface)] border-[var(--border)] hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-lg hover:shadow-emerald-50/80 dark:hover:shadow-emerald-900/10',
+        'relative w-full text-left rounded-2xl p-5 transition-all duration-200 border',
+        !isLocked && 'cursor-pointer active:scale-[0.98]',
+        isAvailable && 'bg-[var(--surface)] border-[var(--border)] hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-md',
         isLocked && 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 room-locked cursor-not-allowed',
-        isBooked && 'bg-[var(--surface)] border-[var(--border)] hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg hover:shadow-indigo-50/80 dark:hover:shadow-indigo-900/10',
+        isBooked && 'bg-[var(--surface)] border-[var(--border)] hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -85,27 +85,27 @@ export default function RoomCard({ room, onClick }: Props) {
         {TYPE_LABELS[room.type] ?? room.type} · Våning {room.floor}
       </div>
 
-      {/* Description (hover reveal) */}
-      <div className="overflow-hidden transition-all duration-300 max-h-0 group-hover:max-h-12 opacity-0 group-hover:opacity-100 mb-0 group-hover:mb-3">
-        <p className="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-2">
-          {meta.description}
-        </p>
+      {/* Fixed-height info slot — description for available/locked, guest info for booked.
+          Always the same height so the card never shifts on hover. */}
+      <div className="mb-3 min-h-[2.25rem]">
+        {isBooked ? (
+          <>
+            <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{room.guestName ?? 'Bokad'}</p>
+            {room.checkIn && room.checkOut && (
+              <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                {formatDateShort(room.checkIn)} — {formatDateShort(room.checkOut)}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-2">
+            {meta.description}
+          </p>
+        )}
       </div>
 
-      {/* Booking info (if booked) */}
-      {isBooked && (
-        <div className="mb-3 space-y-0.5">
-          <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{room.guestName ?? 'Bokad'}</p>
-          {room.checkIn && room.checkOut && (
-            <p className="text-[11px] text-[var(--text-muted)]">
-              {formatDateShort(room.checkIn)} — {formatDateShort(room.checkOut)}
-            </p>
-          )}
-        </div>
-      )}
-
       {/* Bottom row: amenity icons + price */}
-      <div className="flex items-center justify-between mt-auto pt-3 border-t border-[var(--border-light)]">
+      <div className="flex items-center justify-between pt-3 border-t border-[var(--border-light)]">
         <div className="flex items-center gap-1">
           {meta.amenities.slice(0, 3).map((a) => (
             <AmenityIcon key={a.key} amenity={a} />
@@ -120,7 +120,7 @@ export default function RoomCard({ room, onClick }: Props) {
         </div>
       </div>
 
-      {/* Size + view (very small, bottom) */}
+      {/* Size + view */}
       <div className="flex items-center gap-1 mt-1.5">
         <span className="text-[10px] text-[var(--text-muted)]">{meta.size} m²</span>
         <span className="text-[10px] text-[var(--text-muted)]">·</span>

@@ -87,19 +87,6 @@ function SplashScreen({ onDone }: { onDone: () => void }) {
   );
 }
 
-/* ───── Activity Summary Row ───── */
-function SummaryRow({ label, count, color }: { label: string; count: number; color: string }) {
-  return (
-    <div className="flex items-center justify-between py-1">
-      <div className="flex items-center gap-2">
-        <div className={`w-2 h-2 rounded-full ${color}`} />
-        <span className="text-sm text-[var(--text-secondary)]">{label}</span>
-      </div>
-      <span className="text-sm font-semibold text-[var(--text-primary)]">{count}</span>
-    </div>
-  );
-}
-
 /* ───── Nav items config ───── */
 const NAV_ITEMS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   {
@@ -426,7 +413,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Spacer pushes Maja to bottom */}
+            {/* Spacer */}
             <div className="flex-1" />
 
             {/* Divider */}
@@ -486,12 +473,22 @@ export default function HomePage() {
             {/* ── Activity Tab ── */}
             {rooms.length > 0 && activeTab === 'activity' && (
               <div key="activity" className="tab-content-enter">
-                {/* Inline summary */}
-                <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 mb-6 flex flex-wrap gap-x-6 gap-y-2">
-                  <SummaryRow label="Bokningar" count={activities.filter(e => e.type === 'room_confirmed').length} color="bg-emerald-500" />
-                  <SummaryRow label="Avbokningar" count={activities.filter(e => e.type === 'room_cancelled').length} color="bg-red-500" />
-                  <SummaryRow label="Samtal" count={activities.filter(e => e.type === 'call_started').length} color="bg-blue-500" />
-                  <SummaryRow label="Sökningar" count={activities.filter(e => e.type === 'rooms_queried').length} color="bg-violet-500" />
+                {/* Stats grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                  {([
+                    { label: 'Bokningar',   count: activities.filter(e => e.type === 'room_confirmed').length,  dot: 'bg-emerald-500', num: 'text-emerald-600 dark:text-emerald-400' },
+                    { label: 'Avbokningar', count: activities.filter(e => e.type === 'room_cancelled').length,  dot: 'bg-red-500',     num: 'text-red-600 dark:text-red-400'       },
+                    { label: 'Samtal',      count: activities.filter(e => e.type === 'call_started').length,    dot: 'bg-blue-500',    num: 'text-blue-600 dark:text-blue-400'     },
+                    { label: 'Sökningar',   count: activities.filter(e => e.type === 'rooms_queried').length,   dot: 'bg-violet-500',  num: 'text-violet-600 dark:text-violet-400' },
+                  ] as const).map(({ label, count, dot, num }) => (
+                    <div key={label} className="bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <div className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+                        <span className="text-xs text-[var(--text-muted)]">{label}</span>
+                      </div>
+                      <span className={`text-2xl font-bold tabular-nums ${num}`}>{count}</span>
+                    </div>
+                  ))}
                 </div>
                 <ActivityLog activities={activities} />
               </div>

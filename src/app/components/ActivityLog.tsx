@@ -53,6 +53,7 @@ const EVENT_ICONS: Record<ActivityEvent['type'], ReactNode> = {
   ),
 };
 
+// Icon bg + color
 const EVENT_COLORS: Record<ActivityEvent['type'], string> = {
   call_started: 'text-blue-500 bg-blue-50 dark:bg-blue-900/30',
   call_ended: 'text-stone-500 dark:text-slate-400 bg-stone-100 dark:bg-slate-700/30',
@@ -63,6 +64,18 @@ const EVENT_COLORS: Record<ActivityEvent['type'], string> = {
   info: 'text-stone-500 dark:text-slate-400 bg-stone-100 dark:bg-slate-700/30',
 };
 
+// Left accent border color
+const EVENT_BORDER: Record<ActivityEvent['type'], string> = {
+  call_started: 'border-l-blue-400',
+  call_ended: 'border-l-stone-300 dark:border-l-slate-600',
+  rooms_queried: 'border-l-violet-400',
+  room_locked: 'border-l-amber-400',
+  room_confirmed: 'border-l-emerald-400',
+  room_cancelled: 'border-l-red-400',
+  info: 'border-l-stone-300 dark:border-l-slate-600',
+};
+
+// Message text color
 const EVENT_TEXT_COLORS: Record<ActivityEvent['type'], string> = {
   call_started: 'text-blue-700 dark:text-blue-300',
   call_ended: 'text-[var(--text-secondary)]',
@@ -74,51 +87,68 @@ const EVENT_TEXT_COLORS: Record<ActivityEvent['type'], string> = {
 };
 
 export default function ActivityLog({ activities }: Props) {
-  return (
-    <div className="space-y-3">
-      {activities.length === 0 && (
-        <div className="text-center py-20">
-          <div className="w-16 h-16 rounded-2xl bg-[var(--surface-alt)] flex items-center justify-center mx-auto mb-4 float-animation">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-          </div>
-          <p className="text-[var(--text-secondary)] font-medium">Inga aktiviteter än</p>
-          <p className="text-[var(--text-muted)] text-sm mt-1.5 max-w-xs mx-auto">
-            Ring Maja eller boka ett rum manuellt för att se aktiviteten loggas här i realtid.
-          </p>
+  if (activities.length === 0) {
+    return (
+      <div className="text-center py-20">
+        <div className="w-16 h-16 rounded-2xl bg-[var(--surface-alt)] flex items-center justify-center mx-auto mb-4 float-animation">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
         </div>
-      )}
+        <p className="text-[var(--text-secondary)] font-medium">Inga aktiviteter än</p>
+        <p className="text-[var(--text-muted)] text-sm mt-1.5 max-w-xs mx-auto">
+          Ring Kollegan eller boka ett rum manuellt för att se aktiviteten loggas här i realtid.
+        </p>
+      </div>
+    );
+  }
 
-      {activities.map((event, index) => (
-        <div
-          key={event.id}
-          className="flex gap-3 items-start bg-[var(--surface)] rounded-xl border border-[var(--border)] px-4 py-3 transition-all hover:shadow-sm slide-in-left"
-          style={{ animationDelay: `${Math.min(index * 40, 400)}ms` }}
-        >
+  return (
+    <div>
+      {/* Feed header */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest">Live-flöde</span>
+        <span className="ml-auto text-xs text-[var(--text-muted)] tabular-nums">{activities.length} händelser</span>
+      </div>
+
+      {/* Event list */}
+      <div className="space-y-2">
+        {activities.map((event, index) => (
           <div
+            key={event.id}
             className={[
-              'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
-              EVENT_COLORS[event.type],
+              'flex gap-3 items-start bg-[var(--surface)] rounded-xl',
+              'border border-[var(--border)] border-l-[3px]',
+              'px-4 py-3 transition-colors hover:bg-[var(--surface-alt)] slide-in-left',
+              EVENT_BORDER[event.type],
             ].join(' ')}
+            style={{ animationDelay: `${Math.min(index * 40, 400)}ms` }}
           >
-            {EVENT_ICONS[event.type] ?? EVENT_ICONS.info}
+            <div
+              className={[
+                'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
+                EVENT_COLORS[event.type],
+              ].join(' ')}
+            >
+              {EVENT_ICONS[event.type] ?? EVENT_ICONS.info}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className={['text-sm font-medium leading-snug', EVENT_TEXT_COLORS[event.type]].join(' ')}>
+                {event.message}
+              </p>
+              <p className="text-[var(--text-muted)] text-xs mt-0.5 tabular-nums">
+                {new Date(event.timestamp).toLocaleTimeString('sv-SE', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                })}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className={['text-sm font-medium leading-snug', EVENT_TEXT_COLORS[event.type]].join(' ')}>
-              {event.message}
-            </p>
-            <p className="text-[var(--text-muted)] text-xs mt-1">
-              {new Date(event.timestamp).toLocaleTimeString('sv-SE', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-              })}
-            </p>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
