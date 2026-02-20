@@ -5,6 +5,7 @@ import { Room, ActivityEvent, SSEMessage } from '@/lib/types';
 import HotelGrid from '@/app/components/HotelGrid';
 import ActivityLog from '@/app/components/ActivityLog';
 import CallIndicator from '@/app/components/CallIndicator';
+import MajaContact from '@/app/components/MajaContact';
 
 export default function HomePage() {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -123,6 +124,8 @@ export default function HomePage() {
           </footer>
         )}
       </div>
+
+      <MajaContact />
     </main>
   );
 }
