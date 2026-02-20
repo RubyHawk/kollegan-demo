@@ -13,6 +13,80 @@ import ThemeToggle from '@/app/components/ThemeToggle';
 
 type Tab = 'available' | 'booked' | 'activity' | 'hotel-info';
 
+/* ───── Mini activity card config ───── */
+const MINI_ACTIVITY = {
+  call_started: {
+    icon: (
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+      </svg>
+    ),
+    badge: 'bg-[var(--surface-alt)] text-[var(--text-muted)]',
+    accent: 'border-l-[var(--border)]',
+  },
+  call_ended: {
+    icon: (
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
+        <line x1="1" y1="1" x2="23" y2="23" />
+      </svg>
+    ),
+    badge: 'bg-[var(--surface-alt)] text-[var(--text-muted)]',
+    accent: 'border-l-[var(--border)]',
+  },
+  rooms_queried: {
+    icon: (
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+    ),
+    badge: 'bg-[var(--surface-alt)] text-[var(--text-muted)]',
+    accent: 'border-l-[var(--border)]',
+  },
+  room_locked: {
+    icon: (
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
+    ),
+    badge: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
+    accent: 'border-l-amber-400',
+  },
+  room_confirmed: {
+    icon: (
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+        <polyline points="22 4 12 14.01 9 11.01" />
+      </svg>
+    ),
+    badge: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
+    accent: 'border-l-emerald-400',
+  },
+  room_cancelled: {
+    icon: (
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="15" y1="9" x2="9" y2="15" />
+        <line x1="9" y1="9" x2="15" y2="15" />
+      </svg>
+    ),
+    badge: 'bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400',
+    accent: 'border-l-red-400',
+  },
+  info: {
+    icon: (
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 16v-4M12 8h.01" />
+      </svg>
+    ),
+    badge: 'bg-[var(--surface-alt)] text-[var(--text-muted)]',
+    accent: 'border-l-[var(--border)]',
+  },
+};
+
 /* ───── Animated number counter ───── */
 function AnimatedNumber({ value, duration = 600 }: { value: number; duration?: number }) {
   const [display, setDisplay] = useState(0);
@@ -404,31 +478,60 @@ export default function HomePage() {
             {/* Divider */}
             <div className="mx-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
 
-            {/* Mini activity (sidebar) */}
-            <div className="p-4">
-              <div className="flex items-center justify-between px-3 mb-2">
-                <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest">Senaste</p>
-                {activeTab !== 'activity' && (
-                  <button
-                    onClick={() => setActiveTab('activity')}
-                    className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline font-medium"
-                  >
-                    Visa alla
-                  </button>
-                )}
-              </div>
-              <div className="space-y-1 px-3">
-                {activities.length === 0 && (
-                  <p className="text-xs text-[var(--text-muted)] py-3 text-center">Inga händelser än</p>
-                )}
-                {activities.slice(0, 4).map((event) => (
-                  <div key={event.id} className="text-[11px] text-[var(--text-secondary)] leading-snug py-1.5 border-b border-[var(--border-light)] last:border-b-0">
-                    <span className="line-clamp-1">{event.message}</span>
-                    <span className="text-[var(--text-muted)] text-[10px]">
-                      {new Date(event.timestamp).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+            {/* Mini activity card (sidebar) */}
+            <div className="px-4 pb-4">
+              {/* Card wrapper */}
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-hidden">
+                {/* Card header */}
+                <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--border)] bg-[var(--surface-alt)]/60">
+                  <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest">
+                    Senaste händelser
+                  </p>
+                  {activeTab !== 'activity' && (
+                    <button
+                      onClick={() => setActiveTab('activity')}
+                      className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline font-medium"
+                    >
+                      Visa alla
+                    </button>
+                  )}
+                </div>
+
+                {/* Event rows */}
+                {activities.length === 0 ? (
+                  <p className="text-[11px] text-[var(--text-muted)] py-4 text-center">Inga händelser än</p>
+                ) : (
+                  <div>
+                    {activities.slice(0, 4).map((event: ActivityEvent) => {
+                      const cfg = MINI_ACTIVITY[event.type as keyof typeof MINI_ACTIVITY] ?? MINI_ACTIVITY.info;
+                      return (
+                        <div
+                          key={event.id}
+                          className={[
+                            'flex items-center gap-2.5 px-3 py-2.5',
+                            'border-l-[3px]',
+                            'border-b border-[var(--border)] last:border-b-0',
+                            'hover:bg-[var(--surface-alt)] transition-colors',
+                            cfg.accent,
+                          ].join(' ')}
+                        >
+                          {/* Icon badge */}
+                          <div className={['w-5 h-5 rounded-md flex items-center justify-center shrink-0', cfg.badge].join(' ')}>
+                            {cfg.icon}
+                          </div>
+                          {/* Message */}
+                          <p className="flex-1 min-w-0 text-[11px] text-[var(--text-secondary)] font-medium line-clamp-1 leading-tight">
+                            {event.message}
+                          </p>
+                          {/* Time */}
+                          <span className="text-[10px] text-[var(--text-muted)] tabular-nums font-mono shrink-0">
+                            {new Date(event.timestamp).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -439,7 +542,7 @@ export default function HomePage() {
             <div className="mx-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
 
             {/* Kollegan section */}
-            <div className="p-4">
+            <div className="px-4 pt-5 pb-4">
               <KolleganContact variant="sidebar" />
             </div>
           </aside>
