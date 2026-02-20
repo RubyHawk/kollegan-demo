@@ -359,21 +359,21 @@ export default function HomePage() {
               <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest px-3 mb-3">Rumstyper</p>
               <div className="space-y-2 px-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400">1</div>
+                  <div className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center text-xs font-bold text-[var(--text-secondary)]">1</div>
                   <div>
                     <p className="text-xs font-medium text-[var(--text-primary)]">Enkelt rum</p>
                     <p className="text-[10px] text-[var(--text-muted)]">1 495 kr/natt</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-xs font-bold text-blue-700 dark:text-blue-400">2</div>
+                  <div className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center text-xs font-bold text-[var(--text-secondary)]">2</div>
                   <div>
                     <p className="text-xs font-medium text-[var(--text-primary)]">Dubbelrum</p>
                     <p className="text-[10px] text-[var(--text-muted)]">2 495 kr/natt</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center text-xs font-bold text-violet-700 dark:text-violet-400">S</div>
+                  <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs font-bold text-amber-700 dark:text-amber-400">S</div>
                   <div>
                     <p className="text-xs font-medium text-[var(--text-primary)]">Svit</p>
                     <p className="text-[10px] text-[var(--text-muted)]">3 995 kr/natt</p>
@@ -476,17 +476,17 @@ export default function HomePage() {
                 {/* Stats grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                   {([
-                    { label: 'Bokningar',   count: activities.filter(e => e.type === 'room_confirmed').length,  dot: 'bg-emerald-500', num: 'text-emerald-600 dark:text-emerald-400' },
-                    { label: 'Avbokningar', count: activities.filter(e => e.type === 'room_cancelled').length,  dot: 'bg-red-500',     num: 'text-red-600 dark:text-red-400'       },
-                    { label: 'Samtal',      count: activities.filter(e => e.type === 'call_started').length,    dot: 'bg-blue-500',    num: 'text-blue-600 dark:text-blue-400'     },
-                    { label: 'Sökningar',   count: activities.filter(e => e.type === 'rooms_queried').length,   dot: 'bg-violet-500',  num: 'text-violet-600 dark:text-violet-400' },
-                  ] as const).map(({ label, count, dot, num }) => (
+                    { label: 'Bokningar',   count: activities.filter(e => e.type === 'room_confirmed').length,  dot: 'bg-emerald-500' },
+                    { label: 'Avbokningar', count: activities.filter(e => e.type === 'room_cancelled').length,  dot: 'bg-red-500'     },
+                    { label: 'Samtal',      count: activities.filter(e => e.type === 'call_started').length,    dot: 'bg-amber-500'   },
+                    { label: 'Sökningar',   count: activities.filter(e => e.type === 'rooms_queried').length,   dot: 'bg-[var(--text-muted)]' },
+                  ] as const).map(({ label, count, dot }) => (
                     <div key={label} className="bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3">
                       <div className="flex items-center gap-1.5 mb-2">
                         <div className={`w-1.5 h-1.5 rounded-full ${dot}`} />
                         <span className="text-xs text-[var(--text-muted)]">{label}</span>
                       </div>
-                      <span className={`text-2xl font-bold tabular-nums ${num}`}>{count}</span>
+                      <span className="text-2xl font-bold tabular-nums text-[var(--text-primary)]">{count}</span>
                     </div>
                   ))}
                 </div>

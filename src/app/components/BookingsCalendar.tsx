@@ -14,10 +14,12 @@ const TYPE_LABELS: Record<string, string> = {
   Svit: 'Svit',
 };
 
+// Neutral tones for standard rooms, amber for premium (Svit).
+// Avoids the rainbow problem while keeping rooms distinguishable.
 const ROOM_COLORS: Record<string, { bar: string; text: string; bg: string; border: string }> = {
-  Enkel:  { bar: 'bg-emerald-400', text: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30', border: 'border-l-emerald-400' },
-  Dubbel: { bar: 'bg-blue-400',    text: 'text-blue-700 dark:text-blue-400',       bg: 'bg-blue-50 dark:bg-blue-900/30',       border: 'border-l-blue-400'    },
-  Svit:   { bar: 'bg-violet-400',  text: 'text-violet-700 dark:text-violet-400',   bg: 'bg-violet-50 dark:bg-violet-900/30',   border: 'border-l-violet-500'  },
+  Enkel:  { bar: 'bg-stone-400 dark:bg-stone-500',  text: 'text-[var(--text-secondary)]', bg: 'bg-[var(--surface-alt)]',                             border: 'border-l-stone-300 dark:border-l-stone-500'  },
+  Dubbel: { bar: 'bg-stone-500 dark:bg-stone-400',  text: 'text-[var(--text-secondary)]', bg: 'bg-[var(--surface-alt)]',                             border: 'border-l-stone-400 dark:border-l-stone-400'  },
+  Svit:   { bar: 'bg-amber-500',                    text: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30',              border: 'border-l-amber-400'                           },
 };
 
 const DAYS_TO_SHOW = 14;
@@ -114,14 +116,10 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
               <button
                 key={room.id}
                 onClick={() => onRoomClick?.(room)}
-                className={[
-                  'bg-[var(--surface)] border border-[var(--border)] border-l-[3px] rounded-2xl p-4 text-left',
-                  'hover:shadow-md transition-all active:scale-[0.98]',
-                  colors.border,
-                ].join(' ')}
+                className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 text-left hover:shadow-md hover:border-[var(--text-muted)] transition-all active:scale-[0.98]"
               >
                 <div className="flex items-start gap-3">
-                  <div className={['w-11 h-11 rounded-xl flex items-center justify-center font-bold text-base shrink-0 font-heading', colors.bg, colors.text].join(' ')}>
+                  <div className="w-11 h-11 rounded-xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center font-bold text-base shrink-0 font-heading text-[var(--text-primary)]">
                     {room.id}
                   </div>
                   <div className="flex-1 min-w-0 pt-0.5">
@@ -295,13 +293,15 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-xs text-[var(--text-muted)]">
-        {Object.entries(ROOM_COLORS).map(([type, colors]) => (
-          <div key={type} className="flex items-center gap-1.5">
-            <div className={['w-3 h-3 rounded', colors.bar].join(' ')} />
-            <span>{TYPE_LABELS[type]}</span>
-          </div>
-        ))}
+      <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)]">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded bg-stone-400 dark:bg-stone-500" />
+          <span>Enkelt / Dubbel</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded bg-amber-500" />
+          <span>Svit</span>
+        </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-amber-200 dark:bg-amber-700 border border-amber-300 dark:border-amber-600" />
           <span>Idag</span>
