@@ -4,6 +4,7 @@ import { Room } from '@/lib/types';
 
 interface Props {
   room: Room;
+  onClick?: (room: Room) => void;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -12,19 +13,26 @@ const TYPE_LABELS: Record<string, string> = {
   Svit: 'Svit',
 };
 
-export default function RoomCard({ room }: Props) {
+function formatDate(iso: string): string {
+  const [, m, d] = iso.split('-');
+  return `${d}/${m}`;
+}
+
+export default function RoomCard({ room, onClick }: Props) {
   const isAvailable = room.status === 'available';
   const isLocked = room.status === 'locked';
   const isBooked = room.status === 'booked';
 
   return (
     <div
+      onClick={() => onClick?.(room)}
       className={[
         'relative rounded-xl p-4 transition-all duration-500 select-none border',
+        onClick ? 'cursor-pointer' : 'cursor-default',
         isAvailable &&
-          'bg-emerald-950 border-emerald-800 hover:border-gold-600 hover:bg-[#0D3322] cursor-default',
+          'bg-emerald-950 border-emerald-800 hover:border-gold-600 hover:bg-[#0D3322]',
         isLocked && 'bg-gold-950 border-gold-500 room-locked',
-        isBooked && 'bg-navy-900 border-navy-700 opacity-50',
+        isBooked && 'bg-navy-900 border-navy-700 hover:border-cream-600',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -47,7 +55,7 @@ export default function RoomCard({ room }: Props) {
           'text-2xl font-bold tracking-tight font-heading',
           isAvailable && 'text-cream-100',
           isLocked && 'text-gold-400',
-          isBooked && 'text-cream-600',
+          isBooked && 'text-cream-400',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -76,9 +84,16 @@ export default function RoomCard({ room }: Props) {
           <span className="text-gold-600 font-medium">Reserveras...</span>
         )}
         {isBooked && (
-          <span className="text-cream-600 truncate block max-w-full">
-            {room.guestName ?? 'Bokad'}
-          </span>
+          <div className="space-y-0.5">
+            <span className="text-cream-500 truncate block max-w-full">
+              {room.guestName ?? 'Bokad'}
+            </span>
+            {room.checkIn && room.checkOut && (
+              <span className="text-cream-600 text-[10px]">
+                {formatDate(room.checkIn)} — {formatDate(room.checkOut)}
+              </span>
+            )}
+          </div>
         )}
       </div>
     </div>

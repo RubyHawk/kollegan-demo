@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { Room, RoomStore, ActivityEvent } from './types';
 import { broadcast } from './sseManager';
+import { createCalendarEvent, deleteCalendarEvent } from './googleCalendar';
 
 const DATA_PATH = path.join(process.cwd(), 'data', 'rooms.json');
 
@@ -106,10 +107,12 @@ export function lockRoom(roomId: string): { success: boolean; message: string; r
   return { success: true, message: `Rum ${roomId} är nu låst för bokning.`, room };
 }
 
-export function confirmBooking(
+export async function confirmBooking(
   roomId: string,
-  guestName: string
-): { success: boolean; message: string; room?: Room } {
+  guestName: string,
+  checkIn?: string,
+  checkOut?: string
+): Promise<{ success: boolean; message: string; room?: Room }> {
   const store = getStore();
   const room = store.rooms.find((r) => r.id === roomId);
 
@@ -121,10 +124,31 @@ export function confirmBooking(
   room.status = 'booked';
   room.guestName = guestName;
   room.bookedAt = new Date().toISOString();
+  room.checkIn = checkIn;
+  room.checkOut = checkOut;
 
+  // Create Google Calendar event if dates are provided
+  if (checkIn && checkOut) {
+    try {
+      const eventId = await createCalendarEvent({
+        roomId,
+        roomType: room.type,
+        guestName,
+        checkIn,
+        checkOut,
+      });
+      if (eventId) {
+        room.calendarEventId = eventId;
+      }
+    } catch (err) {
+      console.error('[RoomStore] Failed to create calendar event:', err);
+    }
+  }
+
+  const dateInfo = checkIn && checkOut ? ` (${checkIn} → ${checkOut})` : '';
   addActivity(store, {
     type: 'room_confirmed',
-    message: `Rum ${roomId} bokades av ${guestName}.`,
+    message: `Rum ${roomId} bokades av ${guestName}.${dateInfo}`,
     roomId,
   });
 
@@ -138,9 +162,9 @@ export function confirmBooking(
   };
 }
 
-export function cancelBooking(
+export async function cancelBooking(
   roomId: string
-): { success: boolean; message: string; room?: Room } {
+): Promise<{ success: boolean; message: string; room?: Room }> {
   const store = getStore();
   const room = store.rooms.find((r) => r.id === roomId);
 
@@ -149,11 +173,23 @@ export function cancelBooking(
     return { success: false, message: `Rum ${roomId} är redan tillgängligt.` };
   }
 
+  // Delete Google Calendar event if one exists
+  if (room.calendarEventId) {
+    try {
+      await deleteCalendarEvent(room.calendarEventId);
+    } catch (err) {
+      console.error('[RoomStore] Failed to delete calendar event:', err);
+    }
+  }
+
   const prevGuest = room.guestName;
   room.status = 'available';
   room.guestName = undefined;
   room.lockedAt = undefined;
   room.bookedAt = undefined;
+  room.checkIn = undefined;
+  room.checkOut = undefined;
+  room.calendarEventId = undefined;
 
   addActivity(store, {
     type: 'room_cancelled',
@@ -167,6 +203,57 @@ export function cancelBooking(
   saveToDisk(store);
 
   return { success: true, message: `Bokning för rum ${roomId} har avbokats.`, room };
+}
+
+export async function bookRoom(
+  roomId: string,
+  guestName: string,
+  checkIn: string,
+  checkOut: string
+): Promise<{ success: boolean; message: string; room?: Room }> {
+  const store = getStore();
+  const room = store.rooms.find((r) => r.id === roomId);
+
+  if (!room) return { success: false, message: `Rum ${roomId} hittades inte.` };
+  if (room.status !== 'available') {
+    return { success: false, message: `Rum ${roomId} är inte tillgängligt.` };
+  }
+
+  room.status = 'booked';
+  room.guestName = guestName;
+  room.bookedAt = new Date().toISOString();
+  room.checkIn = checkIn;
+  room.checkOut = checkOut;
+
+  try {
+    const eventId = await createCalendarEvent({
+      roomId,
+      roomType: room.type,
+      guestName,
+      checkIn,
+      checkOut,
+    });
+    if (eventId) {
+      room.calendarEventId = eventId;
+    }
+  } catch (err) {
+    console.error('[RoomStore] Failed to create calendar event:', err);
+  }
+
+  addActivity(store, {
+    type: 'room_confirmed',
+    message: `Rum ${roomId} bokades av ${guestName}. (${checkIn} → ${checkOut})`,
+    roomId,
+  });
+
+  broadcast({ type: 'room_update', payload: { ...room } });
+  saveToDisk(store);
+
+  return {
+    success: true,
+    message: `Rum ${roomId} bokat för ${guestName} (${checkIn} → ${checkOut}).`,
+    room,
+  };
 }
 
 export function setCallStatus(onCall: boolean): void {
