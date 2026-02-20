@@ -93,8 +93,11 @@ const NAV_ITEMS: { key: Tab; label: string; icon: React.ReactNode }[] = [
     key: 'available',
     label: 'Rum',
     icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z" />
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8" />
+        <path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
+        <path d="M12 4v6" />
+        <path d="M2 18h20" />
       </svg>
     ),
   },
@@ -102,7 +105,7 @@ const NAV_ITEMS: { key: Tab; label: string; icon: React.ReactNode }[] = [
     key: 'booked',
     label: 'Bokningar',
     icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
         <line x1="16" y1="2" x2="16" y2="6" />
         <line x1="8" y1="2" x2="8" y2="6" />
@@ -114,9 +117,8 @@ const NAV_ITEMS: { key: Tab; label: string; icon: React.ReactNode }[] = [
     key: 'activity',
     label: 'Aktivitet',
     icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="12 6 12 12 16 14" />
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
       </svg>
     ),
   },
@@ -124,9 +126,10 @@ const NAV_ITEMS: { key: Tab; label: string; icon: React.ReactNode }[] = [
     key: 'hotel-info',
     label: 'Hotellinfo',
     icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-        <polyline points="9 22 9 12 15 12 15 22" />
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 16v-4" />
+        <path d="M12 8h.01" />
       </svg>
     ),
   },
@@ -233,39 +236,49 @@ export default function HomePage() {
                   </svg>
                 </button>
 
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm shrink-0">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center shrink-0">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M3 21h18" />
                     <path d="M5 21V7l7-4 7 4v14" />
                     <path d="M9 21v-4h6v4" />
                     <path d="M9 9h1" />
                     <path d="M14 9h1" />
+                    <path d="M9 13h1" />
+                    <path d="M14 13h1" />
                   </svg>
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="font-heading text-xl font-bold tracking-tight text-[var(--text-primary)] leading-tight">
+                  <h1 className="font-heading text-[17px] font-semibold tracking-wide text-[var(--text-primary)] leading-tight">
                     Grand Hotel Kollegan
                   </h1>
-                  <p className="text-[var(--text-muted)] text-xs flex items-center gap-1">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
+                  <p className="text-[var(--text-muted)] text-[11px] mt-0.5">
                     Storgatan 1, Stockholm
                   </p>
                 </div>
               </div>
 
-              {/* Center: compact stat chips */}
+              {/* Center: stat summary */}
               {rooms.length > 0 && (
-                <div className="hidden md:flex items-center gap-3 flex-wrap justify-center">
-                  <StatChip color="bg-emerald-500" label="Lediga" value={availableCount} />
-                  <StatChip color="bg-amber-500" label="Res." value={lockedCount} />
-                  <StatChip color="bg-indigo-500" label="Bokade" value={bookedCount} />
-                  <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                    <div className="w-20 h-1.5 bg-[var(--surface-alt)] rounded-full overflow-hidden">
+                <div className="hidden md:flex items-center text-xs">
+                  <div className="flex items-center gap-1.5 px-4">
+                    <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={availableCount} /></span>
+                    <span className="text-[var(--text-muted)]">lediga</span>
+                  </div>
+                  <div className="w-px h-3.5 bg-[var(--border)]" />
+                  <div className="flex items-center gap-1.5 px-4">
+                    <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={lockedCount} /></span>
+                    <span className="text-[var(--text-muted)]">reserverade</span>
+                  </div>
+                  <div className="w-px h-3.5 bg-[var(--border)]" />
+                  <div className="flex items-center gap-1.5 px-4">
+                    <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={bookedCount} /></span>
+                    <span className="text-[var(--text-muted)]">bokade</span>
+                  </div>
+                  <div className="w-px h-3.5 bg-[var(--border)]" />
+                  <div className="flex items-center gap-2 px-4">
+                    <div className="w-16 h-1 bg-[var(--surface-alt)] rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 bar-grow"
+                        className="h-full rounded-full bg-amber-500 bar-grow"
                         style={{ width: `${occupancy}%` }}
                       />
                     </div>
@@ -275,7 +288,7 @@ export default function HomePage() {
               )}
 
               {/* Right: status + controls */}
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 <CallIndicator onCall={onCall} />
 
                 <div className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
@@ -283,11 +296,17 @@ export default function HomePage() {
                   {connected ? 'Live' : 'Offline'}
                 </div>
 
+                <div className="hidden sm:block w-px h-4 bg-[var(--border)]" />
+
                 <button
                   onClick={handleReset}
-                  className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-alt)] border border-[var(--border)] hover:border-[var(--text-muted)] rounded-lg px-2.5 py-1.5 transition-all hover:shadow-sm active:scale-95"
+                  className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg px-2.5 py-1.5 transition-all hover:bg-[var(--surface-hover)] active:scale-95"
                 >
-                  Återställ
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="1 4 1 10 7 10" />
+                    <path d="M3.51 15a9 9 0 1 0 .49-3.15" />
+                  </svg>
+                  <span className="hidden sm:inline">Återställ</span>
                 </button>
 
                 <ThemeToggle />
@@ -429,11 +448,14 @@ export default function HomePage() {
           <main className="flex-1 min-w-0 p-6">
             {/* ── Mobile stat chips (visible below md) ── */}
             {rooms.length > 0 && (
-              <div className="flex md:hidden items-center gap-2 flex-wrap mb-4">
-                <StatChip color="bg-emerald-500" label="Lediga" value={availableCount} />
-                <StatChip color="bg-amber-500" label="Res." value={lockedCount} />
-                <StatChip color="bg-indigo-500" label="Bokade" value={bookedCount} />
-                <span className="text-xs font-semibold text-[var(--text-primary)]"><AnimatedNumber value={occupancy} />%</span>
+              <div className="flex md:hidden items-center gap-2 flex-wrap mb-4 text-xs text-[var(--text-muted)]">
+                <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={availableCount} /></span> lediga
+                <span>·</span>
+                <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={lockedCount} /></span> res.
+                <span>·</span>
+                <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={bookedCount} /></span> bokade
+                <span>·</span>
+                <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={occupancy} />%</span>
               </div>
             )}
 
@@ -553,13 +575,3 @@ export default function HomePage() {
   );
 }
 
-/* ───── Stat chip (compact) ───── */
-function StatChip({ color, label, value }: { color: string; label: string; value: number }) {
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-      <div className={`w-2 h-2 rounded-full ${color}`} />
-      <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={value} /></span>
-      <span>{label}</span>
-    </div>
-  );
-}
