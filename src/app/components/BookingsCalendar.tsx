@@ -15,9 +15,9 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const ROOM_COLORS: Record<string, { bar: string; text: string; bg: string }> = {
-  Enkel: { bar: 'bg-emerald-400', text: 'text-emerald-700', bg: 'bg-emerald-50' },
-  Dubbel: { bar: 'bg-blue-400', text: 'text-blue-700', bg: 'bg-blue-50' },
-  Svit: { bar: 'bg-violet-400', text: 'text-violet-700', bg: 'bg-violet-50' },
+  Enkel: { bar: 'bg-emerald-400', text: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
+  Dubbel: { bar: 'bg-blue-400', text: 'text-blue-700 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30' },
+  Svit: { bar: 'bg-violet-400', text: 'text-violet-700 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/30' },
 };
 
 const DAYS_TO_SHOW = 14;
@@ -70,7 +70,6 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
     [rooms]
   );
 
-  // All rooms sorted for the grid (show every room)
   const allRooms = useMemo(
     () => [...rooms].sort((a, b) => a.id.localeCompare(b.id)),
     [rooms]
@@ -79,16 +78,16 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
   if (bookedRooms.length === 0) {
     return (
       <div className="text-center py-20">
-        <div className="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center mx-auto mb-4">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <div className="w-16 h-16 rounded-2xl bg-[var(--surface-alt)] flex items-center justify-center mx-auto mb-4">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
             <line x1="16" y1="2" x2="16" y2="6" />
             <line x1="8" y1="2" x2="8" y2="6" />
             <line x1="3" y1="10" x2="21" y2="10" />
           </svg>
         </div>
-        <p className="text-stone-500 font-medium">Inga bokningar just nu</p>
-        <p className="text-stone-400 text-sm mt-1">
+        <p className="text-[var(--text-secondary)] font-medium">Inga bokningar just nu</p>
+        <p className="text-[var(--text-muted)] text-sm mt-1">
           Klicka på ett tillgängligt rum för att skapa en bokning
         </p>
       </div>
@@ -107,17 +106,17 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
             <button
               key={room.id}
               onClick={() => onRoomClick?.(room)}
-              className="bg-white border border-stone-200 rounded-2xl p-4 text-left hover:shadow-lg hover:border-stone-300 transition-all group"
+              className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 text-left hover:shadow-lg hover:border-[var(--text-muted)] transition-all group"
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className={['w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm', colors.bg, colors.text].join(' ')}>
                   {room.id}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-stone-800 truncate">
+                  <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
                     {room.guestName}
                   </p>
-                  <p className="text-xs text-stone-400">
+                  <p className="text-xs text-[var(--text-muted)]">
                     {TYPE_LABELS[room.type]}
                   </p>
                 </div>
@@ -125,24 +124,24 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
 
               {room.checkIn && room.checkOut ? (
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-stone-500">
+                  <span className="text-[var(--text-secondary)]">
                     {formatDateNice(room.checkIn)}
                   </span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
                     <line x1="5" y1="12" x2="19" y2="12" />
                     <polyline points="12 5 19 12 12 19" />
                   </svg>
-                  <span className="text-stone-500">
+                  <span className="text-[var(--text-secondary)]">
                     {formatDateNice(room.checkOut)}
                   </span>
                   {nights !== null && (
-                    <span className="ml-auto text-stone-400 bg-stone-100 rounded-md px-2 py-0.5">
+                    <span className="ml-auto text-[var(--text-muted)] bg-[var(--surface-alt)] rounded-md px-2 py-0.5">
                       {nights} {nights === 1 ? 'natt' : 'nätter'}
                     </span>
                   )}
                 </div>
               ) : (
-                <p className="text-xs text-stone-400">Inga datum angivna</p>
+                <p className="text-xs text-[var(--text-muted)]">Inga datum angivna</p>
               )}
             </button>
           );
@@ -151,14 +150,14 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
 
       {/* Calendar timeline */}
       <div>
-        <h3 className="text-sm font-semibold text-stone-700 mb-3">Tidslinje — nästa 14 dagar</h3>
-        <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden">
+        <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-3">Tidslinje — nästa 14 dagar</h3>
+        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
           <div className="overflow-x-auto calendar-scroll">
             <div className="min-w-[800px]">
               {/* Date header row */}
-              <div className="grid border-b border-stone-200" style={{ gridTemplateColumns: '120px repeat(14, 1fr)' }}>
-                <div className="px-3 py-3 bg-stone-50 border-r border-stone-200">
-                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Rum</span>
+              <div className="grid border-b border-[var(--border)]" style={{ gridTemplateColumns: '120px repeat(14, 1fr)' }}>
+                <div className="px-3 py-3 bg-[var(--surface-alt)] border-r border-[var(--border)]">
+                  <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Rum</span>
                 </div>
                 {dates.map((date) => {
                   const { day, weekday, isToday, isWeekend } = formatDayHeader(date);
@@ -166,19 +165,19 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
                     <div
                       key={toDateKey(date)}
                       className={[
-                        'px-1 py-2 text-center border-r border-stone-100 last:border-r-0',
-                        isToday ? 'bg-amber-50' : isWeekend ? 'bg-stone-50' : 'bg-white',
+                        'px-1 py-2 text-center border-r border-[var(--border-light)] last:border-r-0',
+                        isToday ? 'bg-amber-50 dark:bg-amber-900/20' : isWeekend ? 'bg-[var(--surface-alt)]' : 'bg-[var(--surface)]',
                       ].join(' ')}
                     >
-                      <div className={['text-[10px] uppercase', isToday ? 'text-amber-600 font-bold' : 'text-stone-400'].join(' ')}>
+                      <div className={['text-[10px] uppercase', isToday ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-[var(--text-muted)]'].join(' ')}>
                         {weekday}
                       </div>
                       <div
                         className={[
                           'text-sm font-semibold mt-0.5',
                           isToday
-                            ? 'text-amber-700 bg-amber-200 w-7 h-7 rounded-full flex items-center justify-center mx-auto'
-                            : 'text-stone-700',
+                            ? 'text-amber-700 dark:text-amber-300 bg-amber-200 dark:bg-amber-700 w-7 h-7 rounded-full flex items-center justify-center mx-auto'
+                            : 'text-[var(--text-secondary)]',
                         ].join(' ')}
                       >
                         {day}
@@ -193,7 +192,6 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
                 const colors = ROOM_COLORS[room.type] || ROOM_COLORS.Enkel;
                 const isBooked = room.status === 'booked' && room.checkIn && room.checkOut;
 
-                // Calculate bar position
                 let barStart = 0;
                 let barSpan = 0;
                 if (isBooked && room.checkIn && room.checkOut) {
@@ -207,20 +205,17 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
                 return (
                   <div
                     key={room.id}
-                    className="grid border-b border-stone-100 last:border-b-0 group/row"
+                    className="grid border-b border-[var(--border-light)] last:border-b-0"
                     style={{ gridTemplateColumns: '120px repeat(14, 1fr)' }}
                   >
-                    {/* Room label */}
-                    <div className="px-3 py-3 border-r border-stone-200 bg-stone-50/50 flex items-center gap-2">
-                      <span className="font-bold text-sm text-stone-700">{room.id}</span>
+                    <div className="px-3 py-3 border-r border-[var(--border)] bg-[var(--surface-alt)] flex items-center gap-2">
+                      <span className="font-bold text-sm text-[var(--text-secondary)]">{room.id}</span>
                       <span className={['text-[10px] font-medium px-1.5 py-0.5 rounded', colors.bg, colors.text].join(' ')}>
                         {TYPE_LABELS[room.type]}
                       </span>
                     </div>
 
-                    {/* Timeline cells with overlay bar */}
                     <div className="col-span-14 relative min-h-[48px]">
-                      {/* Grid lines */}
                       <div className="absolute inset-0 grid" style={{ gridTemplateColumns: 'repeat(14, 1fr)' }}>
                         {dates.map((date) => {
                           const { isToday, isWeekend } = formatDayHeader(date);
@@ -228,15 +223,14 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
                             <div
                               key={toDateKey(date)}
                               className={[
-                                'border-r border-stone-100 last:border-r-0',
-                                isToday ? 'bg-amber-50/50' : isWeekend ? 'bg-stone-50/50' : '',
+                                'border-r border-[var(--border-light)] last:border-r-0',
+                                isToday ? 'bg-amber-50/50 dark:bg-amber-900/10' : isWeekend ? 'bg-[var(--surface-alt)]/50' : '',
                               ].join(' ')}
                             />
                           );
                         })}
                       </div>
 
-                      {/* Booking bar */}
                       {isBooked && barSpan > 0 && (
                         <div
                           className="absolute top-2 bottom-2 flex items-center cursor-pointer group/bar"
@@ -268,7 +262,7 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-xs text-stone-500">
+      <div className="flex flex-wrap gap-4 text-xs text-[var(--text-muted)]">
         {Object.entries(ROOM_COLORS).map(([type, colors]) => (
           <div key={type} className="flex items-center gap-1.5">
             <div className={['w-3 h-3 rounded', colors.bar].join(' ')} />
@@ -276,7 +270,7 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
           </div>
         ))}
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-amber-200 border border-amber-300" />
+          <div className="w-3 h-3 rounded bg-amber-200 dark:bg-amber-700 border border-amber-300 dark:border-amber-600" />
           <span>Idag</span>
         </div>
       </div>

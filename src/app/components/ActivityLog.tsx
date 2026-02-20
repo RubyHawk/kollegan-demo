@@ -54,23 +54,23 @@ const EVENT_ICONS: Record<ActivityEvent['type'], ReactNode> = {
 };
 
 const EVENT_COLORS: Record<ActivityEvent['type'], string> = {
-  call_started: 'text-blue-500 bg-blue-50',
-  call_ended: 'text-stone-500 bg-stone-100',
-  rooms_queried: 'text-violet-500 bg-violet-50',
-  room_locked: 'text-amber-600 bg-amber-50',
-  room_confirmed: 'text-emerald-600 bg-emerald-50',
-  room_cancelled: 'text-red-500 bg-red-50',
-  info: 'text-stone-500 bg-stone-100',
+  call_started: 'text-blue-500 bg-blue-50 dark:bg-blue-900/30',
+  call_ended: 'text-stone-500 dark:text-slate-400 bg-stone-100 dark:bg-slate-700/30',
+  rooms_queried: 'text-violet-500 bg-violet-50 dark:bg-violet-900/30',
+  room_locked: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30',
+  room_confirmed: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30',
+  room_cancelled: 'text-red-500 bg-red-50 dark:bg-red-900/30',
+  info: 'text-stone-500 dark:text-slate-400 bg-stone-100 dark:bg-slate-700/30',
 };
 
 const EVENT_TEXT_COLORS: Record<ActivityEvent['type'], string> = {
-  call_started: 'text-blue-700',
-  call_ended: 'text-stone-600',
-  rooms_queried: 'text-violet-700',
-  room_locked: 'text-amber-700',
-  room_confirmed: 'text-emerald-700',
-  room_cancelled: 'text-red-700',
-  info: 'text-stone-600',
+  call_started: 'text-blue-700 dark:text-blue-300',
+  call_ended: 'text-[var(--text-secondary)]',
+  rooms_queried: 'text-violet-700 dark:text-violet-300',
+  room_locked: 'text-amber-700 dark:text-amber-300',
+  room_confirmed: 'text-emerald-700 dark:text-emerald-300',
+  room_cancelled: 'text-red-700 dark:text-red-300',
+  info: 'text-[var(--text-secondary)]',
 };
 
 export default function ActivityLog({ activities }: Props) {
@@ -78,21 +78,21 @@ export default function ActivityLog({ activities }: Props) {
     <div className="space-y-3">
       {activities.length === 0 && (
         <div className="text-center py-16">
-          <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="w-12 h-12 rounded-full bg-[var(--surface-alt)] flex items-center justify-center mx-auto mb-3">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
-          <p className="text-stone-400 text-sm">Inga aktiviteter än</p>
-          <p className="text-stone-300 text-xs mt-1">Ring Maja för att börja!</p>
+          <p className="text-[var(--text-muted)] text-sm">Inga aktiviteter än</p>
+          <p className="text-[var(--text-muted)] text-xs mt-1 opacity-60">Ring Maja för att börja!</p>
         </div>
       )}
 
       {activities.map((event) => (
         <div
           key={event.id}
-          className="flex gap-3 items-start bg-white rounded-xl border border-stone-200 px-4 py-3 transition-all hover:shadow-sm"
+          className="flex gap-3 items-start bg-[var(--surface)] rounded-xl border border-[var(--border)] px-4 py-3 transition-all hover:shadow-sm"
         >
           <div
             className={[
@@ -106,7 +106,7 @@ export default function ActivityLog({ activities }: Props) {
             <p className={['text-sm font-medium leading-snug', EVENT_TEXT_COLORS[event.type]].join(' ')}>
               {event.message}
             </p>
-            <p className="text-stone-400 text-xs mt-1">
+            <p className="text-[var(--text-muted)] text-xs mt-1">
               {new Date(event.timestamp).toLocaleTimeString('sv-SE', {
                 hour: '2-digit',
                 minute: '2-digit',
