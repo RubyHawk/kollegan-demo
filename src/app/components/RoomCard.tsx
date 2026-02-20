@@ -31,26 +31,25 @@ export default function RoomCard({ room, onClick }: Props) {
       className={[
         'relative w-full text-left rounded-2xl p-5 transition-all duration-300 border group',
         isAvailable &&
-          'bg-white border-emerald-200 hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-50 cursor-pointer',
+          'bg-[var(--surface)] border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-lg hover:shadow-emerald-50 dark:hover:shadow-emerald-900/20 cursor-pointer',
         isLocked &&
-          'bg-amber-50 border-amber-300 room-locked cursor-not-allowed',
+          'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 room-locked cursor-not-allowed',
         isBooked &&
-          'bg-white border-indigo-200 hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-50 cursor-pointer',
+          'bg-[var(--surface)] border-indigo-200 dark:border-indigo-800 hover:border-indigo-400 dark:hover:border-indigo-600 hover:shadow-lg hover:shadow-indigo-50 dark:hover:shadow-indigo-900/20 cursor-pointer',
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      {/* Top row: room number + type badge */}
       <div className="flex items-start justify-between">
-        <div className="text-2xl font-bold tracking-tight text-stone-800 font-heading">
+        <div className="text-2xl font-bold tracking-tight text-[var(--text-primary)] font-heading">
           {room.id}
         </div>
         <div
           className={[
             'w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold',
-            isAvailable && 'bg-emerald-100 text-emerald-700',
-            isLocked && 'bg-amber-200 text-amber-800',
-            isBooked && 'bg-indigo-100 text-indigo-700',
+            isAvailable && 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400',
+            isLocked && 'bg-amber-200 dark:bg-amber-800/40 text-amber-800 dark:text-amber-400',
+            isBooked && 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400',
           ]
             .filter(Boolean)
             .join(' ')}
@@ -59,35 +58,33 @@ export default function RoomCard({ room, onClick }: Props) {
         </div>
       </div>
 
-      {/* Room type */}
-      <div className="text-xs text-stone-500 mt-1 font-medium">
+      <div className="text-xs text-[var(--text-muted)] mt-1 font-medium">
         {TYPE_LABELS[room.type] ?? room.type}
       </div>
 
-      {/* Status area */}
       <div className="mt-4">
         {isAvailable && (
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-xs font-medium text-emerald-600">Tillgänglig</span>
+            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Tillgänglig</span>
           </div>
         )}
         {isLocked && (
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-amber-500 status-ping" />
-            <span className="text-xs font-medium text-amber-700">Reserveras...</span>
+            <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Reserveras...</span>
           </div>
         )}
         {isBooked && (
           <div className="space-y-1">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-indigo-500" />
-              <span className="text-xs font-medium text-indigo-600 truncate max-w-[140px]">
+              <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 truncate max-w-[140px]">
                 {room.guestName ?? 'Bokad'}
               </span>
             </div>
             {room.checkIn && room.checkOut && (
-              <p className="text-[11px] text-stone-400 pl-3.5">
+              <p className="text-[11px] text-[var(--text-muted)] pl-3.5">
                 {formatDateShort(room.checkIn)} — {formatDateShort(room.checkOut)}
               </p>
             )}
