@@ -30,10 +30,11 @@ export default function RoomCard({ room, onClick }: Props) {
     Svit: 'Svit',
   };
 
+  // Neutral for standard rooms, amber only for premium (Svit)
   const typeColors: Record<string, string> = {
-    Enkel: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400',
-    Dubbel: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400',
-    Svit: 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400',
+    Enkel:  'bg-[var(--surface-alt)] text-[var(--text-secondary)]',
+    Dubbel: 'bg-[var(--surface-alt)] text-[var(--text-secondary)]',
+    Svit:   'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
   };
 
   return (

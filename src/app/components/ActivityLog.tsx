@@ -64,15 +64,16 @@ const EVENT_COLORS: Record<ActivityEvent['type'], string> = {
   info: 'text-stone-500 dark:text-slate-400 bg-stone-100 dark:bg-slate-700/30',
 };
 
-// Left accent border color
+// Left accent border — only semantic colours: amber = in-progress,
+// emerald = success, red = error. Everything else: neutral border.
 const EVENT_BORDER: Record<ActivityEvent['type'], string> = {
-  call_started: 'border-l-blue-400',
-  call_ended: 'border-l-stone-300 dark:border-l-slate-600',
-  rooms_queried: 'border-l-violet-400',
-  room_locked: 'border-l-amber-400',
+  call_started:   'border-l-[var(--border)]',
+  call_ended:     'border-l-[var(--border)]',
+  rooms_queried:  'border-l-[var(--border)]',
+  room_locked:    'border-l-amber-400',
   room_confirmed: 'border-l-emerald-400',
   room_cancelled: 'border-l-red-400',
-  info: 'border-l-stone-300 dark:border-l-slate-600',
+  info:           'border-l-[var(--border)]',
 };
 
 // Message text color
