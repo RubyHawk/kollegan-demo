@@ -75,6 +75,18 @@ const MINI_ACTIVITY = {
     badge: 'bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400',
     accent: 'border-l-red-400',
   },
+  crm_contact: {
+    icon: (
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+    badge: 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400',
+    accent: 'border-l-violet-400',
+  },
   info: {
     icon: (
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -219,6 +231,7 @@ export default function HomePage() {
   const [showSplash, setShowSplash] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hotelServiceCount, setHotelServiceCount] = useState(0);
+  const [focusEventId, setFocusEventId] = useState<string | null>(null);
 
   /* ── SSE ── */
   useEffect(() => {
@@ -505,13 +518,18 @@ export default function HomePage() {
                     {activities.slice(0, 4).map((event: ActivityEvent) => {
                       const cfg = MINI_ACTIVITY[event.type as keyof typeof MINI_ACTIVITY] ?? MINI_ACTIVITY.info;
                       return (
-                        <div
+                        <button
                           key={event.id}
+                          onClick={() => {
+                            setActiveTab('activity');
+                            setFocusEventId(event.id);
+                            setMobileMenuOpen(false);
+                          }}
                           className={[
-                            'flex items-center gap-2.5 px-3 py-2.5',
+                            'w-full text-left flex items-center gap-2.5 px-3 py-2.5',
                             'border-l-[3px]',
                             'border-b border-[var(--border)] last:border-b-0',
-                            'hover:bg-[var(--surface-alt)] transition-colors',
+                            'hover:bg-[var(--surface-alt)] transition-colors cursor-pointer active:scale-[0.98]',
                             cfg.accent,
                           ].join(' ')}
                         >
@@ -527,7 +545,7 @@ export default function HomePage() {
                           <span className="text-[10px] text-[var(--text-muted)] tabular-nums font-mono shrink-0">
                             {new Date(event.timestamp).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                           </span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -590,7 +608,11 @@ export default function HomePage() {
             {/* ── Activity Tab ── */}
             {rooms.length > 0 && activeTab === 'activity' && (
               <div key="activity" className="tab-content-enter">
-                <ActivityLog activities={activities} />
+                <ActivityLog
+                  activities={activities}
+                  focusEventId={focusEventId}
+                  onFocusConsumed={() => setFocusEventId(null)}
+                />
               </div>
             )}
 
