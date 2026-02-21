@@ -134,7 +134,7 @@ export default function RoomCard({ room, onClick, animDelay }: Props) {
         <div className="font-heading text-4xl font-bold text-[var(--text-primary)] leading-none mb-0.5">
           {room.id}
         </div>
-        <div className="text-xs font-medium text-[var(--text-muted)] mb-3">
+        <div className="text-xs font-medium text-[var(--text-secondary)] mb-3">
           {TYPE_LABELS[room.type] ?? room.type} · Våning {room.floor}
         </div>
 
@@ -146,7 +146,7 @@ export default function RoomCard({ room, onClick, animDelay }: Props) {
                 {room.guestName ?? 'Bokad'}
               </p>
               {room.checkIn && room.checkOut && (
-                <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                   {formatDateShort(room.checkIn)} — {formatDateShort(room.checkOut)}
                 </p>
               )}
@@ -180,9 +180,9 @@ export default function RoomCard({ room, onClick, animDelay }: Props) {
 
         {/* Size + view */}
         <div className="flex items-center gap-1 mt-1.5">
-          <span className="text-[10px] text-[var(--text-muted)]">{meta.size} m²</span>
-          <span className="text-[10px] text-[var(--text-muted)]">·</span>
-          <span className="text-[10px] text-[var(--text-muted)]">{meta.view}</span>
+          <span className="text-xs text-[var(--text-secondary)]">{meta.size} m²</span>
+          <span className="text-xs text-[var(--text-muted)]">·</span>
+          <span className="text-xs text-[var(--text-secondary)]">{meta.view}</span>
         </div>
       </CardBody>
     </Card>

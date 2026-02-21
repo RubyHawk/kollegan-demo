@@ -95,14 +95,18 @@ export default function HotelInfoTab({ onCountChange }: Props) {
         </div>
 
         {/* "Kollegan knows" badge */}
-        <div className="flex items-center gap-2 bg-navy-900 rounded-xl px-3 py-2 shrink-0">
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B1121" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="flex items-center gap-2 bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-800/40 rounded-xl px-3 py-2 shrink-0">
+          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shrink-0">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
             </svg>
           </div>
-          <span className="text-xs font-medium text-cream-100">
-            Kollegan känner till {[...restaurants, ...activities, ...amenities].filter((x) => x.isActive).length} aktiva tjänster
+          <span className="text-xs font-medium text-amber-800 dark:text-amber-300">
+            Kollegan känner till{' '}
+            <span className="font-bold">
+              {[...restaurants, ...activities, ...amenities].filter((x) => x.isActive).length}
+            </span>{' '}
+            aktiva tjänster
           </span>
         </div>
       </div>

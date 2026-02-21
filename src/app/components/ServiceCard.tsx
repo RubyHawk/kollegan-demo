@@ -145,7 +145,10 @@ export default function ServiceCard({ type, item, onEdit, onDelete, onToggleActi
   const hours = getHours(item);
 
   return (
-    <div className={`service-card group relative bg-[var(--surface)] border rounded-2xl p-5 transition-all duration-200 hover:shadow-md ${item.isActive ? 'border-[var(--border)] hover:border-amber-200 dark:hover:border-amber-800/50' : 'border-[var(--border)] opacity-60'}`}>
+    <div
+      onClick={() => onEdit(item)}
+      className={`service-card cursor-pointer relative bg-[var(--surface)] border rounded-2xl p-5 transition-all duration-200 hover:shadow-md ${item.isActive ? 'border-[var(--border)] hover:border-amber-200 dark:hover:border-amber-800/50' : 'border-[var(--border)] opacity-60'}`}
+    >
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
         <div className={`w-10 h-10 rounded-xl ${bg} ${color} flex items-center justify-center shrink-0`}>
@@ -177,7 +180,7 @@ export default function ServiceCard({ type, item, onEdit, onDelete, onToggleActi
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)] shrink-0">
             <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
           </svg>
-          <span className="text-[11px] text-[var(--text-muted)]">{hours}</span>
+          <span className="text-xs text-[var(--text-secondary)]">{hours}</span>
         </div>
       )}
 
@@ -192,8 +195,11 @@ export default function ServiceCard({ type, item, onEdit, onDelete, onToggleActi
         </div>
       )}
 
-      {/* Actions (hover reveal) */}
-      <div className="service-card-actions flex items-center gap-1 pt-3 border-t border-[var(--border-light)]">
+      {/* Actions — always visible */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex items-center gap-1 pt-3 border-t border-[var(--border-light)]"
+      >
         <button
           onClick={() => onEdit(item)}
           className="flex items-center gap-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--surface-alt)] hover:bg-[var(--border)] rounded-lg px-2.5 py-1.5 transition-all"
