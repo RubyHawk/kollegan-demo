@@ -12,7 +12,7 @@ const MINI_ACTIVITY = {
         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
       </svg>
     ),
-    badge: 'bg-white/40 dark:bg-white/8 text-[var(--text-muted)]',
+    badge: 'bg-black/6 dark:bg-white/8 text-[var(--text-muted)]',
     accent: 'border-l-[var(--border)]',
   },
   call_ended: {
@@ -22,7 +22,7 @@ const MINI_ACTIVITY = {
         <line x1="1" y1="1" x2="23" y2="23" />
       </svg>
     ),
-    badge: 'bg-white/40 dark:bg-white/8 text-[var(--text-muted)]',
+    badge: 'bg-black/6 dark:bg-white/8 text-[var(--text-muted)]',
     accent: 'border-l-[var(--border)]',
   },
   rooms_queried: {
@@ -31,7 +31,7 @@ const MINI_ACTIVITY = {
         <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
       </svg>
     ),
-    badge: 'bg-white/40 dark:bg-white/8 text-[var(--text-muted)]',
+    badge: 'bg-black/6 dark:bg-white/8 text-[var(--text-muted)]',
     accent: 'border-l-[var(--border)]',
   },
   room_locked: {
@@ -77,7 +77,7 @@ const MINI_ACTIVITY = {
         <circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" />
       </svg>
     ),
-    badge: 'bg-white/40 dark:bg-white/8 text-[var(--text-muted)]',
+    badge: 'bg-black/6 dark:bg-white/8 text-[var(--text-muted)]',
     accent: 'border-l-[var(--border)]',
   },
 };
@@ -171,7 +171,9 @@ export default function DashboardSidebar({
   return (
     <aside
       className={[
-        'w-64 shrink-0 bg-[#111111] dark:bg-[#0c0c0c] border-r border-[#222] dark:border-[#1c1c1c] flex flex-col z-40',
+        'w-64 shrink-0 flex flex-col z-40',
+        'bg-[var(--surface)] dark:bg-[#0c0c0c]',
+        'border-r border-[var(--border)] dark:border-[#1c1c1c]',
         'fixed lg:sticky top-0 lg:top-0 h-screen lg:h-auto lg:max-h-[calc(100vh-44px)] overflow-y-auto',
         'transition-transform duration-300 lg:translate-x-0',
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full',
@@ -179,7 +181,7 @@ export default function DashboardSidebar({
     >
       {/* Nav */}
       <nav className="px-3 pt-5 pb-3 space-y-0.5">
-        <p className="text-[10px] font-semibold text-white/25 uppercase tracking-widest px-3 mb-3">
+        <p className="text-[10px] font-semibold text-[var(--text-muted)] dark:text-white/25 uppercase tracking-widest px-3 mb-3">
           Navigation
         </p>
         {NAV_ITEMS.map((item) => {
@@ -194,8 +196,16 @@ export default function DashboardSidebar({
               className={[
                 'w-full flex items-center gap-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.97]',
                 isActive
-                  ? 'bg-amber-500/12 text-amber-400 pl-2.5 border-l-2 border-amber-400 rounded-l-none'
-                  : 'text-white/45 hover:text-white/85 hover:bg-white/7 px-3',
+                  ? [
+                      'pl-2.5 border-l-2 rounded-l-none',
+                      'bg-purple-700/10 text-purple-700 border-purple-600',
+                      'dark:bg-amber-500/12 dark:text-amber-400 dark:border-amber-400',
+                    ].join(' ')
+                  : [
+                      'px-3',
+                      'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5',
+                      'dark:text-white/45 dark:hover:text-white/85 dark:hover:bg-white/7',
+                    ].join(' '),
               ].join(' ')}
             >
               {item.icon}
@@ -204,8 +214,8 @@ export default function DashboardSidebar({
                 className={[
                   'ml-auto text-xs px-2 py-0.5 rounded-full min-w-[24px] text-center tabular-nums',
                   isActive
-                    ? 'bg-amber-500/20 text-amber-400'
-                    : 'bg-white/10 text-white/35',
+                    ? 'bg-purple-700/15 text-purple-700 dark:bg-amber-500/20 dark:text-amber-400'
+                    : 'bg-black/7 text-[var(--text-muted)] dark:bg-white/10 dark:text-white/35',
                 ].join(' ')}
               >
                 {tabCounts[item.key]}
@@ -216,26 +226,44 @@ export default function DashboardSidebar({
       </nav>
 
       {/* Divider */}
-      <div className="mx-4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="mx-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] dark:via-white/10 to-transparent" />
 
       {/* Room type legend */}
       <div className="px-4 py-5">
-        <p className="text-[10px] font-semibold text-white/25 uppercase tracking-widest px-3 mb-4">
+        <p className="text-[10px] font-semibold text-[var(--text-muted)] dark:text-white/25 uppercase tracking-widest px-3 mb-4">
           Rumstyper
         </p>
         <div className="space-y-3 px-3">
           {[
-            { badge: 'text-white/60', bg: 'bg-white/8 border border-white/12', label: '1', name: 'Enkelt rum', price: '1 495 kr/natt' },
-            { badge: 'text-white/60', bg: 'bg-white/8 border border-white/12', label: '2', name: 'Dubbelrum', price: '2 495 kr/natt' },
-            { badge: 'text-amber-400', bg: 'bg-amber-500/15 border border-amber-500/25', label: 'S', name: 'Svit', price: '3 995 kr/natt' },
+            {
+              badge: 'text-[var(--text-secondary)] dark:text-white/60',
+              bg: 'bg-black/5 border border-black/8 dark:bg-white/8 dark:border-white/12',
+              label: '1',
+              name: 'Enkelt rum',
+              price: '1 495 kr/natt',
+            },
+            {
+              badge: 'text-[var(--text-secondary)] dark:text-white/60',
+              bg: 'bg-black/5 border border-black/8 dark:bg-white/8 dark:border-white/12',
+              label: '2',
+              name: 'Dubbelrum',
+              price: '2 495 kr/natt',
+            },
+            {
+              badge: 'text-amber-600 dark:text-amber-400',
+              bg: 'bg-amber-500/15 border border-amber-500/25',
+              label: 'S',
+              name: 'Svit',
+              price: '3 995 kr/natt',
+            },
           ].map(({ bg, badge, label, name, price }) => (
             <div key={label} className="flex items-center gap-3">
               <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center text-xs font-bold ${badge} shrink-0`}>
                 {label}
               </div>
               <div>
-                <p className="text-xs font-semibold text-white/80">{name}</p>
-                <p className="text-[11px] text-white/35 mt-0.5">{price}</p>
+                <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-white/80">{name}</p>
+                <p className="text-[11px] text-[var(--text-muted)] dark:text-white/35 mt-0.5">{price}</p>
               </div>
             </div>
           ))}
@@ -243,20 +271,20 @@ export default function DashboardSidebar({
       </div>
 
       {/* Divider */}
-      <div className="mx-4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="mx-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] dark:via-white/10 to-transparent" />
 
       {/* Mini activity card */}
       <div className="px-4 pb-4 pt-4">
-        <div className="bg-white/4 border border-white/8 rounded-xl overflow-hidden">
+        <div className="bg-[var(--surface-alt)] dark:bg-white/4 border border-[var(--border)] dark:border-white/8 rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/8 bg-white/5">
-            <p className="text-[10px] font-semibold text-white/30 uppercase tracking-widest">
+          <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--border)] dark:border-white/8 bg-[var(--surface-hover)] dark:bg-white/5">
+            <p className="text-[10px] font-semibold text-[var(--text-muted)] dark:text-white/30 uppercase tracking-widest">
               Senaste händelser
             </p>
             {activeTab !== 'activity' && (
               <button
                 onClick={() => onTabChange('activity')}
-                className="text-[10px] text-amber-400 hover:underline font-medium"
+                className="text-[10px] font-medium text-purple-600 hover:underline dark:text-amber-400"
               >
                 Visa alla
               </button>
@@ -265,7 +293,7 @@ export default function DashboardSidebar({
 
           {/* Event rows */}
           {activities.length === 0 ? (
-            <p className="text-[11px] text-white/30 py-4 text-center">Inga händelser än</p>
+            <p className="text-[11px] text-[var(--text-muted)] dark:text-white/30 py-4 text-center">Inga händelser än</p>
           ) : (
             <div>
               {activities.slice(0, 4).map((event: ActivityEvent) => {
@@ -281,18 +309,18 @@ export default function DashboardSidebar({
                     className={[
                       'w-full text-left flex items-center gap-2.5 px-3 py-2.5',
                       'border-l-[3px]',
-                      'border-b border-white/6 last:border-b-0',
-                      'hover:bg-white/6 transition-colors cursor-pointer active:scale-[0.98]',
+                      'border-b border-[var(--border-light)] dark:border-white/6 last:border-b-0',
+                      'hover:bg-[var(--surface-hover)] dark:hover:bg-white/6 transition-colors cursor-pointer active:scale-[0.98]',
                       cfg.accent,
                     ].join(' ')}
                   >
                     <div className={['w-5 h-5 rounded-md flex items-center justify-center shrink-0', cfg.badge].join(' ')}>
                       {cfg.icon}
                     </div>
-                    <p className="flex-1 min-w-0 text-[11px] text-white/60 font-medium line-clamp-1 leading-tight">
+                    <p className="flex-1 min-w-0 text-[11px] text-[var(--text-secondary)] dark:text-white/60 font-medium line-clamp-1 leading-tight">
                       {event.message}
                     </p>
-                    <span className="text-[10px] text-white/30 tabular-nums font-mono shrink-0">
+                    <span className="text-[10px] text-[var(--text-muted)] dark:text-white/30 tabular-nums font-mono shrink-0">
                       {new Date(event.timestamp).toLocaleTimeString('sv-SE', {
                         hour: '2-digit',
                         minute: '2-digit',
@@ -309,11 +337,11 @@ export default function DashboardSidebar({
       <div className="flex-1" />
 
       {/* Divider */}
-      <div className="mx-4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="mx-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] dark:via-white/10 to-transparent" />
 
       {/* Bottom controls */}
       <div className="px-4 py-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-[11px] text-white/40">
+        <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)] dark:text-white/40">
           <div className={[
             'w-1.5 h-1.5 rounded-full transition-colors duration-500',
             connected ? 'bg-emerald-500' : 'bg-red-400',
@@ -324,7 +352,11 @@ export default function DashboardSidebar({
           <button
             onClick={onReset}
             title="Återställ data"
-            className="flex items-center gap-1.5 text-[11px] font-medium text-white/40 hover:text-white/70 px-2 py-1.5 rounded-lg hover:bg-white/8 transition-all active:scale-95"
+            className={[
+              'flex items-center gap-1.5 text-[11px] font-medium px-2 py-1.5 rounded-lg transition-all active:scale-95',
+              'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-alt)]',
+              'dark:text-white/40 dark:hover:text-white/70 dark:hover:bg-white/8',
+            ].join(' ')}
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="1 4 1 10 7 10" />
@@ -332,7 +364,13 @@ export default function DashboardSidebar({
             </svg>
             Återställ
           </button>
-          <ThemeToggle className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/8 border border-white/12 hover:border-amber-400/60 transition-all text-white/60 hover:text-white/90" />
+          <ThemeToggle className={[
+            'w-8 h-8 flex items-center justify-center rounded-lg transition-all',
+            'bg-[var(--surface-alt)] border border-[var(--border)]',
+            'hover:border-purple-400/70 dark:hover:border-amber-400/60',
+            'text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
+            'dark:bg-white/8 dark:border-white/12 dark:text-white/60 dark:hover:text-white/90',
+          ].join(' ')} />
         </div>
       </div>
     </aside>
