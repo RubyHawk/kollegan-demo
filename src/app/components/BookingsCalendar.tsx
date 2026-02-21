@@ -380,8 +380,6 @@ function TimelineView({
     return ce - cs > 0 ? { col: cs, span: ce - cs } : null;
   }
 
-  const totalW = LABEL_W + view.days * COL_W;
-
   return (
     <div className="space-y-3">
       {/* ── Toolbar row ── */}
@@ -435,8 +433,7 @@ function TimelineView({
 
       {/* ── Calendar grid ── */}
       <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <div style={{ width: totalW }}>
+        <div>
 
             {/* ── Row 1: Month groups ── */}
             <div
@@ -454,17 +451,19 @@ function TimelineView({
               </div>
 
               {/* Month spans */}
-              {monthGroups.map((mg, i) => (
-                <div
-                  key={i}
-                  className="border-r border-[var(--border-light)] last:border-r-0 flex items-center px-3"
-                  style={{ width: mg.span * COL_W }}
-                >
-                  <span className="text-[11px] font-semibold text-[var(--text-secondary)] capitalize truncate">
-                    {mg.label}
-                  </span>
-                </div>
-              ))}
+              <div className="flex flex-1 min-w-0">
+                {monthGroups.map((mg, i) => (
+                  <div
+                    key={i}
+                    className="border-r border-[var(--border-light)] last:border-r-0 flex items-center px-3 min-w-0"
+                    style={{ flex: mg.span }}
+                  >
+                    <span className="text-[11px] font-semibold text-[var(--text-secondary)] capitalize truncate">
+                      {mg.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* ── Row 2: Day numbers ── */}
@@ -479,46 +478,52 @@ function TimelineView({
               />
 
               {/* Day cells */}
-              {dates.map((d) => {
-                const k        = toKey(d);
-                const isToday  = k === todayKey;
-                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                return (
-                  <div
-                    key={k}
-                    className={[
-                      'shrink-0 flex flex-col items-center justify-center border-r border-[var(--border-light)] last:border-r-0 select-none',
-                      isToday
-                        ? 'bg-amber-50 dark:bg-amber-900/20'
-                        : isWeekend
-                        ? 'bg-[var(--surface-alt)]/60'
-                        : 'bg-[var(--surface)]',
-                    ].join(' ')}
-                    style={{ width: COL_W }}
-                  >
-                    <span
-                      className={[
-                        'text-[9px] font-semibold uppercase',
-                        isToday
-                          ? 'text-amber-600 dark:text-amber-400'
-                          : 'text-[var(--text-muted)]',
-                      ].join(' ')}
-                    >
-                      {d.toLocaleDateString('sv-SE', { weekday: 'narrow' })}
-                    </span>
+              <div className="flex flex-1 min-w-0">
+                {dates.map((d) => {
+                  const k         = toKey(d);
+                  const isToday   = k === todayKey;
+                  const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                  return (
                     <div
+                      key={k}
                       className={[
-                        'w-6 h-6 flex items-center justify-center rounded-full text-[11px] font-bold mt-0.5',
+                        'flex-1 flex flex-col items-center justify-center border-r border-[var(--border-light)] last:border-r-0 select-none overflow-hidden',
                         isToday
-                          ? 'bg-amber-500 text-white'
-                          : 'text-[var(--text-secondary)]',
+                          ? 'bg-amber-50 dark:bg-amber-900/20'
+                          : isWeekend
+                          ? 'bg-[var(--surface-alt)]/60'
+                          : 'bg-[var(--surface)]',
                       ].join(' ')}
                     >
-                      {d.getDate()}
+                      {view.days <= 31 && (
+                        <span
+                          className={[
+                            'text-[9px] font-semibold uppercase leading-none',
+                            isToday
+                              ? 'text-amber-600 dark:text-amber-400'
+                              : 'text-[var(--text-muted)]',
+                          ].join(' ')}
+                        >
+                          {d.toLocaleDateString('sv-SE', { weekday: 'narrow' })}
+                        </span>
+                      )}
+                      <div
+                        className={[
+                          'flex items-center justify-center rounded-full font-bold leading-none',
+                          view.days > 31
+                            ? 'text-[9px] w-5 h-5 mt-0'
+                            : 'text-[11px] w-6 h-6 mt-0.5',
+                          isToday
+                            ? 'bg-amber-500 text-white'
+                            : 'text-[var(--text-secondary)]',
+                        ].join(' ')}
+                      >
+                        {d.getDate()}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
             {/* ── Room rows ── */}
@@ -571,14 +576,13 @@ function TimelineView({
                         <div
                           key={k}
                           className={[
-                            'shrink-0 border-r border-[var(--border-light)] last:border-r-0',
+                            'flex-1 border-r border-[var(--border-light)] last:border-r-0',
                             isToday
                               ? 'bg-amber-50/60 dark:bg-amber-900/10'
                               : isWeekend
                               ? 'bg-[var(--surface-alt)]/30'
                               : '',
                           ].join(' ')}
-                          style={{ width: COL_W, height: ROW_H }}
                         />
                       );
                     })}
@@ -592,8 +596,8 @@ function TimelineView({
                           colors.bg,
                         ].join(' ')}
                         style={{
-                          left:  bar.col * COL_W + 2,
-                          width: bar.span * COL_W - 4,
+                          left:  `calc(${(bar.col / view.days) * 100}% + 2px)`,
+                          width: `calc(${(bar.span / view.days) * 100}% - 4px)`,
                         }}
                         title={
                           room.guestName && room.checkIn && room.checkOut
@@ -621,7 +625,6 @@ function TimelineView({
                 <p className="text-sm text-[var(--text-muted)]">Laddar rum…</p>
               </div>
             )}
-          </div>
         </div>
 
         {/* Legend */}
