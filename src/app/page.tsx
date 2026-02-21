@@ -14,7 +14,6 @@ import AnimatedNumber from '@/app/components/AnimatedNumber';
 import SplashScreen from '@/app/components/SplashScreen';
 import DashboardHeader from '@/app/components/DashboardHeader';
 import DashboardSidebar from '@/app/components/DashboardSidebar';
-import StatSummaryCards from '@/app/components/StatSummaryCards';
 import ToastContainer, { Toast } from '@/app/components/ToastContainer';
 
 type Tab = 'available' | 'booked' | 'activity' | 'hotel-info' | 'crm';
@@ -256,13 +255,6 @@ export default function HomePage() {
             {/* Available tab */}
             {rooms.length > 0 && activeTab === 'available' && (
               <div key="available" className="tab-content-enter">
-                <StatSummaryCards
-                  availableCount={availableCount}
-                  lockedCount={lockedCount}
-                  bookedCount={bookedCount}
-                  occupancy={occupancy}
-                  totalRooms={rooms.length}
-                />
                 <HotelGrid rooms={rooms} onRoomClick={handleRoomClick} />
               </div>
             )}
