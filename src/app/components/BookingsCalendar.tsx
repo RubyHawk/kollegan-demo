@@ -18,7 +18,6 @@ const VIEWS: { key: View; label: string; days: number; step: number }[] = [
 ];
 
 // Fixed pixel dimensions
-const COL_W   = 36;  // px per day column
 const LABEL_W = 180; // px for room label column
 const ROW_H   = 52;  // px per room row
 const HEAD1_H = 32;  // month group row height
@@ -433,7 +432,6 @@ function TimelineView({
 
       {/* ── Calendar grid ── */}
       <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
-        <div>
 
             {/* ── Row 1: Month groups ── */}
             <div
@@ -625,7 +623,6 @@ function TimelineView({
                 <p className="text-sm text-[var(--text-muted)]">Laddar rum…</p>
               </div>
             )}
-        </div>
 
         {/* Legend */}
         <div className="flex flex-wrap gap-4 px-4 py-3 border-t border-[var(--border-light)] bg-[var(--surface-alt)]">
