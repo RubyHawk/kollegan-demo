@@ -30,13 +30,16 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_TEXT: Record<string, string> = {
   available: 'text-emerald-700 dark:text-emerald-400',
   locked:    'text-amber-700 dark:text-amber-400',
-  booked:    'text-indigo-700 dark:text-indigo-400',
+  booked:    'text-indigo-600 dark:text-indigo-400',
 };
 
 function AmenityIcon({ amenity }: { amenity: AmenityDef }) {
   return (
-    <div title={amenity.label} className="text-[var(--text-muted)]">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <div
+      title={amenity.label}
+      className="w-6 h-6 rounded-md bg-[var(--surface-alt)] border border-[var(--border-light)] flex items-center justify-center text-[var(--text-muted)] shrink-0"
+    >
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d={AMENITY_ICONS[amenity.key]} />
       </svg>
     </div>
@@ -54,75 +57,81 @@ export default function RoomCard({ room, onClick, animDelay }: Props) {
       disabled={isLocked}
       className={[
         'group relative w-full text-left rounded-xl border-l-[3px] border border-[var(--border)] stagger-in',
-        'bg-[var(--surface)] dark:bg-[var(--surface)]',
         'transition-all duration-200',
-        !isLocked && 'hover:shadow-md hover:-translate-y-px hover:border-[var(--border)] cursor-pointer',
-        isLocked && 'cursor-default opacity-80 room-locked',
+        !isLocked && 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer',
+        isLocked && 'cursor-default room-locked',
         STATUS_ACCENT[room.status] ?? 'border-l-[var(--border)]',
-        room.type === 'Svit' && 'overflow-hidden',
+        room.type === 'Svit'
+          ? 'bg-amber-50/40 dark:bg-amber-900/10 overflow-hidden'
+          : 'bg-[var(--surface)]',
       ].filter(Boolean).join(' ')}
       style={animDelay !== undefined ? { animationDelay: `${animDelay}ms` } : undefined}
     >
-      {/* Svit: subtle top shimmer only */}
+      {/* Svit: top shimmer edge */}
       {room.type === 'Svit' && (
         <div className="absolute top-0 inset-x-0 h-0.5 svit-shimmer pointer-events-none" />
       )}
 
-      <div className="px-3.5 py-3">
-        {/* Row 1: room number + type tag */}
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <span className="font-heading text-2xl font-bold text-[var(--text-primary)] leading-none">
-            {room.id}
-          </span>
+      <div className="px-4 py-4 flex flex-col gap-3">
+
+        {/* Block 1: room number + type chip + meta */}
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <div className="font-heading text-3xl font-bold text-[var(--text-primary)] leading-none mb-1">
+              {room.id}
+            </div>
+            <div className="text-[11px] text-[var(--text-muted)]">
+              {meta.bedType} · Vn {room.floor} · {meta.size} m²
+            </div>
+          </div>
           <span className={[
-            'text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded mt-0.5 shrink-0',
+            'text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0 mt-0.5',
             room.type === 'Svit'
-              ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+              ? 'bg-amber-200/70 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
               : 'bg-[var(--surface-alt)] text-[var(--text-muted)] border border-[var(--border-light)]',
           ].join(' ')}>
             {room.type}
           </span>
         </div>
 
-        {/* Row 2: status dot + label + guest name if booked */}
-        <div className="flex items-center gap-1.5 mb-2.5">
-          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[room.status]}`} />
-          <span className={`text-[11px] font-semibold ${STATUS_TEXT[room.status]}`}>
-            {STATUS_LABEL[room.status]}
-          </span>
-          {isBooked && room.guestName && (
-            <>
-              <span className="text-[var(--border)] text-[11px]">·</span>
-              <span className="text-[11px] text-[var(--text-secondary)] truncate">{room.guestName}</span>
-            </>
-          )}
-          {isBooked && room.checkIn && room.checkOut && (
-            <>
-              <span className="text-[var(--border)] text-[11px] hidden sm:inline">·</span>
-              <span className="text-[11px] text-[var(--text-muted)] hidden sm:inline">
-                {formatDateShort(room.checkIn)}–{formatDateShort(room.checkOut)}
-              </span>
-            </>
+        {/* Block 2: status + guest info */}
+        <div>
+          <div className="flex items-center gap-1.5">
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[room.status]}`} />
+            <span className={`text-[11px] font-semibold ${STATUS_TEXT[room.status]}`}>
+              {STATUS_LABEL[room.status]}
+            </span>
+          </div>
+          {isBooked && (room.guestName || (room.checkIn && room.checkOut)) && (
+            <div className="mt-1 text-[11px] text-[var(--text-secondary)] leading-tight">
+              {room.guestName && <span className="font-medium">{room.guestName}</span>}
+              {room.guestName && room.checkIn && <span className="text-[var(--text-muted)]"> · </span>}
+              {room.checkIn && room.checkOut && (
+                <span className="text-[var(--text-muted)]">
+                  {formatDateShort(room.checkIn)}–{formatDateShort(room.checkOut)}
+                </span>
+              )}
+            </div>
           )}
         </div>
 
-        {/* Row 3: amenities + price + size */}
+        {/* Block 3: amenities + price */}
         <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-[var(--border-light)]">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {meta.amenities.slice(0, 3).map((a) => (
               <AmenityIcon key={a.key} amenity={a} />
             ))}
             {meta.amenities.length > 3 && (
-              <span className="text-[10px] text-[var(--text-muted)]">+{meta.amenities.length - 3}</span>
+              <span className="text-[10px] text-[var(--text-muted)] ml-0.5">
+                +{meta.amenities.length - 3}
+              </span>
             )}
           </div>
-          <div className="flex items-baseline gap-1 shrink-0">
-            <span className="text-xs font-semibold text-[var(--text-primary)]">
-              {meta.price.toLocaleString('sv-SE')} kr
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)]">· {meta.size}m²</span>
-          </div>
+          <span className="text-xs font-semibold text-[var(--text-primary)] shrink-0">
+            {meta.price.toLocaleString('sv-SE')} <span className="font-normal text-[var(--text-muted)]">kr/n</span>
+          </span>
         </div>
+
       </div>
     </button>
   );
