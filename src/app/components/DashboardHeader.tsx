@@ -25,7 +25,7 @@ export default function DashboardHeader({
   hasData,
 }: Props) {
   return (
-    <header className="glass-header border-b border-white/40 dark:border-white/8 sticky top-0 z-30">
+    <header className="glass-header border-b border-[var(--border-light)] dark:border-white/8 sticky top-0 z-30">
       <div className="px-5 h-11 flex items-center justify-between gap-4 py-2">
 
         {/* ── Left: hamburger + logo + name ── */}
@@ -44,8 +44,8 @@ export default function DashboardHeader({
           </button>
 
           <div className="relative shrink-0">
-            <div className="absolute inset-0 rounded-lg bg-amber-400/20 blur-sm" />
-            <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm">
+            <div className="absolute inset-0 rounded-lg bg-purple-500/20 dark:bg-amber-400/20 blur-sm" />
+            <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-purple-800 dark:from-amber-400 dark:to-amber-600 flex items-center justify-center shadow-sm">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
                 <path d="M9 9h1" /><path d="M14 9h1" /><path d="M9 13h1" /><path d="M14 13h1" />
@@ -70,7 +70,7 @@ export default function DashboardHeader({
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--surface-alt)] border border-[var(--border-light)]">
               <div className="w-10 h-1 bg-[var(--border)] rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-amber-500 transition-all duration-700"
+                  className="h-full rounded-full bg-purple-600 dark:bg-amber-500 transition-all duration-700"
                   style={{ width: `${occupancy}%` }}
                 />
               </div>
@@ -87,7 +87,7 @@ export default function DashboardHeader({
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/30 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/30 dark:via-amber-400/30 to-transparent" />
     </header>
   );
 }
