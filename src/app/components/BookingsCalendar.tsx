@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Tooltip, Button, Chip } from '@heroui/react';
 import { Room } from '@/lib/types';
 
 interface Props {
@@ -29,11 +30,6 @@ const ROOM_LABEL: Record<string, string> = {
   Svit:   'Svit',
 };
 
-const TYPE_BADGE: Record<string, string> = {
-  Enkel:  'bg-stone-100 dark:bg-stone-800   text-stone-600 dark:text-stone-300',
-  Dubbel: 'bg-stone-200 dark:bg-stone-700   text-stone-700 dark:text-stone-200',
-  Svit:   'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400',
-};
 
 const BAR_COLOR: Record<string, { bg: string; text: string }> = {
   Enkel:  { bg: 'bg-stone-300 dark:bg-stone-600', text: 'text-stone-900 dark:text-stone-100' },
@@ -385,37 +381,46 @@ function TimelineView({
       <div className="flex flex-wrap items-center gap-2">
         {/* Prev / period / next */}
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setOffsetDays((o) => o - view.step)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--border)] hover:bg-[var(--surface-alt)] transition-colors text-[var(--text-secondary)]"
+          <Button
+            isIconOnly
+            size="sm"
+            variant="bordered"
+            onPress={() => setOffsetDays((o) => o - view.step)}
             aria-label="Föregående period"
+            className="border-[var(--border)] text-[var(--text-secondary)] bg-transparent"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
-          </button>
+          </Button>
 
           <span className="text-sm font-semibold text-[var(--text-primary)] min-w-[140px] text-center select-none">
             {periodLabel}
           </span>
 
-          <button
-            onClick={() => setOffsetDays((o) => o + view.step)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--border)] hover:bg-[var(--surface-alt)] transition-colors text-[var(--text-secondary)]"
+          <Button
+            isIconOnly
+            size="sm"
+            variant="bordered"
+            onPress={() => setOffsetDays((o) => o + view.step)}
             aria-label="Nästa period"
+            className="border-[var(--border)] text-[var(--text-secondary)] bg-transparent"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="9 18 15 12 9 6" />
             </svg>
-          </button>
+          </Button>
 
           {offsetDays !== 0 && (
-            <button
-              onClick={() => setOffsetDays(0)}
-              className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline ml-1"
+            <Button
+              size="sm"
+              variant="light"
+              color="warning"
+              onPress={() => setOffsetDays(0)}
+              className="text-xs font-medium ml-1 min-w-0 h-7 px-2"
             >
               Idag
-            </button>
+            </Button>
           )}
         </div>
 
@@ -505,19 +510,28 @@ function TimelineView({
                           {d.toLocaleDateString('sv-SE', { weekday: 'narrow' })}
                         </span>
                       )}
-                      <div
-                        className={[
-                          'flex items-center justify-center rounded-full font-bold leading-none',
-                          view.days > 31
-                            ? 'text-[9px] w-5 h-5 mt-0'
-                            : 'text-[11px] w-6 h-6 mt-0.5',
-                          isToday
-                            ? 'bg-amber-500 text-white'
-                            : 'text-[var(--text-secondary)]',
-                        ].join(' ')}
+                      <Tooltip
+                        content="Idag"
+                        placement="bottom"
+                        delay={400}
+                        closeDelay={0}
+                        isDisabled={!isToday}
+                        size="sm"
                       >
-                        {d.getDate()}
-                      </div>
+                        <div
+                          className={[
+                            'flex items-center justify-center rounded-full font-bold leading-none',
+                            view.days > 31
+                              ? 'text-[9px] w-5 h-5 mt-0'
+                              : 'text-[11px] w-6 h-6 mt-0.5',
+                            isToday
+                              ? 'bg-amber-500 text-white cursor-default'
+                              : 'text-[var(--text-secondary)]',
+                          ].join(' ')}
+                        >
+                          {d.getDate()}
+                        </div>
+                      </Tooltip>
                     </div>
                   );
                 })}
@@ -528,7 +542,7 @@ function TimelineView({
             {sortedRooms.map((room, idx) => {
               const bar    = getBar(room);
               const colors = BAR_COLOR[room.type] || BAR_COLOR.Enkel;
-              const badge  = TYPE_BADGE[room.type] || TYPE_BADGE.Enkel;
+              const nights = room.checkIn && room.checkOut ? diffDays(room.checkIn, room.checkOut) : 0;
 
               return (
                 <div
@@ -553,14 +567,17 @@ function TimelineView({
                       <p className="text-[12px] font-semibold text-[var(--text-primary)] leading-tight truncate">
                         {ROOM_LABEL[room.type]} {room.number}
                       </p>
-                      <span
-                        className={[
-                          'inline-block text-[9px] font-semibold px-1.5 py-[1px] rounded mt-0.5',
-                          badge,
-                        ].join(' ')}
+                      <Chip
+                        size="sm"
+                        variant="flat"
+                        color={room.type === 'Svit' ? 'warning' : 'default'}
+                        classNames={{
+                          base: 'h-[18px] mt-0.5',
+                          content: 'text-[9px] font-semibold px-1.5 py-0',
+                        }}
                       >
                         Vån {room.floor}
-                      </span>
+                      </Chip>
                     </div>
                   </div>
 
@@ -586,32 +603,50 @@ function TimelineView({
                     })}
 
                     {bar && (
-                      <button
-                        onClick={() => onRoomClick?.(room)}
-                        className={[
-                          'absolute top-3 bottom-3 flex items-center px-2.5 rounded-lg shadow-sm',
-                          'transition-all hover:brightness-105 hover:shadow-md active:scale-[0.99]',
-                          colors.bg,
-                        ].join(' ')}
-                        style={{
-                          left:  `calc(${(bar.col / view.days) * 100}% + 2px)`,
-                          width: `calc(${(bar.span / view.days) * 100}% - 4px)`,
-                        }}
-                        title={
-                          room.guestName && room.checkIn && room.checkOut
-                            ? `${room.guestName} · ${fmtShort(room.checkIn)} → ${fmtShort(room.checkOut)}`
-                            : room.guestName ?? ''
+                      <Tooltip
+                        showArrow
+                        placement="top"
+                        delay={200}
+                        closeDelay={0}
+                        content={
+                          <div className="px-1 py-1 min-w-[160px]">
+                            <p className="font-semibold text-sm">{room.guestName}</p>
+                            <p className="text-tiny text-default-400 mb-2">
+                              {ROOM_LABEL[room.type]} · Rum {room.number} · Vån {room.floor}
+                            </p>
+                            <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-tiny">
+                              <span className="text-default-400">Incheckning</span>
+                              <span className="font-medium">{room.checkIn ? fmtShort(room.checkIn) : '–'}</span>
+                              <span className="text-default-400">Utcheckning</span>
+                              <span className="font-medium">{room.checkOut ? fmtShort(room.checkOut) : '–'}</span>
+                              <span className="text-default-400">Nätter</span>
+                              <span className="font-medium">{nights}</span>
+                            </div>
+                          </div>
                         }
                       >
-                        <span
+                        <button
+                          onClick={() => onRoomClick?.(room)}
                           className={[
-                            'text-[11px] font-semibold truncate leading-none',
-                            colors.text,
+                            'absolute top-3 bottom-3 flex items-center px-2.5 rounded-lg shadow-sm',
+                            'transition-all hover:brightness-105 hover:shadow-md active:scale-[0.99]',
+                            colors.bg,
                           ].join(' ')}
+                          style={{
+                            left:  `calc(${(bar.col / view.days) * 100}% + 2px)`,
+                            width: `calc(${(bar.span / view.days) * 100}% - 4px)`,
+                          }}
                         >
-                          {room.guestName}
-                        </span>
-                      </button>
+                          <span
+                            className={[
+                              'text-[11px] font-semibold truncate leading-none',
+                              colors.text,
+                            ].join(' ')}
+                          >
+                            {room.guestName}
+                          </span>
+                        </button>
+                      </Tooltip>
                     )}
                   </div>
                 </div>
