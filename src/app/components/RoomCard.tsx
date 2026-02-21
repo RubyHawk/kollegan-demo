@@ -1,6 +1,5 @@
 'use client';
 
-import { Card, CardBody, Chip } from '@heroui/react';
 import { Room } from '@/lib/types';
 import { getRoomMeta, AMENITY_ICONS, AmenityDef } from '@/lib/roomMeta';
 
@@ -10,22 +9,34 @@ interface Props {
   animDelay?: number;
 }
 
+const STATUS_ACCENT: Record<string, string> = {
+  available: 'border-l-emerald-500',
+  locked:    'border-l-amber-400',
+  booked:    'border-l-indigo-400',
+};
+
+const STATUS_DOT: Record<string, string> = {
+  available: 'bg-emerald-500',
+  locked:    'bg-amber-400',
+  booked:    'bg-indigo-400',
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  available: 'Ledigt',
+  locked:    'Reserveras',
+  booked:    'Bokat',
+};
+
+const STATUS_TEXT: Record<string, string> = {
+  available: 'text-emerald-700 dark:text-emerald-400',
+  locked:    'text-amber-700 dark:text-amber-400',
+  booked:    'text-indigo-700 dark:text-indigo-400',
+};
+
 function AmenityIcon({ amenity }: { amenity: AmenityDef }) {
   return (
-    <div
-      title={amenity.label}
-      className="flex items-center justify-center w-7 h-7 rounded-md bg-white/50 dark:bg-white/8 border border-white/40 dark:border-white/12 text-[var(--text-muted)]"
-    >
-      <svg
-        width="13"
-        height="13"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
+    <div title={amenity.label} className="text-[var(--text-muted)]">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d={AMENITY_ICONS[amenity.key]} />
       </svg>
     </div>
@@ -33,159 +44,87 @@ function AmenityIcon({ amenity }: { amenity: AmenityDef }) {
 }
 
 export default function RoomCard({ room, onClick, animDelay }: Props) {
-  const isAvailable = room.status === 'available';
   const isLocked = room.status === 'locked';
   const isBooked = room.status === 'booked';
   const meta = getRoomMeta(room.id, room.type);
 
-  const TYPE_LABELS: Record<string, string> = {
-    Enkel: 'Enkelt rum',
-    Dubbel: 'Dubbelrum',
-    Svit: 'Svit',
-  };
-
-  const cardClasses = [
-    'relative w-full text-left transition-all duration-300 cursor-pointer stagger-in',
-    'glass-panel border',
-    isAvailable &&
-      'hover:shadow-glow-emerald hover:border-emerald-300/60 dark:hover:border-emerald-600/50 hover:-translate-y-0.5',
-    isBooked &&
-      'hover:shadow-glow-indigo hover:border-indigo-300/60 dark:hover:border-indigo-600/50 hover:-translate-y-0.5',
-    isLocked &&
-      '!bg-amber-50/70 dark:!bg-amber-900/15 !border-amber-300/60 dark:!border-amber-700/40 room-locked',
-    room.type === 'Svit' && isAvailable && 'border-amber-200/60 dark:border-amber-700/30',
-  ]
-    .filter(Boolean)
-    .join(' ');
-
   return (
-    <Card
-      isPressable={!isLocked}
-      isHoverable={!isLocked}
-      isDisabled={isLocked}
-      shadow="none"
-      onPress={() => onClick?.(room)}
-      className={cardClasses}
+    <button
+      onClick={() => !isLocked && onClick?.(room)}
+      disabled={isLocked}
+      className={[
+        'group relative w-full text-left rounded-xl border-l-[3px] border border-[var(--border)] stagger-in',
+        'bg-[var(--surface)] dark:bg-[var(--surface)]',
+        'transition-all duration-200',
+        !isLocked && 'hover:shadow-md hover:-translate-y-px hover:border-[var(--border)] cursor-pointer',
+        isLocked && 'cursor-default opacity-80 room-locked',
+        STATUS_ACCENT[room.status] ?? 'border-l-[var(--border)]',
+        room.type === 'Svit' && 'overflow-hidden',
+      ].filter(Boolean).join(' ')}
       style={animDelay !== undefined ? { animationDelay: `${animDelay}ms` } : undefined}
-      radius="lg"
     >
-      <CardBody className="p-5">
-        {/* Svit shimmer overlay */}
-        {room.type === 'Svit' && (
-          <div className="absolute inset-0 pointer-events-none rounded-xl overflow-hidden">
-            <div className="absolute inset-0 svit-shimmer" />
-          </div>
-        )}
+      {/* Svit: subtle top shimmer only */}
+      {room.type === 'Svit' && (
+        <div className="absolute top-0 inset-x-0 h-0.5 svit-shimmer pointer-events-none" />
+      )}
 
-        {/* Top row: status chip + type badge */}
-        <div className="flex items-center justify-between mb-3">
-          {isAvailable && (
-            <Chip
-              size="sm"
-              color="success"
-              variant="dot"
-              classNames={{
-                base: 'bg-emerald-50/70 dark:bg-emerald-900/20 border-emerald-200/60 dark:border-emerald-800/40',
-                content: 'text-emerald-700 dark:text-emerald-400 font-semibold text-[10px] uppercase tracking-wider',
-              }}
-            >
-              Ledigt
-            </Chip>
-          )}
-          {isLocked && (
-            <Chip
-              size="sm"
-              color="warning"
-              variant="dot"
-              classNames={{
-                base: 'bg-amber-50/70 dark:bg-amber-900/20 border-amber-200/60 dark:border-amber-800/40',
-                content: 'text-amber-700 dark:text-amber-400 font-semibold text-[10px] uppercase tracking-wider',
-              }}
-            >
-              Reserveras
-            </Chip>
-          )}
-          {isBooked && (
-            <Chip
-              size="sm"
-              color="secondary"
-              variant="dot"
-              classNames={{
-                base: 'bg-indigo-50/70 dark:bg-indigo-900/20 border-indigo-200/60 dark:border-indigo-800/40',
-                content: 'text-indigo-700 dark:text-indigo-400 font-semibold text-[10px] uppercase tracking-wider',
-              }}
-            >
-              Bokat
-            </Chip>
-          )}
-          <div
-            className={[
-              'px-2 py-0.5 rounded-md text-[10px] font-semibold',
-              room.type === 'Svit'
-                ? 'bg-amber-100/80 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                : 'bg-white/50 dark:bg-white/8 text-[var(--text-secondary)] border border-white/40 dark:border-white/12',
-            ].join(' ')}
-          >
+      <div className="px-3.5 py-3">
+        {/* Row 1: room number + type tag */}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <span className="font-heading text-2xl font-bold text-[var(--text-primary)] leading-none">
+            {room.id}
+          </span>
+          <span className={[
+            'text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded mt-0.5 shrink-0',
+            room.type === 'Svit'
+              ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+              : 'bg-[var(--surface-alt)] text-[var(--text-muted)] border border-[var(--border-light)]',
+          ].join(' ')}>
             {room.type}
-          </div>
+          </span>
         </div>
 
-        {/* Room number (large serif) */}
-        <div className="font-heading text-4xl font-bold text-[var(--text-primary)] leading-none mb-0.5">
-          {room.id}
-        </div>
-        <div className="text-xs font-medium text-[var(--text-secondary)] mb-3">
-          {TYPE_LABELS[room.type] ?? room.type} · Våning {room.floor}
-        </div>
-
-        {/* Fixed-height info slot */}
-        <div className="mb-3 min-h-[2.25rem]">
-          {isBooked ? (
+        {/* Row 2: status dot + label + guest name if booked */}
+        <div className="flex items-center gap-1.5 mb-2.5">
+          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[room.status]}`} />
+          <span className={`text-[11px] font-semibold ${STATUS_TEXT[room.status]}`}>
+            {STATUS_LABEL[room.status]}
+          </span>
+          {isBooked && room.guestName && (
             <>
-              <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
-                {room.guestName ?? 'Bokad'}
-              </p>
-              {room.checkIn && room.checkOut && (
-                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                  {formatDateShort(room.checkIn)} — {formatDateShort(room.checkOut)}
-                </p>
-              )}
+              <span className="text-[var(--border)] text-[11px]">·</span>
+              <span className="text-[11px] text-[var(--text-secondary)] truncate">{room.guestName}</span>
             </>
-          ) : (
-            <p className="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-2">
-              {meta.description}
-            </p>
+          )}
+          {isBooked && room.checkIn && room.checkOut && (
+            <>
+              <span className="text-[var(--border)] text-[11px] hidden sm:inline">·</span>
+              <span className="text-[11px] text-[var(--text-muted)] hidden sm:inline">
+                {formatDateShort(room.checkIn)}–{formatDateShort(room.checkOut)}
+              </span>
+            </>
           )}
         </div>
 
-        {/* Bottom row: amenity icons + price */}
-        <div className="flex items-center justify-between pt-3 border-t border-white/30 dark:border-white/8">
-          <div className="flex items-center gap-1">
+        {/* Row 3: amenities + price + size */}
+        <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-[var(--border-light)]">
+          <div className="flex items-center gap-1.5">
             {meta.amenities.slice(0, 3).map((a) => (
               <AmenityIcon key={a.key} amenity={a} />
             ))}
             {meta.amenities.length > 3 && (
-              <span className="text-[10px] text-[var(--text-muted)] ml-0.5">
-                +{meta.amenities.length - 3}
-              </span>
+              <span className="text-[10px] text-[var(--text-muted)]">+{meta.amenities.length - 3}</span>
             )}
           </div>
-          <div className="text-right">
+          <div className="flex items-baseline gap-1 shrink-0">
             <span className="text-xs font-semibold text-[var(--text-primary)]">
               {meta.price.toLocaleString('sv-SE')} kr
             </span>
-            <span className="text-[10px] text-[var(--text-muted)]">/natt</span>
+            <span className="text-[10px] text-[var(--text-muted)]">· {meta.size}m²</span>
           </div>
         </div>
-
-        {/* Size + view */}
-        <div className="flex items-center gap-1 mt-1.5">
-          <span className="text-xs text-[var(--text-secondary)]">{meta.size} m²</span>
-          <span className="text-xs text-[var(--text-muted)]">·</span>
-          <span className="text-xs text-[var(--text-secondary)]">{meta.view}</span>
-        </div>
-      </CardBody>
-    </Card>
+      </div>
+    </button>
   );
 }
 
