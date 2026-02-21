@@ -16,6 +16,15 @@ export interface Room {
   calendarEventId?: string;
 }
 
+export interface CRMContact {
+  name?: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  notes?: string;
+  summary?: string;
+}
+
 export interface ActivityEvent {
   id: string;
   timestamp: string;
@@ -26,9 +35,11 @@ export interface ActivityEvent {
     | 'room_locked'
     | 'room_confirmed'
     | 'room_cancelled'
+    | 'crm_contact'
     | 'info';
   message: string;
   roomId?: string;
+  metadata?: CRMContact;
 }
 
 export interface SSEMessage {

@@ -296,3 +296,8 @@ export function logRoomsQueried(): void {
     message: 'Receptionen frågade efter tillgängliga rum.',
   });
 }
+
+export function logActivity(event: Omit<ActivityEvent, 'id' | 'timestamp'>): ActivityEvent {
+  const store = getStore();
+  return addActivity(store, event);
+}
