@@ -1,238 +1,23 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Room, ActivityEvent, SSEMessage } from '@/lib/types';
+
 import HotelGrid from '@/app/components/HotelGrid';
 import BookingsCalendar from '@/app/components/BookingsCalendar';
 import ActivityLog from '@/app/components/ActivityLog';
-import CallIndicator from '@/app/components/CallIndicator';
 import KolleganContact from '@/app/components/KolleganContact';
 import RoomDetailModal from '@/app/components/RoomDetailModal';
 import HotelInfoTab from '@/app/components/HotelInfoTab';
 import CRMTab from '@/app/components/CRMTab';
-import ThemeToggle from '@/app/components/ThemeToggle';
+import AnimatedNumber from '@/app/components/AnimatedNumber';
+import SplashScreen from '@/app/components/SplashScreen';
+import DashboardHeader from '@/app/components/DashboardHeader';
+import DashboardSidebar from '@/app/components/DashboardSidebar';
+import StatSummaryCards from '@/app/components/StatSummaryCards';
+import ToastContainer, { Toast } from '@/app/components/ToastContainer';
 
 type Tab = 'available' | 'booked' | 'activity' | 'hotel-info' | 'crm';
-
-/* ───── Mini activity card config ───── */
-const MINI_ACTIVITY = {
-  call_started: {
-    icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-      </svg>
-    ),
-    badge: 'bg-[var(--surface-alt)] text-[var(--text-muted)]',
-    accent: 'border-l-[var(--border)]',
-  },
-  call_ended: {
-    icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
-        <line x1="1" y1="1" x2="23" y2="23" />
-      </svg>
-    ),
-    badge: 'bg-[var(--surface-alt)] text-[var(--text-muted)]',
-    accent: 'border-l-[var(--border)]',
-  },
-  rooms_queried: {
-    icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="11" cy="11" r="8" />
-        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-      </svg>
-    ),
-    badge: 'bg-[var(--surface-alt)] text-[var(--text-muted)]',
-    accent: 'border-l-[var(--border)]',
-  },
-  room_locked: {
-    icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-      </svg>
-    ),
-    badge: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
-    accent: 'border-l-amber-400',
-  },
-  room_confirmed: {
-    icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-        <polyline points="22 4 12 14.01 9 11.01" />
-      </svg>
-    ),
-    badge: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
-    accent: 'border-l-emerald-400',
-  },
-  room_cancelled: {
-    icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <line x1="15" y1="9" x2="9" y2="15" />
-        <line x1="9" y1="9" x2="15" y2="15" />
-      </svg>
-    ),
-    badge: 'bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400',
-    accent: 'border-l-red-400',
-  },
-  crm_contact: {
-    icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-    badge: 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400',
-    accent: 'border-l-violet-400',
-  },
-  info: {
-    icon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 16v-4M12 8h.01" />
-      </svg>
-    ),
-    badge: 'bg-[var(--surface-alt)] text-[var(--text-muted)]',
-    accent: 'border-l-[var(--border)]',
-  },
-};
-
-/* ───── Animated number counter ───── */
-function AnimatedNumber({ value, duration = 600 }: { value: number; duration?: number }) {
-  const [display, setDisplay] = useState(0);
-  const prevRef = useRef(0);
-
-  useEffect(() => {
-    const from = prevRef.current;
-    const to = value;
-    if (from === to) return;
-
-    const start = performance.now();
-    let raf: number;
-
-    const step = (now: number) => {
-      const t = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setDisplay(Math.round(from + (to - from) * eased));
-      if (t < 1) {
-        raf = requestAnimationFrame(step);
-      } else {
-        prevRef.current = to;
-      }
-    };
-
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [value, duration]);
-
-  return <>{display}</>;
-}
-
-/* ───── Splash Screen ───── */
-function SplashScreen({ onDone }: { onDone: () => void }) {
-  const [exiting, setExiting] = useState(false);
-
-  useEffect(() => {
-    const holdTimer = setTimeout(() => setExiting(true), 2000);
-    const doneTimer = setTimeout(() => onDone(), 2500);
-    return () => {
-      clearTimeout(holdTimer);
-      clearTimeout(doneTimer);
-    };
-  }, [onDone]);
-
-  return (
-    <div
-      className={[
-        'fixed inset-0 z-[100] flex items-center justify-center bg-[var(--page-bg)]',
-        exiting ? 'splash-exit' : 'splash-enter',
-      ].join(' ')}
-    >
-      <div className="flex flex-col items-center gap-5">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg splash-icon-pulse">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 21h18" />
-            <path d="M5 21V7l7-4 7 4v14" />
-            <path d="M9 21v-4h6v4" />
-            <path d="M9 9h1" />
-            <path d="M14 9h1" />
-            <path d="M9 13h1" />
-            <path d="M14 13h1" />
-          </svg>
-        </div>
-        <div className="text-center">
-          <h1 className="font-heading text-3xl font-bold text-[var(--text-primary)]">
-            Grand Hotel Kollegan
-          </h1>
-          <p className="text-[var(--text-muted)] text-sm mt-1.5">Storgatan 1, Stockholm</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ───── Nav items config ───── */
-const NAV_ITEMS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-  {
-    key: 'available',
-    label: 'Rum',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8" />
-        <path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
-        <path d="M12 4v6" />
-        <path d="M2 18h20" />
-      </svg>
-    ),
-  },
-  {
-    key: 'booked',
-    label: 'Bokningar',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-        <line x1="16" y1="2" x2="16" y2="6" />
-        <line x1="8" y1="2" x2="8" y2="6" />
-        <line x1="3" y1="10" x2="21" y2="10" />
-      </svg>
-    ),
-  },
-  {
-    key: 'activity',
-    label: 'Aktivitet',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-      </svg>
-    ),
-  },
-  {
-    key: 'hotel-info',
-    label: 'Hotellinfo',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 16v-4" />
-        <path d="M12 8h.01" />
-      </svg>
-    ),
-  },
-  {
-    key: 'crm',
-    label: 'CRM',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-];
 
 export default function HomePage() {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -246,6 +31,17 @@ export default function HomePage() {
   const [hotelServiceCount, setHotelServiceCount] = useState(0);
   const [crmCount, setCrmCount] = useState(0);
   const [focusEventId, setFocusEventId] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  /* ── Toast helpers ── */
+  const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
+    const id = Math.random().toString(36).slice(2, 9);
+    setToasts((prev) => [...prev.slice(-2), { id, ...toast }]);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   /* ── SSE ── */
   useEffect(() => {
@@ -271,14 +67,70 @@ export default function HomePage() {
         setRooms((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
         setSelectedRoom((prev) => (prev?.id === updated.id ? updated : prev));
       } else if (msg.type === 'activity') {
-        setActivities((prev) => [msg.payload as ActivityEvent, ...prev].slice(0, 50));
+        const activity = msg.payload as ActivityEvent;
+        setActivities((prev) => [activity, ...prev].slice(0, 50));
+
+        if (activity.type === 'room_confirmed') {
+          addToast({
+            message: `Rum ${activity.roomId ?? ''} bokad`,
+            color: 'emerald',
+            icon: (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            ),
+          });
+        } else if (activity.type === 'room_cancelled') {
+          addToast({
+            message: `Rum ${activity.roomId ?? ''} avbokad`,
+            color: 'red',
+            icon: (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+              </svg>
+            ),
+          });
+        } else if (activity.type === 'room_locked') {
+          addToast({
+            message: `Rum ${activity.roomId ?? ''} reserveras...`,
+            color: 'amber',
+            icon: (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            ),
+          });
+        }
       } else if (msg.type === 'call_status') {
-        setOnCall((msg.payload as { onCall: boolean }).onCall);
+        const { onCall: newOnCall } = msg.payload as { onCall: boolean };
+        setOnCall(newOnCall);
+        addToast(
+          newOnCall
+            ? {
+                message: 'Inkommande samtal',
+                color: 'indigo',
+                icon: (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                ),
+              }
+            : {
+                message: 'Samtal avslutat',
+                color: 'gray',
+                icon: (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
+                    <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ),
+              }
+        );
       }
     };
 
     return () => es.close();
-  }, []);
+  }, [addToast]);
 
   const handleReset = useCallback(async () => {
     await fetch('/api/rooms', { method: 'DELETE' });
@@ -291,10 +143,19 @@ export default function HomePage() {
 
   const handleSplashDone = useCallback(() => setShowSplash(false), []);
 
+  const handleActivityClick = useCallback((eventId: string) => {
+    setActiveTab('activity');
+    setFocusEventId(eventId);
+  }, []);
+
+  /* ── Derived counts ── */
   const availableCount = rooms.filter((r) => r.status === 'available').length;
   const bookedCount = rooms.filter((r) => r.status === 'booked').length;
   const lockedCount = rooms.filter((r) => r.status === 'locked').length;
-  const occupancy = rooms.length > 0 ? Math.round(((bookedCount + lockedCount) / rooms.length) * 100) : 0;
+  const occupancy =
+    rooms.length > 0
+      ? Math.round(((bookedCount + lockedCount) / rooms.length) * 100)
+      : 0;
 
   const tabCounts: Record<Tab, number> = {
     available: availableCount + lockedCount,
@@ -306,293 +167,77 @@ export default function HomePage() {
 
   return (
     <>
-      {/* ───── Splash Screen ───── */}
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
 
       <div className="min-h-screen grid grid-rows-[auto_1fr_auto]">
         {/* ═══════ HEADER ═══════ */}
-        <header className="bg-[var(--surface)] border-b border-[var(--border)] relative z-30">
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between gap-4">
-              {/* Left: logo + name */}
-              <div className="flex items-center gap-3">
-                {/* Mobile hamburger */}
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="lg:hidden p-1.5 rounded-lg hover:bg-[var(--surface-alt)] transition-colors"
-                  aria-label="Meny"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {mobileMenuOpen ? (
-                      <>
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </>
-                    ) : (
-                      <>
-                        <line x1="3" y1="12" x2="21" y2="12" />
-                        <line x1="3" y1="6" x2="21" y2="6" />
-                        <line x1="3" y1="18" x2="21" y2="18" />
-                      </>
-                    )}
-                  </svg>
-                </button>
+        <DashboardHeader
+          onCall={onCall}
+          connected={connected}
+          onReset={handleReset}
+          onToggleMobileMenu={() => setMobileMenuOpen((v) => !v)}
+          mobileMenuOpen={mobileMenuOpen}
+          availableCount={availableCount}
+          bookedCount={bookedCount}
+          lockedCount={lockedCount}
+          occupancy={occupancy}
+          hasData={rooms.length > 0}
+        />
 
-                <div className="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center shrink-0">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 21h18" />
-                    <path d="M5 21V7l7-4 7 4v14" />
-                    <path d="M9 21v-4h6v4" />
-                    <path d="M9 9h1" />
-                    <path d="M14 9h1" />
-                    <path d="M9 13h1" />
-                    <path d="M14 13h1" />
-                  </svg>
-                </div>
-                <div className="hidden sm:block">
-                  <h1 className="font-heading text-[17px] font-semibold tracking-wide text-[var(--text-primary)] leading-tight">
-                    Grand Hotel Kollegan
-                  </h1>
-                  <p className="text-[var(--text-muted)] text-[11px] mt-0.5">
-                    Storgatan 1, Stockholm
-                  </p>
-                </div>
-              </div>
-
-              {/* Center: stat summary */}
-              {rooms.length > 0 && (
-                <div className="hidden md:flex items-center text-xs">
-                  <div className="flex items-center gap-1.5 px-4">
-                    <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={availableCount} /></span>
-                    <span className="text-[var(--text-muted)]">lediga</span>
-                  </div>
-                  <div className="w-px h-3.5 bg-[var(--border)]" />
-                  <div className="flex items-center gap-1.5 px-4">
-                    <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={lockedCount} /></span>
-                    <span className="text-[var(--text-muted)]">reserverade</span>
-                  </div>
-                  <div className="w-px h-3.5 bg-[var(--border)]" />
-                  <div className="flex items-center gap-1.5 px-4">
-                    <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={bookedCount} /></span>
-                    <span className="text-[var(--text-muted)]">bokade</span>
-                  </div>
-                  <div className="w-px h-3.5 bg-[var(--border)]" />
-                  <div className="flex items-center gap-2 px-4">
-                    <div className="w-16 h-1 bg-[var(--surface-alt)] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-amber-500 bar-grow"
-                        style={{ width: `${occupancy}%` }}
-                      />
-                    </div>
-                    <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={occupancy} />%</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Right: status + controls */}
-              <div className="flex items-center gap-2">
-                <CallIndicator onCall={onCall} />
-
-                <div className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                  <div className={['w-1.5 h-1.5 rounded-full', connected ? 'bg-emerald-500' : 'bg-red-400'].join(' ')} />
-                  {connected ? 'Live' : 'Offline'}
-                </div>
-
-                <div className="hidden sm:block w-px h-4 bg-[var(--border)]" />
-
-                <button
-                  onClick={handleReset}
-                  className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg px-2.5 py-1.5 transition-all hover:bg-[var(--surface-hover)] active:scale-95"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="1 4 1 10 7 10" />
-                    <path d="M3.51 15a9 9 0 1 0 .49-3.15" />
-                  </svg>
-                  <span className="hidden sm:inline">Återställ</span>
-                </button>
-
-                <ThemeToggle />
-              </div>
-            </div>
-          </div>
-          {/* Decorative gradient line */}
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
-        </header>
-
-        {/* ═══════ BODY: Sidebar + Main ═══════ */}
+        {/* ═══════ BODY ═══════ */}
         <div className="flex relative">
-          {/* ── Mobile menu overlay ── */}
+          {/* Mobile overlay */}
           {mobileMenuOpen && (
             <div
-              className="fixed inset-0 bg-black/30 z-30 lg:hidden"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 lg:hidden"
               onClick={() => setMobileMenuOpen(false)}
             />
           )}
 
-          {/* ── Sidebar ── */}
-          <aside
-            className={[
-              'w-64 shrink-0 bg-[var(--surface)] border-r border-[var(--border)] flex flex-col z-40',
-              // Mobile: fixed slide-in, Desktop: sticky
-              'fixed lg:sticky top-0 lg:top-0 h-screen lg:h-auto lg:max-h-[calc(100vh-65px)] overflow-y-auto',
-              'transition-transform duration-300 lg:translate-x-0',
-              mobileMenuOpen ? 'translate-x-0' : '-translate-x-full',
-            ].join(' ')}
-          >
-            {/* Nav */}
-            <nav className="px-4 pt-5 pb-3 space-y-1">
-              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-widest px-3 mb-3">Navigation</p>
-              {NAV_ITEMS.map((item) => (
-                <button
-                  key={item.key}
-                  onClick={() => {
-                    setActiveTab(item.key);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={[
-                    'w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all active:scale-[0.97]',
-                    activeTab === item.key
-                      ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50'
-                      : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]',
-                  ].join(' ')}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                  <span
-                    className={[
-                      'ml-auto text-xs px-2 py-0.5 rounded-full min-w-[24px] text-center tabular-nums',
-                      activeTab === item.key
-                        ? 'bg-amber-200/60 dark:bg-amber-800/40 text-amber-800 dark:text-amber-300'
-                        : 'bg-[var(--surface-alt)] text-[var(--text-muted)]',
-                    ].join(' ')}
-                  >
-                    {tabCounts[item.key]}
-                  </span>
-                </button>
-              ))}
-            </nav>
+          {/* Sidebar */}
+          <DashboardSidebar
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabCounts={tabCounts}
+            activities={activities}
+            mobileMenuOpen={mobileMenuOpen}
+            onActivityClick={handleActivityClick}
+            onMobileClose={() => setMobileMenuOpen(false)}
+          />
 
-            {/* Divider */}
-            <div className="mx-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
-
-            {/* Room type legend */}
-            <div className="px-4 py-5">
-              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-widest px-3 mb-4">Rumstyper</p>
-              <div className="space-y-3 px-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center text-xs font-bold text-[var(--text-secondary)] shrink-0">1</div>
-                  <div>
-                    <p className="text-xs font-semibold text-[var(--text-primary)]">Enkelt rum</p>
-                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">1 495 kr/natt</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center text-xs font-bold text-[var(--text-secondary)] shrink-0">2</div>
-                  <div>
-                    <p className="text-xs font-semibold text-[var(--text-primary)]">Dubbelrum</p>
-                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">2 495 kr/natt</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs font-bold text-amber-700 dark:text-amber-400 shrink-0">S</div>
-                  <div>
-                    <p className="text-xs font-semibold text-[var(--text-primary)]">Svit</p>
-                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">3 995 kr/natt</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="mx-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
-
-            {/* Mini activity card (sidebar) */}
-            <div className="px-4 pb-4">
-              {/* Card wrapper */}
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-hidden">
-                {/* Card header */}
-                <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--border)] bg-[var(--surface-alt)]/60">
-                  <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest">
-                    Senaste händelser
-                  </p>
-                  {activeTab !== 'activity' && (
-                    <button
-                      onClick={() => setActiveTab('activity')}
-                      className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline font-medium"
-                    >
-                      Visa alla
-                    </button>
-                  )}
-                </div>
-
-                {/* Event rows */}
-                {activities.length === 0 ? (
-                  <p className="text-[11px] text-[var(--text-muted)] py-4 text-center">Inga händelser än</p>
-                ) : (
-                  <div>
-                    {activities.slice(0, 4).map((event: ActivityEvent) => {
-                      const cfg = MINI_ACTIVITY[event.type as keyof typeof MINI_ACTIVITY] ?? MINI_ACTIVITY.info;
-                      return (
-                        <button
-                          key={event.id}
-                          onClick={() => {
-                            setActiveTab('activity');
-                            setFocusEventId(event.id);
-                            setMobileMenuOpen(false);
-                          }}
-                          className={[
-                            'w-full text-left flex items-center gap-2.5 px-3 py-2.5',
-                            'border-l-[3px]',
-                            'border-b border-[var(--border)] last:border-b-0',
-                            'hover:bg-[var(--surface-alt)] transition-colors cursor-pointer active:scale-[0.98]',
-                            cfg.accent,
-                          ].join(' ')}
-                        >
-                          {/* Icon badge */}
-                          <div className={['w-5 h-5 rounded-md flex items-center justify-center shrink-0', cfg.badge].join(' ')}>
-                            {cfg.icon}
-                          </div>
-                          {/* Message */}
-                          <p className="flex-1 min-w-0 text-[11px] text-[var(--text-secondary)] font-medium line-clamp-1 leading-tight">
-                            {event.message}
-                          </p>
-                          {/* Time */}
-                          <span className="text-[10px] text-[var(--text-muted)] tabular-nums font-mono shrink-0">
-                            {new Date(event.timestamp).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Spacer */}
-            <div className="flex-1" />
-          </aside>
-
-          {/* ── Main content ── */}
+          {/* Main */}
           <main className="flex-1 min-w-0 p-6">
-            {/* ── Mobile stat chips (visible below md) ── */}
+            {/* Mobile stat row */}
             {rooms.length > 0 && (
               <div className="flex md:hidden items-center gap-2 flex-wrap mb-4 text-xs text-[var(--text-muted)]">
-                <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={availableCount} /></span> lediga
-                <span>·</span>
-                <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={lockedCount} /></span> res.
-                <span>·</span>
-                <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={bookedCount} /></span> bokade
-                <span>·</span>
-                <span className="font-semibold text-[var(--text-primary)]"><AnimatedNumber value={occupancy} />%</span>
+                <span className="font-semibold text-[var(--text-primary)]">
+                  <AnimatedNumber value={availableCount} />
+                </span>{' '}
+                lediga <span>·</span>
+                <span className="font-semibold text-[var(--text-primary)]">
+                  <AnimatedNumber value={lockedCount} />
+                </span>{' '}
+                res. <span>·</span>
+                <span className="font-semibold text-[var(--text-primary)]">
+                  <AnimatedNumber value={bookedCount} />
+                </span>{' '}
+                bokade <span>·</span>
+                <span className="font-semibold text-[var(--text-primary)]">
+                  <AnimatedNumber value={occupancy} />%
+                </span>
               </div>
             )}
 
-            {/* ── Loading (Skeleton) ── */}
+            {/* Loading skeleton */}
             {rooms.length === 0 && (
               <div className="space-y-6 py-4">
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {[0, 1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="rounded-2xl border border-[var(--border)] p-5 space-y-3 fade-in-up" style={{ animationDelay: `${i * 60}ms` }}>
+                    <div
+                      key={i}
+                      className="rounded-2xl border border-[var(--border)] p-5 space-y-3 fade-in-up glass-panel"
+                      style={{ animationDelay: `${i * 60}ms` }}
+                    >
                       <div className="flex justify-between">
                         <div className="h-7 w-12 skeleton" />
                         <div className="h-7 w-7 rounded-lg skeleton" />
@@ -602,25 +247,34 @@ export default function HomePage() {
                     </div>
                   ))}
                 </div>
-                <p className="text-center text-sm text-[var(--text-muted)] mt-4">Ansluter till realtidsström...</p>
+                <p className="text-center text-sm text-[var(--text-muted)] mt-4">
+                  Ansluter till realtidsström...
+                </p>
               </div>
             )}
 
-            {/* ── Available Tab ── */}
+            {/* Available tab */}
             {rooms.length > 0 && activeTab === 'available' && (
               <div key="available" className="tab-content-enter">
+                <StatSummaryCards
+                  availableCount={availableCount}
+                  lockedCount={lockedCount}
+                  bookedCount={bookedCount}
+                  occupancy={occupancy}
+                  totalRooms={rooms.length}
+                />
                 <HotelGrid rooms={rooms} onRoomClick={handleRoomClick} />
               </div>
             )}
 
-            {/* ── Booked Tab ── */}
+            {/* Booked tab */}
             {rooms.length > 0 && activeTab === 'booked' && (
               <div key="booked" className="tab-content-enter">
                 <BookingsCalendar rooms={rooms} onRoomClick={handleRoomClick} />
               </div>
             )}
 
-            {/* ── Activity Tab ── */}
+            {/* Activity tab */}
             {rooms.length > 0 && activeTab === 'activity' && (
               <div key="activity" className="tab-content-enter">
                 <ActivityLog
@@ -631,14 +285,14 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* ── Hotellinfo Tab ── */}
+            {/* Hotel info tab */}
             {activeTab === 'hotel-info' && (
               <div key="hotel-info" className="tab-content-enter">
                 <HotelInfoTab onCountChange={setHotelServiceCount} />
               </div>
             )}
 
-            {/* ── CRM Tab ── */}
+            {/* CRM tab */}
             {activeTab === 'crm' && (
               <div key="crm" className="tab-content-enter">
                 <CRMTab activities={activities} onCountChange={setCrmCount} />
@@ -648,24 +302,23 @@ export default function HomePage() {
         </div>
 
         {/* ═══════ FOOTER ═══════ */}
-        <footer className="border-t border-[var(--border)] bg-[var(--surface)]">
-          <div className="px-6 py-6">
+        <footer className="glass-header border-t border-white/40 dark:border-white/8">
+          <div className="px-6 py-5">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shrink-0">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 21h18" />
-                    <path d="M5 21V7l7-4 7 4v14" />
-                    <path d="M9 21v-4h6v4" />
+                    <path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
                   </svg>
                 </div>
                 <div>
-                  <span className="font-heading text-sm font-semibold text-[var(--text-primary)]">Grand Hotel Kollegan</span>
+                  <span className="font-heading text-sm font-semibold text-[var(--text-primary)]">
+                    Grand Hotel Kollegan
+                  </span>
                   <div className="flex items-center gap-4 mt-0.5">
                     <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                       </svg>
                       Storgatan 1, Stockholm
                     </span>
@@ -678,14 +331,13 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-[var(--text-muted)]">
-                Demo — Powered by Vapi AI
-              </p>
+              <p className="text-xs text-[var(--text-muted)]">Demo — Powered by Vapi AI</p>
             </div>
           </div>
         </footer>
       </div>
 
+      {/* Room modal */}
       {selectedRoom && (
         <RoomDetailModal
           room={selectedRoom}
@@ -694,9 +346,11 @@ export default function HomePage() {
         />
       )}
 
-      {/* ── Draggable Kollegan module ── */}
+      {/* Kollegan widget */}
       <KolleganContact variant="draggable" />
+
+      {/* Toast notifications */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </>
   );
 }
-
