@@ -543,19 +543,22 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
             style={{ cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none' }}
             className={[
               'flex items-center gap-3 px-4 shrink-0',
-              'bg-[var(--surface)] border-b border-[var(--border)]',
-              draggableCollapsed ? 'py-3' : 'py-3.5',
+              'bg-amber-50/60 dark:bg-amber-900/10 border-b-2 border-amber-200 dark:border-amber-800/60',
+              draggableCollapsed ? 'py-2.5' : 'py-3',
             ].join(' ')}
           >
-            {/* Grip */}
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-[var(--border)] shrink-0">
-              <circle cx="8"  cy="5"  r="1.8" />
-              <circle cx="16" cy="5"  r="1.8" />
-              <circle cx="8"  cy="12" r="1.8" />
-              <circle cx="16" cy="12" r="1.8" />
-              <circle cx="8"  cy="19" r="1.8" />
-              <circle cx="16" cy="19" r="1.8" />
-            </svg>
+            {/* Grip zone — clearly labelled */}
+            <div className="flex items-center gap-1.5 shrink-0 bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 rounded-lg px-2 py-1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-amber-500 shrink-0">
+                <circle cx="8"  cy="5"  r="2" />
+                <circle cx="16" cy="5"  r="2" />
+                <circle cx="8"  cy="12" r="2" />
+                <circle cx="16" cy="12" r="2" />
+                <circle cx="8"  cy="19" r="2" />
+                <circle cx="16" cy="19" r="2" />
+              </svg>
+              <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider select-none">Dra</span>
+            </div>
 
             {/* K badge */}
             <div className="relative shrink-0">
