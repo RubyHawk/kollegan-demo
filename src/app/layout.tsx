@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { HeroUIProvider } from '@heroui/react';
 
 export const metadata: Metadata = {
   title: 'Grand Hotel Kollegan — Receptionsöversikt',
@@ -33,7 +34,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <HeroUIProvider>{children}</HeroUIProvider>
+      </body>
     </html>
   );
 }
