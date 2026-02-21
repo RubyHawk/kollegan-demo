@@ -1,13 +1,10 @@
 'use client';
 
 import CallIndicator from './CallIndicator';
-import ThemeToggle from './ThemeToggle';
 import AnimatedNumber from './AnimatedNumber';
 
 interface Props {
   onCall: boolean;
-  connected: boolean;
-  onReset: () => void;
   onToggleMobileMenu: () => void;
   mobileMenuOpen: boolean;
   availableCount: number;
@@ -19,8 +16,6 @@ interface Props {
 
 export default function DashboardHeader({
   onCall,
-  connected,
-  onReset,
   onToggleMobileMenu,
   mobileMenuOpen,
   availableCount,
@@ -86,33 +81,9 @@ export default function DashboardHeader({
           </div>
         )}
 
-        {/* ── Right: controls ── */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* ── Right: call indicator ── */}
+        <div className="shrink-0">
           <CallIndicator onCall={onCall} />
-
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
-            <div className={[
-              'w-1.5 h-1.5 rounded-full transition-colors duration-500',
-              connected ? 'bg-emerald-500' : 'bg-red-400',
-            ].join(' ')} />
-            <span className="font-medium">{connected ? 'Live' : 'Offline'}</span>
-          </div>
-
-          <div className="hidden sm:block w-px h-3.5 bg-[var(--border)]" />
-
-          <button
-            onClick={onReset}
-            title="Återställ data"
-            className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2.5 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/8 transition-all active:scale-95"
-          >
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="1 4 1 10 7 10" />
-              <path d="M3.51 15a9 9 0 1 0 .49-3.15" />
-            </svg>
-            <span className="hidden sm:inline">Återställ</span>
-          </button>
-
-          <ThemeToggle />
         </div>
       </div>
 

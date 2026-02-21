@@ -172,8 +172,6 @@ export default function HomePage() {
         {/* ═══════ HEADER ═══════ */}
         <DashboardHeader
           onCall={onCall}
-          connected={connected}
-          onReset={handleReset}
           onToggleMobileMenu={() => setMobileMenuOpen((v) => !v)}
           mobileMenuOpen={mobileMenuOpen}
           availableCount={availableCount}
@@ -202,6 +200,8 @@ export default function HomePage() {
             mobileMenuOpen={mobileMenuOpen}
             onActivityClick={handleActivityClick}
             onMobileClose={() => setMobileMenuOpen(false)}
+            connected={connected}
+            onReset={handleReset}
           />
 
           {/* Main */}

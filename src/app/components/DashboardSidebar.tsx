@@ -1,6 +1,7 @@
 'use client';
 
 import { ActivityEvent } from '@/lib/types';
+import ThemeToggle from './ThemeToggle';
 
 type Tab = 'available' | 'booked' | 'activity' | 'hotel-info' | 'crm';
 
@@ -152,6 +153,8 @@ interface Props {
   mobileMenuOpen: boolean;
   onActivityClick: (eventId: string) => void;
   onMobileClose: () => void;
+  connected: boolean;
+  onReset: () => void;
 }
 
 export default function DashboardSidebar({
@@ -162,6 +165,8 @@ export default function DashboardSidebar({
   mobileMenuOpen,
   onActivityClick,
   onMobileClose,
+  connected,
+  onReset,
 }: Props) {
   return (
     <aside
@@ -302,6 +307,34 @@ export default function DashboardSidebar({
       </div>
 
       <div className="flex-1" />
+
+      {/* Divider */}
+      <div className="mx-4 h-px bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent" />
+
+      {/* Bottom controls */}
+      <div className="px-4 py-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
+          <div className={[
+            'w-1.5 h-1.5 rounded-full transition-colors duration-500',
+            connected ? 'bg-emerald-500' : 'bg-red-400',
+          ].join(' ')} />
+          <span className="font-medium">{connected ? 'Live' : 'Offline'}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onReset}
+            title="Återställ data"
+            className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 py-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-white/8 transition-all active:scale-95"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 .49-3.15" />
+            </svg>
+            Återställ
+          </button>
+          <ThemeToggle />
+        </div>
+      </div>
     </aside>
   );
 }
