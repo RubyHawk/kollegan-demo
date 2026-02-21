@@ -26,7 +26,7 @@ export default function ThemeToggle({ className }: { className?: string }) {
     <button
       onClick={toggle}
       aria-label={dark ? 'Byt till ljust läge' : 'Byt till mörkt läge'}
-      className={className ?? 'w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--surface)] border border-[var(--border)] hover:border-amber-400 transition-all hover:shadow-sm text-[var(--text-secondary)]'}
+      className={className ?? 'w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--accent)] transition-all hover:shadow-sm text-[var(--text-secondary)]'}
     >
       {dark ? (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

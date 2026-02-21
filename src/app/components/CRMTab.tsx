@@ -223,7 +223,7 @@ function TabBtn({ active, onClick, icon, label, count }: { active: boolean; onCl
       className={[
         'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
         active
-          ? 'bg-amber-500 text-white shadow-sm'
+          ? 'bg-purple-700 dark:bg-amber-500 text-white shadow-sm'
           : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] border border-transparent hover:border-[var(--border)]',
       ].join(' ')}
     >
@@ -240,7 +240,7 @@ function TabBtn({ active, onClick, icon, label, count }: { active: boolean; onCl
 function EmptyState({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle: string }) {
   return (
     <div className="text-center py-20">
-      <div className="w-14 h-14 rounded-2xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center mx-auto mb-4 float-animation text-amber-500">
+      <div className="w-14 h-14 rounded-2xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center mx-auto mb-4 float-animation text-[var(--accent)]">
         {icon}
       </div>
       <p className="text-[var(--text-secondary)] font-medium text-sm">{title}</p>
@@ -271,7 +271,7 @@ function CustomerList({ entries }: { entries: CRMEntry[] }) {
         return (
           <div
             key={entry.id}
-            className="bg-[var(--surface)] border-2 border-[var(--border)] rounded-2xl overflow-hidden activity-item-enter shadow-card hover:shadow-card-hover hover:border-amber-200 dark:hover:border-amber-900/40 transition-all"
+            className="bg-[var(--surface)] border-2 border-[var(--border)] rounded-2xl overflow-hidden activity-item-enter shadow-card hover:shadow-card-hover hover:border-purple-200 dark:hover:border-amber-900/40 transition-all"
             style={{ animationDelay: `${Math.min(ei * 60, 360)}ms` }}
           >
             {/* Card header */}
@@ -288,7 +288,7 @@ function CustomerList({ entries }: { entries: CRMEntry[] }) {
                     {hasContact && (
                       <div className="flex items-center gap-3 flex-wrap mt-1.5">
                         {entry.contact.email && (
-                          <span className="flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400">
+                          <span className="flex items-center gap-1.5 text-[11px] text-purple-700 dark:text-amber-400">
                             {Icon.mail}
                             <a href={`mailto:${entry.contact.email}`} className="hover:underline transition-colors">
                               {entry.contact.email}
@@ -296,7 +296,7 @@ function CustomerList({ entries }: { entries: CRMEntry[] }) {
                           </span>
                         )}
                         {entry.contact.phone && (
-                          <span className="flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400">
+                          <span className="flex items-center gap-1.5 text-[11px] text-purple-700 dark:text-amber-400">
                             {Icon.phone}
                             <a href={`tel:${entry.contact.phone}`} className="hover:underline transition-colors">
                               {entry.contact.phone}
@@ -304,7 +304,7 @@ function CustomerList({ entries }: { entries: CRMEntry[] }) {
                           </span>
                         )}
                         {entry.contact.company && (
-                          <span className="flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400">
+                          <span className="flex items-center gap-1.5 text-[11px] text-purple-700 dark:text-amber-400">
                             {Icon.building}
                             {entry.contact.company}
                           </span>
@@ -316,7 +316,7 @@ function CustomerList({ entries }: { entries: CRMEntry[] }) {
                     <p className="text-xs font-medium text-[var(--text-secondary)]">{fmtDate(entry.timestamp)}</p>
                     <p className="text-[11px] text-[var(--text-muted)] mt-0.5">{fmtTime(entry.timestamp)}</p>
                     {entry.sessionDuration !== undefined && (
-                      <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-full px-2 py-0.5">
+                      <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] text-purple-700 dark:text-amber-400 bg-purple-50 dark:bg-amber-900/20 border border-purple-200 dark:border-amber-800/40 rounded-full px-2 py-0.5">
                         {Icon.clock} {fmtDuration(entry.sessionDuration)}
                       </span>
                     )}
@@ -330,9 +330,9 @@ function CustomerList({ entries }: { entries: CRMEntry[] }) {
               <div className="border-t-2 border-[var(--border)] divide-y-2 divide-[var(--border)]">
                 {entry.bookedRooms.length > 0 && (
                   <div className="flex items-start gap-3 px-5 py-3">
-                    <span className="text-amber-500 shrink-0 mt-0.5">{Icon.bed}</span>
+                    <span className="text-[var(--accent)] dark:text-amber-500 shrink-0 mt-0.5">{Icon.bed}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide mb-1.5">Bokningar</p>
+                      <p className="text-[10px] font-semibold text-purple-700 dark:text-amber-400 uppercase tracking-wide mb-1.5">Bokningar</p>
                       <div className="flex flex-wrap gap-2">
                         {entry.bookedRooms.map((b, bi) => (
                           <span key={bi} className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 rounded-lg px-2.5 py-1">
@@ -348,18 +348,18 @@ function CustomerList({ entries }: { entries: CRMEntry[] }) {
                 )}
                 {entry.contact.summary && (
                   <div className="flex items-start gap-3 px-5 py-3">
-                    <span className="text-amber-500 shrink-0 mt-0.5">{Icon.sparkle}</span>
+                    <span className="text-[var(--accent)] dark:text-amber-500 shrink-0 mt-0.5">{Icon.sparkle}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide mb-1">AI-sammanfattning</p>
+                      <p className="text-[10px] font-semibold text-purple-700 dark:text-amber-400 uppercase tracking-wide mb-1">AI-sammanfattning</p>
                       <p className="text-xs text-[var(--text-secondary)] leading-relaxed italic">{entry.contact.summary}</p>
                     </div>
                   </div>
                 )}
                 {entry.contact.notes && (
                   <div className="flex items-start gap-3 px-5 py-3">
-                    <span className="text-amber-500 shrink-0 mt-0.5">{Icon.note}</span>
+                    <span className="text-[var(--accent)] dark:text-amber-500 shrink-0 mt-0.5">{Icon.note}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide mb-1">Anteckningar</p>
+                      <p className="text-[10px] font-semibold text-purple-700 dark:text-amber-400 uppercase tracking-wide mb-1">Anteckningar</p>
                       <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{entry.contact.notes}</p>
                     </div>
                   </div>
@@ -396,7 +396,7 @@ function BookingLogTab({ activities }: { activities: ActivityEvent[] }) {
         return (
           <div
             key={evt.id}
-            className="flex items-center gap-3.5 rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-3.5 shadow-card activity-item-enter hover:shadow-card-hover hover:border-amber-200/60 dark:hover:border-amber-900/30 transition-all"
+            className="flex items-center gap-3.5 rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-3.5 shadow-card activity-item-enter hover:shadow-card-hover hover:border-purple-200/60 dark:hover:border-amber-900/30 transition-all"
             style={{ animationDelay: `${Math.min(i * 40, 240)}ms` }}
           >
             <div className={[
@@ -455,15 +455,15 @@ function CallLogTab({ activities }: { activities: ActivityEvent[] }) {
       {calls.map((call, i) => (
         <div
           key={call.id}
-          className="flex items-center gap-3.5 rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-3.5 shadow-card activity-item-enter hover:shadow-card-hover hover:border-amber-200/60 dark:hover:border-amber-900/30 transition-all"
+          className="flex items-center gap-3.5 rounded-xl border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-3.5 shadow-card activity-item-enter hover:shadow-card-hover hover:border-purple-200/60 dark:hover:border-amber-900/30 transition-all"
           style={{ animationDelay: `${Math.min(i * 40, 240)}ms` }}
         >
           {/* Icon */}
           <div className={[
             'w-9 h-9 rounded-xl flex items-center justify-center shrink-0',
             call.ongoing
-              ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/60 text-amber-600 dark:text-amber-400'
-              : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 text-amber-500 dark:text-amber-400',
+              ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/60 text-purple-700 dark:text-amber-400'
+              : 'bg-purple-50 dark:bg-amber-900/20 border border-purple-200 dark:border-amber-800/40 text-purple-600 dark:text-amber-400',
           ].join(' ')}>
             {call.ongoing ? (
               <span className="relative flex h-2.5 w-2.5">
@@ -490,7 +490,7 @@ function CallLogTab({ activities }: { activities: ActivityEvent[] }) {
             </div>
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               {call.duration !== undefined && (
-                <span className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <span className="text-[11px] text-purple-700 dark:text-amber-400 flex items-center gap-1">
                   {Icon.clock} {fmtDuration(call.duration)}
                 </span>
               )}
@@ -505,7 +505,7 @@ function CallLogTab({ activities }: { activities: ActivityEvent[] }) {
                 </span>
               )}
               {call.bookedRooms.length > 0 && (
-                <span className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <span className="text-[11px] text-purple-700 dark:text-amber-400 flex items-center gap-1">
                   {Icon.bed} Rum {call.bookedRooms.join(', ')}
                 </span>
               )}
@@ -541,7 +541,7 @@ export default function CRMTab({ activities, onCountChange }: Props) {
           <h2 className="font-heading text-xl font-semibold text-[var(--text-primary)]">Kundregister</h2>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">Kundprofiler, bokningar och samtal via Kollegan</p>
         </div>
-        <span className="text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-full px-3 py-1.5">
+        <span className="text-xs font-medium text-purple-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-full px-3 py-1.5">
           {entries.length} {entries.length === 1 ? 'kund' : 'kunder'}
         </span>
       </div>

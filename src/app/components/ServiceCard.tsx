@@ -147,7 +147,7 @@ export default function ServiceCard({ type, item, onEdit, onDelete, onToggleActi
   return (
     <div
       onClick={() => onEdit(item)}
-      className={`service-card cursor-pointer relative bg-[var(--surface)] border rounded-2xl p-5 transition-all duration-200 hover:shadow-md ${item.isActive ? 'border-[var(--border)] hover:border-amber-200 dark:hover:border-amber-800/50' : 'border-[var(--border)] opacity-60'}`}
+      className={`service-card cursor-pointer relative bg-[var(--surface)] border rounded-2xl p-5 transition-all duration-200 hover:shadow-md ${item.isActive ? 'border-[var(--border)] hover:border-purple-200 dark:hover:border-amber-800/50' : 'border-[var(--border)] opacity-60'}`}
     >
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
