@@ -31,6 +31,12 @@ const ROOM_LABEL: Record<string, string> = {
 };
 
 
+const TYPE_BADGE: Record<string, string> = {
+  Enkel:  'bg-stone-100 dark:bg-stone-800   text-stone-600 dark:text-stone-300',
+  Dubbel: 'bg-stone-200 dark:bg-stone-700   text-stone-700 dark:text-stone-200',
+  Svit:   'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400',
+};
+
 const BAR_COLOR: Record<string, { bg: string; text: string }> = {
   Enkel:  { bg: 'bg-stone-300 dark:bg-stone-600', text: 'text-stone-900 dark:text-stone-100' },
   Dubbel: { bg: 'bg-stone-400 dark:bg-stone-500', text: 'text-stone-950 dark:text-white'     },
