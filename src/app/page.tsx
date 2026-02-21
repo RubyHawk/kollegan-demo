@@ -9,9 +9,10 @@ import CallIndicator from '@/app/components/CallIndicator';
 import KolleganContact from '@/app/components/KolleganContact';
 import RoomDetailModal from '@/app/components/RoomDetailModal';
 import HotelInfoTab from '@/app/components/HotelInfoTab';
+import CRMTab from '@/app/components/CRMTab';
 import ThemeToggle from '@/app/components/ThemeToggle';
 
-type Tab = 'available' | 'booked' | 'activity' | 'hotel-info';
+type Tab = 'available' | 'booked' | 'activity' | 'hotel-info' | 'crm';
 
 /* ───── Mini activity card config ───── */
 const MINI_ACTIVITY = {
@@ -219,6 +220,18 @@ const NAV_ITEMS: { key: Tab; label: string; icon: React.ReactNode }[] = [
       </svg>
     ),
   },
+  {
+    key: 'crm',
+    label: 'CRM',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
 ];
 
 export default function HomePage() {
@@ -231,6 +244,7 @@ export default function HomePage() {
   const [showSplash, setShowSplash] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hotelServiceCount, setHotelServiceCount] = useState(0);
+  const [crmCount, setCrmCount] = useState(0);
   const [focusEventId, setFocusEventId] = useState<string | null>(null);
 
   /* ── SSE ── */
@@ -287,6 +301,7 @@ export default function HomePage() {
     booked: bookedCount,
     activity: activities.length,
     'hotel-info': hotelServiceCount,
+    crm: crmCount,
   };
 
   return (
@@ -620,6 +635,13 @@ export default function HomePage() {
             {activeTab === 'hotel-info' && (
               <div key="hotel-info" className="tab-content-enter">
                 <HotelInfoTab onCountChange={setHotelServiceCount} />
+              </div>
+            )}
+
+            {/* ── CRM Tab ── */}
+            {activeTab === 'crm' && (
+              <div key="crm" className="tab-content-enter">
+                <CRMTab activities={activities} onCountChange={setCrmCount} />
               </div>
             )}
           </main>
