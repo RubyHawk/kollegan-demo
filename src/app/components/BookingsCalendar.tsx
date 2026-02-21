@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Room } from '@/lib/types';
 
 interface Props {
@@ -8,310 +8,673 @@ interface Props {
   onRoomClick?: (room: Room) => void;
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  Enkel: 'Enkelt',
-  Dubbel: 'Dubbel',
-  Svit: 'Svit',
+type View = 'week' | 'month' | '2months';
+type SubTab = 'list' | 'timeline';
+
+const VIEWS: { key: View; label: string; days: number; step: number }[] = [
+  { key: 'week',    label: 'Vecka', days: 7,  step: 7  },
+  { key: 'month',   label: 'Månad', days: 31, step: 14 },
+  { key: '2months', label: '2 mån', days: 62, step: 30 },
+];
+
+// Fixed pixel dimensions
+const COL_W   = 36;  // px per day column
+const LABEL_W = 180; // px for room label column
+const ROW_H   = 52;  // px per room row
+const HEAD1_H = 32;  // month group row height
+const HEAD2_H = 42;  // day number row height
+
+const ROOM_LABEL: Record<string, string> = {
+  Enkel:  'Enkelt rum',
+  Dubbel: 'Dubbelrum',
+  Svit:   'Svit',
 };
 
-// Neutral tones for standard rooms, amber for premium (Svit).
-// Avoids the rainbow problem while keeping rooms distinguishable.
-const ROOM_COLORS: Record<string, { bar: string; text: string; bg: string; border: string }> = {
-  Enkel:  { bar: 'bg-stone-400 dark:bg-stone-500',  text: 'text-[var(--text-secondary)]', bg: 'bg-[var(--surface-alt)]',                             border: 'border-l-stone-300 dark:border-l-stone-500'  },
-  Dubbel: { bar: 'bg-stone-500 dark:bg-stone-400',  text: 'text-[var(--text-secondary)]', bg: 'bg-[var(--surface-alt)]',                             border: 'border-l-stone-400 dark:border-l-stone-400'  },
-  Svit:   { bar: 'bg-amber-500',                    text: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30',              border: 'border-l-amber-400'                           },
+const TYPE_BADGE: Record<string, string> = {
+  Enkel:  'bg-stone-100 dark:bg-stone-800   text-stone-600 dark:text-stone-300',
+  Dubbel: 'bg-stone-200 dark:bg-stone-700   text-stone-700 dark:text-stone-200',
+  Svit:   'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400',
 };
 
-const DAYS_TO_SHOW = 14;
+const BAR_COLOR: Record<string, { bg: string; text: string }> = {
+  Enkel:  { bg: 'bg-stone-300 dark:bg-stone-600', text: 'text-stone-900 dark:text-stone-100' },
+  Dubbel: { bg: 'bg-stone-400 dark:bg-stone-500', text: 'text-stone-950 dark:text-white'     },
+  Svit:   { bg: 'bg-amber-400 dark:bg-amber-500', text: 'text-amber-950 dark:text-amber-50'  },
+};
 
-function getDateArray(start: Date, count: number): Date[] {
-  return Array.from({ length: count }, (_, i) => {
-    const d = new Date(start);
-    d.setDate(d.getDate() + i);
-    return d;
-  });
-}
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
-function toDateKey(d: Date): string {
+function toKey(d: Date) {
   return d.toISOString().split('T')[0];
 }
 
-function daysBetween(a: string, b: string): number {
-  const da = new Date(a + 'T00:00:00');
-  const db = new Date(b + 'T00:00:00');
-  return Math.round((db.getTime() - da.getTime()) / (1000 * 60 * 60 * 24));
+function addDays(d: Date, n: number): Date {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
 }
 
-function formatDayHeader(d: Date): { day: string; weekday: string; isToday: boolean; isWeekend: boolean } {
-  const today = new Date();
-  const isToday =
-    d.getDate() === today.getDate() &&
-    d.getMonth() === today.getMonth() &&
-    d.getFullYear() === today.getFullYear();
-  const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-  return {
-    day: d.getDate().toString(),
-    weekday: d.toLocaleDateString('sv-SE', { weekday: 'short' }).replace('.', ''),
-    isToday,
-    isWeekend,
-  };
+function diffDays(a: string, b: string): number {
+  return Math.round(
+    (new Date(b + 'T00:00:00').getTime() - new Date(a + 'T00:00:00').getTime()) / 86400000,
+  );
 }
 
-export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
-  const today = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
+function fmtShort(iso: string): string {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('sv-SE', {
+    day: 'numeric',
+    month: 'short',
+  });
+}
 
-  const dates = useMemo(() => getDateArray(today, DAYS_TO_SHOW), [today]);
-  const startKey = toDateKey(today);
+function fmtLong(iso: string): string {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('sv-SE', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
 
-  const bookedRooms = useMemo(
-    () => rooms.filter((r) => r.status === 'booked').sort((a, b) => a.id.localeCompare(b.id)),
-    [rooms]
-  );
+function todayMidnight(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
-  const allRooms = useMemo(
-    () => [...rooms].sort((a, b) => a.id.localeCompare(b.id)),
-    [rooms]
-  );
+// ── Sub-components ───────────────────────────────────────────────────────────
 
-  if (bookedRooms.length === 0) {
-    return (
-      <div className="text-center py-20">
-        <div className="w-16 h-16 rounded-2xl bg-[var(--surface-alt)] flex items-center justify-center mx-auto mb-4 float-animation">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-        </div>
-        <p className="text-[var(--text-secondary)] font-medium">Inga bokningar just nu</p>
-        <p className="text-[var(--text-muted)] text-sm mt-1.5 max-w-xs mx-auto">
-          Klicka på ett tillgängligt rum för att skapa en bokning, eller ring Kollegan för att boka via röst.
-        </p>
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center mb-5 float-animation">
+        <svg
+          width="26"
+          height="26"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-[var(--text-muted)]"
+        >
+          <path d="M8 2v4M16 2v4" />
+          <path d="M3 9h18" />
+          <path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2" />
+        </svg>
       </div>
-    );
-  }
+      <p className="text-[var(--text-secondary)] font-semibold text-sm">Inga aktiva bokningar</p>
+      <p className="text-[var(--text-muted)] text-xs mt-1.5 max-w-[260px] leading-relaxed">
+        Klicka på ett tillgängligt rum för att skapa en bokning, eller ring Kollegan.
+      </p>
+    </div>
+  );
+}
+
+function SegmentedControl({
+  options,
+  value,
+  onChange,
+  size = 'md',
+}: {
+  options: { key: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+  size?: 'sm' | 'md';
+}) {
+  const base = size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3.5 py-1.5 text-sm';
+  return (
+    <div className="flex bg-[var(--surface-alt)] border border-[var(--border)] rounded-xl p-0.5">
+      {options.map((o) => (
+        <button
+          key={o.key}
+          onClick={() => onChange(o.key)}
+          className={[
+            base,
+            'font-medium rounded-[10px] transition-all',
+            value === o.key
+              ? 'bg-[var(--surface)] shadow-sm text-[var(--text-primary)]'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
+          ].join(' ')}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── List view ────────────────────────────────────────────────────────────────
+
+function ListView({
+  rooms,
+  onRoomClick,
+}: {
+  rooms: Room[];
+  onRoomClick?: (r: Room) => void;
+}) {
+  const booked = useMemo(
+    () => rooms.filter((r) => r.status === 'booked').sort((a, b) => a.id.localeCompare(b.id)),
+    [rooms],
+  );
+
+  if (booked.length === 0) return <EmptyState />;
 
   return (
-    <div className="space-y-8">
-      {/* ── Booking summary cards ── */}
-      <div>
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest">Aktiva bokningar</span>
-          <span className="text-xs text-[var(--text-muted)] bg-[var(--surface-alt)] border border-[var(--border)] rounded-full px-2 py-0.5">
-            {bookedRooms.length}
+    <div className="space-y-2">
+      {/* Table header */}
+      <div className="hidden sm:grid grid-cols-[1fr_1.4fr_1fr_1fr_auto] gap-4 px-4 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest">
+        <span>Rum</span>
+        <span>Gäst</span>
+        <span>Incheckning</span>
+        <span>Utcheckning</span>
+        <span>Nätter</span>
+      </div>
+
+      {booked.map((room) => {
+        const nights =
+          room.checkIn && room.checkOut ? diffDays(room.checkIn, room.checkOut) : null;
+        const badge = TYPE_BADGE[room.type] || TYPE_BADGE.Enkel;
+        const bar   = BAR_COLOR[room.type] || BAR_COLOR.Enkel;
+
+        return (
+          <button
+            key={room.id}
+            onClick={() => onRoomClick?.(room)}
+            className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-2xl px-4 py-3.5 text-left hover:shadow-md hover:border-[var(--text-muted)] transition-all active:scale-[0.995] group"
+          >
+            {/* Mobile layout */}
+            <div className="flex items-start gap-3 sm:hidden">
+              <div
+                className={[
+                  'w-2 self-stretch rounded-full shrink-0 mt-1',
+                  bar.bg,
+                ].join(' ')}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-sm text-[var(--text-primary)]">
+                    Rum {room.id}
+                  </span>
+                  <span className={['text-[10px] font-medium px-1.5 py-0.5 rounded-md', badge].join(' ')}>
+                    {ROOM_LABEL[room.type]}
+                  </span>
+                </div>
+                <p className="text-sm text-[var(--text-secondary)] mt-0.5 truncate">
+                  {room.guestName}
+                </p>
+                {room.checkIn && room.checkOut && (
+                  <p className="text-xs text-[var(--text-muted)] mt-1">
+                    {fmtShort(room.checkIn)} → {fmtShort(room.checkOut)}
+                    {nights !== null && <> · {nights} {nights === 1 ? 'natt' : 'nätter'}</>}
+                  </p>
+                )}
+              </div>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="shrink-0 text-[var(--text-muted)] mt-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+
+            {/* Desktop layout */}
+            <div className="hidden sm:grid grid-cols-[1fr_1.4fr_1fr_1fr_auto] gap-4 items-center">
+              {/* Room */}
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={['w-1.5 h-8 rounded-full shrink-0', bar.bg].join(' ')} />
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-[var(--text-primary)] truncate">
+                    {ROOM_LABEL[room.type]} {room.number}
+                  </p>
+                  <p className="text-[10px] text-[var(--text-muted)]">Våning {room.floor}</p>
+                </div>
+              </div>
+
+              {/* Guest */}
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-full bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center shrink-0">
+                  <span className="text-[10px] font-bold text-[var(--text-secondary)]">
+                    {room.guestName?.charAt(0).toUpperCase() ?? '?'}
+                  </span>
+                </div>
+                <span className="text-sm text-[var(--text-primary)] font-medium truncate">
+                  {room.guestName}
+                </span>
+              </div>
+
+              {/* Check-in */}
+              <div>
+                {room.checkIn ? (
+                  <>
+                    <p className="text-sm font-medium text-[var(--text-primary)]">
+                      {fmtShort(room.checkIn)}
+                    </p>
+                    <p className="text-[10px] text-[var(--text-muted)]">
+                      {new Date(room.checkIn + 'T00:00:00').toLocaleDateString('sv-SE', { weekday: 'long' })}
+                    </p>
+                  </>
+                ) : (
+                  <span className="text-xs text-[var(--text-muted)]">—</span>
+                )}
+              </div>
+
+              {/* Check-out */}
+              <div>
+                {room.checkOut ? (
+                  <>
+                    <p className="text-sm font-medium text-[var(--text-primary)]">
+                      {fmtShort(room.checkOut)}
+                    </p>
+                    <p className="text-[10px] text-[var(--text-muted)]">
+                      {new Date(room.checkOut + 'T00:00:00').toLocaleDateString('sv-SE', { weekday: 'long' })}
+                    </p>
+                  </>
+                ) : (
+                  <span className="text-xs text-[var(--text-muted)]">—</span>
+                )}
+              </div>
+
+              {/* Nights + arrow */}
+              <div className="flex items-center gap-3">
+                {nights !== null ? (
+                  <div className="text-right">
+                    <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
+                      {nights}
+                    </span>
+                    <p className="text-[10px] text-[var(--text-muted)] leading-none mt-0.5">
+                      {nights === 1 ? 'natt' : 'nätter'}
+                    </p>
+                  </div>
+                ) : (
+                  <span className="text-xs text-[var(--text-muted)]">—</span>
+                )}
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Timeline view ────────────────────────────────────────────────────────────
+
+function TimelineView({
+  rooms,
+  onRoomClick,
+}: {
+  rooms: Room[];
+  onRoomClick?: (r: Room) => void;
+}) {
+  const [viewKey, setViewKey] = useState<View>('month');
+  const [offsetDays, setOffsetDays] = useState(0);
+
+  const view = VIEWS.find((v) => v.key === viewKey)!;
+  const today = useMemo(todayMidnight, []);
+  const todayKey = toKey(today);
+
+  const startDate = useMemo(() => addDays(today, offsetDays), [today, offsetDays]);
+  const startKey  = toKey(startDate);
+
+  const dates = useMemo(
+    () => Array.from({ length: view.days }, (_, i) => addDays(startDate, i)),
+    [startDate, view.days],
+  );
+
+  const sortedRooms = useMemo(
+    () => [...rooms].sort((a, b) => a.floor - b.floor || a.number - b.number),
+    [rooms],
+  );
+
+  // Group dates by month for the double-row header
+  const monthGroups = useMemo(() => {
+    const groups: { label: string; span: number }[] = [];
+    for (const d of dates) {
+      const lbl = d.toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' });
+      const cap = lbl[0].toUpperCase() + lbl.slice(1);
+      if (!groups.length || groups[groups.length - 1].label !== cap) {
+        groups.push({ label: cap, span: 1 });
+      } else {
+        groups[groups.length - 1].span++;
+      }
+    }
+    return groups;
+  }, [dates]);
+
+  // Period label for the nav bar
+  const periodLabel = useMemo(() => {
+    const end = addDays(startDate, view.days - 1);
+    const sm  = startDate.toLocaleDateString('sv-SE', { month: 'short', year: 'numeric' });
+    const em  = end.toLocaleDateString('sv-SE',       { month: 'short', year: 'numeric' });
+    const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
+    return sm === em ? cap(sm) : `${cap(sm)} – ${cap(em)}`;
+  }, [startDate, view.days]);
+
+  function getBar(room: Room) {
+    if (room.status !== 'booked' || !room.checkIn || !room.checkOut) return null;
+    const s  = diffDays(startKey, room.checkIn);
+    const e  = diffDays(startKey, room.checkOut);
+    const cs = Math.max(0, s);
+    const ce = Math.min(view.days, e);
+    return ce - cs > 0 ? { col: cs, span: ce - cs } : null;
+  }
+
+  const totalW = LABEL_W + view.days * COL_W;
+
+  return (
+    <div className="space-y-3">
+      {/* ── Toolbar row ── */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Prev / period / next */}
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setOffsetDays((o) => o - view.step)}
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--border)] hover:bg-[var(--surface-alt)] transition-colors text-[var(--text-secondary)]"
+            aria-label="Föregående period"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+
+          <span className="text-sm font-semibold text-[var(--text-primary)] min-w-[140px] text-center select-none">
+            {periodLabel}
           </span>
+
+          <button
+            onClick={() => setOffsetDays((o) => o + view.step)}
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--border)] hover:bg-[var(--surface-alt)] transition-colors text-[var(--text-secondary)]"
+            aria-label="Nästa period"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+
+          {offsetDays !== 0 && (
+            <button
+              onClick={() => setOffsetDays(0)}
+              className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline ml-1"
+            >
+              Idag
+            </button>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {bookedRooms.map((room) => {
-            const colors = ROOM_COLORS[room.type] || ROOM_COLORS.Enkel;
-            const nights = room.checkIn && room.checkOut ? daysBetween(room.checkIn, room.checkOut) : null;
-
-            return (
-              <button
-                key={room.id}
-                onClick={() => onRoomClick?.(room)}
-                className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-4 text-left hover:shadow-md hover:border-[var(--text-muted)] transition-all active:scale-[0.98]"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center font-bold text-base shrink-0 font-heading text-[var(--text-primary)]">
-                    {room.id}
-                  </div>
-                  <div className="flex-1 min-w-0 pt-0.5">
-                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate leading-tight">
-                      {room.guestName}
-                    </p>
-                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                      {TYPE_LABELS[room.type]}
-                    </p>
-                  </div>
-                  {nights !== null && (
-                    <div className="shrink-0 text-right">
-                      <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">{nights}</span>
-                      <p className="text-[10px] text-[var(--text-muted)] leading-none mt-0.5">{nights === 1 ? 'natt' : 'nätter'}</p>
-                    </div>
-                  )}
-                </div>
-
-                {room.checkIn && room.checkOut && (
-                  <div className="mt-3 pt-3 border-t border-[var(--border-light)] flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)] shrink-0">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    <span className="font-medium">{formatDateNice(room.checkIn)}</span>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)] shrink-0">
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                      <polyline points="12 5 19 12 12 19" />
-                    </svg>
-                    <span className="font-medium">{formatDateNice(room.checkOut)}</span>
-                  </div>
-                )}
-              </button>
-            );
-          })}
+        {/* View selector – pushed to the right */}
+        <div className="ml-auto">
+          <SegmentedControl
+            options={VIEWS.map((v) => ({ key: v.key, label: v.label }))}
+            value={viewKey}
+            onChange={(k) => setViewKey(k as View)}
+            size="sm"
+          />
         </div>
       </div>
 
-      {/* ── Calendar timeline ── */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest">Tidslinje</span>
-            <span className="text-xs text-[var(--text-muted)] bg-[var(--surface-alt)] border border-[var(--border)] rounded-full px-2 py-0.5">
-              14 dagar
-            </span>
-          </div>
-          <span className="text-[11px] text-[var(--text-muted)]">Klicka på en bokning för detaljer</span>
-        </div>
+      {/* ── Calendar grid ── */}
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <div style={{ width: totalW }}>
 
-        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto calendar-scroll">
-            <div className="min-w-[800px]">
-              {/* Date header row */}
-              <div className="grid border-b border-[var(--border)]" style={{ gridTemplateColumns: '120px repeat(14, 1fr)' }}>
-                <div className="px-3 py-3 bg-[var(--surface-alt)] border-r border-[var(--border)]">
-                  <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Rum</span>
-                </div>
-                {dates.map((date) => {
-                  const { day, weekday, isToday, isWeekend } = formatDayHeader(date);
-                  return (
-                    <div
-                      key={toDateKey(date)}
-                      className={[
-                        'px-1 py-2 text-center border-r border-[var(--border-light)] last:border-r-0',
-                        isToday ? 'bg-amber-50 dark:bg-amber-900/20' : isWeekend ? 'bg-[var(--surface-alt)]' : 'bg-[var(--surface)]',
-                      ].join(' ')}
-                    >
-                      <div className={['text-[10px] uppercase', isToday ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-[var(--text-muted)]'].join(' ')}>
-                        {weekday}
-                      </div>
-                      <div
-                        className={[
-                          'text-sm font-semibold mt-0.5',
-                          isToday
-                            ? 'text-amber-700 dark:text-amber-300 bg-amber-200 dark:bg-amber-700 w-7 h-7 rounded-full flex items-center justify-center mx-auto'
-                            : 'text-[var(--text-secondary)]',
-                        ].join(' ')}
-                      >
-                        {day}
-                      </div>
-                    </div>
-                  );
-                })}
+            {/* ── Row 1: Month groups ── */}
+            <div
+              className="flex border-b border-[var(--border)] bg-[var(--surface-alt)]"
+              style={{ height: HEAD1_H }}
+            >
+              {/* Label column header */}
+              <div
+                className="shrink-0 border-r border-[var(--border)] flex items-center px-4"
+                style={{ width: LABEL_W }}
+              >
+                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
+                  Rum
+                </span>
               </div>
 
-              {/* Room rows */}
-              {allRooms.map((room) => {
-                const colors = ROOM_COLORS[room.type] || ROOM_COLORS.Enkel;
-                const isBooked = room.status === 'booked' && room.checkIn && room.checkOut;
+              {/* Month spans */}
+              {monthGroups.map((mg, i) => (
+                <div
+                  key={i}
+                  className="border-r border-[var(--border-light)] last:border-r-0 flex items-center px-3"
+                  style={{ width: mg.span * COL_W }}
+                >
+                  <span className="text-[11px] font-semibold text-[var(--text-secondary)] capitalize truncate">
+                    {mg.label}
+                  </span>
+                </div>
+              ))}
+            </div>
 
-                let barStart = 0;
-                let barSpan = 0;
-                if (isBooked && room.checkIn && room.checkOut) {
-                  const rawStart = daysBetween(startKey, room.checkIn);
-                  const rawEnd = daysBetween(startKey, room.checkOut);
-                  barStart = Math.max(0, rawStart);
-                  barSpan = Math.min(DAYS_TO_SHOW, rawEnd) - barStart;
-                  if (barSpan <= 0) barSpan = 0;
-                }
+            {/* ── Row 2: Day numbers ── */}
+            <div
+              className="flex border-b border-[var(--border)]"
+              style={{ height: HEAD2_H }}
+            >
+              {/* Label column spacer */}
+              <div
+                className="shrink-0 border-r border-[var(--border)] bg-[var(--surface-alt)]"
+                style={{ width: LABEL_W }}
+              />
 
+              {/* Day cells */}
+              {dates.map((d) => {
+                const k        = toKey(d);
+                const isToday  = k === todayKey;
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                 return (
                   <div
-                    key={room.id}
-                    className="grid border-b border-[var(--border-light)] last:border-b-0"
-                    style={{ gridTemplateColumns: '120px repeat(14, 1fr)' }}
+                    key={k}
+                    className={[
+                      'shrink-0 flex flex-col items-center justify-center border-r border-[var(--border-light)] last:border-r-0 select-none',
+                      isToday
+                        ? 'bg-amber-50 dark:bg-amber-900/20'
+                        : isWeekend
+                        ? 'bg-[var(--surface-alt)]/60'
+                        : 'bg-[var(--surface)]',
+                    ].join(' ')}
+                    style={{ width: COL_W }}
                   >
-                    <div className="px-3 py-3 border-r border-[var(--border)] bg-[var(--surface-alt)] flex items-center gap-2">
-                      <span className="font-bold text-sm text-[var(--text-secondary)]">{room.id}</span>
-                      <span className={['text-[10px] font-medium px-1.5 py-0.5 rounded', colors.bg, colors.text].join(' ')}>
-                        {TYPE_LABELS[room.type]}
-                      </span>
-                    </div>
-
-                    <div className="col-span-14 relative min-h-[48px]">
-                      <div className="absolute inset-0 grid" style={{ gridTemplateColumns: 'repeat(14, 1fr)' }}>
-                        {dates.map((date) => {
-                          const { isToday, isWeekend } = formatDayHeader(date);
-                          return (
-                            <div
-                              key={toDateKey(date)}
-                              className={[
-                                'border-r border-[var(--border-light)] last:border-r-0',
-                                isToday ? 'bg-amber-50/50 dark:bg-amber-900/10' : isWeekend ? 'bg-[var(--surface-alt)]/50' : '',
-                              ].join(' ')}
-                            />
-                          );
-                        })}
-                      </div>
-
-                      {isBooked && barSpan > 0 && (
-                        <div
-                          className="absolute top-2 bottom-2 flex items-center cursor-pointer group/bar booking-bar-tooltip"
-                          style={{
-                            left: `${(barStart / DAYS_TO_SHOW) * 100}%`,
-                            width: `${(barSpan / DAYS_TO_SHOW) * 100}%`,
-                          }}
-                          onClick={() => onRoomClick?.(room)}
-                        >
-                          <div
-                            className={[
-                              'w-full h-full rounded-lg flex items-center px-3 shadow-sm transition-all group-hover/bar:shadow-md group-hover/bar:brightness-105',
-                              colors.bar,
-                            ].join(' ')}
-                          >
-                            <span className="text-xs font-semibold text-white truncate drop-shadow-sm">
-                              {room.guestName}
-                            </span>
-                          </div>
-                          {/* Tooltip */}
-                          <div className="tooltip-content">
-                            <div className="font-semibold">{room.guestName}</div>
-                            {room.checkIn && room.checkOut && (
-                              <div className="opacity-80 mt-0.5">
-                                {formatDateNice(room.checkIn)} → {formatDateNice(room.checkOut)}
-                                {' · '}{daysBetween(room.checkIn, room.checkOut)} {daysBetween(room.checkIn, room.checkOut) === 1 ? 'natt' : 'nätter'}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                    <span
+                      className={[
+                        'text-[9px] font-semibold uppercase',
+                        isToday
+                          ? 'text-amber-600 dark:text-amber-400'
+                          : 'text-[var(--text-muted)]',
+                      ].join(' ')}
+                    >
+                      {d.toLocaleDateString('sv-SE', { weekday: 'narrow' })}
+                    </span>
+                    <div
+                      className={[
+                        'w-6 h-6 flex items-center justify-center rounded-full text-[11px] font-bold mt-0.5',
+                        isToday
+                          ? 'bg-amber-500 text-white'
+                          : 'text-[var(--text-secondary)]',
+                      ].join(' ')}
+                    >
+                      {d.getDate()}
                     </div>
                   </div>
                 );
               })}
             </div>
+
+            {/* ── Room rows ── */}
+            {sortedRooms.map((room, idx) => {
+              const bar    = getBar(room);
+              const colors = BAR_COLOR[room.type] || BAR_COLOR.Enkel;
+              const badge  = TYPE_BADGE[room.type] || TYPE_BADGE.Enkel;
+
+              return (
+                <div
+                  key={room.id}
+                  className={[
+                    'flex relative',
+                    idx < sortedRooms.length - 1
+                      ? 'border-b border-[var(--border-light)]'
+                      : '',
+                  ].join(' ')}
+                  style={{ height: ROW_H }}
+                >
+                  {/* Room label */}
+                  <div
+                    className="shrink-0 border-r border-[var(--border)] bg-[var(--surface-alt)] flex items-center gap-2.5 px-4"
+                    style={{ width: LABEL_W }}
+                  >
+                    <div
+                      className={['w-2 h-8 rounded-full shrink-0', colors.bg].join(' ')}
+                    />
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-semibold text-[var(--text-primary)] leading-tight truncate">
+                        {ROOM_LABEL[room.type]} {room.number}
+                      </p>
+                      <span
+                        className={[
+                          'inline-block text-[9px] font-semibold px-1.5 py-[1px] rounded mt-0.5',
+                          badge,
+                        ].join(' ')}
+                      >
+                        Vån {room.floor}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Day cells + booking bar */}
+                  <div className="flex-1 relative flex">
+                    {dates.map((d) => {
+                      const k         = toKey(d);
+                      const isToday   = k === todayKey;
+                      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                      return (
+                        <div
+                          key={k}
+                          className={[
+                            'shrink-0 border-r border-[var(--border-light)] last:border-r-0',
+                            isToday
+                              ? 'bg-amber-50/60 dark:bg-amber-900/10'
+                              : isWeekend
+                              ? 'bg-[var(--surface-alt)]/30'
+                              : '',
+                          ].join(' ')}
+                          style={{ width: COL_W, height: ROW_H }}
+                        />
+                      );
+                    })}
+
+                    {bar && (
+                      <button
+                        onClick={() => onRoomClick?.(room)}
+                        className={[
+                          'absolute top-3 bottom-3 flex items-center px-2.5 rounded-lg shadow-sm',
+                          'transition-all hover:brightness-105 hover:shadow-md active:scale-[0.99]',
+                          colors.bg,
+                        ].join(' ')}
+                        style={{
+                          left:  bar.col * COL_W + 2,
+                          width: bar.span * COL_W - 4,
+                        }}
+                        title={
+                          room.guestName && room.checkIn && room.checkOut
+                            ? `${room.guestName} · ${fmtShort(room.checkIn)} → ${fmtShort(room.checkOut)}`
+                            : room.guestName ?? ''
+                        }
+                      >
+                        <span
+                          className={[
+                            'text-[11px] font-semibold truncate leading-none',
+                            colors.text,
+                          ].join(' ')}
+                        >
+                          {room.guestName}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {sortedRooms.length === 0 && (
+              <div className="flex items-center justify-center" style={{ height: ROW_H * 3 }}>
+                <p className="text-sm text-[var(--text-muted)]">Laddar rum…</p>
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)]">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-stone-400 dark:bg-stone-500" />
-          <span>Enkelt / Dubbel</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-amber-500" />
-          <span>Svit</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-amber-200 dark:bg-amber-700 border border-amber-300 dark:border-amber-600" />
-          <span>Idag</span>
+        {/* Legend */}
+        <div className="flex flex-wrap gap-4 px-4 py-3 border-t border-[var(--border-light)] bg-[var(--surface-alt)]">
+          {(['Enkel', 'Dubbel', 'Svit'] as const).map((type) => (
+            <div key={type} className="flex items-center gap-1.5">
+              <div className={['w-3 h-3 rounded-sm', BAR_COLOR[type].bg].join(' ')} />
+              <span className="text-[11px] text-[var(--text-muted)]">{ROOM_LABEL[type]}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm bg-amber-500" />
+            <span className="text-[11px] text-[var(--text-muted)]">Idag</span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function formatDateNice(iso: string): string {
-  const d = new Date(iso + 'T00:00:00');
-  return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+// ── Main export ──────────────────────────────────────────────────────────────
+
+export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
+  const [subTab, setSubTab] = useState<SubTab>('timeline');
+
+  const bookedCount = rooms.filter((r) => r.status === 'booked').length;
+
+  return (
+    <div className="space-y-5">
+      {/* ── Top bar: sub-tabs + badge ── */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <SegmentedControl
+          options={[
+            { key: 'list',     label: 'Listvy'    },
+            { key: 'timeline', label: 'Tidslinje' },
+          ]}
+          value={subTab}
+          onChange={(v) => setSubTab(v as SubTab)}
+        />
+
+        {bookedCount > 0 && (
+          <span className="text-xs font-medium text-[var(--text-muted)] bg-[var(--surface-alt)] border border-[var(--border)] rounded-full px-2 py-0.5 tabular-nums">
+            {bookedCount} {bookedCount === 1 ? 'bokning' : 'bokningar'}
+          </span>
+        )}
+      </div>
+
+      {/* ── Content ── */}
+      {subTab === 'list' ? (
+        <ListView rooms={rooms} onRoomClick={onRoomClick} />
+      ) : (
+        <TimelineView rooms={rooms} onRoomClick={onRoomClick} />
+      )}
+    </div>
+  );
 }
