@@ -17,7 +17,7 @@ const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
 const VAPI_ASSISTANT_ID = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID || '';
 
 interface KolleganContactProps {
-  variant?: 'floating' | 'sidebar';
+  variant?: 'floating' | 'sidebar' | 'draggable';
 }
 
 export default function KolleganContact({ variant = 'floating' }: KolleganContactProps) {
@@ -30,12 +30,62 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
   const [chatInput, setChatInput] = useState('');
   const [activeTranscript, setActiveTranscript] = useState('');
 
+  /* ── Draggable-variant state ── */
+  const [draggablePos, setDraggablePos] = useState({ x: 0, y: 0 });
+  const [draggableCollapsed, setDraggableCollapsed] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ mx: 0, my: 0, px: 0, py: 0 });
+
   const vapiRef = useRef<Vapi | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeTranscript]);
+
+  /* ── Initialise draggable position (client-side only) ── */
+  useEffect(() => {
+    if (variant !== 'draggable') return;
+    setDraggablePos({
+      x: Math.max(0, window.innerWidth - 448),
+      y: 80,
+    });
+  }, [variant]);
+
+  /* ── Drag mouse listeners ── */
+  useEffect(() => {
+    if (variant !== 'draggable') return;
+    const onMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      setDraggablePos({
+        x: dragStartRef.current.px + (e.clientX - dragStartRef.current.mx),
+        y: dragStartRef.current.py + (e.clientY - dragStartRef.current.my),
+      });
+    };
+    const onUp = () => {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, [variant]);
+
+  const handleDragStart = (e: { preventDefault(): void; clientX: number; clientY: number }) => {
+    e.preventDefault();
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    dragStartRef.current = {
+      mx: e.clientX,
+      my: e.clientY,
+      px: draggablePos.x,
+      py: draggablePos.y,
+    };
+  };
 
   const getVapi = useCallback(() => {
     if (!vapiRef.current && VAPI_PUBLIC_KEY) {
@@ -183,7 +233,7 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
     };
   }, []);
 
-  /* ── Voice bars (amber, inline styles — no legacy CSS class) ── */
+  /* ── Voice bars (amber, inline styles) ── */
   const volumeBars = Array.from({ length: 5 }, (_, i) => {
     const threshold = i * 0.15;
     const active = volumeLevel > threshold && callStatus === 'active';
@@ -222,7 +272,7 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
     );
   };
 
-  /* ── Status subtitle text ── */
+  /* ── Status text ── */
   const statusText =
     callStatus === 'connecting'
       ? 'Ansluter...'
@@ -321,7 +371,9 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
     </div>
   );
 
-  /* ═══════ SIDEBAR VARIANT ═══════ */
+  /* ═══════════════════════════════════════════
+     SIDEBAR VARIANT
+  ═══════════════════════════════════════════ */
   if (variant === 'sidebar') {
     return (
       <div className="rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--surface)]">
@@ -359,13 +411,9 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
           )}
         </div>
 
-        {/* Active call: voice strip */}
         {mode === 'call' && callStatus === 'active' && voiceStrip(true)}
-
-        {/* Connecting */}
         {mode === 'call' && callStatus === 'connecting' && connectingIndicator(true)}
 
-        {/* Idle: action buttons */}
         {mode === 'idle' && (
           <div className="px-3 pb-3 pt-1 space-y-1.5 border-t border-[var(--border)]">
             <button
@@ -392,10 +440,8 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
           </div>
         )}
 
-        {/* Messages */}
         {(mode === 'call' || mode === 'chat') && messagesList('max-h-[200px]')}
 
-        {/* Chat input */}
         {mode === 'chat' && (
           <div className="border-t border-[var(--border)] px-3 py-2">
             <form onSubmit={(e) => { e.preventDefault(); sendChat(); }} className="flex gap-1.5">
@@ -421,7 +467,6 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
           </div>
         )}
 
-        {/* End call */}
         {mode === 'call' && callStatus === 'active' && (
           <div className="border-t border-[var(--border)] px-3 py-2 flex justify-center">
             <button
@@ -437,7 +482,6 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
           </div>
         )}
 
-        {/* Call ended */}
         {mode === 'call' && callStatus === 'ended' && (
           <div className="border-t border-[var(--border)] px-3 py-2 text-center">
             <p className="text-[var(--text-muted)] text-[10px]">Samtalet avslutat</p>
@@ -447,7 +491,264 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
     );
   }
 
-  /* ═══════ FLOATING VARIANT ═══════ */
+  /* ═══════════════════════════════════════════
+     DRAGGABLE VARIANT
+  ═══════════════════════════════════════════ */
+  if (variant === 'draggable') {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          left: draggablePos.x,
+          top: draggablePos.y,
+          width: 400,
+          zIndex: 50,
+        }}
+        className="maja-panel-enter"
+      >
+        <div
+          className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-2xl shadow-black/10 overflow-hidden flex flex-col"
+          style={{ maxHeight: draggableCollapsed ? 'auto' : 'calc(100vh - 120px)' }}
+        >
+
+          {/* ── Drag handle / header ── */}
+          <div
+            onMouseDown={handleDragStart}
+            style={{ cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none' }}
+            className="flex items-center gap-3 px-4 py-3.5 bg-[var(--surface)] border-b border-[var(--border)] shrink-0"
+          >
+            {/* Grip icon */}
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="text-[var(--text-muted)] shrink-0"
+            >
+              <circle cx="8"  cy="5"  r="1.6" />
+              <circle cx="16" cy="5"  r="1.6" />
+              <circle cx="8"  cy="12" r="1.6" />
+              <circle cx="16" cy="12" r="1.6" />
+              <circle cx="8"  cy="19" r="1.6" />
+              <circle cx="16" cy="19" r="1.6" />
+            </svg>
+
+            {/* K badge + status */}
+            <div className="relative shrink-0">
+              <KBadge size="md" />
+              <div
+                className={[
+                  'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--surface)]',
+                  callStatus === 'active' ? 'bg-emerald-500' : 'bg-amber-400',
+                ].join(' ')}
+              />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <h3 className="font-heading text-sm font-semibold text-[var(--text-primary)] leading-none">
+                Kollegan
+              </h3>
+              <p className="text-[var(--text-muted)] text-xs mt-0.5">{statusText}</p>
+            </div>
+
+            {/* Active call pill */}
+            {callStatus === 'active' && (
+              <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 rounded-full px-2.5 py-1 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">Aktivt samtal</span>
+              </div>
+            )}
+
+            {/* Collapse / expand */}
+            <button
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={() => setDraggableCollapsed((c) => !c)}
+              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 rounded-lg hover:bg-[var(--surface-alt)] shrink-0"
+              aria-label={draggableCollapsed ? 'Expandera' : 'Minimera'}
+            >
+              {draggableCollapsed ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="18 15 12 9 6 15" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {/* ── Body (hidden when collapsed) ── */}
+          {!draggableCollapsed && (
+            <>
+              {/* Voice strip */}
+              {mode === 'call' && callStatus === 'active' && (
+                <div className="border-b border-[var(--border)] bg-[var(--surface-alt)] flex items-center justify-between px-5 py-3">
+                  <div className="flex items-end gap-0.5 h-5">{volumeBars}</div>
+                  <span className="text-[10px] text-[var(--text-muted)]">
+                    {isKolleganSpeaking ? 'Kollegan talar' : 'Din tur'}
+                  </span>
+                </div>
+              )}
+
+              {/* Connecting */}
+              {mode === 'call' && callStatus === 'connecting' && connectingIndicator(false)}
+
+              {/* ── Idle: action buttons ── */}
+              {mode === 'idle' && (
+                <div className="px-5 py-6 space-y-5">
+                  <div>
+                    <h4 className="font-heading text-base font-semibold text-[var(--text-primary)]">
+                      Kontakta receptionen
+                    </h4>
+                    <p className="text-[var(--text-muted)] text-xs mt-1">
+                      Ring Kollegan direkt eller starta en chatt
+                    </p>
+                  </div>
+
+                  {/* Primary: Ring */}
+                  <button
+                    onClick={startCall}
+                    className="group w-full flex items-center gap-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl px-5 py-4 transition-all duration-200 active:scale-[0.98] shadow-md shadow-amber-500/20 hover:shadow-amber-500/30"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <p className="font-semibold text-sm leading-none">Ring Kollegan</p>
+                      <p className="text-white/70 text-xs mt-1">Snabbaste sättet att boka rum</p>
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-auto opacity-70">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </button>
+
+                  {/* Secondary: Chatta */}
+                  <button
+                    onClick={() => {
+                      setMode('chat');
+                      setMessages([{
+                        id: crypto.randomUUID(),
+                        role: 'kollegan',
+                        text: 'Hej! Skriv ditt meddelande så hjälper jag dig. Vill du boka rum rekommenderar jag att ringa mig för snabbast hjälp!',
+                        timestamp: new Date(),
+                      }]);
+                    }}
+                    className="group w-full flex items-center gap-4 bg-[var(--surface-alt)] hover:bg-[var(--surface-hover)] border border-[var(--border)] hover:border-[var(--text-muted)]/30 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl px-5 py-4 transition-all duration-200 active:scale-[0.98]"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center shrink-0">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <p className="font-semibold text-sm leading-none">Chatta</p>
+                      <p className="text-[var(--text-muted)] text-xs mt-1">Skriv ett meddelande</p>
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-auto opacity-40">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </button>
+
+                  {/* Info strip */}
+                  <div className="flex items-center gap-2 px-1">
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    </span>
+                    <span className="text-[11px] text-[var(--text-muted)]">Kollegan är online och redo att hjälpa</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Messages */}
+              {(mode === 'call' || mode === 'chat') && messagesList('max-h-[340px]')}
+
+              {/* Chat input */}
+              {mode === 'chat' && (
+                <div className="border-t border-[var(--border)] px-4 py-3 shrink-0">
+                  <form onSubmit={(e) => { e.preventDefault(); sendChat(); }} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Skriv ett meddelande..."
+                      className="flex-1 bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-amber-400 transition-colors"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!chatInput.trim()}
+                      className="bg-amber-500 hover:bg-amber-600 disabled:bg-[var(--surface-alt)] disabled:text-[var(--text-muted)] text-white rounded-lg px-3 py-2 transition-colors"
+                      aria-label="Skicka"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13" />
+                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {/* End call */}
+              {mode === 'call' && callStatus === 'active' && (
+                <div className="border-t border-[var(--border)] px-5 py-3 shrink-0 flex justify-center">
+                  <button
+                    onClick={endCall}
+                    className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 rounded-full px-6 py-2 text-xs font-medium transition-all"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                    Avsluta samtal
+                  </button>
+                </div>
+              )}
+
+              {/* Chat footer nav */}
+              {mode === 'chat' && (
+                <div className="border-t border-[var(--border)] px-4 py-2 shrink-0 flex items-center gap-2">
+                  <button
+                    onClick={() => { setMode('idle'); setMessages([]); }}
+                    className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xs flex items-center gap-1 transition-colors"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="19" y1="12" x2="5" y2="12" />
+                      <polyline points="12 19 5 12 12 5" />
+                    </svg>
+                    Tillbaka
+                  </button>
+                  <button
+                    onClick={startCall}
+                    className="ml-auto text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 text-xs flex items-center gap-1 transition-colors"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    Ring istället
+                  </button>
+                </div>
+              )}
+
+              {/* Call ended */}
+              {mode === 'call' && callStatus === 'ended' && (
+                <div className="border-t border-[var(--border)] px-5 py-3 shrink-0 text-center">
+                  <p className="text-[var(--text-muted)] text-xs">Samtalet har avslutats</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ═══════════════════════════════════════════
+     FLOATING VARIANT (FAB)
+  ═══════════════════════════════════════════ */
   return (
     <>
       {/* FAB button */}
@@ -478,7 +779,6 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
             className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl shadow-xl shadow-black/10 overflow-hidden flex flex-col"
             style={{ maxHeight: 'calc(100vh - 48px)' }}
           >
-            {/* Header */}
             <div className="px-5 py-4 flex items-center gap-3 shrink-0 border-b border-[var(--border)]">
               <div className="relative">
                 <KBadge size="md" />
@@ -509,13 +809,9 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
               </button>
             </div>
 
-            {/* Active: voice strip */}
             {mode === 'call' && callStatus === 'active' && voiceStrip(false)}
-
-            {/* Connecting */}
             {mode === 'call' && callStatus === 'connecting' && connectingIndicator(false)}
 
-            {/* Idle */}
             {mode === 'idle' && (
               <div className="px-5 py-6 space-y-4">
                 <div>
@@ -558,10 +854,8 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
               </div>
             )}
 
-            {/* Messages */}
             {(mode === 'call' || mode === 'chat') && messagesList('max-h-[320px]')}
 
-            {/* Chat input */}
             {mode === 'chat' && (
               <div className="border-t border-[var(--border)] px-4 py-3 shrink-0">
                 <form onSubmit={(e) => { e.preventDefault(); sendChat(); }} className="flex gap-2">
@@ -587,7 +881,6 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
               </div>
             )}
 
-            {/* End call */}
             {mode === 'call' && callStatus === 'active' && (
               <div className="border-t border-[var(--border)] px-5 py-3 shrink-0 flex justify-center">
                 <button
@@ -603,7 +896,6 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
               </div>
             )}
 
-            {/* Chat footer nav */}
             {mode === 'chat' && (
               <div className="border-t border-[var(--border)] px-4 py-2 shrink-0 flex items-center gap-2">
                 <button
@@ -628,7 +920,6 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
               </div>
             )}
 
-            {/* Call ended */}
             {mode === 'call' && callStatus === 'ended' && (
               <div className="border-t border-[var(--border)] px-5 py-3 shrink-0 text-center">
                 <p className="text-[var(--text-muted)] text-xs">Samtalet har avslutats</p>
