@@ -412,8 +412,8 @@ export default function HomePage() {
             ].join(' ')}
           >
             {/* Nav */}
-            <nav className="p-4 space-y-1">
-              <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest px-3 mb-2">Navigation</p>
+            <nav className="px-4 pt-5 pb-3 space-y-1">
+              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-widest px-3 mb-3">Navigation</p>
               {NAV_ITEMS.map((item) => (
                 <button
                   key={item.key}
@@ -422,7 +422,7 @@ export default function HomePage() {
                     setMobileMenuOpen(false);
                   }}
                   className={[
-                    'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-[0.97]',
+                    'w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all active:scale-[0.97]',
                     activeTab === item.key
                       ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50'
                       : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]',
@@ -432,7 +432,7 @@ export default function HomePage() {
                   <span>{item.label}</span>
                   <span
                     className={[
-                      'ml-auto text-xs px-1.5 py-0.5 rounded-full min-w-[22px] text-center',
+                      'ml-auto text-xs px-2 py-0.5 rounded-full min-w-[24px] text-center tabular-nums',
                       activeTab === item.key
                         ? 'bg-amber-200/60 dark:bg-amber-800/40 text-amber-800 dark:text-amber-300'
                         : 'bg-[var(--surface-alt)] text-[var(--text-muted)]',
@@ -448,28 +448,28 @@ export default function HomePage() {
             <div className="mx-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
 
             {/* Room type legend */}
-            <div className="p-4">
-              <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest px-3 mb-3">Rumstyper</p>
-              <div className="space-y-2 px-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center text-xs font-bold text-[var(--text-secondary)]">1</div>
+            <div className="px-4 py-5">
+              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-widest px-3 mb-4">Rumstyper</p>
+              <div className="space-y-3 px-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center text-xs font-bold text-[var(--text-secondary)] shrink-0">1</div>
                   <div>
-                    <p className="text-xs font-medium text-[var(--text-primary)]">Enkelt rum</p>
-                    <p className="text-[10px] text-[var(--text-muted)]">1 495 kr/natt</p>
+                    <p className="text-xs font-semibold text-[var(--text-primary)]">Enkelt rum</p>
+                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">1 495 kr/natt</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center text-xs font-bold text-[var(--text-secondary)]">2</div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center text-xs font-bold text-[var(--text-secondary)] shrink-0">2</div>
                   <div>
-                    <p className="text-xs font-medium text-[var(--text-primary)]">Dubbelrum</p>
-                    <p className="text-[10px] text-[var(--text-muted)]">2 495 kr/natt</p>
+                    <p className="text-xs font-semibold text-[var(--text-primary)]">Dubbelrum</p>
+                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">2 495 kr/natt</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs font-bold text-amber-700 dark:text-amber-400">S</div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs font-bold text-amber-700 dark:text-amber-400 shrink-0">S</div>
                   <div>
-                    <p className="text-xs font-medium text-[var(--text-primary)]">Svit</p>
-                    <p className="text-[10px] text-[var(--text-muted)]">3 995 kr/natt</p>
+                    <p className="text-xs font-semibold text-[var(--text-primary)]">Svit</p>
+                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">3 995 kr/natt</p>
                   </div>
                 </div>
               </div>
@@ -537,14 +537,6 @@ export default function HomePage() {
 
             {/* Spacer */}
             <div className="flex-1" />
-
-            {/* Divider */}
-            <div className="mx-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
-
-            {/* Kollegan section */}
-            <div className="px-4 pt-5 pb-4">
-              <KolleganContact variant="sidebar" />
-            </div>
           </aside>
 
           {/* ── Main content ── */}
@@ -657,6 +649,9 @@ export default function HomePage() {
           onBooked={() => setSelectedRoom(null)}
         />
       )}
+
+      {/* ── Draggable Kollegan module ── */}
+      <KolleganContact variant="draggable" />
     </>
   );
 }
