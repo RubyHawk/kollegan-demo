@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { bookRoom } from '@/lib/roomStore';
+import { NextRequest, NextResponse } from "next/server";
+import { bookRoom } from "@/lib/roomStore";
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -7,8 +8,11 @@ export async function POST(request: NextRequest) {
 
   if (!room_id || !guest_name || !check_in || !check_out) {
     return NextResponse.json(
-      { success: false, message: 'room_id, guest_name, check_in och check_out krävs.' },
-      { status: 400 }
+      {
+        success: false,
+        message: "room_id, guest_name, check_in och check_out krävs.",
+      },
+      { status: 400 },
     );
   }
 
@@ -16,7 +20,7 @@ export async function POST(request: NextRequest) {
     String(room_id),
     String(guest_name),
     String(check_in),
-    String(check_out)
+    String(check_out),
   );
   return NextResponse.json(result, { status: result.success ? 200 : 409 });
 }
