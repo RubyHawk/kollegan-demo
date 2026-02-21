@@ -190,9 +190,9 @@ const SmIcon = {
 
 /* ─── Per-event-type styling ────────────────────────────────── */
 const EVT: Record<ActivityEvent['type'], { icon: typeof SmIcon[keyof typeof SmIcon]; badge: string; label: string }> = {
-  call_started:   { icon: SmIcon.phone,    badge: 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 text-amber-600 dark:text-amber-400', label: 'Samtal' },
+  call_started:   { icon: SmIcon.phone,    badge: 'bg-purple-50 dark:bg-amber-900/20 border border-purple-200 dark:border-amber-800/40 text-purple-700 dark:text-amber-400', label: 'Samtal' },
   call_ended:     { icon: SmIcon.phoneOff, badge: 'bg-[var(--surface-alt)] border border-[var(--border)] text-[var(--text-muted)]',     label: 'Avslutat' },
-  rooms_queried:  { icon: SmIcon.search,   badge: 'bg-amber-50/60 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 text-amber-500 dark:text-amber-400', label: 'Sökning' },
+  rooms_queried:  { icon: SmIcon.search,   badge: 'bg-purple-50/60 dark:bg-amber-900/10 border border-purple-100 dark:border-amber-900/30 text-purple-600 dark:text-amber-400', label: 'Sökning' },
   room_locked:    { icon: SmIcon.lock,     badge: 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 text-amber-600 dark:text-amber-400',   label: 'Reserverad' },
   room_confirmed: { icon: SmIcon.check,    badge: 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 text-emerald-600 dark:text-emerald-400', label: 'Bokad' },
   room_cancelled: { icon: SmIcon.x,        badge: 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-500 dark:text-red-400',               label: 'Avbokad' },
@@ -270,7 +270,7 @@ function DetailPanel({ session, onClose }: { session: Session; onClose: () => vo
         >
           {SmIcon.arrowLeft}
         </button>
-        <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 flex items-center justify-center shrink-0 text-amber-500">
+        <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-amber-900/20 border border-purple-200 dark:border-amber-800/40 flex items-center justify-center shrink-0 text-purple-600 dark:text-amber-500">
           {session.kind === 'call' ? SmIcon.phone : (EVT[session.events[0]?.type]?.icon ?? SmIcon.info)}
         </div>
         <div className="flex-1 min-w-0">

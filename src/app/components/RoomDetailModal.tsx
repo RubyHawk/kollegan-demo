@@ -32,7 +32,7 @@ const TYPE_GRADIENT: Record<string, string> = {
 function AmenityBadge({ amenity }: { amenity: AmenityDef }) {
   return (
     <div className="flex items-center gap-1.5 bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg px-2.5 py-1.5">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600 dark:text-amber-400 shrink-0">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-purple-700 dark:text-amber-400 shrink-0">
         <path d={AMENITY_ICONS[amenity.key]} />
       </svg>
       <span className="text-[11px] font-medium text-[var(--text-secondary)]">{amenity.label}</span>
@@ -111,7 +111,7 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
   };
 
   const inputStyles = {
-    inputWrapper: 'bg-[var(--surface-alt)] border-[var(--border)] hover:border-amber-400/60 focus-within:!border-amber-500 dark:bg-white/5 dark:border-white/12',
+    inputWrapper: 'bg-[var(--surface-alt)] border-[var(--border)] hover:border-purple-500/60 dark:hover:border-amber-400/60 focus-within:!border-purple-600 dark:focus-within:!border-amber-500 dark:bg-white/5 dark:border-white/12',
     label: 'text-[var(--text-secondary)] font-medium',
     input: 'text-[var(--text-primary)]',
   };
@@ -307,7 +307,7 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
                 </div>
 
                 {/* Price summary */}
-                <div className="flex items-center justify-between bg-amber-50/70 dark:bg-amber-900/15 border border-amber-200/50 dark:border-amber-800/30 rounded-xl px-4 py-3">
+                <div className="flex items-center justify-between bg-purple-50/70 dark:bg-amber-900/15 border border-purple-200/50 dark:border-amber-800/30 rounded-xl px-4 py-3">
                   <span className="text-xs text-[var(--text-secondary)]">
                     {nights} natt{nights !== 1 ? 'er' : ''} × {meta.price.toLocaleString('sv-SE')} kr
                   </span>
@@ -332,7 +332,7 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
                     color="warning"
                     isLoading={loading}
                     isDisabled={loading || !guestName.trim()}
-                    className="flex-1 font-semibold bg-amber-500 text-white hover:bg-amber-600"
+                    className="flex-1 font-semibold bg-purple-700 dark:bg-amber-500 text-white hover:bg-purple-800 dark:hover:bg-amber-600"
                   >
                     {loading ? 'Bokar...' : 'Boka rum'}
                   </Button>
