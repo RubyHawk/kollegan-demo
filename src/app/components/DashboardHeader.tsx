@@ -26,7 +26,7 @@ export default function DashboardHeader({
 }: Props) {
   return (
     <header className="glass-header border-b border-white/40 dark:border-white/8 sticky top-0 z-30">
-      <div className="px-5 h-13 flex items-center justify-between gap-4 py-2.5">
+      <div className="px-5 h-11 flex items-center justify-between gap-4 py-2">
 
         {/* ── Left: hamburger + logo + name ── */}
         <div className="flex items-center gap-3 shrink-0">
