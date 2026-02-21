@@ -29,6 +29,8 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [activeTranscript, setActiveTranscript] = useState('');
+  const [callStartedAt, setCallStartedAt] = useState<Date | null>(null);
+  const [callDuration, setCallDuration] = useState(0); // seconds
 
   /* ── Draggable-variant state ── */
   const [draggablePos, setDraggablePos] = useState({ x: 0, y: 0 });
@@ -44,6 +46,15 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeTranscript]);
 
+  /* ── Call duration timer ── */
+  useEffect(() => {
+    if (callStatus !== 'active' || !callStartedAt) return;
+    const id = setInterval(() => {
+      setCallDuration(Math.floor((Date.now() - callStartedAt.getTime()) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [callStatus, callStartedAt]);
+
   /* ── Initialise draggable position (client-side only) ── */
   useEffect(() => {
     if (variant !== 'draggable') return;
@@ -56,11 +67,15 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
   /* ── Drag mouse listeners ── */
   useEffect(() => {
     if (variant !== 'draggable') return;
+    const PANEL_W = 400;
+    const HEADER_H = 60;
     const onMove = (e: MouseEvent) => {
       if (!isDraggingRef.current) return;
+      const rawX = dragStartRef.current.px + (e.clientX - dragStartRef.current.mx);
+      const rawY = dragStartRef.current.py + (e.clientY - dragStartRef.current.my);
       setDraggablePos({
-        x: dragStartRef.current.px + (e.clientX - dragStartRef.current.mx),
-        y: dragStartRef.current.py + (e.clientY - dragStartRef.current.my),
+        x: Math.max(0, Math.min(window.innerWidth - PANEL_W, rawX)),
+        y: Math.max(0, Math.min(window.innerHeight - HEADER_H, rawY)),
       });
     };
     const onUp = () => {
@@ -93,6 +108,8 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
 
       vapiRef.current.on('call-start', () => {
         setCallStatus('active');
+        setCallStartedAt(new Date());
+        setCallDuration(0);
         setMessages((prev) => [
           ...prev,
           {
@@ -108,6 +125,8 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
         setCallStatus('ended');
         setIsKolleganSpeaking(false);
         setVolumeLevel(0);
+        setCallStartedAt(null);
+        setCallDuration(0);
         setTimeout(() => {
           setCallStatus('idle');
           setMode('idle');
@@ -232,6 +251,13 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
       vapiRef.current?.stop();
     };
   }, []);
+
+  /* ── Call duration formatter ── */
+  const fmtDur = (secs: number) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
 
   /* ── Voice bars (amber, inline styles) ── */
   const volumeBars = Array.from({ length: 5 }, (_, i) => {
@@ -515,66 +541,111 @@ export default function KolleganContact({ variant = 'floating' }: KolleganContac
           <div
             onMouseDown={handleDragStart}
             style={{ cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none' }}
-            className="flex items-center gap-3 px-4 py-3.5 bg-[var(--surface)] border-b border-[var(--border)] shrink-0"
+            className={[
+              'flex items-center gap-3 px-4 shrink-0',
+              'bg-[var(--surface)] border-b border-[var(--border)]',
+              draggableCollapsed ? 'py-3' : 'py-3.5',
+            ].join(' ')}
           >
-            {/* Grip icon */}
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="text-[var(--text-muted)] shrink-0"
-            >
-              <circle cx="8"  cy="5"  r="1.6" />
-              <circle cx="16" cy="5"  r="1.6" />
-              <circle cx="8"  cy="12" r="1.6" />
-              <circle cx="16" cy="12" r="1.6" />
-              <circle cx="8"  cy="19" r="1.6" />
-              <circle cx="16" cy="19" r="1.6" />
+            {/* Grip */}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-[var(--border)] shrink-0">
+              <circle cx="8"  cy="5"  r="1.8" />
+              <circle cx="16" cy="5"  r="1.8" />
+              <circle cx="8"  cy="12" r="1.8" />
+              <circle cx="16" cy="12" r="1.8" />
+              <circle cx="8"  cy="19" r="1.8" />
+              <circle cx="16" cy="19" r="1.8" />
             </svg>
 
-            {/* K badge + status */}
+            {/* K badge */}
             <div className="relative shrink-0">
               <KBadge size="md" />
-              <div
-                className={[
-                  'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--surface)]',
-                  callStatus === 'active' ? 'bg-emerald-500' : 'bg-amber-400',
-                ].join(' ')}
-              />
+              <div className={[
+                'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--surface)]',
+                callStatus === 'active' ? 'bg-emerald-500' : 'bg-amber-400',
+              ].join(' ')} />
             </div>
 
+            {/* Name + status */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-heading text-sm font-semibold text-[var(--text-primary)] leading-none">
-                Kollegan
-              </h3>
-              <p className="text-[var(--text-muted)] text-xs mt-0.5">{statusText}</p>
+              <h3 className="font-heading text-sm font-semibold text-[var(--text-primary)] leading-none">Kollegan</h3>
+              <p className="text-[var(--text-muted)] text-xs mt-0.5 truncate">{statusText}</p>
             </div>
 
-            {/* Active call pill */}
-            {callStatus === 'active' && (
-              <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 rounded-full px-2.5 py-1 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">Aktivt samtal</span>
+            {/* ── Collapsed contextual strip ── */}
+            {draggableCollapsed && (
+              <div
+                onMouseDown={(e) => e.stopPropagation()}
+                className="flex items-center gap-2 shrink-0"
+              >
+                {/* Idle: Ring button */}
+                {(callStatus === 'idle' || callStatus === 'ended') && (
+                  <button
+                    onClick={startCall}
+                    className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-3 py-1.5 text-xs font-semibold transition-all active:scale-95"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    Ring
+                  </button>
+                )}
+
+                {/* Connecting: spinner */}
+                {callStatus === 'connecting' && (
+                  <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-lg px-2.5 py-1.5">
+                    <div className="w-3 h-3 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
+                    <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">Ansluter…</span>
+                  </div>
+                )}
+
+                {/* Active: timer + mini vol bars + end call */}
+                {callStatus === 'active' && (
+                  <>
+                    <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 rounded-lg px-2.5 py-1.5">
+                      <span className="relative flex h-1.5 w-1.5 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                      </span>
+                      <span className="text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                        {fmtDur(callDuration)}
+                      </span>
+                      <div className="flex items-end gap-px h-3.5">{volumeBars}</div>
+                    </div>
+                    <button
+                      onClick={endCall}
+                      className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all active:scale-95"
+                      aria-label="Avsluta samtal"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                      </svg>
+                      Avsluta
+                    </button>
+                  </>
+                )}
               </div>
             )}
 
-            {/* Collapse / expand */}
+            {/* Expand / collapse — clear bordered button */}
             <button
               onMouseDown={(e) => e.stopPropagation()}
               onClick={() => setDraggableCollapsed((c) => !c)}
-              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 rounded-lg hover:bg-[var(--surface-alt)] shrink-0"
+              className={[
+                'flex items-center gap-1.5 shrink-0 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all',
+                'text-[var(--text-secondary)] border-[var(--border)] bg-[var(--surface-alt)]',
+                'hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]/40',
+              ].join(' ')}
               aria-label={draggableCollapsed ? 'Expandera' : 'Minimera'}
             >
-              {draggableCollapsed ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="18 15 12 9 6 15" />
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              )}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {draggableCollapsed
+                  ? <polyline points="18 15 12 9 6 15" />
+                  : <polyline points="6 9 12 15 18 9" />
+                }
+              </svg>
+              <span>{draggableCollapsed ? 'Öppna' : 'Minimera'}</span>
             </button>
           </div>
 
