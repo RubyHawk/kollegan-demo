@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Room, ActivityEvent, SSEMessage } from '@/lib/types';
+import { resetRooms } from '@features/rooms/api';
 
 import HotelGrid from '@/app/components/HotelGrid';
 import BookingsCalendar from '@/app/components/BookingsCalendar';
@@ -132,7 +133,7 @@ export default function HomePage() {
   }, [addToast]);
 
   const handleReset = useCallback(async () => {
-    await fetch('/api/rooms', { method: 'DELETE' });
+    await resetRooms();
   }, []);
 
   const handleRoomClick = useCallback((room: Room) => {
