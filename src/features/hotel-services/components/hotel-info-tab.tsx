@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Restaurant, HotelActivity, Amenity } from '@/lib/types';
-import ServiceCard from './service-card';
-import ServiceFormModal from './service-form-modal';
-import ServiceDetailModal from './service-detail-modal';
+import { Restaurant, HotelActivity, Amenity } from '@features/hotel-services/types';
+import ServiceCard from '@features/hotel-services/components/service-card';
+import ServiceFormModal from '@features/hotel-services/components/service-form-modal';
+import ServiceDetailModal from '@features/hotel-services/components/service-detail-modal';
 import { fetchRestaurants, fetchActivities, fetchAmenities, deleteService, toggleServiceActive } from '@features/hotel-services/api';
 
 type ServiceSection = 'restaurants' | 'activities' | 'amenities';
