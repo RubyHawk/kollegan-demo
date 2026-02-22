@@ -27,7 +27,7 @@ export default function HotelInfoTab({ onCountChange }: Props) {
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [viewingItem, setViewingItem] = useState<{ type: ServiceType; item: ServiceItem } | null>(null);
+  const [viewingItem, setViewingItem] = useState<{ type: ServiceType; id: string } | null>(null);
   const [editingItem, setEditingItem] = useState<{ type: ServiceType; item: ServiceItem } | null>(null);
   const [creatingType, setCreatingType] = useState<ServiceType | null>(null);
 
@@ -55,6 +55,12 @@ export default function HotelInfoTab({ onCountChange }: Props) {
   }, [onCountChange]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const getCurrentItem = useCallback((type: ServiceType, id: string): ServiceItem | undefined => {
+    if (type === 'restaurant') return restaurants.find((r) => r.id === id);
+    if (type === 'activity') return activities.find((a) => a.id === id);
+    return amenities.find((a) => a.id === id);
+  }, [restaurants, activities, amenities]);
 
   const handleSave = async () => {
     setEditingItem(null);
@@ -209,7 +215,7 @@ export default function HotelInfoTab({ onCountChange }: Props) {
                 key={item.id}
                 type={currentSection.type}
                 item={item}
-                onView={(i) => setViewingItem({ type: currentSection.type, item: i })}
+                onView={(i) => setViewingItem({ type: currentSection.type, id: i.id })}
                 onEdit={(i) => setEditingItem({ type: currentSection.type, item: i })}
                 onDelete={(id) => handleDelete(currentSection.type, id)}
                 onToggleActive={(id, isActive) => handleToggleActive(currentSection.type, id, isActive)}
@@ -254,19 +260,23 @@ export default function HotelInfoTab({ onCountChange }: Props) {
         />
       )}
 
-      {viewingItem && (
-        <ServiceDetailModal
-          type={viewingItem.type}
-          item={viewingItem.item}
-          onClose={() => setViewingItem(null)}
-          onEdit={(i) => {
-            setViewingItem(null);
-            setEditingItem({ type: viewingItem.type, item: i });
-          }}
-          onToggleActive={(id, isActive) => handleToggleActive(viewingItem.type, id, isActive)}
-          onDelete={(id) => { setViewingItem(null); handleDelete(viewingItem.type, id); }}
-        />
-      )}
+      {viewingItem && (() => {
+        const liveItem = getCurrentItem(viewingItem.type, viewingItem.id);
+        if (!liveItem) return null;
+        return (
+          <ServiceDetailModal
+            type={viewingItem.type}
+            item={liveItem}
+            onClose={() => setViewingItem(null)}
+            onEdit={(i) => {
+              setViewingItem(null);
+              setEditingItem({ type: viewingItem.type, item: i });
+            }}
+            onToggleActive={(id, isActive) => handleToggleActive(viewingItem.type, id, isActive)}
+            onDelete={(id) => { setViewingItem(null); handleDelete(viewingItem.type, id); }}
+          />
+        );
+      })()}
     </div>
   );
 }
