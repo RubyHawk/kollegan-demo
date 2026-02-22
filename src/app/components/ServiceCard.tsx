@@ -8,6 +8,7 @@ type ServiceType = 'restaurant' | 'activity' | 'amenity';
 interface Props {
   type: ServiceType;
   item: ServiceItem;
+  onView: (item: ServiceItem) => void;
   onEdit: (item: ServiceItem) => void;
   onDelete: (id: string) => void;
   onToggleActive: (id: string, isActive: boolean) => void;
@@ -138,7 +139,7 @@ function getHours(item: ServiceItem): string {
   return item.openingHours?.default ?? '';
 }
 
-export default function ServiceCard({ type, item, onEdit, onDelete, onToggleActive }: Props) {
+export default function ServiceCard({ type, item, onView, onEdit, onDelete, onToggleActive }: Props) {
   const { icon, bg, color } = getIconAndColor(type, item);
   const subtitle = getSubtitle(type, item);
   const tags = getTags(type, item);
@@ -146,7 +147,7 @@ export default function ServiceCard({ type, item, onEdit, onDelete, onToggleActi
 
   return (
     <div
-      onClick={() => onEdit(item)}
+      onClick={() => onView(item)}
       className={`service-card cursor-pointer relative bg-[var(--surface)] border rounded-2xl p-5 transition-all duration-200 hover:shadow-md ${item.isActive ? 'border-[var(--border)] hover:border-purple-200 dark:hover:border-amber-800/50' : 'border-[var(--border)] opacity-60'}`}
     >
       {/* Header */}
