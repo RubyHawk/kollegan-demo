@@ -1,0 +1,60 @@
+/* ───── Design System Tokens ───── */
+
+@theme {
+  /* Keep navy + cream for Maja widget (dark overlay) */
+  --color-navy-950: #0B1121;
+  --color-navy-900: #131C2E;
+  --color-navy-800: #1A2540;
+  --color-navy-700: #1E293B;
+
+  --color-cream-100: #F5F0E8;
+  --color-cream-400: #9B917F;
+  --color-cream-500: #827668;
+  --color-cream-600: #5C5549;
+  --color-cream-700: #3D3A34;
+
+  --color-burgundy-950: #2A1015;
+  --color-burgundy-800: #991B1B;
+  --color-burgundy-400: #F87171;
+
+  --color-gold-400: #FBBF24;
+  --color-gold-500: #D4A843;
+  --color-gold-600: #B8860B;
+}
+
+/* ───── Semantic color tokens ───── */
+:root {
+  /* Light mode: clean white + dark purple */
+  --page-bg: #FAFAFD;
+  --surface: #FFFFFF;
+  --surface-alt: #F1EEF9;
+  --surface-hover: #F7F4FD;
+  --border: #CCC6E8;
+  --border-light: #E4E0F5;
+  --text-primary: #1A0F3C;
+  --text-secondary: #4A3A78;
+  --text-muted: #8B7DAE;
+  --dot-color: rgba(74, 58, 120, 0.07);
+  --accent: #6D28D9;
+  --accent-light: #7C3AED;
+  --accent-subtle: rgba(109, 40, 217, 0.08);
+  --accent-border: rgba(109, 40, 217, 0.22);
+}
+
+.dark {
+  /* Dark mode: gray/black + amber */
+  --page-bg: #121212;
+  --surface: #1C1C1C;
+  --surface-alt: #202020;
+  --surface-hover: #2A2A2A;
+  --border: #3D3D3D;
+  --border-light: #2A2A2A;
+  --text-primary: #ECECEC;
+  --text-secondary: #999999;
+  --text-muted: #666666;
+  --dot-color: rgba(102, 102, 102, 0.1);
+  --accent: #f59e0b;
+  --accent-light: #fbbf24;
+  --accent-subtle: rgba(245, 158, 11, 0.10);
+  --accent-border: rgba(245, 158, 11, 0.22);
+}
