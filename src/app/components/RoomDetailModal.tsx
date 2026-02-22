@@ -10,6 +10,7 @@ import {
 } from '@heroui/react';
 import { Room } from '@/lib/types';
 import { getRoomMeta, AMENITY_ICONS, AmenityDef } from '@/lib/roomMeta';
+import { bookRoom, cancelBooking } from '@features/rooms/api';
 
 interface Props {
   room: Room;
@@ -69,19 +70,12 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/rooms/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          room_id: room.id,
-          guest_name: guestName.trim(),
-          guest_email: email.trim() || undefined,
-          guest_phone: phone.trim() || undefined,
-          check_in: checkIn,
-          check_out: checkOut,
-        }),
+      const data = await bookRoom({
+        room_id: room.id,
+        guest_name: guestName.trim(),
+        check_in: checkIn,
+        check_out: checkOut,
       });
-      const data = await res.json();
       if (data.success) onBooked();
       else setError(data.message || 'Något gick fel.');
     } catch {
@@ -95,12 +89,7 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/rooms/cancel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ room_id: room.id }),
-      });
-      const data = await res.json();
+      const data = await cancelBooking(room.id);
       if (data.success) onBooked();
       else setError(data.message || 'Kunde inte avboka.');
     } catch {

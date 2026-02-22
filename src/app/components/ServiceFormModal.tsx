@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Restaurant, HotelActivity, Amenity, RestaurantService, ActivityCategory, AmenityType } from '@/lib/types';
+import { createService, updateService } from '@features/hotel-services/api';
 
 type ServiceType = 'restaurant' | 'activity' | 'amenity';
 type ServiceItem = Restaurant | HotelActivity | Amenity;
@@ -119,18 +120,12 @@ export default function ServiceFormModal({ type, item, onSave, onClose }: Props)
     setLoading(true);
     setError('');
     try {
-      const endpoint = `/api/${type === 'restaurant' ? 'restaurants' : type === 'activity' ? 'activities' : 'amenities'}${isEdit ? `/${item!.id}` : ''}`;
-      const res = await fetch(endpoint, {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildPayload()),
-      });
-      const data = await res.json();
-      if (res.ok && (data.success || data.item || !isEdit)) {
-        onSave();
+      if (isEdit) {
+        await updateService(type, item!.id, buildPayload());
       } else {
-        setError(data.message ?? 'Något gick fel.');
+        await createService(type, buildPayload());
       }
+      onSave();
     } catch { setError('Nätverksfel. Försök igen.'); }
     finally { setLoading(false); }
   };

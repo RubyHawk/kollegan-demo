@@ -5,6 +5,7 @@ import { Restaurant, HotelActivity, Amenity } from '@/lib/types';
 import ServiceCard from './ServiceCard';
 import ServiceFormModal from './ServiceFormModal';
 import ServiceDetailModal from './ServiceDetailModal';
+import { fetchRestaurants, fetchActivities, fetchAmenities, deleteService, toggleServiceActive } from '@features/hotel-services/api';
 
 type ServiceSection = 'restaurants' | 'activities' | 'amenities';
 type ServiceItem = Restaurant | HotelActivity | Amenity;
@@ -34,15 +35,11 @@ export default function HotelInfoTab({ onCountChange }: Props) {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [rRes, aRes, amRes] = await Promise.all([
-        fetch('/api/restaurants'),
-        fetch('/api/activities'),
-        fetch('/api/amenities'),
+      const [r, a, am] = await Promise.all([
+        fetchRestaurants(),
+        fetchActivities(),
+        fetchAmenities(),
       ]);
-      const [rData, aData, amData] = await Promise.all([rRes.json(), aRes.json(), amRes.json()]);
-      const r: Restaurant[] = rData.items ?? [];
-      const a: HotelActivity[] = aData.items ?? [];
-      const am: Amenity[] = amData.items ?? [];
       setRestaurants(r);
       setActivities(a);
       setAmenities(am);
@@ -69,18 +66,12 @@ export default function HotelInfoTab({ onCountChange }: Props) {
   };
 
   const handleDelete = async (type: ServiceType, id: string) => {
-    const endpoint = `/api/${type === 'restaurant' ? 'restaurants' : type === 'activity' ? 'activities' : 'amenities'}/${id}`;
-    await fetch(endpoint, { method: 'DELETE' });
+    await deleteService(type, id);
     await fetchAll();
   };
 
   const handleToggleActive = async (type: ServiceType, id: string, isActive: boolean) => {
-    const endpoint = `/api/${type === 'restaurant' ? 'restaurants' : type === 'activity' ? 'activities' : 'amenities'}/${id}`;
-    await fetch(endpoint, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isActive }),
-    });
+    await toggleServiceActive(type, id, isActive);
     await fetchAll();
   };
 

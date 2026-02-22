@@ -1,7 +1,12 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { Room, ActivityEvent, SSEMessage } from '@/lib/types';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { Room } from '@/lib/types';
+import { resetRooms } from '@features/rooms/api';
+import { useRealtimeStore, selectRooms, selectActivities, selectOnCall, selectConnected, selectAvailableCount, selectBookedCount, selectLockedCount, selectOccupancy } from '@shared/stores/realtime-store';
+import { useToast } from '@shared/ui/toast/toast-context';
+import { CheckCircleIcon, XCircleIcon, LockIcon, PhoneIcon, PhoneOffIcon } from '@shared/ui/icons';
+import ToastContainer from '@shared/ui/toast/toast-container';
 
 import HotelGrid from '@/app/components/HotelGrid';
 import BookingsCalendar from '@/app/components/BookingsCalendar';
@@ -14,15 +19,21 @@ import AnimatedNumber from '@/app/components/AnimatedNumber';
 import SplashScreen from '@/app/components/SplashScreen';
 import DashboardHeader from '@/app/components/DashboardHeader';
 import DashboardSidebar from '@/app/components/DashboardSidebar';
-import ToastContainer, { Toast } from '@/app/components/ToastContainer';
 
 type Tab = 'available' | 'booked' | 'activity' | 'hotel-info' | 'crm';
 
 export default function HomePage() {
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [activities, setActivities] = useState<ActivityEvent[]>([]);
-  const [onCall, setOnCall] = useState(false);
-  const [connected, setConnected] = useState(false);
+  const rooms = useRealtimeStore(selectRooms);
+  const activities = useRealtimeStore(selectActivities);
+  const onCall = useRealtimeStore(selectOnCall);
+  const connected = useRealtimeStore(selectConnected);
+  const availableCount = useRealtimeStore(selectAvailableCount);
+  const bookedCount = useRealtimeStore(selectBookedCount);
+  const lockedCount = useRealtimeStore(selectLockedCount);
+  const occupancy = useRealtimeStore(selectOccupancy);
+
+  const { toasts, addToast, dismissToast } = useToast();
+
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('available');
   const [showSplash, setShowSplash] = useState(true);
@@ -30,109 +41,60 @@ export default function HomePage() {
   const [hotelServiceCount, setHotelServiceCount] = useState(0);
   const [crmCount, setCrmCount] = useState(0);
   const [focusEventId, setFocusEventId] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<Toast[]>([]);
 
-  /* ── Toast helpers ── */
-  const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
-    const id = Math.random().toString(36).slice(2, 9);
-    setToasts((prev) => [...prev.slice(-2), { id, ...toast }]);
-  }, []);
+  /* ── Activity-based toasts ── */
+  const lastActivityIdRef = useRef<string | null>(null);
+  const prevOnCallRef = useRef(onCall);
 
-  const dismissToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  /* ── SSE ── */
   useEffect(() => {
-    const es = new EventSource('/api/sse');
+    if (activities.length === 0) return;
+    const latest = activities[0];
+    if (!latest || latest.id === lastActivityIdRef.current) return;
+    lastActivityIdRef.current = latest.id;
 
-    es.onopen = () => setConnected(true);
-    es.onerror = () => setConnected(false);
+    if (latest.type === 'room_confirmed') {
+      addToast({
+        message: `Rum ${latest.roomId ?? ''} bokad`,
+        color: 'emerald',
+        icon: <CheckCircleIcon size={14} className="text-emerald-600" />,
+      });
+    } else if (latest.type === 'room_cancelled') {
+      addToast({
+        message: `Rum ${latest.roomId ?? ''} avbokad`,
+        color: 'red',
+        icon: <XCircleIcon size={14} className="text-red-500" />,
+      });
+    } else if (latest.type === 'room_locked') {
+      addToast({
+        message: `Rum ${latest.roomId ?? ''} reserveras...`,
+        color: 'amber',
+        icon: <LockIcon size={14} className="text-amber-600" />,
+      });
+    }
+  }, [activities, addToast]);
 
-    es.onmessage = (event) => {
-      const msg: SSEMessage = JSON.parse(event.data);
+  useEffect(() => {
+    if (prevOnCallRef.current !== onCall) {
+      prevOnCallRef.current = onCall;
+      addToast(
+        onCall
+          ? { message: 'Inkommande samtal', color: 'indigo', icon: <PhoneIcon size={14} className="text-indigo-600" /> }
+          : { message: 'Samtal avslutat', color: 'gray', icon: <PhoneOffIcon size={14} className="text-[var(--text-muted)]" /> }
+      );
+    }
+  }, [onCall, addToast]);
 
-      if (msg.type === 'full_state') {
-        const state = msg.payload as {
-          rooms: Room[];
-          recentActivity: ActivityEvent[];
-          onCall: boolean;
-        };
-        setRooms(state.rooms);
-        setActivities(state.recentActivity);
-        setOnCall(state.onCall);
-      } else if (msg.type === 'room_update') {
-        const updated = msg.payload as Room;
-        setRooms((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
-        setSelectedRoom((prev) => (prev?.id === updated.id ? updated : prev));
-      } else if (msg.type === 'activity') {
-        const activity = msg.payload as ActivityEvent;
-        setActivities((prev) => [activity, ...prev].slice(0, 50));
-
-        if (activity.type === 'room_confirmed') {
-          addToast({
-            message: `Rum ${activity.roomId ?? ''} bokad`,
-            color: 'emerald',
-            icon: (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-            ),
-          });
-        } else if (activity.type === 'room_cancelled') {
-          addToast({
-            message: `Rum ${activity.roomId ?? ''} avbokad`,
-            color: 'red',
-            icon: (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
-                <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
-              </svg>
-            ),
-          });
-        } else if (activity.type === 'room_locked') {
-          addToast({
-            message: `Rum ${activity.roomId ?? ''} reserveras...`,
-            color: 'amber',
-            icon: (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-            ),
-          });
-        }
-      } else if (msg.type === 'call_status') {
-        const { onCall: newOnCall } = msg.payload as { onCall: boolean };
-        setOnCall(newOnCall);
-        addToast(
-          newOnCall
-            ? {
-                message: 'Inkommande samtal',
-                color: 'indigo',
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
-                ),
-              }
-            : {
-                message: 'Samtal avslutat',
-                color: 'gray',
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
-                    <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>
-                ),
-              }
-        );
-      }
-    };
-
-    return () => es.close();
-  }, [addToast]);
+  /* ── Keep selectedRoom in sync with SSE updates ── */
+  useEffect(() => {
+    if (!selectedRoom) return;
+    const updated = rooms.find((r) => r.id === selectedRoom.id);
+    if (updated && updated !== selectedRoom) {
+      setSelectedRoom(updated);
+    }
+  }, [rooms, selectedRoom]);
 
   const handleReset = useCallback(async () => {
-    await fetch('/api/rooms', { method: 'DELETE' });
+    await resetRooms();
   }, []);
 
   const handleRoomClick = useCallback((room: Room) => {
@@ -146,15 +108,6 @@ export default function HomePage() {
     setActiveTab('activity');
     setFocusEventId(eventId);
   }, []);
-
-  /* ── Derived counts ── */
-  const availableCount = rooms.filter((r) => r.status === 'available').length;
-  const bookedCount = rooms.filter((r) => r.status === 'booked').length;
-  const lockedCount = rooms.filter((r) => r.status === 'locked').length;
-  const occupancy =
-    rooms.length > 0
-      ? Math.round(((bookedCount + lockedCount) / rooms.length) * 100)
-      : 0;
 
   const tabCounts: Record<Tab, number> = {
     available: availableCount + lockedCount,

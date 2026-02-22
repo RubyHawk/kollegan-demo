@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Room } from '@/lib/types';
+import { bookRoom, cancelBooking } from '@features/rooms/api';
 
 const TYPE_LABELS: Record<string, string> = {
   Enkel: 'Enkelt rum',
@@ -37,18 +38,12 @@ export default function BookingDialog({ room, onClose, onBooked }: Props) {
     setError('');
 
     try {
-      const res = await fetch('/api/rooms/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          room_id: room.id,
-          guest_name: guestName.trim(),
-          check_in: checkIn,
-          check_out: checkOut,
-        }),
+      const data = await bookRoom({
+        room_id: room.id,
+        guest_name: guestName.trim(),
+        check_in: checkIn,
+        check_out: checkOut,
       });
-
-      const data = await res.json();
       if (data.success) {
         onBooked();
       } else {
@@ -66,13 +61,7 @@ export default function BookingDialog({ room, onClose, onBooked }: Props) {
     setError('');
 
     try {
-      const res = await fetch('/api/rooms/cancel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ room_id: room.id }),
-      });
-
-      const data = await res.json();
+      const data = await cancelBooking(room.id);
       if (data.success) {
         onBooked();
       } else {
