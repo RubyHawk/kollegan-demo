@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ActivityEvent, CRMContact } from '@/lib/types';
+import { ActivityEvent } from '@features/activity/types';
+import { CRMContact } from '@features/crm/types';
 
 interface Props {
   activities: ActivityEvent[];
