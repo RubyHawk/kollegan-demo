@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Restaurant, HotelActivity, Amenity } from '@/lib/types';
 import ServiceCard from './ServiceCard';
 import ServiceFormModal from './ServiceFormModal';
+import ServiceDetailModal from './ServiceDetailModal';
 
 type ServiceSection = 'restaurants' | 'activities' | 'amenities';
 type ServiceItem = Restaurant | HotelActivity | Amenity;
@@ -26,6 +27,7 @@ export default function HotelInfoTab({ onCountChange }: Props) {
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [viewingItem, setViewingItem] = useState<{ type: ServiceType; item: ServiceItem } | null>(null);
   const [editingItem, setEditingItem] = useState<{ type: ServiceType; item: ServiceItem } | null>(null);
   const [creatingType, setCreatingType] = useState<ServiceType | null>(null);
 
@@ -207,6 +209,7 @@ export default function HotelInfoTab({ onCountChange }: Props) {
                 key={item.id}
                 type={currentSection.type}
                 item={item}
+                onView={(i) => setViewingItem({ type: currentSection.type, item: i })}
                 onEdit={(i) => setEditingItem({ type: currentSection.type, item: i })}
                 onDelete={(id) => handleDelete(currentSection.type, id)}
                 onToggleActive={(id, isActive) => handleToggleActive(currentSection.type, id, isActive)}
@@ -248,6 +251,20 @@ export default function HotelInfoTab({ onCountChange }: Props) {
           item={editingItem.item}
           onSave={handleSave}
           onClose={() => setEditingItem(null)}
+        />
+      )}
+
+      {viewingItem && (
+        <ServiceDetailModal
+          type={viewingItem.type}
+          item={viewingItem.item}
+          onClose={() => setViewingItem(null)}
+          onEdit={(i) => {
+            setViewingItem(null);
+            setEditingItem({ type: viewingItem.type, item: i });
+          }}
+          onToggleActive={(id, isActive) => handleToggleActive(viewingItem.type, id, isActive)}
+          onDelete={(id) => { setViewingItem(null); handleDelete(viewingItem.type, id); }}
         />
       )}
     </div>
