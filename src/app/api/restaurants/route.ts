@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllRestaurants, createRestaurant } from '@/lib/hotelServicesStore';
+import { getAllRestaurants, createRestaurant } from '@features/hotel-services/lib/hotel-services-store';
 
 export const dynamic = 'force-dynamic';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Room } from '@/lib/types';
+import { Room } from '@features/rooms/types';
 import { resetRooms } from '@features/rooms/api';
 import { useRealtimeStore, selectRooms, selectActivities, selectOnCall, selectConnected, selectAvailableCount, selectBookedCount, selectLockedCount, selectOccupancy } from '@shared/stores/realtime-store';
 import { useToast } from '@shared/ui/toast/toast-context';

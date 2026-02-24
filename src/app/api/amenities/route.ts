@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllAmenities, createAmenity } from '@/lib/hotelServicesStore';
+import { getAllAmenities, createAmenity } from '@features/hotel-services/lib/hotel-services-store';
 
 export const dynamic = 'force-dynamic';
 

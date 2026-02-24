@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { addClient, removeClient } from '@/lib/sseManager';
-import { getFullState } from '@/lib/roomStore';
+import { addClient, removeClient } from '@infra/sse/sse-manager';
+import { getFullState } from '@features/rooms/lib/room-store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

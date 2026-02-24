@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRestaurantById, updateRestaurant, deleteRestaurant } from '@/lib/hotelServicesStore';
+import { getRestaurantById, updateRestaurant, deleteRestaurant } from '@features/hotel-services/lib/hotel-services-store';
 
 export const dynamic = 'force-dynamic';
 
