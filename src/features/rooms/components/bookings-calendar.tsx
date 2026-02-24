@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Tooltip, Button, Chip } from '@heroui/react';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@shared/ui/tooltip';
+import { Button } from '@shared/ui/button';
+import { Badge } from '@shared/ui/badge';
 import { Room } from '@features/rooms/types';
 
 interface Props {
@@ -388,12 +390,11 @@ function TimelineView({
         {/* Prev / period / next */}
         <div className="flex items-center gap-1.5">
           <Button
-            isIconOnly
-            size="sm"
-            variant="bordered"
-            onPress={() => setOffsetDays((o) => o - view.step)}
+            size="icon"
+            variant="outline"
+            onClick={() => setOffsetDays((o) => o - view.step)}
             aria-label="Föregående period"
-            className="border-[var(--border)] text-[var(--text-secondary)] bg-transparent"
+            className="h-9 w-9 border-[var(--border)] text-[var(--text-secondary)] bg-transparent"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
@@ -405,12 +406,11 @@ function TimelineView({
           </span>
 
           <Button
-            isIconOnly
-            size="sm"
-            variant="bordered"
-            onPress={() => setOffsetDays((o) => o + view.step)}
+            size="icon"
+            variant="outline"
+            onClick={() => setOffsetDays((o) => o + view.step)}
             aria-label="Nästa period"
-            className="border-[var(--border)] text-[var(--text-secondary)] bg-transparent"
+            className="h-9 w-9 border-[var(--border)] text-[var(--text-secondary)] bg-transparent"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="9 18 15 12 9 6" />
@@ -420,10 +420,9 @@ function TimelineView({
           {offsetDays !== 0 && (
             <Button
               size="sm"
-              variant="light"
-              color="warning"
-              onPress={() => setOffsetDays(0)}
-              className="text-xs font-medium ml-1 min-w-0 h-7 px-2"
+              variant="ghost"
+              onClick={() => setOffsetDays(0)}
+              className="text-xs font-medium ml-1 min-w-0 h-7 px-2 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
             >
               Idag
             </Button>
@@ -516,28 +515,38 @@ function TimelineView({
                           {d.toLocaleDateString('sv-SE', { weekday: 'narrow' })}
                         </span>
                       )}
-                      <Tooltip
-                        content="Idag"
-                        placement="bottom"
-                        delay={400}
-                        closeDelay={0}
-                        isDisabled={!isToday}
-                        size="sm"
-                      >
+                      {isToday ? (
+                        <TooltipProvider delayDuration={400}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={[
+                                  'flex items-center justify-center rounded-full font-bold leading-none',
+                                  view.days > 31
+                                    ? 'text-[9px] w-5 h-5 mt-0'
+                                    : 'text-[11px] w-6 h-6 mt-0.5',
+                                  'bg-amber-500 text-white cursor-default',
+                                ].join(' ')}
+                              >
+                                {d.getDate()}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">Idag</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
                         <div
                           className={[
                             'flex items-center justify-center rounded-full font-bold leading-none',
                             view.days > 31
                               ? 'text-[9px] w-5 h-5 mt-0'
                               : 'text-[11px] w-6 h-6 mt-0.5',
-                            isToday
-                              ? 'bg-amber-500 text-white cursor-default'
-                              : 'text-[var(--text-secondary)]',
+                            'text-[var(--text-secondary)]',
                           ].join(' ')}
                         >
                           {d.getDate()}
                         </div>
-                      </Tooltip>
+                      )}
                     </div>
                   );
                 })}
@@ -573,17 +582,12 @@ function TimelineView({
                       <p className="text-[12px] font-semibold text-[var(--text-primary)] leading-tight truncate">
                         {ROOM_LABEL[room.type]} {room.number}
                       </p>
-                      <Chip
-                        size="sm"
-                        variant="flat"
-                        color={room.type === 'Svit' ? 'warning' : 'default'}
-                        classNames={{
-                          base: 'h-[18px] mt-0.5',
-                          content: 'text-[9px] font-semibold px-1.5 py-0',
-                        }}
+                      <Badge
+                        variant={room.type === 'Svit' ? 'warning' : 'secondary'}
+                        className="h-[18px] mt-0.5 text-[9px] font-semibold px-1.5 py-0 rounded-md"
                       >
                         Vån {room.floor}
-                      </Chip>
+                      </Badge>
                     </div>
                   </div>
 
@@ -609,50 +613,49 @@ function TimelineView({
                     })}
 
                     {bar && (
-                      <Tooltip
-                        showArrow
-                        placement="top"
-                        delay={200}
-                        closeDelay={0}
-                        content={
-                          <div className="px-1 py-1 min-w-[160px]">
-                            <p className="font-semibold text-sm">{room.guestName}</p>
-                            <p className="text-tiny text-default-400 mb-2">
-                              {ROOM_LABEL[room.type]} · Rum {room.number} · Vån {room.floor}
-                            </p>
-                            <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-tiny">
-                              <span className="text-default-400">Incheckning</span>
-                              <span className="font-medium">{room.checkIn ? fmtShort(room.checkIn) : '–'}</span>
-                              <span className="text-default-400">Utcheckning</span>
-                              <span className="font-medium">{room.checkOut ? fmtShort(room.checkOut) : '–'}</span>
-                              <span className="text-default-400">Nätter</span>
-                              <span className="font-medium">{nights}</span>
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => onRoomClick?.(room)}
+                              className={[
+                                'absolute top-3 bottom-3 flex items-center px-2.5 rounded-lg shadow-sm',
+                                'transition-all hover:brightness-105 hover:shadow-md active:scale-[0.99]',
+                                colors.bg,
+                              ].join(' ')}
+                              style={{
+                                left:  `calc(${(bar.col / view.days) * 100}% + 2px)`,
+                                width: `calc(${(bar.span / view.days) * 100}% - 4px)`,
+                              }}
+                            >
+                              <span
+                                className={[
+                                  'text-[11px] font-semibold truncate leading-none',
+                                  colors.text,
+                                ].join(' ')}
+                              >
+                                {room.guestName}
+                              </span>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="px-3 py-2">
+                            <div className="min-w-[160px]">
+                              <p className="font-semibold text-sm">{room.guestName}</p>
+                              <p className="text-xs text-[var(--text-muted)] mb-2">
+                                {ROOM_LABEL[room.type]} · Rum {room.number} · Vån {room.floor}
+                              </p>
+                              <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+                                <span className="text-[var(--text-muted)]">Incheckning</span>
+                                <span className="font-medium">{room.checkIn ? fmtShort(room.checkIn) : '–'}</span>
+                                <span className="text-[var(--text-muted)]">Utcheckning</span>
+                                <span className="font-medium">{room.checkOut ? fmtShort(room.checkOut) : '–'}</span>
+                                <span className="text-[var(--text-muted)]">Nätter</span>
+                                <span className="font-medium">{nights}</span>
+                              </div>
                             </div>
-                          </div>
-                        }
-                      >
-                        <button
-                          onClick={() => onRoomClick?.(room)}
-                          className={[
-                            'absolute top-3 bottom-3 flex items-center px-2.5 rounded-lg shadow-sm',
-                            'transition-all hover:brightness-105 hover:shadow-md active:scale-[0.99]',
-                            colors.bg,
-                          ].join(' ')}
-                          style={{
-                            left:  `calc(${(bar.col / view.days) * 100}% + 2px)`,
-                            width: `calc(${(bar.span / view.days) * 100}% - 4px)`,
-                          }}
-                        >
-                          <span
-                            className={[
-                              'text-[11px] font-semibold truncate leading-none',
-                              colors.text,
-                            ].join(' ')}
-                          >
-                            {room.guestName}
-                          </span>
-                        </button>
-                      </Tooltip>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </div>
                 </div>

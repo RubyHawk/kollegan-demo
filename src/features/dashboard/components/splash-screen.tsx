@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardBody } from '@heroui/react';
+import { Card, CardContent } from '@shared/ui/card';
 
 interface Props {
   onDone: () => void;
@@ -32,13 +32,8 @@ export default function SplashScreen({ onDone }: Props) {
       <div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full bg-indigo-500/5 blur-3xl pointer-events-none" />
 
       {/* Glass card */}
-      <Card
-        isBlurred
-        shadow="none"
-        className="border border-white/15 bg-white/8 backdrop-blur-2xl z-10"
-        radius="lg"
-      >
-        <CardBody className="flex flex-col items-center gap-6 px-12 py-10">
+      <Card className="border border-white/15 bg-white/8 backdrop-blur-2xl z-10 rounded-lg shadow-none">
+        <CardContent className="flex flex-col items-center gap-6 px-12 py-10">
           {/* Icon with glow halo */}
           <div className="relative flex items-center justify-center">
             {/* Outer glow ring */}
@@ -96,7 +91,7 @@ export default function SplashScreen({ onDone }: Props) {
               />
             ))}
           </div>
-        </CardBody>
+        </CardContent>
       </Card>
     </div>
   );

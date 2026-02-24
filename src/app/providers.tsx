@@ -1,6 +1,5 @@
 'use client';
 
-import { HeroUIProvider } from '@heroui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ToastProvider } from '@shared/ui/toast/toast-context';
@@ -16,13 +15,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <HeroUIProvider>
-        <ToastProvider>
-          <SSEInitializer>
-            {children}
-          </SSEInitializer>
-        </ToastProvider>
-      </HeroUIProvider>
+      <ToastProvider>
+        <SSEInitializer>
+          {children}
+        </SSEInitializer>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
