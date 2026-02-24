@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Restaurant, HotelActivity, Amenity } from '@/lib/types';
+import { Restaurant, HotelActivity, Amenity } from '@features/hotel-services/types';
 import ServiceCard from './ServiceCard';
 import ServiceFormModal from './ServiceFormModal';
 import ServiceDetailModal from './ServiceDetailModal';

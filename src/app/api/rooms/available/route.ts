@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAvailableRooms, logRoomsQueried } from '@/lib/roomStore';
+import { getAvailableRooms, logRoomsQueried } from '@features/rooms/lib/room-store';
 
 export const dynamic = 'force-dynamic';
 

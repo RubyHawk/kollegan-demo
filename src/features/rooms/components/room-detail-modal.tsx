@@ -9,7 +9,7 @@ import {
   Input,
 } from '@heroui/react';
 import { Room } from '@features/rooms/types';
-import { getRoomMeta, AMENITY_ICONS, AmenityDef } from '@/lib/roomMeta';
+import { getRoomMeta, AMENITY_ICONS, AmenityDef } from '@features/rooms/lib/room-meta';
 import { bookRoom, cancelBooking } from '@features/rooms/api';
 
 interface Props {

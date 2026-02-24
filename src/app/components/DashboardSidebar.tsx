@@ -1,6 +1,6 @@
 'use client';
 
-import { ActivityEvent } from '@/lib/types';
+import { ActivityEvent } from '@features/activity/types';
 import ThemeToggle from './ThemeToggle';
 
 type Tab = 'available' | 'booked' | 'activity' | 'hotel-info' | 'crm';

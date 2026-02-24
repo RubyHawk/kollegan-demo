@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { confirmBooking } from '@/lib/roomStore';
+import { confirmBooking } from '@features/rooms/lib/room-store';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();

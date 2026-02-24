@@ -1,7 +1,7 @@
 'use client';
 
 import { Room } from '@features/rooms/types';
-import { getRoomMeta, AMENITY_ICONS, AmenityDef } from '@/lib/roomMeta';
+import { getRoomMeta, AMENITY_ICONS, AmenityDef } from '@features/rooms/lib/room-meta';
 
 interface Props {
   room: Room;
