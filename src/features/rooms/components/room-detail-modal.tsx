@@ -1,13 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Modal,
-  ModalContent,
-  ModalBody,
-  Button,
-  Input,
-} from '@heroui/react';
+import { Dialog, DialogContent, DialogOverlay, DialogPortal } from '@shared/ui/dialog';
+import { Button } from '@shared/ui/button';
+import { Input } from '@shared/ui/input';
+import { Label } from '@shared/ui/label';
 import { Room } from '@features/rooms/types';
 import { getRoomMeta, AMENITY_ICONS, AmenityDef } from '@features/rooms/lib/room-meta';
 import { bookRoom, cancelBooking } from '@features/rooms/api';
@@ -99,28 +96,11 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
     }
   };
 
-  const inputStyles = {
-    inputWrapper: 'bg-[var(--surface-alt)] border-[var(--border)] hover:border-purple-500/60 dark:hover:border-amber-400/60 focus-within:!border-purple-600 dark:focus-within:!border-amber-500 dark:bg-white/5 dark:border-white/12',
-    label: 'text-[var(--text-secondary)] font-medium',
-    input: 'text-[var(--text-primary)]',
-  };
-
   return (
-    <Modal
-      isOpen={true}
-      onClose={onClose}
-      backdrop="blur"
-      size="lg"
-      placement="center"
-      scrollBehavior="inside"
-      classNames={{
-        base: 'bg-[var(--surface)] dark:bg-zinc-900 border border-[var(--border)] shadow-2xl overflow-hidden',
-        backdrop: 'bg-black/40',
-        wrapper: 'p-4',
-      }}
-    >
-      <ModalContent>
-        <ModalBody className="p-0">
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogPortal>
+        <DialogOverlay className="bg-black/40" />
+        <DialogContent className="max-w-lg p-0 dark:bg-zinc-900" aria-describedby={undefined}>
 
           {/* ── Compact gradient header ── */}
           <div className={`relative bg-gradient-to-r ${TYPE_GRADIENT[room.type] ?? TYPE_GRADIENT.Enkel} px-6 py-4 overflow-hidden`}>
@@ -163,7 +143,7 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
           </div>
 
           {/* ── Body ── */}
-          <div className="p-6 space-y-5">
+          <div className="p-6 space-y-5 max-h-[60vh] overflow-y-auto">
 
             {/* Description + amenities */}
             <div>
@@ -217,82 +197,98 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
                 {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
                 <div className="flex gap-3">
-                  <Button variant="flat" onPress={onClose} className="flex-1 bg-[var(--surface-alt)] border border-[var(--border)]">
+                  <Button variant="secondary" onClick={onClose} className="flex-1">
                     Stäng
                   </Button>
-                  <Button color="danger" variant="flat" onPress={handleCancel} isLoading={loading} className="flex-1">
+                  <Button variant="destructive" onClick={handleCancel} disabled={loading} className="flex-1">
                     {loading ? 'Avbokar...' : 'Avboka'}
                   </Button>
                 </div>
               </div>
             ) : (
               <form onSubmit={handleBook} className="space-y-4">
-                <Input
-                  label="Gästnamn"
-                  placeholder="Anna Svensson"
-                  value={guestName}
-                  onValueChange={setGuestName}
-                  isRequired
-                  autoFocus
-                  variant="bordered"
-                  classNames={inputStyles}
-                  startContent={
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)] shrink-0">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                    </svg>
-                  }
-                />
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    type="email"
-                    label="E-post"
-                    placeholder="anna@exempel.se"
-                    value={email}
-                    onValueChange={setEmail}
-                    variant="bordered"
-                    classNames={inputStyles}
-                    startContent={
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)] shrink-0">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
+                <div className="space-y-2">
+                  <Label htmlFor="guestName">Gästnamn</Label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
                       </svg>
-                    }
-                  />
-                  <Input
-                    type="tel"
-                    label="Telefon"
-                    placeholder="+46 70 000 00 00"
-                    value={phone}
-                    onValueChange={setPhone}
-                    variant="bordered"
-                    classNames={inputStyles}
-                    startContent={
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)] shrink-0">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                      </svg>
-                    }
-                  />
+                    </div>
+                    <Input
+                      id="guestName"
+                      placeholder="Anna Svensson"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      required
+                      autoFocus
+                      className="pl-9 hover:border-purple-500/60 dark:hover:border-amber-400/60 focus-visible:ring-purple-600 dark:focus-visible:ring-amber-500"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    type="date"
-                    label="Incheckning"
-                    value={checkIn}
-                    onChange={(e) => setCheckIn(e.target.value)}
-                    isRequired
-                    variant="bordered"
-                    classNames={{ ...inputStyles, input: `${inputStyles.input} [color-scheme:light] dark:[color-scheme:dark]` }}
-                  />
-                  <Input
-                    type="date"
-                    label="Utcheckning"
-                    value={checkOut}
-                    onChange={(e) => setCheckOut(e.target.value)}
-                    isRequired
-                    variant="bordered"
-                    classNames={{ ...inputStyles, input: `${inputStyles.input} [color-scheme:light] dark:[color-scheme:dark]` }}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="email">E-post</Label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
+                        </svg>
+                      </div>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="anna@exempel.se"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-9 hover:border-purple-500/60 dark:hover:border-amber-400/60 focus-visible:ring-purple-600 dark:focus-visible:ring-amber-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefon</Label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                      </div>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="+46 70 000 00 00"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="pl-9 hover:border-purple-500/60 dark:hover:border-amber-400/60 focus-visible:ring-purple-600 dark:focus-visible:ring-amber-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="checkIn">Incheckning</Label>
+                    <Input
+                      id="checkIn"
+                      type="date"
+                      value={checkIn}
+                      onChange={(e) => setCheckIn(e.target.value)}
+                      required
+                      className="hover:border-purple-500/60 dark:hover:border-amber-400/60 focus-visible:ring-purple-600 dark:focus-visible:ring-amber-500 [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="checkOut">Utcheckning</Label>
+                    <Input
+                      id="checkOut"
+                      type="date"
+                      value={checkOut}
+                      onChange={(e) => setCheckOut(e.target.value)}
+                      required
+                      className="hover:border-purple-500/60 dark:hover:border-amber-400/60 focus-visible:ring-purple-600 dark:focus-visible:ring-amber-500 [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                  </div>
                 </div>
 
                 {/* Price summary */}
@@ -308,19 +304,12 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
                 {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
                 <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    variant="flat"
-                    onPress={onClose}
-                    className="flex-1 bg-[var(--surface-alt)] border border-[var(--border)]"
-                  >
+                  <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
                     Avbryt
                   </Button>
                   <Button
                     type="submit"
-                    color="warning"
-                    isLoading={loading}
-                    isDisabled={loading || !guestName.trim()}
+                    disabled={loading || !guestName.trim()}
                     className="flex-1 font-semibold bg-purple-700 dark:bg-amber-500 text-white hover:bg-purple-800 dark:hover:bg-amber-600"
                   >
                     {loading ? 'Bokar...' : 'Boka rum'}
@@ -329,9 +318,9 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
               </form>
             )}
           </div>
-        </ModalBody>
-      </ModalContent>
-    </Modal>
+        </DialogContent>
+      </DialogPortal>
+    </Dialog>
   );
 }
 

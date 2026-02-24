@@ -1,6 +1,7 @@
 'use client';
 
-import { Card, CardBody, Progress } from '@heroui/react';
+import { Card, CardContent } from '@shared/ui/card';
+import { Progress } from '@shared/ui/progress';
 import AnimatedNumber from '@shared/ui/animated-number';
 
 interface Props {
@@ -21,11 +22,10 @@ export default function StatSummaryCards({
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
       {/* Available */}
       <Card
-        shadow="none"
-        className="glass-panel border border-white/35 dark:border-white/8 stagger-in"
+        className="glass-panel border border-white/35 dark:border-white/8 shadow-none stagger-in"
         style={{ animationDelay: '0ms' }}
       >
-        <CardBody className="p-4">
+        <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
             <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-widest font-semibold">
@@ -36,16 +36,15 @@ export default function StatSummaryCards({
             <AnimatedNumber value={availableCount} />
           </p>
           <p className="text-[11px] text-[var(--text-muted)] mt-1">rum tillgängliga</p>
-        </CardBody>
+        </CardContent>
       </Card>
 
       {/* Locked */}
       <Card
-        shadow="none"
-        className="glass-panel border border-white/35 dark:border-white/8 stagger-in"
+        className="glass-panel border border-white/35 dark:border-white/8 shadow-none stagger-in"
         style={{ animationDelay: '60ms' }}
       >
-        <CardBody className="p-4">
+        <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
             <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-widest font-semibold">
@@ -56,16 +55,15 @@ export default function StatSummaryCards({
             <AnimatedNumber value={lockedCount} />
           </p>
           <p className="text-[11px] text-[var(--text-muted)] mt-1">under bearbetning</p>
-        </CardBody>
+        </CardContent>
       </Card>
 
       {/* Booked */}
       <Card
-        shadow="none"
-        className="glass-panel border border-white/35 dark:border-white/8 stagger-in"
+        className="glass-panel border border-white/35 dark:border-white/8 shadow-none stagger-in"
         style={{ animationDelay: '120ms' }}
       >
-        <CardBody className="p-4">
+        <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
             <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-widest font-semibold">
@@ -76,16 +74,15 @@ export default function StatSummaryCards({
             <AnimatedNumber value={bookedCount} />
           </p>
           <p className="text-[11px] text-[var(--text-muted)] mt-1">aktiva bokningar</p>
-        </CardBody>
+        </CardContent>
       </Card>
 
       {/* Occupancy */}
       <Card
-        shadow="none"
-        className="glass-panel border border-white/35 dark:border-white/8 stagger-in"
+        className="glass-panel border border-white/35 dark:border-white/8 shadow-none stagger-in"
         style={{ animationDelay: '180ms' }}
       >
-        <CardBody className="p-4">
+        <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
             <p className="text-[11px] text-[var(--text-muted)] uppercase tracking-widest font-semibold">
@@ -97,12 +94,11 @@ export default function StatSummaryCards({
           </p>
           <Progress
             value={occupancy}
-            size="sm"
-            color="warning"
-            className="mt-2"
+            className="mt-2 h-1.5"
+            indicatorClassName="bg-amber-500"
             aria-label="Beläggning"
           />
-        </CardBody>
+        </CardContent>
       </Card>
     </div>
   );
