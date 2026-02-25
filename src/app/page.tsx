@@ -35,6 +35,18 @@ export default function HomePage() {
 
   const { toasts, addToast, dismissToast } = useToast();
 
+  /* ── Mouse glow overlay ── */
+  const glowRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = glowRef.current;
+    if (!el) return;
+    const onMove = (e: MouseEvent) => {
+      el.style.background = `radial-gradient(550px circle at ${e.clientX}px ${e.clientY}px, var(--mouse-glow-color), transparent 55%)`;
+    };
+    window.addEventListener('mousemove', onMove, { passive: true });
+    return () => window.removeEventListener('mousemove', onMove);
+  }, []);
+
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const selectedRoom = selectedRoomId ? (rooms.find((r) => r.id === selectedRoomId) ?? null) : null;
   const [activeTab, setActiveTab] = useState<Tab>('available');
@@ -113,9 +125,17 @@ export default function HomePage() {
 
   return (
     <>
+      {/* Mouse-following glow — behind all content */}
+      <div
+        ref={glowRef}
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0"
+        style={{ zIndex: 0 }}
+      />
+
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
 
-      <div className="min-h-screen grid grid-rows-[auto_1fr_auto]">
+      <div className="relative min-h-screen grid grid-rows-[auto_1fr_auto]" style={{ zIndex: 1 }}>
         {/* ═══════ HEADER ═══════ */}
         <DashboardHeader
           onCall={onCall}
