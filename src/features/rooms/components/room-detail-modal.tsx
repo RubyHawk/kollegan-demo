@@ -99,7 +99,7 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-lg p-0 dark:bg-zinc-900" style={{ top: '12vh', transform: 'translateX(-50%)' }} aria-describedby={undefined}>
+        <DialogContent className="max-w-lg p-0 dark:bg-zinc-900" aria-describedby={undefined}>
           <VisuallyHidden>
             <DialogTitle>Rum {room.id} detaljer</DialogTitle>
           </VisuallyHidden>

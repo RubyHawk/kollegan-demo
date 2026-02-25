@@ -61,7 +61,7 @@ export async function updateCRM(input: CRMUpdateInput): Promise<CRMUpdateResult>
 
   // Link unowned bookings to this customer
   if (input.bookedRoomIds?.length) {
-    await prisma.booking.updateMany({
+    await prisma.hotelBooking.updateMany({
       where: { roomId: { in: input.bookedRoomIds }, customerId: null },
       data:  { customerId: customer.id },
     });
