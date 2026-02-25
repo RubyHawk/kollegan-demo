@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Restaurant, HotelActivity, Amenity, RestaurantService, ActivityCategory, AmenityType } from '@features/hotel-services/types';
-import { createService, updateService } from '@features/hotel-services/api';
+import { Restaurant, HotelActivity, Amenity, RestaurantService, ActivityCategory, AmenityType } from '@features/hotel/services/types';
+import { createService, updateService } from '@features/hotel/services/api';
 
 type ServiceType = 'restaurant' | 'activity' | 'amenity';
 type ServiceItem = Restaurant | HotelActivity | Amenity;

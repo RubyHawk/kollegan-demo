@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { lockRoom } from '@features/rooms/lib/room-store';
+import { lockRoom } from '@features/hotel/rooms/lib/room-store';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();

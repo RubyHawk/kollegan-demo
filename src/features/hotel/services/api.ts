@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiPut, apiDelete } from '@shared/lib/api-client';
-import type { Restaurant, HotelActivity, Amenity } from '@features/hotel-services/types';
+import type { Restaurant, HotelActivity, Amenity } from '@features/hotel/services/types';
 
 type ServiceType = 'restaurant' | 'activity' | 'amenity';
 

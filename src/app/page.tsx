@@ -2,20 +2,20 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Room } from '@features/rooms/types';
-import { resetRooms } from '@features/rooms/api';
+import { Room } from '@features/hotel/rooms/types';
+import { resetRooms } from '@features/hotel/rooms/api';
 import { useRealtimeStore, selectRooms, selectActivities, selectOnCall, selectConnected, selectAvailableCount, selectBookedCount, selectLockedCount, selectOccupancy } from '@shared/stores/realtime-store';
 import { useToast } from '@shared/ui/toast/toast-context';
 import { CheckCircleIcon, XCircleIcon, LockIcon, PhoneIcon, PhoneOffIcon } from '@shared/ui/icons';
 import ToastContainer from '@shared/ui/toast/toast-container';
 import { TAB_TRANSITION } from '@shared/lib/motion';
 
-import HotelGrid from '@features/rooms/components/room-grid';
-import BookingsCalendar from '@features/rooms/components/bookings-calendar';
+import HotelGrid from '@features/hotel/rooms/components/room-grid';
+import BookingsCalendar from '@features/hotel/rooms/components/bookings-calendar';
 import ActivityLog from '@features/activity/components/activity-log';
 import KolleganContact from '@features/voice/components/kollegan-contact';
-import RoomDetailModal from '@features/rooms/components/room-detail-modal';
-import HotelInfoTab from '@features/hotel-services/components/hotel-info-tab';
+import RoomDetailModal from '@features/hotel/rooms/components/room-detail-modal';
+import HotelInfoTab from '@features/hotel/services/components/hotel-info-tab';
 import CRMTab from '@features/crm/components/crm-tab';
 import SetupTab from '@features/dashboard/components/setup-tab';
 import AnimatedNumber from '@shared/ui/animated-number';

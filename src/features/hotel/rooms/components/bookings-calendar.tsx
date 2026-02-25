@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@shared/ui/tooltip';
 import { Button } from '@shared/ui/button';
 import { Badge } from '@shared/ui/badge';
-import { Room } from '@features/rooms/types';
+import { Room } from '@features/hotel/rooms/types';
 import { SPRING_STANDARD } from '@shared/lib/motion';
 
 interface Props {

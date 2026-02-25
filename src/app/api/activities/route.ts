@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllActivities, createActivity } from '@features/hotel-services/lib/hotel-services-store';
+import { getAllActivities, createActivity } from '@features/hotel/services/lib/hotel-services-store';
 
 export const dynamic = 'force-dynamic';
 

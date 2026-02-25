@@ -9,4 +9,4 @@
  *
  * No duplication needed.
  */
-export { lockRoom, confirmBooking, cancelBooking } from '@features/rooms/lib/room-store';
+export { lockRoom, confirmBooking, cancelBooking } from '@features/hotel/rooms/lib/room-store';

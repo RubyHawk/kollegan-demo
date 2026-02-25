@@ -1,5 +1,5 @@
 import { prisma } from '@core/database/prisma';
-import { logActivity } from '@features/rooms/lib/room-store';
+import { logActivity } from '@features/hotel/rooms/lib/room-store';
 import { upsertCustomer } from './customers';
 import type { CRMContact } from '@features/crm/types';
 

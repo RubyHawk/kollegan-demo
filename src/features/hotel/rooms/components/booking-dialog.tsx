@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Room } from '@features/rooms/types';
-import { bookRoom, cancelBooking } from '@features/rooms/api';
+import { Room } from '@features/hotel/rooms/types';
+import { bookRoom, cancelBooking } from '@features/hotel/rooms/api';
 
 const TYPE_LABELS: Record<string, string> = {
   Enkel: 'Enkelt rum',

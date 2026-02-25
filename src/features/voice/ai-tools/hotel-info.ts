@@ -1,9 +1,9 @@
-import { getAllRooms } from '@features/rooms/lib/room-store';
+import { getAllRooms } from '@features/hotel/rooms/lib/room-store';
 import {
   getAllRestaurants,
   getAllActivities,
   getAllAmenities,
-} from '@features/hotel-services/lib/hotel-services-store';
+} from '@features/hotel/services/lib/hotel-services-store';
 
 /**
  * Returns a snapshot of hotel information for Elsa to relay to callers.

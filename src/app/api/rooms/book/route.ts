@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { bookRoom } from "@features/rooms/lib/room-store";
+import { bookRoom } from "@features/hotel/rooms/lib/room-store";
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {

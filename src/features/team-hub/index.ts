@@ -1,41 +1,80 @@
 /**
- * Team Hub Module
+ * Team Hub — SaaS collaboration module
  *
- * Status: PLANNED — not yet implemented.
+ * A multi-tenant workspace hub for internal team operations.
+ * Each workspace is isolated; members have roles within their workspace.
  *
- * Sub-modules and implementation plan:
+ * Sub-modules:
  *
- * 1. GitHub integration
- *    - OAuth app or GitHub App installation
- *    - Webhook receiver at /api/integrations/github/webhook
- *    - PRs, issues, CI status displayed in team dashboard
+ *  workspace/        Multi-tenant foundation — orgs, members, billing, invites
+ *  integrations/
+ *    github/         GitHub App: PRs, issues, CI status per repo
+ *    slack/          Slack App: channel feed, notification rules, bot commands
+ *  meetings/         Video calls + AI transcription + Claude summaries + action items
+ *  announcements/    Internal comms — pinned notices, policy updates
  *
- * 2. Slack integration
- *    - Slack App with Bot token
- *    - Webhook receiver at /api/integrations/slack/webhook
- *    - Channel feed + notification rules
+ * SaaS model:
+ *  - Free tier:    1 workspace, limited integrations, no recordings
+ *  - Pro tier:     Unlimited integrations, meeting recordings + AI summaries
+ *  - Enterprise:   SSO, audit logs, SLA, dedicated support
  *
- * 3. Video call + AI summaries
- *    - Daily.co or similar for video
- *    - Whisper/Deepgram for transcription
- *    - Claude API for meeting summary and action items
- *    - Stored in Meeting model
+ * Infrastructure adapters needed (add to src/infrastructure/ when implementing):
+ *  - github-client.ts   (GitHub App REST + GraphQL API)
+ *  - slack-client.ts    (Slack Web API + Events API)
+ *  - storage-client.ts  (S3-compatible for recordings)
+ *  - transcription.ts   (Whisper / Deepgram / AssemblyAI)
  *
- * To add this module:
- * 1. Create Prisma models: Meeting, TeamAnnouncement
- * 2. Add integration adapters under src/infrastructure/github/, src/infrastructure/slack/
- * 3. Add API routes under /api/integrations/ and /api/meetings/
- * 4. Build TeamHubTab component for the dashboard
- * 5. Register in DashboardSidebar NAV_ITEMS
+ * Webhook receivers needed (add to src/app/api/integrations/):
+ *  - github/webhook/route.ts    (verify X-Hub-Signature-256)
+ *  - slack/events/route.ts      (verify X-Slack-Signature)
  *
- * See docs/ARCHITECTURE.md for the full ERP module roadmap.
+ * n8n workflows needed:
+ *  - meeting-summary-pipeline.json  (recording → transcribe → summarize → notify)
+ *  - slack-notification-router.json (ERP event → Slack message by rule)
  */
 
+// Workspace
 export type {
+  Workspace,
+  WorkspaceMember,
+  WorkspaceInvite,
+  WorkspaceSettings,
+  WorkspacePlan,
+  WorkspaceMemberRole,
+} from './workspace/types';
+
+// GitHub integration
+export type {
+  GitHubInstallation,
   GitHubPullRequest,
   GitHubIssue,
+  GitHubCIRun,
+  PRStatus,
+  CIStatus,
+} from './integrations/github/types';
+
+// Slack integration
+export type {
+  SlackInstallation,
+  SlackChannel,
   SlackMessage,
+  SlackNotificationRule,
+} from './integrations/slack/types';
+
+// Meetings + AI summaries
+export type {
   Meeting,
+  MeetingParticipant,
+  MeetingTranscript,
+  MeetingSummary,
+  ActionItem,
   MeetingStatus,
-  TeamAnnouncement,
-} from './types';
+  MeetingProvider,
+} from './meetings/types';
+
+// Announcements
+export type {
+  Announcement,
+  AnnouncementRead,
+  AnnouncementPriority,
+} from './announcements/types';

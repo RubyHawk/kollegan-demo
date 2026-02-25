@@ -1,5 +1,5 @@
 import { apiPost, apiDelete } from '@shared/lib/api-client';
-import type { Room } from '@features/rooms/types';
+import type { Room } from '@features/hotel/rooms/types';
 
 interface BookingResult {
   success: boolean;

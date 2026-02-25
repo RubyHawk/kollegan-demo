@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Room } from '@features/rooms/types';
+import { Room } from '@features/hotel/rooms/types';
 import RoomCard from './room-card';
 import { STAGGER_CONTAINER, STAGGER_ITEM } from '@shared/lib/motion';
 

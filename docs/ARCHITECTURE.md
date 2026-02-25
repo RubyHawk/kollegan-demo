@@ -45,7 +45,7 @@ The platform is organized around these primary business domains:
 ```
 
 ### Core modules (ship with the system)
-- **Hotel** — the current demo vertical; rooms, bookings, calendar, services
+- **Hotel** — the current demo vertical; one feature directory (`features/hotel/`) with two sub-domains: `rooms/` (availability, bookings, calendar) and `services/` (restaurants, amenities, activities)
 - **CRM** — customer profiles, call history, interaction timeline
 - **Activity Log** — cross-module audit trail and real-time event feed
 - **Voice AI** — Vapi integration, AI tool handlers, call transcripts
@@ -54,7 +54,7 @@ The platform is organized around these primary business domains:
 ### Optional/future modules (plugged in independently)
 - **Leads** — inbound lead tracking, pipeline management, scoring
 - **Offers** — quote builder, PDF generation, e-signature, delivery
-- **Team Hub** — GitHub PRs/issues, Slack feed, AI meeting summaries
+- **Team Hub** — SaaS workspace model with sub-modules: multi-tenant workspace/billing, GitHub App (PRs/issues/CI), Slack App (channels/notifications), AI meeting pipeline (recording → transcript → Claude summary → action items), and internal announcements
 - **Invoicing** — invoice generation, payment status, reminders
 - **Analytics** — occupancy dashboards, revenue trends, forecasting
 - **Multi-property** — tenant isolation for multiple hotel locations
@@ -448,11 +448,13 @@ Production: make rate limiting hard (fail-closed) and tune limits per endpoint.
 - [ ] Link offers to leads and CRM contacts
 
 ### Phase 5: Team Hub (Months 5–7)
-- [ ] GitHub integration (OAuth App → PRs, issues, CI status)
-- [ ] Slack integration (Bot token → channel feed, notifications)
-- [ ] Meeting scheduler (basic — link to Google Meet or Zoom)
-- [ ] AI meeting summaries (audio upload → Whisper → Claude summary → action items)
-- [ ] Team announcements and pinned notes
+- [ ] Workspace model (multi-tenant: slug, plan, members, invites, settings)
+- [ ] GitHub App integration (PRs, issues, CI runs per repo — App model, not OAuth)
+- [ ] Slack App integration (Bot token → channel feed, notification rules, slash commands)
+- [ ] Meeting scheduler (link to Google Meet or Zoom; track participants)
+- [ ] AI meeting pipeline: recording → Whisper/Deepgram transcription → Claude summary → action items → Slack notify (via n8n `meeting-summary-pipeline.json`)
+- [ ] Team announcements with priority tiers (normal / important / urgent), pinning, optional Slack mirror
+- [ ] Workspace billing tiers (Free / Pro / Enterprise)
 
 ### Phase 6: Analytics & Multi-property (Months 7–9)
 - [ ] Occupancy analytics dashboard (charts, trends, forecasting)

@@ -70,14 +70,22 @@ src/
 │   ├── activity/                 Activity log / audit trail
 │   ├── crm/                      Customer relationship management
 │   ├── dashboard/                Dashboard shell (header, sidebar, setup, splash)
-│   ├── hotel-services/           Restaurants, amenities, activities management
-│   ├── rooms/                    Room availability, bookings, calendar
+│   ├── hotel/                    Hotel vertical (one domain, two sub-domains)
+│   │   ├── rooms/                Room availability, bookings, calendar
+│   │   ├── services/             Restaurants, amenities, activities
+│   │   └── index.ts              Combined barrel export for the hotel vertical
 │   ├── voice/                    Voice AI (Vapi) + ai-tools (LLM-callable functions)
 │   │   └── ai-tools/             Functions called by Vapi during phone calls
 │   │
 │   ├── leads/           [PLANNED] Lead management & pipeline tracking
 │   ├── offers/          [PLANNED] Quotation / proposal builder
-│   └── team-hub/        [PLANNED] GitHub, Slack, AI meeting summaries
+│   └── team-hub/        [PLANNED] SaaS collaboration hub
+│       ├── workspace/            Multi-tenant workspaces, members, billing, invites
+│       ├── integrations/
+│       │   ├── github/           GitHub App: PRs, issues, CI status
+│       │   └── slack/            Slack App: channel feed, notification rules
+│       ├── meetings/             Video calls + AI transcription + Claude summaries
+│       └── announcements/        Internal comms — pinned notices, policy updates
 │
 ├── core/                         Application core — framework-agnostic utilities
 │   ├── auth/                     JWT token management, Vapi webhook auth
@@ -272,14 +280,14 @@ Client: `src/shared/hooks/use-sse.ts`
 
 | Module | Status | Description |
 |---|---|---|
-| Hotel rooms | Live | Availability, bookings, real-time status |
-| Hotel services | Live | Restaurants, amenities, activities |
+| Hotel (`hotel/rooms/`) | Live | Availability, bookings, real-time status |
+| Hotel services (`hotel/services/`) | Live | Restaurants, amenities, activities |
 | Voice AI | Live | Vapi phone receptionist |
 | CRM | Live (basic) | Customer profiles, call history |
 | Activity log | Live | Full audit trail |
 | Lead management | Planned | Pipeline, scoring, assignment |
 | Offer builder | Planned | Quotations, PDF, e-signature |
-| Team hub | Planned | GitHub, Slack, AI meeting summaries |
+| Team hub | Planned | SaaS workspace: GitHub, Slack, AI meetings, announcements |
 | Invoicing | Future | Invoice generation, payment tracking |
 | Analytics | Future | Occupancy trends, revenue, forecasting |
 | Multi-property | Future | Multiple locations |

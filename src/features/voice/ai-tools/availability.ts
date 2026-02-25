@@ -1,5 +1,5 @@
-import { getAllRooms, logRoomsQueried } from '@features/rooms/lib/room-store';
-import type { RoomType } from '@features/rooms/types';
+import { getAllRooms, logRoomsQueried } from '@features/hotel/rooms/lib/room-store';
+import type { RoomType } from '@features/hotel/rooms/types';
 
 export interface AvailabilityOptions {
   checkIn?: string;   // YYYY-MM-DD

@@ -1,6 +1,6 @@
 'use client';
 
-import { Restaurant, HotelActivity, Amenity } from '@features/hotel-services/types';
+import { Restaurant, HotelActivity, Amenity } from '@features/hotel/services/types';
 
 type ServiceItem = Restaurant | HotelActivity | Amenity;
 type ServiceType = 'restaurant' | 'activity' | 'amenity';

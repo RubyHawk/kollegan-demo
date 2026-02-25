@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Room, RoomStoreState } from '@features/rooms/types';
+import { Room, RoomStoreState } from '@features/hotel/rooms/types';
 import { ActivityEvent } from '@features/activity/types';
 import { broadcast } from '@infra/sse/sse-manager';
 import { createCalendarEvent, deleteCalendarEvent } from '@infra/calendar/google-calendar';

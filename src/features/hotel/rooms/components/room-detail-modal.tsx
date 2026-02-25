@@ -5,9 +5,9 @@ import { Dialog, DialogContent, DialogTitle } from '@shared/ui/dialog';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
-import { Room } from '@features/rooms/types';
-import { getRoomMeta, AMENITY_ICONS, AmenityDef } from '@features/rooms/lib/room-meta';
-import { bookRoom, cancelBooking } from '@features/rooms/api';
+import { Room } from '@features/hotel/rooms/types';
+import { getRoomMeta, AMENITY_ICONS, AmenityDef } from '@features/hotel/rooms/lib/room-meta';
+import { bookRoom, cancelBooking } from '@features/hotel/rooms/api';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 // ── Custom date field — entire surface is clickable ───────────────────────────

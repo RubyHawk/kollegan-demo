@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import type { Restaurant, HotelActivity, Amenity } from '@features/hotel-services/types';
+import type { Restaurant, HotelActivity, Amenity } from '@features/hotel/services/types';
 
 const DATA_PATH = path.join(process.cwd(), 'data', 'hotel-services.json');
 

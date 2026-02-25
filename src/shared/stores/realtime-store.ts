@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Room } from '@features/rooms/types';
+import type { Room } from '@features/hotel/rooms/types';
 import type { ActivityEvent } from '@features/activity/types';
 
 interface RealtimeStore {

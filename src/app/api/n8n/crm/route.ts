@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { logActivity } from '@features/rooms/lib/room-store';
+import { logActivity } from '@features/hotel/rooms/lib/room-store';
 
 export const dynamic = 'force-dynamic';
 
