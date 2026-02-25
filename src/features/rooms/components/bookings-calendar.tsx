@@ -5,7 +5,6 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@share
 import { Button } from '@shared/ui/button';
 import { Badge } from '@shared/ui/badge';
 import { Room } from '@features/rooms/types';
-import type { CalendarEventSummary } from '@infra/calendar/google-calendar';
 
 interface Props {
   rooms: Room[];
@@ -142,7 +141,7 @@ function SegmentedControl({
   onChange,
   size = 'md',
 }: {
-  options: { key: string; label: string }[];
+  options: { key: string; label: React.ReactNode }[];
   value: string;
   onChange: (v: string) => void;
   size?: 'sm' | 'md';
@@ -156,7 +155,7 @@ function SegmentedControl({
           onClick={() => onChange(o.key)}
           className={[
             base,
-            'font-medium rounded-[10px] transition-all',
+            'font-medium rounded-[10px] transition-all flex items-center gap-1.5',
             value === o.key
               ? 'bg-[var(--surface)] shadow-sm text-[var(--text-primary)]'
               : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
@@ -166,6 +165,19 @@ function SegmentedControl({
         </button>
       ))}
     </div>
+  );
+}
+
+// Google Calendar brand icon
+function GoogleCalendarIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2" y="4" width="20" height="18" rx="2" fill="#fff" stroke="#dadce0" strokeWidth="1"/>
+      <rect x="2" y="4" width="20" height="6" rx="2" fill="#1a73e8"/>
+      <rect x="2" y="8" width="20" height="2" fill="#1a73e8"/>
+      <path d="M8 2v4M16 2v4" stroke="#1a73e8" strokeWidth="1.5" strokeLinecap="round"/>
+      <text x="12" y="19" textAnchor="middle" fontSize="7" fontWeight="700" fill="#1a73e8" fontFamily="sans-serif">31</text>
+    </svg>
   );
 }
 
@@ -758,49 +770,73 @@ function TimelineView({
 
 // ── Google Calendar view ─────────────────────────────────────────────────────
 
+// Greyed-out "coming soon" integrations to show extensibility
+const FUTURE_INTEGRATIONS = [
+  {
+    name: 'Outlook',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="4" width="13" height="16" rx="1.5" fill="#0078d4"/>
+        <rect x="9" y="7" width="13" height="13" rx="1.5" fill="#28a8e8"/>
+        <rect x="9" y="7" width="13" height="7" rx="1.5" fill="#0078d4"/>
+        <circle cx="15.5" cy="13.5" r="3.5" fill="#fff"/>
+      </svg>
+    ),
+  },
+  {
+    name: 'Booking.com',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="24" height="24" rx="4" fill="#003580"/>
+        <text x="12" y="16" textAnchor="middle" fontSize="10" fontWeight="900" fill="#fff" fontFamily="sans-serif">B.</text>
+      </svg>
+    ),
+  },
+  {
+    name: 'iCal',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="4" width="20" height="18" rx="3" fill="#fff" stroke="#d1d5db" strokeWidth="1.5"/>
+        <rect x="2" y="4" width="20" height="6" rx="3" fill="#f3111b"/>
+        <rect x="2" y="8" width="20" height="2" fill="#f3111b"/>
+        <text x="12" y="19" textAnchor="middle" fontSize="7" fontWeight="700" fill="#1d1d1f" fontFamily="sans-serif">iCal</text>
+      </svg>
+    ),
+  },
+  {
+    name: 'Airtable',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="24" height="24" rx="4" fill="#18BFFF"/>
+        <rect x="4" y="6" width="16" height="4" rx="1" fill="#fff" opacity="0.9"/>
+        <rect x="4" y="12" width="10" height="3" rx="1" fill="#fff" opacity="0.9"/>
+        <rect x="4" y="17" width="13" height="3" rx="1" fill="#fff" opacity="0.9"/>
+      </svg>
+    ),
+  },
+];
+
 function GoogleCalendarView() {
-  const [loading, setLoading]       = useState(true);
+  const [loading, setLoading]     = useState(true);
   const [configured, setConfigured] = useState(false);
-  const [events, setEvents]         = useState<CalendarEventSummary[]>([]);
-  const [error, setError]           = useState<string | null>(null);
-  const [fetchedAt, setFetchedAt]   = useState<Date | null>(null);
+  const [embedUrl, setEmbedUrl]   = useState<string | null>(null);
 
   useEffect(() => {
-    const from = new Date();
-    const to   = new Date();
-    to.setMonth(to.getMonth() + 3);
-
-    const fmt = (d: Date) => d.toISOString().split('T')[0];
-
-    fetch(`/api/calendar/events?from=${fmt(from)}&to=${fmt(to)}`)
+    fetch('/api/calendar/events')
       .then((r) => r.json())
       .then((data) => {
         setConfigured(data.configured ?? false);
-        setEvents(data.events ?? []);
-        setFetchedAt(new Date());
+        setEmbedUrl(data.embedUrl ?? null);
       })
-      .catch(() => setError('Kunde inte hämta kalenderdata.'))
+      .catch(() => {/* stay unconfigured */})
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <div className="w-8 h-8 rounded-full border-2 border-[var(--border)] border-t-amber-500 animate-spin" />
-        <p className="text-sm text-[var(--text-muted)]">Hämtar Google Kalender…</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
-            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-        </div>
-        <p className="text-sm font-medium text-[var(--text-primary)]">{error}</p>
+        <div className="w-8 h-8 rounded-full border-2 border-[var(--border)] border-t-[#1a73e8] animate-spin" />
+        <p className="text-sm text-[var(--text-muted)]">Ansluter till Google Kalender…</p>
       </div>
     );
   }
@@ -808,14 +844,10 @@ function GoogleCalendarView() {
   if (!configured) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-        </div>
+        <GoogleCalendarIcon size={48} />
         <div>
           <p className="text-sm font-semibold text-[var(--text-primary)]">Google Kalender ej konfigurerad</p>
-          <p className="text-xs text-[var(--text-muted)] mt-1 max-w-[280px] leading-relaxed">
+          <p className="text-xs text-[var(--text-muted)] mt-1 max-w-[300px] leading-relaxed">
             Lägg till <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">GOOGLE_SERVICE_ACCOUNT_EMAIL</code>, <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY</code> och <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">GOOGLE_CALENDAR_ID</code> i <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">.env.local</code>.
           </p>
         </div>
@@ -824,101 +856,58 @@ function GoogleCalendarView() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Status bar */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-full px-2.5 py-1">
+    <div className="space-y-3">
+      {/* ── Integration header ── */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2.5">
+          <GoogleCalendarIcon size={22} />
+          <div>
+            <p className="text-sm font-semibold text-[var(--text-primary)] leading-tight">Google Kalender</p>
+            <p className="text-[10px] text-[var(--text-muted)] leading-tight">Live-synkad · realtidsbokningar</p>
+          </div>
+          <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-full px-2 py-0.5 ml-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Google Kalender ansluten
-          </span>
-          <span className="text-xs text-[var(--text-muted)] tabular-nums">
-            {events.length} {events.length === 1 ? 'händelse' : 'händelser'} (nästa 3 månader)
+            Ansluten
           </span>
         </div>
-        {fetchedAt && (
-          <span className="text-[10px] text-[var(--text-muted)]">
-            Hämtad {fetchedAt.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        )}
-      </div>
 
-      {/* Events list */}
-      {events.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+        {/* Future integrations */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-[var(--text-muted)] mr-1">Fler integrationer:</span>
+          {FUTURE_INTEGRATIONS.map((fi) => (
+            <div
+              key={fi.name}
+              title={fi.name}
+              className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center opacity-40 grayscale cursor-not-allowed"
+            >
+              {fi.icon}
+            </div>
+          ))}
+          <div
+            title="Lägg till integration"
+            className="w-7 h-7 rounded-lg bg-[var(--surface-alt)] border border-dashed border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] opacity-50 cursor-not-allowed"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
           </div>
-          <p className="text-sm text-[var(--text-secondary)] font-medium">Inga händelser hittades</p>
-          <p className="text-xs text-[var(--text-muted)]">Bokningar som skapas via Kollegan dyker upp här.</p>
         </div>
-      ) : (
-        <div className="space-y-2">
-          {/* Table header */}
-          <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr] gap-4 px-4 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest">
-            <span>Händelse</span>
-            <span>Incheckning</span>
-            <span>Utcheckning</span>
-          </div>
+      </div>
 
-          {events.map((ev) => {
-            const nights = ev.start && ev.end ? diffDays(ev.start.split('T')[0], ev.end.split('T')[0]) : null;
-            return (
-              <div
-                key={ev.id}
-                className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl px-4 py-3.5"
-              >
-                {/* Mobile */}
-                <div className="flex items-start gap-3 sm:hidden">
-                  <div className="w-2 self-stretch rounded-full shrink-0 mt-1 bg-blue-400 dark:bg-blue-500" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-[var(--text-primary)] truncate">{ev.summary || '(Ingen titel)'}</p>
-                    <p className="text-xs text-[var(--text-muted)] mt-1">
-                      {ev.start ? fmtShort(ev.start.split('T')[0]) : '–'} → {ev.end ? fmtShort(ev.end.split('T')[0]) : '–'}
-                      {nights !== null && nights > 0 && <> · {nights} {nights === 1 ? 'natt' : 'nätter'}</>}
-                    </p>
-                  </div>
-                </div>
+      {/* ── Embedded Google Calendar iframe ── */}
+      <div className="rounded-2xl overflow-hidden border border-[var(--border)] bg-white" style={{ height: 560 }}>
+        <iframe
+          src={embedUrl!}
+          style={{ width: '100%', height: '100%', border: 0 }}
+          title="Google Kalender"
+          allowFullScreen
+        />
+      </div>
 
-                {/* Desktop */}
-                <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr] gap-4 items-center">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-1.5 h-8 rounded-full shrink-0 bg-blue-400 dark:bg-blue-500" />
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm text-[var(--text-primary)] truncate">{ev.summary || '(Ingen titel)'}</p>
-                      {nights !== null && nights > 0 && (
-                        <p className="text-[10px] text-[var(--text-muted)]">{nights} {nights === 1 ? 'natt' : 'nätter'}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    {ev.start ? (
-                      <>
-                        <p className="text-sm font-medium text-[var(--text-primary)]">{fmtShort(ev.start.split('T')[0])}</p>
-                        <p className="text-[10px] text-[var(--text-muted)]">
-                          {new Date(ev.start.split('T')[0] + 'T00:00:00').toLocaleDateString('sv-SE', { weekday: 'long' })}
-                        </p>
-                      </>
-                    ) : <span className="text-xs text-[var(--text-muted)]">—</span>}
-                  </div>
-                  <div>
-                    {ev.end ? (
-                      <>
-                        <p className="text-sm font-medium text-[var(--text-primary)]">{fmtShort(ev.end.split('T')[0])}</p>
-                        <p className="text-[10px] text-[var(--text-muted)]">
-                          {new Date(ev.end.split('T')[0] + 'T00:00:00').toLocaleDateString('sv-SE', { weekday: 'long' })}
-                        </p>
-                      </>
-                    ) : <span className="text-xs text-[var(--text-muted)]">—</span>}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <p className="text-[10px] text-[var(--text-muted)] text-center">
+        Kalender måste vara offentlig i Google Kalender-inställningar för att visas i iframe.
+        Bokningar skapade via Kollegan synkroniseras automatiskt.
+      </p>
     </div>
   );
 }
@@ -936,9 +925,17 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
       <div className="flex items-center gap-3 flex-wrap">
         <SegmentedControl
           options={[
-            { key: 'list',     label: 'Listvy'         },
-            { key: 'timeline', label: 'Tidslinje'       },
-            { key: 'google',   label: 'Google Kalender' },
+            { key: 'list',     label: 'Listvy'   },
+            { key: 'timeline', label: 'Tidslinje' },
+            {
+              key: 'google',
+              label: (
+                <>
+                  <GoogleCalendarIcon size={14} />
+                  Google Kalender
+                </>
+              ),
+            },
           ]}
           value={subTab}
           onChange={(v) => setSubTab(v as SubTab)}
