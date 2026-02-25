@@ -1,5 +1,5 @@
-// Prisma 7: import from the generated output path (set in prisma/schema.prisma)
-import { PrismaClient } from '../generated/prisma';
+// Prisma 7: import from client.ts (the entry point in the generated output path)
+import { PrismaClient } from '../generated/prisma/client';
 
 declare global {
   // eslint-disable-next-line no-var
