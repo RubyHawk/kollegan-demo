@@ -15,12 +15,13 @@ import KolleganContact from '@/app/components/KolleganContact';
 import RoomDetailModal from '@/app/components/RoomDetailModal';
 import HotelInfoTab from '@/app/components/HotelInfoTab';
 import CRMTab from '@/app/components/CRMTab';
+import SetupTab from '@/app/components/SetupTab';
 import AnimatedNumber from '@/app/components/AnimatedNumber';
 import SplashScreen from '@/app/components/SplashScreen';
 import DashboardHeader from '@/app/components/DashboardHeader';
 import DashboardSidebar from '@/app/components/DashboardSidebar';
 
-type Tab = 'available' | 'booked' | 'activity' | 'hotel-info' | 'crm';
+type Tab = 'available' | 'booked' | 'activity' | 'hotel-info' | 'crm' | 'setup';
 
 export default function HomePage() {
   const rooms = useRealtimeStore(selectRooms);
@@ -107,6 +108,7 @@ export default function HomePage() {
     activity: activities.length,
     'hotel-info': hotelServiceCount,
     crm: crmCount,
+    setup: 0,
   };
 
   return (
@@ -233,6 +235,13 @@ export default function HomePage() {
             {activeTab === 'crm' && (
               <div key="crm" className="tab-content-enter">
                 <CRMTab activities={activities} onCountChange={setCrmCount} />
+              </div>
+            )}
+
+            {/* Setup tab */}
+            {activeTab === 'setup' && (
+              <div key="setup" className="tab-content-enter">
+                <SetupTab />
               </div>
             )}
           </main>

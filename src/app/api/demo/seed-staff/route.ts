@@ -11,6 +11,7 @@ export const runtime = 'nodejs'; // required: bcrypt uses Node.js crypto
 
 const TAG         = 'Demo:SeedStaff';
 const SALT_ROUNDS = 12; // OWASP-recommended minimum for bcrypt
+const ENDPOINT    = '/api/demo/seed-staff';
 
 // One user per role so every access level is immediately testable.
 const DEMO_STAFF = [
@@ -30,6 +31,16 @@ type SeededUser = {
   createdAt: Date;
   status:    'created' | 'updated';
 };
+
+// ─── RFC 7807 Problem Details helper ─────────────────────────────────────────
+// https://www.rfc-editor.org/rfc/rfc7807
+
+function problem(status: number, title: string, detail: string) {
+  return NextResponse.json(
+    { type: `${ENDPOINT}/errors/${title.toLowerCase().replace(/\s+/g, '-')}`, title, status, detail, instance: ENDPOINT },
+    { status, headers: { 'Content-Type': 'application/problem+json' } }
+  );
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -57,7 +68,9 @@ async function seedOne(staff: DemoStaff, passwordHash: string): Promise<SeededUs
  *
  * Idempotent — safe to call multiple times.
  * Creates (or resets) one demo staff user per role for local DB testing.
- * Returns 201 on first seed, 200 on subsequent calls.
+ *
+ * Success  → 201 Created  (first seed)  |  200 OK (idempotent re-run)
+ * Errors   → RFC 7807 Problem Details (application/problem+json)
  */
 export async function POST(req: NextRequest) {
   // Rate-limit: max 5 calls per minute per IP
@@ -65,7 +78,7 @@ export async function POST(req: NextRequest) {
   const rl = await checkRateLimit(`seed-staff:${ip}`, 5, 60_000);
   if (!rl.allowed) {
     logger.warn(TAG, 'Rate limit exceeded', { ip });
-    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+    return problem(429, 'Too Many Requests', 'Maximum 5 seed requests per minute per IP address.');
   }
 
   logger.info(TAG, 'Seeding demo staff users', { ip, count: DEMO_STAFF.length });
@@ -82,7 +95,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (err) {
     logger.error(TAG, 'Password hashing failed', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return problem(500, 'Internal Server Error', 'Password hashing failed unexpectedly.');
   }
 
   let results: SeededUser[];
@@ -92,28 +105,37 @@ export async function POST(req: NextRequest) {
     );
   } catch (err) {
     logger.error(TAG, 'Database operation failed', err);
-    return NextResponse.json(
-      { error: 'Failed to seed staff users. Check server logs and verify DATABASE_URL.' },
-      { status: 500 }
+    return problem(
+      500,
+      'Database Error',
+      'Failed to upsert staff users. Verify DATABASE_URL is set and the migration has been applied.'
     );
   }
 
   const created = results.filter((u) => u.status === 'created').length;
   const updated = results.filter((u) => u.status === 'updated').length;
+  const timestamp = new Date().toISOString();
 
   logger.info(TAG, 'Seed complete', { created, updated });
 
   return NextResponse.json(
     {
-      success: true,
-      summary:     { created, updated, total: results.length },
-      users:       results.map(({ id, email, role, createdAt, status }) => ({
-        id, email, role, createdAt, status,
-      })),
-      // Plaintext credentials returned only in this demo-seed context.
-      credentials: DEMO_STAFF.map(({ email, password, role }) => ({
-        email, password, role,
-      })),
+      data: {
+        summary:     { created, updated, total: results.length },
+        users:       results.map(({ id, email, role, createdAt, status }) => ({
+          id,
+          email,
+          role,
+          createdAt: createdAt instanceof Date ? createdAt.toISOString() : createdAt,
+          status,
+        })),
+        // Plaintext credentials — intentional in this demo-seed context only.
+        credentials: DEMO_STAFF.map(({ email, password, role }) => ({ email, password, role })),
+      },
+      meta: {
+        timestamp,
+        operation: 'seed_staff_users',
+      },
     },
     { status: created > 0 ? 201 : 200 }
   );
