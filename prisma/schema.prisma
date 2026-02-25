@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Customer Profiles ────────────────────────────────────────────────────────
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String?
+  phone     String?  @unique
+  email     String?
+  company   String?
+  notes     String?
+  callCount Int      @default(1)
+  firstSeen DateTime @default(now())
+  lastSeen  DateTime @updatedAt
+
+  bookings    Booking[]
+  transcripts CallTranscript[]
+  crmRecords  CrmRecord[]
+
+  @@index([phone])
+  @@index([name])
+  @@map("customers")
+}
+
+// ─── Booking Records ──────────────────────────────────────────────────────────
+
+model Booking {
+  id          String    @id @default(uuid())
+  roomId      String
+  guestName   String
+  checkIn     DateTime?
+  checkOut    DateTime?
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+
+  @@index([roomId])
+  @@index([customerId])
+  @@index([checkIn, checkOut])
+  @@map("bookings")
+}
+
+// ─── Call Transcripts ─────────────────────────────────────────────────────────
+
+model CallTranscript {
+  id             String    @id @default(uuid())
+  vapiCallId     String?   @unique
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  summary        String?
+  bookingsMade   String[]  // room IDs booked during this call
+  cancelledRooms String[]  // room IDs cancelled during this call
+
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+
+  @@index([vapiCallId])
+  @@index([customerId])
+  @@map("call_transcripts")
+}
+
+// ─── CRM Records (one per call session) ──────────────────────────────────────
+
+model CrmRecord {
+  id          String   @id @default(uuid())
+  name        String?
+  email       String?
+  phone       String?
+  company     String?
+  notes       String?
+  summary     String?
+  bookedRooms String[] // room IDs from this session
+  createdAt   DateTime @default(now())
+
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+
+  @@index([customerId])
+  @@map("crm_records")
+}
+
+// ─── Staff Users (admin dashboard auth) ──────────────────────────────────────
+
+model StaffUser {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  role         String    @default("receptionist") // 'receptionist' | 'manager' | 'admin'
+  createdAt    DateTime  @default(now())
+  lastLogin    DateTime?
+
+  @@index([email])
+  @@map("staff_users")
+}

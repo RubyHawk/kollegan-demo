@@ -257,7 +257,7 @@ function CustomerList({ entries }: { entries: CRMEntry[] }) {
       <EmptyState
         icon={Icon.users}
         title="Inga kundprofiler än"
-        subtitle="Kundprofiler samlas in automatiskt via n8n under samtal. Skicka data via POST /api/n8n/crm"
+        subtitle="Kundprofiler samlas in automatiskt av Elsa under samtal via POST /api/ai/crm/update"
       />
     );
   }
