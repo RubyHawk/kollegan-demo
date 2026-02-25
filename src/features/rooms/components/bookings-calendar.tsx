@@ -864,7 +864,7 @@ function GoogleCalendarView() {
         <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
           {/* Header */}
           <div className="px-6 py-5 border-b border-[var(--border)] bg-gradient-to-br from-[#1a73e8]/5 to-transparent flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-white border border-[var(--border)] shadow-sm flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-sm flex items-center justify-center shrink-0">
               <GoogleCalendarIcon size={28} />
             </div>
             <div>
@@ -1006,7 +1006,7 @@ function GoogleCalendarView() {
       </div>
 
       {/* ── Embedded Google Calendar iframe ── */}
-      <div className="rounded-2xl overflow-hidden border border-[var(--border)] bg-white" style={{ height: 'calc(100vh - 260px)', minHeight: 560 }}>
+      <div className="rounded-2xl overflow-hidden border border-[var(--border)] bg-[var(--surface)]" style={{ height: '64vh' }}>
         <iframe
           src={embedUrl!}
           style={{ width: '100%', height: '100%', border: 0 }}
