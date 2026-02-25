@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useMotionValue, useSpring, useMotionTemplate, motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Room } from '@features/rooms/types';
 import { resetRooms } from '@features/rooms/api';
 import { useRealtimeStore, selectRooms, selectActivities, selectOnCall, selectConnected, selectAvailableCount, selectBookedCount, selectLockedCount, selectOccupancy } from '@shared/stores/realtime-store';
@@ -37,18 +37,28 @@ export default function HomePage() {
 
   const { toasts, addToast, dismissToast } = useToast();
 
-  /* ── Mouse glow overlay — spring physics ── */
-  const mouseX = useMotionValue(typeof window !== 'undefined' ? window.innerWidth / 2 : 760);
-  const mouseY = useMotionValue(typeof window !== 'undefined' ? window.innerHeight / 2 : 400);
-  const springX = useSpring(mouseX, { damping: 25, stiffness: 80, mass: 1 });
-  const springY = useSpring(mouseY, { damping: 25, stiffness: 80, mass: 1 });
-  const glowBg = useMotionTemplate`radial-gradient(350px circle at ${springX}px ${springY}px, var(--mouse-glow-color), transparent 55%)`;
-
+  /* ── Grid distortion — mouse parallax, no glow ── */
+  const gridRafRef = useRef<number | null>(null);
   useEffect(() => {
-    const onMove = (e: MouseEvent) => { mouseX.set(e.clientX); mouseY.set(e.clientY); };
+    let targetX = 0, targetY = 0, currentX = 0, currentY = 0;
+    const onMove = (e: MouseEvent) => {
+      targetX = (e.clientX / window.innerWidth - 0.5) * 20;
+      targetY = (e.clientY / window.innerHeight - 0.5) * 20;
+    };
+    const tick = () => {
+      currentX += (targetX - currentX) * 0.06;
+      currentY += (targetY - currentY) * 0.06;
+      document.documentElement.style.setProperty('--grid-offset-x', `${currentX.toFixed(2)}px`);
+      document.documentElement.style.setProperty('--grid-offset-y', `${currentY.toFixed(2)}px`);
+      gridRafRef.current = requestAnimationFrame(tick);
+    };
     window.addEventListener('mousemove', onMove, { passive: true });
-    return () => window.removeEventListener('mousemove', onMove);
-  }, [mouseX, mouseY]);
+    gridRafRef.current = requestAnimationFrame(tick);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      if (gridRafRef.current !== null) cancelAnimationFrame(gridRafRef.current);
+    };
+  }, []);
 
   /* ── Scroll ref — passed to header for scroll-linked shadow ── */
   const mainScrollRef = useRef<HTMLElement>(null);
@@ -131,13 +141,6 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Mouse-following glow — spring physics, behind all content */}
-      <motion.div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0"
-        style={{ zIndex: 0, background: glowBg }}
-      />
-
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
 
       <div className="relative h-full grid grid-rows-[auto_1fr_auto]" style={{ zIndex: 1 }}>

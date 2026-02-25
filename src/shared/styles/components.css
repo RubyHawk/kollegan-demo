@@ -166,6 +166,11 @@ body {
     100% 100%,
     100% 100%;
   background-attachment: fixed, fixed, fixed, fixed;
+  background-position:
+    var(--grid-offset-x, 0px) var(--grid-offset-y, 0px),
+    var(--grid-offset-x, 0px) var(--grid-offset-y, 0px),
+    0 0,
+    0 0;
   color: var(--text-primary);
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: "cv11", "ss01";
