@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -257,7 +257,6 @@ function EmployeeList({ refreshKey }: { refreshKey: number }) {
   const [users,    setUsers]    = useState<StaffUser[]>([]);
   const [loading,  setLoading]  = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [lastKey,  setLastKey]  = useState(refreshKey);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -272,16 +271,14 @@ function EmployeeList({ refreshKey }: { refreshKey: number }) {
     }
   }, []);
 
+  // Load on mount and whenever a new user is created
+  useEffect(() => {
+    load();
+  }, [load, refreshKey]);
+
   const handleToggle = () => {
-    if (!open) load();
     setOpen((v) => !v);
   };
-
-  // Reload when a new user was created while list is open
-  if (open && refreshKey !== lastKey) {
-    setLastKey(refreshKey);
-    load();
-  }
 
   const handleDelete = async (id: string) => {
     setDeleting(id);
