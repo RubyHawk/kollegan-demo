@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogTitle } from '@shared/ui/dialog';
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import { Dialog, DialogContent, DialogTitle, DialogOverlay, DialogPortal } from '@shared/ui/dialog';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
 import { Room } from '@features/rooms/types';
 import { getRoomMeta, AMENITY_ICONS, AmenityDef } from '@features/rooms/lib/room-meta';
 import { bookRoom, cancelBooking } from '@features/rooms/api';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 interface Props {
   room: Room;
@@ -98,11 +98,11 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
   };
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-        <DialogContent className="max-w-lg p-0 dark:bg-zinc-900 top-[12vh] translate-y-0" aria-describedby={undefined}>
-          <VisuallyHidden>
-            <DialogTitle>Rum {room.id} detaljer</DialogTitle>
-          </VisuallyHidden>
+<Dialog open onOpenChange={(open) => !open && onClose()}>
+  <DialogContent className="max-w-lg p-0 dark:bg-zinc-900" aria-describedby={undefined}>
+    <VisuallyHidden>
+      <DialogTitle>Rum {room.id} detaljer</DialogTitle>
+    </VisuallyHidden>
 
           {/* ── Compact gradient header ── */}
           <div className={`relative bg-gradient-to-r ${TYPE_GRADIENT[room.type] ?? TYPE_GRADIENT.Enkel} px-6 py-4 overflow-hidden`}>
