@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@shared/ui/tooltip';
 import { Button } from '@shared/ui/button';
 import { Badge } from '@shared/ui/badge';
 import { Room } from '@features/rooms/types';
+import type { CalendarEventSummary } from '@infra/calendar/google-calendar';
 
 interface Props {
   rooms: Room[];
@@ -12,7 +13,7 @@ interface Props {
 }
 
 type View = 'week' | 'month' | '2months';
-type SubTab = 'list' | 'timeline';
+type SubTab = 'list' | 'timeline' | 'google';
 
 const VIEWS: { key: View; label: string }[] = [
   { key: 'week',    label: 'Vecka' },
@@ -755,6 +756,173 @@ function TimelineView({
   );
 }
 
+// ── Google Calendar view ─────────────────────────────────────────────────────
+
+function GoogleCalendarView() {
+  const [loading, setLoading]       = useState(true);
+  const [configured, setConfigured] = useState(false);
+  const [events, setEvents]         = useState<CalendarEventSummary[]>([]);
+  const [error, setError]           = useState<string | null>(null);
+  const [fetchedAt, setFetchedAt]   = useState<Date | null>(null);
+
+  useEffect(() => {
+    const from = new Date();
+    const to   = new Date();
+    to.setMonth(to.getMonth() + 3);
+
+    const fmt = (d: Date) => d.toISOString().split('T')[0];
+
+    fetch(`/api/calendar/events?from=${fmt(from)}&to=${fmt(to)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setConfigured(data.configured ?? false);
+        setEvents(data.events ?? []);
+        setFetchedAt(new Date());
+      })
+      .catch(() => setError('Kunde inte hämta kalenderdata.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-[var(--border)] border-t-amber-500 animate-spin" />
+        <p className="text-sm text-[var(--text-muted)]">Hämtar Google Kalender…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center gap-3">
+        <div className="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 flex items-center justify-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-[var(--text-primary)]">{error}</p>
+      </div>
+    );
+  }
+
+  if (!configured) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
+        <div className="w-14 h-14 rounded-2xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Google Kalender ej konfigurerad</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1 max-w-[280px] leading-relaxed">
+            Lägg till <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">GOOGLE_SERVICE_ACCOUNT_EMAIL</code>, <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY</code> och <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">GOOGLE_CALENDAR_ID</code> i <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">.env.local</code>.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Status bar */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-full px-2.5 py-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Google Kalender ansluten
+          </span>
+          <span className="text-xs text-[var(--text-muted)] tabular-nums">
+            {events.length} {events.length === 1 ? 'händelse' : 'händelser'} (nästa 3 månader)
+          </span>
+        </div>
+        {fetchedAt && (
+          <span className="text-[10px] text-[var(--text-muted)]">
+            Hämtad {fetchedAt.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
+      </div>
+
+      {/* Events list */}
+      {events.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
+          <p className="text-sm text-[var(--text-secondary)] font-medium">Inga händelser hittades</p>
+          <p className="text-xs text-[var(--text-muted)]">Bokningar som skapas via Kollegan dyker upp här.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {/* Table header */}
+          <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr] gap-4 px-4 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest">
+            <span>Händelse</span>
+            <span>Incheckning</span>
+            <span>Utcheckning</span>
+          </div>
+
+          {events.map((ev) => {
+            const nights = ev.start && ev.end ? diffDays(ev.start.split('T')[0], ev.end.split('T')[0]) : null;
+            return (
+              <div
+                key={ev.id}
+                className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl px-4 py-3.5"
+              >
+                {/* Mobile */}
+                <div className="flex items-start gap-3 sm:hidden">
+                  <div className="w-2 self-stretch rounded-full shrink-0 mt-1 bg-blue-400 dark:bg-blue-500" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-[var(--text-primary)] truncate">{ev.summary || '(Ingen titel)'}</p>
+                    <p className="text-xs text-[var(--text-muted)] mt-1">
+                      {ev.start ? fmtShort(ev.start.split('T')[0]) : '–'} → {ev.end ? fmtShort(ev.end.split('T')[0]) : '–'}
+                      {nights !== null && nights > 0 && <> · {nights} {nights === 1 ? 'natt' : 'nätter'}</>}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Desktop */}
+                <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr] gap-4 items-center">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-1.5 h-8 rounded-full shrink-0 bg-blue-400 dark:bg-blue-500" />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm text-[var(--text-primary)] truncate">{ev.summary || '(Ingen titel)'}</p>
+                      {nights !== null && nights > 0 && (
+                        <p className="text-[10px] text-[var(--text-muted)]">{nights} {nights === 1 ? 'natt' : 'nätter'}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    {ev.start ? (
+                      <>
+                        <p className="text-sm font-medium text-[var(--text-primary)]">{fmtShort(ev.start.split('T')[0])}</p>
+                        <p className="text-[10px] text-[var(--text-muted)]">
+                          {new Date(ev.start.split('T')[0] + 'T00:00:00').toLocaleDateString('sv-SE', { weekday: 'long' })}
+                        </p>
+                      </>
+                    ) : <span className="text-xs text-[var(--text-muted)]">—</span>}
+                  </div>
+                  <div>
+                    {ev.end ? (
+                      <>
+                        <p className="text-sm font-medium text-[var(--text-primary)]">{fmtShort(ev.end.split('T')[0])}</p>
+                        <p className="text-[10px] text-[var(--text-muted)]">
+                          {new Date(ev.end.split('T')[0] + 'T00:00:00').toLocaleDateString('sv-SE', { weekday: 'long' })}
+                        </p>
+                      </>
+                    ) : <span className="text-xs text-[var(--text-muted)]">—</span>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main export ──────────────────────────────────────────────────────────────
 
 export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
@@ -768,14 +936,15 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
       <div className="flex items-center gap-3 flex-wrap">
         <SegmentedControl
           options={[
-            { key: 'list',     label: 'Listvy'    },
-            { key: 'timeline', label: 'Tidslinje' },
+            { key: 'list',     label: 'Listvy'         },
+            { key: 'timeline', label: 'Tidslinje'       },
+            { key: 'google',   label: 'Google Kalender' },
           ]}
           value={subTab}
           onChange={(v) => setSubTab(v as SubTab)}
         />
 
-        {bookedCount > 0 && (
+        {subTab !== 'google' && bookedCount > 0 && (
           <span className="text-xs font-medium text-[var(--text-muted)] bg-[var(--surface-alt)] border border-[var(--border)] rounded-full px-2 py-0.5 tabular-nums">
             {bookedCount} {bookedCount === 1 ? 'bokning' : 'bokningar'}
           </span>
@@ -785,8 +954,10 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
       {/* ── Content ── */}
       {subTab === 'list' ? (
         <ListView rooms={rooms} onRoomClick={onRoomClick} />
-      ) : (
+      ) : subTab === 'timeline' ? (
         <TimelineView rooms={rooms} onRoomClick={onRoomClick} />
+      ) : (
+        <GoogleCalendarView />
       )}
     </div>
   );
