@@ -14,10 +14,10 @@ interface Props {
 type View = 'week' | 'month' | '2months';
 type SubTab = 'list' | 'timeline';
 
-const VIEWS: { key: View; label: string; days: number; step: number }[] = [
-  { key: 'week',    label: 'Vecka', days: 7,  step: 7  },
-  { key: 'month',   label: 'Månad', days: 31, step: 14 },
-  { key: '2months', label: '2 mån', days: 62, step: 30 },
+const VIEWS: { key: View; label: string }[] = [
+  { key: 'week',    label: 'Vecka' },
+  { key: 'month',   label: 'Månad' },
+  { key: '2months', label: '2 mån' },
 ];
 
 // Fixed pixel dimensions
@@ -82,6 +82,27 @@ function todayMidnight(): Date {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   return d;
+}
+
+function startOfWeek(d: Date): Date {
+  const r = new Date(d);
+  const shift = (r.getDay() + 6) % 7; // Mon=0 … Sun=6
+  r.setDate(r.getDate() - shift);
+  return r;
+}
+
+function startOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+function daysInMonth(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+}
+
+function addMonths(d: Date, n: number): Date {
+  const r = new Date(d);
+  r.setMonth(r.getMonth() + n);
+  return r;
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -331,18 +352,35 @@ function TimelineView({
   onRoomClick?: (r: Room) => void;
 }) {
   const [viewKey, setViewKey] = useState<View>('month');
-  const [offsetDays, setOffsetDays] = useState(0);
+  const [baseDate, setBaseDate] = useState(() => todayMidnight());
 
-  const view = VIEWS.find((v) => v.key === viewKey)!;
   const today = useMemo(todayMidnight, []);
   const todayKey = toKey(today);
 
-  const startDate = useMemo(() => addDays(today, offsetDays), [today, offsetDays]);
-  const startKey  = toKey(startDate);
+  // Compute view boundaries: snap to week/month start
+  const { startDate, totalDays } = useMemo(() => {
+    switch (viewKey) {
+      case 'week': {
+        const s = startOfWeek(baseDate);
+        return { startDate: s, totalDays: 7 };
+      }
+      case 'month': {
+        const s = startOfMonth(baseDate);
+        return { startDate: s, totalDays: daysInMonth(s) };
+      }
+      case '2months': {
+        const s = startOfMonth(baseDate);
+        const next = addMonths(s, 1);
+        return { startDate: s, totalDays: daysInMonth(s) + daysInMonth(next) };
+      }
+    }
+  }, [viewKey, baseDate]);
+
+  const startKey = toKey(startDate);
 
   const dates = useMemo(
-    () => Array.from({ length: view.days }, (_, i) => addDays(startDate, i)),
-    [startDate, view.days],
+    () => Array.from({ length: totalDays }, (_, i) => addDays(startDate, i)),
+    [startDate, totalDays],
   );
 
   const sortedRooms = useMemo(
@@ -365,69 +403,100 @@ function TimelineView({
     return groups;
   }, [dates]);
 
-  // Period label for the nav bar
+  // Period label – Google Calendar style
   const periodLabel = useMemo(() => {
-    const end = addDays(startDate, view.days - 1);
-    const sm  = startDate.toLocaleDateString('sv-SE', { month: 'short', year: 'numeric' });
-    const em  = end.toLocaleDateString('sv-SE',       { month: 'short', year: 'numeric' });
     const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
-    return sm === em ? cap(sm) : `${cap(sm)} – ${cap(em)}`;
-  }, [startDate, view.days]);
+    if (viewKey === 'month') {
+      return cap(startDate.toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' }));
+    }
+    if (viewKey === 'week') {
+      const end = addDays(startDate, 6);
+      if (startDate.getMonth() === end.getMonth()) {
+        const m = cap(startDate.toLocaleDateString('sv-SE', { month: 'short', year: 'numeric' }));
+        return `${startDate.getDate()} – ${end.getDate()} ${m}`;
+      }
+      const sm = cap(startDate.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' }));
+      const em = cap(end.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }));
+      return `${sm} – ${em}`;
+    }
+    // 2months
+    const end = addDays(startDate, totalDays - 1);
+    const sm = cap(startDate.toLocaleDateString('sv-SE', { month: 'long' }));
+    const em = cap(end.toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' }));
+    return `${sm} – ${em}`;
+  }, [viewKey, startDate, totalDays]);
+
+  // Check if today falls within the current visible period
+  const isShowingToday = useMemo(() => {
+    const t = today.getTime();
+    return t >= startDate.getTime() && t < addDays(startDate, totalDays).getTime();
+  }, [today, startDate, totalDays]);
+
+  function navigate(direction: -1 | 1) {
+    setBaseDate((d) => {
+      switch (viewKey) {
+        case 'week': return addDays(d, 7 * direction);
+        case 'month': return addMonths(d, direction);
+        case '2months': return addMonths(d, 2 * direction);
+      }
+    });
+  }
 
   function getBar(room: Room) {
     if (room.status !== 'booked' || !room.checkIn || !room.checkOut) return null;
     const s  = diffDays(startKey, room.checkIn);
     const e  = diffDays(startKey, room.checkOut);
     const cs = Math.max(0, s);
-    const ce = Math.min(view.days, e);
+    const ce = Math.min(totalDays, e);
     return ce - cs > 0 ? { col: cs, span: ce - cs } : null;
   }
 
   return (
     <div className="space-y-3">
-      {/* ── Toolbar row ── */}
+      {/* ── Toolbar row (Google Calendar layout) ── */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Prev / period / next */}
-        <div className="flex items-center gap-1.5">
+        {/* Today button – always visible, outlined like Google Calendar */}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setBaseDate(todayMidnight())}
+          disabled={isShowingToday}
+          className="h-8 px-3 text-sm font-medium border-[var(--border)] text-[var(--text-primary)] bg-[var(--surface)] hover:bg-[var(--surface-alt)] disabled:opacity-40"
+        >
+          Idag
+        </Button>
+
+        {/* Prev / Next arrows */}
+        <div className="flex items-center gap-0.5">
           <Button
             size="icon"
-            variant="outline"
-            onClick={() => setOffsetDays((o) => o - view.step)}
+            variant="ghost"
+            onClick={() => navigate(-1)}
             aria-label="Föregående period"
-            className="h-9 w-9 border-[var(--border)] text-[var(--text-secondary)] bg-transparent"
+            className="h-8 w-8 text-[var(--text-secondary)]"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </Button>
 
-          <span className="text-sm font-semibold text-[var(--text-primary)] min-w-[140px] text-center select-none">
-            {periodLabel}
-          </span>
-
           <Button
             size="icon"
-            variant="outline"
-            onClick={() => setOffsetDays((o) => o + view.step)}
+            variant="ghost"
+            onClick={() => navigate(1)}
             aria-label="Nästa period"
-            className="h-9 w-9 border-[var(--border)] text-[var(--text-secondary)] bg-transparent"
+            className="h-8 w-8 text-[var(--text-secondary)]"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </Button>
-
-          {offsetDays !== 0 && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setOffsetDays(0)}
-              className="text-xs font-medium ml-1 min-w-0 h-7 px-2 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
-            >
-              Idag
-            </Button>
-          )}
         </div>
+
+        {/* Period label */}
+        <span className="text-lg font-semibold text-[var(--text-primary)] select-none">
+          {periodLabel}
+        </span>
 
         {/* View selector – pushed to the right */}
         <div className="ml-auto">
@@ -503,7 +572,7 @@ function TimelineView({
                           : 'bg-[var(--surface)]',
                       ].join(' ')}
                     >
-                      {view.days <= 31 && (
+                      {totalDays <= 31 && (
                         <span
                           className={[
                             'text-[9px] font-semibold uppercase leading-none',
@@ -522,7 +591,7 @@ function TimelineView({
                               <div
                                 className={[
                                   'flex items-center justify-center rounded-full font-bold leading-none',
-                                  view.days > 31
+                                  totalDays > 31
                                     ? 'text-[9px] w-5 h-5 mt-0'
                                     : 'text-[11px] w-6 h-6 mt-0.5',
                                   'bg-amber-500 text-white cursor-default',
@@ -538,7 +607,7 @@ function TimelineView({
                         <div
                           className={[
                             'flex items-center justify-center rounded-full font-bold leading-none',
-                            view.days > 31
+                            totalDays > 31
                               ? 'text-[9px] w-5 h-5 mt-0'
                               : 'text-[11px] w-6 h-6 mt-0.5',
                             'text-[var(--text-secondary)]',
@@ -624,8 +693,8 @@ function TimelineView({
                                 colors.bg,
                               ].join(' ')}
                               style={{
-                                left:  `calc(${(bar.col / view.days) * 100}% + 2px)`,
-                                width: `calc(${(bar.span / view.days) * 100}% - 4px)`,
+                                left:  `calc(${(bar.col / totalDays) * 100}% + 2px)`,
+                                width: `calc(${(bar.span / totalDays) * 100}% - 4px)`,
                               }}
                             >
                               <span
