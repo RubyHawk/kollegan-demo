@@ -1,508 +1,1152 @@
-# ERP Platform — Architecture & Roadmap
+# Platform Architecture — Kollegan
 
-This document defines the long-term architecture vision, domain model, integration strategy, data strategy, and 6–12 month execution roadmap for the Kollegan ERP Platform.
-
-> Written for future collaborators and architects. Think in years, not sprints.
-
----
-
-## 1. Vision & Core Philosophy
-
-We are building a **modular ERP platform** — not a bundle of disconnected apps, and not a bloated monolith. Every module shares a common core, common design system, and common data model, while remaining independently deployable if needed.
-
-### Core tenets:
-
-1. **Domain isolation** — modules own their data and UI. They communicate through defined contracts, not shared database joins.
-2. **AI-native from day one** — LLMs, voice AI, and automation are first-class citizens, not afterthoughts.
-3. **Fast iteration now, clean structure always** — we don't design microservices we don't need, but we structure code so they can be extracted when the time comes.
-4. **Integration over re-invention** — use n8n for automation orchestration, Vapi for voice, Slack/GitHub for team tooling. Build the connective tissue, not every brick.
-5. **Single source of truth** — one database, one auth system, one design system.
+> **Framing:** We are building an AI-driven business automation platform. Workflows and agents are
+> the core product. CRM, leads, offers, and ERP modules are value-add layers that feed into and
+> benefit from automation — not the other way around.
+>
+> Written for architects and senior engineers. Think in years, not sprints. Be critical.
 
 ---
 
-## 2. Business Domains
+## Table of Contents
 
-The platform is organized around these primary business domains:
+1. [Vision & Strategic Positioning](#1-vision--strategic-positioning)
+2. [Domain Classification (DDD)](#2-domain-classification-ddd)
+3. [Modular Monolith Strategy](#3-modular-monolith-strategy)
+4. [Module Communication Patterns](#4-module-communication-patterns)
+5. [Multi-Tenancy Strategy](#5-multi-tenancy-strategy)
+6. [Event-Driven Architecture Evolution](#6-event-driven-architecture-evolution)
+7. [Integration Architecture](#7-integration-architecture)
+8. [AI & Automation Platform](#8-ai--automation-platform)
+9. [Plugin & Extension Strategy](#9-plugin--extension-strategy)
+10. [Scalability & Microservices Readiness](#10-scalability--microservices-readiness)
+11. [Data, Observability & Audit Strategy](#11-data-observability--audit-strategy)
+12. [Development Workflow](#12-development-workflow)
+13. [Risks & Technical Debt](#13-risks--technical-debt)
+14. [6–18 Month Roadmap](#14-618-month-roadmap)
+
+---
+
+## 1. Vision & Strategic Positioning
+
+### What we are
+
+An **AI-native business automation platform**. We sell workflows, voice agents, and automation
+primitives. CRM, leads, hotel management, and team tools are modules that sit on top of and
+integrate with the automation core — they are compelling value-add features, not the product.
+
+This distinction matters architecturally: the automation engine must never depend on CRM or leads.
+CRM and leads depend on automation.
+
+### Core tenets
+
+| # | Tenet | What it means in practice |
+|---|---|---|
+| 1 | **Automation-first** | Every domain event can trigger a workflow. No module is exempt. |
+| 2 | **Module isolation** | Modules own their data. Cross-module reads go through a service interface, not a SQL join. |
+| 3 | **AI is infrastructure** | LLM calls, embeddings, vector search — these are infrastructure concerns, not feature code. |
+| 4 | **Multi-tenant from row 1** | `organizationId` on every table, enforced at the query layer, never bolted on later. |
+| 5 | **Events over coupling** | Prefer publishing a domain event over calling another module's service directly. |
+| 6 | **Adapters over integrations** | Every external service (Vapi, Slack, n8n, GitHub) is behind an adapter. Swap the vendor, not the code. |
+| 7 | **Extraction readiness** | Structure modules so any one of them can become a separate service. Don't need to, but must be able to. |
+
+---
+
+## 2. Domain Classification (DDD)
+
+DDD categorizes domains by strategic value. This determines where you invest in design quality.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     KOLLEGAN ERP PLATFORM                   │
-├──────────┬──────────┬──────────┬──────────┬─────────────────┤
-│  HOTEL   │   CRM    │  LEADS   │  OFFERS  │   TEAM HUB      │
-│ Rooms    │ Contacts │ Pipeline │ Quotes   │ GitHub / Slack  │
-│ Bookings │ History  │ Scoring  │ PDF/Sign │ AI Meetings     │
-│ Services │ Segments │ Assign   │ Delivery │ Announcements   │
-├──────────┴──────────┴──────────┴──────────┴─────────────────┤
-│                       VOICE AI (Vapi)                       │
-│          Phone receptionist · Tool calls · Transcripts      │
-├─────────────────────────────────────────────────────────────┤
-│               ACTIVITY LOG / AUDIT TRAIL                    │
-│            Cross-module event stream · Real-time SSE        │
-├─────────────────────────────────────────────────────────────┤
-│                  SHARED CORE SERVICES                       │
-│   Auth · Database · Cache · Logging · Rate limiting · API   │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                        CORE DOMAINS                                  │
+│         Highest strategic value — your competitive moat              │
+├──────────────────────────┬───────────────────────────────────────────┤
+│  AUTOMATION / WORKFLOWS  │           VOICE & AGENTS                  │
+│  ─────────────────────   │  ──────────────────────────               │
+│  Workflow definitions    │  Vapi phone agent                         │
+│  Step execution engine   │  LLM tool orchestration                   │
+│  Trigger system          │  Call lifecycle management                │
+│  Run history & replay    │  Transcript processing                    │
+│  Memory/context store    │  Agent routing & handoff                  │
+└──────────────────────────┴───────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│                      SUPPORTING DOMAINS                              │
+│     Important, but not your moat — solid DDD, not heroic             │
+├──────────┬──────────┬──────────┬──────────┬───────────────────────── │
+│   CRM    │  LEADS   │  OFFERS  │ IDENTITY │   INTEGRATIONS           │
+│ Contacts │ Pipeline │ Quotes   │ Auth     │   Connectors             │
+│ History  │ Scoring  │ PDF/Sign │ Orgs     │   Webhooks               │
+│ Segments │ Assign   │ Delivery │ Roles    │   OAuth flows            │
+└──────────┴──────────┴──────────┴──────────┴─────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│                       GENERIC DOMAINS                                │
+│     Commodity — implement simply, consider off-the-shelf             │
+├──────────────┬───────────────┬──────────────┬─────────────────────── │
+│  TEAM HUB    │   VERTICALS   │   BILLING    │   ANALYTICS            │
+│ GitHub/Slack │ Hotel demo    │ Stripe/Lemon │ Occupancy, revenue     │
+│ AI meetings  │ Future SaaS   │ Seat limits  │ Funnel reporting       │
+│ Announce.    │ demos         │ Feature flags│ LLM usage costs        │
+└──────────────┴───────────────┴──────────────┴────────────────────────┘
 ```
 
-### Core modules (ship with the system)
-- **Hotel** — the current demo vertical; one feature directory (`features/hotel/`) with two sub-domains: `rooms/` (availability, bookings, calendar) and `services/` (restaurants, amenities, activities)
-- **CRM** — customer profiles, call history, interaction timeline
-- **Activity Log** — cross-module audit trail and real-time event feed
-- **Voice AI** — Vapi integration, AI tool handlers, call transcripts
-- **Dashboard** — shell UI, authentication, setup, staff management
+### Why classification matters
 
-### Optional/future modules (plugged in independently)
-- **Leads** — inbound lead tracking, pipeline management, scoring
-- **Offers** — quote builder, PDF generation, e-signature, delivery
-- **Team Hub** — SaaS workspace model with sub-modules: multi-tenant workspace/billing, GitHub App (PRs/issues/CI), Slack App (channels/notifications), AI meeting pipeline (recording → transcript → Claude summary → action items), and internal announcements
-- **Invoicing** — invoice generation, payment status, reminders
-- **Analytics** — occupancy dashboards, revenue trends, forecasting
-- **Multi-property** — tenant isolation for multiple hotel locations
+- **Core domains** get the most rigorous architecture: clean domain models, rich events, full test coverage. This is where you build moats.
+- **Supporting domains** get solid structure but pragmatic shortcuts are acceptable. Import the CRM service, don't re-architect it.
+- **Generic domains** can be 80% scaffolding. Buy a billing library (Stripe, LemonSqueezy). Don't build invoicing from scratch.
+
+### Domain dependency rule
+
+```
+Generic  →  can import  →  Supporting  →  can import  →  Core
+Core  MUST NOT  import from Supporting or Generic
+Supporting  MUST NOT  import from Generic (except identity/billing)
+```
+
+This is enforced by convention and linting (see §12). If `automation/` ever imports `crm/`, that's
+an architecture violation.
 
 ---
 
-## 3. Architecture Pattern: Modular Monolith
+## 3. Modular Monolith Strategy
 
-### Why modular monolith (not microservices)?
+### Directory structure (current + target)
 
-At this stage, microservices would add deployment complexity, network latency, and distributed transaction problems — without meaningful benefit. A **well-structured monolith** with clean module boundaries gives us:
+```
+src/
+├── app/                          Next.js App Router — HTTP layer ONLY
+│   └── api/                      Thin handlers, max ~20 lines, delegate to features
+│
+├── features/                     Business modules — vertical slices
+│   │
+│   ├── automation/               ★ CORE — workflow engine (build this next)
+│   │   ├── engine/               Workflow executor, step runner, retry logic
+│   │   ├── triggers/             Event triggers, schedule triggers, webhook triggers
+│   │   ├── memory/               Run context, agent memory, per-org history
+│   │   ├── tools/                Tool registry — functions callable by LLMs
+│   │   ├── components/           Workflow builder UI (future)
+│   │   ├── types.ts
+│   │   └── index.ts              Public interface — what other modules may import
+│   │
+│   ├── voice/                    ★ CORE — Vapi phone agent & AI tools
+│   │   ├── ai-tools/             LLM-callable tool handlers
+│   │   ├── components/           Voice widget UI
+│   │   ├── types.ts
+│   │   └── index.ts
+│   │
+│   ├── crm/                      Supporting — contacts, history, segments
+│   ├── leads/                    Supporting — pipeline, scoring, conversion
+│   ├── offers/                   Supporting — quotes, PDFs, delivery
+│   │
+│   ├── identity/                 Supporting — orgs, members, auth, RBAC
+│   │   ├── auth/                 Login, JWT, sessions
+│   │   ├── organizations/        Org CRUD, settings, plan
+│   │   ├── members/              Membership, roles, invites
+│   │   └── index.ts
+│   │
+│   ├── integrations/             Supporting — connector registry
+│   │   ├── registry.ts           Central connector index
+│   │   ├── n8n/                  n8n workflow triggers + webhook receivers
+│   │   ├── slack/                Slack App events + posting
+│   │   ├── github/               GitHub App events + data fetch
+│   │   └── index.ts
+│   │
+│   ├── hotel/                    Generic — demo vertical
+│   │   ├── rooms/
+│   │   ├── services/
+│   │   └── index.ts
+│   │
+│   ├── team-hub/                 Generic — SaaS collaboration
+│   │   ├── workspace/
+│   │   ├── integrations/github/
+│   │   ├── integrations/slack/
+│   │   ├── meetings/
+│   │   ├── announcements/
+│   │   └── index.ts
+│   │
+│   ├── dashboard/                Generic — shell UI only
+│   ├── activity/                 Generic — audit trail + SSE feed
+│   ├── leads/                    Supporting (stub)
+│   └── offers/                   Supporting (stub)
+│
+├── core/                         Framework-agnostic application utilities
+│   ├── auth/                     JWT sign/verify, Vapi auth
+│   ├── cache/                    Redis client, rate limiter
+│   ├── database/                 Prisma singleton
+│   ├── events/                   ★ In-process event bus (add this)
+│   ├── logging/                  Structured logger
+│   ├── queue/                    ★ Background job queue (add this)
+│   ├── resilience/               Retry, circuit breaker
+│   └── api/                      OpenAPI spec
+│
+├── infrastructure/               External system adapters
+│   ├── ai/                       LLM provider adapters (Claude, OpenAI)
+│   ├── calendar/                 Google Calendar
+│   ├── storage/                  S3-compatible file storage
+│   ├── sse/                      Server-Sent Events manager
+│   ├── transcription/            Whisper/Deepgram/AssemblyAI
+│   └── persistence/              JSON fallback store
+│
+└── shared/                       Cross-cutting UI + utilities
+    ├── ui/
+    ├── hooks/
+    ├── lib/
+    ├── stores/
+    └── styles/
+```
 
-- Fast iteration (no inter-service APIs to maintain)
-- ACID transactions across modules
-- Single deployment unit
-- Easy local development
-- Clear extraction path if/when scale demands it
+### Module internal structure
 
-### Extraction trigger points
+Every non-trivial module follows this internal layout:
 
-Extract a module to a service when ANY of these are true:
-- The module requires dramatically different scaling (e.g., analytics needs read replicas)
-- The module has independent release cadence with a separate team
-- The module has fundamentally different technology requirements
+```
+features/my-module/
+├── components/          UI only — no business logic
+├── service.ts           ★ The domain service — all business logic lives here
+├── repository.ts        ★ All database queries — no raw Prisma in service.ts
+├── events.ts            Domain event definitions + publish helpers
+├── types.ts             TypeScript domain types
+├── api.ts               Client-side fetch wrappers (for React components)
+├── lib/
+│   └── my-store.ts      Zustand store (if real-time UI state needed)
+└── index.ts             Public barrel — ONLY export what other modules need
+```
 
-### Module communication
+The `index.ts` is the **module contract**. It is the only file other modules may import from.
+Internal files (`service.ts`, `repository.ts`) are private by convention.
 
-Within the monolith, modules communicate via:
-
-1. **Direct function calls** (synchronous) — for reads and fast writes
-2. **SSE events** (real-time broadcast) — for live dashboard updates
-3. **n8n workflows** (async orchestration) — for multi-step business processes, emails, notifications
-
-Modules must NOT:
-- Share database tables (each module owns its tables)
-- Import each other's internal `lib/` or `store` files directly
-- Bypass the API layer for cross-module writes
-
-### Module interface contract
-
-Each module exposes its public API via `src/features/<module>/index.ts`:
+### The service layer
 
 ```typescript
-// What other modules can import from this module
-export type { Lead, LeadStatus } from './types';
-export { createLead } from './api';
-// Components are NOT exported between modules (use page.tsx composition)
+// features/crm/service.ts — business logic only, no HTTP, no Prisma directly
+export class CrmService {
+  constructor(
+    private readonly repo: CrmRepository,
+    private readonly events: EventBus,
+  ) {}
+
+  async createContact(orgId: string, data: CreateContactInput): Promise<Customer> {
+    const customer = await this.repo.create(orgId, data);
+    await this.events.publish(new ContactCreatedEvent(customer));
+    return customer;
+  }
+}
+
+// features/crm/repository.ts — database queries only
+export class CrmRepository {
+  async create(orgId: string, data: CreateContactInput): Promise<Customer> {
+    return prisma.customer.create({
+      data: { ...data, organizationId: orgId },
+    });
+  }
+}
 ```
+
+This separation means:
+- Service is unit-testable without a database
+- Repository is swappable (different DB, caching layer)
+- Business rules never leak into route handlers
 
 ---
 
-## 4. Domain-Driven Design Structure
+## 4. Module Communication Patterns
 
-### Aggregate roots (per module)
+Three legitimate patterns. Use them in priority order:
 
-| Module | Aggregate Root | Key Relations |
-|---|---|---|
-| Hotel/Rooms | `Room` | `HotelBooking[]` |
-| CRM | `Customer` | `CrmRecord[]`, `CallTranscript[]`, `HotelBooking[]` |
-| Voice | `CallTranscript` | `Customer`, `CrmRecord` |
-| Leads (future) | `Lead` | `LeadActivity[]`, `Customer?` |
-| Offers (future) | `Offer` | `OfferLineItem[]`, `Customer?`, `Lead?` |
-| Staff | `StaffUser` | (auth only) |
+### Pattern 1 — Direct service call (synchronous)
 
-### Value objects and shared types
-
-- Dates: always ISO 8601 strings in API/DB, `Date` objects only in business logic
-- Money: always integers in minor units (öre) for storage; formatted for display
-- IDs: UUIDs v4 from the database
-
-### Domain events (current and future)
-
-Domain events are the backbone of cross-module communication:
+Use when: module A needs data from module B as part of a user request.
 
 ```typescript
-// Current (via SSE)
-type RoomEvent = 'room_confirmed' | 'room_cancelled' | 'room_locked';
-type CallEvent = 'call_started' | 'call_ended';
-type CRMEvent  = 'crm_contact' | 'rooms_queried';
+// Allowed: CRM needs to check if a lead has an existing contact
+import { crmService } from '@features/crm';  // importing from public index.ts only
 
-// Future (add to SSE event types)
-type LeadEvent    = 'lead_created' | 'lead_stage_changed' | 'lead_converted';
-type OfferEvent   = 'offer_sent' | 'offer_accepted' | 'offer_declined';
-type MeetingEvent = 'meeting_completed' | 'summary_generated';
+const existing = await crmService.findByEmail(orgId, lead.email);
+```
+
+Rule: only import from `@features/<module>/index.ts`, never from internal files.
+
+### Pattern 2 — Domain events (async, decoupled)
+
+Use when: something happened in module A, and module B should react — but A doesn't need to know B exists.
+
+```typescript
+// features/leads/service.ts
+await this.events.publish(new LeadConvertedEvent({ leadId, customerId, orgId }));
+
+// features/automation/triggers/event-trigger.ts
+eventBus.subscribe(LeadConvertedEvent, async (event) => {
+  await automationEngine.triggerWorkflow('lead_converted', event);
+});
+
+// features/crm/listeners.ts
+eventBus.subscribe(LeadConvertedEvent, async (event) => {
+  await crmService.linkLeadToCustomer(event.leadId, event.customerId);
+});
+```
+
+Neither `leads` nor `crm` imports each other. Automation doesn't know CRM exists.
+This is the target pattern for cross-domain side effects.
+
+### Pattern 3 — n8n orchestration (async, external)
+
+Use when: multi-step business process spanning multiple systems (email + CRM + Slack + wait-for-reply).
+
+```
+Domain event → webhook → n8n workflow → our API endpoints + external services
+```
+
+n8n is the escape valve for complex, stateful, multi-system processes. Don't replicate its
+orchestration capability inside the app.
+
+### What is never allowed
+
+```typescript
+// ❌ Never — direct cross-module internal import
+import { prisma } from '@core/database/prisma';
+const leads = await prisma.lead.findMany(...);  // from inside crm/service.ts
+
+// ❌ Never — HTTP call to your own API
+fetch('/api/crm/contacts');  // from inside another feature
+
+// ❌ Never — shared mutable state between modules
+import { leadsStore } from '@features/leads/lib/leads-store';  // from crm/
 ```
 
 ---
 
-## 5. Database Strategy
+## 5. Multi-Tenancy Strategy
 
-### Current schema
+### Decision: Row-Level Isolation with PostgreSQL RLS
 
-PostgreSQL with Prisma 7 ORM. All current tables use the `demo_hotel_` prefix to signal their scope. As new modules are added, use module-specific prefixes:
+**Chosen approach:** `organizationId` on every tenant-owned table, enforced by PostgreSQL
+Row Level Security (RLS) policies, with additional application-layer checks.
 
+**Why not schema-per-tenant:**
+- Prisma has limited multi-schema support today
+- Schema creation/migration per new org is operationally complex
+- At current scale, row isolation is sufficient and fast with proper indexing
+
+**Why not application-only filtering:**
+- A single missing `WHERE organizationId = ?` leaks all tenant data
+- RLS provides defense-in-depth at the database layer
+
+### Implementation
+
+```sql
+-- Every tenant-owned table gets RLS
+ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation ON customers
+  USING (organization_id = current_setting('app.current_org_id')::uuid);
+
+-- Set at connection time (via Prisma middleware)
+SET LOCAL app.current_org_id = 'org_abc123';
 ```
-demo_hotel_*    → hotel module tables (rooms, bookings, services)
-crm_*           → CRM module tables
-leads_*         → Leads module tables
-offers_*        → Offers module tables
-team_*          → Team hub tables
-staff_*         → Auth/staff tables
+
+```typescript
+// core/database/prisma.ts — set org context on every request
+export function withOrgContext(orgId: string) {
+  return prisma.$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ args, query }) {
+          await prisma.$executeRaw`SET LOCAL app.current_org_id = ${orgId}`;
+          return query(args);
+        },
+      },
+    },
+  });
+}
 ```
 
-### Multi-tenancy strategy
+### Prisma schema conventions
 
-Current: single tenant (one hotel). Future multi-tenancy approach:
+```prisma
+// Every tenant-owned model includes:
+model Customer {
+  id             String   @id @default(uuid())
+  organizationId String   // ← NEVER nullable on tenant data
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-**Phase 1 (now):** Single tenant, no isolation needed.
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
-**Phase 2 (multi-property):** Add `organizationId` to all tables. Use row-level security (PostgreSQL RLS) for data isolation. Single database.
+  @@index([organizationId])           // ← always index this
+  @@index([organizationId, createdAt]) // ← compound index for list queries
+}
 
-**Phase 3 (true SaaS):** Schema-per-tenant using Prisma's multi-schema support, or a dedicated database per large customer. Determined by data isolation requirements and scale.
+// Table naming: module prefix
+// hotel_*    → hotel module
+// crm_*      → CRM module
+// lead_*     → leads module
+// wf_*       → automation/workflow module
+// org_*      → identity/org module
+// voice_*    → voice/agent module
+```
 
-Never mix tenant data in the same table row — always use foreign key isolation.
+### Postgres indexing rules
 
-### Event sourcing consideration
+1. Every `organizationId` column gets an index
+2. Every `organizationId` + `createdAt` pair gets a compound index (list queries always sort by time)
+3. Every foreign key gets an index (Prisma doesn't add these automatically)
+4. Every `status` or `stage` column used in `WHERE` clauses: add `[organizationId, status]` compound
+5. `EXPLAIN ANALYZE` any query touching > 10k rows before shipping it
 
-For the audit log / activity trail, consider moving to an append-only event log as volume grows:
+### Data ownership
 
-- Current: `ActivityEvent[]` stored in memory (Zustand) and persisted via SSE
-- Future: Dedicated `events` table as source of truth, replayed into Zustand on connect
-
-This gives you a complete audit trail, time-travel debugging, and the ability to rebuild any derived state.
-
-### Scaling read performance
-
-When reporting/analytics queries slow down transactional queries:
-1. Add read replica for reporting queries (Prisma supports multiple datasources)
-2. Materialize summary tables via nightly jobs
-3. Consider ClickHouse or TimescaleDB for time-series analytics data
+| Concern | Rule |
+|---|---|
+| Each org's data | Never leaves org boundary without explicit `organizationId` scoping |
+| Cross-org reads | Forbidden at application layer; blocked by RLS |
+| Admin/system | Use a separate Prisma client without RLS for internal jobs |
+| Billing events | Stored separately from business data; org is billed, not queried |
+| Backups | Per-org export is a feature to build; full DB dumps are operational |
 
 ---
 
-## 6. API Layer
+## 6. Event-Driven Architecture Evolution
 
-### Internal vs. external APIs
+### Phase 1 — In-process event bus (now)
+
+Start with a typed, in-process EventEmitter. Zero infrastructure, same process:
+
+```typescript
+// core/events/event-bus.ts
+import { EventEmitter } from 'events';
+
+type EventHandler<T> = (event: T) => Promise<void>;
+
+class EventBus {
+  private emitter = new EventEmitter();
+
+  publish<T extends DomainEvent>(event: T): void {
+    this.emitter.emit(event.type, event);
+    // Fire-and-forget: errors in listeners must be caught and logged internally
+  }
+
+  subscribe<T extends DomainEvent>(
+    eventType: string,
+    handler: EventHandler<T>,
+  ): void {
+    this.emitter.on(eventType, async (event: T) => {
+      try {
+        await handler(event);
+      } catch (err) {
+        logger.error({ event, err }, 'Event handler failed');
+      }
+    });
+  }
+}
+
+export const eventBus = new EventBus();
+```
+
+```typescript
+// core/events/domain-event.ts
+export interface DomainEvent {
+  type: string;          // e.g. 'lead.converted'
+  orgId: string;
+  occurredAt: string;    // ISO 8601
+  payload: unknown;
+}
+
+// Feature-specific events (in features/<module>/events.ts)
+export class LeadConvertedEvent implements DomainEvent {
+  type = 'lead.converted' as const;
+  constructor(
+    public readonly orgId: string,
+    public readonly payload: { leadId: string; customerId: string },
+    public readonly occurredAt = new Date().toISOString(),
+  ) {}
+}
+```
+
+### Phase 2 — Persisted event log (3–6 months)
+
+When you need: replay, audit, guaranteed delivery, cross-request correlation.
+
+Add an `events` table:
+
+```prisma
+model DomainEventRecord {
+  id          String   @id @default(uuid())
+  type        String
+  orgId       String
+  aggregateId String   // The entity this event is about (leadId, customerId...)
+  payload     Json
+  occurredAt  DateTime
+  processedAt DateTime?
+
+  @@index([orgId, type])
+  @@index([orgId, occurredAt])
+  @@index([aggregateId])
+}
+```
+
+The in-process bus writes to this table. Listeners can be re-run from history.
+This is your foundation for event sourcing patterns — without the full complexity of ES upfront.
+
+### Phase 3 — Message queue (6–12 months, when needed)
+
+When in-process fan-out causes latency problems, or you need durable async:
 
 ```
-External (Vapi tool calls) → /api/ai/*       → Requires x-vapi-secret
-External (n8n webhooks)    → /api/n8n/*      → Requires HMAC signature
-External (client app)      → /api/*          → Requires JWT (future)
-Internal (SSE)             → /api/sse        → Requires JWT (future)
-Public (docs)              → /api/docs       → No auth
+BullMQ (Redis-backed) → workers process jobs from the queue
 ```
 
-### API design principles
+The domain event interface stays identical. Only the `EventBus.publish()` implementation
+changes — instead of `emitter.emit()`, it calls `queue.add()`.
 
-- **Thin handlers** — route files import from `@features/`, never duplicate logic
-- **Zod validation** at the boundary — validate all incoming data before it touches the domain
-- **Consistent error format** — `{ error: string }` for all 4xx/5xx responses
-- **Rate limiting** — all external endpoints rate-limited via Redis sliding window
+The feature code that publishes and subscribes never changes.
 
-### Authentication roadmap
+### Phase 4 — Extract to message broker (12+ months, if needed)
 
-Current: JWT stored in cookies (staff auth). Future expansion:
+When: multiple services need to share events.
 
-1. **Staff auth** (done) — email/password → JWT → HttpOnly cookie
-2. **API keys** — for external integrations (replace `x-vapi-secret` with proper API key system)
-3. **OAuth 2.0** — for Slack/GitHub integrations
-4. **Role-based access control (RBAC)** — `admin`, `manager`, `receptionist` roles already in DB; enforce in middleware
+```
+Redis Streams → pub/sub at service boundary
+or
+NATS / RabbitMQ if you need complex routing
+```
 
-### OpenAPI spec
+Again: feature code doesn't change. Infrastructure swaps under the bus abstraction.
 
-Maintained in `src/core/api/openapi.ts`. Served at `/api/docs`. Keep this updated as new AI tool endpoints are added — Vapi's LLM uses it to understand tool capabilities.
+### Background jobs
+
+```typescript
+// core/queue/job-queue.ts
+export const jobQueue = {
+  async add<T>(jobType: string, payload: T, options?: JobOptions): Promise<void> {
+    // Phase 1: in-process setTimeout (acceptable for demos)
+    // Phase 2: BullMQ job
+    // Phase 3: distributed queue
+  }
+};
+
+// Usage (automation/engine/workflow-runner.ts)
+await jobQueue.add('workflow.run', { workflowId, triggerPayload, orgId });
+```
+
+Job types to implement early:
+- `workflow.run` — execute an automation workflow
+- `transcript.process` — send recording to transcription service
+- `summary.generate` — send transcript to LLM for summary
+- `email.send` — dispatch email (n8n or direct)
+- `report.generate` — heavy analytics queries
 
 ---
 
-## 7. Integration Strategy
+## 7. Integration Architecture
 
-### n8n — Automation Orchestration
+### Adapter pattern — hard rule
 
-n8n is our automation backbone. Keep n8n workflows for:
-- Multi-step processes (e.g., booking confirmation → send email → update CRM → notify Slack)
-- Scheduled jobs (e.g., daily occupancy report)
-- Data sync between services
-- Error handling and retry flows
+Every external service is behind an adapter interface. The application calls the interface.
+The concrete implementation lives in `src/infrastructure/`.
 
-Our app exposes webhooks; n8n calls them. n8n also calls us back via `/api/n8n/*`.
+```typescript
+// infrastructure/ai/types.ts — the interface (never changes)
+export interface LLMProvider {
+  complete(prompt: string, options?: LLMOptions): Promise<string>;
+  embed(text: string): Promise<number[]>;
+}
 
-Workflow files are version-controlled in `n8n/`. Export from n8n and commit after changes.
+// infrastructure/ai/claude-adapter.ts — one implementation
+export class ClaudeAdapter implements LLMProvider { ... }
 
-### Vapi — Voice AI
+// infrastructure/ai/openai-adapter.ts — another
+export class OpenAIAdapter implements LLMProvider { ... }
 
-Vapi handles telephony and LLM orchestration. We provide:
-- Tool definitions (in Vapi dashboard or via API)
-- Tool endpoints at `/api/ai/*`
-- Webhook handlers for call lifecycle events
-
-Assistant configuration: `vapi/assistant-config.json` (version-controlled).
-
-As new ERP modules are added, add corresponding Vapi tools:
-- Lead management → `create_lead`, `update_lead_status`
-- CRM lookup → already exists (`get_customer`)
-- Offers → `get_offer_status`, `confirm_offer`
-
-### Slack Integration (future)
-
-Pattern:
-1. Install Slack App with Bot token + Events API
-2. Add `src/infrastructure/slack/slack-client.ts` (thin wrapper around Slack Web API)
-3. Webhook receiver at `/api/integrations/slack/webhook` (verify with signing secret)
-4. Post notifications from domain events (e.g., new booking → #bookings channel)
-5. Slash commands for quick actions from Slack
-
-### GitHub Integration (future)
-
-Pattern:
-1. Create GitHub App (preferred over OAuth for team use)
-2. Add `src/infrastructure/github/github-client.ts`
-3. Webhook receiver at `/api/integrations/github/webhook`
-4. Display PRs/issues/CI in Team Hub tab
-5. Link commits to ERP activities (e.g., feature deployment triggers activity log entry)
-
-### LLM / AI Strategy
-
-Current: Vapi manages the LLM for voice calls (GPT-4o or equivalent).
-
-Future direct LLM integration:
-- **Meeting summaries** — send transcript to Claude/GPT → extract summary + action items → store in `Meeting` model
-- **Lead scoring** — periodically run LLM over lead interactions → update score
-- **Offer generation** — LLM drafts offer text based on lead/customer context
-- **Analytics narratives** — LLM generates natural language summaries of occupancy/revenue data
-
-Add `src/infrastructure/ai/` with adapters for Claude API, OpenAI, etc. Keep LLM calls outside of the critical request path (async via background jobs or n8n).
-
----
-
-## 8. Frontend Architecture
-
-### Design system
-
-Token-based CSS design system in `src/shared/styles/`:
-- `tokens.css` — CSS custom properties (colors, spacing, radii, shadows)
-- `components.css` — reusable utility classes (`.glass-panel`, `.nav-active`, `.card-interactive`)
-- `animations.css` — keyframe animations
-- `voice-widget.css` — voice contact widget styles
-
-All colors use CSS variables. Light/dark mode via `.dark` class on `<html>`.
-
-### Component hierarchy
-
-```
-Page (app/page.tsx)
-└── Layout (app/layout.tsx)
-    ├── DashboardHeader     @features/dashboard
-    ├── DashboardSidebar    @features/dashboard
-    └── Tab content         @features/<module>
-        └── Feature UI
-            └── @shared/ui  (Button, Dialog, Badge, Toast…)
+// Features use the interface, not the adapter
+import type { LLMProvider } from '@infra/ai/types';
 ```
 
-### State management
+### Integration registry
 
-| Type | Solution | Where |
+Each integration has:
+
+```
+src/infrastructure/<integration>/
+├── types.ts         Interface that the adapter implements
+├── adapter.ts       Concrete implementation
+├── webhook.ts       Incoming webhook handler (signature verification)
+└── index.ts         Exports the interface + factory function
+```
+
+The factory reads env vars and returns the configured adapter. Features never touch env vars directly.
+
+### Current integrations
+
+| Integration | Purpose | Adapter location | Webhook receiver |
+|---|---|---|---|
+| Vapi | Voice AI, phone calls | `@infra/vapi/` | `/api/ai/*` |
+| n8n | Workflow orchestration | `@infra/n8n/` | `/api/n8n/*` |
+| Google Calendar | Event sync | `@infra/calendar/` | None (polling) |
+| LLM (Claude/GPT) | Summaries, tools | `@infra/ai/` | None |
+
+### Planned integrations
+
+| Integration | Purpose | Webhook receiver |
 |---|---|---|
-| Server state | Fetch + Zustand | `@features/*/lib/*-store.ts` |
-| Real-time state | SSE → Zustand | `@shared/stores/realtime-store.ts` |
-| UI state | React useState | Component-local |
-| Form state | React useState | Component-local (no heavy form library) |
-| Global UI (toasts) | React Context | `@shared/ui/toast/toast-context.tsx` |
+| Slack | Team notifications, slash commands | `/api/integrations/slack/events` |
+| GitHub | PR/issue/CI feed in Team Hub | `/api/integrations/github/webhook` |
+| Stripe | Billing, subscriptions | `/api/integrations/stripe/webhook` |
+| Resend/SMTP | Transactional email | None (outbound only) |
+| Deepgram/Whisper | Meeting transcription | None (outbound only) |
+| S3-compatible | Recording/file storage | None |
 
-As modules grow, consider React Query (TanStack Query) for server state — it handles loading/error/stale states elegantly and is already in `package.json`.
+### Webhook security — non-negotiable
 
-### Adding UI to a new module
+Every inbound webhook verifies its signature before any processing:
 
-1. Build the tab component in `src/features/<module>/components/<module>-tab.tsx`
-2. Use `@shared/ui/` for primitives (Button, Dialog, Badge, etc.)
-3. Follow the existing design token conventions (use CSS vars, not hardcoded colors)
-4. Animate with Framer Motion using constants from `@shared/lib/motion`
-5. Export from `src/features/<module>/index.ts`
+```typescript
+// core/auth/webhook-verify.ts
+export function verifySlackSignature(req: Request): boolean {
+  const sig = req.headers.get('x-slack-signature');
+  const ts  = req.headers.get('x-slack-request-timestamp');
+  const body = await req.text();
+  const expected = `v0:${ts}:${body}`;
+  return crypto.timingSafeEqual(
+    Buffer.from(sig),
+    Buffer.from(hmac('sha256', SLACK_SIGNING_SECRET, expected)),
+  );
+}
+```
+
+Fail before parsing body. Never process unauthenticated payloads.
+
+### Avoiding vendor lock-in
+
+- Never import `Anthropic` SDK directly in feature code — always via `@infra/ai/`
+- Never import `Slack` SDK in feature code — always via `@infra/slack/`
+- n8n workflows are version-controlled in `n8n/` — treat them like migrations
+- If a vendor changes its API, only the adapter file changes
 
 ---
 
-## 9. Development Workflow
+## 8. AI & Automation Platform
+
+This is the core domain. It deserves the most architectural investment.
+
+### Automation engine concepts
+
+```
+Workflow = a directed graph of Steps, triggered by an Event or Schedule
+Step     = an atomic unit of work (call tool, send message, wait, branch, LLM call)
+Run      = a single execution of a Workflow with a specific trigger payload
+Memory   = persistent context available to agents across runs
+Tool     = a function callable by an LLM during a run
+```
+
+### Data model
+
+```prisma
+model Workflow {
+  id             String         @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  trigger        Json           // TriggerConfig (event name, schedule, webhook)
+  steps          Json           // StepConfig[] — the DAG definition
+  isActive       Boolean        @default(true)
+  version        Int            @default(1)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  runs           WorkflowRun[]
+  @@index([organizationId, isActive])
+}
+
+model WorkflowRun {
+  id             String         @id @default(uuid())
+  organizationId String
+  workflowId     String
+  status         RunStatus      // pending | running | completed | failed | cancelled
+  trigger        Json           // What triggered this run
+  context        Json           // Current execution state (step outputs, variables)
+  startedAt      DateTime       @default(now())
+  completedAt    DateTime?
+  error          String?
+  steps          WorkflowRunStep[]
+  @@index([organizationId, workflowId, status])
+}
+
+model WorkflowRunStep {
+  id          String     @id @default(uuid())
+  runId       String
+  stepId      String     // References step in workflow.steps DAG
+  status      StepStatus // pending | running | completed | failed | skipped
+  input       Json?
+  output      Json?
+  startedAt   DateTime   @default(now())
+  completedAt DateTime?
+  error       String?
+  retryCount  Int        @default(0)
+}
+```
+
+### Tool registry
+
+The tool registry is a map of name → async function. All LLM-callable tools register here:
+
+```typescript
+// features/automation/tools/registry.ts
+type ToolFn = (args: unknown, ctx: RunContext) => Promise<unknown>;
+
+const tools = new Map<string, ToolFn>();
+
+export function registerTool(name: string, fn: ToolFn): void {
+  tools.set(name, fn);
+}
+
+export function getTool(name: string): ToolFn | undefined {
+  return tools.get(name);
+}
+
+// features/crm/tools.ts — CRM registers its tools on startup
+registerTool('crm.find_customer', async (args, ctx) => {
+  return crmService.findByEmail(ctx.orgId, args.email);
+});
+
+// features/hotel/rooms/tools.ts
+registerTool('hotel.check_availability', async (args, ctx) => {
+  return roomService.checkAvailability(ctx.orgId, args.checkIn, args.checkOut);
+});
+```
+
+This is the same tool registry used by Vapi's AI tool calls. Voice agents and automation
+workflows share the same tool interface.
+
+### Agent memory
+
+```typescript
+// features/automation/memory/types.ts
+interface AgentMemory {
+  sessionMemory: Record<string, unknown>;  // per-run, discarded after
+  orgMemory: Record<string, unknown>;      // persisted per-org (preferences, history)
+  vectorMemory?: VectorSearchResult[];     // semantic search over past interactions
+}
+```
+
+Phase 1: key-value in Redis (session) + Postgres JSON (org).
+Phase 2: pgvector for semantic memory (embeddings of past conversations + documents).
+
+### LLM orchestration patterns
+
+```
+Simple tool call:    User input → LLM → tool call → result → LLM → response
+ReAct loop:         User input → [LLM → tool → observe] × N → final answer
+Parallel tools:     LLM requests multiple tools simultaneously → gather results → continue
+Human in the loop:  Workflow pauses → sends notification → waits for approval → resumes
+```
+
+All of these are variations of the same workflow engine. The LLM decides which tools to call;
+the engine executes them and returns results.
+
+### Vapi → Automation bridge
+
+```
+Phone call → Vapi LLM → tool call → /api/ai/<tool>
+                                         ↓
+                               features/automation/tools/registry
+                                         ↓
+                               Domain logic + DB write + SSE event
+                                         ↓
+                               Optionally: trigger a workflow
+```
+
+The voice agent and the automation engine share the same tool registry. A Vapi tool call
+can trigger a multi-step workflow (e.g., "book this room" → Workflow: create booking +
+update CRM + send confirmation email + notify Slack).
+
+---
+
+## 9. Plugin & Extension Strategy
+
+### Phase 1 — Internal module registration (now)
+
+Modules self-register at startup. The core never has a hard import of feature code.
+
+```typescript
+// app/bootstrap.ts — runs at startup, not in route handlers
+import '@features/crm/register';          // registers CRM tools + event listeners
+import '@features/leads/register';        // registers leads tools + listeners
+import '@features/hotel/rooms/register';  // registers hotel tools + listeners
+import '@features/voice/register';        // registers voice tools
+
+// features/crm/register.ts
+import { registerTool } from '@features/automation/tools/registry';
+import { eventBus }      from '@core/events/event-bus';
+import { crmService }    from './service';
+import { LeadConvertedEvent } from '@features/leads/events';
+
+// Register tools
+registerTool('crm.find_customer', ...);
+
+// Subscribe to cross-module events
+eventBus.subscribe(LeadConvertedEvent.type, async (event) => {
+  await crmService.onLeadConverted(event);
+});
+```
+
+### Phase 2 — External plugin interface (future)
+
+When you want third-party modules or customer-specific extensions:
+
+```typescript
+// core/plugins/plugin-api.ts
+export interface Plugin {
+  id: string;
+  name: string;
+  version: string;
+  register(api: PluginAPI): Promise<void>;
+}
+
+export interface PluginAPI {
+  registerTool(name: string, fn: ToolFn): void;
+  onEvent(type: string, handler: EventHandler): void;
+  addApiRoute(path: string, handler: RouteHandler): void;
+  getService<T>(token: ServiceToken<T>): T;
+}
+```
+
+Third-party plugins get a sandboxed PluginAPI — they cannot reach Prisma directly or call
+other plugins' internals.
+
+### Versioning and isolation
+
+- Tool names are namespaced: `crm.find_customer` not `find_customer`
+- Event types are namespaced: `crm.contact_created` not `contact_created`
+- Plugin IDs are scoped to vendor: `@acme/my-plugin`
+- Breaking changes to tool signatures must bump the tool version: `crm.find_customer.v2`
+
+---
+
+## 10. Scalability & Microservices Readiness
+
+### Don't extract prematurely. Do extract when you see these signals.
+
+| Module | Extract when... |
+|---|---|
+| **Automation/Workflow** | Workflow runs cause DB contention with transactional queries; you need dedicated workers |
+| **Voice/Vapi** | Call volume needs dedicated infrastructure; latency SLAs conflict with app deploys |
+| **LLM/AI** | Token costs need separate tracking; LLM calls need dedicated rate limits/queues |
+| **Analytics** | Reporting queries start degrading transactional performance; read replica isn't enough |
+| **Billing** | Compliance requirements demand audit isolation; Stripe webhooks need dedicated processing |
+
+### How to prepare now
+
+1. **Service classes not static functions** — `new CrmService(repo, events)` can be deployed
+   separately trivially. `crmService.createContact()` cannot if it directly imports Prisma.
+
+2. **No shared state between modules** — each module's Zustand store is local. SSE is the
+   only shared channel.
+
+3. **Tool registry is stateless** — tools are pure functions over injected services. They can
+   run in any process.
+
+4. **HTTP-ready module contracts** — the `index.ts` public interface maps cleanly to a REST API.
+   If `leadsService.createLead()` becomes a network call, feature code doesn't change.
+
+5. **Event payloads are serializable** — all `DomainEvent.payload` must be JSON-serializable.
+   Never put class instances or Promises in events.
+
+### Infrastructure scaling path
+
+```
+Phase 1: Single Next.js process (now)
+         └─ All modules, Postgres, Redis in one deployment
+
+Phase 2: Separate background worker
+         ├─ Next.js (HTTP + SSE)
+         └─ Worker process (BullMQ consumers: workflow runs, transcription, LLM jobs)
+
+Phase 3: Extract high-load modules
+         ├─ Next.js (HTTP layer)
+         ├─ Automation service (workflow engine)
+         └─ Worker pool (parallel job execution)
+
+Phase 4: Full service mesh (only if justified)
+         ├─ API gateway
+         ├─ Individual domain services
+         └─ Event bus (NATS or Redis Streams)
+```
+
+---
+
+## 11. Data, Observability & Audit Strategy
+
+### Structured logging
+
+```typescript
+// core/logging/logger.ts — already exists, enforce everywhere
+logger.info({ orgId, userId, action: 'booking.created', bookingId }, 'Booking created');
+
+// Never:
+console.log('booking created', booking);
+```
+
+Log format: JSON, always. Fields: `level`, `msg`, `orgId`, `userId`, `action`, `duration`,
+`traceId`, `error?`. Ship to Datadog or Axiom in production.
+
+### Request tracing
+
+Add a `traceId` to every request and propagate it through the call stack:
+
+```typescript
+// app/api/middleware.ts
+const traceId = crypto.randomUUID();
+AsyncLocalStorage.run({ traceId, orgId }, () => next());
+```
+
+Every log line, every event, every job carries this trace ID.
+
+### Audit trail
+
+The `activity` feature is the audit trail. Every write operation across all modules should
+emit an audit event:
+
+```typescript
+// Pattern: service emits audit event after every state change
+await this.events.publish(new AuditEvent({
+  orgId,
+  actorId: userId,        // who did it
+  action: 'lead.stage_changed',
+  resourceType: 'Lead',
+  resourceId: lead.id,
+  before: { stage: 'new' },
+  after: { stage: 'qualified' },
+}));
+```
+
+The activity module subscribes to all `AuditEvent` types and persists them. This gives you:
+- Complete audit trail for compliance
+- Timeline view per entity
+- Anomaly detection (future)
+- Debug replays
+
+### Analytics strategy
+
+Phase 1: Materialized counts stored on parent records (e.g., `_count` via Prisma relations).
+Phase 2: Dedicated `analytics_*` tables aggregated by nightly job. Never run OLAP queries on transactional tables.
+Phase 3: ClickHouse or TimescaleDB sidecar for time-series data (LLM costs, workflow volumes, booking trends).
+
+### LLM cost tracking
+
+Every LLM call must record tokens used and cost:
+
+```typescript
+// infrastructure/ai/adapter.ts
+const result = await llm.complete(prompt);
+await jobQueue.add('billing.record_llm_usage', {
+  orgId,
+  model: result.model,
+  inputTokens: result.usage.input_tokens,
+  outputTokens: result.usage.output_tokens,
+  costUsd: calculateCost(result),
+});
+```
+
+You will need this for billing, rate limiting per org, and cost attribution.
+
+---
+
+## 12. Development Workflow
+
+### Path aliases (tsconfig)
+
+| Alias | Resolves to |
+|---|---|
+| `@features/*` | `src/features/*` |
+| `@core/*` | `src/core/*` |
+| `@infra/*` | `src/infrastructure/*` |
+| `@shared/*` | `src/shared/*` |
+| `@/*` | `src/*` (fallback only) |
+
+### Linting module boundaries (add to ESLint config)
+
+```json
+{
+  "rules": {
+    "no-restricted-imports": ["error", {
+      "patterns": [
+        {
+          "group": ["@features/*/service", "@features/*/repository"],
+          "message": "Import from the module's index.ts only."
+        },
+        {
+          "group": ["@features/automation/*/node_modules"],
+          "message": "Core domain must not import from supporting domains."
+        }
+      ]
+    }]
+  }
+}
+```
+
+### Testing strategy
+
+| Layer | What to test | Tool |
+|---|---|---|
+| `core/` | Auth, cache, retry logic | Vitest unit tests |
+| `features/*/service.ts` | Business rules, edge cases | Vitest + mock repository |
+| `features/*/repository.ts` | SQL correctness | Integration tests against test DB |
+| `app/api/` | Request/response shape, auth | supertest |
+| Workflows | Trigger → step → output | Integration tests with mocked tools |
+| E2E | Critical user paths | Playwright (future) |
+
+Target: >90% coverage on `core/` and `features/*/service.ts`. Lower bar acceptable on UI.
+
+### Database migrations
+
+```bash
+# Development: always use migrate dev (creates migration file)
+npx prisma migrate dev --name add_workflow_table
+
+# Production: apply migrations (CI/CD step before deploy)
+npx prisma migrate deploy
+
+# Never use db push in any environment resembling production
+```
+
+Migration files are code. Review them in PRs. Never edit a deployed migration.
 
 ### Branching strategy
 
 ```
-main          Production-ready code. Protected.
-develop       Integration branch. All features merge here first.
-feature/*     Feature branches. One per ticket/feature.
+main          Protected. Production. Linear history.
+develop       Integration. All features merge here first.
+feature/*     Feature branches. Short-lived (< 1 week).
 fix/*         Bug fixes.
-chore/*       Non-functional changes (deps, docs, config).
+chore/*       Deps, docs, config.
+claude/*      AI-assisted development sessions.
 ```
 
-For the AI development sessions, use `claude/*` branches as designated.
-
-### Commit conventions
-
-```
-feat: add lead pipeline view
-fix: resolve calendar timezone offset bug
-chore: update Prisma to v8
-refactor: move ai-tools to voice feature
-docs: update architecture roadmap
-```
-
-### CI/CD (recommended setup)
+### CI/CD pipeline (recommended)
 
 ```yaml
-# GitHub Actions
-on: [push, pull_request]
-jobs:
-  quality:
-    - npm run lint
-    - npm run build
-    - npm test
-  deploy:
-    - on: merge to main
+quality:
+  - npx tsc --noEmit          # type check
+  - npm run lint               # ESLint
+  - npm test                   # Vitest
+  - npm run build              # Next.js build
+
+deploy:
+  trigger: merge to main
+  steps:
     - npx prisma migrate deploy
-    - Deploy to Vercel/Docker
+    - Deploy to Vercel or Docker
+    - Run smoke tests against production
 ```
-
-### Code quality gates
-
-- TypeScript strict mode — CI fails on type errors
-- ESLint with Next.js config — no console.logs in production code (use logger)
-- Test coverage targets (aim for >80% on `src/core/` and `src/features/*/lib/`)
 
 ---
 
-## 10. Security Model
+## 13. Risks & Technical Debt
 
-### Authentication layers
+### Critical risks
 
-| Surface | Mechanism | Notes |
-|---|---|---|
-| Staff dashboard | JWT (HttpOnly cookie, 15m access + 7d refresh) | Rotation on use |
-| Vapi tool calls | `x-vapi-secret` shared secret | Per-environment |
-| n8n webhooks | HMAC-SHA256 signature | Verify in middleware |
-| Slack webhooks | Signing secret | `@infra/slack` adapter |
-| GitHub webhooks | Webhook secret | `@infra/github` adapter |
+**R1 — No isolation around Prisma yet**
+Every feature can call `prisma` directly. One missing `WHERE organizationId = ?` leaks all tenant data.
+Fix: add the `withOrgContext()` Prisma extension. Enforce it in code review. No query
+should reach the DB without org scoping.
 
-### Authorization (RBAC)
+**R2 — `src/lib/` shim layer will rot**
+`src/lib/*.ts` files are shims pointing to `src/core/*`. Developers will eventually import both.
+Fix: delete `src/lib/` entirely after confirming zero references. Don't leave the ladder hanging.
 
-Current roles in DB: `receptionist`, `manager`, `admin`.
+**R3 — No event bus yet**
+Cross-module side effects are currently direct imports. This creates hidden coupling.
+Fix: add `core/events/event-bus.ts` before building the automation module. It will be too
+painful to untangle later.
 
-Enforce in middleware:
-```typescript
-// src/core/auth/middleware.ts (future)
-export function requireRole(role: 'receptionist' | 'manager' | 'admin') {
-  return (handler) => async (req) => {
-    const user = await verifyJWT(req);
-    if (!hasRole(user, role)) return unauthorized();
-    return handler(req);
-  };
-}
-```
+**R4 — LLM calls are synchronous in the request path**
+Any timeout or provider outage blocks the HTTP response.
+Fix: wrap all LLM calls in `jobQueue.add('llm.complete', ...)` before they're in production flows.
 
-### Rate limiting
+**R5 — No multi-tenancy enforcement layer**
+Currently, `organizationId` is on models but not enforced at query time.
+Fix: Implement RLS policies in the first migration that adds an `Organization` table.
 
-All external endpoints rate-limited. Current config:
-- Vapi tool calls: 30 req/min per endpoint
-- Fail-open if Redis unavailable (acceptable for demo)
+### Technical debt to avoid
 
-Production: make rate limiting hard (fail-closed) and tune limits per endpoint.
+1. **Never put Prisma calls in route handlers.** They belong in `repository.ts`.
+
+2. **Never import a module's `service.ts` or `repository.ts` from another module.** Public interface is `index.ts` only.
+
+3. **Never store secrets in code.** `.env.local` for development; Doppler/Vault in production.
+
+4. **Never let tools grow inside route handlers.** Vapi tools currently live in `features/voice/ai-tools/`. All new tools go in `features/automation/tools/registry.ts`.
+
+5. **Never build synchronous analytics queries.** Any `COUNT(*)`, `GROUP BY`, or multi-join reporting query gets its own background job and materialized result.
+
+6. **Never add workflow logic to n8n that should be in the app.** n8n handles orchestration between systems. Business rules (e.g., lead scoring) belong in the service layer.
+
+7. **Never share Zustand stores between modules.** State isolation is part of module isolation.
+
+8. **Never skip OpenAPI updates when adding AI tools.** Vapi's LLM reads the spec. Outdated docs = broken voice agent.
 
 ---
 
-## 11. 6–12 Month Roadmap
+## 14. 6–18 Month Roadmap
 
-### Phase 1: Foundation (Months 1–2) — DONE
-- [x] Hotel room management + real-time dashboard
-- [x] Vapi voice AI receptionist
+### Phase 1 — Foundation (Done)
+- [x] Hotel vertical with rooms + services
+- [x] Vapi voice agent + AI tools
 - [x] CRM with call transcripts
 - [x] Google Calendar sync
-- [x] n8n workflow integration
-- [x] Clean ERP architecture (core/, features/, infrastructure/)
-- [x] ERP module stubs (leads, offers, team-hub)
-- [x] Comprehensive documentation
+- [x] n8n integration
+- [x] Clean module structure (`core/`, `features/`, `infrastructure/`, `shared/`)
+- [x] ERP stubs (leads, offers, team-hub)
+- [x] Multi-module documentation
 
-### Phase 2: CRM Expansion (Months 2–3)
-- [ ] Full customer profile page (booking history, call timeline, notes)
-- [ ] Customer search and filtering
-- [ ] Customer segments/tags
-- [ ] CRM data export (CSV)
-- [ ] Email integration (send confirmation emails via n8n)
+### Phase 2 — Platform Core (Months 1–3)
+- [ ] `core/events/` — in-process event bus with typed domain events
+- [ ] `core/queue/` — background job queue (BullMQ or simple in-process)
+- [ ] `features/identity/` — Organization model, multi-tenancy, RBAC
+- [ ] `features/automation/` — Workflow model, tool registry, basic trigger system
+- [ ] RLS policies on all tenant tables
+- [ ] Structured logging everywhere (`logger.*`, not `console.*`)
+- [ ] LLM adapter in `infrastructure/ai/`
 
-### Phase 3: Lead Management (Months 3–4)
-- [ ] Lead capture from voice calls (auto-create from Vapi transcripts)
-- [ ] Pipeline view (kanban or table with stages)
-- [ ] Lead-to-customer conversion flow
-- [ ] Assignment to staff members
-- [ ] Lead scoring (simple rules-based first, LLM-enhanced later)
+### Phase 3 — CRM + Leads (Months 2–4)
+- [ ] Full customer profile (booking history, call timeline, interaction log)
+- [ ] Lead pipeline (kanban stages, assignment, activity feed)
+- [ ] Lead-to-customer conversion flow with domain events
+- [ ] Automation triggers on lead stage changes
+- [ ] Voice agent creates leads from call transcripts automatically
 
-### Phase 4: Offer Builder (Months 4–5)
-- [ ] Offer creation UI (line items, pricing, discounts)
-- [ ] PDF generation (react-pdf)
-- [ ] Email delivery via n8n
-- [ ] Offer status tracking (sent, viewed, accepted)
-- [ ] Link offers to leads and CRM contacts
+### Phase 4 — Automation Builder (Months 3–6)
+- [ ] Workflow definition schema and storage
+- [ ] Step executor (sequential, parallel, conditional branch)
+- [ ] Tool registry with CRM + hotel + leads tools registered
+- [ ] Trigger system (domain event trigger, webhook trigger, schedule trigger)
+- [ ] Run history and replay
+- [ ] Basic UI for workflow inspection (read-only first, then builder)
 
-### Phase 5: Team Hub (Months 5–7)
-- [ ] Workspace model (multi-tenant: slug, plan, members, invites, settings)
-- [ ] GitHub App integration (PRs, issues, CI runs per repo — App model, not OAuth)
-- [ ] Slack App integration (Bot token → channel feed, notification rules, slash commands)
-- [ ] Meeting scheduler (link to Google Meet or Zoom; track participants)
-- [ ] AI meeting pipeline: recording → Whisper/Deepgram transcription → Claude summary → action items → Slack notify (via n8n `meeting-summary-pipeline.json`)
-- [ ] Team announcements with priority tiers (normal / important / urgent), pinning, optional Slack mirror
-- [ ] Workspace billing tiers (Free / Pro / Enterprise)
+### Phase 5 — Offers + Team Hub (Months 5–8)
+- [ ] Offer builder (line items, pricing, PDF generation)
+- [ ] Email delivery via n8n or Resend
+- [ ] GitHub App integration (Team Hub)
+- [ ] Slack App integration (Team Hub + notification routing)
+- [ ] AI meeting pipeline (recording → transcript → summary → action items)
+- [ ] Workspace model for Team Hub (multi-tenant)
 
-### Phase 6: Analytics & Multi-property (Months 7–9)
-- [ ] Occupancy analytics dashboard (charts, trends, forecasting)
-- [ ] Revenue tracking per room type
-- [ ] Staff performance metrics
-- [ ] Multi-property support (`organizationId` on all tables)
-- [ ] Property switching in the dashboard
+### Phase 6 — Scale + Billing (Months 8–12)
+- [ ] Billing module (Stripe/LemonSqueezy, seat limits, usage quotas)
+- [ ] LLM cost tracking per org
+- [ ] Background worker process extracted from Next.js
+- [ ] Analytics dashboard (occupancy, revenue, workflow volumes)
+- [ ] Multi-property support for hotel vertical
+- [ ] pgvector for agent semantic memory
 
-### Phase 7: Invoicing & Payments (Months 9–12)
-- [ ] Invoice generation from bookings/offers
-- [ ] Stripe or Klarna integration for payment links
-- [ ] Payment status tracking
-- [ ] Automated payment reminders via n8n
-
----
-
-## 12. Technical Debt to Avoid
-
-1. **Don't skip Prisma migrations** — always use `prisma migrate dev`, never `db push` in anything resembling production.
-
-2. **Don't put business logic in route handlers** — `app/api/` routes should be 20 lines max. Extract to features.
-
-3. **Don't use relative imports across feature boundaries** — always use path aliases. `../../features/rooms` is a bug waiting to happen.
-
-4. **Don't share Zustand stores across modules** — each module gets its own store. `realtime-store.ts` is the one exception (SSE events affect multiple modules).
-
-5. **Don't hardcode tenant context** — even in single-tenant mode, pass `organizationId` through the call stack from day one. Retrofitting multi-tenancy is expensive.
-
-6. **Don't build synchronous LLM calls in the hot path** — voice calls are already real-time; adding LLM latency will kill call quality. Use async patterns (background jobs, queues) for LLM work.
-
-7. **Don't let `src/lib/` grow back** — `src/lib/` is now a shim layer pointing to `src/core/`. New utilities go in `src/core/<category>/`. Eventually remove the shims.
-
-8. **Don't skip OpenAPI updates** — when you add a Vapi tool endpoint, update `src/core/api/openapi.ts`. The LLM needs accurate docs to use tools correctly.
-
----
-
-## 13. Infrastructure Checklist for Production
-
-| Concern | Solution | Notes |
-|---|---|---|
-| Database | PostgreSQL 18+ (Supabase, Neon, or self-hosted) | Enable RLS for multi-tenant |
-| Cache | Redis (Upstash for serverless, or self-hosted) | Rate limiting + session blacklist |
-| File storage | S3-compatible (offer PDFs, meeting recordings) | Not yet implemented |
-| Email | SMTP via n8n or Resend | Not yet implemented |
-| Monitoring | Sentry + Vercel Analytics | Not yet implemented |
-| Logging | Structured logs → Datadog/Axiom | logger.ts already structured |
-| Secrets | Environment variables (never in code) | Use Doppler or Vault in production |
-| Backups | Daily PostgreSQL dumps | Automated via cron or Supabase |
+### Phase 7 — Platform Maturity (Months 12–18)
+- [ ] External plugin API (third-party tool registration)
+- [ ] Public webhook integration framework (any system → trigger workflow)
+- [ ] Workflow template marketplace
+- [ ] SDK for building custom tools
+- [ ] Enterprise: SSO (SAML/OIDC), audit export, SLA dashboard
+- [ ] Evaluate extraction of automation engine to separate service
 
 ---
 

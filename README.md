@@ -1,22 +1,22 @@
-# Kollegan ERP Platform
+# Kollegan — AI Automation Platform
 
-A modular, scalable ERP platform built on Next.js 16 + React 19. Currently ships as a **hotel management demo** integrating Vapi AI voice, n8n automation, and Google Calendar — but the architecture is designed from day one for full ERP expansion.
+An AI-native business automation platform built on Next.js 16 + React 19. The core product is **agentic workflows and voice AI** — automating business processes end-to-end. CRM, lead management, and ERP modules are value-add layers that integrate with and benefit from the automation engine.
 
-> **Vision:** A single, extensible platform covering hotel operations, CRM, lead management, quotation builders, team collaboration, AI integrations, and more — all in one cohesive system.
+> **Vision:** A single extensible platform where every business event can trigger an automated workflow. Sell automation. Include CRM, leads, team tools, and vertical demos as proof of value.
 
 ---
 
-## Current Scope — Hotel Demo
+## Current Demo — Hotel AI Receptionist
 
-The live demo powers a real hotel front desk:
+The live demo shows the automation platform in a hotel context:
 
-- **Voice AI receptionist** (Vapi) — takes calls, books rooms, updates CRM
+- **Voice AI receptionist** (Vapi) — answers calls, books rooms, updates CRM, triggers workflows
 - **Real-time room dashboard** — live availability via Server-Sent Events
 - **Bookings calendar** — week/month timeline with Google Calendar sync
 - **CRM & activity log** — call transcripts, customer profiles, booking history
-- **Hotel services** — manage restaurants, amenities, and activities
+- **Hotel services** — restaurants, amenities, activities management
 - **Staff authentication** — JWT-secured admin dashboard
-- **n8n workflow automation** — webhook-driven business process automation
+- **n8n workflow automation** — business process orchestration across all modules
 
 ---
 
@@ -42,11 +42,12 @@ The live demo powers a real hotel front desk:
 
 ### Principles
 
-1. **Vertical slice architecture** — each ERP module is self-contained (types, components, API logic, stores)
-2. **Clean separation** — HTTP layer (`app/api/`) is thin; business logic lives in `features/` and `core/`
-3. **Infrastructure adapters** — external services (Google, n8n, Vapi) are isolated in `infrastructure/`
-4. **Shared kernel** — common UI, hooks, and utilities in `shared/`
-5. **ERP-ready stubs** — future modules are scaffolded with types and documentation from day one
+1. **Automation-first** — every domain event can trigger a workflow; no module is exempt
+2. **Vertical slice architecture** — each module owns its types, components, service, repository, and events
+3. **Clean separation** — HTTP layer (`app/api/`) is thin; business logic lives in `features/*/service.ts`
+4. **Infrastructure adapters** — every external service (Vapi, Slack, n8n, LLM) is behind an adapter interface; swap vendor, not code
+5. **Multi-tenant from row 1** — `organizationId` on every table, enforced at query layer
+6. **Event-driven by design** — in-process event bus today, extractable to message queue when needed
 
 ### Directory Structure
 
@@ -66,26 +67,33 @@ src/
 │   ├── page.tsx                  Main dashboard page
 │   └── providers.tsx             React context providers
 │
-├── features/                     ERP Domain Modules — one folder per vertical
-│   ├── activity/                 Activity log / audit trail
-│   ├── crm/                      Customer relationship management
-│   ├── dashboard/                Dashboard shell (header, sidebar, setup, splash)
-│   ├── hotel/                    Hotel vertical (one domain, two sub-domains)
+├── features/                     Business modules — vertical slices
+│   │
+│   ├── automation/      [CORE ★] Workflow engine, tool registry, triggers, memory
+│   ├── voice/           [CORE ★] Vapi phone agent + LLM-callable ai-tools
+│   │   └── ai-tools/             Tool handlers registered into the automation tool registry
+│   │
+│   ├── identity/        [PLANNED] Orgs, members, auth, RBAC
+│   ├── crm/                      Customer profiles, call history, segments
+│   ├── leads/           [PLANNED] Pipeline, scoring, lead-to-customer conversion
+│   ├── offers/          [PLANNED] Quotation builder, PDF, e-signature
+│   │
+│   ├── integrations/    [PLANNED] Connector registry (Slack, GitHub, webhooks)
+│   │
+│   ├── hotel/                    Hotel demo vertical (one domain, two sub-domains)
 │   │   ├── rooms/                Room availability, bookings, calendar
 │   │   ├── services/             Restaurants, amenities, activities
-│   │   └── index.ts              Combined barrel export for the hotel vertical
-│   ├── voice/                    Voice AI (Vapi) + ai-tools (LLM-callable functions)
-│   │   └── ai-tools/             Functions called by Vapi during phone calls
+│   │   └── index.ts              Combined barrel export
 │   │
-│   ├── leads/           [PLANNED] Lead management & pipeline tracking
-│   ├── offers/          [PLANNED] Quotation / proposal builder
-│   └── team-hub/        [PLANNED] SaaS collaboration hub
-│       ├── workspace/            Multi-tenant workspaces, members, billing, invites
-│       ├── integrations/
-│       │   ├── github/           GitHub App: PRs, issues, CI status
-│       │   └── slack/            Slack App: channel feed, notification rules
-│       ├── meetings/             Video calls + AI transcription + Claude summaries
-│       └── announcements/        Internal comms — pinned notices, policy updates
+│   ├── team-hub/        [PLANNED] SaaS collaboration hub
+│   │   ├── workspace/            Multi-tenant workspaces, members, billing
+│   │   ├── integrations/github/  GitHub App: PRs, issues, CI status
+│   │   ├── integrations/slack/   Slack App: channels, notification rules
+│   │   ├── meetings/             Video + AI transcription + Claude summaries
+│   │   └── announcements/        Internal comms — pinned notices, policy updates
+│   │
+│   ├── activity/                 Cross-module audit trail + real-time SSE feed
+│   └── dashboard/                Shell UI (header, sidebar, setup, splash)
 │
 ├── core/                         Application core — framework-agnostic utilities
 │   ├── auth/                     JWT token management, Vapi webhook auth
@@ -183,7 +191,7 @@ npx prisma studio
 
 ---
 
-## Adding a New ERP Module
+## Adding a New Module
 
 ### 1. Create the feature folder
 
@@ -191,11 +199,15 @@ npx prisma studio
 src/features/my-module/
 ├── components/
 │   └── my-tab.tsx
-├── api.ts               Client-side fetch wrappers
+├── service.ts           Business logic — all domain rules live here
+├── repository.ts        Database queries — no Prisma outside this file
+├── events.ts            Domain event definitions + publish helpers
+├── register.ts          Self-registration: tools, event listeners
+├── api.ts               Client-side fetch wrappers (for React)
 ├── lib/
-│   └── my-store.ts      Zustand store (if real-time state needed)
+│   └── my-store.ts      Zustand store (if real-time UI state needed)
 ├── types.ts             TypeScript domain types
-└── index.ts             Public barrel export
+└── index.ts             Public barrel — ONLY export what other modules need
 ```
 
 ### 2. Add database models
@@ -214,7 +226,7 @@ src/app/api/my-module/
 └── [id]/route.ts        GET/PUT/DELETE
 ```
 
-Route handlers must be thin — business logic goes in `@features/my-module/`.
+Route handlers must be thin — delegate immediately to `@features/my-module/service.ts`.
 
 ### 4. Register in the sidebar
 
@@ -276,21 +288,23 @@ Client: `src/shared/hooks/use-sse.ts`
 
 ---
 
-## ERP Module Roadmap
+## Module Roadmap
 
-| Module | Status | Description |
-|---|---|---|
-| Hotel (`hotel/rooms/`) | Live | Availability, bookings, real-time status |
-| Hotel services (`hotel/services/`) | Live | Restaurants, amenities, activities |
-| Voice AI | Live | Vapi phone receptionist |
-| CRM | Live (basic) | Customer profiles, call history |
-| Activity log | Live | Full audit trail |
-| Lead management | Planned | Pipeline, scoring, assignment |
-| Offer builder | Planned | Quotations, PDF, e-signature |
-| Team hub | Planned | SaaS workspace: GitHub, Slack, AI meetings, announcements |
-| Invoicing | Future | Invoice generation, payment tracking |
-| Analytics | Future | Occupancy trends, revenue, forecasting |
-| Multi-property | Future | Multiple locations |
+| Module | Domain | Status | Description |
+|---|---|---|---|
+| Voice AI | Core | Live | Vapi phone receptionist + LLM tool calls |
+| Hotel rooms | Generic | Live | Availability, bookings, real-time status |
+| Hotel services | Generic | Live | Restaurants, amenities, activities |
+| CRM | Supporting | Live (basic) | Customer profiles, call history |
+| Activity log | Generic | Live | Cross-module audit trail |
+| Automation engine | Core | Planned | Workflow definitions, step executor, tool registry |
+| Identity / Orgs | Supporting | Planned | Multi-tenancy, RBAC, org management |
+| Lead management | Supporting | Planned | Pipeline, scoring, conversion |
+| Offer builder | Supporting | Planned | Quotations, PDF, e-signature |
+| Team hub | Generic | Planned | SaaS workspace: GitHub, Slack, AI meetings |
+| Billing | Generic | Future | Stripe, seat limits, LLM usage billing |
+| Analytics | Generic | Future | Occupancy, revenue, workflow volumes |
+| Plugin API | Core | Future | External tool registration, third-party modules |
 
 See `docs/ARCHITECTURE.md` for the full ERP vision, domain model, and 6–12 month roadmap.
 
