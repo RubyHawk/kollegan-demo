@@ -138,3 +138,42 @@ export function isCalendarConfigured(): boolean {
     process.env.GOOGLE_CALENDAR_ID
   );
 }
+
+export interface CalendarEventSummary {
+  id: string;
+  summary: string;
+  start: string;
+  end: string;
+}
+
+/**
+ * Lists Google Calendar events within a date range.
+ * Returns an empty array if calendar is not configured.
+ */
+export async function listCalendarEvents(
+  checkIn: string,
+  checkOut: string
+): Promise<CalendarEventSummary[]> {
+  const calendar = getCalendarClient();
+  if (!calendar) return [];
+
+  try {
+    const res = await calendar.events.list({
+      calendarId: getCalendarId(),
+      timeMin: new Date(checkIn).toISOString(),
+      timeMax: new Date(checkOut).toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+
+    return (res.data.items ?? []).map((e) => ({
+      id:      e.id      ?? '',
+      summary: e.summary ?? '',
+      start:   e.start?.date ?? e.start?.dateTime ?? '',
+      end:     e.end?.date   ?? e.end?.dateTime   ?? '',
+    }));
+  } catch (err) {
+    console.error('[GoogleCalendar] Failed to list events:', err);
+    return [];
+  }
+}

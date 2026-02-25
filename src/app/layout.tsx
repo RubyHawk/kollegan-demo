@@ -20,7 +20,7 @@ const cormorant = Cormorant_Garamond({
 
 export const metadata: Metadata = {
   title: 'Grand Hotel Kollegan — Receptionsöversikt',
-  description: 'Live-demo: AI-receptionist med Vapi + n8n',
+  description: 'Live-demo: AI-receptionist Elsa med Vapi',
 };
 
 const themeScript = `

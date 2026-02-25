@@ -1,24 +1,27 @@
 {
-  "_comment": "Grand Hotel Kollegan — Vapi Assistant Configuration",
+  "_comment": "Grand Hotel Kollegan — Elsa AI Receptionist",
   "_instructions": [
-    "1. Go to https://dashboard.vapi.ai and create a new Assistant",
-    "2. Paste the systemPrompt from 'model.systemPrompt' below",
-    "3. Add the four tools from 'tools' array — set each server.url to your n8n webhook URL",
-    "4. Set transcriber language to 'sv' (Swedish)",
-    "5. Choose a Swedish-capable voice (see 'voice' section below)",
-    "6. Save and assign a phone number to the assistant",
-    "7. Set NEXTJS_BASE_URL in your n8n environment variables"
+    "1. Go to https://dashboard.vapi.ai and create/update your Assistant",
+    "2. Set NEXTJS_PUBLIC_URL in your environment to your deployment URL (e.g. https://your-app.vercel.app)",
+    "3. Generate a random secret: openssl rand -hex 32",
+    "4. Set VAPI_WEBHOOK_SECRET on your server AND in each tool's server.secret field below",
+    "5. Paste the systemPrompt from model.systemPrompt into your VAPI assistant",
+    "6. Add all tools from the 'tools' array — server.url points directly to Next.js (no n8n needed)",
+    "7. Set transcriber language to 'sv' (Swedish)",
+    "8. Choose a Swedish-capable voice (see 'voice' section below)",
+    "9. Save and assign a phone number to the assistant",
+    "10. Recommended call flow: transcripts/start → availability/check → rooms/lock → calendar/book → crm/update"
   ],
 
-  "name": "Kollegan — Grand Hotel Kollegan",
+  "name": "Elsa — Grand Hotel Kollegan",
 
-  "firstMessage": "Välkommen till Grand Hotel Kollegan, det är Kollegan i receptionen. Hur kan jag hjälpa dig idag?",
+  "firstMessage": "Välkommen till Grand Hotel Kollegan, det är Elsa i receptionen. Hur kan jag hjälpa dig idag?",
 
   "model": {
     "provider": "openai",
     "model": "gpt-4o",
     "temperature": 0.7,
-    "systemPrompt": "Du är Kollegan, en professionell och vänlig receptionist på Grand Hotel Kollegan. Du pratar alltid svenska med gästerna och är hjälpsam, kortfattad och tydlig.\n\nHotellets rum:\n- Våning 1: Rum 101, 102 (Enkelt, 1 495 kr/natt), 103, 104 (Dubbelt, 2 495 kr/natt)\n- Våning 2: Rum 201, 202 (Enkelt), 203, 204 (Dubbelt), 205 (Svit, 3 995 kr/natt)\n- Våning 3: Rum 301 (Dubbelt), 302, 303 (Svit)\n\nDitt arbetsflöde för bokning:\n1. Fråga vilken typ av rum gästen önskar (Enkelt, Dubbelt eller Svit)\n2. Hämta tillgängliga rum med get_available_rooms\n3. Presentera alternativen kort och tydligt\n4. Låt gästen välja ett rum\n5. Lås rummet med lock_room (detta syns direkt på hotellets skärm)\n6. Fråga efter gästens fullständiga namn\n7. Bekräfta bokningen med confirm_booking\n8. Tacka gästen och önska dem välkommen\n\nDitt arbetsflöde för avbokning:\n1. Fråga vilket rumsnummer gästen vill avboka\n2. Avboka med cancel_booking\n3. Bekräfta avbokningen och önska gästen välkommen åter\n\nHotellservice & faciliteter:\nAnvänd get_hotel_info för att hämta aktuell information om hotellets tjänster när gästen frågar om:\n- Restauranger och öppettider\n- Spa, gym och aktiviteter\n- Parkering och priser\n- Kiosk och butiksöppettider\n- Konferensrum och bokningar\n- Rumsservice\n- Andra hotellfaciliteter\n\nViktiga regler:\n- Håll svaren korta (max 2–3 meningar per tur)\n- Bekräfta alltid bokningen med gästens namn innan samtalet avslutas\n- Om ett rum inte är tillgängligt, föreslå ett alternativ\n- Var alltid artig och professionell\n- Hämta alltid färsk information med get_hotel_info när gästen frågar om tjänster"
+    "systemPrompt": "Du är Elsa, en professionell och vänlig receptionist på Grand Hotel Kollegan. Du pratar alltid svenska med gästerna och är hjälpsam, kortfattad och tydlig.\n\nHotellets rum:\n- Våning 1: Rum 101, 102 (Enkelt, 1 495 kr/natt), 103, 104 (Dubbelt, 2 495 kr/natt)\n- Våning 2: Rum 201, 202 (Enkelt), 203, 204 (Dubbelt), 205 (Svit, 3 995 kr/natt)\n- Våning 3: Rum 301 (Dubbelt), 302, 303 (Svit)\n\nDitt arbetsflöde för bokning:\n1. Registrera samtalet med start_transcript (skicka med call.id)\n2. Fråga vilken typ av rum gästen önskar (Enkelt, Dubbelt eller Svit)\n3. Hämta tillgängliga rum med get_available_rooms (ange gärna check_in/check_out om gästen uppgett det)\n4. Presentera alternativen kort och tydligt\n5. Låt gästen välja ett rum\n6. Fråga efter gästens fullständiga namn och om in/utcheckningsdatum\n7. Bekräfta bokningen med book_room (lås + bekräftar i ett steg, skapar kalenderbokning)\n8. Avsluta samtalet med update_crm — spara gästens uppgifter och en kort sammanfattning\n9. Tacka gästen och önska dem välkommen\n\nDitt arbetsflöde för avbokning:\n1. Fråga vilket rumsnummer gästen vill avboka\n2. Avboka med cancel_booking\n3. Avsluta med update_crm\n4. Bekräfta avbokningen och önska gästen välkommen åter\n\nHotellservice & faciliteter:\nAnvänd get_hotel_info för att hämta aktuell information om hotellets tjänster när gästen frågar om:\n- Restauranger och öppettider\n- Spa, gym och aktiviteter\n- Parkering och priser\n- Kiosk och butiksöppettider\n- Konferensrum och bokningar\n- Rumsservice\n- Andra hotellfaciliteter\n\nÅterkommande gäster:\nAnvänd get_customer för att kontrollera om gästen är känd (sök på telefonnummer eller namn). Hälsa återkommande gäster välkommen tillbaka.\n\nViktiga regler:\n- Håll svaren korta (max 2–3 meningar per tur)\n- Bekräfta alltid bokningen med gästens namn innan samtalet avslutas\n- Ring alltid update_crm när samtalet avslutas, oavsett om en bokning gjordes\n- Om ett rum inte är tillgängligt, föreslå ett alternativ\n- Var alltid artig och professionell\n- Hämta alltid färsk information med get_hotel_info när gästen frågar om tjänster"
   },
 
   "transcriber": {
@@ -32,11 +35,11 @@
     "option_azure": {
       "provider": "azure",
       "voiceId": "sv-SE-SofiaNeural",
-      "_note": "Recommended: Clear Swedish female voice, no extra account needed if Vapi supports Azure TTS"
+      "_note": "Recommended: Clear Swedish female voice, well-suited for Elsa's receptionist persona"
     },
     "option_elevenlabs": {
       "provider": "elevenlabs",
-      "_note": "Use ElevenLabs with a Swedish voice cloned or selected from their library. Requires ElevenLabs API key in Vapi."
+      "_note": "Use ElevenLabs with a Swedish voice cloned or selected from their library. Requires ElevenLabs API key in VAPI."
     },
     "option_openai": {
       "provider": "openai",
@@ -49,24 +52,60 @@
     {
       "type": "function",
       "function": {
-        "name": "get_available_rooms",
-        "description": "Hämtar alla tillgängliga rum på Grand Hotel Kollegan. Returnerar rumsnummer, typ (Enkel/Dubbel/Svit) och våning.",
+        "name": "start_transcript",
+        "description": "Registrerar samtalet i systemet. Anropa direkt när samtalet startar med VAPI call ID.",
         "parameters": {
           "type": "object",
-          "properties": {},
+          "properties": {
+            "vapi_call_id": {
+              "type": "string",
+              "description": "VAPI call ID ({{call.id}})"
+            }
+          },
+          "required": ["vapi_call_id"]
+        }
+      },
+      "server": {
+        "url": "{{NEXTJS_PUBLIC_URL}}/api/ai/transcripts/start",
+        "secret": "{{VAPI_WEBHOOK_SECRET}}"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_available_rooms",
+        "description": "Hämtar tillgängliga rum på Grand Hotel Kollegan. Returnerar rumsnummer, typ (Enkel/Dubbel/Svit) och våning. Ange gärna check_in och check_out om gästen uppgett datum.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "check_in": {
+              "type": "string",
+              "description": "Önskat incheckningsdatum, format YYYY-MM-DD"
+            },
+            "check_out": {
+              "type": "string",
+              "description": "Önskat utcheckningsdatum, format YYYY-MM-DD"
+            },
+            "type": {
+              "type": "string",
+              "enum": ["Enkel", "Dubbel", "Svit"],
+              "description": "Rumstyp att filtrera på"
+            }
+          },
           "required": []
         }
       },
       "server": {
-        "url": "YOUR_N8N_WEBHOOK_URL_HERE",
-        "_note": "Replace with your n8n webhook URL after importing the workflow"
+        "url": "{{NEXTJS_PUBLIC_URL}}/api/ai/availability/check",
+        "method": "POST",
+        "secret": "{{VAPI_WEBHOOK_SECRET}}"
       }
     },
     {
       "type": "function",
       "function": {
         "name": "lock_room",
-        "description": "Låser ett specifikt rum tillfälligt under pågående samtal. Rummet visas direkt som 'reserveras' på hotellets skärm. Måste göras innan confirm_booking.",
+        "description": "Låser ett specifikt rum tillfälligt under pågående samtal. Rummet visas direkt som 'reserveras' på hotellets skärm. Använd book_room istället om du vill bekräfta direkt.",
         "parameters": {
           "type": "object",
           "properties": {
@@ -79,14 +118,15 @@
         }
       },
       "server": {
-        "url": "YOUR_N8N_WEBHOOK_URL_HERE"
+        "url": "{{NEXTJS_PUBLIC_URL}}/api/ai/rooms/lock",
+        "secret": "{{VAPI_WEBHOOK_SECRET}}"
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "confirm_booking",
-        "description": "Bekräftar och slutför bokningen av ett låst rum med gästens namn. Rummet markeras som bokat och grås ut på hotellets skärm.",
+        "name": "book_room",
+        "description": "Bekräftar bokning av ett rum i ett steg (lås + bekräfta + kalenderbokning). Använd denna när du har gästens namn och datum klara.",
         "parameters": {
           "type": "object",
           "properties": {
@@ -97,13 +137,22 @@
             "guest_name": {
               "type": "string",
               "description": "Gästens fullständiga namn"
+            },
+            "check_in": {
+              "type": "string",
+              "description": "Incheckningsdatum, format YYYY-MM-DD"
+            },
+            "check_out": {
+              "type": "string",
+              "description": "Utcheckningsdatum, format YYYY-MM-DD"
             }
           },
           "required": ["room_id", "guest_name"]
         }
       },
       "server": {
-        "url": "YOUR_N8N_WEBHOOK_URL_HERE"
+        "url": "{{NEXTJS_PUBLIC_URL}}/api/ai/calendar/book",
+        "secret": "{{VAPI_WEBHOOK_SECRET}}"
       }
     },
     {
@@ -123,14 +172,15 @@
         }
       },
       "server": {
-        "url": "YOUR_N8N_WEBHOOK_URL_HERE"
+        "url": "{{NEXTJS_PUBLIC_URL}}/api/ai/rooms/cancel",
+        "secret": "{{VAPI_WEBHOOK_SECRET}}"
       }
     },
     {
       "type": "function",
       "function": {
         "name": "get_hotel_info",
-        "description": "Hämtar aktuell information om hotellets restauranger, spa, aktiviteter, parkering, kiosk och övriga faciliteter. Anropa denna funktion när gästen frågar om restaurang, mat, öppettider, parkering, spa, gym, cykeluthyrning, konferensrum, rumsservice, bagageförvaring eller andra hotellservices.",
+        "description": "Hämtar aktuell information om hotellets restauranger, spa, aktiviteter, parkering, kiosk och övriga faciliteter. Anropa när gästen frågar om restaurang, mat, öppettider, parkering, spa, gym, cykeluthyrning, konferensrum, rumsservice, bagageförvaring eller andra hotellservices.",
         "parameters": {
           "type": "object",
           "properties": {},
@@ -138,8 +188,81 @@
         }
       },
       "server": {
-        "url": "YOUR_N8N_WEBHOOK_URL_HERE",
-        "_note": "In n8n: route tool_call.name === 'get_hotel_info' → HTTP GET {{NEXTJS_BASE_URL}}/api/hotel-info"
+        "url": "{{NEXTJS_PUBLIC_URL}}/api/ai/hotel-info",
+        "method": "POST",
+        "secret": "{{VAPI_WEBHOOK_SECRET}}"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_customer",
+        "description": "Söker efter en återkommande gäst i systemet baserat på telefonnummer eller namn. Använd för att ge ett personligt bemötande.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "phone": {
+              "type": "string",
+              "description": "Gästens telefonnummer"
+            },
+            "name": {
+              "type": "string",
+              "description": "Gästens namn"
+            }
+          },
+          "required": []
+        }
+      },
+      "server": {
+        "url": "{{NEXTJS_PUBLIC_URL}}/api/ai/customer/get",
+        "method": "POST",
+        "secret": "{{VAPI_WEBHOOK_SECRET}}"
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "update_crm",
+        "description": "Sparar gästens uppgifter och en kort sammanfattning av samtalet i CRM. Anropa alltid när samtalet avslutas — oavsett om en bokning gjordes eller inte.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Gästens fullständiga namn"
+            },
+            "phone": {
+              "type": "string",
+              "description": "Gästens telefonnummer"
+            },
+            "email": {
+              "type": "string",
+              "description": "Gästens e-postadress"
+            },
+            "company": {
+              "type": "string",
+              "description": "Företagsnamn om relevant"
+            },
+            "summary": {
+              "type": "string",
+              "description": "Kort sammanfattning av samtalet (1–3 meningar)"
+            },
+            "booked_room_ids": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Rumsnummer som bokades under samtalet"
+            },
+            "vapi_call_id": {
+              "type": "string",
+              "description": "VAPI call ID ({{call.id}})"
+            }
+          },
+          "required": []
+        }
+      },
+      "server": {
+        "url": "{{NEXTJS_PUBLIC_URL}}/api/ai/crm/update",
+        "secret": "{{VAPI_WEBHOOK_SECRET}}"
       }
     }
   ],
