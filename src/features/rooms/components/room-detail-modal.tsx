@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogOverlay, DialogPortal } from '@shared/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@shared/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
@@ -98,9 +99,10 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogPortal>
-        <DialogOverlay className="bg-black/40" />
         <DialogContent className="max-w-lg p-0 dark:bg-zinc-900" aria-describedby={undefined}>
+          <VisuallyHidden>
+            <DialogTitle>Rum {room.id} detaljer</DialogTitle>
+          </VisuallyHidden>
 
           {/* ── Compact gradient header ── */}
           <div className={`relative bg-gradient-to-r ${TYPE_GRADIENT[room.type] ?? TYPE_GRADIENT.Enkel} px-6 py-4 overflow-hidden`}>
@@ -319,7 +321,6 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
             )}
           </div>
         </DialogContent>
-      </DialogPortal>
     </Dialog>
   );
 }
