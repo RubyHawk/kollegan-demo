@@ -253,7 +253,7 @@ function CreateUserForm({ onCreated }: { onCreated: (u: StaffUser) => void }) {
 // ─── Employee list ────────────────────────────────────────────────────────────
 
 function EmployeeList({ refreshKey }: { refreshKey: number }) {
-  const [open,     setOpen]     = useState(false);
+  const [open,     setOpen]     = useState(true);
   const [users,    setUsers]    = useState<StaffUser[]>([]);
   const [loading,  setLoading]  = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -453,15 +453,24 @@ export default function SetupTab() {
   const bump = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   return (
-    <div className="max-w-2xl space-y-5 fade-in-up">
+    <div className="space-y-5 fade-in-up">
       <div>
         <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)]">Inställningar</h1>
         <p className="text-sm text-[var(--text-muted)] mt-0.5">Hantera personalkonton och demo-data</p>
       </div>
 
-      <CreateUserForm onCreated={bump} />
-      <EmployeeList refreshKey={refreshKey} />
-      <SeedCard onSeeded={bump} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+        {/* Left column: form + seed */}
+        <div className="space-y-4">
+          <CreateUserForm onCreated={bump} />
+          <SeedCard onSeeded={bump} />
+        </div>
+
+        {/* Right column: employee list */}
+        <div>
+          <EmployeeList refreshKey={refreshKey} />
+        </div>
+      </div>
     </div>
   );
 }
