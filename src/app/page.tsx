@@ -34,7 +34,8 @@ export default function HomePage() {
 
   const { toasts, addToast, dismissToast } = useToast();
 
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const selectedRoom = selectedRoomId ? (rooms.find((r) => r.id === selectedRoomId) ?? null) : null;
   const [activeTab, setActiveTab] = useState<Tab>('available');
   const [showSplash, setShowSplash] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -84,22 +85,13 @@ export default function HomePage() {
     }
   }, [onCall, addToast]);
 
-  /* ── Keep selectedRoom in sync with SSE updates ── */
-  useEffect(() => {
-    if (!selectedRoom) return;
-    const updated = rooms.find((r) => r.id === selectedRoom.id);
-    if (updated && updated !== selectedRoom) {
-      setSelectedRoom(updated);
-    }
-  }, [rooms, selectedRoom]);
-
   const handleReset = useCallback(async () => {
     await resetRooms();
   }, []);
 
   const handleRoomClick = useCallback((room: Room) => {
     if (room.status === 'locked') return;
-    setSelectedRoom(room);
+    setSelectedRoomId(room.id);
   }, []);
 
   const handleSplashDone = useCallback(() => setShowSplash(false), []);
@@ -286,8 +278,8 @@ export default function HomePage() {
       {selectedRoom && (
         <RoomDetailModal
           room={selectedRoom}
-          onClose={() => setSelectedRoom(null)}
-          onBooked={() => setSelectedRoom(null)}
+          onClose={() => setSelectedRoomId(null)}
+          onBooked={() => setSelectedRoomId(null)}
         />
       )}
 
