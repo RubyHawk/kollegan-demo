@@ -133,6 +133,10 @@ input:focus-visible {
 }
 
 /* ───── Base ───── */
+html {
+  font-size: 16.5px;
+}
+
 body {
   background-color: var(--page-bg);
   background-image:
