@@ -40,10 +40,12 @@ function AmenityBadge({ amenity }: { amenity: AmenityDef }) {
 }
 
 export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
+  const today = new Date().toISOString().split('T')[0];
+
   const [guestName, setGuestName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [checkIn, setCheckIn] = useState(() => new Date().toISOString().split('T')[0]);
+  const [checkIn, setCheckIn] = useState(today);
   const [checkOut, setCheckOut] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 2);
@@ -55,16 +57,40 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
   const meta = getRoomMeta(room.id, room.type);
   const isBooked = room.status === 'booked';
 
-  const nights = (() => {
-    const a = new Date(checkIn + 'T00:00:00');
-    const b = new Date(checkOut + 'T00:00:00');
-    return Math.max(1, Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24)));
+  // minimum checkout = day after check-in
+  const minCheckOut = (() => {
+    const d = new Date(checkIn + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
   })();
-  const total = nights * meta.price;
+
+  const nights = Math.round(
+    (new Date(checkOut + 'T00:00:00').getTime() - new Date(checkIn + 'T00:00:00').getTime()) /
+      (1000 * 60 * 60 * 24),
+  );
+  const total = Math.max(0, nights) * meta.price;
+
+  const handleCheckInChange = (val: string) => {
+    setCheckIn(val);
+    // if current checkout is no longer after the new check-in, advance it
+    if (checkOut <= val) {
+      const d = new Date(val + 'T00:00:00');
+      d.setDate(d.getDate() + 1);
+      setCheckOut(d.toISOString().split('T')[0]);
+    }
+  };
 
   const handleBook = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!guestName.trim()) return;
+    if (checkOut <= checkIn) {
+      setError('Utcheckning måste vara efter incheckning.');
+      return;
+    }
+    if (checkIn < today) {
+      setError('Incheckning kan inte vara i det förflutna.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -275,7 +301,8 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
                       id="checkIn"
                       type="date"
                       value={checkIn}
-                      onChange={(e) => setCheckIn(e.target.value)}
+                      min={today}
+                      onChange={(e) => handleCheckInChange(e.target.value)}
                       required
                       className="hover:border-purple-500/60 dark:hover:border-amber-400/60 focus-visible:ring-purple-600 dark:focus-visible:ring-amber-500 [color-scheme:light] dark:[color-scheme:dark]"
                     />
@@ -286,6 +313,7 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
                       id="checkOut"
                       type="date"
                       value={checkOut}
+                      min={minCheckOut}
                       onChange={(e) => setCheckOut(e.target.value)}
                       required
                       className="hover:border-purple-500/60 dark:hover:border-amber-400/60 focus-visible:ring-purple-600 dark:focus-visible:ring-amber-500 [color-scheme:light] dark:[color-scheme:dark]"
@@ -296,10 +324,10 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
                 {/* Price summary */}
                 <div className="flex items-center justify-between bg-purple-50/70 dark:bg-amber-900/15 border border-purple-200/50 dark:border-amber-800/30 rounded-xl px-4 py-3">
                   <span className="text-xs text-[var(--text-secondary)]">
-                    {nights} natt{nights !== 1 ? 'er' : ''} × {meta.price.toLocaleString('sv-SE')} kr
+                    {nights > 0 ? `${nights} natt${nights !== 1 ? 'er' : ''}` : '—'} × {meta.price.toLocaleString('sv-SE')} kr
                   </span>
                   <span className="text-sm font-bold text-[var(--text-primary)]">
-                    {total.toLocaleString('sv-SE')} kr
+                    {nights > 0 ? `${total.toLocaleString('sv-SE')} kr` : '—'}
                   </span>
                 </div>
 
@@ -311,7 +339,7 @@ export default function RoomDetailModal({ room, onClose, onBooked }: Props) {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={loading || !guestName.trim()}
+                    disabled={loading || !guestName.trim() || nights <= 0 || checkIn < today}
                     className="flex-1 font-semibold bg-purple-700 dark:bg-amber-500 text-white hover:bg-purple-800 dark:hover:bg-amber-600"
                   >
                     {loading ? 'Bokar...' : 'Boka rum'}

@@ -16,6 +16,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const today = new Date().toISOString().split('T')[0];
+  if (String(check_in) < today) {
+    return NextResponse.json(
+      { success: false, message: 'Incheckning kan inte vara i det förflutna.' },
+      { status: 400 },
+    );
+  }
+  if (String(check_out) <= String(check_in)) {
+    return NextResponse.json(
+      { success: false, message: 'Utcheckning måste vara efter incheckning.' },
+      { status: 400 },
+    );
+  }
+
   const result = await bookRoom(
     String(room_id),
     String(guest_name),

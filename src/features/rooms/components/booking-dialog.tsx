@@ -17,11 +17,10 @@ interface Props {
 }
 
 export default function BookingDialog({ room, onClose, onBooked }: Props) {
+  const today = new Date().toISOString().split('T')[0];
+
   const [guestName, setGuestName] = useState('');
-  const [checkIn, setCheckIn] = useState(() => {
-    const d = new Date();
-    return d.toISOString().split('T')[0];
-  });
+  const [checkIn, setCheckIn] = useState(today);
   const [checkOut, setCheckOut] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 2);
@@ -30,9 +29,32 @@ export default function BookingDialog({ room, onClose, onBooked }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const minCheckOut = (() => {
+    const d = new Date(checkIn + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  })();
+
+  const handleCheckInChange = (val: string) => {
+    setCheckIn(val);
+    if (checkOut <= val) {
+      const d = new Date(val + 'T00:00:00');
+      d.setDate(d.getDate() + 1);
+      setCheckOut(d.toISOString().split('T')[0]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!guestName.trim()) return;
+    if (checkOut <= checkIn) {
+      setError('Utcheckning måste vara efter incheckning.');
+      return;
+    }
+    if (checkIn < today) {
+      setError('Incheckning kan inte vara i det förflutna.');
+      return;
+    }
 
     setLoading(true);
     setError('');
@@ -173,7 +195,8 @@ export default function BookingDialog({ room, onClose, onBooked }: Props) {
                 <input
                   type="date"
                   value={checkIn}
-                  onChange={(e) => setCheckIn(e.target.value)}
+                  min={today}
+                  onChange={(e) => handleCheckInChange(e.target.value)}
                   required
                   className="w-full bg-[var(--surface-alt)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all [color-scheme:light] dark:[color-scheme:dark]"
                 />
@@ -183,6 +206,7 @@ export default function BookingDialog({ room, onClose, onBooked }: Props) {
                 <input
                   type="date"
                   value={checkOut}
+                  min={minCheckOut}
                   onChange={(e) => setCheckOut(e.target.value)}
                   required
                   className="w-full bg-[var(--surface-alt)] border border-[var(--border)] rounded-xl px-4 py-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all [color-scheme:light] dark:[color-scheme:dark]"
@@ -202,7 +226,7 @@ export default function BookingDialog({ room, onClose, onBooked }: Props) {
               </button>
               <button
                 type="submit"
-                disabled={loading || !guestName.trim()}
+                disabled={loading || !guestName.trim() || checkOut <= checkIn || checkIn < today}
                 className="flex-1 text-sm text-white bg-stone-800 dark:bg-slate-200 dark:text-slate-800 hover:bg-stone-900 dark:hover:bg-white rounded-xl py-3 font-semibold transition-all active:scale-95 disabled:opacity-40"
               >
                 {loading ? 'Bokar...' : 'Boka rum'}
