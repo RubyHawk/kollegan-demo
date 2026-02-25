@@ -1,10 +1,18 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Prisma 7 schema — Grand Hotel Kollegan demo
+//
+// Connection URL lives in prisma.config.ts, not here (Prisma 7 change).
+// Table names use the demo_hotel_ prefix via @@map() so the database
+// stays unambiguous and generic names like "bookings" are avoided.
+// ─────────────────────────────────────────────────────────────────────────────
+
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ─── Customer Profiles ────────────────────────────────────────────────────────
@@ -20,18 +28,19 @@ model Customer {
   firstSeen DateTime @default(now())
   lastSeen  DateTime @updatedAt
 
-  bookings    Booking[]
+  bookings    HotelBooking[]
   transcripts CallTranscript[]
   crmRecords  CrmRecord[]
 
   @@index([phone])
   @@index([name])
-  @@map("customers")
+  @@map("demo_hotel_customers")
 }
 
 // ─── Booking Records ──────────────────────────────────────────────────────────
+// Model renamed HotelBooking to avoid collision with generic "Booking" types.
 
-model Booking {
+model HotelBooking {
   id          String    @id @default(uuid())
   roomId      String
   guestName   String
@@ -46,7 +55,7 @@ model Booking {
   @@index([roomId])
   @@index([customerId])
   @@index([checkIn, checkOut])
-  @@map("bookings")
+  @@map("demo_hotel_bookings")
 }
 
 // ─── Call Transcripts ─────────────────────────────────────────────────────────
@@ -65,7 +74,7 @@ model CallTranscript {
 
   @@index([vapiCallId])
   @@index([customerId])
-  @@map("call_transcripts")
+  @@map("demo_hotel_call_transcripts")
 }
 
 // ─── CRM Records (one per call session) ──────────────────────────────────────
@@ -78,14 +87,14 @@ model CrmRecord {
   company     String?
   notes       String?
   summary     String?
-  bookedRooms String[] // room IDs from this session
+  bookedRooms String[] // room IDs confirmed in this session
   createdAt   DateTime @default(now())
 
   customer   Customer? @relation(fields: [customerId], references: [id])
   customerId String?
 
   @@index([customerId])
-  @@map("crm_records")
+  @@map("demo_hotel_crm_records")
 }
 
 // ─── Staff Users (admin dashboard auth) ──────────────────────────────────────
@@ -94,10 +103,10 @@ model StaffUser {
   id           String    @id @default(uuid())
   email        String    @unique
   passwordHash String
-  role         String    @default("receptionist") // 'receptionist' | 'manager' | 'admin'
+  role         String    @default("receptionist") // receptionist | manager | admin
   createdAt    DateTime  @default(now())
   lastLogin    DateTime?
 
   @@index([email])
-  @@map("staff_users")
+  @@map("demo_hotel_staff_users")
 }
