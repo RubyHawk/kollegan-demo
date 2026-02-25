@@ -183,8 +183,8 @@ export default function DashboardSidebar({
     <aside
       className={[
         'w-64 shrink-0 flex flex-col z-40',
-        'bg-[var(--surface)] dark:bg-[#0c0c0c]',
-        'border-r border-[var(--border)] dark:border-[#1c1c1c]',
+        'glass-sidebar',
+        'border-r border-[var(--border)]',
         'fixed lg:sticky top-0 lg:top-0 h-screen lg:h-auto lg:max-h-[calc(100vh-44px)] overflow-y-auto',
         'transition-transform duration-300 lg:translate-x-0',
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full',
@@ -209,10 +209,7 @@ export default function DashboardSidebar({
                 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium',
                 'transition-colors duration-150 active:scale-[0.97]',
                 isActive
-                  ? [
-                      'bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold',
-                      'dark:bg-amber-500/12 dark:text-amber-400',
-                    ].join(' ')
+                  ? 'nav-active text-[var(--accent)] dark:text-amber-400 font-semibold'
                   : [
                       'text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
                       'hover:bg-black/5 dark:text-white/45 dark:hover:text-white/85 dark:hover:bg-white/10',

@@ -142,11 +142,13 @@ function SegmentedControl({
   value,
   onChange,
   size = 'md',
+  layoutId = 'segmented-pill',
 }: {
   options: { key: string; label: React.ReactNode }[];
   value: string;
   onChange: (v: string) => void;
   size?: 'sm' | 'md';
+  layoutId?: string;
 }) {
   const base = size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3.5 py-1.5 text-sm';
   return (
@@ -165,7 +167,7 @@ function SegmentedControl({
         >
           {value === o.key && (
             <motion.div
-              layoutId="segmented-pill"
+              layoutId={layoutId}
               className="absolute inset-0 bg-[var(--surface)] rounded-[10px] shadow-sm"
               transition={SPRING_STANDARD}
             />
@@ -180,12 +182,13 @@ function SegmentedControl({
 // Google Calendar brand icon
 function GoogleCalendarIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="4" width="20" height="18" rx="2" fill="#fff" stroke="#dadce0" strokeWidth="1"/>
-      <rect x="2" y="4" width="20" height="6" rx="2" fill="#1a73e8"/>
-      <rect x="2" y="8" width="20" height="2" fill="#1a73e8"/>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="2" y="4" width="20" height="18" rx="2.5" fill="#fff" stroke="#dadce0" strokeWidth="1"/>
+      <path d="M2 7C2 5.34 3.34 4 5 4h14c1.66 0 3 1.34 3 3v3H2V7z" fill="#1a73e8"/>
       <path d="M8 2v4M16 2v4" stroke="#1a73e8" strokeWidth="1.5" strokeLinecap="round"/>
-      <text x="12" y="19" textAnchor="middle" fontSize="7" fontWeight="700" fill="#1a73e8" fontFamily="sans-serif">31</text>
+      <line x1="2" y1="15" x2="22" y2="15" stroke="#dadce0" strokeWidth="0.75"/>
+      <line x1="12" y1="10" x2="12" y2="22" stroke="#dadce0" strokeWidth="0.75"/>
+      <rect x="13" y="16" width="4" height="3" rx="0.5" fill="#1a73e8" opacity="0.7"/>
     </svg>
   );
 }
@@ -527,6 +530,7 @@ function TimelineView({
             value={viewKey}
             onChange={(k) => setViewKey(k as View)}
             size="sm"
+            layoutId="timeline-view-pill"
           />
         </div>
       </div>
@@ -1060,6 +1064,7 @@ export default function BookingsCalendar({ rooms, onRoomClick }: Props) {
           ]}
           value={subTab}
           onChange={(v) => setSubTab(v as SubTab)}
+          layoutId="booking-tab-pill"
         />
 
         {subTab !== 'google' && bookedCount > 0 && (
