@@ -3,7 +3,7 @@
 import { ActivityEvent } from '@features/activity/types';
 import ThemeToggle from './ThemeToggle';
 
-type Tab = 'available' | 'booked' | 'activity' | 'hotel-info' | 'crm';
+type Tab = 'available' | 'booked' | 'activity' | 'hotel-info' | 'crm' | 'setup';
 
 const MINI_ACTIVITY = {
   call_started: {
@@ -138,6 +138,17 @@ const NAV_ITEMS: { key: Tab; label: string; icon: React.ReactNode }[] = [
         <path d="M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8" />
         <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
+  {
+    key: 'setup',
+    label: 'Setup',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <ellipse cx="12" cy="5" rx="9" ry="3" />
+        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
       </svg>
     ),
   },
