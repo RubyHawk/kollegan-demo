@@ -40,11 +40,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="sv" suppressHydrationWarning className={`${inter.variable} ${cormorant.variable}`}>
+    <html lang="sv" suppressHydrationWarning className={`${inter.variable} ${cormorant.variable} h-full overflow-hidden`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="antialiased">
+      <body className="h-[100dvh] overflow-hidden antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

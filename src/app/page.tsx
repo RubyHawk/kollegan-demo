@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useMotionValue, useSpring, useMotionTemplate, motion, AnimatePresence } from 'framer-motion';
 import { Room } from '@features/rooms/types';
 import { resetRooms } from '@features/rooms/api';
 import { useRealtimeStore, selectRooms, selectActivities, selectOnCall, selectConnected, selectAvailableCount, selectBookedCount, selectLockedCount, selectOccupancy } from '@shared/stores/realtime-store';
 import { useToast } from '@shared/ui/toast/toast-context';
 import { CheckCircleIcon, XCircleIcon, LockIcon, PhoneIcon, PhoneOffIcon } from '@shared/ui/icons';
 import ToastContainer from '@shared/ui/toast/toast-container';
+import { TAB_TRANSITION } from '@shared/lib/motion';
 
 import HotelGrid from '@/app/components/HotelGrid';
 import BookingsCalendar from '@/app/components/BookingsCalendar';
@@ -35,17 +37,21 @@ export default function HomePage() {
 
   const { toasts, addToast, dismissToast } = useToast();
 
-  /* ── Mouse glow overlay ── */
-  const glowRef = useRef<HTMLDivElement>(null);
+  /* ── Mouse glow overlay — spring physics ── */
+  const mouseX = useMotionValue(typeof window !== 'undefined' ? window.innerWidth / 2 : 760);
+  const mouseY = useMotionValue(typeof window !== 'undefined' ? window.innerHeight / 2 : 400);
+  const springX = useSpring(mouseX, { damping: 25, stiffness: 80, mass: 1 });
+  const springY = useSpring(mouseY, { damping: 25, stiffness: 80, mass: 1 });
+  const glowBg = useMotionTemplate`radial-gradient(350px circle at ${springX}px ${springY}px, var(--mouse-glow-color), transparent 55%)`;
+
   useEffect(() => {
-    const el = glowRef.current;
-    if (!el) return;
-    const onMove = (e: MouseEvent) => {
-      el.style.background = `radial-gradient(550px circle at ${e.clientX}px ${e.clientY}px, var(--mouse-glow-color), transparent 55%)`;
-    };
+    const onMove = (e: MouseEvent) => { mouseX.set(e.clientX); mouseY.set(e.clientY); };
     window.addEventListener('mousemove', onMove, { passive: true });
     return () => window.removeEventListener('mousemove', onMove);
-  }, []);
+  }, [mouseX, mouseY]);
+
+  /* ── Scroll ref — passed to header for scroll-linked shadow ── */
+  const mainScrollRef = useRef<HTMLElement>(null);
 
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const selectedRoom = selectedRoomId ? (rooms.find((r) => r.id === selectedRoomId) ?? null) : null;
@@ -125,17 +131,16 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Mouse-following glow — behind all content */}
-      <div
-        ref={glowRef}
+      {/* Mouse-following glow — spring physics, behind all content */}
+      <motion.div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0"
-        style={{ zIndex: 0 }}
+        style={{ zIndex: 0, background: glowBg }}
       />
 
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
 
-      <div className="relative min-h-screen grid grid-rows-[auto_1fr_auto]" style={{ zIndex: 1 }}>
+      <div className="relative h-full grid grid-rows-[auto_1fr_auto]" style={{ zIndex: 1 }}>
         {/* ═══════ HEADER ═══════ */}
         <DashboardHeader
           onCall={onCall}
@@ -146,10 +151,11 @@ export default function HomePage() {
           lockedCount={lockedCount}
           occupancy={occupancy}
           hasData={rooms.length > 0}
+          scrollRef={mainScrollRef}
         />
 
         {/* ═══════ BODY ═══════ */}
-        <div className="flex relative">
+        <div className="flex relative overflow-hidden">
           {/* Mobile overlay */}
           {mobileMenuOpen && (
             <div
@@ -172,7 +178,7 @@ export default function HomePage() {
           />
 
           {/* Main */}
-          <main className="flex-1 min-w-0 p-6">
+          <main ref={mainScrollRef} className="flex-1 min-w-0 overflow-y-auto overscroll-contain p-6">
             {/* Mobile stat row */}
             {rooms.length > 0 && (
               <div className="flex md:hidden items-center gap-2 flex-wrap mb-4 text-xs text-[var(--text-muted)]">
@@ -219,51 +225,48 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Available tab */}
-            {rooms.length > 0 && activeTab === 'available' && (
-              <div key="available" className="tab-content-enter">
-                <HotelGrid rooms={rooms} onRoomClick={handleRoomClick} />
-              </div>
-            )}
+            {/* Tab content — AnimatePresence for smooth enter/exit */}
+            <AnimatePresence mode="wait">
+              {rooms.length > 0 && activeTab === 'available' && (
+                <motion.div key="available" {...TAB_TRANSITION}>
+                  <HotelGrid rooms={rooms} onRoomClick={handleRoomClick} />
+                </motion.div>
+              )}
 
-            {/* Booked tab */}
-            {rooms.length > 0 && activeTab === 'booked' && (
-              <div key="booked" className="tab-content-enter">
-                <BookingsCalendar rooms={rooms} onRoomClick={handleRoomClick} />
-              </div>
-            )}
+              {rooms.length > 0 && activeTab === 'booked' && (
+                <motion.div key="booked" {...TAB_TRANSITION}>
+                  <BookingsCalendar rooms={rooms} onRoomClick={handleRoomClick} />
+                </motion.div>
+              )}
 
-            {/* Activity tab */}
-            {rooms.length > 0 && activeTab === 'activity' && (
-              <div key="activity" className="tab-content-enter">
-                <ActivityLog
-                  activities={activities}
-                  focusEventId={focusEventId}
-                  onFocusConsumed={() => setFocusEventId(null)}
-                />
-              </div>
-            )}
+              {rooms.length > 0 && activeTab === 'activity' && (
+                <motion.div key="activity" {...TAB_TRANSITION}>
+                  <ActivityLog
+                    activities={activities}
+                    focusEventId={focusEventId}
+                    onFocusConsumed={() => setFocusEventId(null)}
+                  />
+                </motion.div>
+              )}
 
-            {/* Hotel info tab */}
-            {activeTab === 'hotel-info' && (
-              <div key="hotel-info" className="tab-content-enter">
-                <HotelInfoTab onCountChange={setHotelServiceCount} />
-              </div>
-            )}
+              {activeTab === 'hotel-info' && (
+                <motion.div key="hotel-info" {...TAB_TRANSITION}>
+                  <HotelInfoTab onCountChange={setHotelServiceCount} />
+                </motion.div>
+              )}
 
-            {/* CRM tab */}
-            {activeTab === 'crm' && (
-              <div key="crm" className="tab-content-enter">
-                <CRMTab activities={activities} onCountChange={setCrmCount} />
-              </div>
-            )}
+              {activeTab === 'crm' && (
+                <motion.div key="crm" {...TAB_TRANSITION}>
+                  <CRMTab activities={activities} onCountChange={setCrmCount} />
+                </motion.div>
+              )}
 
-            {/* Setup tab */}
-            {activeTab === 'setup' && (
-              <div key="setup" className="tab-content-enter">
-                <SetupTab />
-              </div>
-            )}
+              {activeTab === 'setup' && (
+                <motion.div key="setup" {...TAB_TRANSITION}>
+                  <SetupTab />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </main>
         </div>
 

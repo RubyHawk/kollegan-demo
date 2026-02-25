@@ -1,7 +1,9 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { ActivityEvent } from '@features/activity/types';
 import ThemeToggle from './ThemeToggle';
+import { SPRING_SNAPPY } from '@shared/lib/motion';
 
 type Tab = 'available' | 'booked' | 'activity' | 'hotel-info' | 'crm' | 'setup';
 
@@ -217,7 +219,13 @@ export default function DashboardSidebar({
                     ].join(' '),
               ].join(' ')}
             >
-              <span className={isActive ? 'opacity-100' : 'opacity-70'}>{item.icon}</span>
+              <motion.span
+                className={isActive ? 'opacity-100' : 'opacity-70'}
+                whileHover={{ scale: 1.1, rotate: isActive ? 0 : 3 }}
+                transition={SPRING_SNAPPY}
+              >
+                {item.icon}
+              </motion.span>
               <span>{item.label}</span>
               {count > 0 && (
                 <span

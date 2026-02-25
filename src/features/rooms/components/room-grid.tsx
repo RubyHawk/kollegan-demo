@@ -1,7 +1,9 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { Room } from '@features/rooms/types';
 import RoomCard from './room-card';
+import { STAGGER_CONTAINER, STAGGER_ITEM } from '@shared/lib/motion';
 
 interface Props {
   rooms: Room[];
@@ -10,7 +12,6 @@ interface Props {
 
 export default function HotelGrid({ rooms, onRoomClick }: Props) {
   const floors = [3, 2, 1];
-  let cardIdx = 0;
 
   return (
     <div className="space-y-6">
@@ -52,19 +53,16 @@ export default function HotelGrid({ rooms, onRoomClick }: Props) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2.5">
-              {floorRooms.map((room) => {
-                const delay = cardIdx++ * 40;
-                return (
-                  <RoomCard
-                    key={room.id}
-                    room={room}
-                    onClick={onRoomClick}
-                    animDelay={delay}
-                  />
-                );
-              })}
-            </div>
+            <motion.div
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2.5"
+              {...STAGGER_CONTAINER}
+            >
+              {floorRooms.map((room) => (
+                <motion.div key={room.id} {...STAGGER_ITEM}>
+                  <RoomCard room={room} onClick={onRoomClick} />
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         );
       })}

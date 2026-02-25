@@ -6,7 +6,6 @@ import { getRoomMeta, AMENITY_ICONS, AmenityDef } from '@features/rooms/lib/room
 interface Props {
   room: Room;
   onClick?: (room: Room) => void;
-  animDelay?: number;
 }
 
 const STATUS_ACCENT: Record<string, string> = {
@@ -39,14 +38,14 @@ function AmenityIcon({ amenity }: { amenity: AmenityDef }) {
       title={amenity.label}
       className="w-6 h-6 rounded-md bg-[var(--surface-alt)] border border-[var(--border-light)] flex items-center justify-center text-[var(--text-muted)] shrink-0"
     >
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
         <path d={AMENITY_ICONS[amenity.key]} />
       </svg>
     </div>
   );
 }
 
-export default function RoomCard({ room, onClick, animDelay }: Props) {
+export default function RoomCard({ room, onClick }: Props) {
   const isLocked = room.status === 'locked';
   const isBooked = room.status === 'booked';
   const meta = getRoomMeta(room.id, room.type);
@@ -56,16 +55,15 @@ export default function RoomCard({ room, onClick, animDelay }: Props) {
       onClick={() => !isLocked && onClick?.(room)}
       disabled={isLocked}
       className={[
-        'group relative w-full text-left rounded-xl border-l-[3px] border border-[var(--border)] stagger-in',
-        'transition-all duration-200',
-        !isLocked && 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer',
+        'group relative w-full text-left rounded-xl border-l-[3px] border border-[var(--border)]',
+        'card-interactive transition-all duration-200',
+        !isLocked && 'cursor-pointer',
         isLocked && 'cursor-default room-locked',
         STATUS_ACCENT[room.status] ?? 'border-l-[var(--border)]',
         room.type === 'Svit'
           ? 'bg-amber-50/40 dark:bg-amber-900/10 overflow-hidden'
           : 'bg-[var(--surface)]',
       ].filter(Boolean).join(' ')}
-      style={animDelay !== undefined ? { animationDelay: `${animDelay}ms` } : undefined}
     >
       {/* Svit: top shimmer edge */}
       {room.type === 'Svit' && (
@@ -77,7 +75,7 @@ export default function RoomCard({ room, onClick, animDelay }: Props) {
         {/* Block 1: room number + type chip + meta */}
         <div className="flex items-start justify-between gap-2">
           <div>
-            <div className="font-heading text-3xl font-bold text-[var(--text-primary)] leading-none mb-1">
+            <div className="font-heading text-3xl font-bold text-[var(--text-primary)] leading-none mb-1 tabular-nums">
               {room.id}
             </div>
             <div className="text-[11px] text-[var(--text-muted)]">
@@ -127,7 +125,7 @@ export default function RoomCard({ room, onClick, animDelay }: Props) {
               </span>
             )}
           </div>
-          <span className="text-xs font-semibold text-[var(--text-primary)] shrink-0">
+          <span className="text-xs font-semibold text-[var(--text-primary)] shrink-0 tabular-nums">
             {meta.price.toLocaleString('sv-SE')} <span className="font-normal text-[var(--text-muted)]">kr/n</span>
           </span>
         </div>

@@ -1,5 +1,7 @@
 'use client';
 
+import { RefObject } from 'react';
+import { motion, useScroll, useTransform, useMotionTemplate } from 'framer-motion';
 import CallIndicator from '@features/dashboard/components/call-indicator';
 import AnimatedNumber from '@shared/ui/animated-number';
 
@@ -12,6 +14,7 @@ interface Props {
   lockedCount: number;
   occupancy: number;
   hasData: boolean;
+  scrollRef?: RefObject<HTMLElement | null>;
 }
 
 export default function DashboardHeader({
@@ -23,9 +26,17 @@ export default function DashboardHeader({
   lockedCount,
   occupancy,
   hasData,
+  scrollRef,
 }: Props) {
+  const { scrollY } = useScroll({ container: scrollRef });
+  const shadowOpacity = useTransform(scrollY, [0, 40], [0, 1]);
+  const boxShadow = useMotionTemplate`0 1px 0 rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,calc(0.04 * ${shadowOpacity}))`;
+
   return (
-    <header className="glass-header border-b border-[var(--border-light)] dark:border-white/8 sticky top-0 z-30">
+    <motion.header
+      className="glass-header border-b border-[var(--border-light)] dark:border-white/8 sticky top-0 z-30"
+      style={{ boxShadow }}
+    >
       <div className="px-5 h-11 flex items-center justify-between gap-4 py-2">
 
         {/* ── Left: hamburger + logo + name ── */}
@@ -35,7 +46,7 @@ export default function DashboardHeader({
             className="lg:hidden p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/8 transition-colors text-[var(--text-secondary)]"
             aria-label="Meny"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
               {mobileMenuOpen
                 ? <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>
                 : <><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></>
@@ -46,7 +57,7 @@ export default function DashboardHeader({
           <div className="relative shrink-0">
             <div className="absolute inset-0 rounded-lg bg-purple-500/20 dark:bg-amber-400/20 blur-sm" />
             <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-purple-800 dark:from-amber-400 dark:to-amber-600 flex items-center justify-center shadow-sm">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
                 <path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
                 <path d="M9 9h1" /><path d="M14 9h1" /><path d="M9 13h1" /><path d="M14 13h1" />
               </svg>
@@ -88,7 +99,7 @@ export default function DashboardHeader({
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/30 dark:via-amber-400/30 to-transparent" />
-    </header>
+    </motion.header>
   );
 }
 
