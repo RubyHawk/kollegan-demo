@@ -1,10 +1,12 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@shared/ui/tooltip';
 import { Button } from '@shared/ui/button';
 import { Badge } from '@shared/ui/badge';
 import { Room } from '@features/rooms/types';
+import { SPRING_STANDARD } from '@shared/lib/motion';
 
 interface Props {
   rooms: Room[];
@@ -148,20 +150,27 @@ function SegmentedControl({
 }) {
   const base = size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3.5 py-1.5 text-sm';
   return (
-    <div className="flex bg-[var(--surface-alt)] border border-[var(--border)] rounded-xl p-0.5">
+    <div className="relative flex bg-[var(--surface-alt)] border border-[var(--border)] rounded-xl p-0.5">
       {options.map((o) => (
         <button
           key={o.key}
           onClick={() => onChange(o.key)}
           className={[
             base,
-            'font-medium rounded-[10px] transition-all flex items-center gap-1.5',
+            'relative font-medium rounded-[10px] flex items-center gap-1.5 transition-colors duration-150',
             value === o.key
-              ? 'bg-[var(--surface)] shadow-sm text-[var(--text-primary)]'
+              ? 'text-[var(--text-primary)]'
               : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
           ].join(' ')}
         >
-          {o.label}
+          {value === o.key && (
+            <motion.div
+              layoutId="segmented-pill"
+              className="absolute inset-0 bg-[var(--surface)] rounded-[10px] shadow-sm"
+              transition={SPRING_STANDARD}
+            />
+          )}
+          <span className="relative z-10">{o.label}</span>
         </button>
       ))}
     </div>
@@ -523,7 +532,8 @@ function TimelineView({
       </div>
 
       {/* ── Calendar grid ── */}
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
+      <div className="overflow-x-auto overscroll-x-contain -mx-0 rounded-2xl">
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden" style={{ minWidth: `${LABEL_W + totalDays * 28}px` }}>
 
             {/* ── Row 1: Month groups ── */}
             <div
@@ -763,6 +773,7 @@ function TimelineView({
             <span className="text-[11px] text-[var(--text-muted)]">Idag</span>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -23,15 +23,31 @@
 /* ───── Focus-visible (accessibility) ───── */
 :focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline-offset: 3px;
   border-radius: 4px;
 }
 
 button:focus-visible,
 a:focus-visible,
-input:focus-visible {
+[role="button"]:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline-offset: 3px;
+  border-radius: inherit;
+  box-shadow: 0 0 0 4px var(--accent-subtle);
+}
+
+/* ───── Card interactive hover depth ───── */
+.card-interactive {
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  will-change: transform;
+}
+.card-interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
+  border-color: var(--border-light);
+}
+.dark .card-interactive:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 /* ───── Calendar bar tooltip ───── */
@@ -140,19 +156,40 @@ html {
 body {
   background-color: var(--page-bg);
   background-image:
-    radial-gradient(ellipse 90% 50% at 20% -5%, rgba(109, 40, 217, 0.06), transparent 60%),
-    radial-gradient(ellipse 70% 40% at 85% 100%, rgba(124, 58, 237, 0.04), transparent 60%),
-    radial-gradient(var(--dot-color) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 24px 24px;
+    linear-gradient(var(--grid-line-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px),
+    radial-gradient(ellipse 80% 40% at 20% -10%, rgba(109, 40, 217, 0.07), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 85% 105%, rgba(124, 58, 237, 0.04), transparent 55%);
+  background-size:
+    var(--grid-size) var(--grid-size),
+    var(--grid-size) var(--grid-size),
+    100% 100%,
+    100% 100%;
+  background-attachment: fixed, fixed, fixed, fixed;
   color: var(--text-primary);
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .dark body {
   background-image:
-    radial-gradient(ellipse 90% 50% at 20% -5%, rgba(251, 191, 36, 0.08), transparent 60%),
-    radial-gradient(ellipse 70% 40% at 85% 100%, rgba(99, 102, 241, 0.05), transparent 60%),
-    radial-gradient(var(--dot-color) 1px, transparent 1px);
+    linear-gradient(var(--grid-line-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px),
+    radial-gradient(ellipse 80% 40% at 20% -10%, rgba(245, 158, 11, 0.07), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 85% 105%, rgba(99, 102, 241, 0.04), transparent 55%);
+}
+
+/* ───── Tabular numerics ───── */
+.tabular-nums,
+[data-numeric],
+.stat-value,
+.badge-count,
+.calendar-cell,
+table td {
+  font-variant-numeric: tabular-nums;
 }
 
 .font-heading {
@@ -171,6 +208,7 @@ body {
 .calendar-cell {
   background: var(--surface);
   min-height: 48px;
+  font-variant-numeric: tabular-nums;
 }
 
 .calendar-header-cell {
