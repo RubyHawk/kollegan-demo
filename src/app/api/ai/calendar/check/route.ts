@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { validateVapiAuth } from '@/lib/vapi-auth';
-import { checkRateLimit } from '@/lib/rate-limiter';
-import { logger } from '@/lib/logger';
-import { checkCalendarRange } from '@/lib/ai-tools';
+import { validateVapiAuth } from '@core/auth/vapi-auth';
+import { checkRateLimit } from '@core/cache/rate-limiter';
+import { logger } from '@core/logging/logger';
+import { checkCalendarRange } from '@features/voice/ai-tools';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

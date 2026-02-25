@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@core/database/prisma';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

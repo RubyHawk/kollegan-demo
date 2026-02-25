@@ -804,9 +804,13 @@ const FUTURE_INTEGRATIONS = [
     desc: 'Kanalhantering',
     color: '#003580',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <rect width="24" height="24" rx="4" fill="#003580"/>
-        <text x="12" y="16" textAnchor="middle" fontSize="10" fontWeight="900" fill="#fff" fontFamily="sans-serif">B.</text>
+        {/* B letterform: vertical stem + two bumps */}
+        <rect x="7" y="6" width="2" height="12" rx="0.5" fill="#fff"/>
+        <path d="M9 6h3a2.5 2.5 0 0 1 0 5H9V6z" fill="#fff"/>
+        <path d="M9 11h3.5a2.5 2.5 0 0 1 0 5H9v-5z" fill="#fff"/>
+        <circle cx="18" cy="17" r="1.5" fill="#ffcc00"/>
       </svg>
     ),
   },
@@ -815,11 +819,16 @@ const FUTURE_INTEGRATIONS = [
     desc: 'CalDAV-synk',
     color: '#f3111b',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="2" y="4" width="20" height="18" rx="3" fill="#fff" stroke="#d1d5db" strokeWidth="1.5"/>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="2" y="4" width="20" height="18" rx="3" fill="#fff" stroke="#d1d5db" strokeWidth="1"/>
         <rect x="2" y="4" width="20" height="6" rx="3" fill="#f3111b"/>
         <rect x="2" y="8" width="20" height="2" fill="#f3111b"/>
-        <text x="12" y="19" textAnchor="middle" fontSize="7" fontWeight="700" fill="#1d1d1f" fontFamily="sans-serif">iCal</text>
+        {/* Grid lines */}
+        <line x1="9" y1="13" x2="9" y2="19" stroke="#e5e7eb" strokeWidth="0.75"/>
+        <line x1="15" y1="13" x2="15" y2="19" stroke="#e5e7eb" strokeWidth="0.75"/>
+        <line x1="2" y1="16" x2="22" y2="16" stroke="#e5e7eb" strokeWidth="0.75"/>
+        {/* Highlighted today marker */}
+        <rect x="10" y="12.5" width="4" height="3" rx="0.5" fill="#f3111b" opacity="0.9"/>
       </svg>
     ),
   },

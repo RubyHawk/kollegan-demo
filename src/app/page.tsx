@@ -10,18 +10,18 @@ import { CheckCircleIcon, XCircleIcon, LockIcon, PhoneIcon, PhoneOffIcon } from 
 import ToastContainer from '@shared/ui/toast/toast-container';
 import { TAB_TRANSITION } from '@shared/lib/motion';
 
-import HotelGrid from '@/app/components/HotelGrid';
-import BookingsCalendar from '@/app/components/BookingsCalendar';
-import ActivityLog from '@/app/components/ActivityLog';
-import KolleganContact from '@/app/components/KolleganContact';
-import RoomDetailModal from '@/app/components/RoomDetailModal';
-import HotelInfoTab from '@/app/components/HotelInfoTab';
-import CRMTab from '@/app/components/CRMTab';
-import SetupTab from '@/app/components/SetupTab';
-import AnimatedNumber from '@/app/components/AnimatedNumber';
-import SplashScreen from '@/app/components/SplashScreen';
-import DashboardHeader from '@/app/components/DashboardHeader';
-import DashboardSidebar from '@/app/components/DashboardSidebar';
+import HotelGrid from '@features/rooms/components/room-grid';
+import BookingsCalendar from '@features/rooms/components/bookings-calendar';
+import ActivityLog from '@features/activity/components/activity-log';
+import KolleganContact from '@features/voice/components/kollegan-contact';
+import RoomDetailModal from '@features/rooms/components/room-detail-modal';
+import HotelInfoTab from '@features/hotel-services/components/hotel-info-tab';
+import CRMTab from '@features/crm/components/crm-tab';
+import SetupTab from '@features/dashboard/components/setup-tab';
+import AnimatedNumber from '@shared/ui/animated-number';
+import SplashScreen from '@features/dashboard/components/splash-screen';
+import DashboardHeader from '@features/dashboard/components/dashboard-header';
+import DashboardSidebar from '@features/dashboard/components/dashboard-sidebar';
 
 type Tab = 'available' | 'booked' | 'activity' | 'hotel-info' | 'crm' | 'setup';
 
@@ -275,11 +275,11 @@ export default function HomePage() {
 
         {/* ═══════ FOOTER ═══════ */}
         <footer className="glass-header border-t border-white/40 dark:border-white/8">
-          <div className="px-6 py-5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="px-6 py-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shrink-0">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
                   </svg>
                 </div>
@@ -289,13 +289,13 @@ export default function HomePage() {
                   </span>
                   <div className="flex items-center gap-4 mt-0.5">
                     <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                       </svg>
                       Storgatan 1, Stockholm
                     </span>
                     <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72" />
                       </svg>
                       08-123 456 78
