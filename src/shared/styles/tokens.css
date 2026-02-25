@@ -49,7 +49,6 @@
   --accent-light: #7C3AED;
   --accent-subtle: rgba(109, 40, 217, 0.08);
   --accent-border: rgba(109, 40, 217, 0.22);
-  --mouse-glow-color: rgba(109, 40, 217, 0.06);
 
   /* Grid system */
   --grid-line-color: rgba(74, 58, 120, 0.055);
@@ -96,7 +95,6 @@
   --accent-light: #fbbf24;
   --accent-subtle: rgba(245, 158, 11, 0.10);
   --accent-border: rgba(245, 158, 11, 0.22);
-  --mouse-glow-color: rgba(245, 158, 11, 0.09);
 
   /* Grid system */
   --grid-line-color: rgba(255, 255, 255, 0.032);
