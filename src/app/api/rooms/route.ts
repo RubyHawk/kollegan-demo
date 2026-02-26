@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAllRooms, resetRooms } from '@features/rooms/lib/room-store';
+import { getAllRooms, resetRooms } from '@features/hotel/rooms/lib/room-store';
 
 export const dynamic = 'force-dynamic';
 

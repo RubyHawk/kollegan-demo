@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { validateVapiAuth } from '@/lib/vapi-auth';
-import { checkRateLimit } from '@/lib/rate-limiter';
-import { logger } from '@/lib/logger';
-import { prisma } from '@/lib/prisma';
+import { validateVapiAuth } from '@core/auth/vapi-auth';
+import { checkRateLimit } from '@core/cache/rate-limiter';
+import { logger } from '@core/logging/logger';
+import { startCallTranscript } from '@features/crm/service';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -36,11 +36,7 @@ export async function POST(req: NextRequest) {
 
   logger.info(TAG, `Starting transcript for call ${parsed.data.vapi_call_id}`);
 
-  const transcript = await prisma.callTranscript.upsert({
-    where:  { vapiCallId: parsed.data.vapi_call_id },
-    create: { vapiCallId: parsed.data.vapi_call_id, startedAt: new Date() },
-    update: { startedAt: new Date() },
-  });
+  const { transcriptId } = await startCallTranscript(parsed.data.vapi_call_id);
 
-  return NextResponse.json({ success: true, transcriptId: transcript.id }, { status: 200 });
+  return NextResponse.json({ success: true, transcriptId }, { status: 200 });
 }

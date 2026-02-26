@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRealtimeStore } from '@shared/stores/realtime-store';
-import type { Room } from '@features/rooms/types';
+import type { Room } from '@features/hotel/rooms/types';
 import type { ActivityEvent } from '@features/activity/types';
 
 interface SSEPayload {

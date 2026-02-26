@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { withRetry } from '@/lib/with-retry';
+import { withRetry } from '@core/resilience/with-retry';
 
 describe('withRetry', () => {
   it('returns result on first success', async () => {

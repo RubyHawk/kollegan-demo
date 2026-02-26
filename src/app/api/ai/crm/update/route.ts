@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { validateVapiAuth } from '@/lib/vapi-auth';
-import { checkRateLimit } from '@/lib/rate-limiter';
-import { logger } from '@/lib/logger';
-import { updateCRM } from '@/lib/ai-tools';
+import { validateVapiAuth } from '@core/auth/vapi-auth';
+import { checkRateLimit } from '@core/cache/rate-limiter';
+import { logger } from '@core/logging/logger';
+import { updateCrm } from '@features/voice/ai-tools';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   const { booked_room_ids, vapi_call_id, ...rest } = parsed.data;
 
   logger.info(TAG, 'Updating CRM', { name: rest.name, email: rest.email, phone: rest.phone });
-  const result = await updateCRM({
+  const result = await updateCrm({
     ...rest,
     bookedRoomIds: booked_room_ids,
     vapiCallId:    vapi_call_id,

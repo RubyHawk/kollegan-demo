@@ -1,4 +1,4 @@
-import type { CRMContact } from '@features/crm/types';
+import type { CrmContact } from '@features/crm/types';
 
 export interface ActivityEvent {
   id: string;
@@ -14,7 +14,7 @@ export interface ActivityEvent {
     | 'info';
   message: string;
   roomId?: string;
-  metadata?: CRMContact;
+  metadata?: CrmContact;
 }
 
 export interface Session {
@@ -28,5 +28,5 @@ export interface Session {
   cancelled: number;
   locked: number;
   searched: number;
-  crmContact?: CRMContact;
+  crmContact?: CrmContact;
 }

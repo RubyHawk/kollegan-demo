@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/lib/logger';
-import { checkRateLimit } from '@/lib/rate-limiter';
+import { prisma } from '@core/database/prisma';
+import { logger } from '@core/logging/logger';
+import { checkRateLimit } from '@core/cache/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs'; // required: bcrypt uses Node.js crypto

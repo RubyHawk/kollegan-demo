@@ -1,0 +1,46 @@
+/**
+ * Offer / Quotation Builder Module — Types
+ *
+ * Future ERP module for creating professional quotes and proposals.
+ *
+ * Planned features:
+ *  - Create offers from leads or CRM contacts
+ *  - Line items: rooms, services, packages, custom items
+ *  - Dynamic pricing and discount rules
+ *  - PDF generation and email delivery
+ *  - Digital acceptance / e-signature flow
+ *  - Offer versioning and expiry tracking
+ *  - Integration with Leads module (offer → won)
+ *  - n8n workflow: auto-send offers, follow-up reminders
+ */
+
+export type OfferStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
+
+export interface OfferLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;   // SEK
+  vatRate: number;     // 0.25 = 25%
+  discount?: number;   // percentage 0–100
+}
+
+export interface Offer {
+  id: string;
+  title: string;
+  status: OfferStatus;
+  recipientName: string;
+  recipientEmail: string;
+  recipientCompany?: string;
+  lineItems: OfferLineItem[];
+  notes?: string;
+  validUntil: string;       // ISO date
+  createdBy: string;        // StaffUser.id
+  createdAt: string;
+  sentAt?: string;
+  acceptedAt?: string;
+  leadId?: string;          // Link to Leads module
+  customerId?: string;      // Link to CRM module
+  totalExVat: number;
+  totalIncVat: number;
+}

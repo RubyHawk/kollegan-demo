@@ -1,4 +1,4 @@
-export interface CRMContact {
+export interface CrmContact {
   name?: string;
   email?: string;
   phone?: string;
@@ -7,9 +7,9 @@ export interface CRMContact {
   summary?: string;
 }
 
-export interface CRMEntry {
+export interface CrmEntry {
   id: string;
-  contact: CRMContact;
+  contact: CrmContact;
   timestamp: string;
   bookedRooms: { roomId: string; message: string }[];
   sessionDuration?: number;

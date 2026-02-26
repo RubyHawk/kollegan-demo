@@ -1,9 +1,18 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Prisma 7 schema — Grand Hotel Kollegan demo
+// Prisma 7 schema — Kollegan AI Automation Platform
 //
-// Connection URL lives in prisma.config.ts, not here (Prisma 7 change).
-// Table names use the demo_hotel_ prefix via @@map() so the database
-// stays unambiguous and generic names like "bookings" are avoided.
+// Table naming conventions:
+//   org_*        → identity / organization module
+//   demo_hotel_* → hotel demo vertical (kept for migration compatibility)
+//   wf_*         → automation / workflow module (core domain)
+//   evt_*        → domain event log
+//   lead_*       → leads module (supporting domain)
+//
+// Multi-tenancy: every tenant-owned model has organizationId.
+//   Existing models (demo_hotel_*): organizationId is nullable for
+//   backward compatibility. New models: organizationId is required.
+//
+// Connection URL lives in prisma.config.ts (Prisma 7 convention).
 // ─────────────────────────────────────────────────────────────────────────────
 
 generator client {
@@ -13,6 +22,29 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ─── Identity / Organization ───────────────────────────────────────────────────
+// Multi-tenancy root. Every tenant-owned record has an organizationId pointing here.
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  plan      String   @default("demo") // demo | starter | growth | enterprise
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Back-relations from tenant-owned models
+  customers   Customer[]
+  bookings    HotelBooking[]
+  transcripts CallTranscript[]
+  crmRecords  CrmRecord[]
+  workflows   Workflow[]
+  leads       Lead[]
+
+  @@index([slug])
+  @@map("org_organizations")
 }
 
 // ─── Customer Profiles ────────────────────────────────────────────────────────
@@ -28,17 +60,21 @@ model Customer {
   firstSeen DateTime @default(now())
   lastSeen  DateTime @updatedAt
 
+  // Multi-tenancy — nullable for backward compatibility with existing rows
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
   bookings    HotelBooking[]
   transcripts CallTranscript[]
   crmRecords  CrmRecord[]
 
   @@index([phone])
   @@index([name])
+  @@index([organizationId])
   @@map("demo_hotel_customers")
 }
 
 // ─── Booking Records ──────────────────────────────────────────────────────────
-// Model renamed HotelBooking to avoid collision with generic "Booking" types.
 
 model HotelBooking {
   id          String    @id @default(uuid())
@@ -49,12 +85,17 @@ model HotelBooking {
   cancelledAt DateTime?
   createdAt   DateTime  @default(now())
 
+  // Multi-tenancy — nullable for backward compatibility
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
   customer   Customer? @relation(fields: [customerId], references: [id])
   customerId String?
 
   @@index([roomId])
   @@index([customerId])
   @@index([checkIn, checkOut])
+  @@index([organizationId])
   @@map("demo_hotel_bookings")
 }
 
@@ -69,11 +110,16 @@ model CallTranscript {
   bookingsMade   String[]  // room IDs booked during this call
   cancelledRooms String[]  // room IDs cancelled during this call
 
+  // Multi-tenancy — nullable for backward compatibility
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
   customer   Customer? @relation(fields: [customerId], references: [id])
   customerId String?
 
   @@index([vapiCallId])
   @@index([customerId])
+  @@index([organizationId])
   @@map("demo_hotel_call_transcripts")
 }
 
@@ -90,14 +136,19 @@ model CrmRecord {
   bookedRooms String[] // room IDs confirmed in this session
   createdAt   DateTime @default(now())
 
+  // Multi-tenancy — nullable for backward compatibility
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
   customer   Customer? @relation(fields: [customerId], references: [id])
   customerId String?
 
   @@index([customerId])
+  @@index([organizationId])
   @@map("demo_hotel_crm_records")
 }
 
-// ─── Staff Users (admin dashboard auth) ──────────────────────────────────────
+// ─── Staff Users ──────────────────────────────────────────────────────────────
 
 model StaffUser {
   id           String    @id @default(uuid())
@@ -109,4 +160,117 @@ model StaffUser {
 
   @@index([email])
   @@map("demo_hotel_staff_users")
+}
+
+// ─── Automation: Workflows ────────────────────────────────────────────────────
+// Core domain. Primary value-generating entities in the platform.
+
+model Workflow {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  trigger        Json     // TriggerConfig (see features/automation/types.ts)
+  steps          Json     // StepConfig[]
+  isActive       Boolean  @default(true)
+  version        Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  runs         WorkflowRun[]
+
+  @@index([organizationId, isActive])
+  @@index([organizationId, createdAt])
+  @@map("wf_workflows")
+}
+
+model WorkflowRun {
+  id             String    @id @default(uuid())
+  organizationId String
+  workflowId     String
+  status         String    @default("pending") // pending | running | completed | failed | cancelled
+  trigger        Json      // The event/payload that started this run
+  context        Json      @default("{}") // RunContext: step outputs + variables
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  error          String?
+
+  workflow Workflow          @relation(fields: [workflowId], references: [id])
+  steps    WorkflowRunStep[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, workflowId])
+  @@index([organizationId, startedAt])
+  @@map("wf_workflow_runs")
+}
+
+model WorkflowRunStep {
+  id          String    @id @default(uuid())
+  runId       String
+  stepId      String    // References a step ID in Workflow.steps JSON
+  status      String    @default("pending") // pending | running | completed | failed | skipped
+  input       Json?
+  output      Json?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  error       String?
+  retryCount  Int       @default(0)
+
+  run WorkflowRun @relation(fields: [runId], references: [id])
+
+  @@index([runId])
+  @@index([runId, stepId])
+  @@map("wf_workflow_run_steps")
+}
+
+// ─── Domain Event Log ─────────────────────────────────────────────────────────
+// Persisted audit trail for all domain events.
+//
+// Phase 1 (now):   written on-demand by services that need an audit trail.
+// Phase 2 (3-6mo): event bus middleware writes every published event here.
+// Phase 3 (6mo+):  replay consumer re-runs events for debugging and migration.
+
+model DomainEventRecord {
+  id          String    @id @default(uuid())
+  type        String    // e.g. 'room.booked', 'crm.contact_upserted'
+  orgId       String
+  aggregateId String    // The primary entity: roomId, customerId, workflowId, ...
+  payload     Json
+  occurredAt  DateTime
+  processedAt DateTime? // null = pending downstream processing
+
+  @@index([orgId, type])
+  @@index([orgId, occurredAt])
+  @@index([aggregateId])
+  @@map("evt_domain_events")
+}
+
+// ─── Leads ────────────────────────────────────────────────────────────────────
+// Supporting domain. Lead stage changes trigger automation workflows.
+
+model Lead {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  email          String?
+  phone          String?
+  company        String?
+  status         String    @default("new") // new | contacted | qualified | proposal | won | lost
+  source         String    @default("manual") // voice_call | web_form | manual | referral | n8n_webhook
+  score          Int?      // 0–100 lead score
+  assignedTo     String?   // StaffUser.id
+  notes          String?
+  estimatedValue Float?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  convertedAt    DateTime?
+  customerId     String?   // Customer.id — set when lead is converted
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, assignedTo])
+  @@map("lead_leads")
 }

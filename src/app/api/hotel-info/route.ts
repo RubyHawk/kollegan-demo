@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getAllRooms } from '@features/rooms/lib/room-store';
-import { getAllHotelServices } from '@features/hotel-services/lib/hotel-services-store';
+import { getAllRooms } from '@features/hotel/rooms/lib/room-store';
+import { getAllHotelServices } from '@features/hotel/services/lib/hotel-services-store';
 
 export const dynamic = 'force-dynamic';
 

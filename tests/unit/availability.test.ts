@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { checkAvailability } from '@/lib/ai-tools/availability';
-import { getAllRooms, logRoomsQueried } from '@features/rooms/lib/room-store';
+import { checkAvailability } from '@features/voice/ai-tools/availability';
+import { getAllRooms, logRoomsQueried } from '@features/hotel/rooms/lib/room-store';
 
 describe('checkAvailability', () => {
   beforeEach(() => {
@@ -10,23 +10,23 @@ describe('checkAvailability', () => {
   it('returns only available rooms when no dates provided', () => {
     const result = checkAvailability();
     // Mocked rooms: 101, 102 (available), 103 (available), 201 (booked), 202 (locked)
-    expect(result.rooms.every((r) => ['101', '102', '103'].includes(r.id))).toBe(true);
+    expect(result.rooms.every((r: { id: string; type: string }) => ['101', '102', '103'].includes(r.id))).toBe(true);
     expect(result.count).toBe(3);
   });
 
   it('excludes locked rooms', () => {
     const result = checkAvailability();
-    expect(result.rooms.find((r) => r.id === '202')).toBeUndefined();
+    expect(result.rooms.find((r: { id: string; type: string }) => r.id === '202')).toBeUndefined();
   });
 
   it('excludes booked rooms when no dates provided', () => {
     const result = checkAvailability();
-    expect(result.rooms.find((r) => r.id === '201')).toBeUndefined();
+    expect(result.rooms.find((r: { id: string; type: string }) => r.id === '201')).toBeUndefined();
   });
 
   it('filters by room type', () => {
     const result = checkAvailability({ type: 'Enkel' });
-    expect(result.rooms.every((r) => r.type === 'Enkel')).toBe(true);
+    expect(result.rooms.every((r: { id: string; type: string }) => r.type === 'Enkel')).toBe(true);
     expect(result.count).toBe(2);
   });
 
@@ -34,14 +34,14 @@ describe('checkAvailability', () => {
     // Booked: 2026-03-10 → 2026-03-15
     // Query:  2026-03-16 → 2026-03-20 (no overlap)
     const result = checkAvailability({ checkIn: '2026-03-16', checkOut: '2026-03-20' });
-    expect(result.rooms.find((r) => r.id === '201')).toBeDefined();
+    expect(result.rooms.find((r: { id: string; type: string }) => r.id === '201')).toBeDefined();
   });
 
   it('excludes booked rooms with overlapping dates', () => {
     // Booked: 2026-03-10 → 2026-03-15
     // Query:  2026-03-12 → 2026-03-17 (overlaps)
     const result = checkAvailability({ checkIn: '2026-03-12', checkOut: '2026-03-17' });
-    expect(result.rooms.find((r) => r.id === '201')).toBeUndefined();
+    expect(result.rooms.find((r: { id: string; type: string }) => r.id === '201')).toBeUndefined();
   });
 
   it('calls logRoomsQueried on every invocation', () => {
