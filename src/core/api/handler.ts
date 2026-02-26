@@ -5,19 +5,31 @@
  *   1. Generate / extract request ID
  *   2. Rate limiting (configurable per-route)
  *   3. Authentication (vapi | jwt | internal | none)
- *   4. Request body / query-string parsing + Zod validation
- *   5. Business logic (the caller-supplied handler function)
- *   6. Wrap result in standard ApiSuccess envelope
- *   7. Attach observability headers (X-Request-Id, X-Version, X-Duration-Ms)
- *   8. Catch ApiError → RFC 7807 Problem Details
- *   9. Catch unknown error → 500 Problem Details (never leaks stack traces)
+ *   4. Content-Type validation for body routes (415)
+ *   5. Request body / query-string parsing + Zod validation
+ *   6. Business logic (the caller-supplied handler function)
+ *   7. Wrap result in standard ApiSuccess envelope
+ *   8. Attach observability headers (X-Request-Id, X-Version, X-Duration-Ms)
+ *   9. Catch ApiError → RFC 9457 Problem Details
+ *  10. Catch unknown error → 500 Problem Details (never leaks stack traces)
+ *
+ * RFC compliance:
+ *   RFC 9110 §15.5.2  — 401 MUST include WWW-Authenticate
+ *   RFC 9110 §15.5.6  — 405 MUST include Allow (via ApiError.headers)
+ *   RFC 9110 §15.3.2  — 201 SHOULD include Location (via HandlerResult.headers)
+ *   RFC 6585 §4       — 429 SHOULD include Retry-After
+ *   RFC 9457          — Errors use application/problem+json
+ *
+ * Rate-limit headers follow the IETF draft-ietf-httpapi-ratelimit-headers spec:
+ *   RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset (standard unprefixed)
+ *   X-RateLimit-*  (legacy X- prefixed, kept for backward compatibility)
  *
  * Usage:
  *   export const POST = createHandler(
  *     { auth: 'vapi', rateLimit: { max: 30, windowMs: 60_000 }, body: MySchema, tag: 'AI:Thing' },
  *     async ({ body, meta }) => {
  *       const result = await doWork(body);
- *       return ok(result);         // or created(), paginated(), etc.
+ *       return ok(result);         // or created('/api/v1/things/id'), paginated(), etc.
  *     }
  *   );
  */
@@ -104,6 +116,28 @@ function generateRequestId(): string {
   return `req_${ts}${rnd}`;
 }
 
+// ─── WWW-Authenticate challenge builder ────────────────────────────────────────
+
+/**
+ * Produces the WWW-Authenticate challenge for a given auth strategy.
+ *
+ * RFC 9110 §15.5.2: A server generating a 401 response MUST send a
+ * WWW-Authenticate header field containing at least one challenge.
+ *
+ * Challenge formats follow RFC 7235 §2.1 syntax:
+ *   Bearer — RFC 6750 (OAuth 2.0 Bearer Token)
+ *   ApiKey — de facto scheme used for shared-secret APIs
+ */
+function wwwAuthChallenge(strategy: AuthStrategy): string {
+  const realm = 'api.kollegan.ai';
+  switch (strategy) {
+    case 'jwt':      return `Bearer realm="${realm}", charset="UTF-8"`;
+    case 'vapi':     return `ApiKey realm="${realm}"`;
+    case 'internal': return `ApiKey realm="${realm}"`;
+    case 'none':     return '';
+  }
+}
+
 // ─── Problem Details response builder ─────────────────────────────────────────
 
 function problemResponse(
@@ -142,6 +176,8 @@ function envelopeResponse<T>(
       'X-Request-Id':   meta.requestId,
       'X-Version':      meta.version,
       'X-Duration-Ms':  String(meta.durationMs),
+      // Caller-supplied extra headers (e.g. Location for 201, Link for paginated)
+      ...(result.headers ?? {}),
     },
   });
 }
@@ -161,7 +197,7 @@ export function createHandler<
   config: HandlerConfig<TBody, TQuery>,
   fn: HandlerFn<TBody, TQuery>
 ): (req: NextRequest) => Promise<NextResponse> {
-  const version     = config.version ?? CURRENT_VERSION;
+  const version      = config.version ?? CURRENT_VERSION;
   const authStrategy = config.auth ?? 'vapi';
 
   return async (req: NextRequest): Promise<NextResponse> => {
@@ -177,13 +213,29 @@ export function createHandler<
       durationMs: Date.now() - startMs,
     });
 
-    // Helper to produce a problem response with request context attached
+    /**
+     * Convert an ApiError to a Problem Details response.
+     *
+     * Merges (in order of priority):
+     *   1. err.headers  — RFC 9110 required headers (Allow, etc.)
+     *   2. Retry-After  — derived from problem.retryAfter when retryable
+     *   3. WWW-Authenticate — RFC 9110 §15.5.2 MUST on 401
+     */
     const problem = (err: ApiError): NextResponse => {
       const p = err.problem;
-      const extraHeaders: Record<string, string> = {};
+      const extraHeaders: Record<string, string> = { ...(err.headers ?? {}) };
+
+      // RFC 6585 §4 / RFC 9110 §10.2.4: include Retry-After when retryable
       if (p.retryable && p.retryAfter) {
         extraHeaders['Retry-After'] = String(p.retryAfter);
       }
+
+      // RFC 9110 §15.5.2: 401 MUST include WWW-Authenticate
+      if (p.status === 401) {
+        const challenge = wwwAuthChallenge(authStrategy);
+        if (challenge) extraHeaders['WWW-Authenticate'] = challenge;
+      }
+
       return problemResponse({ ...p, requestId, instance }, extraHeaders);
     };
 
@@ -200,10 +252,15 @@ export function createHandler<
           const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
           const err = Errors.rateLimit(retryAfter);
           const headers: Record<string, string> = {
+            // Standard unprefixed rate-limit headers (IETF draft-ietf-httpapi-ratelimit-headers)
+            'RateLimit-Limit':     String(rlConf.max),
+            'RateLimit-Remaining': '0',
+            'RateLimit-Reset':     String(retryAfter),
+            'Retry-After':         String(retryAfter),
+            // Legacy X-prefixed headers (backward compat)
             'X-RateLimit-Limit':     String(rlConf.max),
             'X-RateLimit-Remaining': '0',
             'X-RateLimit-Reset':     String(rl.resetAt),
-            'Retry-After':           String(retryAfter),
           };
           return problemResponse({ ...err.problem, requestId, instance }, headers);
         }
@@ -241,7 +298,17 @@ export function createHandler<
         }
       }
 
-      // ── 3. Parse query string ───────────────────────────────────────────────
+      // ── 3. Content-Type validation (RFC 9110 §15.5.15) ─────────────────────
+      // For requests with a body schema, require application/json.
+      // Allows omitting Content-Type on GET/HEAD/DELETE when there's no body.
+      if (config.body && req.method !== 'GET' && req.method !== 'HEAD') {
+        const ct = req.headers.get('content-type') ?? '';
+        if (!ct.includes('application/json')) {
+          return problem(Errors.unsupportedMediaType());
+        }
+      }
+
+      // ── 4. Parse query string ───────────────────────────────────────────────
       let parsedQuery: InferSchema<TQuery> = undefined as InferSchema<TQuery>;
       if (config.query) {
         const { searchParams } = new URL(req.url);
@@ -259,7 +326,7 @@ export function createHandler<
         parsedQuery = result.data as InferSchema<TQuery>;
       }
 
-      // ── 4. Parse request body ───────────────────────────────────────────────
+      // ── 5. Parse request body ───────────────────────────────────────────────
       let parsedBody: InferSchema<TBody> = undefined as InferSchema<TBody>;
       if (config.body) {
         let raw: unknown;
@@ -280,7 +347,7 @@ export function createHandler<
         parsedBody = result.data as InferSchema<TBody>;
       }
 
-      // ── 5. Execute handler ──────────────────────────────────────────────────
+      // ── 6. Execute handler ──────────────────────────────────────────────────
       const ctx: HandlerContext<TBody, TQuery> = {
         body:  parsedBody,
         query: parsedQuery,
@@ -292,7 +359,7 @@ export function createHandler<
 
       const raw = await fn(ctx);
 
-      // ── 6. Wrap in envelope ─────────────────────────────────────────────────
+      // ── 7. Wrap in envelope ─────────────────────────────────────────────────
       const handlerResult: HandlerResult<unknown> = isHandlerResult(raw)
         ? raw
         : ok(raw);
@@ -308,7 +375,7 @@ export function createHandler<
       return res;
 
     } catch (err) {
-      // ── 7. Handle ApiError (expected) ───────────────────────────────────────
+      // ── 8. Handle ApiError (expected) ───────────────────────────────────────
       if (err instanceof ApiError) {
         logger.warn(config.tag, `API error ${err.problem.status}: ${err.problem.detail}`, {
           requestId,
@@ -317,7 +384,7 @@ export function createHandler<
         return problem(err);
       }
 
-      // ── 8. Handle unexpected errors (never leak internals) ──────────────────
+      // ── 9. Handle unexpected errors (never leak internals) ──────────────────
       logger.error(config.tag, 'Unhandled error', { requestId, err });
       return problem(Errors.internal());
     }

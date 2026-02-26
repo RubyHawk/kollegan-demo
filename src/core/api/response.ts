@@ -11,7 +11,7 @@
  * Shape:
  *   { data: T, meta: RequestMeta, pagination?: Pagination }
  *
- * Errors use RFC 7807 Problem Details (see errors.ts) — separate type,
+ * Errors use RFC 9457 Problem Details (see errors.ts) — separate type,
  * never { data: null, error: ... }. The LLM knows success = has `data`,
  * failure = has `type` (problem URI).
  */
@@ -61,16 +61,28 @@ export interface ApiSuccess<T> {
 
 // ─── Internal result markers (used by createHandler) ──────────────────────────
 
-/** @internal — used by the handler wrapper to determine HTTP status + pagination */
+/** @internal — used by the handler wrapper to determine HTTP status + pagination + extra headers */
 export interface HandlerResult<T> {
   __apiResult: true;
   data:        T;
   status:      number;
   pagination?: Pagination;
+  /**
+   * Extra HTTP headers to include in the success response.
+   * Use sparingly — prefer body fields over custom headers.
+   * RFC 9110 §15.3.2: 201 Created SHOULD include Location.
+   * RFC 8288: paginated responses SHOULD include Link headers.
+   */
+  headers?: Record<string, string>;
 }
 
-function result<T>(data: T, status: number, pagination?: Pagination): HandlerResult<T> {
-  return { __apiResult: true, data, status, pagination };
+function result<T>(
+  data:        T,
+  status:      number,
+  pagination?: Pagination,
+  headers?:    Record<string, string>
+): HandlerResult<T> {
+  return { __apiResult: true, data, status, pagination, headers };
 }
 
 export function isHandlerResult(v: unknown): v is HandlerResult<unknown> {
@@ -92,11 +104,17 @@ export function ok<T>(data: T): HandlerResult<T> {
 /**
  * Return a 201 Created response.
  *
+ * RFC 9110 §15.3.2: The server SHOULD send a Location header containing a URI
+ * reference for the specific resource created. Pass the `location` argument to
+ * comply — the handler will emit it as the `Location` response header.
+ *
+ * @param location  Absolute URI of the newly created resource (SHOULD per RFC 9110)
+ *
  * @example
- * return created({ workflowId: 'wf_abc', name: 'My Workflow' });
+ * return created({ workflowId: 'wf_abc' }, `/api/v1/workflows/wf_abc`);
  */
-export function created<T>(data: T): HandlerResult<T> {
-  return result(data, 201);
+export function created<T>(data: T, location?: string): HandlerResult<T> {
+  return result(data, 201, undefined, location ? { Location: location } : undefined);
 }
 
 /**

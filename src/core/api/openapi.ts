@@ -8,7 +8,7 @@
  *
  * Envelope design:
  *   Success → { data, meta, pagination? }          (ApiResponse schema)
- *   Error   → RFC 7807 Problem Details             (Problem schema)
+ *   Error   → RFC 9457 Problem Details             (Problem schema)
  *
  * This is the CONTRACT. Changes here require version bumps.
  */
@@ -25,7 +25,7 @@ export const openApiSpec = {
       '',
       '## Response Format',
       'All successful responses use the standard envelope: `{ data, meta, pagination? }`.',
-      'All errors use RFC 7807 Problem Details with `Content-Type: application/problem+json`.',
+      'All errors use RFC 9457 Problem Details with `Content-Type: application/problem+json`.',
       '',
       '## LLM Tool Calling',
       'These endpoints are designed for direct consumption by LLM agents (Vapi, n8n, custom ReAct loops).',
@@ -85,17 +85,22 @@ export const openApiSpec = {
 
       ValidationIssue: {
         type: 'object',
-        required: ['field', 'message', 'code'],
+        description: 'Field-level validation issue — shape mirrors the RFC 9457 §3 validation error example.',
+        required: ['pointer', 'detail', 'code'],
         properties: {
-          field:   { type: 'string', example: 'email', description: 'Dot-separated field path; "_root" for top-level errors' },
-          message: { type: 'string', example: 'Invalid email address' },
-          code:    { type: 'string', example: 'invalid_string', description: 'Machine-readable Zod issue code' },
+          pointer: {
+            type: 'string',
+            example: '#/email',
+            description: 'JSON Pointer (RFC 6901) to the failing field. "#" = root; "#/email" = top-level field; "#/items/0/price" = array element.',
+          },
+          detail: { type: 'string', example: 'Invalid email address', description: 'Human-readable explanation of this specific failure' },
+          code:   { type: 'string', example: 'invalid_string', description: 'Machine-readable Zod issue code (invalid_type, too_small, invalid_string…)' },
         },
       },
 
       Problem: {
         type: 'object',
-        description: 'RFC 7807 Problem Details — all error responses use this shape.',
+        description: 'RFC 9457 Problem Details — all error responses use this shape. Content-Type: application/problem+json.',
         required: ['type', 'title', 'status', 'detail', 'timestamp', 'retryable'],
         properties: {
           type:        { type: 'string', format: 'uri', example: `${PROBLEM_BASE}/validation-error`, description: 'Stable URI identifying the problem type' },
@@ -152,29 +157,72 @@ export const openApiSpec = {
     },
     responses: {
       RateLimited: {
-        description: 'Rate limit exceeded — too many requests. Check Retry-After header.',
+        description: 'Rate limit exceeded (RFC 6585 §4). Wait for Retry-After seconds before retrying.',
         headers: {
-          'X-RateLimit-Limit':     { schema: { type: 'integer' }, description: 'Configured limit for this endpoint' },
-          'X-RateLimit-Remaining': { schema: { type: 'integer' }, description: 'Requests remaining in the current window' },
+          // Standard headers — IETF draft-ietf-httpapi-ratelimit-headers
+          'RateLimit-Policy': { schema: { type: 'string' }, description: 'Quota policy: e.g. "60; w=60" (60 requests per 60-second window)' },
+          'RateLimit':        { schema: { type: 'string' }, description: 'Current quota state: e.g. "0; t=47" (0 remaining, reset in 47s)' },
+          'Retry-After':      { schema: { type: 'integer' }, description: 'Seconds to wait before retrying (RFC 9110 §10.2.4)' },
+          // Legacy X- headers (backward compat)
+          'X-RateLimit-Limit':     { schema: { type: 'integer' }, description: 'Configured request limit per window' },
+          'X-RateLimit-Remaining': { schema: { type: 'integer' }, description: 'Requests remaining in current window' },
           'X-RateLimit-Reset':     { schema: { type: 'integer' }, description: 'Unix timestamp (ms) when the window resets' },
-          'Retry-After':           { schema: { type: 'integer' }, description: 'Seconds to wait before retrying' },
         },
         content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
       },
       Unauthorized: {
-        description: 'Invalid or missing authentication credentials',
+        description: 'Authentication credentials missing or invalid (RFC 9110 §15.5.2). Check WWW-Authenticate for the required scheme.',
+        headers: {
+          'WWW-Authenticate': {
+            schema: { type: 'string' },
+            description: 'RFC 9110 §15.5.2 REQUIRED. Authentication challenge. E.g. "Bearer realm=\\"api.kollegan.ai\\""',
+          },
+        },
+        content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
+      },
+      Forbidden: {
+        description: 'Credentials valid but insufficient scope for this operation (RFC 9110 §15.5.4)',
         content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
       },
       BadRequest: {
         description: 'Validation error — the request body or query params are invalid',
         content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
       },
+      MethodNotAllowed: {
+        description: 'HTTP method not supported on this endpoint (RFC 9110 §15.5.6). Check Allow header.',
+        headers: {
+          'Allow': {
+            schema: { type: 'string' },
+            description: 'RFC 9110 §15.5.6 REQUIRED. Comma-separated list of allowed methods. E.g. "GET, POST"',
+          },
+        },
+        content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
+      },
       Conflict: {
-        description: 'Resource state conflict — check current state and retry',
+        description: 'Resource state conflict — check current state and retry (RFC 9110 §15.5.10)',
+        content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
+      },
+      Gone: {
+        description: 'Resource has been permanently removed (RFC 9110 §15.5.11). Do not retry.',
+        content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
+      },
+      ContentTooLarge: {
+        description: 'Request body exceeds the size limit (RFC 9110 §15.5.14)',
+        content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
+      },
+      UnsupportedMediaType: {
+        description: 'Content-Type not accepted — use application/json (RFC 9110 §15.5.15)',
         content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
       },
       InternalError: {
-        description: 'Unexpected server error — retryable with exponential backoff',
+        description: 'Unexpected server error — retryable with exponential backoff (RFC 9110 §15.6.1)',
+        content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
+      },
+      ServiceUnavailable: {
+        description: 'Service temporarily unavailable (RFC 9110 §15.6.4). Retry after Retry-After seconds.',
+        headers: {
+          'Retry-After': { schema: { type: 'integer' }, description: 'Seconds before the service is expected to recover' },
+        },
         content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
       },
     },
