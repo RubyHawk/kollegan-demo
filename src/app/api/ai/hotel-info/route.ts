@@ -1,24 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { validateVapiAuth } from '@core/auth/vapi-auth';
-import { checkRateLimit } from '@core/cache/rate-limiter';
-import { logger } from '@core/logging/logger';
+import { createHandler, ok } from '@core/api';
 import { getHotelInfo } from '@features/voice/ai-tools';
 
 export const dynamic = 'force-dynamic';
 
-const TAG = 'AI:HotelInfo';
+const handler = createHandler(
+  { tag: 'AI:HotelInfo', auth: 'vapi', rateLimit: { max: 60, windowMs: 60_000 } },
+  async () => ok(getHotelInfo())
+);
 
-async function handle(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for') ?? 'vapi';
-  const rl = await checkRateLimit(ip, 60, 60_000);
-  if (!rl.allowed) return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
-
-  const authError = validateVapiAuth(req);
-  if (authError) return NextResponse.json({ error: authError.error }, { status: authError.status });
-
-  logger.info(TAG, 'Fetching hotel info');
-  return NextResponse.json(getHotelInfo(), { status: 200 });
-}
-
-export const GET  = handle;
-export const POST = handle;
+export const GET  = handler;
+export const POST = handler;
