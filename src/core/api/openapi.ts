@@ -1,20 +1,43 @@
 /**
- * OpenAPI 3.1 specification for all Elsa AI tool endpoints.
- * Served at GET /api/docs  (JSON)
- * Swagger UI at GET /api/docs/ui
+ * OpenAPI 3.1 specification — Kollegan Agentic Platform API.
+ *
+ * Source of truth for all public and internal API surfaces.
+ * Served as:
+ *   GET /api/docs     → JSON spec (machine-readable)
+ *   GET /api/docs/ui  → Swagger UI (human-readable)
+ *
+ * Envelope design:
+ *   Success → { data, meta, pagination? }          (ApiResponse schema)
+ *   Error   → RFC 7807 Problem Details             (Problem schema)
+ *
+ * This is the CONTRACT. Changes here require version bumps.
  */
 
 const BASE_URL = process.env.NEXTJS_PUBLIC_URL ?? 'http://localhost:3001';
+const PROBLEM_BASE = 'https://docs.kollegan.ai/problems';
 
 export const openApiSpec = {
   openapi: '3.1.0',
   info: {
-    title:       'Grand Hotel Kollegan — Elsa AI Tool API',
-    description: 'REST endpoints called directly by VAPI when Elsa needs to look up rooms, make bookings, or update the CRM.',
-    version:     '1.0.0',
-    contact: {
-      name: 'Grand Hotel Kollegan',
-    },
+    title:       'Kollegan Agentic Platform — AI Tool API',
+    description: [
+      'REST API for AI-driven automation, voice agents, and workflow orchestration.',
+      '',
+      '## Response Format',
+      'All successful responses use the standard envelope: `{ data, meta, pagination? }`.',
+      'All errors use RFC 7807 Problem Details with `Content-Type: application/problem+json`.',
+      '',
+      '## LLM Tool Calling',
+      'These endpoints are designed for direct consumption by LLM agents (Vapi, n8n, custom ReAct loops).',
+      'The `meta.requestId` field enables correlation between tool call results and server logs.',
+      'Error responses include `retryable` and `retryAfter` to guide agent retry behaviour.',
+      '',
+      '## Versioning',
+      'The active API version is `2025-11-01`. Specify `Kollegan-Version: YYYY-MM-DD` to pin a version.',
+      'The version used is echoed in every response `meta.version` field.',
+    ].join('\n'),
+    version: '2025-11-01',
+    contact: { name: 'Kollegan Platform Team' },
   },
   servers: [
     { url: BASE_URL, description: 'Active deployment' },
@@ -32,12 +55,66 @@ export const openApiSpec = {
       },
     },
     schemas: {
-      Error: {
+      // ── Platform envelope schemas ──────────────────────────────────────────
+
+      RequestMeta: {
         type: 'object',
+        description: 'Present on every successful response. Enables tracing, versioning, and performance observability.',
+        required: ['requestId', 'timestamp', 'version', 'durationMs'],
         properties: {
-          error: { type: ['string', 'object'] },
+          requestId:  { type: 'string', example: 'req_lk5s8f2a', description: 'Unique request ID — correlate with X-Request-Id header and server logs' },
+          timestamp:  { type: 'string', format: 'date-time', description: 'ISO 8601 UTC timestamp of request receipt' },
+          version:    { type: 'string', example: '2025-11-01', description: 'API version used to process this request' },
+          durationMs: { type: 'integer', example: 42, description: 'Server-side processing time in milliseconds' },
         },
       },
+
+      Pagination: {
+        type: 'object',
+        description: 'Cursor-based pagination metadata. Present when the response is a list.',
+        required: ['count', 'hasNext', 'hasPrev'],
+        properties: {
+          total:      { type: 'integer', description: 'Total matching records (may be omitted for large datasets)' },
+          count:      { type: 'integer', description: 'Number of items in this page' },
+          hasNext:    { type: 'boolean' },
+          hasPrev:    { type: 'boolean' },
+          nextCursor: { type: 'string', description: 'Pass as ?cursor= to fetch the next page' },
+          prevCursor: { type: 'string' },
+        },
+      },
+
+      ValidationIssue: {
+        type: 'object',
+        required: ['field', 'message', 'code'],
+        properties: {
+          field:   { type: 'string', example: 'email', description: 'Dot-separated field path; "_root" for top-level errors' },
+          message: { type: 'string', example: 'Invalid email address' },
+          code:    { type: 'string', example: 'invalid_string', description: 'Machine-readable Zod issue code' },
+        },
+      },
+
+      Problem: {
+        type: 'object',
+        description: 'RFC 7807 Problem Details — all error responses use this shape.',
+        required: ['type', 'title', 'status', 'detail', 'timestamp', 'retryable'],
+        properties: {
+          type:        { type: 'string', format: 'uri', example: `${PROBLEM_BASE}/validation-error`, description: 'Stable URI identifying the problem type' },
+          title:       { type: 'string', example: 'Validation Error', description: 'Short summary — same for all instances of this problem type' },
+          status:      { type: 'integer', example: 400 },
+          detail:      { type: 'string', example: 'Request body failed validation', description: 'Human-readable explanation of this specific occurrence' },
+          instance:    { type: 'string', example: '/api/ai/crm/update', description: 'URI of the failing endpoint' },
+          requestId:   { type: 'string', example: 'req_lk5s8f2a', description: 'Correlate with logs' },
+          timestamp:   { type: 'string', format: 'date-time' },
+          errors:      { type: 'array', items: { '$ref': '#/components/schemas/ValidationIssue' }, description: 'Field-level validation issues (only on 400 validation errors)' },
+          retryable:   { type: 'boolean', description: 'Whether retrying with the same request may succeed' },
+          retryAfter:  { type: 'integer', description: 'Seconds to wait before retrying (when retryable=true)' },
+        },
+      },
+
+      // ── Generic wrapped response ─────────────────────────────────────────
+      // Per-endpoint schemas extend this pattern: { data: <specific schema>, meta, pagination? }
+
+      // ── Domain schemas ─────────────────────────────────────────────────────
       Room: {
         type: 'object',
         properties: {
@@ -75,16 +152,30 @@ export const openApiSpec = {
     },
     responses: {
       RateLimited: {
-        description: 'Rate limit exceeded — too many requests from this client',
-        content: { 'application/json': { schema: { '$ref': '#/components/schemas/Error' } } },
+        description: 'Rate limit exceeded — too many requests. Check Retry-After header.',
+        headers: {
+          'X-RateLimit-Limit':     { schema: { type: 'integer' }, description: 'Configured limit for this endpoint' },
+          'X-RateLimit-Remaining': { schema: { type: 'integer' }, description: 'Requests remaining in the current window' },
+          'X-RateLimit-Reset':     { schema: { type: 'integer' }, description: 'Unix timestamp (ms) when the window resets' },
+          'Retry-After':           { schema: { type: 'integer' }, description: 'Seconds to wait before retrying' },
+        },
+        content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
       },
       Unauthorized: {
-        description: 'Invalid or missing x-vapi-secret header',
-        content: { 'application/json': { schema: { '$ref': '#/components/schemas/Error' } } },
+        description: 'Invalid or missing authentication credentials',
+        content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
       },
       BadRequest: {
-        description: 'Validation error — check the request body/params',
-        content: { 'application/json': { schema: { '$ref': '#/components/schemas/Error' } } },
+        description: 'Validation error — the request body or query params are invalid',
+        content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
+      },
+      Conflict: {
+        description: 'Resource state conflict — check current state and retry',
+        content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
+      },
+      InternalError: {
+        description: 'Unexpected server error — retryable with exponential backoff',
+        content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
       },
     },
   },
