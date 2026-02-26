@@ -1,8 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { validateVapiAuth } from '@core/auth/vapi-auth';
-import { checkRateLimit } from '@core/cache/rate-limiter';
-import { logger } from '@core/logging/logger';
+import { createHandler, Errors, ok } from '@core/api';
 import { lockRoom, confirmBooking } from '@features/voice/ai-tools';
 
 export const dynamic = 'force-dynamic';
@@ -17,39 +14,26 @@ const BodySchema = z.object({
   check_out:  DateSchema.optional(),
 });
 
-const TAG = 'AI:CalendarBook';
-
 /**
  * Atomic lock-then-confirm booking.
- * Used when Elsa wants to complete a booking in a single tool call.
- * Locks the room, then immediately confirms it with calendar event creation.
+ * Locks the room then immediately confirms it, optionally creating a Google
+ * Calendar event when check_in/check_out are supplied.
  */
-export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for') ?? 'vapi';
-  const rl = await checkRateLimit(ip, 30, 60_000);
-  if (!rl.allowed) return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+export const POST = createHandler(
+  { tag: 'AI:CalendarBook', auth: 'vapi', rateLimit: { max: 30, windowMs: 60_000 }, body: BodySchema },
+  async ({ body }) => {
+    const { room_id, guest_name, check_in, check_out } = body;
 
-  const authError = validateVapiAuth(req);
-  if (authError) return NextResponse.json({ error: authError.error }, { status: authError.status });
+    const lockResult = lockRoom(room_id);
+    if (!lockResult.success) {
+      throw Errors.conflict(lockResult.message ?? `Room ${room_id} is not available`);
+    }
 
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    const confirmResult = await confirmBooking(room_id, guest_name, check_in, check_out);
+    if (!confirmResult.success) {
+      throw Errors.conflict(confirmResult.message ?? `Booking for room ${room_id} could not be confirmed`);
+    }
+
+    return ok(confirmResult);
   }
-
-  const parsed = BodySchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  const { room_id, guest_name, check_in, check_out } = parsed.data;
-  logger.info(TAG, `Booking room ${room_id} for ${guest_name}`, { check_in, check_out });
-
-  // Lock first
-  const lockResult = lockRoom(room_id);
-  if (!lockResult.success) {
-    return NextResponse.json(lockResult, { status: 409 });
-  }
-
-  // Then confirm (creates Google Calendar event if dates provided)
-  const confirmResult = await confirmBooking(room_id, guest_name, check_in, check_out);
-  return NextResponse.json(confirmResult, { status: confirmResult.success ? 200 : 409 });
-}
+);
