@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ActivityEvent } from '@features/activity/types';
-import { CrmContact } from '@features/crm/types';
+import { CrmContact } from '../types';
 
 interface Props {
   activities: ActivityEvent[];
