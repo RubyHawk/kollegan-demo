@@ -9,25 +9,26 @@
  *
  * Called once at startup from instrumentation.ts. Never import this at module
  * scope — it has side effects (attaches listeners to the global event bus).
+ *
+ * ARCHITECTURE NOTE: This file must NEVER import from other feature modules
+ * (hotel, crm, leads, etc.). Automation is a core domain — it depends on
+ * zero supporting or generic modules. Subscribe by event type string only;
+ * use DomainEvent from @core/events for typing.
  */
 
 import { eventBus } from '@core/events';
 import { logger }   from '@core/logging/logger';
+import type { DomainEvent } from '@core/events';
 
-import {
-  ROOM_LOCKED,
-  ROOM_BOOKED,
-  ROOM_CANCELLED,
-  ROOM_QUERIED,
-} from '@features/hotel/rooms/events';
-
-import {
-  CRM_CONTACT_UPSERTED,
-  CRM_RECORD_CREATED,
-} from '@features/crm/events';
-
-import type { RoomLockedEvent, RoomBookedEvent, RoomCancelledEvent, RoomQueriedEvent } from '@features/hotel/rooms/events';
-import type { CrmContactUpsertedEvent, CrmRecordCreatedEvent } from '@features/crm/events';
+// Event type strings — kept here as the authoritative registry for automation.
+// These strings MUST match what the publishing modules emit.
+// See: features/hotel/rooms/events.ts, features/crm/events.ts
+const HOTEL_ROOM_LOCKED    = 'room.locked';
+const HOTEL_ROOM_BOOKED    = 'room.booked';
+const HOTEL_ROOM_CANCELLED = 'room.cancelled';
+const HOTEL_ROOM_QUERIED   = 'room.queried';
+const CRM_CONTACT_UPSERTED = 'crm.contact_upserted';
+const CRM_RECORD_CREATED   = 'crm.record_created';
 
 const TAG = 'AutomationListeners';
 
@@ -35,47 +36,53 @@ export function registerAutomationListeners(): void {
 
   // ─── Hotel room events ────────────────────────────────────────────────────────
 
-  eventBus.subscribe<RoomLockedEvent>(ROOM_LOCKED, async (event) => {
-    logger.info(TAG, `[${ROOM_LOCKED}] Room ${event.payload.roomId} locked`, {
+  eventBus.subscribe(HOTEL_ROOM_LOCKED, async (event: DomainEvent) => {
+    const { roomId } = event.payload as { roomId: string };
+    logger.info(TAG, `[${HOTEL_ROOM_LOCKED}] Room ${roomId} locked`, {
       orgId: event.orgId,
     });
     // Phase 2: await automationEngine.triggerByEvent(event);
   });
 
-  eventBus.subscribe<RoomBookedEvent>(ROOM_BOOKED, async (event) => {
-    logger.info(TAG, `[${ROOM_BOOKED}] Room ${event.payload.roomId} booked for ${event.payload.guestName}`, {
+  eventBus.subscribe(HOTEL_ROOM_BOOKED, async (event: DomainEvent) => {
+    const { roomId, guestName } = event.payload as { roomId: string; guestName: string };
+    logger.info(TAG, `[${HOTEL_ROOM_BOOKED}] Room ${roomId} booked for ${guestName}`, {
       orgId: event.orgId,
     });
     // Phase 2: trigger confirmation email workflow, upsell workflow, etc.
     // await automationEngine.triggerByEvent(event);
   });
 
-  eventBus.subscribe<RoomCancelledEvent>(ROOM_CANCELLED, async (event) => {
-    logger.info(TAG, `[${ROOM_CANCELLED}] Room ${event.payload.roomId} cancelled`, {
+  eventBus.subscribe(HOTEL_ROOM_CANCELLED, async (event: DomainEvent) => {
+    const { roomId } = event.payload as { roomId: string };
+    logger.info(TAG, `[${HOTEL_ROOM_CANCELLED}] Room ${roomId} cancelled`, {
       orgId: event.orgId,
     });
     // Phase 2: trigger cancellation email workflow, re-availability notification, etc.
   });
 
-  eventBus.subscribe<RoomQueriedEvent>(ROOM_QUERIED, async (event) => {
-    logger.info(TAG, `[${ROOM_QUERIED}] Availability queried — ${event.payload.availableCount} rooms available`, {
+  eventBus.subscribe(HOTEL_ROOM_QUERIED, async (event: DomainEvent) => {
+    const { availableCount } = event.payload as { availableCount: number };
+    logger.info(TAG, `[${HOTEL_ROOM_QUERIED}] Availability queried — ${availableCount} rooms available`, {
       orgId: event.orgId,
     });
   });
 
   // ─── CRM events ───────────────────────────────────────────────────────────────
 
-  eventBus.subscribe<CrmContactUpsertedEvent>(CRM_CONTACT_UPSERTED, async (event) => {
-    logger.info(TAG, `[${CRM_CONTACT_UPSERTED}] Contact ${event.payload.customerId} upserted (isNew=${event.payload.isNew})`, {
+  eventBus.subscribe(CRM_CONTACT_UPSERTED, async (event: DomainEvent) => {
+    const { customerId, isNew } = event.payload as { customerId: string; isNew: boolean };
+    logger.info(TAG, `[${CRM_CONTACT_UPSERTED}] Contact ${customerId} upserted (isNew=${isNew})`, {
       orgId: event.orgId,
     });
-    // Phase 2: if event.payload.isNew → trigger welcome workflow, lead scoring, etc.
+    // Phase 2: if isNew → trigger welcome workflow, lead scoring, etc.
   });
 
-  eventBus.subscribe<CrmRecordCreatedEvent>(CRM_RECORD_CREATED, async (event) => {
-    logger.info(TAG, `[${CRM_RECORD_CREATED}] CRM record ${event.payload.crmRecordId} created`, {
+  eventBus.subscribe(CRM_RECORD_CREATED, async (event: DomainEvent) => {
+    const { crmRecordId, bookedRooms } = event.payload as { crmRecordId: string; bookedRooms: string[] };
+    logger.info(TAG, `[${CRM_RECORD_CREATED}] CRM record ${crmRecordId} created`, {
       orgId: event.orgId,
-      bookedRooms: event.payload.bookedRooms,
+      bookedRooms,
     });
     // Phase 2: trigger post-call workflow:
     //   → send confirmation email

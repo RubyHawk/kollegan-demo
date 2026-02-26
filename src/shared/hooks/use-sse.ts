@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRealtimeStore } from '@shared/stores/realtime-store';
+import { useRealtimeStore } from '@features/hotel/rooms/lib/hotel-realtime-store';
 import type { Room } from '@features/hotel/rooms/types';
 import type { ActivityEvent } from '@features/activity/types';
 
