@@ -1,8 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { validateVapiAuth } from '@core/auth/vapi-auth';
-import { checkRateLimit } from '@core/cache/rate-limiter';
-import { logger } from '@core/logging/logger';
+import { createHandler, ok } from '@core/api';
 import { updateCrm } from '@features/voice/ai-tools';
 
 export const dynamic = 'force-dynamic';
@@ -19,32 +16,22 @@ const BodySchema = z.object({
   vapi_call_id:    z.string().optional(),
 });
 
-const TAG = 'AI:CRMUpdate';
-
-export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for') ?? 'vapi';
-  const rl = await checkRateLimit(ip, 30, 60_000);
-  if (!rl.allowed) return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
-
-  const authError = validateVapiAuth(req);
-  if (authError) return NextResponse.json({ error: authError.error }, { status: authError.status });
-
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+const handler = createHandler(
+  {
+    tag:       'AI:CrmUpdate',
+    auth:      'vapi',
+    rateLimit: { max: 30, windowMs: 60_000 },
+    body:      BodySchema,
+  },
+  async ({ body }) => {
+    const { booked_room_ids, vapi_call_id, ...rest } = body;
+    const result = await updateCrm({
+      ...rest,
+      bookedRoomIds: booked_room_ids,
+      vapiCallId:    vapi_call_id,
+    });
+    return ok(result);
   }
+);
 
-  const parsed = BodySchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  const { booked_room_ids, vapi_call_id, ...rest } = parsed.data;
-
-  logger.info(TAG, 'Updating CRM', { name: rest.name, email: rest.email, phone: rest.phone });
-  const result = await updateCrm({
-    ...rest,
-    bookedRoomIds: booked_room_ids,
-    vapiCallId:    vapi_call_id,
-  });
-
-  return NextResponse.json(result, { status: result.success ? 200 : 400 });
-}
+export const POST = handler;
