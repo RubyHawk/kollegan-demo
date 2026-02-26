@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ActivityEvent } from '@features/activity/types';
-import { CRMContact } from '@features/crm/types';
+import { CrmContact } from '@features/crm/types';
 
 interface Props {
   activities: ActivityEvent[];
@@ -10,9 +10,9 @@ interface Props {
 }
 
 /* ─── Data models ────────────────────────────────────────────── */
-interface CRMEntry {
+interface CrmEntry {
   id: string;
-  contact: CRMContact;
+  contact: CrmContact;
   timestamp: string;
   bookedRooms: { roomId: string; message: string }[];
   sessionDuration?: number;
@@ -32,8 +32,8 @@ interface CallEntry {
 }
 
 /* ─── Build CRM entries (customer profiles) ──────────────────── */
-function buildCRMEntries(activities: ActivityEvent[]): CRMEntry[] {
-  const entries: CRMEntry[] = [];
+function buildCrmEntries(activities: ActivityEvent[]): CrmEntry[] {
+  const entries: CrmEntry[] = [];
   const ordered = [...activities].reverse();
 
   let sessionEvts: ActivityEvent[] = [];
@@ -251,7 +251,7 @@ function EmptyState({ icon, title, subtitle }: { icon: React.ReactNode; title: s
 }
 
 /* ─── Customer profile cards ─────────────────────────────────── */
-function CustomerList({ entries }: { entries: CRMEntry[] }) {
+function CustomerList({ entries }: { entries: CrmEntry[] }) {
   if (entries.length === 0) {
     return (
       <EmptyState
@@ -525,10 +525,10 @@ function CallLogTab({ activities }: { activities: ActivityEvent[] }) {
 }
 
 /* ─── Main component ─────────────────────────────────────────── */
-export default function CRMTab({ activities, onCountChange }: Props) {
+export default function CrmTab({ activities, onCountChange }: Props) {
   const [subTab, setSubTab] = useState<'kunder' | 'bokningar' | 'samtal'>('kunder');
 
-  const entries = buildCRMEntries(activities);
+  const entries = buildCrmEntries(activities);
   const bookingCount = activities.filter(e => e.type === 'room_confirmed' || e.type === 'room_cancelled').length;
   const callCount = buildCallLog(activities).length;
 

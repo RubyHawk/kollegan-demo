@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify, type JWTPayload as JosePayload } from 'jose';
+import { logger } from '@core/logging/logger';
 
 const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET ?? 'dev-secret-change-me');
 const ALGORITHM = 'HS256';
@@ -59,6 +60,6 @@ export async function blacklistToken(jti: string, expiresInSec: number): Promise
     await redis.setex(`blacklist:${jti}`, expiresInSec, '1');
   } catch {
     // Non-critical: log but don't throw
-    console.warn('[jwt] Failed to blacklist token in Redis:', jti);
+    logger.warn('jwt', 'Failed to blacklist token in Redis', { jti });
   }
 }

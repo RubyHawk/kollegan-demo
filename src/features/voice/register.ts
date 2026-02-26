@@ -13,8 +13,8 @@
 import { registerTool } from '@features/automation/tools/registry';
 import { checkAvailability } from '@features/voice/ai-tools/availability';
 import { lockRoom, confirmBooking, cancelBooking } from '@features/hotel/rooms/lib/room-store';
-import { lookupCustomer, upsertCustomer } from '@features/voice/ai-tools/customers';
-import { updateCRM } from '@features/voice/ai-tools/crm';
+import { lookupCustomer, updateCrm } from '@features/crm/service';
+import { upsertCustomer } from '@features/crm/repository';
 import { checkCalendarRange } from '@features/voice/ai-tools/calendar';
 
 export function registerVoiceTools(): void {
@@ -110,7 +110,7 @@ export function registerVoiceTools(): void {
       'Create a CRM record for a completed call session, linking booked rooms, ' +
       'the customer profile, and the Vapi transcript.',
     fn: async (args) => {
-      return updateCRM(args as Parameters<typeof updateCRM>[0]);
+      return updateCrm(args as Parameters<typeof updateCrm>[0]);
     },
   });
 }

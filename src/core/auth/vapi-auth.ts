@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { logger } from '@core/logging/logger';
 
 const SECRET = process.env.VAPI_WEBHOOK_SECRET;
 
@@ -20,7 +21,7 @@ export function validateVapiAuth(req: NextRequest): { error: string; status: num
         status: 500,
       };
     }
-    console.warn('[vapi-auth] VAPI_WEBHOOK_SECRET not set — skipping auth check (dev mode only)');
+    logger.warn('vapi-auth', 'VAPI_WEBHOOK_SECRET not set — skipping auth check (dev mode only)');
     return null;
   }
 

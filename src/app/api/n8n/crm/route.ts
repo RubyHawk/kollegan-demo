@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { logActivity } from '@features/hotel/rooms/lib/room-store';
+import { updateCrm } from '@features/crm/service';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,16 +33,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const displayName = name ?? email ?? phone ?? 'Okänd gäst';
-  const message = summary
-    ? `Kundprofil: ${displayName} — ${summary}`
-    : `Kundprofil insamlad för ${displayName}.`;
+  const result = await updateCrm({ name, email, phone, company, notes, summary });
 
-  const event = logActivity({
-    type: 'crm_contact',
-    message,
-    metadata: { name, email, phone, company, notes, summary },
-  });
-
-  return NextResponse.json({ success: true, event });
+  return NextResponse.json(result, { status: result.success ? 200 : 400 });
 }

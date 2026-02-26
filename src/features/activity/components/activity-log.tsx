@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ActivityEvent } from '@features/activity/types';
-import { CRMContact } from '@features/crm/types';
+import { CrmContact } from '@features/crm/types';
 
 interface Props {
   activities: ActivityEvent[];
@@ -22,7 +22,7 @@ interface Session {
   cancelled: number;
   locked: number;
   searched: number;
-  crmContact?: CRMContact;
+  crmContact?: CrmContact;
 }
 
 function groupSessions(activities: ActivityEvent[]): Session[] {
@@ -215,7 +215,7 @@ function sessionMeta(s: Session) {
 }
 
 /* ─── CRM Contact Card ──────────────────────────────────────── */
-function CRMCard({ crm }: { crm: CRMContact }) {
+function CrmCard({ crm }: { crm: CrmContact }) {
   const fields = [
     { icon: SmIcon.user,       label: 'Namn',    value: crm.name },
     { icon: SmIcon.mail,       label: 'E-post',  value: crm.email },
@@ -303,7 +303,7 @@ function DetailPanel({ session, onClose }: { session: Session; onClose: () => vo
 
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="p-5 space-y-5">
-          {session.crmContact && <CRMCard crm={session.crmContact} />}
+          {session.crmContact && <CrmCard crm={session.crmContact} />}
 
           {session.kind === 'call' && (session.confirmed > 0 || session.cancelled > 0 || session.locked > 0 || session.searched > 0) && (
             <div className="flex items-center gap-2 flex-wrap">

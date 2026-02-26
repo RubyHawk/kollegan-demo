@@ -16,7 +16,7 @@ import ActivityLog from '@features/activity/components/activity-log';
 import KolleganContact from '@features/voice/components/kollegan-contact';
 import RoomDetailModal from '@features/hotel/rooms/components/room-detail-modal';
 import HotelInfoTab from '@features/hotel/services/components/hotel-info-tab';
-import CRMTab from '@features/crm/components/crm-tab';
+import CrmTab from '@features/crm/components/crm-tab';
 import SetupTab from '@features/dashboard/components/setup-tab';
 import AnimatedNumber from '@shared/ui/animated-number';
 import SplashScreen from '@features/dashboard/components/splash-screen';
@@ -260,7 +260,7 @@ export default function HomePage() {
 
               {activeTab === 'crm' && (
                 <motion.div key="crm" {...TAB_TRANSITION}>
-                  <CRMTab activities={activities} onCountChange={setCrmCount} />
+                  <CrmTab activities={activities} onCountChange={setCrmCount} />
                 </motion.div>
               )}
 
