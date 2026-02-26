@@ -8,14 +8,22 @@
  *   3. ReAct LLM loops  — available to any LLM reasoning step
  *
  * Called exactly once at startup from instrumentation.ts.
+ *
+ * ARCHITECTURE NOTE: This file bridges core (voice) with supporting (crm) and
+ * generic (hotel) modules by registering their domain functions as AI tools.
+ * This is a known, intentional violation documented in ARCHITECTURE.md — the
+ * tool registration layer IS the cross-domain integration point.
+ * Resolution path: each domain registers its own tools in Phase 5.
  */
 
-import { registerTool } from '@features/automation/tools/registry';
-import { checkAvailability } from '@features/voice/ai-tools/availability';
+import { registerTool } from '@modules/core/automation/tools/registry';
+import { checkAvailability } from './ai-tools/availability';
+// Phase 5: hotel module registers hotel.* tools itself; remove these imports
 import { lockRoom, confirmBooking, cancelBooking } from '@features/hotel/rooms/lib/room-store';
+// Phase 4: crm module registers crm.* tools itself; remove these imports
 import { lookupCustomer, updateCrm } from '@features/crm/service';
 import { upsertCustomer } from '@features/crm/repository';
-import { checkCalendarRange } from '@features/voice/ai-tools/calendar';
+import { checkCalendarRange } from './ai-tools/calendar';
 
 export function registerVoiceTools(): void {
 

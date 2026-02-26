@@ -21,6 +21,10 @@
     "paths": {
       "@/*": ["./src/*"],
       "@features/*": ["./src/features/*"],
+      "@features/automation": ["./src/modules/core/automation/index.ts"],
+      "@features/automation/*": ["./src/modules/core/automation/*"],
+      "@features/voice": ["./src/modules/core/voice/index.ts"],
+      "@features/voice/*": ["./src/modules/core/voice/*"],
       "@shared/*": ["./src/shared/*"],
       "@infra/*": ["./src/infrastructure/*"],
       "@core/*": ["./src/core/*"],

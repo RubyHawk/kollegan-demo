@@ -10,8 +10,8 @@
  * Do NOT import this file in route handlers or React components.
  */
 
-import { registerVoiceTools }          from '@features/voice/register';
-import { registerAutomationListeners } from '@features/automation/listeners';
+import { registerVoiceTools }          from '@modules/core/voice/register';
+import { registerAutomationListeners } from '@modules/core/automation/listeners';
 import { logger }                      from '@core/logging/logger';
 
 let initialized = false;
