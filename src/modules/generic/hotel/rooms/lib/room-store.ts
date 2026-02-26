@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Room, RoomStoreState } from '@features/hotel/rooms/types';
+import { Room, RoomStoreState } from '../types';
 import { ActivityEvent } from '@features/activity/types';
 import { broadcast } from '@infra/sse/sse-manager';
 import { createCalendarEvent, deleteCalendarEvent } from '@infra/calendar/google-calendar';
@@ -11,13 +11,13 @@ import {
   ROOM_BOOKED,
   ROOM_CANCELLED,
   ROOM_QUERIED,
-} from '@features/hotel/rooms/events';
+} from '../events';
 import type {
   RoomLockedEvent,
   RoomBookedEvent,
   RoomCancelledEvent,
   RoomQueriedEvent,
-} from '@features/hotel/rooms/events';
+} from '../events';
 
 // Organization ID for domain events.
 // Set DEMO_ORG_ID in .env.local once the identity module is wired up.
