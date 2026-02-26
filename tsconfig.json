@@ -23,7 +23,10 @@
       "@features/*": ["./src/features/*"],
       "@shared/*": ["./src/shared/*"],
       "@infra/*": ["./src/infrastructure/*"],
-      "@core/*": ["./src/core/*"]
+      "@core/*": ["./src/core/*"],
+      "@modules/core/*": ["./src/modules/core/*"],
+      "@modules/supporting/*": ["./src/modules/supporting/*"],
+      "@modules/generic/*": ["./src/modules/generic/*"]
     }
   },
   "include": [
