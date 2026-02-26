@@ -2,6 +2,17 @@ import { prisma } from '@core/database/prisma';
 import { logActivity } from '@features/hotel/rooms/lib/room-store';
 import { upsertCustomer } from './customers';
 import type { CRMContact } from '@features/crm/types';
+import { eventBus } from '@core/events';
+import {
+  CRM_CONTACT_UPSERTED,
+  CRM_RECORD_CREATED,
+} from '@features/crm/events';
+import type {
+  CrmContactUpsertedEvent,
+  CrmRecordCreatedEvent,
+} from '@features/crm/events';
+
+const DEMO_ORG_ID = process.env.DEMO_ORG_ID ?? 'demo';
 
 export interface CRMUpdateInput {
   name?: string;
@@ -44,6 +55,20 @@ export async function updateCRM(input: CRMUpdateInput): Promise<CRMUpdateResult>
     email:   input.email,
     company: input.company,
     notes:   input.notes,
+  });
+
+  // callCount === 1 means this is a newly created customer (upsert created it)
+  eventBus.publish<CrmContactUpsertedEvent>({
+    type: CRM_CONTACT_UPSERTED,
+    orgId: DEMO_ORG_ID,
+    occurredAt: new Date().toISOString(),
+    payload: {
+      customerId: customer.id,
+      name:  input.name,
+      phone: input.phone,
+      email: input.email,
+      isNew: customer.callCount === 1,
+    },
   });
 
   const crmRecord = await prisma.crmRecord.create({
@@ -97,6 +122,18 @@ export async function updateCRM(input: CRMUpdateInput): Promise<CRMUpdateResult>
       ? `Kundprofil: ${displayName} — ${input.summary}`
       : `Kundprofil insamlad för ${displayName}.`,
     metadata: contact,
+  });
+
+  eventBus.publish<CrmRecordCreatedEvent>({
+    type: CRM_RECORD_CREATED,
+    orgId: DEMO_ORG_ID,
+    occurredAt: new Date().toISOString(),
+    payload: {
+      crmRecordId: crmRecord.id,
+      customerId:  customer.id,
+      vapiCallId:  input.vapiCallId,
+      bookedRooms: input.bookedRoomIds ?? [],
+    },
   });
 
   return {

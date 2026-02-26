@@ -4,6 +4,26 @@ import { Room, RoomStoreState } from '@features/hotel/rooms/types';
 import { ActivityEvent } from '@features/activity/types';
 import { broadcast } from '@infra/sse/sse-manager';
 import { createCalendarEvent, deleteCalendarEvent } from '@infra/calendar/google-calendar';
+import { eventBus } from '@core/events';
+import { logger } from '@core/logging/logger';
+import {
+  ROOM_LOCKED,
+  ROOM_BOOKED,
+  ROOM_CANCELLED,
+  ROOM_QUERIED,
+} from '@features/hotel/rooms/events';
+import type {
+  RoomLockedEvent,
+  RoomBookedEvent,
+  RoomCancelledEvent,
+  RoomQueriedEvent,
+} from '@features/hotel/rooms/events';
+
+// Organization ID for domain events.
+// Set DEMO_ORG_ID in .env.local once the identity module is wired up.
+const DEMO_ORG_ID = process.env.DEMO_ORG_ID ?? 'demo';
+
+const TAG = 'RoomStore';
 
 const DATA_PATH = path.join(process.cwd(), 'data', 'rooms.json');
 
@@ -37,7 +57,7 @@ function loadFromDisk(): RoomStoreState {
       return JSON.parse(raw);
     }
   } catch {
-    console.warn('[RoomStore] Failed to load from disk, using defaults');
+    logger.warn(TAG, 'Failed to load from disk, using defaults');
   }
   return { rooms: INITIAL_ROOMS.map((r) => ({ ...r })), recentActivity: [], onCall: false };
 }
@@ -55,7 +75,7 @@ function saveToDisk(store: RoomStoreState): void {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(DATA_PATH, JSON.stringify(store, null, 2), 'utf-8');
   } catch (e) {
-    console.error('[RoomStore] Failed to save to disk:', e);
+    logger.error(TAG, 'Failed to save to disk', e);
   }
 }
 
@@ -105,6 +125,13 @@ export function lockRoom(roomId: string): { success: boolean; message: string; r
   broadcast({ type: 'room_update', payload: { ...room } });
   saveToDisk(store);
 
+  eventBus.publish<RoomLockedEvent>({
+    type: ROOM_LOCKED,
+    orgId: DEMO_ORG_ID,
+    occurredAt: new Date().toISOString(),
+    payload: { roomId, roomType: room.type },
+  });
+
   return { success: true, message: `Rum ${roomId} är nu låst för bokning.`, room };
 }
 
@@ -142,7 +169,7 @@ export async function confirmBooking(
         room.calendarEventId = eventId;
       }
     } catch (err) {
-      console.error('[RoomStore] Failed to create calendar event:', err);
+      logger.error(TAG, 'Failed to create calendar event', err);
     }
   }
 
@@ -155,6 +182,13 @@ export async function confirmBooking(
 
   broadcast({ type: 'room_update', payload: { ...room } });
   saveToDisk(store);
+
+  eventBus.publish<RoomBookedEvent>({
+    type: ROOM_BOOKED,
+    orgId: DEMO_ORG_ID,
+    occurredAt: new Date().toISOString(),
+    payload: { roomId, roomType: room.type, guestName, checkIn, checkOut },
+  });
 
   return {
     success: true,
@@ -179,7 +213,7 @@ export async function cancelBooking(
     try {
       await deleteCalendarEvent(room.calendarEventId);
     } catch (err) {
-      console.error('[RoomStore] Failed to delete calendar event:', err);
+      logger.error(TAG, 'Failed to delete calendar event', err);
     }
   }
 
@@ -202,6 +236,13 @@ export async function cancelBooking(
 
   broadcast({ type: 'room_update', payload: { ...room } });
   saveToDisk(store);
+
+  eventBus.publish<RoomCancelledEvent>({
+    type: ROOM_CANCELLED,
+    orgId: DEMO_ORG_ID,
+    occurredAt: new Date().toISOString(),
+    payload: { roomId, prevGuestName: prevGuest },
+  });
 
   return { success: true, message: `Bokning för rum ${roomId} har avbokats.`, room };
 }
@@ -238,7 +279,7 @@ export async function bookRoom(
       room.calendarEventId = eventId;
     }
   } catch (err) {
-    console.error('[RoomStore] Failed to create calendar event:', err);
+    logger.error(TAG, 'Failed to create calendar event', err);
   }
 
   addActivity(store, {
@@ -249,6 +290,13 @@ export async function bookRoom(
 
   broadcast({ type: 'room_update', payload: { ...room } });
   saveToDisk(store);
+
+  eventBus.publish<RoomBookedEvent>({
+    type: ROOM_BOOKED,
+    orgId: DEMO_ORG_ID,
+    occurredAt: new Date().toISOString(),
+    payload: { roomId, roomType: room.type, guestName, checkIn, checkOut },
+  });
 
   return {
     success: true,
@@ -295,6 +343,13 @@ export function logRoomsQueried(): void {
   addActivity(store, {
     type: 'rooms_queried',
     message: 'Receptionen frågade efter tillgängliga rum.',
+  });
+
+  eventBus.publish<RoomQueriedEvent>({
+    type: ROOM_QUERIED,
+    orgId: DEMO_ORG_ID,
+    occurredAt: new Date().toISOString(),
+    payload: { availableCount: getAvailableRooms().length },
   });
 }
 
