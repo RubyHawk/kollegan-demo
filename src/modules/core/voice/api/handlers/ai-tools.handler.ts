@@ -1,8 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+/**
+ * Voice AI tool handlers — colocated with the voice module.
+ *
+ * All handlers use createHandler from @core/api which provides:
+ *   - Vapi JWT authentication
+ *   - Rate limiting
+ *   - Zod validation (body or query)
+ *   - RFC 9110 / 9457 compliant error responses
+ *   - Observability headers (X-Request-Id, X-Duration-Ms)
+ *
+ * app/api/ routes are thin re-export wrappers that point here.
+ */
+
 import { z } from 'zod';
-import { validateVapiAuth } from '@core/auth/vapi-auth';
-import { checkRateLimit } from '@core/cache/rate-limiter';
-import { logger } from '@core/logging/logger';
+import { createHandler, Errors, ok } from '@core/api';
 import {
   checkAvailability,
   cancelBooking,
@@ -14,22 +24,6 @@ import {
 
 const DateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD');
 
-// ── Shared Vapi auth + rate-limit ─────────────────────────────────────────────
-
-async function vapiGuard(
-  req: NextRequest,
-  maxPerMin: number,
-): Promise<{ error: NextResponse } | null> {
-  const ip = req.headers.get('x-forwarded-for') ?? 'vapi';
-  const rl = await checkRateLimit(ip, maxPerMin, 60_000);
-  if (!rl.allowed) return { error: NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 }) };
-
-  const authError = validateVapiAuth(req);
-  if (authError) return { error: NextResponse.json({ error: authError.error }, { status: authError.status }) };
-
-  return null;
-}
-
 // ── Availability ──────────────────────────────────────────────────────────────
 
 const AvailabilitySchema = z.object({
@@ -38,83 +32,53 @@ const AvailabilitySchema = z.object({
   type:      z.enum(['Enkel', 'Dubbel', 'Svit']).optional(),
 });
 
-const TAG_AVAIL = 'AI:AvailabilityCheck';
+/** GET /api/ai/availability/check — query params */
+export const handleAvailabilityGet = createHandler(
+  { tag: 'AI:AvailabilityCheck', auth: 'vapi', rateLimit: { max: 60, windowMs: 60_000 }, query: AvailabilitySchema },
+  async ({ query }) => ok(checkAvailability({
+    checkIn:  query.check_in,
+    checkOut: query.check_out,
+    type:     query.type,
+  }))
+);
 
-export async function handleAvailabilityGet(req: NextRequest): Promise<NextResponse> {
-  const guard = await vapiGuard(req, 60);
-  if (guard) return guard.error;
-
-  const { searchParams } = new URL(req.url);
-  const parsed = AvailabilitySchema.safeParse({
-    check_in:  searchParams.get('check_in')  ?? undefined,
-    check_out: searchParams.get('check_out') ?? undefined,
-    type:      searchParams.get('type')      ?? undefined,
-  });
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  logger.info(TAG_AVAIL, 'Checking room availability', parsed.data);
-  return NextResponse.json(checkAvailability({
-    checkIn:  parsed.data.check_in,
-    checkOut: parsed.data.check_out,
-    type:     parsed.data.type,
-  }), { status: 200 });
-}
-
-export async function handleAvailabilityPost(req: NextRequest): Promise<NextResponse> {
-  const guard = await vapiGuard(req, 60);
-  if (guard) return guard.error;
-
-  let body: unknown;
-  try { body = await req.json(); } catch { body = {}; }
-
-  const parsed = AvailabilitySchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  logger.info(TAG_AVAIL, 'Checking room availability (POST)', parsed.data);
-  return NextResponse.json(checkAvailability({
-    checkIn:  parsed.data.check_in,
-    checkOut: parsed.data.check_out,
-    type:     parsed.data.type,
-  }), { status: 200 });
-}
+/** POST /api/ai/availability/check — body params (some VAPI tool configs use POST) */
+export const handleAvailabilityPost = createHandler(
+  { tag: 'AI:AvailabilityCheck', auth: 'vapi', rateLimit: { max: 60, windowMs: 60_000 }, body: AvailabilitySchema },
+  async ({ body }) => ok(checkAvailability({
+    checkIn:  body.check_in,
+    checkOut: body.check_out,
+    type:     body.type,
+  }))
+);
 
 // ── AI Rooms: cancel + lock ───────────────────────────────────────────────────
 
 const RoomIdSchema = z.object({ room_id: z.string().min(1, 'room_id is required') });
 
-export async function handleAiCancelBooking(req: NextRequest): Promise<NextResponse> {
-  const guard = await vapiGuard(req, 30);
-  if (guard) return guard.error;
-
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+/** POST /api/ai/rooms/cancel */
+export const handleAiCancelBooking = createHandler(
+  { tag: 'AI:CancelBooking', auth: 'vapi', rateLimit: { max: 30, windowMs: 60_000 }, body: RoomIdSchema },
+  async ({ body }) => {
+    const result = await cancelBooking(body.room_id);
+    if (!result.success) {
+      throw Errors.conflict(result.message ?? `Cannot cancel booking for room ${body.room_id}`);
+    }
+    return ok(result);
   }
+);
 
-  const parsed = RoomIdSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  logger.info('AI:CancelBooking', `Cancelling booking for room ${parsed.data.room_id}`);
-  const result = await cancelBooking(parsed.data.room_id);
-  return NextResponse.json(result, { status: result.success ? 200 : 409 });
-}
-
-export async function handleAiLockRoom(req: NextRequest): Promise<NextResponse> {
-  const guard = await vapiGuard(req, 30);
-  if (guard) return guard.error;
-
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+/** POST /api/ai/rooms/lock */
+export const handleAiLockRoom = createHandler(
+  { tag: 'AI:LockRoom', auth: 'vapi', rateLimit: { max: 30, windowMs: 60_000 }, body: RoomIdSchema },
+  async ({ body }) => {
+    const result = lockRoom(body.room_id);
+    if (!result.success) {
+      throw Errors.conflict(result.message ?? `Room ${body.room_id} is not available`);
+    }
+    return ok(result);
   }
-
-  const parsed = RoomIdSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  logger.info('AI:LockRoom', `Locking room ${parsed.data.room_id}`);
-  const result = lockRoom(parsed.data.room_id);
-  return NextResponse.json(result, { status: result.success ? 200 : 409 });
-}
+);
 
 // ── Calendar: book + check ────────────────────────────────────────────────────
 
@@ -125,70 +89,53 @@ const CalendarBookSchema = z.object({
   check_out:  DateSchema.optional(),
 });
 
-export async function handleCalendarBook(req: NextRequest): Promise<NextResponse> {
-  const guard = await vapiGuard(req, 30);
-  if (guard) return guard.error;
+/**
+ * POST /api/ai/calendar/book
+ *
+ * Atomic lock-then-confirm booking.
+ * Locks the room then immediately confirms it, optionally creating a Google
+ * Calendar event when check_in/check_out are supplied.
+ */
+export const handleCalendarBook = createHandler(
+  { tag: 'AI:CalendarBook', auth: 'vapi', rateLimit: { max: 30, windowMs: 60_000 }, body: CalendarBookSchema },
+  async ({ body }) => {
+    const { room_id, guest_name, check_in, check_out } = body;
 
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    const lockResult = lockRoom(room_id);
+    if (!lockResult.success) {
+      throw Errors.conflict(lockResult.message ?? `Room ${room_id} is not available`);
+    }
+
+    const confirmResult = await confirmBooking(room_id, guest_name, check_in, check_out);
+    if (!confirmResult.success) {
+      throw Errors.conflict(confirmResult.message ?? `Booking for room ${room_id} could not be confirmed`);
+    }
+
+    return ok(confirmResult);
   }
-
-  const parsed = CalendarBookSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  const { room_id, guest_name, check_in, check_out } = parsed.data;
-  logger.info('AI:CalendarBook', `Booking room ${room_id} for ${guest_name}`, { check_in, check_out });
-
-  const lockResult = lockRoom(room_id);
-  if (!lockResult.success) return NextResponse.json(lockResult, { status: 409 });
-
-  const confirmResult = await confirmBooking(room_id, guest_name, check_in, check_out);
-  return NextResponse.json(confirmResult, { status: confirmResult.success ? 200 : 409 });
-}
+);
 
 const CalendarCheckSchema = z.object({
   check_in:  DateSchema,
   check_out: DateSchema,
 });
 
-export async function handleCalendarCheckGet(req: NextRequest): Promise<NextResponse> {
-  const guard = await vapiGuard(req, 30);
-  if (guard) return guard.error;
+/** GET /api/ai/calendar/check — query params */
+export const handleCalendarCheckGet = createHandler(
+  { tag: 'AI:CalendarCheck', auth: 'vapi', rateLimit: { max: 30, windowMs: 60_000 }, query: CalendarCheckSchema },
+  async ({ query }) => ok(await checkCalendarRange(query.check_in, query.check_out))
+);
 
-  const { searchParams } = new URL(req.url);
-  const parsed = CalendarCheckSchema.safeParse({
-    check_in:  searchParams.get('check_in'),
-    check_out: searchParams.get('check_out'),
-  });
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  logger.info('AI:CalendarCheck', `Checking calendar range ${parsed.data.check_in} → ${parsed.data.check_out}`);
-  return NextResponse.json(await checkCalendarRange(parsed.data.check_in, parsed.data.check_out));
-}
-
-export async function handleCalendarCheckPost(req: NextRequest): Promise<NextResponse> {
-  const guard = await vapiGuard(req, 30);
-  if (guard) return guard.error;
-
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-  }
-
-  const parsed = CalendarCheckSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  logger.info('AI:CalendarCheck', `Checking calendar range ${parsed.data.check_in} → ${parsed.data.check_out}`);
-  return NextResponse.json(await checkCalendarRange(parsed.data.check_in, parsed.data.check_out));
-}
+/** POST /api/ai/calendar/check — body params */
+export const handleCalendarCheckPost = createHandler(
+  { tag: 'AI:CalendarCheck', auth: 'vapi', rateLimit: { max: 30, windowMs: 60_000 }, body: CalendarCheckSchema },
+  async ({ body }) => ok(await checkCalendarRange(body.check_in, body.check_out))
+);
 
 // ── Hotel Info ────────────────────────────────────────────────────────────────
 
-export async function handleAiHotelInfo(req: NextRequest): Promise<NextResponse> {
-  const guard = await vapiGuard(req, 60);
-  if (guard) return guard.error;
-
-  logger.info('AI:HotelInfo', 'Fetching hotel info');
-  return NextResponse.json(getHotelInfo(), { status: 200 });
-}
+/** GET /api/ai/hotel-info, POST /api/ai/hotel-info */
+export const handleAiHotelInfo = createHandler(
+  { tag: 'AI:HotelInfo', auth: 'vapi', rateLimit: { max: 60, windowMs: 60_000 } },
+  async () => ok(getHotelInfo())
+);

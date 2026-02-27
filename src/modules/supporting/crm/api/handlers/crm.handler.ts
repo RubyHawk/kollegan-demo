@@ -1,27 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
+/**
+ * CRM API handlers — colocated with the CRM module.
+ *
+ * All Vapi-facing handlers use createHandler from @core/api which provides:
+ *   - Vapi JWT authentication
+ *   - Rate limiting
+ *   - Zod validation
+ *   - RFC 9110 / 9457 compliant error responses
+ *
+ * app/api/ routes are thin re-export wrappers that point here.
+ */
+
 import { z } from 'zod';
-import { validateVapiAuth } from '@core/auth/vapi-auth';
-import { checkRateLimit } from '@core/cache/rate-limiter';
-import { logger } from '@core/logging/logger';
+import { createHandler, ok } from '@core/api';
+import { NextRequest, NextResponse } from 'next/server';
 import { lookupCustomer, updateCrm, startCallTranscript } from '../../application/crm.service';
-
-// ── Shared Vapi guard ─────────────────────────────────────────────────────────
-
-async function vapiGuard(
-  req: NextRequest,
-  maxPerMin: number,
-): Promise<{ error: NextResponse } | null> {
-  const ip = req.headers.get('x-forwarded-for') ?? 'vapi';
-  const rl = await checkRateLimit(ip, maxPerMin, 60_000);
-  if (!rl.allowed)
-    return { error: NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 }) };
-
-  const authError = validateVapiAuth(req);
-  if (authError)
-    return { error: NextResponse.json({ error: authError.error }, { status: authError.status }) };
-
-  return null;
-}
 
 // ── Transcript ────────────────────────────────────────────────────────────────
 
@@ -29,24 +21,13 @@ const TranscriptBodySchema = z.object({
   vapi_call_id: z.string().min(1, 'vapi_call_id is required'),
 });
 
-export async function handleStartTranscript(req: NextRequest): Promise<NextResponse> {
-  const guard = await vapiGuard(req, 30);
-  if (guard) return guard.error;
-
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+export const handleStartTranscript = createHandler(
+  { tag: 'AI:TranscriptStart', auth: 'vapi', rateLimit: { max: 30, windowMs: 60_000 }, body: TranscriptBodySchema },
+  async ({ body }) => {
+    const { transcriptId } = await startCallTranscript(body.vapi_call_id);
+    return ok({ success: true, transcriptId });
   }
-
-  const parsed = TranscriptBodySchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  logger.info('AI:TranscriptStart', `Starting transcript for call ${parsed.data.vapi_call_id}`);
-  const { transcriptId } = await startCallTranscript(parsed.data.vapi_call_id);
-  return NextResponse.json({ success: true, transcriptId }, { status: 200 });
-}
+);
 
 // ── CRM Update ────────────────────────────────────────────────────────────────
 
@@ -61,28 +42,18 @@ const CrmUpdateSchema = z.object({
   vapi_call_id:    z.string().optional(),
 });
 
-export async function handleUpdateCrm(req: NextRequest): Promise<NextResponse> {
-  const guard = await vapiGuard(req, 30);
-  if (guard) return guard.error;
-
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+export const handleUpdateCrm = createHandler(
+  { tag: 'AI:CrmUpdate', auth: 'vapi', rateLimit: { max: 30, windowMs: 60_000 }, body: CrmUpdateSchema },
+  async ({ body }) => {
+    const { booked_room_ids, vapi_call_id, ...rest } = body;
+    const result = await updateCrm({
+      ...rest,
+      bookedRoomIds: booked_room_ids,
+      vapiCallId:    vapi_call_id,
+    });
+    return ok(result);
   }
-
-  const parsed = CrmUpdateSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  const { booked_room_ids, vapi_call_id, ...rest } = parsed.data;
-  const result = await updateCrm({
-    ...rest,
-    bookedRoomIds: booked_room_ids,
-    vapiCallId:    vapi_call_id,
-  });
-  return NextResponse.json(result, { status: result.success ? 200 : 400 });
-}
+);
 
 // ── Customer Lookup ───────────────────────────────────────────────────────────
 
@@ -91,40 +62,17 @@ const LookupSchema = z.object({
   name:  z.string().min(1).max(100).optional(),
 });
 
-export async function handleGetCustomerGet(req: NextRequest): Promise<NextResponse> {
-  const guard = await vapiGuard(req, 30);
-  if (guard) return guard.error;
+export const handleGetCustomerGet = createHandler(
+  { tag: 'AI:CustomerGet', auth: 'vapi', rateLimit: { max: 30, windowMs: 60_000 }, query: LookupSchema },
+  async ({ query }) => ok(await lookupCustomer(query))
+);
 
-  const { searchParams } = new URL(req.url);
-  const parsed = LookupSchema.safeParse({
-    phone: searchParams.get('phone') ?? undefined,
-    name:  searchParams.get('name')  ?? undefined,
-  });
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+export const handleGetCustomerPost = createHandler(
+  { tag: 'AI:CustomerGet', auth: 'vapi', rateLimit: { max: 30, windowMs: 60_000 }, body: LookupSchema },
+  async ({ body }) => ok(await lookupCustomer(body))
+);
 
-  const result = await lookupCustomer(parsed.data);
-  return NextResponse.json(result, { status: 200 });
-}
-
-export async function handleGetCustomerPost(req: NextRequest): Promise<NextResponse> {
-  const guard = await vapiGuard(req, 30);
-  if (guard) return guard.error;
-
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-  }
-
-  const parsed = LookupSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  const result = await lookupCustomer(parsed.data);
-  return NextResponse.json(result, { status: 200 });
-}
-
-// ── N8N CRM Update (no Vapi auth) ─────────────────────────────────────────────
+// ── N8N CRM Update (no Vapi auth — called by n8n webhook) ─────────────────────
 
 export async function handleN8nCrmUpdate(req: NextRequest): Promise<NextResponse> {
   let body: Record<string, string>;
