@@ -6,4 +6,4 @@ export type {
   GitHubEventType,
   PRStatus,
   CIStatus,
-} from '../../../domain/github.entity';
+} from '../../domain/github.entity';

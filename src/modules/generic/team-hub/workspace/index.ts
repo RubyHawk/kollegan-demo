@@ -5,4 +5,4 @@ export type {
   WorkspaceSettings,
   WorkspacePlan,
   WorkspaceMemberRole,
-} from '../../domain/workspace.entity';
+} from '../domain/workspace.entity';
