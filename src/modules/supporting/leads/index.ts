@@ -13,4 +13,4 @@
  * See docs/ARCHITECTURE.md for the full ERP module roadmap.
  */
 
-export type { Lead, LeadActivity, LeadStatus, LeadSource } from './types';
+export type { Lead, LeadActivity, LeadStatus, LeadSource } from './domain/lead.entity';

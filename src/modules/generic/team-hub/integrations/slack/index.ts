@@ -3,4 +3,4 @@ export type {
   SlackChannel,
   SlackMessage,
   SlackNotificationRule,
-} from './types';
+} from '../../../domain/slack.entity';

@@ -1,31 +1,53 @@
 /**
- * Hotel Module — public API
+ * Hotel Module — public interface.
  *
- * The hotel vertical is organized into two sub-domains:
- *  - rooms/    Room inventory, availability, bookings, calendar
- *  - services/ Restaurants, amenities, activities (hotel service catalog)
+ * Other modules ONLY import from this file.
  *
- * Import from sub-domains directly for specificity:
- *   import { Room } from '@features/hotel/rooms/types';
- *   import { HotelInfoTab } from '@features/hotel/services';
- *
- * Or import from here for a broad cross-domain pull:
- *   import { Room, Restaurant } from '@features/hotel';
+ * Layer structure:
+ *   domain/         — room.entity.ts, service.entity.ts, room-meta.ts, activity/
+ *   infrastructure/ — room-store.ts, hotel-services-store.ts
+ *   api/            — rooms.ts, services.ts (client-side fetch helpers)
+ *   ui/             — components/, stores/, pages/
+ *   events/         — room.events.ts + publishers/room.publisher.ts
+ *   activity/       — ActivityEvent types + ActivityLog component (hotel domain)
  */
 
-// Rooms sub-domain
-export { default as RoomCard }         from './rooms/components/room-card';
-export { default as RoomGrid }         from './rooms/components/room-grid';
-export { default as RoomDetailModal }  from './rooms/components/room-detail-modal';
-export { default as BookingsCalendar } from './rooms/components/bookings-calendar';
-export { default as BookingDialog }    from './rooms/components/booking-dialog';
-export * from './rooms/api';
-export type { Room, RoomType, RoomStatus } from './rooms/types';
+// ── UI — Room components ───────────────────────────────────────────────────
+export { default as RoomCard }         from './ui/components/room-card';
+export { default as RoomGrid }         from './ui/components/room-grid';
+export { default as RoomDetailModal }  from './ui/components/room-detail-modal';
+export { default as BookingsCalendar } from './ui/components/bookings-calendar';
+export { default as BookingDialog }    from './ui/components/booking-dialog';
 
-// Services sub-domain
-export { default as HotelInfoTab }       from './services/components/hotel-info-tab';
-export { default as ServiceCard }        from './services/components/service-card';
-export { default as ServiceDetailModal } from './services/components/service-detail-modal';
-export { default as ServiceFormModal }   from './services/components/service-form-modal';
-export * from './services/api';
-export type { Restaurant, HotelActivity, Amenity } from './services/types';
+// ── UI — Service components ────────────────────────────────────────────────
+export { default as HotelInfoTab }       from './ui/components/hotel-info-tab';
+export { default as ServiceCard }        from './ui/components/service-card';
+export { default as ServiceDetailModal } from './ui/components/service-detail-modal';
+export { default as ServiceFormModal }   from './ui/components/service-form-modal';
+
+// ── Activity — hotel activity log ──────────────────────────────────────────
+export { default as ActivityLog } from './activity/components/activity-log';
+export type { ActivityEvent, Session } from './activity/types';
+
+// ── API client helpers ─────────────────────────────────────────────────────
+export * from './api/rooms';
+export * from './api/services';
+
+// ── Domain types ───────────────────────────────────────────────────────────
+export type { Room, RoomType, RoomStatus, RoomStoreState } from './domain/room.entity';
+export type { Restaurant, HotelActivity, Amenity } from './domain/service.entity';
+
+// ── Domain events ──────────────────────────────────────────────────────────
+export {
+  ROOM_LOCKED,
+  ROOM_BOOKED,
+  ROOM_CANCELLED,
+  ROOM_QUERIED,
+} from './events/room.events';
+export type {
+  RoomLockedEvent,
+  RoomBookedEvent,
+  RoomCancelledEvent,
+  RoomQueriedEvent,
+  HotelRoomEvent,
+} from './events/room.events';

@@ -2,4 +2,4 @@ export type {
   Announcement,
   AnnouncementRead,
   AnnouncementPriority,
-} from './types';
+} from '../../domain/announcement.entity';
