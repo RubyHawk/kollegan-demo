@@ -10,7 +10,7 @@ interface ContainerProps {
 
 export default function ToastContainer({ toasts, onDismiss }: ContainerProps) {
   return (
-    <div className="fixed bottom-6 right-6 z-[200] flex flex-col gap-2 items-end pointer-events-none">
+    <div className="fixed bottom-6 right-6 z-200 flex flex-col gap-2 items-end pointer-events-none">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onDismiss={onDismiss} />
       ))}
@@ -60,12 +60,12 @@ function ToastItem({
         bgColorMap[toast.color],
         borderColorMap[toast.color],
         'backdrop-blur-xl shadow-elevated',
-        'min-w-[220px] max-w-[300px]',
+        'min-w-55 max-w-75',
         exiting ? 'toast-out' : 'toast-in',
       ].join(' ')}
     >
       <span className="shrink-0 text-base">{toast.icon}</span>
-      <p className="text-sm font-medium text-[var(--text-primary)] leading-snug">
+      <p className="text-sm font-medium text-(--text-primary) leading-snug">
         {toast.message}
       </p>
     </div>

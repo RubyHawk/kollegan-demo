@@ -44,7 +44,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="h-[100dvh] overflow-hidden antialiased">
+      <body className="h-dvh overflow-hidden antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

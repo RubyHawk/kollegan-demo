@@ -109,7 +109,7 @@ export default function HomePage() {
       addToast(
         onCall
           ? { message: 'Inkommande samtal', color: 'indigo', icon: <PhoneIcon size={14} className="text-indigo-600" /> }
-          : { message: 'Samtal avslutat', color: 'gray', icon: <PhoneOffIcon size={14} className="text-[var(--text-muted)]" /> }
+          : { message: 'Samtal avslutat', color: 'gray', icon: <PhoneOffIcon size={14} className="text-(--text-muted)" /> }
       );
     }
   }, [onCall, addToast]);
@@ -184,20 +184,20 @@ export default function HomePage() {
           <main ref={mainScrollRef} className="flex-1 min-w-0 overflow-y-auto overscroll-contain p-6">
             {/* Mobile stat row */}
             {rooms.length > 0 && (
-              <div className="flex md:hidden items-center gap-2 flex-wrap mb-4 text-xs text-[var(--text-muted)]">
-                <span className="font-semibold text-[var(--text-primary)]">
+              <div className="flex md:hidden items-center gap-2 flex-wrap mb-4 text-xs text-(--text-muted)">
+                <span className="font-semibold text-(--text-primary)">
                   <AnimatedNumber value={availableCount} />
                 </span>{' '}
                 lediga <span>·</span>
-                <span className="font-semibold text-[var(--text-primary)]">
+                <span className="font-semibold text-(--text-primary)">
                   <AnimatedNumber value={lockedCount} />
                 </span>{' '}
                 res. <span>·</span>
-                <span className="font-semibold text-[var(--text-primary)]">
+                <span className="font-semibold text-(--text-primary)">
                   <AnimatedNumber value={bookedCount} />
                 </span>{' '}
                 bokade <span>·</span>
-                <span className="font-semibold text-[var(--text-primary)]">
+                <span className="font-semibold text-(--text-primary)">
                   <AnimatedNumber value={occupancy} />%
                 </span>
               </div>
@@ -210,7 +210,7 @@ export default function HomePage() {
                   {[0, 1, 2, 3, 4, 5].map((i) => (
                     <div
                       key={i}
-                      className="rounded-2xl border border-[var(--border)] p-5 space-y-3 fade-in-up glass-panel"
+                      className="rounded-2xl border border-(--border) p-5 space-y-3 fade-in-up glass-panel"
                       style={{ animationDelay: `${i * 60}ms` }}
                     >
                       <div className="flex justify-between">
@@ -222,7 +222,7 @@ export default function HomePage() {
                     </div>
                   ))}
                 </div>
-                <p className="text-center text-sm text-[var(--text-muted)] mt-4">
+                <p className="text-center text-sm text-(--text-muted) mt-4">
                   Ansluter till realtidsström...
                 </p>
               </div>
@@ -278,23 +278,23 @@ export default function HomePage() {
           <div className="px-6 py-3.5">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-linear-to-br from-amber-400 to-amber-600 flex items-center justify-center shrink-0">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
                   </svg>
                 </div>
                 <div>
-                  <span className="font-heading text-sm font-semibold text-[var(--text-primary)]">
+                  <span className="font-heading text-sm font-semibold text-(--text-primary)">
                     Grand Hotel Kollegan
                   </span>
                   <div className="flex items-center gap-4 mt-0.5">
-                    <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
+                    <span className="text-xs text-(--text-muted) flex items-center gap-1">
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                       </svg>
                       Storgatan 1, Stockholm
                     </span>
-                    <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
+                    <span className="text-xs text-(--text-muted) flex items-center gap-1">
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72" />
                       </svg>
@@ -303,7 +303,7 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-[var(--text-muted)]">Demo — Powered by Vapi AI</p>
+              <p className="text-xs text-(--text-muted)">Demo — Powered by Vapi AI</p>
             </div>
           </div>
         </footer>

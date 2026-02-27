@@ -3,26 +3,26 @@
   --page-bg: #121212;
 
   /* Backward-compatible surface aliases */
-  --surface: #1C1C1C;
+  --surface: #1c1c1c;
   --surface-alt: #202020;
-  --surface-hover: #2E2E2E;
+  --surface-hover: #2e2e2e;
 
   /* Surface layer system — 6 visually separable tones */
-  --surface-0:      #1C1C1C;
-  --surface-1:      #202020;
-  --surface-2:      #242424;
-  --surface-3:      #2A2A2A;
+  --surface-0: #1c1c1c;
+  --surface-1: #202020;
+  --surface-2: #242424;
+  --surface-3: #2a2a2a;
   --surface-active: #333333;
 
-  --border: #3D3D3D;
-  --border-light: #2A2A2A;
-  --text-primary: #EFEFEF;
-  --text-secondary: #C2C2C2;
+  --border: #3d3d3d;
+  --border-light: #2a2a2a;
+  --text-primary: #efefef;
+  --text-secondary: #c2c2c2;
   --text-muted: #909090;
   --dot-color: rgba(102, 102, 102, 0.1);
   --accent: #f59e0b;
   --accent-light: #fbbf24;
-  --accent-subtle: rgba(245, 158, 11, 0.10);
+  --accent-subtle: rgba(245, 158, 11, 0.1);
   --accent-border: rgba(245, 158, 11, 0.22);
 
   /* Grid system */
