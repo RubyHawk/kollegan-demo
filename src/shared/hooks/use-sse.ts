@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRealtimeStore } from '@features/hotel/rooms/lib/hotel-realtime-store';
-import type { Room } from '@features/hotel/rooms/types';
-import type { ActivityEvent } from '@features/activity/types';
+import { useRealtimeStore } from '@demos/hotel/ui/stores/hotel-realtime-store';
+import type { Room } from '@demos/hotel/domain/room.entity';
+import type { ActivityEvent } from '@demos/hotel/activity/types';
 
 interface SSEPayload {
   type: 'room_update' | 'activity' | 'call_status' | 'full_state';

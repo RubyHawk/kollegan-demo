@@ -1,11 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import type { ActivityEvent } from '@modules/generic/hotel/activity/types';
+import type { ActivityEvent } from '@demos/hotel/activity/types';
 import ThemeToggle from '@shared/ui/theme-toggle';
 import { SPRING_SNAPPY } from '@shared/lib/motion';
 
-type Tab = 'available' | 'booked' | 'activity' | 'hotel-info' | 'crm' | 'setup';
+type Tab = 'available' | 'activity' | 'hotel-info' | 'crm' | 'setup';
 
 const MINI_ACTIVITY = {
   call_started: {
@@ -94,18 +94,6 @@ const NAV_ITEMS: { key: Tab; label: string; icon: React.ReactNode }[] = [
         <path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
         <path d="M12 4v6" />
         <path d="M2 18h20" />
-      </svg>
-    ),
-  },
-  {
-    key: 'booked',
-    label: 'Bokningar',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 2v4M16 2v4" />
-        <path d="M3 9h18" />
-        <path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2" />
-        <path d="M9 14l2 2 4-4" />
       </svg>
     ),
   },

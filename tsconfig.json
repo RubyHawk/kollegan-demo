@@ -21,63 +21,10 @@
     "paths": {
       "@/*": ["./src/*"],
 
-      // ── Fallback (catches any remaining src/features/* not yet migrated) ───
-      "@features/*": ["./src/features/*"],
+      // ── Demos ─────────────────────────────────────────────────────────────
+      "@demos/*": ["./src/demos/*"],
 
-      // ── Core modules ──────────────────────────────────────────────────────
-      "@features/automation": ["./src/modules/core/automation/index.ts"],
-      "@features/automation/*": ["./src/modules/core/automation/*"],
-      "@features/voice": ["./src/modules/core/voice/index.ts"],
-      "@features/voice/*": ["./src/modules/core/voice/*"],
-      // Voice internal deep-import backwards compat
-      "@features/voice/components/*": ["./src/modules/core/voice/ui/components/*"],
-      "@features/voice/hooks/*": ["./src/modules/core/voice/ui/hooks/*"],
-      "@features/voice/types": ["./src/modules/core/voice/domain/voice-brand.vo.ts"],
-
-      // ── Supporting modules ────────────────────────────────────────────────
-      "@features/crm": ["./src/modules/supporting/crm/index.ts"],
-      "@features/crm/*": ["./src/modules/supporting/crm/*"],
-      // CRM internal deep-import backwards compat
-      "@features/crm/types": ["./src/modules/supporting/crm/domain/contact.entity.ts"],
-      "@features/crm/service": ["./src/modules/supporting/crm/application/crm.service.ts"],
-      "@features/crm/repository": ["./src/modules/supporting/crm/infrastructure/contact.repository.ts"],
-      "@features/crm/events": ["./src/modules/supporting/crm/events/contact.events.ts"],
-      "@features/crm/components/*": ["./src/modules/supporting/crm/ui/components/*"],
-      "@features/leads": ["./src/modules/supporting/leads/index.ts"],
-      "@features/leads/*": ["./src/modules/supporting/leads/*"],
-      "@features/identity": ["./src/modules/supporting/identity/index.ts"],
-      "@features/identity/*": ["./src/modules/supporting/identity/*"],
-      "@features/offers": ["./src/modules/supporting/offers/index.ts"],
-      "@features/offers/*": ["./src/modules/supporting/offers/*"],
-
-      // ── Generic modules ───────────────────────────────────────────────────
-      "@features/hotel": ["./src/modules/generic/hotel/index.ts"],
-      "@features/hotel/*": ["./src/modules/generic/hotel/*"],
-      // Hotel internal deep-import backwards compat (voice ai-tools + shared/stores use these)
-      "@features/hotel/rooms/types": ["./src/modules/generic/hotel/domain/room.entity.ts"],
-      "@features/hotel/rooms/events": ["./src/modules/generic/hotel/events/room.events.ts"],
-      "@features/hotel/rooms/lib/room-store": ["./src/modules/generic/hotel/infrastructure/room-store.ts"],
-      "@features/hotel/rooms/lib/room-meta": ["./src/modules/generic/hotel/domain/room-meta.ts"],
-      "@features/hotel/rooms/lib/hotel-realtime-store": ["./src/modules/generic/hotel/ui/stores/hotel-realtime-store.ts"],
-      "@features/hotel/rooms/api": ["./src/modules/generic/hotel/api/rooms.ts"],
-      "@features/hotel/rooms/components/*": ["./src/modules/generic/hotel/ui/components/*"],
-      "@features/hotel/services/types": ["./src/modules/generic/hotel/domain/service.entity.ts"],
-      "@features/hotel/services/lib/hotel-services-store": ["./src/modules/generic/hotel/infrastructure/hotel-services-store.ts"],
-      "@features/hotel/services/api": ["./src/modules/generic/hotel/api/services.ts"],
-      "@features/hotel/services/components/*": ["./src/modules/generic/hotel/ui/components/*"],
-      "@features/team-hub": ["./src/modules/generic/team-hub/index.ts"],
-      "@features/team-hub/*": ["./src/modules/generic/team-hub/*"],
-
-      // ── Moved: activity → hotel domain (backwards-compat redirects) ───────
-      "@features/activity": ["./src/modules/generic/hotel/activity/index.ts"],
-      "@features/activity/types": ["./src/modules/generic/hotel/activity/types.ts"],
-      "@features/activity/components/activity-log": ["./src/modules/generic/hotel/activity/components/activity-log.tsx"],
-
-      // ── Moved: dashboard → generic module ─────────────────────────────────
-      "@features/dashboard": ["./src/modules/generic/dashboard/index.ts"],
-      "@features/dashboard/*": ["./src/modules/generic/dashboard/*"],
-
-      // ── Canonical module aliases (new import style) ────────────────────────
+      // ── Canonical module aliases ───────────────────────────────────────────
       "@modules/core/*": ["./src/modules/core/*"],
       "@modules/supporting/*": ["./src/modules/supporting/*"],
       "@modules/generic/*": ["./src/modules/generic/*"],

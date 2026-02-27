@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ActivityEvent } from '@features/activity/types';
+import { ActivityEvent } from '@demos/hotel/activity/types';
 import type { CrmContact } from '../../domain/contact.entity';
 
 interface Props {

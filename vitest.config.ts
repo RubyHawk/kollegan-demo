@@ -14,11 +14,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@':         resolve(__dirname, 'src'),
-      '@core':     resolve(__dirname, 'src/core'),
-      '@features': resolve(__dirname, 'src/features'),
-      '@shared':   resolve(__dirname, 'src/shared'),
-      '@infra':    resolve(__dirname, 'src/infrastructure'),
+      '@':              resolve(__dirname, 'src'),
+      '@core':          resolve(__dirname, 'src/core'),
+      '@demos':         resolve(__dirname, 'src/demos'),
+      '@modules/core':  resolve(__dirname, 'src/modules/core'),
+      '@modules/supporting': resolve(__dirname, 'src/modules/supporting'),
+      '@modules/generic': resolve(__dirname, 'src/modules/generic'),
+      '@shared':        resolve(__dirname, 'src/shared'),
+      '@infra':         resolve(__dirname, 'src/infrastructure'),
     },
   },
 });

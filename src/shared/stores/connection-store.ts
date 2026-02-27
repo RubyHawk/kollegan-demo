@@ -6,7 +6,7 @@
  * sidebar status indicators) — not hotel-domain state.
  *
  * Domain-specific state (rooms, activities) lives in each module:
- *   Hotel realtime state → @modules/generic/hotel/ui/stores/hotel-realtime-store
+ *   Hotel realtime state → @demos/hotel/ui/stores/hotel-realtime-store
  */
 
 import { create } from 'zustand';

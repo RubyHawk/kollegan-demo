@@ -2,7 +2,7 @@
 
 import { RefObject } from 'react';
 import { motion, useScroll, useTransform, useMotionTemplate } from 'framer-motion';
-import CallIndicator from '@features/dashboard/components/call-indicator';
+import CallIndicator from '@modules/generic/dashboard/components/call-indicator';
 import AnimatedNumber from '@shared/ui/animated-number';
 
 interface Props {

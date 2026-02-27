@@ -1,5 +1,5 @@
-import type { Room } from '@features/hotel/rooms/types';
-import type { ActivityEvent } from '@features/activity/types';
+import type { Room } from '@demos/hotel/domain/room.entity';
+import type { ActivityEvent } from '@demos/hotel/activity/types';
 
 export interface SSEMessage {
   type: 'room_update' | 'activity' | 'call_status' | 'full_state';

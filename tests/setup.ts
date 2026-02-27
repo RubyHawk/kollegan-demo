@@ -32,7 +32,7 @@ vi.mock('@core/cache/redis', () => ({
 }));
 
 // ── Mock room-store (file I/O + SSE) ─────────────────────────────────────────
-vi.mock('@features/hotel/rooms/lib/room-store', () => ({
+vi.mock('@demos/hotel/infrastructure/room-store', () => ({
   getAllRooms: vi.fn(() => [
     { id: '101', floor: 1, number: 101, type: 'Enkel',  status: 'available' },
     { id: '102', floor: 1, number: 102, type: 'Enkel',  status: 'available' },
@@ -74,7 +74,7 @@ vi.mock('@infra/calendar/google-calendar', () => ({
 }));
 
 // ── Mock hotel-services-store ─────────────────────────────────────────────────
-vi.mock('@features/hotel-services/lib/hotel-services-store', () => ({
+vi.mock('@demos/hotel/infrastructure/hotel-services-store', () => ({
   getAllRestaurants: vi.fn(() => []),
   getAllActivities:  vi.fn(() => []),
   getAllAmenities:   vi.fn(() => []),
