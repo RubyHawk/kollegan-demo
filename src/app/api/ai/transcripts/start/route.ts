@@ -1,42 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { validateVapiAuth } from '@core/auth/vapi-auth';
-import { checkRateLimit } from '@core/cache/rate-limiter';
-import { logger } from '@core/logging/logger';
-import { startCallTranscript } from '@features/crm/service';
-
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const BodySchema = z.object({
-  vapi_call_id: z.string().min(1, 'vapi_call_id is required'),
-});
-
-const TAG = 'AI:TranscriptStart';
-
-/**
- * Called by VAPI at the start of a call to create a transcript record.
- * Returns the transcriptId for use in subsequent CRM update.
- */
-export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for') ?? 'vapi';
-  const rl = await checkRateLimit(ip, 30, 60_000);
-  if (!rl.allowed) return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
-
-  const authError = validateVapiAuth(req);
-  if (authError) return NextResponse.json({ error: authError.error }, { status: authError.status });
-
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-  }
-
-  const parsed = BodySchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-
-  logger.info(TAG, `Starting transcript for call ${parsed.data.vapi_call_id}`);
-
-  const { transcriptId } = await startCallTranscript(parsed.data.vapi_call_id);
-
-  return NextResponse.json({ success: true, transcriptId }, { status: 200 });
-}
+export { handleStartTranscript as POST } from '@modules/supporting/crm/api/handlers/crm.handler';

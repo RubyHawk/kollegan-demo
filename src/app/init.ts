@@ -11,7 +11,7 @@
  */
 
 import { registerVoiceTools }          from '@modules/core/voice/register';
-import { registerAutomationListeners } from '@modules/core/automation/listeners';
+import { registerAutomationListeners } from '@modules/core/automation/events/subscribers/domain-events.subscriber';
 import { logger }                      from '@core/logging/logger';
 
 let initialized = false;

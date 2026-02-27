@@ -1,0 +1,31 @@
+/* ───── Dark mode semantic tokens ───── */
+.dark {
+  --page-bg: #121212;
+
+  /* Backward-compatible surface aliases */
+  --surface: #1C1C1C;
+  --surface-alt: #202020;
+  --surface-hover: #2E2E2E;
+
+  /* Surface layer system — 6 visually separable tones */
+  --surface-0:      #1C1C1C;
+  --surface-1:      #202020;
+  --surface-2:      #242424;
+  --surface-3:      #2A2A2A;
+  --surface-active: #333333;
+
+  --border: #3D3D3D;
+  --border-light: #2A2A2A;
+  --text-primary: #EFEFEF;
+  --text-secondary: #C2C2C2;
+  --text-muted: #909090;
+  --dot-color: rgba(102, 102, 102, 0.1);
+  --accent: #f59e0b;
+  --accent-light: #fbbf24;
+  --accent-subtle: rgba(245, 158, 11, 0.10);
+  --accent-border: rgba(245, 158, 11, 0.22);
+
+  /* Grid system */
+  --grid-line-color: rgba(255, 255, 255, 0.032);
+  --grid-size: 28px;
+}

@@ -1,36 +1,21 @@
 /**
- * Team Hub — SaaS collaboration module
+ * Team Hub — SaaS collaboration module — public interface.
  *
- * A multi-tenant workspace hub for internal team operations.
- * Each workspace is isolated; members have roles within their workspace.
+ * Other modules ONLY import from this file.
  *
- * Sub-modules:
+ * Layer structure:
+ *   domain/         — entity files for all sub-domains
+ *   application/    — use cases [Phase 2]
+ *   infrastructure/ — adapters [Phase 2]
+ *   events/         — publishers/, subscribers/ [Phase 2]
+ *   ui/             — pages/ [Phase 3]
  *
- *  workspace/        Multi-tenant foundation — orgs, members, billing, invites
- *  integrations/
- *    github/         GitHub App: PRs, issues, CI status per repo
- *    slack/          Slack App: channel feed, notification rules, bot commands
- *  meetings/         Video calls + AI transcription + Claude summaries + action items
- *  announcements/    Internal comms — pinned notices, policy updates
- *
- * SaaS model:
- *  - Free tier:    1 workspace, limited integrations, no recordings
- *  - Pro tier:     Unlimited integrations, meeting recordings + AI summaries
- *  - Enterprise:   SSO, audit logs, SLA, dedicated support
- *
- * Infrastructure adapters needed (add to src/infrastructure/ when implementing):
- *  - github-client.ts   (GitHub App REST + GraphQL API)
- *  - slack-client.ts    (Slack Web API + Events API)
- *  - storage-client.ts  (S3-compatible for recordings)
- *  - transcription.ts   (Whisper / Deepgram / AssemblyAI)
- *
- * Webhook receivers needed (add to src/app/api/integrations/):
- *  - github/webhook/route.ts    (verify X-Hub-Signature-256)
- *  - slack/events/route.ts      (verify X-Slack-Signature)
- *
- * n8n workflows needed:
- *  - meeting-summary-pipeline.json  (recording → transcribe → summarize → notify)
- *  - slack-notification-router.json (ERP event → Slack message by rule)
+ * Sub-domains (organized in domain/ layer):
+ *   announcement.entity.ts  — internal comms
+ *   meeting.entity.ts       — video calls + AI transcription
+ *   workspace.entity.ts     — multi-tenant workspace model
+ *   github.entity.ts        — GitHub App integration
+ *   slack.entity.ts         — Slack App integration
  */
 
 // Workspace
@@ -41,7 +26,7 @@ export type {
   WorkspaceSettings,
   WorkspacePlan,
   WorkspaceMemberRole,
-} from './workspace/types';
+} from './domain/workspace.entity';
 
 // GitHub integration
 export type {
@@ -51,7 +36,7 @@ export type {
   GitHubCIRun,
   PRStatus,
   CIStatus,
-} from './integrations/github/types';
+} from './domain/github.entity';
 
 // Slack integration
 export type {
@@ -59,7 +44,7 @@ export type {
   SlackChannel,
   SlackMessage,
   SlackNotificationRule,
-} from './integrations/slack/types';
+} from './domain/slack.entity';
 
 // Meetings + AI summaries
 export type {
@@ -70,11 +55,11 @@ export type {
   ActionItem,
   MeetingStatus,
   MeetingProvider,
-} from './meetings/types';
+} from './domain/meeting.entity';
 
 // Announcements
 export type {
   Announcement,
   AnnouncementRead,
   AnnouncementPriority,
-} from './announcements/types';
+} from './domain/announcement.entity';

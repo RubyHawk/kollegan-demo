@@ -1,26 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getRestaurantById, updateRestaurant, deleteRestaurant } from '@features/hotel/services/lib/hotel-services-store';
-
 export const dynamic = 'force-dynamic';
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const item = getRestaurantById(id);
-  if (!item) return NextResponse.json({ message: 'Hittades inte.' }, { status: 404 });
-  return NextResponse.json(item);
-}
-
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const body = await req.json();
-  const updated = updateRestaurant(id, body);
-  if (!updated) return NextResponse.json({ message: 'Hittades inte.' }, { status: 404 });
-  return NextResponse.json({ success: true, item: updated });
-}
-
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const ok = deleteRestaurant(id);
-  if (!ok) return NextResponse.json({ message: 'Hittades inte.' }, { status: 404 });
-  return NextResponse.json({ success: true });
-}
+export {
+  handleGetRestaurantById as GET,
+  handleUpdateRestaurant as PUT,
+  handleDeleteRestaurant as DELETE,
+} from '@modules/generic/hotel/api/handlers/services.handler';

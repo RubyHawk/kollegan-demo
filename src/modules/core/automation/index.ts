@@ -2,10 +2,18 @@
  * Automation module — public interface.
  *
  * Other modules ONLY import from this file.
- * Never import from internal files: tools/registry.ts, types.ts, events.ts, listeners.ts
+ * Never import from internal sub-layers directly.
+ *
+ * Layer structure:
+ *   domain/         — pure business objects (workflow entity, step types, triggers)
+ *   application/    — orchestration (use cases, workflow engine) [Phase 2]
+ *   infrastructure/ — persistence (workflow repository) [Phase 2]
+ *   tools/          — the central AI tool registry
+ *   events/         — workflow.events.ts + subscribers/domain-events.subscriber.ts
+ *   ui/             — components, hooks, pages [Phase 3]
  */
 
-// Tool registry — the primary API other modules use to register tools
+// Tool registry — the primary API other modules use to register and call tools
 export {
   registerTool,
   getTool,
@@ -40,7 +48,7 @@ export type {
   TriggerType,
   StepType,
   OnError,
-} from './types';
+} from './domain/workflow.entity';
 
 // Domain events
 export {
@@ -50,7 +58,7 @@ export {
   WORKFLOW_CANCELLED,
   STEP_COMPLETED,
   STEP_FAILED,
-} from './events';
+} from './events/workflow.events';
 export type {
   WorkflowTriggeredEvent,
   WorkflowCompletedEvent,
@@ -59,4 +67,4 @@ export type {
   StepCompletedEvent,
   StepFailedEvent,
   AutomationEvent,
-} from './events';
+} from './events/workflow.events';

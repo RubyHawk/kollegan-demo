@@ -14,4 +14,4 @@
  * See docs/ARCHITECTURE.md for the full ERP module roadmap.
  */
 
-export type { Offer, OfferLineItem, OfferStatus } from './types';
+export type { Offer, OfferLineItem, OfferStatus } from './domain/offer.entity';
