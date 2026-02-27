@@ -24,6 +24,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Fel e-post eller lösenord.' }, { status: 401 });
     }
 
+    await prisma.staffUser.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() },
+    });
+
     // Use refresh token TTL (7 days) for the session cookie
     const token = await signRefreshToken({ sub: user.id, role: user.role });
 
