@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 
 // ── Mock Prisma ───────────────────────────────────────────────────────────────
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@core/database/prisma', () => ({
   prisma: {
     customer:      { findFirst: vi.fn(), create: vi.fn(), upsert: vi.fn() },
     booking:       { updateMany: vi.fn() },
@@ -11,7 +11,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 // ── Mock Redis ────────────────────────────────────────────────────────────────
-vi.mock('@/lib/redis', () => ({
+vi.mock('@core/cache/redis', () => ({
   redis: {
     pipeline: vi.fn(() => ({
       zadd:            vi.fn().mockReturnThis(),
@@ -32,7 +32,7 @@ vi.mock('@/lib/redis', () => ({
 }));
 
 // ── Mock room-store (file I/O + SSE) ─────────────────────────────────────────
-vi.mock('@features/rooms/lib/room-store', () => ({
+vi.mock('@features/hotel/rooms/lib/room-store', () => ({
   getAllRooms: vi.fn(() => [
     { id: '101', floor: 1, number: 101, type: 'Enkel',  status: 'available' },
     { id: '102', floor: 1, number: 102, type: 'Enkel',  status: 'available' },
