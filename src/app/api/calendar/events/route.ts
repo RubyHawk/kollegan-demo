@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
- * GET /api/calendar/info
+ * GET /api/calendar/events
  *
  * Returns whether Google Calendar is configured and, if so, the iframe
  * embed URL so the frontend can display the embedded calendar.

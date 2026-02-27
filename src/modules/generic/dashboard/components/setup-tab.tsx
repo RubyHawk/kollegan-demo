@@ -266,8 +266,10 @@ function EmployeeList({ refreshKey }: { refreshKey: number }) {
   const handleDelete = async (id: string) => {
     setDeleting(id);
     try {
-      await fetch(`/api/staff?id=${id}`, { method: 'DELETE' });
-      setUsers((prev) => prev.filter((u) => u.id !== id));
+      const res = await fetch(`/api/staff?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setUsers((prev) => prev.filter((u) => u.id !== id));
+      }
     } finally { setDeleting(null); }
   };
 
