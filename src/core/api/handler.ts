@@ -164,20 +164,31 @@ function envelopeResponse<T>(
   result: HandlerResult<T>,
   meta:   RequestMeta
 ): NextResponse {
+  const status = result.data === null ? 204 : result.status;
+  const sharedHeaders: Record<string, string> = {
+    'X-Request-Id':  meta.requestId,
+    'X-Version':     meta.version,
+    'X-Duration-Ms': String(meta.durationMs),
+    ...(result.headers ?? {}),
+  };
+
+  // RFC 9110 §8.6: null-body statuses (204, 205, 304) MUST NOT include
+  // a message body. Passing any body to NextResponse with these statuses
+  // violates the WHATWG Fetch spec and throws a TypeError at runtime.
+  if (status === 204) {
+    return new NextResponse(null, { status: 204, headers: sharedHeaders });
+  }
+
   const body: ApiSuccess<T> = {
-    data:       result.data as T,
+    data: result.data as T,
     meta,
     ...(result.pagination ? { pagination: result.pagination } : {}),
   };
   return new NextResponse(JSON.stringify(body), {
-    status:  result.data === null ? 204 : result.status,
+    status,
     headers: {
-      'Content-Type':   'application/json',
-      'X-Request-Id':   meta.requestId,
-      'X-Version':      meta.version,
-      'X-Duration-Ms':  String(meta.durationMs),
-      // Caller-supplied extra headers (e.g. Location for 201, Link for paginated)
-      ...(result.headers ?? {}),
+      'Content-Type': 'application/json',
+      ...sharedHeaders,
     },
   });
 }
