@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 const DEMO_ACCOUNTS = [
   { label: 'Receptionist', email: 'receptionist@demo-hotel.com' },
@@ -11,7 +11,6 @@ const DEMO_ACCOUNTS = [
 const DEMO_PASSWORD = 'demo1234';
 
 export default function LoginPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') ?? '/';
 
@@ -38,8 +37,10 @@ export default function LoginPage() {
         return;
       }
 
-      router.push(redirect);
-      router.refresh();
+      // Full page reload so SSE initializes cleanly after auth cookie is set.
+      // router.push() causes a race where full_state arrives before store
+      // listeners are attached, leaving skeleton loaders stuck forever.
+      window.location.href = redirect;
     } catch {
       setError('Nätverksfel. Försök igen.');
     } finally {
