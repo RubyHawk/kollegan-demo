@@ -9,4 +9,4 @@ export type {
   MeetingProvider,
   TranscriptionStatus,
   SummaryStatus,
-} from '../../domain/meeting.entity';
+} from '../domain/meeting.entity';
