@@ -38,16 +38,23 @@ a:focus-visible,
 
 /* ───── Card interactive hover depth ───── */
 .card-interactive {
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
   will-change: transform;
 }
 .card-interactive:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.06);
   border-color: var(--border-light);
 }
 .dark .card-interactive:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 /* ───── Calendar bar tooltip ───── */
@@ -70,12 +77,15 @@ a:focus-visible,
   white-space: nowrap;
   z-index: 50;
   pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0.2s;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .booking-bar-tooltip .tooltip-content::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 100%;
   left: 50%;
@@ -122,26 +132,38 @@ a:focus-visible,
 
 /* ───── Glow shadows ───── */
 .shadow-glow-amber {
-  box-shadow: 0 0 24px rgba(245, 158, 11, 0.22), 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 0 24px rgba(245, 158, 11, 0.22),
+    0 4px 16px rgba(0, 0, 0, 0.12);
 }
 .shadow-glow-purple {
-  box-shadow: 0 0 24px rgba(109, 40, 217, 0.22), 0 4px 16px rgba(0, 0, 0, 0.10);
+  box-shadow:
+    0 0 24px rgba(109, 40, 217, 0.22),
+    0 4px 16px rgba(0, 0, 0, 0.1);
 }
 .shadow-glow-emerald {
-  box-shadow: 0 0 18px rgba(16, 185, 129, 0.22), 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 0 18px rgba(16, 185, 129, 0.22),
+    0 4px 12px rgba(0, 0, 0, 0.1);
 }
 .shadow-glow-indigo {
-  box-shadow: 0 0 18px rgba(99, 102, 241, 0.22), 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 0 18px rgba(99, 102, 241, 0.22),
+    0 4px 12px rgba(0, 0, 0, 0.1);
 }
 .shadow-glow-red {
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.28), 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 0 16px rgba(239, 68, 68, 0.28),
+    0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* ───── Active nav glow ───── */
 .nav-active {
   background: var(--accent-subtle) !important;
   border: 1px solid var(--accent-border) !important;
-  box-shadow: 0 0 14px var(--accent-subtle), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 0 14px var(--accent-subtle),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 .dark .nav-active {
   background: rgba(245, 158, 11, 0.1) !important;
@@ -158,8 +180,16 @@ body {
   background-image:
     linear-gradient(var(--grid-line-color) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px),
-    radial-gradient(ellipse 80% 40% at 20% -10%, rgba(109, 40, 217, 0.07), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 85% 105%, rgba(124, 58, 237, 0.04), transparent 55%);
+    radial-gradient(
+      ellipse 80% 40% at 20% -10%,
+      rgba(109, 40, 217, 0.07),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 85% 105%,
+      rgba(124, 58, 237, 0.04),
+      transparent 55%
+    );
   background-size:
     var(--grid-size) var(--grid-size),
     var(--grid-size) var(--grid-size),
@@ -183,8 +213,16 @@ body {
   background-image:
     linear-gradient(var(--grid-line-color) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px),
-    radial-gradient(ellipse 80% 40% at 20% -10%, rgba(245, 158, 11, 0.07), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 85% 105%, rgba(99, 102, 241, 0.04), transparent 55%);
+    radial-gradient(
+      ellipse 80% 40% at 20% -10%,
+      rgba(245, 158, 11, 0.07),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 85% 105%,
+      rgba(99, 102, 241, 0.04),
+      transparent 55%
+    );
 }
 
 /* ───── Tabular numerics ───── */
@@ -198,7 +236,7 @@ table td {
 }
 
 .font-heading {
-  font-family: var(--font-cormorant), Georgia, 'Times New Roman', serif;
+  font-family: var(--font-cormorant), Georgia, "Times New Roman", serif;
 }
 
 /* ───── Calendar grid ───── */

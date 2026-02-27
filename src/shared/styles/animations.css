@@ -1,17 +1,35 @@
 /* ───── Splash screen ───── */
 @keyframes splash-enter {
-  0% { opacity: 0; transform: scale(0.92); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes splash-exit {
-  0% { opacity: 1; }
-  100% { opacity: 0; pointer-events: none; }
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 @keyframes splash-icon-pulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(212, 168, 67, 0.3); }
-  50% { transform: scale(1.05); box-shadow: 0 0 30px 8px rgba(212, 168, 67, 0.15); }
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(212, 168, 67, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px 8px rgba(212, 168, 67, 0.15);
+  }
 }
 
 .splash-enter {
@@ -28,8 +46,14 @@
 
 /* ───── Fade-in-up (stat cards, general entrance) ───── */
 @keyframes fade-in-up {
-  0% { opacity: 0; transform: translateY(12px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .fade-in-up {
@@ -38,13 +62,23 @@
 
 /* ───── Dialog entrance ───── */
 @keyframes dialog-overlay-enter {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes dialog-content-enter {
-  0% { opacity: 0; transform: translateY(16px) scale(0.96); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .dialog-overlay-enter {
@@ -57,8 +91,14 @@
 
 /* ───── Tab content enter ───── */
 @keyframes tab-content-enter {
-  0% { opacity: 0; transform: translateY(8px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .tab-content-enter {
@@ -67,8 +107,12 @@
 
 /* ───── Occupancy bar grow ───── */
 @keyframes bar-grow {
-  0% { transform: scaleX(0); }
-  100% { transform: scaleX(1); }
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
 }
 
 .bar-grow {
@@ -79,8 +123,12 @@
 
 /* ───── Skeleton shimmer ───── */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .skeleton {
@@ -97,8 +145,14 @@
 
 /* ───── Slide-in-left (activity log) ───── */
 @keyframes slide-in-left {
-  0% { opacity: 0; transform: translateX(-16px); }
-  100% { opacity: 1; transform: translateX(0); }
+  0% {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .slide-in-left {
@@ -107,8 +161,14 @@
 
 /* ───── Activity feed item entrance ───── */
 @keyframes activity-item-enter {
-  0%   { opacity: 0; transform: translateY(-8px) scale(0.99); }
-  100% { opacity: 1; transform: translateY(0)    scale(1);    }
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .activity-item-enter {
@@ -117,8 +177,13 @@
 
 /* ───── Float animation (empty states) ───── */
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 .float-animation {
@@ -127,8 +192,13 @@
 
 /* ───── Locked room pulse ───── */
 @keyframes locked-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.25); }
-  50% { box-shadow: 0 0 12px 4px rgba(245, 158, 11, 0.15); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 12px 4px rgba(245, 158, 11, 0.15);
+  }
 }
 
 .room-locked {
@@ -141,8 +211,13 @@
 
 /* ───── Call indicator ───── */
 @keyframes call-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
-  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
 }
 
 .call-indicator {
@@ -151,8 +226,14 @@
 
 /* ───── Stagger entrance ───── */
 @keyframes stagger-in {
-  0% { opacity: 0; transform: translateY(14px) scale(0.97); }
-  100% { opacity: 1; transform: none; }
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
 }
 .stagger-in {
   animation: stagger-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -160,34 +241,67 @@
 
 /* ───── Toast animations ───── */
 @keyframes toast-in {
-  0% { opacity: 0; transform: translateX(24px) scale(0.95); }
-  100% { opacity: 1; transform: none; }
+  0% {
+    opacity: 0;
+    transform: translateX(24px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
 }
 @keyframes toast-out {
-  0% { opacity: 1; transform: none; }
-  100% { opacity: 0; transform: translateX(24px) scale(0.95); }
+  0% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(24px) scale(0.95);
+  }
 }
-.toast-in { animation: toast-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.toast-out { animation: toast-out 0.3s ease-in both; }
+.toast-in {
+  animation: toast-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.toast-out {
+  animation: toast-out 0.3s ease-in both;
+}
 
 /* ───── Voice bars (CallIndicator active) ───── */
 @keyframes voice-bar {
-  0%, 100% { transform: scaleY(0.25); }
-  50% { transform: scaleY(1); }
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
 }
 .vb {
   transform-origin: bottom;
   animation: voice-bar 0.7s ease-in-out infinite;
 }
-.vb-1 { animation-delay: 0ms; }
-.vb-2 { animation-delay: 140ms; }
-.vb-3 { animation-delay: 280ms; }
-.vb-4 { animation-delay: 140ms; }
+.vb-1 {
+  animation-delay: 0ms;
+}
+.vb-2 {
+  animation-delay: 140ms;
+}
+.vb-3 {
+  animation-delay: 280ms;
+}
+.vb-4 {
+  animation-delay: 140ms;
+}
 
 /* ───── Svit premium shimmer ───── */
 @keyframes svit-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 .svit-shimmer {
   background: linear-gradient(
@@ -202,8 +316,14 @@
 
 /* ───── Room Detail Modal ───── */
 @keyframes room-detail-enter {
-  0% { opacity: 0; transform: translateY(20px) scale(0.97); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .room-detail-enter {
@@ -214,7 +334,9 @@
 .service-card-actions {
   opacity: 0;
   transform: translateY(3px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .service-card:hover .service-card-actions {
@@ -224,7 +346,9 @@
 
 /* ───── Reduced motion ───── */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }

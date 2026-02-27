@@ -3,24 +3,24 @@
 
 @theme {
   /* Keep navy + cream for Maja widget (dark overlay) */
-  --color-navy-950: #0B1121;
-  --color-navy-900: #131C2E;
-  --color-navy-800: #1A2540;
-  --color-navy-700: #1E293B;
+  --color-navy-950: #0b1121;
+  --color-navy-900: #131c2e;
+  --color-navy-800: #1a2540;
+  --color-navy-700: #1e293b;
 
-  --color-cream-100: #F5F0E8;
-  --color-cream-400: #9B917F;
+  --color-cream-100: #f5f0e8;
+  --color-cream-400: #9b917f;
   --color-cream-500: #827668;
-  --color-cream-600: #5C5549;
-  --color-cream-700: #3D3A34;
+  --color-cream-600: #5c5549;
+  --color-cream-700: #3d3a34;
 
-  --color-burgundy-950: #2A1015;
-  --color-burgundy-800: #991B1B;
-  --color-burgundy-400: #F87171;
+  --color-burgundy-950: #2a1015;
+  --color-burgundy-800: #991b1b;
+  --color-burgundy-400: #f87171;
 
-  --color-gold-400: #FBBF24;
-  --color-gold-500: #D4A843;
-  --color-gold-600: #B8860B;
+  --color-gold-400: #fbbf24;
+  --color-gold-500: #d4a843;
+  --color-gold-600: #b8860b;
 }
 
 @import "./light.css";

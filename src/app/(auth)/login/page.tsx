@@ -55,25 +55,25 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--page-bg)] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-(--page-bg) px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
             </svg>
           </div>
-          <span className="font-heading text-xl font-semibold text-[var(--text-primary)]">Kollegan</span>
+          <span className="font-heading text-xl font-semibold text-(--text-primary)">Kollegan</span>
         </div>
 
         {/* Login card */}
-        <div className="p-8 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] shadow-lg">
-          <h1 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Logga in</h1>
+        <div className="p-8 rounded-2xl border border-(--border) bg-(--surface-0) shadow-lg">
+          <h1 className="text-lg font-semibold text-(--text-primary) mb-6">Logga in</h1>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1" htmlFor="email">
+              <label className="block text-sm text-(--text-secondary) mb-1" htmlFor="email">
                 E-post
               </label>
               <input
@@ -83,12 +83,12 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)]"
+                className="w-full px-3 py-2 rounded-lg border border-(--border) bg-(--surface-1) text-(--text-primary) text-sm focus:outline-none focus:border-(--accent)"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-[var(--text-secondary)] mb-1" htmlFor="password">
+              <label className="block text-sm text-(--text-secondary) mb-1" htmlFor="password">
                 Lösenord
               </label>
               <input
@@ -98,7 +98,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)]"
+                className="w-full px-3 py-2 rounded-lg border border-(--border) bg-(--surface-1) text-(--text-primary) text-sm focus:outline-none focus:border-(--accent)"
               />
             </div>
 
@@ -109,7 +109,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2 px-4 rounded-lg bg-[var(--accent)] text-white text-sm font-medium hover:bg-[var(--accent-light)] transition-colors disabled:opacity-60"
+              className="w-full py-2 px-4 rounded-lg bg-(--accent) text-white text-sm font-medium hover:bg-(--accent-light) transition-colors disabled:opacity-60"
             >
               {loading ? 'Loggar in…' : 'Logga in'}
             </button>
@@ -117,9 +117,9 @@ export default function LoginPage() {
         </div>
 
         {/* Demo accounts */}
-        <div className="mt-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface-0)]">
-          <p className="text-xs text-[var(--text-muted)] mb-3 font-medium uppercase tracking-wide">
-            Demokonton — lösenord: <code className="font-mono bg-[var(--surface-1)] px-1 py-0.5 rounded">{DEMO_PASSWORD}</code>
+        <div className="mt-4 p-4 rounded-xl border border-(--border) bg-(--surface-0)">
+          <p className="text-xs text-(--text-muted) mb-3 font-medium uppercase tracking-wide">
+            Demokonton — lösenord: <code className="font-mono bg-(--surface-1) px-1 py-0.5 rounded">{DEMO_PASSWORD}</code>
           </p>
           <div className="flex flex-col gap-1.5">
             {DEMO_ACCOUNTS.map((a) => (
@@ -127,12 +127,12 @@ export default function LoginPage() {
                 key={a.email}
                 type="button"
                 onClick={() => fillDemo(a.email)}
-                className="flex items-center justify-between text-left px-3 py-2 rounded-lg hover:bg-[var(--surface-1)] transition-colors group"
+                className="flex items-center justify-between text-left px-3 py-2 rounded-lg hover:bg-(--surface-1) transition-colors group"
               >
-                <span className="text-xs font-medium text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
+                <span className="text-xs font-medium text-(--text-secondary) group-hover:text-(--text-primary)">
                   {a.label}
                 </span>
-                <span className="text-xs text-[var(--text-muted)] font-mono">{a.email}</span>
+                <span className="text-xs text-(--text-muted) font-mono">{a.email}</span>
               </button>
             ))}
           </div>

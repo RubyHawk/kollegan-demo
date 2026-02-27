@@ -1,62 +1,62 @@
-/* ───── Maja / Kollegan Contact Widget ───── */
-@keyframes maja-fab-ping {
+/* ───── Elsa / Kollegan Contact Widget ───── */
+@keyframes elsa-fab-ping {
   0% { transform: scale(1); opacity: 0.5; }
   75%, 100% { transform: scale(1.6); opacity: 0; }
 }
 
-.maja-fab-ping {
-  animation: maja-fab-ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+.elsa-fab-ping {
+  animation: elsa-fab-ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
-@keyframes maja-panel-enter {
+@keyframes elsa-panel-enter {
   0% { opacity: 0; transform: translateY(16px) scale(0.95); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.maja-panel-enter {
-  animation: maja-panel-enter 0.3s ease-out;
+.elsa-panel-enter {
+  animation: elsa-panel-enter 0.3s ease-out;
 }
 
-@keyframes maja-avatar-breathe {
+@keyframes elsa-avatar-breathe {
   0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.3); }
   50% { transform: scale(1.04); box-shadow: 0 0 20px 4px rgba(201, 168, 76, 0.15); }
 }
 
-.maja-avatar-breathe {
-  animation: maja-avatar-breathe 3s ease-in-out infinite;
+.elsa-avatar-breathe {
+  animation: elsa-avatar-breathe 3s ease-in-out infinite;
 }
 
-@keyframes maja-speaking-glow {
+@keyframes elsa-speaking-glow {
   0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.4); }
   50% { box-shadow: 0 0 12px 4px rgba(201, 168, 76, 0.3); }
 }
 
-.maja-speaking-glow {
-  animation: maja-speaking-glow 1s ease-in-out infinite;
+.elsa-speaking-glow {
+  animation: elsa-speaking-glow 1s ease-in-out infinite;
 }
 
-@keyframes maja-speak-dot {
+@keyframes elsa-speak-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(1.3); }
 }
 
-.maja-speak-dot {
-  animation: maja-speak-dot 0.8s ease-in-out infinite;
+.elsa-speak-dot {
+  animation: elsa-speak-dot 0.8s ease-in-out infinite;
 }
 
-.maja-voice-bar {
+.elsa-voice-bar {
   width: 4px;
   border-radius: 9999px;
   background: linear-gradient(to top, #C9A84C, #D4B96A);
   transition: height 0.12s ease-out, opacity 0.12s ease-out;
 }
 
-@keyframes maja-ring-expand {
+@keyframes elsa-ring-expand {
   0% { transform: scale(0.5); opacity: 0.6; }
   100% { transform: scale(2.5); opacity: 0; }
 }
 
-.maja-connecting-rings {
+.elsa-connecting-rings {
   position: relative;
   display: flex;
   align-items: center;
@@ -65,32 +65,32 @@
   height: 60px;
 }
 
-.maja-ring {
+.elsa-ring {
   position: absolute;
   width: 20px;
   height: 20px;
   border-radius: 9999px;
   border: 2px solid #C9A84C;
-  animation: maja-ring-expand 2s ease-out infinite;
+  animation: elsa-ring-expand 2s ease-out infinite;
 }
 
-.maja-ring-1 { animation-delay: 0s; }
-.maja-ring-2 { animation-delay: 0.5s; }
-.maja-ring-3 { animation-delay: 1s; }
+.elsa-ring-1 { animation-delay: 0s; }
+.elsa-ring-2 { animation-delay: 0.5s; }
+.elsa-ring-3 { animation-delay: 1s; }
 
-@keyframes maja-typing {
+@keyframes elsa-typing {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
   30% { transform: translateY(-4px); opacity: 1; }
 }
 
-.maja-typing-dot {
+.elsa-typing-dot {
   width: 5px;
   height: 5px;
   border-radius: 9999px;
   background-color: #C9A84C;
-  animation: maja-typing 1.2s ease-in-out infinite;
+  animation: elsa-typing 1.2s ease-in-out infinite;
 }
 
-.maja-hangup-btn:hover {
+.elsa-hangup-btn:hover {
   box-shadow: 0 0 16px 2px rgba(248, 113, 113, 0.3);
 }
