@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { verifyToken } from '@core/auth/jwt';
-import DemoGrid from '@features/dashboard/components/demo-grid';
+import DemoGrid from '@modules/generic/dashboard/components/demo-grid';
 
 async function getUser() {
   try {

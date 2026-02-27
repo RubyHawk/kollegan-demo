@@ -64,7 +64,7 @@ export default function DemoGrid({ userRole }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Hotel demo card */}
             <button
-              onClick={() => router.push('/hotel')}
+              onClick={() => router.push('/demos/hotel')}
               className="group text-left rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] p-6 hover:border-amber-400/60 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
             >
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mb-4 shadow-sm group-hover:scale-105 transition-transform duration-200">

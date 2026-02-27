@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { checkAvailability } from '@features/voice/ai-tools/availability';
-import { getAllRooms, logRoomsQueried } from '@features/hotel/rooms/lib/room-store';
+import { checkAvailability } from '@modules/core/voice/ai-tools/availability';
+import { getAllRooms, logRoomsQueried } from '@demos/hotel/infrastructure/room-store';
 
 describe('checkAvailability', () => {
   beforeEach(() => {

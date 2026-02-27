@@ -6,11 +6,11 @@
  *
  * Install: npm install --save-dev dependency-cruiser
  *
- * Rules follow the DDD classification hierarchy:
- *   generic → supporting → core → infrastructure/shared
- *
- * During Phase 1 migration, rules target both src/modules/ (new) and
- * src/features/ (existing) paths to catch violations early.
+ * Dependency hierarchy:
+ *   demos      → can import modules, core, infrastructure, shared
+ *   generic    → can import supporting, core, infrastructure, shared
+ *   supporting → can import core, infrastructure, shared
+ *   core       → can import infrastructure, shared only
  */
 
 /** @type {import('dependency-cruiser').IConfiguration} */
@@ -25,28 +25,22 @@ module.exports = {
         'Core domains (automation, voice) must not depend on supporting domains (crm, leads, identity, offers). ' +
         'Use the event bus with string event types instead.',
       from: {
-        path: ['^src/modules/core', '^src/features/(automation|voice)'],
+        path: '^src/modules/core',
       },
       to: {
-        path: [
-          '^src/modules/supporting',
-          '^src/features/(crm|leads|offers|identity)',
-        ],
+        path: '^src/modules/supporting',
       },
     },
     {
       name: 'core-no-generic',
       severity: 'error',
       comment:
-        'Core domains must not depend on generic domains (hotel, team-hub, billing, analytics).',
+        'Core domains must not depend on generic domains (team-hub, dashboard) or demos (hotel).',
       from: {
-        path: ['^src/modules/core', '^src/features/(automation|voice)'],
+        path: '^src/modules/core',
       },
       to: {
-        path: [
-          '^src/modules/generic',
-          '^src/features/(hotel|team-hub)',
-        ],
+        path: ['^src/modules/generic', '^src/demos'],
       },
     },
 
@@ -55,36 +49,28 @@ module.exports = {
       name: 'supporting-no-generic',
       severity: 'error',
       comment:
-        'Supporting domains (crm, leads, identity) must not depend on generic domains (hotel, team-hub). ' +
+        'Supporting domains (crm, leads, identity) must not depend on generic domains (team-hub, dashboard). ' +
         'Use the event bus for cross-domain communication.',
       from: {
-        path: [
-          '^src/modules/supporting',
-          '^src/features/(crm|leads|offers|identity)',
-        ],
+        path: '^src/modules/supporting',
       },
       to: {
-        path: [
-          '^src/modules/generic',
-          '^src/features/(hotel|team-hub)',
-        ],
+        path: '^src/modules/generic',
       },
     },
 
     // ─── Shared/ domain-free ─────────────────────────────────────────────────────
     {
-      name: 'shared-no-features',
+      name: 'shared-no-modules',
       severity: 'warn',
       comment:
-        'shared/ must not import from feature or module domains. ' +
-        'If this is domain state, move it to the owning feature module.',
+        'shared/ must not import from module domains or demos. ' +
+        'If this is domain state, move it to the owning module.',
       from: {
         path: '^src/shared',
-        // Allow the re-export shim in realtime-store.ts (deprecated)
-        pathNot: '^src/shared/stores/realtime-store\\.ts',
       },
       to: {
-        path: ['^src/features', '^src/modules'],
+        path: ['^src/modules', '^src/demos'],
       },
     },
 
@@ -97,7 +83,6 @@ module.exports = {
         'Deep imports into domain/, application/, or infrastructure/ break encapsulation.',
       from: {
         path: '^src/modules',
-        // Allow intra-module deep imports (a module can import its own internals)
       },
       to: {
         path: '^src/modules/[^/]+/[^/]+/(domain|application|infrastructure)/',
