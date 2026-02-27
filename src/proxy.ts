@@ -18,7 +18,7 @@ function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PATHS.some((p) => pathname.startsWith(p));
 }
 
-export async function middleware(req: NextRequest): Promise<NextResponse> {
+export async function proxy(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
 
   // Always pass through public paths
