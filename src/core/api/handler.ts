@@ -58,6 +58,9 @@ const PROBLEM_CONTENT_TYPE = 'application/problem+json';
 
 type AuthStrategy = 'vapi' | 'jwt' | 'internal' | 'none';
 
+// Exported so route handlers and middleware can reference it
+export type { AuthStrategy };
+
 // ─── Configuration ─────────────────────────────────────────────────────────────
 
 type InferSchema<T extends z.ZodTypeAny | undefined> =
@@ -90,6 +93,23 @@ export interface HandlerConfig<
    * Defaults to the current platform version (CURRENT_VERSION).
    */
   version?: string;
+
+  /**
+   * Required permission for this route. Format: 'resource.action' (e.g. 'leads.write').
+   * Checked after auth, before the handler executes.
+   * Requires auth='jwt'. Skipped if omitted (backward-compatible — all existing routes unaffected).
+   *
+   * Phase 1: field is defined but enforcement is a no-op until RBAC seeding is complete.
+   * Phase 2: enforced via hasPermission() from the auth module.
+   */
+  permission?: string;
+
+  /**
+   * Enforce that token.orgId matches the resource's organization context.
+   * Defaults to true when permission is set. Set to false only for super-admin routes.
+   * Phase 1: defined but not yet enforced. Phase 2: wired into middleware.
+   */
+  orgScoped?: boolean;
 }
 
 export interface HandlerContext<
