@@ -321,11 +321,32 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
       );
     }
 
+    if (compact) {
+      return (
+        <div className="border-t border-[var(--border)] px-3 py-2 shrink-0 text-center">
+          <p className="text-[10px] text-[var(--text-muted)]">Samtalet avslutat</p>
+        </div>
+      );
+    }
+
     return (
-      <div className={`border-t border-[var(--border)] ${compact ? 'px-3 py-2' : 'px-5 py-3'} shrink-0 text-center`}>
-        <p className={`text-[var(--text-muted)] ${compact ? 'text-[10px]' : 'text-xs'}`}>
-          Samtalet {compact ? 'avslutat' : 'har avslutats'}
-        </p>
+      <div className="border-t border-[var(--border)] px-5 py-4 shrink-0 space-y-2">
+        <p className="text-xs text-[var(--text-muted)] text-center">Samtalet har avslutats</p>
+        <button
+          onClick={() => { setMessages([]); startCall(); }}
+          className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-xl py-2.5 transition-all active:scale-95"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d={PHONE_PATH} />
+          </svg>
+          Ring igen
+        </button>
+        <button
+          onClick={resetToIdle}
+          className="w-full text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] py-1 transition-colors"
+        >
+          Stäng
+        </button>
       </div>
     );
   };
@@ -644,14 +665,28 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
           {/* ── Body (hidden when collapsed) ── */}
           {!draggableCollapsed && (
             <>
-              {/* Voice strip */}
+              {/* Active call banner */}
               {mode === 'call' && callStatus === 'active' && (
-                <div className="border-b border-[var(--border)] bg-[var(--surface-alt)] flex items-center justify-between px-5 py-3">
-                  <div className="flex items-end gap-0.5 h-5">
-                    <InlineVolumeBars volumeLevel={volumeLevel} callActive={callStatus === 'active'} />
+                <div className={[
+                  'border-b px-5 py-3.5 shrink-0 flex items-center gap-3 transition-colors duration-300',
+                  isSpeaking
+                    ? 'bg-emerald-50/70 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800/30'
+                    : 'bg-[var(--surface-alt)] border-[var(--border)]',
+                ].join(' ')}>
+                  <div className="relative shrink-0">
+                    <AvatarBadge size="sm" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-[1.5px] border-[var(--surface)]" />
                   </div>
-                  <span className="text-[10px] text-[var(--text-muted)]">
-                    {isSpeaking ? `${brand.name} talar` : 'Din tur'}
+                  <div className="flex-1 min-w-0">
+                    <p className={['text-xs font-semibold leading-none truncate', isSpeaking ? 'text-emerald-700 dark:text-emerald-400' : 'text-[var(--text-primary)]'].join(' ')}>
+                      {isSpeaking ? `${brand.name} talar` : 'Din tur att prata'}
+                    </p>
+                    <div className="flex items-end gap-0.5 h-3.5 mt-1.5">
+                      <InlineVolumeBars volumeLevel={volumeLevel} callActive />
+                    </div>
+                  </div>
+                  <span className="font-mono text-xs font-semibold tabular-nums shrink-0 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-md px-2 py-0.5 border border-emerald-200 dark:border-emerald-800/50">
+                    {fmtDur(callDuration)}
                   </span>
                 </div>
               )}
@@ -659,6 +694,19 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
               {/* Connecting */}
               {mode === 'call' && callStatus === 'connecting' && (
                 <ConnectingIndicator brand={brand} />
+              )}
+              {mode === 'call' && callStatus === 'connecting' && (
+                <div className="px-5 pb-3 shrink-0 flex justify-center">
+                  <button
+                    onClick={endCall}
+                    className="text-xs text-[var(--text-muted)] hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1.5"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d={HANGUP_PATH} /><line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                    Avbryt
+                  </button>
+                </div>
               )}
 
               {/* ── Idle: action buttons ── */}
