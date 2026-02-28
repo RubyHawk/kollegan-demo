@@ -71,14 +71,20 @@ export default function HotelDemoPage() {
   /* ── Scroll ref — passed to header for scroll-linked shadow ── */
   const mainScrollRef = useRef<HTMLElement>(null);
 
+  /* ── Hotel-info modal open state — contributes to parallax pause ── */
+  const hotelInfoModalOpenRef = useRef(false);
+  const handleHotelInfoModalChange = useCallback((open: boolean) => {
+    hotelInfoModalOpenRef.current = open;
+  }, []);
+
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const selectedRoom = selectedRoomId ? (rooms.find((r) => r.id === selectedRoomId) ?? null) : null;
   // Keep last room data alive during the Dialog close animation
   const lastSelectedRoomRef = useRef<Room | null>(null);
   if (selectedRoom) lastSelectedRoomRef.current = selectedRoom;
   const modalDisplayRoom = selectedRoom ?? lastSelectedRoomRef.current;
-  // Sync modal-open state into ref for parallax pause
-  isModalOpenRef.current = selectedRoomId !== null;
+  // Sync modal-open state into ref for parallax pause (room modal OR hotel-info modals)
+  isModalOpenRef.current = selectedRoomId !== null || hotelInfoModalOpenRef.current;
   const [activeTab, setActiveTab] = useState<Tab>('available');
   const [showSplash, setShowSplash] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -268,7 +274,7 @@ export default function HotelDemoPage() {
 
               {activeTab === 'hotel-info' && (
                 <motion.div key="hotel-info" {...TAB_TRANSITION}>
-                  <HotelInfoTab onCountChange={setHotelServiceCount} />
+                  <HotelInfoTab onCountChange={setHotelServiceCount} onModalOpenChange={handleHotelInfoModalChange} />
                 </motion.div>
               )}
 

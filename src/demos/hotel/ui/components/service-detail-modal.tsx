@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Restaurant, HotelActivity, Amenity } from '../../domain/service.entity';
 
 type ServiceItem = Restaurant | HotelActivity | Amenity;
@@ -158,12 +159,20 @@ export default function ServiceDetailModal({ type, item, onClose, onEdit, onTogg
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm dialog-overlay-enter p-4"
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4"
       onClick={onClose}
     >
-      <div
-        className="bg-[var(--surface)] rounded-2xl w-full max-w-lg shadow-2xl border border-[var(--border)] dialog-content-enter overflow-hidden"
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 10 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+        className="bg-[var(--surface)] rounded-2xl w-full max-w-lg shadow-2xl border border-[var(--border)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Header card ── */}
@@ -332,7 +341,7 @@ export default function ServiceDetailModal({ type, item, onClose, onEdit, onTogg
             Ändra uppgifter
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { Restaurant, HotelActivity, Amenity } from '../../domain/service.entity';
 import ServiceCard from './service-card';
 import ServiceFormModal from './service-form-modal';
@@ -19,9 +20,10 @@ const SECTION_CONFIG: { key: ServiceSection; label: string; type: ServiceType; a
 
 interface Props {
   onCountChange?: (count: number) => void;
+  onModalOpenChange?: (open: boolean) => void;
 }
 
-export default function HotelInfoTab({ onCountChange }: Props) {
+export default function HotelInfoTab({ onCountChange, onModalOpenChange }: Props) {
   const [activeSection, setActiveSection] = useState<ServiceSection>('restaurants');
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [activities, setActivities] = useState<HotelActivity[]>([]);
@@ -52,6 +54,12 @@ export default function HotelInfoTab({ onCountChange }: Props) {
   }, [onCountChange]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // Notify parent when any modal opens/closes — drives parallax pause
+  const anyModalOpen = !!(viewingItem || editingItem || creatingType);
+  useEffect(() => {
+    onModalOpenChange?.(anyModalOpen);
+  }, [anyModalOpen, onModalOpenChange]);
 
   const handleSave = async () => {
     setEditingItem(null);
@@ -214,37 +222,46 @@ export default function HotelInfoTab({ onCountChange }: Props) {
         </div>
       </div>
 
-      {/* Modals */}
-      {creatingType && (
-        <ServiceFormModal
-          type={creatingType}
-          onSave={handleSave}
-          onClose={() => setCreatingType(null)}
-        />
-      )}
+      {/* Modals — wrapped in AnimatePresence so exit animations play */}
+      <AnimatePresence>
+        {creatingType && (
+          <ServiceFormModal
+            key="creating"
+            type={creatingType}
+            onSave={handleSave}
+            onClose={() => setCreatingType(null)}
+          />
+        )}
+      </AnimatePresence>
 
-      {editingItem && (
-        <ServiceFormModal
-          type={editingItem.type}
-          item={editingItem.item}
-          onSave={handleSave}
-          onClose={() => setEditingItem(null)}
-        />
-      )}
+      <AnimatePresence>
+        {editingItem && (
+          <ServiceFormModal
+            key="editing"
+            type={editingItem.type}
+            item={editingItem.item}
+            onSave={handleSave}
+            onClose={() => setEditingItem(null)}
+          />
+        )}
+      </AnimatePresence>
 
-      {viewingItem && (
-        <ServiceDetailModal
-          type={viewingItem.type}
-          item={viewingItem.item}
-          onClose={() => setViewingItem(null)}
-          onEdit={(i) => {
-            setViewingItem(null);
-            setEditingItem({ type: viewingItem.type, item: i });
-          }}
-          onToggleActive={(id, isActive) => handleToggleActive(viewingItem.type, id, isActive)}
-          onDelete={(id) => { setViewingItem(null); handleDelete(viewingItem.type, id); }}
-        />
-      )}
+      <AnimatePresence>
+        {viewingItem && (
+          <ServiceDetailModal
+            key="viewing"
+            type={viewingItem.type}
+            item={viewingItem.item}
+            onClose={() => setViewingItem(null)}
+            onEdit={(i) => {
+              setViewingItem(null);
+              setEditingItem({ type: viewingItem.type, item: i });
+            }}
+            onToggleActive={(id, isActive) => handleToggleActive(viewingItem.type, id, isActive)}
+            onDelete={(id) => { setViewingItem(null); handleDelete(viewingItem.type, id); }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

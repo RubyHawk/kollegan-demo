@@ -321,11 +321,32 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
       );
     }
 
+    if (compact) {
+      return (
+        <div className="border-t border-[var(--border)] px-3 py-2 shrink-0 text-center">
+          <p className="text-[10px] text-[var(--text-muted)]">Samtalet avslutat</p>
+        </div>
+      );
+    }
+
     return (
-      <div className={`border-t border-[var(--border)] ${compact ? 'px-3 py-2' : 'px-5 py-3'} shrink-0 text-center`}>
-        <p className={`text-[var(--text-muted)] ${compact ? 'text-[10px]' : 'text-xs'}`}>
-          Samtalet {compact ? 'avslutat' : 'har avslutats'}
-        </p>
+      <div className="border-t border-[var(--border)] px-5 py-4 shrink-0 space-y-2">
+        <p className="text-xs text-[var(--text-muted)] text-center">Samtalet har avslutats</p>
+        <button
+          onClick={() => { setMessages([]); startCall(); }}
+          className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-white bg-purple-700 hover:bg-purple-800 dark:bg-amber-500 dark:hover:bg-amber-600 rounded-xl py-2.5 transition-all active:scale-95"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d={PHONE_PATH} />
+          </svg>
+          Ring igen
+        </button>
+        <button
+          onClick={resetToIdle}
+          className="w-full text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] py-1 transition-colors"
+        >
+          Stäng
+        </button>
       </div>
     );
   };
@@ -470,7 +491,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
           <div className="px-3 pb-3 pt-1 space-y-1.5 border-t border-[var(--border)]">
             <button
               onClick={startCall}
-              className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-3 py-2 text-xs font-medium transition-all active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 bg-purple-700 hover:bg-purple-800 dark:bg-amber-500 dark:hover:bg-amber-600 text-white rounded-lg px-3 py-2 text-xs font-medium transition-all active:scale-[0.98]"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d={PHONE_PATH} />
@@ -533,22 +554,22 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
             style={{ cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none' }}
             className={[
               'flex items-center gap-2.5 px-3.5 shrink-0',
-              'bg-amber-50/60 dark:bg-amber-900/10 border-b-2 border-amber-200 dark:border-amber-800/60',
+              'bg-[var(--surface-alt)] border-b border-[var(--border)]',
               draggableCollapsed ? 'py-2' : 'py-3',
             ].join(' ')}
           >
             {/* Grip icon — label hidden when collapsed to save space */}
             <div className={[
-              'flex items-center shrink-0 bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 rounded-lg',
+              'flex items-center shrink-0 bg-[var(--surface)] border border-[var(--border)] rounded-lg',
               draggableCollapsed ? 'p-1.5' : 'gap-1.5 px-2 py-1',
             ].join(' ')}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-amber-500 shrink-0">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-[var(--text-muted)] shrink-0">
                 <circle cx="8" cy="5" r="2" /><circle cx="16" cy="5" r="2" />
                 <circle cx="8" cy="12" r="2" /><circle cx="16" cy="12" r="2" />
                 <circle cx="8" cy="19" r="2" /><circle cx="16" cy="19" r="2" />
               </svg>
               {!draggableCollapsed && (
-                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider select-none">Dra</span>
+                <span className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider select-none">Dra</span>
               )}
             </div>
 
@@ -576,7 +597,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
                 {(callStatus === 'idle' || callStatus === 'ended') && (
                   <button
                     onClick={startCall}
-                    className="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-all active:scale-95"
+                    className="flex items-center gap-1 bg-purple-700 hover:bg-purple-800 dark:bg-amber-500 dark:hover:bg-amber-600 text-white rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-all active:scale-95"
                     aria-label="Ring"
                   >
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -588,9 +609,9 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
 
                 {/* Connecting: compact spinner */}
                 {callStatus === 'connecting' && (
-                  <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-lg px-2 py-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full border-[1.5px] border-amber-500 border-t-transparent animate-spin shrink-0" />
-                    <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">Ansluter</span>
+                  <div className="flex items-center gap-1 bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg px-2 py-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full border-[1.5px] border-[var(--accent)] border-t-transparent animate-spin shrink-0" />
+                    <span className="text-[10px] text-[var(--text-secondary)] font-medium">Ansluter</span>
                   </div>
                 )}
 
@@ -644,14 +665,28 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
           {/* ── Body (hidden when collapsed) ── */}
           {!draggableCollapsed && (
             <>
-              {/* Voice strip */}
+              {/* Active call banner */}
               {mode === 'call' && callStatus === 'active' && (
-                <div className="border-b border-[var(--border)] bg-[var(--surface-alt)] flex items-center justify-between px-5 py-3">
-                  <div className="flex items-end gap-0.5 h-5">
-                    <InlineVolumeBars volumeLevel={volumeLevel} callActive={callStatus === 'active'} />
+                <div className={[
+                  'border-b px-5 py-3.5 shrink-0 flex items-center gap-3 transition-colors duration-300',
+                  isSpeaking
+                    ? 'bg-emerald-50/70 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800/30'
+                    : 'bg-[var(--surface-alt)] border-[var(--border)]',
+                ].join(' ')}>
+                  <div className="relative shrink-0">
+                    <AvatarBadge size="sm" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-[1.5px] border-[var(--surface)]" />
                   </div>
-                  <span className="text-[10px] text-[var(--text-muted)]">
-                    {isSpeaking ? `${brand.name} talar` : 'Din tur'}
+                  <div className="flex-1 min-w-0">
+                    <p className={['text-xs font-semibold leading-none truncate', isSpeaking ? 'text-emerald-700 dark:text-emerald-400' : 'text-[var(--text-primary)]'].join(' ')}>
+                      {isSpeaking ? `${brand.name} talar` : 'Din tur att prata'}
+                    </p>
+                    <div className="flex items-end gap-0.5 h-3.5 mt-1.5">
+                      <InlineVolumeBars volumeLevel={volumeLevel} callActive />
+                    </div>
+                  </div>
+                  <span className="font-mono text-xs font-semibold tabular-nums shrink-0 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-md px-2 py-0.5 border border-emerald-200 dark:border-emerald-800/50">
+                    {fmtDur(callDuration)}
                   </span>
                 </div>
               )}
@@ -659,6 +694,19 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
               {/* Connecting */}
               {mode === 'call' && callStatus === 'connecting' && (
                 <ConnectingIndicator brand={brand} />
+              )}
+              {mode === 'call' && callStatus === 'connecting' && (
+                <div className="px-5 pb-3 shrink-0 flex justify-center">
+                  <button
+                    onClick={endCall}
+                    className="text-xs text-[var(--text-muted)] hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1.5"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d={HANGUP_PATH} /><line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                    Avbryt
+                  </button>
+                </div>
               )}
 
               {/* ── Idle: action buttons ── */}
@@ -676,7 +724,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
                   {/* Primary: Ring */}
                   <button
                     onClick={startCall}
-                    className="group w-full flex items-center gap-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl px-5 py-4 transition-all duration-200 active:scale-[0.98] shadow-md shadow-amber-500/20 hover:shadow-amber-500/30"
+                    className="group w-full flex items-center gap-4 bg-purple-700 hover:bg-purple-800 dark:bg-amber-500 dark:hover:bg-amber-600 text-white rounded-xl px-5 py-4 transition-all duration-200 active:scale-[0.98] shadow-md shadow-purple-700/20 dark:shadow-amber-500/20"
                   >
                     <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -900,7 +948,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
           className="fixed bottom-6 right-6 z-50 group"
           aria-label={`Kontakta ${brand.name}`}
         >
-          <div className="relative w-14 h-14 rounded-full bg-amber-500 hover:bg-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/30 group-hover:scale-105 transition-all duration-200 active:scale-95">
+          <div className="relative w-14 h-14 rounded-full bg-purple-700 hover:bg-purple-800 dark:bg-amber-500 dark:hover:bg-amber-600 flex items-center justify-center shadow-lg shadow-purple-700/20 dark:shadow-amber-500/20 group-hover:scale-105 transition-all duration-200 active:scale-95">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d={PHONE_PATH} />
             </svg>
@@ -962,14 +1010,14 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={startCall}
-                    className="group flex flex-col items-center gap-2.5 bg-[var(--surface-alt)] hover:bg-amber-50 dark:hover:bg-amber-900/10 border border-[var(--border)] hover:border-amber-300 dark:hover:border-amber-700 rounded-xl px-4 py-4 transition-all duration-200 active:scale-[0.97]"
+                    className="group flex flex-col items-center gap-2.5 bg-[var(--surface-alt)] hover:bg-purple-50 dark:hover:bg-amber-900/10 border border-[var(--border)] hover:border-purple-300 dark:hover:border-amber-700 rounded-xl px-4 py-4 transition-all duration-200 active:scale-[0.97]"
                   >
-                    <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/30 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/50 flex items-center justify-center transition-colors">
-                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgb(217 119 6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <div className="w-9 h-9 rounded-full bg-purple-100 dark:bg-amber-900/30 group-hover:bg-purple-200 dark:group-hover:bg-amber-900/50 flex items-center justify-center transition-colors">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-purple-600 dark:text-amber-500">
                         <path d={PHONE_PATH} />
                       </svg>
                     </div>
-                    <span className="text-xs font-medium text-[var(--text-secondary)] group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">Ring oss</span>
+                    <span className="text-xs font-medium text-[var(--text-secondary)] group-hover:text-purple-700 dark:group-hover:text-amber-400 transition-colors">Ring oss</span>
                   </button>
 
                   <button
