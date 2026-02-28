@@ -155,9 +155,15 @@ export default function HotelDemoPage() {
 
   return (
     <>
-      {showSplash && <SplashScreen onDone={handleSplashDone} />}
+      <AnimatePresence>
+        {showSplash && <SplashScreen key="splash" onDone={handleSplashDone} />}
+      </AnimatePresence>
 
-      <div className="relative h-full grid grid-rows-[auto_1fr_auto]" style={{ zIndex: 1 }}>
+      <div
+        className="relative h-full grid grid-rows-[auto_1fr_auto]"
+        style={{ zIndex: 1 }}
+        aria-hidden={showSplash ? 'true' : undefined}
+      >
         {/* ═══════ HEADER ═══════ */}
         <DashboardHeader
           onCall={onCall}
