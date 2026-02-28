@@ -532,111 +532,112 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
             onMouseDown={handleDragStart}
             style={{ cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none' }}
             className={[
-              'flex items-center gap-3 px-4 shrink-0',
+              'flex items-center gap-2.5 px-3.5 shrink-0',
               'bg-amber-50/60 dark:bg-amber-900/10 border-b-2 border-amber-200 dark:border-amber-800/60',
-              draggableCollapsed ? 'py-2.5' : 'py-3',
+              draggableCollapsed ? 'py-2' : 'py-3',
             ].join(' ')}
           >
-            {/* Grip zone */}
-            <div className="flex items-center gap-1.5 shrink-0 bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 rounded-lg px-2 py-1">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-amber-500 shrink-0">
-                <circle cx="8" cy="5" r="2" />
-                <circle cx="16" cy="5" r="2" />
-                <circle cx="8" cy="12" r="2" />
-                <circle cx="16" cy="12" r="2" />
-                <circle cx="8" cy="19" r="2" />
-                <circle cx="16" cy="19" r="2" />
+            {/* Grip icon — label hidden when collapsed to save space */}
+            <div className={[
+              'flex items-center shrink-0 bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 rounded-lg',
+              draggableCollapsed ? 'p-1.5' : 'gap-1.5 px-2 py-1',
+            ].join(' ')}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-amber-500 shrink-0">
+                <circle cx="8" cy="5" r="2" /><circle cx="16" cy="5" r="2" />
+                <circle cx="8" cy="12" r="2" /><circle cx="16" cy="12" r="2" />
+                <circle cx="8" cy="19" r="2" /><circle cx="16" cy="19" r="2" />
               </svg>
-              <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider select-none">Dra</span>
+              {!draggableCollapsed && (
+                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider select-none">Dra</span>
+              )}
             </div>
 
             {/* Avatar badge */}
             <div className="relative shrink-0">
-              <AvatarBadge size="md" />
-              <StatusDot size="md" />
+              <AvatarBadge size={draggableCollapsed ? 'sm' : 'md'} />
+              <StatusDot size={draggableCollapsed ? 'sm' : 'md'} />
             </div>
 
-            {/* Name + status */}
+            {/* Name + status — always truncated */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-heading text-sm font-semibold text-[var(--text-primary)] leading-none">{brand.name}</h3>
-              <p className="text-[var(--text-muted)] text-xs mt-0.5 truncate">{statusText}</p>
+              <h3 className={['font-heading font-semibold text-[var(--text-primary)] leading-none truncate', draggableCollapsed ? 'text-xs' : 'text-sm'].join(' ')}>{brand.name}</h3>
+              {!draggableCollapsed && (
+                <p className="text-[var(--text-muted)] text-xs mt-0.5 truncate">{statusText}</p>
+              )}
             </div>
 
-            {/* ── Collapsed contextual strip ── */}
+            {/* ── Collapsed contextual strip — compact, icon-first ── */}
             {draggableCollapsed && (
               <div
                 onMouseDown={(e) => e.stopPropagation()}
-                className="flex items-center gap-2 shrink-0"
+                className="flex items-center gap-1.5 shrink-0"
               >
-                {/* Idle: Ring button */}
+                {/* Idle / ended: compact ring btn */}
                 {(callStatus === 'idle' || callStatus === 'ended') && (
                   <button
                     onClick={startCall}
-                    className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-3 py-1.5 text-xs font-semibold transition-all active:scale-95"
+                    className="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-all active:scale-95"
+                    aria-label="Ring"
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d={PHONE_PATH} />
                     </svg>
                     Ring
                   </button>
                 )}
 
-                {/* Connecting: spinner */}
+                {/* Connecting: compact spinner */}
                 {callStatus === 'connecting' && (
-                  <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-lg px-2.5 py-1.5">
-                    <div className="w-3 h-3 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
-                    <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">Ansluter&hellip;</span>
+                  <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-lg px-2 py-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full border-[1.5px] border-amber-500 border-t-transparent animate-spin shrink-0" />
+                    <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">Ansluter</span>
                   </div>
                 )}
 
-                {/* Active: timer + mini vol bars + end call */}
+                {/* Active: timer badge + icon-only end call — fits 400px */}
                 {callStatus === 'active' && (
                   <>
-                    <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 rounded-lg px-2.5 py-1.5">
+                    <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 rounded-lg px-2 py-1.5">
                       <span className="relative flex h-1.5 w-1.5 shrink-0">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
                       </span>
-                      <span className="text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                      <span className="text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
                         {fmtDur(callDuration)}
                       </span>
-                      <div className="flex items-end gap-px h-3.5">
-                        <InlineVolumeBars volumeLevel={volumeLevel} callActive={callStatus === 'active'} />
-                      </div>
                     </div>
                     <button
                       onClick={endCall}
-                      className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all active:scale-95"
+                      className="w-7 h-7 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all active:scale-95 shrink-0"
                       aria-label="Avsluta samtal"
                     >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d={HANGUP_PATH} />
-                        <line x1="1" y1="1" x2="23" y2="23" />
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d={HANGUP_PATH} /><line x1="1" y1="1" x2="23" y2="23" />
                       </svg>
-                      Avsluta
                     </button>
                   </>
                 )}
               </div>
             )}
 
-            {/* Expand / collapse */}
+            {/* Expand / collapse — icon-only when collapsed */}
             <button
               onMouseDown={(e) => e.stopPropagation()}
               onClick={() => setDraggableCollapsed((c) => !c)}
               className={[
-                'flex items-center gap-1.5 shrink-0 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all',
+                'flex items-center shrink-0 rounded-lg border transition-all',
                 'text-[var(--text-secondary)] border-[var(--border)] bg-[var(--surface-alt)]',
                 'hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]/40',
+                draggableCollapsed ? 'p-1.5' : 'gap-1.5 px-2.5 py-1.5 text-xs font-medium',
               ].join(' ')}
               aria-label={draggableCollapsed ? 'Expandera' : 'Minimera'}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 {draggableCollapsed
                   ? <polyline points="18 15 12 9 6 15" />
                   : <polyline points="6 9 12 15 18 9" />}
               </svg>
-              <span>{draggableCollapsed ? 'Öppna' : 'Minimera'}</span>
+              {!draggableCollapsed && <span>Minimera</span>}
             </button>
           </div>
 

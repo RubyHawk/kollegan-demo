@@ -37,15 +37,23 @@ export default function HotelDemoPage() {
 
   const { toasts, addToast, dismissToast } = useToast();
 
-  /* ── Grid distortion — mouse parallax, no glow ── */
+  /* ── Grid distortion — mouse parallax, pauses when any modal is open ── */
   const gridRafRef = useRef<number | null>(null);
+  const isModalOpenRef = useRef(false);
   useEffect(() => {
     let targetX = 0, targetY = 0, currentX = 0, currentY = 0;
     const onMove = (e: MouseEvent) => {
-      targetX = (e.clientX / window.innerWidth - 0.5) * 20;
-      targetY = (e.clientY / window.innerHeight - 0.5) * 20;
+      if (!isModalOpenRef.current) {
+        targetX = (e.clientX / window.innerWidth - 0.5) * 20;
+        targetY = (e.clientY / window.innerHeight - 0.5) * 20;
+      }
     };
     const tick = () => {
+      if (isModalOpenRef.current) {
+        // Return grid to center when modal is open
+        targetX = 0;
+        targetY = 0;
+      }
       currentX += (targetX - currentX) * 0.06;
       currentY += (targetY - currentY) * 0.06;
       document.documentElement.style.setProperty('--grid-offset-x', `${currentX.toFixed(2)}px`);
@@ -65,6 +73,12 @@ export default function HotelDemoPage() {
 
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const selectedRoom = selectedRoomId ? (rooms.find((r) => r.id === selectedRoomId) ?? null) : null;
+  // Keep last room data alive during the Dialog close animation
+  const lastSelectedRoomRef = useRef<Room | null>(null);
+  if (selectedRoom) lastSelectedRoomRef.current = selectedRoom;
+  const modalDisplayRoom = selectedRoom ?? lastSelectedRoomRef.current;
+  // Sync modal-open state into ref for parallax pause
+  isModalOpenRef.current = selectedRoomId !== null;
   const [activeTab, setActiveTab] = useState<Tab>('available');
   const [showSplash, setShowSplash] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -309,10 +323,11 @@ export default function HotelDemoPage() {
         </footer>
       </div>
 
-      {/* Room modal */}
-      {selectedRoom && (
+      {/* Room modal — keep mounted during close animation via modalDisplayRoom */}
+      {modalDisplayRoom && (
         <RoomDetailModal
-          room={selectedRoom}
+          room={modalDisplayRoom}
+          open={!!selectedRoom}
           onClose={() => setSelectedRoomId(null)}
           onBooked={() => setSelectedRoomId(null)}
         />
