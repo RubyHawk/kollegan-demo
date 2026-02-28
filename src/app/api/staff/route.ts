@@ -1,83 +1,84 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@core/database/prisma';
+import { createHandler } from '@core/api/handler';
+import { Errors } from '@core/api/errors';
+import { ok, created } from '@core/api/response';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const SALT_ROUNDS = 12;
 
+const CreateStaffSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(12, 'Password must be at least 12 characters'),
+  role: z.enum(['receptionist', 'manager', 'admin']),
+});
+
+const DeleteQuerySchema = z.object({
+  id: z.string().uuid('id must be a valid UUID'),
+});
+
 /**
  * GET /api/staff
- * Returns all staff users including their bcrypt hash (demo only).
+ * Returns all staff users. Requires JWT authentication.
+ * passwordHash is intentionally excluded from all responses.
  */
-export async function GET() {
-  try {
+export const GET = createHandler(
+  {
+    tag: 'Staff:List',
+    auth: 'jwt',
+    rateLimit: { max: 60, windowMs: 60_000 },
+  },
+  async () => {
     const users = await prisma.staffUser.findMany({
       orderBy: { createdAt: 'asc' },
-      select: { id: true, email: true, role: true, passwordHash: true, createdAt: true },
+      select: { id: true, email: true, role: true, createdAt: true, lastLogin: true },
     });
-    return NextResponse.json({ users });
-  } catch {
-    return NextResponse.json({ error: 'Kunde inte hämta anställda.' }, { status: 500 });
+    return ok({ users });
   }
-}
+);
 
 /**
  * POST /api/staff
  * Creates a new staff user with a bcrypt-hashed password.
- * Body: { email, password, role }
+ * Requires JWT authentication. RBAC (admin-only) added in Phase 2.
  */
-export async function POST(req: NextRequest) {
-  let body: unknown;
-  try { body = await req.json(); } catch {
-    return NextResponse.json({ error: 'Ogiltig JSON.' }, { status: 400 });
-  }
+export const POST = createHandler(
+  {
+    tag: 'Staff:Create',
+    auth: 'jwt',
+    rateLimit: { max: 20, windowMs: 60_000 },
+    body: CreateStaffSchema,
+  },
+  async ({ body }) => {
+    const existing = await prisma.staffUser.findUnique({ where: { email: body!.email } });
+    if (existing) throw Errors.conflict('A user with this email already exists');
 
-  const { email, password, role } = body as Record<string, string>;
-
-  if (!email || !password || !role) {
-    return NextResponse.json({ error: 'email, password och role krävs.' }, { status: 400 });
-  }
-  if (!['receptionist', 'manager', 'admin'].includes(role)) {
-    return NextResponse.json({ error: 'Ogiltig roll.' }, { status: 400 });
-  }
-  if (password.length < 6) {
-    return NextResponse.json({ error: 'Lösenordet måste vara minst 6 tecken.' }, { status: 400 });
-  }
-
-  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-
-  try {
-    const existing = await prisma.staffUser.findUnique({ where: { email } });
-    if (existing) {
-      return NextResponse.json({ error: 'En användare med den e-postadressen finns redan.' }, { status: 409 });
-    }
-
+    const passwordHash = await bcrypt.hash(body!.password, SALT_ROUNDS);
     const user = await prisma.staffUser.create({
-      data: { email, passwordHash, role },
-      select: { id: true, email: true, role: true, passwordHash: true, createdAt: true },
+      data: { email: body!.email, passwordHash, role: body!.role },
+      select: { id: true, email: true, role: true, createdAt: true },
     });
 
-    return NextResponse.json({ user }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: 'Databasfel. Kontrollera att migrationer är körda.' }, { status: 500 });
+    return created({ user }, `/api/staff?id=${user.id}`);
   }
-}
+);
 
 /**
  * DELETE /api/staff?id=<userId>
- * Deletes a staff user by ID.
+ * Deletes a staff user by ID. Requires JWT authentication.
  */
-export async function DELETE(req: NextRequest) {
-  const id = new URL(req.url).searchParams.get('id');
-  if (!id) {
-    return NextResponse.json({ error: 'id krävs.' }, { status: 400 });
+export const DELETE = createHandler(
+  {
+    tag: 'Staff:Delete',
+    auth: 'jwt',
+    rateLimit: { max: 20, windowMs: 60_000 },
+    query: DeleteQuerySchema,
+  },
+  async ({ query }) => {
+    await prisma.staffUser.delete({ where: { id: query!.id } });
+    return ok(null);
   }
-  try {
-    await prisma.staffUser.delete({ where: { id } });
-    return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: 'Kunde inte radera användaren.' }, { status: 500 });
-  }
-}
+);

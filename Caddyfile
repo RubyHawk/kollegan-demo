@@ -1,0 +1,30 @@
+# Caddyfile — Kollegan AI Platform
+# Automatic TLS via Let's Encrypt. Replace the domain below before deploying.
+#
+# Usage: caddy run --config Caddyfile
+# Docs:  https://caddyserver.com/docs/caddyfile
+
+{
+  # Uncomment to enable Caddy admin API (default: localhost:2019)
+  # admin localhost:2019
+}
+
+app.kollegan.ai {
+  # Reverse proxy all traffic to the Next.js app
+  reverse_proxy app:3000
+
+  # Logging (structured JSON)
+  log {
+    output stdout
+    format json
+    level INFO
+  }
+
+  # Optional: rate limiting at Caddy layer for non-API routes (handled per-route in the app)
+  # rate_limit {remote.ip} 100r/s
+}
+
+# Redirect www → non-www
+www.app.kollegan.ai {
+  redir https://app.kollegan.ai{uri} permanent
+}

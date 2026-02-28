@@ -7,6 +7,9 @@
 //   wf_*         → automation / workflow module (core domain)
 //   evt_*        → domain event log
 //   lead_*       → leads module (supporting domain)
+//   usr_*        → unified user, role, permission, session (NEW)
+//   prt_*        → customer portal (NEW)
+//   aud_*        → audit log (NEW)
 //
 // Multi-tenancy: every tenant-owned model has organizationId.
 //   Existing models (demo_hotel_*): organizationId is nullable for
@@ -35,6 +38,10 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Two-tier tenancy: internal org (the company) vs customer orgs (each client)
+  orgType     String  @default("internal") // internal | customer
+  parentOrgId String? // null for internal; customer → internal org id
+
   // Back-relations from tenant-owned models
   customers   Customer[]
   bookings    HotelBooking[]
@@ -42,8 +49,11 @@ model Organization {
   crmRecords  CrmRecord[]
   workflows   Workflow[]
   leads       Lead[]
+  users       User[]
+  portal      Portal?
 
   @@index([slug])
+  @@index([orgType])
   @@map("org_organizations")
 }
 
@@ -259,18 +269,256 @@ model Lead {
   status         String    @default("new") // new | contacted | qualified | proposal | won | lost
   source         String    @default("manual") // voice_call | web_form | manual | referral | n8n_webhook
   score          Int?      // 0–100 lead score
-  assignedTo     String?   // StaffUser.id
+  assignedTo     String?   // User.id
   notes          String?
   estimatedValue Float?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   convertedAt    DateTime?
+  deletedAt      DateTime? // soft delete
   customerId     String?   // Customer.id — set when lead is converted
 
-  organization Organization @relation(fields: [organizationId], references: [id])
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  activities   LeadActivity[]
 
   @@index([organizationId, status])
   @@index([organizationId, createdAt])
   @@index([organizationId, assignedTo])
+  @@index([deletedAt])
   @@map("lead_leads")
+}
+
+// ─── Lead Activities ──────────────────────────────────────────────────────────
+// Activity timeline per lead: notes, calls, stage changes, AI interactions.
+
+model LeadActivity {
+  id        String    @id @default(uuid())
+  leadId    String
+  type      String    // note | call | email | stage_change | ai_interaction
+  content   String
+  createdBy String    // User.id or 'system'
+  createdAt DateTime  @default(now())
+  deletedAt DateTime? // soft delete
+
+  lead Lead @relation(fields: [leadId], references: [id])
+
+  @@index([leadId, createdAt])
+  @@index([leadId, type])
+  @@map("lead_activities")
+}
+
+// ─── Unified Users ────────────────────────────────────────────────────────────
+// Replaces StaffUser. Covers both internal staff and customer portal users.
+// organizationId is null for super_admin only.
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String    // bcrypt cost >= 12, enforced in auth service
+  firstName       String?
+  lastName        String?
+  avatarUrl       String?
+  userType        String    @default("staff") // staff | customer
+  isActive        Boolean   @default(true)
+  emailVerified   Boolean   @default(false)
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  lastLoginIp     String?   // last octet masked before storage (GDPR)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime? // soft delete — GDPR anonymize then purge
+
+  // null = super_admin with cross-org access
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  roles              UserRole[]
+  sessions           Session[]
+  emailVerifications EmailVerification[]
+  passwordResets     PasswordReset[]
+  auditLogs          AuditLog[]          @relation("ActorLogs")
+
+  @@index([email])
+  @@index([organizationId])
+  @@index([userType, organizationId])
+  @@index([deletedAt])
+  @@map("usr_users")
+}
+
+// ─── Roles and Permissions ────────────────────────────────────────────────────
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  // super_admin | admin | user | viewer | customer_admin | customer_viewer
+  displayName String
+  description String?
+  isSystem    Boolean  @default(true) // system roles cannot be deleted
+  createdAt   DateTime @default(now())
+
+  userRoles   UserRole[]
+  permissions RolePermission[]
+
+  @@map("usr_roles")
+}
+
+model Permission {
+  id       String   @id @default(uuid())
+  resource String   // e.g. 'leads', 'workflow', 'portal', 'audit'
+  action   String   // e.g. 'read', 'write', 'delete', 'admin'
+  // stored as resource.action — the combination must be unique
+  createdAt DateTime @default(now())
+
+  roles RolePermission[]
+
+  @@unique([resource, action])
+  @@index([resource])
+  @@map("usr_permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+  @@map("usr_role_permissions")
+}
+
+model UserRole {
+  userId         String
+  roleId         String
+  organizationId String   // which org this role applies to
+  grantedAt      DateTime @default(now())
+  grantedBy      String?  // User.id who granted this role
+
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId, organizationId])
+  @@index([userId, organizationId])
+  @@index([roleId])
+  @@map("usr_user_roles")
+}
+
+// ─── Sessions ─────────────────────────────────────────────────────────────────
+// One row per refresh token. Enables revocation, auditing, and active-session UI.
+
+model Session {
+  id              String    @id @default(uuid())
+  userId          String
+  refreshTokenJti String    @unique // JWT JTI for blacklist lookup
+  userAgent       String?
+  ipAddress       String?
+  issuedAt        DateTime  @default(now())
+  expiresAt       DateTime
+  revokedAt       DateTime? // set on logout / forced revocation
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([refreshTokenJti])
+  @@index([expiresAt])
+  @@map("usr_sessions")
+}
+
+// ─── Email Verification ───────────────────────────────────────────────────────
+
+model EmailVerification {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique // SHA-256 hashed before storage
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([token])
+  @@map("usr_email_verifications")
+}
+
+// ─── Password Reset ───────────────────────────────────────────────────────────
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique // SHA-256 hashed before storage
+  expiresAt DateTime
+  usedAt    DateTime?
+  ipAddress String?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([token])
+  @@map("usr_password_resets")
+}
+
+// ─── Customer Portal ──────────────────────────────────────────────────────────
+// One portal per customer organization. Auto-provisioned on lead.converted event.
+
+model Portal {
+  id             String    @id @default(uuid())
+  organizationId String    @unique // 1:1 with Organization
+  slug           String    @unique // /(portal)/[slug]/
+  isActive       Boolean   @default(true)
+  customDomain   String?   // future: portal.acmecorp.com
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  provisionedBy  String?   // User.id (staff who triggered conversion)
+  provisionedAt  DateTime?
+
+  organization Organization   @relation(fields: [organizationId], references: [id])
+  members      PortalMember[]
+
+  @@index([slug])
+  @@map("prt_portals")
+}
+
+model PortalMember {
+  id          String    @id @default(uuid())
+  portalId    String
+  userId      String    // User.userType = 'customer'
+  inviteEmail String?
+  status      String    @default("invited") // invited | active | suspended
+  invitedAt   DateTime  @default(now())
+  joinedAt    DateTime?
+
+  portal Portal @relation(fields: [portalId], references: [id])
+
+  @@index([portalId])
+  @@index([userId])
+  @@map("prt_portal_members")
+}
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+// Append-only. No updates. No deletes. Ever.
+//
+// GDPR note: when a user is deleted, actorId is replaced with a tombstone UUID
+// (not set to null / removed). The audit log is immutable by design.
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  organizationId String?  // null for super-admin actions
+  actorId        String?  // User.id — null for system; tombstone UUID on GDPR delete
+  actorType      String   @default("user") // user | system | api_key
+  action         String   // 'lead.stage_changed', 'user.login', 'portal.provisioned'
+  resourceType   String   // 'Lead', 'User', 'WorkflowRun', 'Portal'
+  resourceId     String
+  before         Json?    // previous state snapshot
+  after          Json?    // new state snapshot
+  metadata       Json?    // ip, userAgent, requestId, etc.
+  occurredAt     DateTime @default(now())
+
+  actor User? @relation("ActorLogs", fields: [actorId], references: [id])
+
+  @@index([organizationId, occurredAt])
+  @@index([actorId, occurredAt])
+  @@index([resourceType, resourceId])
+  @@index([action, occurredAt])
+  @@map("aud_audit_logs")
 }
