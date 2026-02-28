@@ -313,8 +313,16 @@ export function createHandler<
 
       if (authStrategy === 'jwt') {
         const authHeader = req.headers.get('authorization') ?? '';
-        const token      = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-        if (!token) return problem(Errors.unauthorized('Bearer token required'));
+        // Primary: Bearer token from Authorization header (API-to-API, mobile)
+        let token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+        // Fallback: httpOnly cookie for same-origin browser requests
+        // 'token' = staff sessions, 'portal_token' = customer portal sessions
+        if (!token) {
+          token = req.cookies.get('token')?.value
+            ?? req.cookies.get('portal_token')?.value
+            ?? '';
+        }
+        if (!token) return problem(Errors.unauthorized('Authentication required'));
         try {
           await verifyToken(token);
         } catch {
