@@ -64,7 +64,7 @@ const TYPE_LABELS: Record<string, string> = {
 const TYPE_COLOR: Record<string, { dot: string; badge: string }> = {
   Enkel:  { dot: 'bg-stone-400',  badge: 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-stone-700' },
   Dubbel: { dot: 'bg-blue-400',   badge: 'bg-blue-50  dark:bg-blue-900/30 text-blue-700  dark:text-blue-300  border-blue-200  dark:border-blue-800/40' },
-  Svit:   { dot: 'bg-amber-400',  badge: 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/40' },
+  Svit:   { dot: 'bg-purple-400 dark:bg-amber-400',  badge: 'bg-purple-50 dark:bg-amber-900/30 text-purple-700 dark:text-amber-400 border-purple-200 dark:border-amber-700/40' },
 };
 
 function AmenityPill({ amenity }: { amenity: AmenityDef }) {

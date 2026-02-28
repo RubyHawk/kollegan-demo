@@ -61,7 +61,7 @@ export default function RoomCard({ room, onClick }: Props) {
         isLocked && 'cursor-default room-locked',
         STATUS_ACCENT[room.status] ?? 'border-l-[var(--border)]',
         room.type === 'Svit'
-          ? 'bg-amber-50/40 dark:bg-amber-900/10 overflow-hidden'
+          ? 'bg-purple-50/40 dark:bg-amber-900/10 overflow-hidden'
           : 'bg-[var(--surface)]',
       ].filter(Boolean).join(' ')}
     >
@@ -85,7 +85,7 @@ export default function RoomCard({ room, onClick }: Props) {
           <span className={[
             'text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0 mt-0.5',
             room.type === 'Svit'
-              ? 'bg-amber-200/70 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
+              ? 'bg-purple-100/70 dark:bg-amber-900/40 text-purple-700 dark:text-amber-400'
               : 'bg-[var(--surface-alt)] text-[var(--text-muted)] border border-[var(--border-light)]',
           ].join(' ')}>
             {room.type}
