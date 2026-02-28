@@ -459,26 +459,43 @@ export default function ActivityLog({ activities, focusEventId, onFocusConsumed 
   const callCount = sessions.filter(s => s.kind === 'call').length;
   const bookingCount = activities.filter(e => e.type === 'room_confirmed' || e.type === 'room_cancelled').length;
 
+  const pageHeader = (
+    <div className="flex items-center justify-between mb-5">
+      <div>
+        <h2 className="font-heading text-xl font-semibold text-[var(--text-primary)]">Aktivitetslogg</h2>
+        <p className="text-xs text-[var(--text-muted)] mt-0.5">Realtidshändelser — samtal, bokningar och sökningar via Kollegan</p>
+      </div>
+      <span className="text-xs font-medium text-purple-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-full px-3 py-1.5">
+        {activities.length} händelser
+      </span>
+    </div>
+  );
+
   if (activities.length === 0) {
     return (
-      <div className="text-center py-24">
-        <div className="w-14 h-14 rounded-2xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center mx-auto mb-4 float-animation text-amber-500">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-          </svg>
+      <div>
+        {pageHeader}
+        <div className="text-center py-24">
+          <div className="w-14 h-14 rounded-2xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center mx-auto mb-4 float-animation text-amber-500">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+          </div>
+          <p className="text-[var(--text-secondary)] font-medium text-sm">Inga aktiviteter än</p>
+          <p className="text-[var(--text-muted)] text-xs mt-1.5 max-w-xs mx-auto leading-relaxed">
+            Ring Kollegan eller boka ett rum manuellt för att se aktiviteten loggas här i realtid.
+          </p>
         </div>
-        <p className="text-[var(--text-secondary)] font-medium text-sm">Inga aktiviteter än</p>
-        <p className="text-[var(--text-muted)] text-xs mt-1.5 max-w-xs mx-auto leading-relaxed">
-          Ring Kollegan eller boka ett rum manuellt för att se aktiviteten loggas här i realtid.
-        </p>
       </div>
     );
   }
 
   return (
+    <div>
+      {pageHeader}
     <div
       className="flex gap-0 border-2 border-[var(--border)] rounded-2xl overflow-hidden bg-[var(--surface)] shadow-card"
-      style={{ height: 'calc(100vh - 160px)', minHeight: '480px' }}
+      style={{ height: 'calc(100vh - 220px)', minHeight: '480px' }}
     >
       {/* ── Left: list pane ── */}
       <div
@@ -502,14 +519,14 @@ export default function ActivityLog({ activities, focusEventId, onFocusConsumed 
           </div>
         </div>
 
-        {/* Sub-tabs: Samtalslogg | Bokningslogg */}
-        <div className="flex items-center gap-1 px-3 py-2.5 border-b-2 border-[var(--border)] bg-[var(--surface)] shrink-0">
+        {/* Sub-tabs: Samtalslogg | Bokningslogg — CRM style */}
+        <div className="flex items-center gap-1 px-2 py-2 border-b-2 border-[var(--border)] bg-[var(--surface)] shrink-0">
           <button
             onClick={() => setLogView('samtal')}
             className={[
               'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
               logView === 'samtal'
-                ? 'bg-amber-500 text-white shadow-sm'
+                ? 'bg-purple-700 dark:bg-amber-500 text-white shadow-sm'
                 : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] border border-transparent hover:border-[var(--border)]',
             ].join(' ')}
           >
@@ -526,7 +543,7 @@ export default function ActivityLog({ activities, focusEventId, onFocusConsumed 
             className={[
               'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
               logView === 'bokningar'
-                ? 'bg-amber-500 text-white shadow-sm'
+                ? 'bg-purple-700 dark:bg-amber-500 text-white shadow-sm'
                 : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] border border-transparent hover:border-[var(--border)]',
             ].join(' ')}
           >
@@ -645,6 +662,7 @@ export default function ActivityLog({ activities, focusEventId, onFocusConsumed 
           )}
         </div>
       )}
+    </div>
     </div>
   );
 }

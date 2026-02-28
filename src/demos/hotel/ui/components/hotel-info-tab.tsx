@@ -76,59 +76,46 @@ export default function HotelInfoTab({ onCountChange }: Props) {
     activeSection === 'activities' ? activities :
     amenities;
 
-  return (
-    <div className="space-y-6">
-      {/* Section header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="font-heading text-xl font-bold text-[var(--text-primary)]">Hotellinfo</h2>
-          <p className="text-sm text-[var(--text-muted)] mt-0.5">
-            All information som Kollegan hämtar och använder under samtal
-          </p>
-        </div>
+  const activeCount = [...restaurants, ...activities, ...amenities].filter((x) => x.isActive).length;
 
-        {/* "Kollegan knows" badge */}
-        <div className="flex items-center gap-2 bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-800/40 rounded-xl px-3 py-2 shrink-0">
-          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shrink-0">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-            </svg>
-          </div>
-          <span className="text-xs font-medium text-amber-800 dark:text-amber-300">
-            Kollegan känner till{' '}
-            <span className="font-bold">
-              {[...restaurants, ...activities, ...amenities].filter((x) => x.isActive).length}
-            </span>{' '}
-            aktiva tjänster
-          </span>
+  return (
+    <div className="space-y-5">
+      {/* CRM-style page header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-heading text-xl font-semibold text-[var(--text-primary)]">Hotellinfo</h2>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">All information som Kollegan hämtar och använder under samtal</p>
         </div>
+        <span className="text-xs font-medium text-purple-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-full px-3 py-1.5">
+          {activeCount} aktiva tjänster
+        </span>
       </div>
 
-      {/* Sub-navigation */}
-      <div className="flex gap-1.5 bg-[var(--surface-alt)] rounded-xl p-1 w-fit">
+      {/* CRM-style sub-tab switcher */}
+      <div className="flex items-center gap-1.5 p-1 bg-[var(--surface-alt)] border-2 border-[var(--border)] rounded-xl w-fit shadow-card">
         {SECTION_CONFIG.map((section) => {
           const count = (
             section.key === 'restaurants' ? restaurants :
             section.key === 'activities' ? activities :
             amenities
           ).length;
+          const isActive = activeSection === section.key;
           return (
             <button
               key={section.key}
               onClick={() => setActiveSection(section.key)}
               className={[
-                'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                activeSection === section.key
-                  ? 'bg-[var(--surface)] text-[var(--text-primary)] shadow-sm border border-[var(--border)]'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
+                'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
+                isActive
+                  ? 'bg-purple-700 dark:bg-amber-500 text-white shadow-sm'
+                  : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] border border-transparent hover:border-[var(--border)]',
               ].join(' ')}
             >
               {section.label}
-              <span className={`text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${
-                activeSection === section.key
-                  ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                  : 'bg-[var(--border)] text-[var(--text-muted)]'
-              }`}>
+              <span className={[
+                'rounded-full px-1.5 py-0.5 text-[9px] font-bold tabular-nums',
+                isActive ? 'bg-white/25 text-white' : 'bg-[var(--surface-alt)] border border-[var(--border)] text-[var(--text-muted)]',
+              ].join(' ')}>
                 {count}
               </span>
             </button>

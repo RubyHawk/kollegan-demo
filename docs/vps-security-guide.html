@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VPS Security Guide — Replacing SSH Tunnels with WireGuard VPN</title>
+  <style>
+    /* ── Page / Print ──────────────────────────────────────────── */
+    @media print {
+      body { font-size: 11pt; }
+      .no-print { display: none; }
+      h2 { page-break-before: always; }
+      h2:first-of-type { page-break-before: auto; }
+      pre, blockquote { page-break-inside: avoid; }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #1a1a2e;
+      background: #fff;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 40px 80px;
+    }
+
+    /* ── Typography ────────────────────────────────────────────── */
+    h1 { font-size: 2rem; font-weight: 800; color: #0f172a; line-height: 1.2; margin-bottom: 8px; }
+    h2 { font-size: 1.4rem; font-weight: 700; color: #0f172a; margin-top: 48px; margin-bottom: 16px;
+         border-bottom: 3px solid #6366f1; padding-bottom: 8px; }
+    h3 { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-top: 28px; margin-bottom: 10px; }
+    h4 { font-size: 0.95rem; font-weight: 600; color: #334155; margin-top: 20px; margin-bottom: 6px; }
+    p  { margin-bottom: 12px; color: #334155; }
+    ul, ol { padding-left: 24px; margin-bottom: 12px; }
+    li { margin-bottom: 6px; color: #334155; }
+    strong { color: #0f172a; }
+    a  { color: #6366f1; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Cover ─────────────────────────────────────────────────── */
+    .cover {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #0ea5e9 100%);
+      color: white;
+      padding: 48px;
+      border-radius: 16px;
+      margin-bottom: 48px;
+    }
+    .cover h1 { color: white; font-size: 2.2rem; }
+    .cover .subtitle { color: rgba(255,255,255,0.85); font-size: 1rem; margin-top: 10px; }
+    .cover .meta { color: rgba(255,255,255,0.7); font-size: 0.8rem; margin-top: 20px; display: flex; gap: 24px; }
+    .cover .meta span { display: flex; align-items: center; gap: 6px; }
+    .cover .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 14px;
+    }
+
+    /* ── Info / Warning / Tip boxes ────────────────────────────── */
+    .box {
+      padding: 16px 20px;
+      border-radius: 10px;
+      margin: 16px 0;
+      border-left: 4px solid;
+    }
+    .box-info    { background: #eff6ff; border-color: #3b82f6; }
+    .box-warn    { background: #fffbeb; border-color: #f59e0b; }
+    .box-danger  { background: #fff1f2; border-color: #f43f5e; }
+    .box-success { background: #f0fdf4; border-color: #22c55e; }
+    .box-title   { font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .box-info    .box-title { color: #1d4ed8; }
+    .box-warn    .box-title { color: #b45309; }
+    .box-danger  .box-title { color: #be123c; }
+    .box-success .box-title { color: #15803d; }
+
+    /* ── Code blocks ───────────────────────────────────────────── */
+    pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 20px 24px;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-family: 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      margin: 12px 0 20px;
+    }
+    pre .comment { color: #64748b; font-style: italic; }
+    pre .cmd     { color: #a5f3fc; }
+    pre .flag    { color: #fde68a; }
+    pre .val     { color: #86efac; }
+    code {
+      background: #f1f5f9;
+      color: #7c3aed;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85em;
+    }
+    pre code { background: none; color: inherit; padding: 0; }
+
+    /* ── Step numbers ──────────────────────────────────────────── */
+    .step {
+      display: flex;
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #6366f1;
+      color: white;
+      font-weight: 800;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+    .step-body h4 { margin-top: 0; }
+
+    /* ── Architecture diagram ──────────────────────────────────── */
+    .arch {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: monospace;
+      font-size: 0.85rem;
+      padding: 28px;
+      border-radius: 10px;
+      line-height: 1.9;
+      margin: 16px 0;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .arch .green  { color: #4ade80; }
+    .arch .blue   { color: #60a5fa; }
+    .arch .yellow { color: #fbbf24; }
+    .arch .red    { color: #f87171; }
+    .arch .grey   { color: #94a3b8; }
+
+    /* ── Table ─────────────────────────────────────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      font-size: 0.88rem;
+    }
+    th {
+      background: #6366f1;
+      color: white;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td { padding: 10px 14px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) { background: #f8fafc; }
+
+    /* ── TOC ───────────────────────────────────────────────────── */
+    .toc {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .toc h3 { margin-top: 0; font-size: 0.9rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; }
+    .toc ol { columns: 2; column-gap: 32px; }
+    .toc li { font-size: 0.88rem; }
+    .toc a { color: #6366f1; }
+
+    /* ── Sources ───────────────────────────────────────────────── */
+    .sources {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-top: 48px;
+    }
+    .sources h3 { margin-top: 0; }
+    .sources li { font-size: 0.83rem; }
+
+    /* ── Print button ──────────────────────────────────────────── */
+    .print-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #6366f1;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+      z-index: 100;
+    }
+    .print-btn:hover { background: #4f46e5; }
+  </style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨 Save / Print as PDF</button>
+
+<!-- COVER ─────────────────────────────────────────────────────────────────── -->
+<div class="cover">
+  <div class="badge">Internal Technical Guide · v1.0 · February 2026</div>
+  <h1>Securing Your VPS Database Connections</h1>
+  <p class="subtitle">
+    A step-by-step guide for replacing SSH tunnels with WireGuard VPN on your<br>
+    Strato Ubuntu VPS (Sweden) — designed for non-DevSecOps teams
+  </p>
+  <div class="meta">
+    <span>🖥️ Platform: Strato VPS · Ubuntu · Sweden</span>
+    <span>🗄️ Services: PostgreSQL · Redis · Prisma</span>
+    <span>🔐 Goal: WireGuard VPN + hardened firewall</span>
+  </div>
+</div>
+
+<!-- TABLE OF CONTENTS ────────────────────────────────────────────────────── -->
+<div class="toc">
+  <h3>Table of Contents</h3>
+  <ol>
+    <li><a href="#context">Your Current Setup — Context</a></li>
+    <li><a href="#why">Why Move Away from SSH Tunnels?</a></li>
+    <li><a href="#options">Your Three Options Explained</a></li>
+    <li><a href="#recommendation">Our Recommendation: Tailscale</a></li>
+    <li><a href="#wireguard">DIY Option: WireGuard VPN</a></li>
+    <li><a href="#firewall">Firewall Hardening (UFW)</a></li>
+    <li><a href="#postgres">PostgreSQL Security</a></li>
+    <li><a href="#redis">Redis Security</a></li>
+    <li><a href="#prisma">Prisma Connection Strings</a></li>
+    <li><a href="#checklist">Final Security Checklist</a></li>
+    <li><a href="#sources">Sources &amp; Further Reading</a></li>
+  </ol>
+</div>
+
+<!-- SECTION 1 ────────────────────────────────────────────────────────────── -->
+<h2 id="context">1. Your Current Setup — Context</h2>
+
+<p>
+  You have a VPS from <strong>Strato</strong> hosted in Sweden, running <strong>Ubuntu</strong>.
+  On this server you have two databases:
+</p>
+<ul>
+  <li><strong>PostgreSQL</strong> — your main relational database, accessed via Prisma ORM</li>
+  <li><strong>Redis</strong> — an in-memory store used for caching/sessions</li>
+</ul>
+<p>
+  You currently store SSH private keys in a folder on your developers' machines
+  (with <code>chmod 700</code> on the folder and <code>chmod 600</code> on the key files).
+  The keys are used to create SSH tunnels to the VPS so that Prisma/Redis can connect
+  as if the database were local.
+</p>
+
+<div class="arch">
+  <span class="grey">Current architecture:</span>
+
+  <span class="blue">Developer laptop</span>          <span class="green">Strato VPS (Sweden)</span>
+  ┌──────────────────────┐        ┌────────────────────────────────┐
+  │  Prisma / app code   │        │  PostgreSQL (port 5432)        │
+  │       ↓              │        │  Redis     (port 6379)         │
+  │  SSH tunnel          │<span class="red">──SSH──▶</span>│  sshd (port 22)                │
+  │  localhost:5432 ───▶ │        │                                │
+  │  localhost:6379 ───▶ │        │  Auth keys: /etc/ssh/keys/     │
+  └──────────────────────┘        │  chmod 700/600 ✓               │
+                                  └────────────────────────────────┘
+</div>
+
+<div class="box box-info">
+  <div class="box-title">ℹ️ What is an SSH Tunnel?</div>
+  <p>
+    An SSH tunnel (also called port-forwarding) creates an encrypted channel over SSH.
+    Your app thinks it's talking to <code>localhost:5432</code>, but SSH secretly
+    forwards all that traffic to <code>your-vps:5432</code> through an encrypted connection.
+    It works, but it's fragile — tunnels drop when your SSH connection drops, and
+    there's no automatic reconnection without tools like <code>autossh</code>.
+  </p>
+</div>
+
+<!-- SECTION 2 ────────────────────────────────────────────────────────────── -->
+<h2 id="why">2. Why Move Away from SSH Tunnels?</h2>
+
+<p>SSH tunnels are a valid approach, but they have real downsides in production:</p>
+
+<table>
+  <tr>
+    <th>Problem</th>
+    <th>Impact</th>
+    <th>How often it bites you</th>
+  </tr>
+  <tr>
+    <td><strong>Tunnel drops silently</strong></td>
+    <td>App loses DB connection; often requires manual restart</td>
+    <td>Very common on long-running processes</td>
+  </tr>
+  <tr>
+    <td><strong>Key management complexity</strong></td>
+    <td>Every developer needs a copy of the key; rotating keys is painful</td>
+    <td>Whenever someone joins/leaves the team</td>
+  </tr>
+  <tr>
+    <td><strong>Tunnel is per-session</strong></td>
+    <td>CI/CD pipelines, cron jobs, and background workers all need their own tunnels</td>
+    <td>Every deployment</td>
+  </tr>
+  <tr>
+    <td><strong>Port 22 (SSH) stays exposed</strong></td>
+    <td>SSH is the most-attacked port on the internet; constant brute-force attempts</td>
+    <td>Every minute (check <code>fail2ban</code> logs)</td>
+  </tr>
+  <tr>
+    <td><strong>No built-in mutual auth for apps</strong></td>
+    <td>If an attacker steals the SSH key, they have full shell access to the VPS</td>
+    <td>Key theft/leakage</td>
+  </tr>
+</table>
+
+<div class="box box-warn">
+  <div class="box-title">⚠️ Your specific risk</div>
+  <p>
+    The <code>chmod 700/600</code> setup you described is good practice. But if a developer
+    machine gets compromised, the attacker gets full SSH shell access to your VPS —
+    not just database access. This is a <em>much</em> larger blast radius than you want.
+  </p>
+</div>
+
+<!-- SECTION 3 ────────────────────────────────────────────────────────────── -->
+<h2 id="options">3. Your Three Options Explained</h2>
+
+<h3>Option A: Keep SSH tunnels but harden them (Low effort, medium security)</h3>
+<p>
+  You can keep using SSH tunnels but improve them significantly:
+  disable password login, use <code>autossh</code> for auto-reconnect,
+  and restrict the SSH key so it can <em>only</em> do port-forwarding
+  (no shell access). This is a quick win but doesn't fully solve the
+  fragility problem.
+</p>
+
+<h3>Option B: Tailscale VPN (Recommended — Low effort, high security)</h3>
+<p>
+  Tailscale is a free, managed VPN built on top of WireGuard. You install
+  a small agent on your VPS and each developer machine. After that, every
+  device gets a private IP address in your network (e.g., <code>100.x.x.x</code>).
+  Your app can then connect directly to <code>100.x.x.x:5432</code> without
+  any tunnel. No key management, no dropped connections — it just works.
+</p>
+<ul>
+  <li>✅ Free for up to 100 devices</li>
+  <li>✅ No server infrastructure to manage</li>
+  <li>✅ Works behind NAT/firewalls</li>
+  <li>✅ Mobile apps available</li>
+  <li>⚠️ Relies on Tailscale's coordination servers (you trust a third party)</li>
+</ul>
+
+<h3>Option C: Self-hosted WireGuard VPN (More effort, maximum control)</h3>
+<p>
+  WireGuard is a modern, extremely fast VPN protocol built into the Linux
+  kernel since 5.6 (Ubuntu 20.04+). You run a WireGuard server on your VPS.
+  Each developer generates a key pair and gets added to the server's config.
+  All DB traffic goes over the encrypted VPN tunnel — no SSH needed.
+</p>
+<ul>
+  <li>✅ 100% self-hosted, no third-party trust</li>
+  <li>✅ Kernel-level performance (much faster than OpenVPN)</li>
+  <li>✅ Can close ALL other ports (including port 22)</li>
+  <li>⚠️ Requires some Linux networking knowledge to set up</li>
+  <li>⚠️ You manage key generation and distribution yourself</li>
+</ul>
+
+<!-- SECTION 4 ────────────────────────────────────────────────────────────── -->
+<h2 id="recommendation">4. Our Recommendation: Start with Tailscale</h2>
+
+<p>
+  Since neither of you are DevSecOps professionals, we recommend <strong>Tailscale</strong>
+  as your first step. Once you're comfortable, you can migrate to self-hosted WireGuard
+  for maximum control. Tailscale is used by thousands of startups and is genuinely easy.
+</p>
+
+<h3>Step-by-step: Tailscale Setup</h3>
+
+<div class="step">
+  <div class="step-num">1</div>
+  <div class="step-body">
+    <h4>Create a free Tailscale account</h4>
+    <p>
+      Go to <strong>tailscale.com</strong> and sign up (you can use Google or GitHub login).
+      The free tier supports up to 100 devices — more than enough for your team.
+    </p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">2</div>
+  <div class="step-body">
+    <h4>Install Tailscale on your VPS</h4>
+    <p>SSH into your Strato VPS and run these commands:</p>
+<pre>
+<span class="comment"># Add the official Tailscale APT repository</span>
+<span class="cmd">curl</span> <span class="flag">-fsSL</span> https://pkgs.tailscale.com/stable/ubuntu/focal.gpg | \
+  sudo apt-key add <span class="flag">-</span>
+<span class="cmd">curl</span> <span class="flag">-fsSL</span> https://pkgs.tailscale.com/stable/ubuntu/focal.list | \
+  sudo tee /etc/apt/sources.list.d/tailscale.list
+
+<span class="comment"># Install</span>
+<span class="cmd">sudo</span> apt-get update
+<span class="cmd">sudo</span> apt-get install <span class="flag">-y</span> tailscale
+
+<span class="comment"># Start Tailscale and authenticate</span>
+<span class="comment"># This prints a URL — open it in your browser to approve the VPS</span>
+<span class="cmd">sudo</span> tailscale up
+</pre>
+    <div class="box box-info">
+      <div class="box-title">ℹ️ Why those commands?</div>
+      <p>
+        <code>curl ... | apt-key add</code> adds Tailscale's cryptographic signing key
+        to Ubuntu's package manager, so Ubuntu trusts packages from Tailscale's server.
+        <code>tailscale up</code> starts the agent and gives you a login URL.
+        After you open the URL and log in, your VPS appears in your Tailscale admin console.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">3</div>
+  <div class="step-body">
+    <h4>Install Tailscale on each developer's machine</h4>
+    <ul>
+      <li><strong>macOS:</strong> Download from the Mac App Store (search "Tailscale") or run <code>brew install tailscale</code></li>
+      <li><strong>Windows:</strong> Download the installer from tailscale.com/download</li>
+      <li><strong>Linux:</strong> Same <code>curl | apt-key</code> commands as above</li>
+    </ul>
+    <p>
+      After installing, click "Log in" in the Tailscale menu bar icon and log in with
+      the same Tailscale account. Both devices now appear in your admin console.
+    </p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">4</div>
+  <div class="step-body">
+    <h4>Find your VPS's Tailscale IP address</h4>
+    <p>On the VPS, run:</p>
+<pre>
+<span class="cmd">tailscale</span> ip <span class="flag">-4</span>
+<span class="comment"># Output example: 100.64.0.5</span>
+</pre>
+    <p>
+      This <code>100.x.x.x</code> address is your VPS's private Tailscale address.
+      Only devices on your Tailscale network can reach it — the internet cannot.
+    </p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">5</div>
+  <div class="step-body">
+    <h4>Update your connection strings</h4>
+    <p>Replace <code>localhost</code> with your VPS's Tailscale IP in your app:</p>
+<pre>
+<span class="comment"># .env.local (or wherever you store secrets)</span>
+<span class="comment"># Before (SSH tunnel):</span>
+DATABASE_URL=<span class="val">"postgresql://user:pass@localhost:5432/mydb"</span>
+REDIS_URL=<span class="val">"redis://localhost:6379"</span>
+
+<span class="comment"># After (Tailscale VPN):</span>
+DATABASE_URL=<span class="val">"postgresql://user:pass@100.64.0.5:5432/mydb"</span>
+REDIS_URL=<span class="val">"redis://100.64.0.5:6379"</span>
+</pre>
+    <p>
+      The <code>100.x.x.x</code> IP is stable — it doesn't change even if your VPS reboots.
+      You no longer need to open a tunnel before starting your app.
+    </p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">6</div>
+  <div class="step-body">
+    <h4>Configure PostgreSQL to listen on the Tailscale interface</h4>
+    <p>By default, PostgreSQL only listens on <code>localhost</code>. You need to tell it to also listen on the Tailscale IP:</p>
+<pre>
+<span class="comment"># Open PostgreSQL config</span>
+<span class="cmd">sudo</span> nano /etc/postgresql/*/main/postgresql.conf
+
+<span class="comment"># Find and change this line:</span>
+<span class="comment"># listen_addresses = 'localhost'</span>
+<span class="comment"># To:</span>
+listen_addresses = <span class="val">'localhost,100.64.0.5'</span>
+<span class="comment"># (use your actual Tailscale IP)</span>
+</pre>
+    <p>Then edit <code>pg_hba.conf</code> to allow connections from the Tailscale subnet:</p>
+<pre>
+<span class="cmd">sudo</span> nano /etc/postgresql/*/main/pg_hba.conf
+
+<span class="comment"># Add this line (Tailscale uses 100.64.0.0/10 range):</span>
+host    all    all    100.64.0.0/10    scram-sha-256
+</pre>
+    <p>Restart PostgreSQL:</p>
+<pre>
+<span class="cmd">sudo</span> systemctl restart postgresql
+</pre>
+    <div class="box box-info">
+      <div class="box-title">ℹ️ Why pg_hba.conf?</div>
+      <p>
+        PostgreSQL has a two-layer auth system. <code>postgresql.conf</code> controls
+        <em>which network interfaces</em> PostgreSQL listens on. <code>pg_hba.conf</code>
+        (Host-Based Authentication) controls <em>who</em> can connect from <em>where</em>.
+        The line we added says: "For connections coming from the Tailscale subnet
+        (<code>100.64.0.0/10</code>), require a username/password using SCRAM-SHA-256."
+        This is the most secure password hashing method PostgreSQL supports.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">7</div>
+  <div class="step-body">
+    <h4>Configure Redis to listen on the Tailscale interface</h4>
+<pre>
+<span class="cmd">sudo</span> nano /etc/redis/redis.conf
+
+<span class="comment"># Find and change:</span>
+<span class="comment"># bind 127.0.0.1 -::1</span>
+<span class="comment"># To (add the Tailscale IP):</span>
+bind 127.0.0.1 100.64.0.5
+
+<span class="comment"># Also uncomment and set a strong password:</span>
+requirepass <span class="val">YourVeryStrongPasswordHere</span>
+
+<span class="cmd">sudo</span> systemctl restart redis
+</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">8</div>
+  <div class="step-body">
+    <h4>Tighten your VPS firewall (UFW)</h4>
+    <p>
+      Now that access goes through Tailscale, you can close PostgreSQL and Redis
+      to the public internet entirely:
+    </p>
+<pre>
+<span class="comment"># Allow Tailscale (WireGuard uses UDP port 41641)</span>
+<span class="cmd">sudo</span> ufw allow 41641/udp comment <span class="val">'Tailscale'</span>
+
+<span class="comment"># Keep SSH (but consider changing to a non-standard port later)</span>
+<span class="cmd">sudo</span> ufw allow 22/tcp comment <span class="val">'SSH'</span>
+
+<span class="comment"># Keep HTTPS/HTTP for your web app</span>
+<span class="cmd">sudo</span> ufw allow 80/tcp
+<span class="cmd">sudo</span> ufw allow 443/tcp
+
+<span class="comment"># Make sure PostgreSQL and Redis ports are NOT open to the internet</span>
+<span class="comment"># (they should not be in UFW at all — if they are, remove them)</span>
+<span class="cmd">sudo</span> ufw delete allow 5432
+<span class="cmd">sudo</span> ufw delete allow 6379
+
+<span class="comment"># Enable UFW</span>
+<span class="cmd">sudo</span> ufw enable
+
+<span class="comment"># Check status</span>
+<span class="cmd">sudo</span> ufw status verbose
+</pre>
+    <div class="box box-success">
+      <div class="box-title">✅ What this achieves</div>
+      <p>
+        PostgreSQL and Redis are now <em>completely invisible</em> to the public internet.
+        Even if an attacker scans your VPS, they will see no open database ports.
+        Only devices connected to your Tailscale network can reach the databases.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5 ────────────────────────────────────────────────────────────── -->
+<h2 id="wireguard">5. DIY Option: Self-Hosted WireGuard VPN</h2>
+
+<p>
+  If you want full control without relying on Tailscale's servers,
+  here is how to set up WireGuard yourself on your Strato Ubuntu VPS.
+  This is more complex but gives you complete ownership.
+</p>
+
+<div class="box box-warn">
+  <div class="box-title">⚠️ Before you start</div>
+  <p>
+    WireGuard configuration mistakes can lock you out of your VPS.
+    Always have an out-of-band access method (Strato's VPS console) before
+    making firewall/network changes. Test in stages — make one change, verify it works.
+  </p>
+</div>
+
+<h3>5.1 — Understanding WireGuard</h3>
+<p>
+  WireGuard creates a virtual network interface (e.g., <code>wg0</code>) on each machine.
+  Traffic sent to this interface is encrypted with ChaCha20/Poly1305 and sent over UDP.
+  Unlike OpenVPN, WireGuard has no concept of a "client" and "server" — every peer is equal.
+  However, for simplicity, we'll treat your VPS as the "hub" and developer laptops as "spokes."
+</p>
+
+<div class="arch">
+  <span class="grey">WireGuard Architecture:</span>
+
+  <span class="blue">Developer 1</span>                       <span class="green">Strato VPS (Sweden)</span>
+  <span class="blue">wg0: 10.0.0.2/32</span>  <span class="yellow">── WireGuard (UDP 51820) ──▶</span>  <span class="green">wg0: 10.0.0.1/24</span>
+                                              <span class="green">PostgreSQL: 10.0.0.1:5432</span>
+  <span class="blue">Developer 2</span>                              <span class="green">Redis:      10.0.0.1:6379</span>
+  <span class="blue">wg0: 10.0.0.3/32</span>  <span class="yellow">── WireGuard (UDP 51820) ──▶</span>  <span class="green">SSH:        10.0.0.1:22</span>
+
+  <span class="red">Internet cannot see any of these ports — only WireGuard (51820) is open</span>
+</div>
+
+<h3>5.2 — Install WireGuard on the VPS</h3>
+
+<pre>
+<span class="comment"># Ubuntu 22.04+ — WireGuard is in the default kernel</span>
+<span class="cmd">sudo</span> apt update
+<span class="cmd">sudo</span> apt install <span class="flag">-y</span> wireguard
+
+<span class="comment"># Enable IP forwarding (required for VPN routing)</span>
+<span class="cmd">echo</span> <span class="val">"net.ipv4.ip_forward = 1"</span> | sudo tee <span class="flag">-a</span> /etc/sysctl.conf
+<span class="cmd">sudo</span> sysctl <span class="flag">-p</span>
+</pre>
+
+<h3>5.3 — Generate server key pair</h3>
+
+<pre>
+<span class="comment"># Work in the WireGuard config directory (only readable by root)</span>
+<span class="cmd">cd</span> /etc/wireguard
+<span class="cmd">umask</span> 077
+
+<span class="comment"># Generate the server private key and derive the public key</span>
+<span class="cmd">wg</span> genkey | tee server.key | wg pubkey > server.pub
+
+<span class="comment"># Save them — you'll need these values</span>
+SERVER_PRIVATE_KEY=$(<span class="cmd">cat</span> server.key)
+SERVER_PUBLIC_KEY=$(<span class="cmd">cat</span> server.pub)
+<span class="cmd">echo</span> <span class="val">"Server public key: $SERVER_PUBLIC_KEY"</span>
+</pre>
+
+<div class="box box-info">
+  <div class="box-title">ℹ️ Why umask 077?</div>
+  <p>
+    <code>umask 077</code> makes all newly created files readable only by root (<code>chmod 600</code>).
+    This is critical — your WireGuard private key must <em>never</em> be readable
+    by other users on the system. Anyone with the private key can impersonate your VPN server.
+  </p>
+</div>
+
+<h3>5.4 — Create server config</h3>
+
+<pre>
+<span class="comment"># Replace SERVER_PRIVATE_KEY with the actual value from server.key</span>
+<span class="cmd">sudo</span> nano /etc/wireguard/wg0.conf
+</pre>
+
+<pre>
+[Interface]
+<span class="comment"># The VPN IP for the VPS — all peers connect to this address</span>
+Address = <span class="val">10.0.0.1/24</span>
+
+<span class="comment"># WireGuard listens on UDP port 51820</span>
+ListenPort = <span class="val">51820</span>
+
+<span class="comment"># Your server's private key (from server.key)</span>
+PrivateKey = <span class="val">SERVER_PRIVATE_KEY_HERE</span>
+
+<span class="comment"># Save iptables rules when the interface comes up/goes down</span>
+PostUp   = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+
+<span class="comment"># ── Peer: Developer 1 ──────────────────────────────────────────</span>
+[Peer]
+<span class="comment"># Developer 1's public key (generated on their machine)</span>
+PublicKey  = <span class="val">DEVELOPER1_PUBLIC_KEY_HERE</span>
+
+<span class="comment"># This developer's VPN IP — only this IP is allowed from this key</span>
+AllowedIPs = <span class="val">10.0.0.2/32</span>
+
+<span class="comment"># ── Peer: Developer 2 ──────────────────────────────────────────</span>
+[Peer]
+PublicKey  = <span class="val">DEVELOPER2_PUBLIC_KEY_HERE</span>
+AllowedIPs = <span class="val">10.0.0.3/32</span>
+</pre>
+
+<h3>5.5 — Generate client key pairs (on each developer machine)</h3>
+
+<pre>
+<span class="comment"># Run this on the DEVELOPER's machine (not on the VPS)</span>
+<span class="cmd">mkdir</span> <span class="flag">-p</span> ~/.wireguard
+<span class="cmd">chmod</span> 700 ~/.wireguard
+<span class="cmd">cd</span> ~/.wireguard
+
+<span class="cmd">wg</span> genkey | tee client.key | wg pubkey > client.pub
+<span class="cmd">chmod</span> 600 client.key client.pub
+
+<span class="cmd">echo</span> <span class="val">"Your public key (share this with the VPS admin):"</span>
+<span class="cmd">cat</span> client.pub
+</pre>
+
+<h3>5.6 — Create client config (on each developer machine)</h3>
+
+<pre>
+<span class="comment"># macOS/Linux: create this file at ~/.wireguard/wg0.conf</span>
+<span class="comment"># Windows: paste into the WireGuard app's "Add tunnel" dialog</span>
+
+[Interface]
+<span class="comment"># Your VPN IP — unique per developer</span>
+Address    = <span class="val">10.0.0.2/32</span>
+PrivateKey = <span class="val">DEVELOPER_PRIVATE_KEY_HERE</span>
+
+<span class="comment"># Optional: use VPS as DNS to avoid leaks</span>
+<span class="comment"># DNS = 1.1.1.1</span>
+
+[Peer]
+<span class="comment"># The VPS's public key</span>
+PublicKey  = <span class="val">SERVER_PUBLIC_KEY_HERE</span>
+
+<span class="comment"># VPS's public IP address and WireGuard port</span>
+Endpoint   = <span class="val">YOUR_VPS_PUBLIC_IP:51820</span>
+
+<span class="comment"># Route ONLY VPN traffic through the tunnel (split tunneling)</span>
+<span class="comment"># This means only 10.0.0.0/24 goes through WireGuard — everything else uses your normal internet</span>
+AllowedIPs = <span class="val">10.0.0.0/24</span>
+
+<span class="comment"># Keep the connection alive (sends a packet every 25 seconds)</span>
+<span class="comment"># This prevents the tunnel from dropping on NAT firewalls</span>
+PersistentKeepalive = <span class="val">25</span>
+</pre>
+
+<div class="box box-info">
+  <div class="box-title">ℹ️ What is AllowedIPs?</div>
+  <p>
+    <code>AllowedIPs = 10.0.0.0/24</code> tells WireGuard: "Only route traffic to the
+    <code>10.0.0.0/24</code> subnet through the VPN tunnel." This is called <em>split tunneling</em>.
+    Your normal internet browsing still uses your regular connection — only database traffic
+    goes through the VPN. If you used <code>0.0.0.0/0</code>, ALL your traffic would go through
+    the VPS (a full VPN like NordVPN/ExpressVPN — you probably don't want this).
+  </p>
+</div>
+
+<h3>5.7 — Start WireGuard on the VPS</h3>
+
+<pre>
+<span class="comment"># Start the VPN interface</span>
+<span class="cmd">sudo</span> wg-quick up wg0
+
+<span class="comment"># Enable WireGuard to start automatically on reboot</span>
+<span class="cmd">sudo</span> systemctl enable wg-quick@wg0
+
+<span class="comment"># Verify it's running</span>
+<span class="cmd">sudo</span> wg show
+<span class="comment"># You should see "interface: wg0" and a "latest handshake" when a peer connects</span>
+</pre>
+
+<h3>5.8 — Start WireGuard on developer machines</h3>
+
+<pre>
+<span class="comment"># Linux:</span>
+<span class="cmd">sudo</span> wg-quick up ~/.wireguard/wg0.conf
+
+<span class="comment"># macOS (via Homebrew): or use the GUI app from wireguard.com</span>
+<span class="cmd">sudo</span> wg-quick up ~/.wireguard/wg0.conf
+
+<span class="comment"># Windows: import the config file into the WireGuard GUI app</span>
+<span class="comment"># Download from: wireguard.com/install</span>
+
+<span class="comment"># Test connectivity</span>
+<span class="cmd">ping</span> 10.0.0.1
+<span class="comment"># Should get replies from the VPS</span>
+</pre>
+
+<!-- SECTION 6 ────────────────────────────────────────────────────────────── -->
+<h2 id="firewall">6. Firewall Hardening with UFW</h2>
+
+<p>
+  UFW (Uncomplicated Firewall) is the standard firewall tool for Ubuntu.
+  Here is a complete, hardened UFW setup for your VPS assuming you're using WireGuard:
+</p>
+
+<pre>
+<span class="comment"># Reset to clean state (WARNING: this removes all existing rules)</span>
+<span class="cmd">sudo</span> ufw --force reset
+
+<span class="comment"># Default: deny all incoming, allow all outgoing</span>
+<span class="cmd">sudo</span> ufw default deny incoming
+<span class="cmd">sudo</span> ufw default allow outgoing
+
+<span class="comment"># Allow SSH (change 22 to your custom port if you moved SSH)</span>
+<span class="cmd">sudo</span> ufw allow 22/tcp comment <span class="val">'SSH'</span>
+
+<span class="comment"># Allow your web application</span>
+<span class="cmd">sudo</span> ufw allow 80/tcp  comment <span class="val">'HTTP'</span>
+<span class="cmd">sudo</span> ufw allow 443/tcp comment <span class="val">'HTTPS'</span>
+
+<span class="comment"># Allow WireGuard VPN (if using self-hosted WireGuard)</span>
+<span class="cmd">sudo</span> ufw allow 51820/udp comment <span class="val">'WireGuard VPN'</span>
+
+<span class="comment"># Allow Tailscale (if using Tailscale instead)</span>
+<span class="comment"># sudo ufw allow 41641/udp comment 'Tailscale'</span>
+
+<span class="comment"># PostgreSQL and Redis: DO NOT open to the internet</span>
+<span class="comment"># They are accessed via VPN only — leave these blocked</span>
+
+<span class="comment"># Enable the firewall</span>
+<span class="cmd">sudo</span> ufw enable
+
+<span class="comment"># Verify</span>
+<span class="cmd">sudo</span> ufw status verbose
+</pre>
+
+<div class="box box-success">
+  <div class="box-title">✅ Result after this setup</div>
+  <p>
+    An external port scan of your VPS will show <em>only</em> ports 22, 80, 443,
+    and 51820 (or 41641 for Tailscale). Ports 5432 (PostgreSQL) and 6379 (Redis)
+    will not appear at all — they are completely invisible to the public internet.
+  </p>
+</div>
+
+<h3>Extra hardening: Move SSH off port 22</h3>
+<p>
+  Port 22 receives millions of automated brute-force attempts every day.
+  Moving SSH to a non-standard port (e.g., 2222) eliminates 99% of this noise:
+</p>
+<pre>
+<span class="cmd">sudo</span> nano /etc/ssh/sshd_config
+<span class="comment"># Change: Port 22</span>
+<span class="comment"># To:     Port 2222</span>
+
+<span class="comment"># Update UFW first (BEFORE restarting SSH or you'll lock yourself out)</span>
+<span class="cmd">sudo</span> ufw allow 2222/tcp comment <span class="val">'SSH custom port'</span>
+<span class="cmd">sudo</span> ufw delete allow 22/tcp
+
+<span class="comment"># Restart SSH</span>
+<span class="cmd">sudo</span> systemctl restart sshd
+
+<span class="comment"># From now on, connect with:</span>
+<span class="cmd">ssh</span> <span class="flag">-p</span> 2222 user@your-vps-ip
+</pre>
+
+<!-- SECTION 7 ────────────────────────────────────────────────────────────── -->
+<h2 id="postgres">7. PostgreSQL Security Hardening</h2>
+
+<h3>7.1 — Create dedicated database users (not superuser)</h3>
+<pre>
+<span class="comment"># Connect to PostgreSQL as the postgres superuser</span>
+<span class="cmd">sudo</span> -u postgres psql
+
+<span class="comment"># Create a dedicated user for your app (NOT a superuser)</span>
+CREATE USER appuser WITH PASSWORD <span class="val">'use_a_very_long_random_password_here'</span>;
+
+<span class="comment"># Grant access only to your specific database</span>
+GRANT CONNECT ON DATABASE mydb TO appuser;
+\c mydb
+GRANT USAGE ON SCHEMA public TO appuser;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO appuser;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO appuser;
+
+<span class="comment"># Exit psql</span>
+\q
+</pre>
+
+<div class="box box-info">
+  <div class="box-title">ℹ️ Why not use the postgres superuser?</div>
+  <p>
+    The <code>postgres</code> superuser can do anything — drop tables, read all databases,
+    execute system commands. If your app's connection string is ever leaked, an attacker
+    with a limited <code>appuser</code> can only read/write your app's data.
+    A <code>postgres</code> superuser connection could destroy your entire server.
+  </p>
+</div>
+
+<h3>7.2 — Enforce SSL for all connections (optional but recommended)</h3>
+<pre>
+<span class="comment"># In postgresql.conf:</span>
+ssl = <span class="val">on</span>
+ssl_cert_file = <span class="val">'server.crt'</span>
+ssl_key_file  = <span class="val">'server.key'</span>
+
+<span class="comment"># In pg_hba.conf, change 'host' to 'hostssl':</span>
+hostssl    all    appuser    10.0.0.0/24    scram-sha-256
+<span class="comment"># This requires SSL even on the VPN — belt and suspenders security</span>
+</pre>
+
+<h3>7.3 — Automated security updates for PostgreSQL</h3>
+<pre>
+<span class="comment"># Enable automatic security updates</span>
+<span class="cmd">sudo</span> apt install <span class="flag">-y</span> unattended-upgrades
+<span class="cmd">sudo</span> dpkg-reconfigure <span class="flag">--priority=low</span> unattended-upgrades
+</pre>
+
+<!-- SECTION 8 ────────────────────────────────────────────────────────────── -->
+<h2 id="redis">8. Redis Security Hardening</h2>
+
+<pre>
+<span class="cmd">sudo</span> nano /etc/redis/redis.conf
+</pre>
+
+<p>Make these changes:</p>
+
+<pre>
+<span class="comment"># 1. Bind only to localhost and VPN interface</span>
+bind 127.0.0.1 10.0.0.1
+<span class="comment"># (or your Tailscale IP: 100.64.0.5)</span>
+
+<span class="comment"># 2. Require a strong password</span>
+requirepass <span class="val">YourVeryLong64CharRandomPasswordHere</span>
+
+<span class="comment"># 3. Disable dangerous commands (optional, high security)</span>
+rename-command FLUSHDB   <span class="val">""</span>
+rename-command FLUSHALL  <span class="val">""</span>
+rename-command CONFIG    <span class="val">""</span>
+rename-command DEBUG     <span class="val">""</span>
+rename-command SHUTDOWN  <span class="val">""</span>
+
+<span class="comment"># 4. Set a memory limit (prevents runaway memory usage)</span>
+maxmemory 512mb
+maxmemory-policy allkeys-lru
+
+<span class="comment"># 5. Disable protected mode (it's redundant when using a password + firewall)</span>
+protected-mode no
+</pre>
+
+<pre>
+<span class="comment"># Restart Redis</span>
+<span class="cmd">sudo</span> systemctl restart redis
+
+<span class="comment"># Test the connection with the password</span>
+<span class="cmd">redis-cli</span> <span class="flag">-h</span> 127.0.0.1 <span class="flag">-a</span> YourPassword ping
+<span class="comment"># Should return: PONG</span>
+</pre>
+
+<div class="box box-warn">
+  <div class="box-title">⚠️ Generate strong passwords</div>
+  <p>
+    For both PostgreSQL and Redis, use randomly generated passwords of at least 32 characters.
+    You can generate one with: <code>openssl rand -base64 32</code><br>
+    Example output: <code>vK8mNpQr3xYzA1bCdEfGhIjK4lMnOpQr</code>
+  </p>
+</div>
+
+<!-- SECTION 9 ────────────────────────────────────────────────────────────── -->
+<h2 id="prisma">9. Prisma Connection Strings</h2>
+
+<p>
+  After setting up your VPN, update your Prisma connection URL in <code>.env</code>
+  or wherever you store environment variables (never commit these to git):
+</p>
+
+<pre>
+<span class="comment"># For Tailscale (use your VPS's Tailscale IP)</span>
+DATABASE_URL=<span class="val">"postgresql://appuser:StrongPassword@100.64.0.5:5432/mydb?schema=public"</span>
+
+<span class="comment"># For self-hosted WireGuard (use your VPN IP)</span>
+DATABASE_URL=<span class="val">"postgresql://appuser:StrongPassword@10.0.0.1:5432/mydb?schema=public"</span>
+
+<span class="comment"># With SSL enabled (add ?sslmode=require)</span>
+DATABASE_URL=<span class="val">"postgresql://appuser:StrongPassword@10.0.0.1:5432/mydb?schema=public&amp;sslmode=require"</span>
+</pre>
+
+<h3>Prisma in production (e.g., on Vercel, Render, Railway)</h3>
+<p>
+  If your app is deployed on a hosting platform, it can't connect to your private VPS
+  unless you either:
+</p>
+<ol>
+  <li><strong>Add the hosting platform to your WireGuard/Tailscale network</strong> (complex but secure)</li>
+  <li><strong>Use a connection pooler like PgBouncer</strong> with a public-facing port,
+      protected by SSL certificates and strong authentication</li>
+  <li><strong>Use a managed database</strong> (e.g., Supabase, Neon, PlanetScale) for the
+      production database, and keep the VPS database for development only</li>
+</ol>
+
+<div class="box box-info">
+  <div class="box-title">ℹ️ Recommended for your setup</div>
+  <p>
+    Since you use the VPS for development/staging with Prisma, and both developers
+    are connecting from their laptops: use <strong>Tailscale or WireGuard</strong> to
+    give each developer direct access to the database. For a production deployment
+    (if you have one), consider a managed database like <strong>Supabase</strong> (built on
+    PostgreSQL) which handles all the security infrastructure for you.
+  </p>
+</div>
+
+<!-- SECTION 10 ────────────────────────────────────────────────────────────── -->
+<h2 id="checklist">10. Final Security Checklist</h2>
+
+<p>Go through this checklist when you're done. Print it out and check off each item:</p>
+
+<table>
+  <tr>
+    <th>Area</th>
+    <th>Check</th>
+    <th>How to verify</th>
+  </tr>
+  <tr>
+    <td><strong>Firewall</strong></td>
+    <td>Only ports 22 (or custom), 80, 443, and VPN port are open</td>
+    <td><code>sudo ufw status verbose</code></td>
+  </tr>
+  <tr>
+    <td><strong>Firewall</strong></td>
+    <td>Port 5432 (PostgreSQL) is NOT open to the internet</td>
+    <td><code>nmap -p 5432 your-vps-ip</code> from external machine</td>
+  </tr>
+  <tr>
+    <td><strong>Firewall</strong></td>
+    <td>Port 6379 (Redis) is NOT open to the internet</td>
+    <td><code>nmap -p 6379 your-vps-ip</code> from external machine</td>
+  </tr>
+  <tr>
+    <td><strong>VPN</strong></td>
+    <td>WireGuard or Tailscale is running and auto-starts on reboot</td>
+    <td><code>sudo systemctl status wg-quick@wg0</code></td>
+  </tr>
+  <tr>
+    <td><strong>VPN</strong></td>
+    <td>Both developers can ping the VPS VPN IP</td>
+    <td><code>ping 10.0.0.1</code> from each laptop</td>
+  </tr>
+  <tr>
+    <td><strong>PostgreSQL</strong></td>
+    <td>App connects as a limited user, not postgres superuser</td>
+    <td>Check your <code>DATABASE_URL</code> — username should not be <code>postgres</code></td>
+  </tr>
+  <tr>
+    <td><strong>PostgreSQL</strong></td>
+    <td>Password uses SCRAM-SHA-256 (not MD5)</td>
+    <td><code>SELECT usename, passwd FROM pg_shadow;</code> — should start with <code>SCRAM-</code></td>
+  </tr>
+  <tr>
+    <td><strong>Redis</strong></td>
+    <td>Redis has a strong <code>requirepass</code> set</td>
+    <td><code>redis-cli info server | grep requirepass</code></td>
+  </tr>
+  <tr>
+    <td><strong>Redis</strong></td>
+    <td>Redis is NOT bound to <code>0.0.0.0</code></td>
+    <td><code>ss -tlnp | grep 6379</code> — should NOT show <code>0.0.0.0:6379</code></td>
+  </tr>
+  <tr>
+    <td><strong>SSH</strong></td>
+    <td>Password authentication is disabled in SSH</td>
+    <td><code>grep PasswordAuthentication /etc/ssh/sshd_config</code> → should be <code>no</code></td>
+  </tr>
+  <tr>
+    <td><strong>SSH</strong></td>
+    <td>Root login is disabled</td>
+    <td><code>grep PermitRootLogin /etc/ssh/sshd_config</code> → should be <code>no</code></td>
+  </tr>
+  <tr>
+    <td><strong>Secrets</strong></td>
+    <td>No secrets in git history</td>
+    <td><code>git log -S "password" --all</code> — should return nothing</td>
+  </tr>
+  <tr>
+    <td><strong>Updates</strong></td>
+    <td>Automatic security updates are enabled</td>
+    <td><code>cat /etc/apt/apt.conf.d/20auto-upgrades</code></td>
+  </tr>
+</table>
+
+<h3>Disable SSH password authentication (important!)</h3>
+<pre>
+<span class="cmd">sudo</span> nano /etc/ssh/sshd_config
+
+<span class="comment"># Set these values:</span>
+PasswordAuthentication no
+PermitRootLogin no
+PubkeyAuthentication yes
+
+<span class="comment"># Restart SSH (make sure you still have your key loaded first!)</span>
+<span class="cmd">sudo</span> systemctl restart sshd
+</pre>
+
+<!-- SECTION 11 ────────────────────────────────────────────────────────────── -->
+<h2 id="sources">11. Sources &amp; Further Reading</h2>
+
+<div class="sources">
+  <h3>Official Documentation</h3>
+  <ul>
+    <li><a href="https://www.wireguard.com/quickstart/" target="_blank">WireGuard — Official QuickStart Guide</a></li>
+    <li><a href="https://tailscale.com/kb/1017/install/" target="_blank">Tailscale — Installation Guide</a></li>
+    <li><a href="https://www.postgresql.org/docs/current/auth-pg-hba-conf.html" target="_blank">PostgreSQL — pg_hba.conf documentation</a></li>
+    <li><a href="https://redis.io/docs/latest/operate/oss_and_stack/management/security/" target="_blank">Redis — Security Guide (2024)</a></li>
+    <li><a href="https://ubuntu.com/server/docs/firewalls" target="_blank">Ubuntu — Firewall / UFW documentation</a></li>
+    <li><a href="https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/databases-connections" target="_blank">Prisma — Database Connections &amp; Connection URLs</a></li>
+  </ul>
+
+  <h3>Security Best Practices</h3>
+  <ul>
+    <li><a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-wireguard-on-ubuntu-22-04" target="_blank">DigitalOcean — How to Set Up WireGuard on Ubuntu 22.04 (2024)</a></li>
+    <li><a href="https://www.postgresql.org/docs/current/auth-password.html" target="_blank">PostgreSQL — Password Authentication (SCRAM-SHA-256)</a></li>
+    <li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Database_Security_Cheat_Sheet.html" target="_blank">OWASP — Database Security Cheat Sheet</a></li>
+    <li><a href="https://tailscale.com/blog/how-nat-traversal-works/" target="_blank">Tailscale Blog — How NAT Traversal Works (technical deep-dive)</a></li>
+  </ul>
+
+  <h3>Tools Used in This Guide</h3>
+  <ul>
+    <li><strong>WireGuard</strong> — <a href="https://wireguard.com" target="_blank">wireguard.com</a> — Fast, modern VPN protocol</li>
+    <li><strong>Tailscale</strong> — <a href="https://tailscale.com" target="_blank">tailscale.com</a> — Managed WireGuard (free tier available)</li>
+    <li><strong>UFW</strong> — Built into Ubuntu — <code>sudo apt install ufw</code></li>
+    <li><strong>fail2ban</strong> — Automatic IP banning for SSH brute-force — <code>sudo apt install fail2ban</code></li>
+    <li><strong>nmap</strong> — Port scanner to verify firewall rules — <code>sudo apt install nmap</code></li>
+  </ul>
+</div>
+
+<p style="text-align:center; color: #94a3b8; font-size: 0.8rem; margin-top: 48px;">
+  Internal guide · Generated February 2026 · For questions contact your colleague 👋
+</p>
+
+</body>
+</html>

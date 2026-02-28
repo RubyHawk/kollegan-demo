@@ -17,12 +17,13 @@ import RoomDetailModal from '@demos/hotel/ui/components/room-detail-modal';
 import HotelInfoTab from '@demos/hotel/ui/components/hotel-info-tab';
 import CrmTab from '@modules/supporting/crm/ui/components/crm-tab';
 import SetupTab from '@modules/generic/dashboard/components/setup-tab';
+import CalendarTab from '@demos/hotel/ui/components/calendar-tab';
 import AnimatedNumber from '@shared/ui/animated-number';
 import SplashScreen from '@modules/generic/dashboard/components/splash-screen';
 import DashboardHeader from '@modules/generic/dashboard/components/dashboard-header';
 import DashboardSidebar from '@modules/generic/dashboard/components/dashboard-sidebar';
 
-type Tab = 'available' | 'activity' | 'hotel-info' | 'crm' | 'setup';
+type Tab = 'available' | 'activity' | 'hotel-info' | 'crm' | 'calendar' | 'setup';
 
 export default function HotelDemoPage() {
   const rooms = useRealtimeStore(selectRooms);
@@ -134,6 +135,7 @@ export default function HotelDemoPage() {
     activity: activities.length,
     'hotel-info': hotelServiceCount,
     crm: crmCount,
+    calendar: rooms.filter((r) => r.status === 'booked').length,
     setup: 0,
   };
 
@@ -253,6 +255,12 @@ export default function HotelDemoPage() {
               {activeTab === 'crm' && (
                 <motion.div key="crm" {...TAB_TRANSITION}>
                   <CrmTab activities={activities} onCountChange={setCrmCount} />
+                </motion.div>
+              )}
+
+              {activeTab === 'calendar' && (
+                <motion.div key="calendar" {...TAB_TRANSITION}>
+                  <CalendarTab rooms={rooms} onRoomClick={handleRoomClick} />
                 </motion.div>
               )}
 
