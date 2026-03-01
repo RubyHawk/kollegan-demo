@@ -1,12 +1,14 @@
 // ─── Lead domain events ───────────────────────────────────────────────────────
 // Published by leads.service on every significant state change.
 // Subscribers: automation module (triggers), audit module (logging).
+//
+// Type strings follow the platform convention: {domain}.{aggregate}.{verb}
 
-export const LEAD_CREATED       = 'lead.created' as const;
-export const LEAD_STAGE_CHANGED = 'lead.stage_changed' as const;
-export const LEAD_CONVERTED     = 'lead.converted' as const;
-export const LEAD_ASSIGNED      = 'lead.assigned' as const;
-export const LEAD_DELETED       = 'lead.deleted' as const;
+export const LEAD_CREATED       = 'leads.lead.created' as const;
+export const LEAD_STAGE_CHANGED = 'leads.lead.stage_changed' as const;
+export const LEAD_CONVERTED     = 'leads.lead.converted' as const;
+export const LEAD_ASSIGNED      = 'leads.lead.assigned' as const;
+export const LEAD_DELETED       = 'leads.lead.deleted' as const;
 
 export interface LeadCreatedEvent {
   type: typeof LEAD_CREATED;
