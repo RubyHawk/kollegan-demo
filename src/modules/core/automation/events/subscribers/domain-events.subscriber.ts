@@ -24,29 +24,31 @@ const TAG = 'AutomationListeners';
 
 export function registerAutomationListeners(): void {
 
-  // ─── Hotel room events ────────────────────────────────────────────────────────
+  // ─── Hotel room events (demo) ─────────────────────────────────────────────────
+  // Hotel is a demo module. Strings match hotel/events/room.events.ts constants.
+  // Do NOT import from the demo — subscribe by string per architecture rules above.
 
-  eventBus.subscribe(EventTypes.ROOM_LOCKED, async (event: DomainEvent) => {
+  eventBus.subscribe('hotel.room.locked', async (event: DomainEvent) => {
     const { roomId } = event.payload as { roomId: string };
-    logger.info(TAG, `[${EventTypes.ROOM_LOCKED}] Room ${roomId} locked`, { orgId: event.orgId });
+    logger.info(TAG, `[hotel.room.locked] Room ${roomId} locked`, { orgId: event.orgId });
     // Phase 2: await automationEngine.triggerByEvent(event);
   });
 
-  eventBus.subscribe(EventTypes.ROOM_BOOKED, async (event: DomainEvent) => {
+  eventBus.subscribe('hotel.room.booked', async (event: DomainEvent) => {
     const { roomId, guestName } = event.payload as { roomId: string; guestName: string };
-    logger.info(TAG, `[${EventTypes.ROOM_BOOKED}] Room ${roomId} booked for ${guestName}`, { orgId: event.orgId });
-    // Phase 2: trigger confirmation email workflow, upsell workflow, etc.
+    logger.info(TAG, `[hotel.room.booked] Room ${roomId} booked for ${guestName}`, { orgId: event.orgId });
+    // Phase 2: trigger confirmation email workflow, upsert workflow, etc.
   });
 
-  eventBus.subscribe(EventTypes.ROOM_CANCELLED, async (event: DomainEvent) => {
+  eventBus.subscribe('hotel.room.cancelled', async (event: DomainEvent) => {
     const { roomId } = event.payload as { roomId: string };
-    logger.info(TAG, `[${EventTypes.ROOM_CANCELLED}] Room ${roomId} cancelled`, { orgId: event.orgId });
+    logger.info(TAG, `[hotel.room.cancelled] Room ${roomId} cancelled`, { orgId: event.orgId });
     // Phase 2: trigger cancellation workflow, re-availability notification, etc.
   });
 
-  eventBus.subscribe(EventTypes.ROOM_QUERIED, async (event: DomainEvent) => {
+  eventBus.subscribe('hotel.room.queried', async (event: DomainEvent) => {
     const { availableCount } = event.payload as { availableCount: number };
-    logger.info(TAG, `[${EventTypes.ROOM_QUERIED}] Availability queried — ${availableCount} rooms available`, { orgId: event.orgId });
+    logger.info(TAG, `[hotel.room.queried] Availability queried — ${availableCount} rooms available`, { orgId: event.orgId });
   });
 
   // ─── CRM events ───────────────────────────────────────────────────────────────

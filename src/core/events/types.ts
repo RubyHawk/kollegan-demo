@@ -56,11 +56,6 @@ export const EventTypes = {
   LEAD_ASSIGNED:      'leads.lead.assigned',
   LEAD_DELETED:       'leads.lead.deleted',
 
-  // ── Generic: Hotel ────────────────────────────────────────────────────────
-  ROOM_BOOKED:    'hotel.room.booked',
-  ROOM_LOCKED:    'hotel.room.locked',
-  ROOM_CANCELLED: 'hotel.room.cancelled',
-  ROOM_QUERIED:   'hotel.room.queried',
 } as const;
 
 export type EventType = typeof EventTypes[keyof typeof EventTypes];
