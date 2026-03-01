@@ -1,8 +1,29 @@
 // ─── Auth module public API ───────────────────────────────────────────────────
 // Only export what other modules and route handlers are allowed to import.
 
-export { login, logout, refreshTokens, revokeAllSessions } from './application/auth.service';
-export type { LoginInput, LoginResult } from './application/auth.service';
+export { login, logout, refreshTokens, revokeAllSessions, completeMfaLogin } from './application/auth.service';
+export type { LoginInput, LoginResult, MfaChallengeResult, LoginOutcome } from './application/auth.service';
+
+export {
+  generateTotpSetup,
+  verifyTotpCode,
+  enableTotp,
+  disableMfa,
+  regenerateBackupCodes,
+  getBackupCodeCount,
+  consumeBackupCode,
+  getMfaStatus,
+} from './application/mfa.service';
+export type { TotpSetupResult, MfaStatus } from './application/mfa.service';
+
+export {
+  beginRegistration,
+  completeRegistration,
+  beginAuthentication,
+  completeAuthentication,
+  listCredentials,
+  deleteCredential,
+} from './application/webauthn.service';
 
 export { hasPermission, invalidatePermissionCache } from './application/rbac.service';
 

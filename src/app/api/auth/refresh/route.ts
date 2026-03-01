@@ -1,33 +1,35 @@
 /**
  * POST /api/auth/refresh
  *
- * Rotates the refresh token and issues a new short-lived access token.
+ * Rotates the opaque refresh token and issues a new short-lived access token.
+ *
+ * Phase 2 changes:
+ *   - Refresh token is now a 32-byte opaque value (not a JWT).
+ *   - Session lookup is by SHA-256 hash. No JWT verification on the cookie.
+ *   - refreshTokens() returns userId/userType for audit logging.
  *
  * Flow:
- *   1. Read refresh token from httpOnly cookie (staff: 'token', customer: 'portal_token')
- *   2. Verify signature, check Redis blacklist, check DB session (in refreshTokens())
- *   3. Rotate: revoke old refresh JTI, issue new refresh token + new access token
+ *   1. Read raw opaque token from httpOnly cookie
+ *   2. Hash + look up session in DB
+ *   3. Rotate: revoke old session, issue new opaque token + new access token
  *   4. Write new refresh token back to httpOnly cookie
- *   5. Return { data: { accessToken } } in response body for SPA/API client use
+ *   5. Return { data: { accessToken } } in body for SPA/API client use
  *
  * Rate limit: 60/min per IP — generous since browser clients call this on every cold load.
- *
- * SOC 2 / GDPR: every successful rotation is written to aud_audit_logs.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit } from '@core/cache/rate-limiter';
 import { refreshTokens } from '@modules/supporting/auth';
 import { log, AUDIT_ACTIONS } from '@modules/supporting/audit';
-import { verifyToken } from '@core/auth/jwt';
 
 export const dynamic = 'force-dynamic';
 
-const REFRESH_TTL_SEC_STAFF    = 60 * 60 * 24 * 7;   // 7d
-const REFRESH_TTL_SEC_CUSTOMER = 60 * 60 * 24 * 30;  // 30d
+const REFRESH_TTL_SEC_STAFF    = 60 * 60 * 24 * 7;
+const REFRESH_TTL_SEC_CUSTOMER = 60 * 60 * 24 * 30;
 
 export async function POST(req: NextRequest) {
-  // ── Rate limiting ────────────────────────────────────────────────────────────
+  // ── Rate limiting ─────────────────────────────────────────────────────────────
   const ip =
     req.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
     req.headers.get('x-real-ip') ??
@@ -38,91 +40,46 @@ export async function POST(req: NextRequest) {
     const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
     return NextResponse.json(
       { type: 'https://docs.kollegan.ai/problems/rate-limit', title: 'Too Many Requests', status: 429 },
-      {
-        status: 429,
-        headers: {
-          'Content-Type': 'application/problem+json',
-          'Retry-After': String(retryAfter),
-        },
-      }
+      { status: 429, headers: { 'Content-Type': 'application/problem+json', 'Retry-After': String(retryAfter) } }
     );
   }
 
-  // ── Read refresh token from httpOnly cookie ──────────────────────────────────
-  const refreshTokenRaw =
+  // ── Read opaque refresh token from httpOnly cookie ────────────────────────────
+  const rawRefreshToken =
     req.cookies.get('token')?.value ??
     req.cookies.get('portal_token')?.value;
 
-  if (!refreshTokenRaw) {
+  if (!rawRefreshToken) {
     return NextResponse.json(
-      {
-        type: 'https://docs.kollegan.ai/problems/unauthorized',
-        title: 'Unauthorized',
-        status: 401,
-        detail: 'No refresh token present',
-      },
-      {
-        status: 401,
-        headers: {
-          'Content-Type': 'application/problem+json',
-          'WWW-Authenticate': 'Bearer realm="api.kollegan.ai", charset="UTF-8"',
-        },
-      }
+      { type: 'https://docs.kollegan.ai/problems/unauthorized', title: 'Unauthorized', status: 401, detail: 'No refresh token present' },
+      { status: 401, headers: { 'Content-Type': 'application/problem+json', 'WWW-Authenticate': 'Bearer realm="api.kollegan.ai", charset="UTF-8"' } }
     );
   }
 
-  // ── Peek at the token for audit metadata before rotating ────────────────────
-  // verifyToken is called again inside refreshTokens() — the redundancy is
-  // intentional: we want audit metadata even if rotation fails partway through.
-  let userId: string | undefined;
-  let orgId: string | null = null;
-  let userType: 'staff' | 'customer' = 'staff';
+  // ── Rotate tokens ─────────────────────────────────────────────────────────────
+  let result: Awaited<ReturnType<typeof refreshTokens>>;
   try {
-    const peeked = await verifyToken(refreshTokenRaw);
-    userId   = peeked.sub;
-    orgId    = peeked.orgId ?? null;
-    userType = (peeked.userType as 'staff' | 'customer') ?? 'staff';
-  } catch {
-    // Token is malformed / expired — refreshTokens() will return a clean 401 below
-  }
-
-  // ── Rotate tokens ────────────────────────────────────────────────────────────
-  let result: { accessToken: string; refreshToken: string };
-  try {
-    result = await refreshTokens(refreshTokenRaw);
+    result = await refreshTokens(rawRefreshToken);
   } catch {
     return NextResponse.json(
-      {
-        type: 'https://docs.kollegan.ai/problems/unauthorized',
-        title: 'Unauthorized',
-        status: 401,
-        detail: 'Invalid or expired refresh token',
-      },
-      {
-        status: 401,
-        headers: {
-          'Content-Type': 'application/problem+json',
-          'WWW-Authenticate': 'Bearer realm="api.kollegan.ai", charset="UTF-8"',
-        },
-      }
+      { type: 'https://docs.kollegan.ai/problems/unauthorized', title: 'Unauthorized', status: 401, detail: 'Invalid or expired refresh token' },
+      { status: 401, headers: { 'Content-Type': 'application/problem+json', 'WWW-Authenticate': 'Bearer realm="api.kollegan.ai", charset="UTF-8"' } }
     );
   }
 
-  // ── Audit ────────────────────────────────────────────────────────────────────
-  if (userId) {
-    await log({
-      action: AUDIT_ACTIONS.USER_TOKEN_REFRESHED,
-      organizationId: orgId,
-      actorId: userId,
-      actorType: 'user',
-      resourceType: 'User',
-      resourceId: userId,
-      metadata: { ip: ip !== 'unknown' ? ip : null },
-    }).catch(() => {}); // non-critical — do not fail the request on audit failure
-  }
+  // ── Audit ─────────────────────────────────────────────────────────────────────
+  await log({
+    action: AUDIT_ACTIONS.USER_TOKEN_REFRESHED,
+    organizationId: result.orgId,
+    actorId: result.userId,
+    actorType: 'user',
+    resourceType: 'User',
+    resourceId: result.userId,
+    metadata: { ip: ip !== 'unknown' ? ip : null },
+  }).catch(() => {});
 
-  // ── Set rotated refresh token cookie + return access token ──────────────────
-  const isCustomer = userType === 'customer';
+  // ── Set rotated refresh token cookie + return access token ────────────────────
+  const isCustomer = result.userType === 'customer';
   const cookieName = isCustomer ? 'portal_token' : 'token';
   const ttlSec     = isCustomer ? REFRESH_TTL_SEC_CUSTOMER : REFRESH_TTL_SEC_STAFF;
 

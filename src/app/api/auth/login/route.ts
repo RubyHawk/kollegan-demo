@@ -1,21 +1,23 @@
 /**
  * POST /api/auth/login
  *
- * Sets an httpOnly refresh token cookie on success.
+ * Phase 2 two-step login:
+ *   Step 1: email + password → tokens (MFA not required) OR 202 + mfa_challenge cookie (MFA required).
+ *   Step 2: client verifies MFA at /api/auth/mfa/verify or /api/auth/webauthn/authenticate/verify.
+ *
+ * Error codes:
+ *   MFA_SETUP_REQUIRED — grace period expired, user must configure MFA before logging in.
+ *
  * Rate limit: 5 attempts per minute per IP (anti brute-force).
  *
- * This route intentionally does NOT use createHandler() because it needs
- * to set an httpOnly cookie directly on the NextResponse. All other
- * security features (rate limiting, validation) are applied manually
- * using the same core utilities that createHandler() uses.
- *
- * Dual-write period (Phase 1): auth.service.login() tries usr_users first,
- * falls back to StaffUser. The cookie name and JWT audience differ by userType.
+ * This route intentionally does NOT use createHandler() because it needs to set
+ * httpOnly cookies directly on the NextResponse.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { checkRateLimit } from '@core/cache/rate-limiter';
+import { signMfaChallengeToken } from '@core/auth/jwt';
 import { login } from '@modules/supporting/auth';
 import { log, AUDIT_ACTIONS } from '@modules/supporting/audit';
 
@@ -26,11 +28,12 @@ const LoginSchema = z.object({
   password: z.string().min(1),
 });
 
-const REFRESH_TTL_SEC_STAFF = 60 * 60 * 24 * 7;      // 7 days
+const REFRESH_TTL_SEC_STAFF    = 60 * 60 * 24 * 7;   // 7 days
 const REFRESH_TTL_SEC_CUSTOMER = 60 * 60 * 24 * 30;  // 30 days
+const MFA_CHALLENGE_TTL_SEC    = 60 * 5;              // 5 minutes
 
 export async function POST(req: NextRequest) {
-  // -- Rate limiting: 5 attempts per minute per IP
+  // ── Rate limiting ─────────────────────────────────────────────────────────────
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
     ?? req.headers.get('x-real-ip')
     ?? 'unknown';
@@ -52,7 +55,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // -- Input validation
+  // ── Input validation ──────────────────────────────────────────────────────────
   let body: unknown;
   try {
     body = await req.json();
@@ -75,10 +78,10 @@ export async function POST(req: NextRequest) {
   const userAgent = req.headers.get('user-agent') ?? undefined;
   const ipAddress = ip !== 'unknown' ? ip : undefined;
 
-  // -- Authentication
-  let result;
+  // ── Authentication ────────────────────────────────────────────────────────────
+  let outcome;
   try {
-    result = await login({ email, password, ipAddress, userAgent });
+    outcome = await login({ email, password, ipAddress, userAgent });
   } catch (err: unknown) {
     const code = (err as { code?: string }).code;
 
@@ -91,19 +94,21 @@ export async function POST(req: NextRequest) {
 
     if (code === 'INVALID_CREDENTIALS' || code === 'ACCOUNT_DISABLED') {
       return NextResponse.json(
+        { type: 'https://docs.kollegan.ai/problems/unauthorized', title: 'Unauthorized', status: 401, detail: 'Invalid email or password' },
+        { status: 401, headers: { 'Content-Type': 'application/problem+json', 'WWW-Authenticate': 'Bearer realm="api.kollegan.ai", charset="UTF-8"' } }
+      );
+    }
+
+    if (code === 'MFA_SETUP_REQUIRED') {
+      // Grace period expired — user cannot log in until MFA is configured
+      return NextResponse.json(
         {
-          type: 'https://docs.kollegan.ai/problems/unauthorized',
-          title: 'Unauthorized',
-          status: 401,
-          detail: 'Invalid email or password',
+          type: 'https://docs.kollegan.ai/problems/mfa-setup-required',
+          title: 'MFA Setup Required',
+          status: 403,
+          detail: 'Your account requires MFA. Please contact your administrator or log in from a previous session to configure it.',
         },
-        {
-          status: 401,
-          headers: {
-            'Content-Type': 'application/problem+json',
-            'WWW-Authenticate': 'Bearer realm="api.kollegan.ai", charset="UTF-8"',
-          },
-        }
+        { status: 403, headers: { 'Content-Type': 'application/problem+json' } }
       );
     }
 
@@ -113,35 +118,57 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // -- Audit successful login
+  // ── MFA challenge required (step 1 complete, step 2 pending) ─────────────────
+  if ('status' in outcome && outcome.status === 'mfa_required') {
+    const challengeToken = await signMfaChallengeToken(outcome.userId);
+
+    const res = NextResponse.json(
+      { data: { status: 'mfa_required', methods: outcome.methods } },
+      { status: 202 }
+    );
+
+    res.cookies.set('mfa_challenge', challengeToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: MFA_CHALLENGE_TTL_SEC,
+      path: '/',
+    });
+
+    return res;
+  }
+
+  // ── Tokens issued (MFA not required or grace period active) ──────────────────
+  // TypeScript cannot narrow LoginOutcome past the early return above; assert here.
+  const loginResult = outcome as import('@modules/supporting/auth').LoginResult;
+
   await log({
     action: AUDIT_ACTIONS.USER_LOGIN,
-    organizationId: result.user.orgId,
-    actorId: result.user.id,
+    organizationId: loginResult.user.orgId,
+    actorId: loginResult.user.id,
     actorType: 'user',
     resourceType: 'User',
-    resourceId: result.user.id,
-    metadata: { ip: ipAddress ?? null },
+    resourceId: loginResult.user.id,
+    metadata: { ip: ipAddress ?? null, mfaWarning: !!loginResult.mfaWarning },
   }).catch(() => {});
 
-  // -- Set refresh token cookie
-  // Staff and customer use different cookie names to prevent cross-contamination.
-  const isCustomer = result.user.userType === 'customer';
+  const isCustomer = loginResult.user.userType === 'customer';
   const cookieName = isCustomer ? 'portal_token' : 'token';
-  const ttlSec = isCustomer ? REFRESH_TTL_SEC_CUSTOMER : REFRESH_TTL_SEC_STAFF;
+  const ttlSec     = isCustomer ? REFRESH_TTL_SEC_CUSTOMER : REFRESH_TTL_SEC_STAFF;
 
   const res = NextResponse.json({
     data: {
       user: {
-        id: result.user.id,
-        email: result.user.email,
-        userType: result.user.userType,
-        roles: result.user.roles,
+        id: loginResult.user.id,
+        email: loginResult.user.email,
+        userType: loginResult.user.userType,
+        roles: loginResult.user.roles,
       },
+      ...(loginResult.mfaWarning ? { mfaWarning: { expiresAt: loginResult.mfaWarning.expiresAt } } : {}),
     },
   });
 
-  res.cookies.set(cookieName, result.refreshToken, {
+  res.cookies.set(cookieName, loginResult.refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
