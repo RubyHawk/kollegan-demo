@@ -35,6 +35,8 @@ export const AUDIT_ACTIONS = {
   USER_LOGIN: 'user.login',
   USER_LOGIN_FAILED: 'user.login_failed',
   USER_LOGOUT: 'user.logout',
+  USER_TOKEN_REFRESHED: 'user.token_refreshed',
+  USER_SESSIONS_REVOKED: 'user.sessions_revoked',
   USER_CREATED: 'user.created',
   USER_DEACTIVATED: 'user.deactivated',
   PASSWORD_CHANGED: 'user.password_changed',
