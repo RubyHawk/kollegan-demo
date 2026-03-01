@@ -35,24 +35,30 @@ function randomJti(): string {
 
 export async function signAccessToken(
   payload: Omit<JWTPayload, 'type' | 'iat' | 'exp' | 'jti'>
-): Promise<string> {
+): Promise<{ token: string; jti: string }> {
   const jti = randomJti();
-  return new SignJWT({ ...payload, type: 'access' } as Record<string, unknown>)
+  const token = await new SignJWT({ ...payload, type: 'access' } as Record<string, unknown>)
     .setProtectedHeader({ alg: ALGORITHM })
     .setIssuedAt()
     .setExpirationTime(ACCESS_TTL)
     .setJti(jti)
     .sign(SECRET_KEY);
+  return { token, jti };
 }
 
+/**
+ * @param ttl  JWT expiration — '7d' for staff (default), '30d' for customers.
+ *             Must match the Session.expiresAt value written to the DB.
+ */
 export async function signRefreshToken(
-  payload: Omit<JWTPayload, 'type' | 'iat' | 'exp' | 'jti'>
+  payload: Omit<JWTPayload, 'type' | 'iat' | 'exp' | 'jti'>,
+  ttl: string = REFRESH_TTL,
 ): Promise<{ token: string; jti: string }> {
   const jti = randomJti();
   const token = await new SignJWT({ ...payload, type: 'refresh' } as Record<string, unknown>)
     .setProtectedHeader({ alg: ALGORITHM })
     .setIssuedAt()
-    .setExpirationTime(REFRESH_TTL)
+    .setExpirationTime(ttl)
     .setJti(jti)
     .sign(SECRET_KEY);
   return { token, jti };
