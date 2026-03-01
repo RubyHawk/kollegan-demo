@@ -19,6 +19,7 @@ export type LeadSource = 'voice_call' | 'web_form' | 'manual' | 'referral' | 'n8
 
 export interface Lead {
   id: string;
+  organizationId: string;
   name: string;
   email?: string;
   phone?: string;

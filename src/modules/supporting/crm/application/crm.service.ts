@@ -89,6 +89,24 @@ export async function updateCrm(input: CrmUpdateInput): Promise<CrmUpdateResult>
     notes:   input.notes,
   });
 
+  // Auto-create a lead for new customers identified from voice calls (Phase 3)
+  const isNewCustomer = customer.callCount === 1;
+  if (isNewCustomer && (input.name ?? input.phone ?? input.email)) {
+    const { createLead } = await import('@modules/supporting/leads');
+    await createLead(
+      {
+        organizationId: DEMO_ORG_ID,
+        name:           input.name ?? input.email ?? input.phone ?? 'Unknown',
+        email:          input.email,
+        phone:          input.phone,
+        company:        input.company,
+        notes:          input.summary ?? input.notes,
+        source:         'voice_call',
+      },
+      'system',
+    ).catch((err: unknown) => logger.error(TAG, 'Auto-lead creation failed', { error: err }));
+  }
+
   // callCount === 1 means this is a newly created customer (upsert created it)
   eventBus.publish<CrmContactUpsertedEvent>({
     type:       CRM_CONTACT_UPSERTED,

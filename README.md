@@ -15,7 +15,7 @@ The live demo shows the automation platform in a hotel context:
 - **Bookings calendar** — week/month timeline with Google Calendar sync
 - **CRM & activity log** — call transcripts, customer profiles, booking history
 - **Hotel services** — restaurants, amenities, activities management
-- **Staff authentication** — JWT-secured admin dashboard
+- **Staff authentication** — JWT-secured admin dashboard with MFA (TOTP + WebAuthn)
 - **n8n workflow automation** — business process orchestration across all modules
 
 ---
@@ -25,15 +25,14 @@ The live demo shows the automation platform in a hotel context:
 | Layer | Technology |
 |---|---|
 | Framework | Next.js 16.1 (App Router) |
-| UI | React 19, TailwindCSS 4, Framer Motion 12 |
+| UI | React 19, TailwindCSS 4, Framer Motion 12, Radix UI |
 | Database | PostgreSQL 18+ via Prisma 7 (driver adapter) |
 | State | Zustand 5, SSE (real-time) |
-| Auth | JWT (jose), bcrypt |
+| Auth | JWT (jose), bcrypt, TOTP (otpauth), WebAuthn (SimpleWebAuthn) |
 | Cache / Rate limiting | Redis (ioredis) |
 | Voice AI | Vapi Web SDK + webhook handlers |
 | Automation | n8n (self-hosted or cloud) |
 | Calendar | Google Calendar API (service account) |
-| UI Primitives | Radix UI |
 | Testing | Vitest + supertest |
 
 ---
@@ -43,8 +42,8 @@ The live demo shows the automation platform in a hotel context:
 ### Principles
 
 1. **Automation-first** — every domain event can trigger a workflow; no module is exempt
-2. **Vertical slice architecture** — each module owns its types, components, service, repository, and events
-3. **Clean separation** — HTTP layer (`app/api/`) is thin; business logic lives in `features/*/service.ts`
+2. **DDD module isolation** — each module owns its data; cross-module reads go through `index.ts` only
+3. **Clean separation** — HTTP layer (`app/api/`) is thin; business logic lives in module `application/` services
 4. **Infrastructure adapters** — every external service (Vapi, Slack, n8n, LLM) is behind an adapter interface; swap vendor, not code
 5. **Multi-tenant from row 1** — `organizationId` on every table, enforced at query layer
 6. **Event-driven by design** — in-process event bus today, extractable to message queue when needed
@@ -54,59 +53,70 @@ The live demo shows the automation platform in a hotel context:
 ```
 src/
 ├── app/                          Next.js App Router (routing + HTTP layer ONLY)
-│   ├── api/                      Thin route handlers — delegate to features
-│   │   ├── ai/                   Vapi AI tool endpoints (availability, booking, CRM)
-│   │   ├── rooms/                Room CRUD
-│   │   ├── staff/                Staff user management
+│   ├── api/
+│   │   ├── ai/                   Vapi AI tool endpoints (availability, booking, CRM, transcripts)
+│   │   ├── auth/                 Login, logout, refresh, MFA (TOTP + backup codes + WebAuthn)
+│   │   ├── leads/                Lead CRUD + activities + conversion
+│   │   ├── n8n/                  n8n webhook receivers (CRM, leads)
+│   │   ├── demos/hotel/          Hotel demo CRUD endpoints
+│   │   ├── admin/                Admin operations (access review)
 │   │   ├── calendar/             Google Calendar sync
-│   │   ├── n8n/                  n8n webhook receivers
 │   │   ├── sse/                  Server-Sent Events stream
-│   │   ├── docs/                 OpenAPI spec + Swagger UI
-│   │   └── demo/                 Demo seed endpoints
-│   ├── layout.tsx                Root layout (fonts, providers, body)
-│   ├── page.tsx                  Main dashboard page
-│   └── providers.tsx             React context providers
+│   │   ├── health/               Docker healthcheck endpoint
+│   │   └── docs/                 OpenAPI spec + Swagger UI
+│   ├── layout.tsx
+│   ├── page.tsx
+│   └── providers.tsx
 │
-├── features/                     Business modules — vertical slices
+├── modules/                      Business modules — DDD classified
 │   │
-│   ├── automation/      [CORE ★] Workflow engine, tool registry, triggers, memory
-│   ├── voice/           [CORE ★] Vapi phone agent + LLM-callable ai-tools
-│   │   └── ai-tools/             Tool handlers registered into the automation tool registry
+│   ├── core/                     ★ Core domains — your competitive moat
+│   │   ├── automation/           Workflow engine, tool registry, triggers
+│   │   └── voice/                Vapi phone agent, LLM-callable ai-tools, call lifecycle
 │   │
-│   ├── identity/        [PLANNED] Orgs, members, auth, RBAC
-│   ├── crm/                      Customer profiles, call history, segments
-│   ├── leads/           [PLANNED] Pipeline, scoring, lead-to-customer conversion
-│   ├── offers/          [PLANNED] Quotation builder, PDF, e-signature
+│   ├── supporting/               Supporting domains — solid DDD, no heroics
+│   │   ├── auth/                 Unified user model, sessions, MFA, RBAC
+│   │   │   ├── domain/           User + Session entities
+│   │   │   ├── application/      login, logout, refreshTokens, completeMfaLogin
+│   │   │   ├── infrastructure/   user.repository, session.repository
+│   │   │   └── index.ts
+│   │   ├── crm/                  Customer profiles, call transcripts, CRM records
+│   │   ├── leads/                Lead pipeline, activity feed, stage transitions, conversion
+│   │   │   ├── domain/           Lead + LeadActivity entities, LeadStatus / LeadSource types
+│   │   │   ├── application/      createLead, listLeads, updateLead, convertLead, addLeadActivity
+│   │   │   ├── infrastructure/   leadsRepository
+│   │   │   ├── events/           LEAD_CREATED, LEAD_STAGE_CHANGED, LEAD_CONVERTED, LEAD_ASSIGNED
+│   │   │   └── index.ts
+│   │   ├── audit/                Append-only audit trail (SOC 2 evidence)
+│   │   ├── identity/             Organizations, org settings
+│   │   └── offers/               Quotation builder (stub)
 │   │
-│   ├── integrations/    [PLANNED] Connector registry (Slack, GitHub, webhooks)
-│   │
-│   ├── hotel/                    Hotel demo vertical (one domain, two sub-domains)
-│   │   ├── rooms/                Room availability, bookings, calendar
-│   │   ├── services/             Restaurants, amenities, activities
-│   │   └── index.ts              Combined barrel export
-│   │
-│   ├── team-hub/        [PLANNED] SaaS collaboration hub
-│   │   ├── workspace/            Multi-tenant workspaces, members, billing
-│   │   ├── integrations/github/  GitHub App: PRs, issues, CI status
-│   │   ├── integrations/slack/   Slack App: channels, notification rules
-│   │   ├── meetings/             Video + AI transcription + Claude summaries
-│   │   └── announcements/        Internal comms — pinned notices, policy updates
-│   │
-│   ├── activity/                 Cross-module audit trail + real-time SSE feed
-│   └── dashboard/                Shell UI (header, sidebar, setup, splash)
+│   └── generic/                  Generic domains — commodity, keep simple
+│       ├── dashboard/            Shell UI — header, sidebar, navigation
+│       └── team-hub/             SaaS collaboration (GitHub, Slack, meetings, announcements)
 │
-├── core/                         Application core — framework-agnostic utilities
-│   ├── auth/                     JWT token management, Vapi webhook auth
+├── demos/                        Sales / showcase verticals (never rename or move)
+│   └── hotel/                    Hotel AI Receptionist demo
+│       ├── api/                  Demo-specific route handlers
+│       ├── domain/               Hotel domain entities
+│       ├── application/          Room booking, service management
+│       ├── infrastructure/       room-store, hotel repositories
+│       └── ui/                   Hotel dashboard components
+│
+├── core/                         Framework-agnostic application utilities
+│   ├── api/                      createHandler() pipeline, RFC 9457 errors, response helpers
+│   ├── auth/                     JWT sign/verify, Vapi webhook auth, token blacklist
 │   ├── cache/                    Redis client, sliding-window rate limiter
 │   ├── database/                 Prisma client singleton
+│   ├── events/                   In-process typed event bus
 │   ├── logging/                  Structured logger
-│   ├── resilience/               Exponential-backoff retry wrapper
-│   └── api/                      OpenAPI specification
+│   ├── queue/                    Background job queue
+│   └── resilience/               Exponential-backoff retry wrapper
 │
 ├── infrastructure/               External system adapters
 │   ├── calendar/                 Google Calendar API client
-│   ├── persistence/              JSON file store (dev/demo fallback)
-│   └── sse/                      Server-Sent Events manager
+│   ├── sse/                      Server-Sent Events manager
+│   └── persistence/              JSON file store (dev/demo fallback)
 │
 ├── shared/                       Cross-cutting concerns
 │   ├── ui/                       Reusable UI components (Button, Dialog, Toast…)
@@ -124,10 +134,34 @@ src/
 | Alias | Resolves to | Use for |
 |---|---|---|
 | `@/*` | `src/*` | Anything in src (fallback) |
-| `@features/*` | `src/features/*` | Domain module imports |
+| `@modules/core/*` | `src/modules/core/*` | Core domain modules |
+| `@modules/supporting/*` | `src/modules/supporting/*` | Supporting domain modules |
+| `@modules/generic/*` | `src/modules/generic/*` | Generic domain modules |
+| `@demos/*` | `src/demos/*` | Demo verticals |
 | `@shared/*` | `src/shared/*` | Shared UI and utilities |
-| `@core/*` | `src/core/*` | Auth, DB, cache, logging |
+| `@core/*` | `src/core/*` | Auth, DB, cache, logging, API pipeline |
 | `@infra/*` | `src/infrastructure/*` | External service adapters |
+
+### Module Internal Structure
+
+Every non-trivial module follows DDD layering:
+
+```
+modules/supporting/my-module/
+├── domain/              Pure TypeScript types — no DB, no HTTP, no side effects
+│   └── my-entity.ts
+├── application/         Business logic — orchestrates domain + infrastructure
+│   └── my.service.ts
+├── infrastructure/      Database queries — all Prisma access lives here
+│   └── my.repository.ts
+├── api/handlers/        Thin HTTP handlers — delegate to application
+│   └── my.handler.ts
+├── events/              Domain event definitions + publishers
+│   └── my.events.ts
+└── index.ts             Public API — ONLY export what other modules need
+```
+
+The `index.ts` is the **module contract**. Other modules may only import from `index.ts`, never from internal files.
 
 ---
 
@@ -142,28 +176,48 @@ src/
 - Google Cloud service account (for calendar sync)
 - n8n instance (for workflow automation)
 
-### Installation
+### Docker (recommended)
+
+```bash
+git clone <repo>
+cd kollegan-demo
+cp .env.example .env
+# Fill in .env values
+docker compose up
+```
+
+The app runs at `http://localhost:3000` (or your configured domain via Caddy TLS).
+
+### Manual
 
 ```bash
 git clone <repo>
 cd kollegan-demo
 npm install
-cp .env.local.example .env.local
+cp .env.example .env.local
 # Fill in .env.local values
-npx prisma migrate dev
+npx prisma migrate deploy
 npm run dev
 ```
 
-The app runs at `http://localhost:3000`.
-
 ### Environment Variables
 
-See `.env.local.example` for all required variables:
+See `.env.example` for all required variables, grouped by concern:
 
 ```env
+# Application
+NODE_ENV=development
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+ALLOWED_ORIGINS=http://localhost:3000
+
+# Database
 DATABASE_URL=postgresql://user:pass@localhost:5432/kollegan
+
+# Cache
 REDIS_URL=redis://localhost:6379
-JWT_SECRET=your-secret-here
+
+# Auth
+JWT_SECRET=<256-bit random secret>
 
 # Vapi (voice AI)
 VAPI_WEBHOOK_SECRET=your-vapi-webhook-secret
@@ -175,39 +229,42 @@ GOOGLE_SERVICE_ACCOUNT_EMAIL=...
 GOOGLE_PRIVATE_KEY=...
 GOOGLE_CALENDAR_ID=...
 
-# App URL (for OpenAPI server URL)
-NEXTJS_PUBLIC_URL=https://your-domain.com
+# Demo
+DEMO_ORG_ID=demo
 ```
 
 ### Database Setup
 
 ```bash
-npx prisma migrate dev --name init
-# Seed demo staff
-curl -X POST http://localhost:3000/api/demo/seed-staff
-# Explore data
-npx prisma studio
+npx prisma migrate deploy    # Apply all migrations
+npx prisma studio            # Browse data
 ```
 
 ---
 
 ## Adding a New Module
 
-### 1. Create the feature folder
+### 1. Create the module folder
+
+Follow the DDD layer template. Place it in the right classification:
+- `src/modules/core/` — automation, voice (your competitive moat)
+- `src/modules/supporting/` — crm, leads, auth, audit (important, not heroic)
+- `src/modules/generic/` — dashboard, team-hub (commodity, keep simple)
+- `src/demos/` — sales verticals (hotel, real-estate, etc.)
 
 ```
-src/features/my-module/
-├── components/
-│   └── my-tab.tsx
-├── service.ts           Business logic — all domain rules live here
-├── repository.ts        Database queries — no Prisma outside this file
-├── events.ts            Domain event definitions + publish helpers
-├── register.ts          Self-registration: tools, event listeners
-├── api.ts               Client-side fetch wrappers (for React)
-├── lib/
-│   └── my-store.ts      Zustand store (if real-time UI state needed)
-├── types.ts             TypeScript domain types
-└── index.ts             Public barrel — ONLY export what other modules need
+src/modules/supporting/my-module/
+├── domain/
+│   └── my-entity.ts         # TypeScript types only — no imports from outside domain/
+├── application/
+│   └── my.service.ts        # Business logic — imports domain + infrastructure
+├── infrastructure/
+│   └── my.repository.ts     # All Prisma queries — no Prisma outside this file
+├── api/handlers/
+│   └── my.handler.ts        # HTTP: thin, delegates to service
+├── events/
+│   └── my.events.ts         # Domain event definitions
+└── index.ts                 # Public barrel — only export what consumers need
 ```
 
 ### 2. Add database models
@@ -223,28 +280,29 @@ npx prisma migrate dev --name add-my-module
 ```
 src/app/api/my-module/
 ├── route.ts             GET/POST
-└── [id]/route.ts        GET/PUT/DELETE
+└── [id]/route.ts        GET/PATCH/DELETE
 ```
 
-Route handlers must be thin — delegate immediately to `@features/my-module/service.ts`.
+Use `createHandler()` from `@core/api/handler` — it provides auth, Zod validation, rate limiting, and RFC 9457 error responses for free:
 
-### 4. Register in the sidebar
-
-Edit `src/features/dashboard/components/dashboard-sidebar.tsx`:
-- Add to `Tab` type
-- Add to `NAV_ITEMS` array
-
-### 5. Add to page.tsx
-
-```tsx
-import MyTab from '@features/my-module/components/my-tab';
-
-{activeTab === 'my-module' && (
-  <motion.div key="my-module" {...TAB_TRANSITION}>
-    <MyTab />
-  </motion.div>
-)}
+```typescript
+export const GET = createHandler(
+  { auth: 'jwt', tag: 'MyModule:Get', rateLimit: { max: 120, windowMs: 60_000 } },
+  async (ctx) => {
+    const req = (ctx as unknown as { req: NextRequest }).req;
+    // ... business logic via service
+    return ok({ result });
+  },
+);
 ```
+
+### 4. Register in the dashboard sidebar
+
+Edit `src/modules/generic/dashboard/components/dashboard-sidebar.tsx`.
+
+### 5. Register event subscribers at startup
+
+Add subscribers in `instrumentation.ts` so they wire up when the app boots.
 
 ---
 
@@ -253,25 +311,23 @@ import MyTab from '@features/my-module/components/my-tab';
 ### Vapi Voice AI
 
 ```
-Caller → Vapi → LLM tool call → Our API endpoint → Business logic → DB + SSE
+Caller → Vapi → LLM tool call → POST /api/ai/* → modules/core/voice/ai-tools/* → DB + SSE
 ```
 
-AI tool functions: `src/features/voice/ai-tools/`
 Auth: `x-vapi-secret` header → `@core/auth/vapi-auth`
 Rate limiting: Redis sliding window → `@core/cache/rate-limiter`
 
 ### n8n Automation
 
 ```
-n8n Workflow → POST /api/n8n/crm → Domain logic → SSE broadcast
+n8n Workflow → POST /api/n8n/crm   → CRM module
+             → POST /api/n8n/leads → Leads module
 ```
-
-Workflow file: `n8n/vapi-hotel-workflow.json`
 
 ### Google Calendar
 
 ```
-Booking created → calendar.ts → Google Calendar API → Event created
+Booking created → calendar adapter → Google Calendar API → Event created
 ```
 
 Adapter: `src/infrastructure/calendar/google-calendar.ts`
@@ -280,33 +336,34 @@ Retry: `@core/resilience/with-retry`
 ### Real-time Dashboard (SSE)
 
 ```
-Any state change → SSE Manager → Event stream → Zustand → UI
+Any state change → logActivity() → SSE Manager → Event stream → Zustand → UI
 ```
 
 Manager: `src/infrastructure/sse/sse-manager.ts`
-Client: `src/shared/hooks/use-sse.ts`
+Client hook: `src/shared/hooks/use-sse.ts`
 
 ---
 
-## Module Roadmap
+## Module Status
 
-| Module | Domain | Status | Description |
+| Module | Layer | Status | Description |
 |---|---|---|---|
-| Voice AI | Core | Live | Vapi phone receptionist + LLM tool calls |
-| Hotel rooms | Generic | Live | Availability, bookings, real-time status |
-| Hotel services | Generic | Live | Restaurants, amenities, activities |
-| CRM | Supporting | Live (basic) | Customer profiles, call history |
-| Activity log | Generic | Live | Cross-module audit trail |
-| Automation engine | Core | Planned | Workflow definitions, step executor, tool registry |
-| Identity / Orgs | Supporting | Planned | Multi-tenancy, RBAC, org management |
-| Lead management | Supporting | Planned | Pipeline, scoring, conversion |
-| Offer builder | Supporting | Planned | Quotations, PDF, e-signature |
-| Team hub | Generic | Planned | SaaS workspace: GitHub, Slack, AI meetings |
-| Billing | Generic | Future | Stripe, seat limits, LLM usage billing |
-| Analytics | Generic | Future | Occupancy, revenue, workflow volumes |
-| Plugin API | Core | Future | External tool registration, third-party modules |
+| Voice AI | core | Live | Vapi phone receptionist, LLM tool calls |
+| Automation engine | core | Partial | Workflow model, tool registry, domain events |
+| CRM | supporting | Live | Customer profiles, call transcripts, auto-lead on new caller |
+| Auth | supporting | Live | JWT, MFA (TOTP + backup codes + WebAuthn), opaque refresh tokens |
+| Leads | supporting | Live | Full pipeline: CRUD, stage transitions, activities, conversion |
+| Audit | supporting | Live | Append-only audit trail, actor tracking |
+| Identity / Orgs | supporting | Live (basic) | Organization model, multi-tenancy |
+| Offers | supporting | Stub | Quotation builder — not yet implemented |
+| Hotel demo | demos | Live | Rooms, services, bookings, calendar, real-time |
+| Team hub | generic | Stub | GitHub/Slack/meetings — not yet implemented |
+| Dashboard | generic | Live | Shell UI, navigation, activity feed |
+| Billing | generic | Planned | Stripe, seat limits, usage billing |
+| Analytics | generic | Planned | Occupancy, revenue, workflow volumes |
+| Plugin API | core | Planned | External tool registration |
 
-See `docs/ARCHITECTURE.md` for the full ERP vision, domain model, and 6–12 month roadmap.
+See `docs/ARCHITECTURE.md` for the full domain model, security architecture, and roadmap.
 
 ---
 
@@ -315,7 +372,8 @@ See `docs/ARCHITECTURE.md` for the full ERP vision, domain model, and 6–12 mon
 - **JSON spec:** `GET /api/docs`
 - **Swagger UI:** `GET /api/docs/ui`
 
-All AI tool endpoints require `x-vapi-secret` header.
+All Vapi AI tool endpoints require `x-vapi-secret` header.
+All authenticated endpoints accept either `Authorization: Bearer <token>` or the httpOnly `token` cookie.
 
 ---
 
@@ -323,14 +381,17 @@ All AI tool endpoints require `x-vapi-secret` header.
 
 - TypeScript strict mode — no implicit `any`
 - Absolute imports only — use path aliases, never deep relative paths
-- Route handlers are thin — business logic lives in `@features/`
-- Infrastructure adapters never import from `@features/`
+- Route handlers are thin — business logic lives in `application/` services, not in `app/api/`
+- Infrastructure adapters never import from `@modules/*`
 - One Prisma client instance via `@core/database/prisma`
+- Module boundaries enforced by dependency-cruiser: `npm run lint:deps`
 
 ```bash
-npm test           # Run all tests
+npm test           # Vitest unit tests
 npm run lint       # ESLint
+npm run lint:deps  # dependency-cruiser module boundary check
 npm run build      # Production build
+npx tsc --noEmit   # TypeScript type check only
 ```
 
 ---

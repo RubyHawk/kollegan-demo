@@ -1,16 +1,27 @@
 /**
- * Lead Management Module
+ * Lead Management Module — Phase 3
  *
- * Status: PLANNED — not yet implemented.
- *
- * To add this module:
- * 1. Create Prisma model: Lead, LeadActivity
- * 2. Add API routes under /api/leads/
- * 3. Build LeadsTab component for the dashboard sidebar
- * 4. Register in DashboardSidebar NAV_ITEMS
- * 5. Add n8n webhook handler for automated lead ingestion
- *
- * See docs/ARCHITECTURE.md for the full ERP module roadmap.
+ * Full lead pipeline: new → contacted → qualified → proposal → won/lost
+ * Conversion flow: convertLead() links to a CRM Customer record.
+ * Domain events: LEAD_CREATED, LEAD_STAGE_CHANGED, LEAD_CONVERTED, LEAD_ASSIGNED
  */
 
 export type { Lead, LeadActivity, LeadStatus, LeadSource } from './domain/lead.entity';
+export {
+  createLead,
+  getLead,
+  listLeads,
+  updateLead,
+  convertLead,
+  deleteLead,
+  addLeadActivity,
+  getLeadActivities,
+} from './application/leads.service';
+export type { CreateLeadInput, UpdateLeadInput, ListLeadsFilter } from './application/leads.service';
+
+export {
+  LEAD_CREATED,
+  LEAD_STAGE_CHANGED,
+  LEAD_CONVERTED,
+  LEAD_ASSIGNED,
+} from './events/lead.events';
