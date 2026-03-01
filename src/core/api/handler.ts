@@ -37,7 +37,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { validateVapiAuth } from '@core/auth/vapi-auth';
-import { verifyToken } from '@core/auth/jwt';
+import { verifyToken, isTokenBlacklisted, isUserBlacklisted, type JWTPayload } from '@core/auth/jwt';
 import { checkRateLimit } from '@core/cache/rate-limiter';
 import { logger } from '@core/logging/logger';
 import { ApiError, Errors, zodToIssues, type Problem } from './errors';
@@ -323,10 +323,24 @@ export function createHandler<
             ?? '';
         }
         if (!token) return problem(Errors.unauthorized('Authentication required'));
+
+        let jwtPayload: JWTPayload;
         try {
-          await verifyToken(token);
+          jwtPayload = await verifyToken(token);
         } catch {
           return problem(Errors.unauthorized('Invalid or expired token'));
+        }
+
+        // Token-level blacklist: catches individually revoked tokens (logout).
+        // Fail-open if Redis is unavailable (see isTokenBlacklisted for rationale).
+        if (await isTokenBlacklisted(jwtPayload.jti)) {
+          return problem(Errors.unauthorized('Token has been revoked'));
+        }
+
+        // User-level blacklist: catches revokeAllSessions (GDPR erasure, "sign out all devices").
+        // Rejects tokens whose iat predates the revocation timestamp stored in Redis.
+        if (jwtPayload.sub && await isUserBlacklisted(jwtPayload.sub, jwtPayload.iat)) {
+          return problem(Errors.unauthorized('Session has been revoked'));
         }
       }
 

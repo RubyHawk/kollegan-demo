@@ -35,24 +35,30 @@ function randomJti(): string {
 
 export async function signAccessToken(
   payload: Omit<JWTPayload, 'type' | 'iat' | 'exp' | 'jti'>
-): Promise<string> {
+): Promise<{ token: string; jti: string }> {
   const jti = randomJti();
-  return new SignJWT({ ...payload, type: 'access' } as Record<string, unknown>)
+  const token = await new SignJWT({ ...payload, type: 'access' } as Record<string, unknown>)
     .setProtectedHeader({ alg: ALGORITHM })
     .setIssuedAt()
     .setExpirationTime(ACCESS_TTL)
     .setJti(jti)
     .sign(SECRET_KEY);
+  return { token, jti };
 }
 
+/**
+ * @param ttl  JWT expiration — '7d' for staff (default), '30d' for customers.
+ *             Must match the Session.expiresAt value written to the DB.
+ */
 export async function signRefreshToken(
-  payload: Omit<JWTPayload, 'type' | 'iat' | 'exp' | 'jti'>
+  payload: Omit<JWTPayload, 'type' | 'iat' | 'exp' | 'jti'>,
+  ttl: string = REFRESH_TTL,
 ): Promise<{ token: string; jti: string }> {
   const jti = randomJti();
   const token = await new SignJWT({ ...payload, type: 'refresh' } as Record<string, unknown>)
     .setProtectedHeader({ alg: ALGORITHM })
     .setIssuedAt()
-    .setExpirationTime(REFRESH_TTL)
+    .setExpirationTime(ttl)
     .setJti(jti)
     .sign(SECRET_KEY);
   return { token, jti };
@@ -95,5 +101,43 @@ export async function blacklistToken(jti: string, expiresInSec: number): Promise
     await redis.setex(`blacklist:${jti}`, expiresInSec, '1');
   } catch {
     logger.warn('jwt', 'Failed to blacklist token in Redis', { jti });
+  }
+}
+
+// ─── User-level revocation ─────────────────────────────────────────────────────
+//
+// Used for "sign out all devices" and GDPR erasure.
+// Stores a revocation epoch per user; any token whose iat ≤ that epoch is rejected.
+// TTL = 30 days (max refresh token lifetime) so the key outlives all pre-revocation tokens.
+
+const USER_REVOKE_TTL_SEC = 60 * 60 * 24 * 30; // 30d — matches max refresh TTL
+
+/**
+ * Mark all tokens issued for a user before now() as revoked.
+ * Call this on revokeAllSessions() and GDPR erasure.
+ * Non-critical: logs on failure but does not throw.
+ */
+export async function blacklistUserTokens(userId: string): Promise<void> {
+  try {
+    const { redis } = await import('@core/cache/redis');
+    const revokedAt = Math.floor(Date.now() / 1000);
+    await redis.setex(`blacklist:user:${userId}`, USER_REVOKE_TTL_SEC, String(revokedAt));
+  } catch {
+    logger.warn('jwt', 'Failed to set user token blacklist in Redis', { userId });
+  }
+}
+
+/**
+ * Returns true if all tokens for this user issued at or before issuedAt are revoked.
+ * Fail-open: if Redis is unavailable, returns false so auth still works.
+ */
+export async function isUserBlacklisted(userId: string, issuedAt: number): Promise<boolean> {
+  try {
+    const { redis } = await import('@core/cache/redis');
+    const value = await redis.get(`blacklist:user:${userId}`);
+    if (value === null) return false;
+    return issuedAt <= parseInt(value, 10);
+  } catch {
+    return false; // fail open — same rationale as isTokenBlacklisted
   }
 }

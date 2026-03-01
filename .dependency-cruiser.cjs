@@ -58,6 +58,34 @@ module.exports = {
         path: '^src/modules/generic',
       },
     },
+    {
+      name: 'supporting-no-cross-supporting',
+      severity: 'error',
+      comment:
+        'Supporting modules must not import directly from each other. ' +
+        'Cross-supporting communication must go through domain events (event bus). ' +
+        'Exception: the known voice→crm violation in core/voice/register.ts is tracked for Phase 5 refactor.',
+      from: {
+        path: '^src/modules/supporting/([^/]+)',
+      },
+      to: {
+        path: '^src/modules/supporting',
+        pathNot: '^src/modules/supporting/$1',
+      },
+    },
+    {
+      name: 'generic-no-demos',
+      severity: 'warn',
+      comment:
+        'Generic modules should not import from demo verticals. ' +
+        'Move shared types (e.g. ActivityEvent) to a shared/ location or the owning module\'s index.ts.',
+      from: {
+        path: '^src/modules/generic',
+      },
+      to: {
+        path: '^src/demos',
+      },
+    },
 
     // ─── Shared/ domain-free ─────────────────────────────────────────────────────
     {

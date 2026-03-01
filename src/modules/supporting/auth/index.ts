@@ -1,7 +1,7 @@
 // ─── Auth module public API ───────────────────────────────────────────────────
 // Only export what other modules and route handlers are allowed to import.
 
-export { login, logout, refreshTokens } from './application/auth.service';
+export { login, logout, refreshTokens, revokeAllSessions } from './application/auth.service';
 export type { LoginInput, LoginResult } from './application/auth.service';
 
 export { hasPermission, invalidatePermissionCache } from './application/rbac.service';

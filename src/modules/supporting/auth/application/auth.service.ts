@@ -19,6 +19,7 @@ import {
   signAccessToken,
   signRefreshToken,
   blacklistToken,
+  blacklistUserTokens,
   isTokenBlacklisted,
   verifyToken,
 } from '@core/auth/jwt';
@@ -105,9 +106,10 @@ export async function login(input: LoginInput): Promise<LoginResult> {
     aud,
   };
 
-  const [accessToken, { token: refreshToken, jti }] = await Promise.all([
+  const refreshTtl = user.userType === 'customer' ? '30d' : '7d';
+  const [{ token: accessToken }, { token: refreshToken, jti: refreshJti }] = await Promise.all([
     signAccessToken(jwtPayload),
-    signRefreshToken(jwtPayload),
+    signRefreshToken(jwtPayload, refreshTtl),
   ]);
 
   const expiresAt = new Date();
@@ -115,7 +117,7 @@ export async function login(input: LoginInput): Promise<LoginResult> {
 
   await sessionRepository.create({
     userId: user.id,
-    refreshTokenJti: jti,
+    refreshTokenJti: refreshJti,
     userAgent: input.userAgent,
     ipAddress: input.ipAddress,
     expiresAt,
@@ -152,6 +154,23 @@ export async function logout(refreshTokenRaw: string): Promise<void> {
   } catch {
     // Ignore invalid tokens on logout — idempotent
   }
+}
+
+// ─── revokeAllSessions ─────────────────────────────────────────────────────────
+//
+// Revokes every active session for a user: sets revokedAt in DB and sets a
+// user-level revocation epoch in Redis so that any still-valid access tokens
+// (which are not individually tracked) are also rejected immediately.
+//
+// Call this for GDPR erasure requests and "sign out all devices".
+// Callers are responsible for writing the SESSIONS_REVOKED audit log entry.
+
+export async function revokeAllSessions(userId: string): Promise<void> {
+  await Promise.all([
+    sessionRepository.revokeAllForUser(userId),
+    blacklistUserTokens(userId),
+  ]);
+  logger.info(TAG, 'All sessions revoked', { userId });
 }
 
 // ─── refreshTokens ─────────────────────────────────────────────────────────────
@@ -194,9 +213,10 @@ export async function refreshTokens(refreshTokenRaw: string): Promise<{
     aud: payload.aud as string,
   };
 
-  const [accessToken, { token: newRefreshToken, jti: newJti }] = await Promise.all([
+  const refreshTtl = payload.userType === 'customer' ? '30d' : '7d';
+  const [{ token: accessToken }, { token: newRefreshToken, jti: newJti }] = await Promise.all([
     signAccessToken(jwtPayload),
-    signRefreshToken(jwtPayload),
+    signRefreshToken(jwtPayload, refreshTtl),
   ]);
 
   const ttlDays = payload.userType === 'customer' ? CUSTOMER_REFRESH_TTL_DAYS : REFRESH_TTL_DAYS;
@@ -237,12 +257,27 @@ async function migrateStaffUser(staffUser: {
   };
   const newRoleName = roleMap[staffUser.role] ?? 'user';
 
-  const user = await userRepository.create({
-    email: staffUser.email,
-    passwordHash: staffUser.passwordHash,
-    userType: 'staff',
-    organizationId: demoOrg.id,
-  });
+  // Handle race condition: two concurrent logins may both fall through to migration.
+  // Catch P2002 (unique constraint on email) and return the already-created user.
+  let user: User;
+  try {
+    user = await userRepository.create({
+      email: staffUser.email,
+      passwordHash: staffUser.passwordHash,
+      userType: 'staff',
+      organizationId: demoOrg.id,
+    });
+  } catch (err) {
+    const isPrismaUniqueViolation =
+      typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'P2002';
+    if (!isPrismaUniqueViolation) throw err;
+    const existing = await userRepository.findByEmail(staffUser.email);
+    if (!existing) throw err; // should not happen — violation means row exists
+    user = existing;
+    logger.info(TAG, `Race condition on migration resolved for ${staffUser.email}`, {
+      existingId: existing.id,
+    });
+  }
 
   const role = await userRepository.findRoleByName(newRoleName);
   if (role) {
