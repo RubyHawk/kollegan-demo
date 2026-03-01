@@ -71,20 +71,22 @@ export default function HotelDemoPage() {
   /* ── Scroll ref — passed to header for scroll-linked shadow ── */
   const mainScrollRef = useRef<HTMLElement>(null);
 
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+
   /* ── Hotel-info modal open state — contributes to parallax pause ── */
   const hotelInfoModalOpenRef = useRef(false);
   const handleHotelInfoModalChange = useCallback((open: boolean) => {
     hotelInfoModalOpenRef.current = open;
-  }, []);
-
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+    isModalOpenRef.current = selectedRoomId !== null || open;
+  }, [selectedRoomId]);
   const selectedRoom = selectedRoomId ? (rooms.find((r) => r.id === selectedRoomId) ?? null) : null;
-  // Keep last room data alive during the Dialog close animation
-  const lastSelectedRoomRef = useRef<Room | null>(null);
-  if (selectedRoom) lastSelectedRoomRef.current = selectedRoom;
-  const modalDisplayRoom = selectedRoom ?? lastSelectedRoomRef.current;
-  // Sync modal-open state into ref for parallax pause (room modal OR hotel-info modals)
-  isModalOpenRef.current = selectedRoomId !== null || hotelInfoModalOpenRef.current;
+  // Keep last room data alive during the Dialog close animation — set in the
+  // click handler so it's never stale and never triggers cascading renders.
+  const [modalRoom, setModalRoom] = useState<Room | null>(null);
+  // Sync isModalOpenRef for parallax pause — only writes to a ref, not setState.
+  useEffect(() => {
+    isModalOpenRef.current = selectedRoomId !== null || hotelInfoModalOpenRef.current;
+  }, [selectedRoomId]);
   const [activeTab, setActiveTab] = useState<Tab>('available');
   const [showSplash, setShowSplash] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -140,6 +142,7 @@ export default function HotelDemoPage() {
 
   const handleRoomClick = useCallback((room: Room) => {
     if (room.status === 'locked') return;
+    setModalRoom(room);
     setSelectedRoomId(room.id);
   }, []);
 
@@ -335,10 +338,10 @@ export default function HotelDemoPage() {
         </footer>
       </div>
 
-      {/* Room modal — keep mounted during close animation via modalDisplayRoom */}
-      {modalDisplayRoom && (
+      {/* Room modal — keep mounted during close animation via modalRoom */}
+      {modalRoom && (
         <RoomDetailModal
-          room={modalDisplayRoom}
+          room={modalRoom}
           open={!!selectedRoom}
           onClose={() => setSelectedRoomId(null)}
           onBooked={() => setSelectedRoomId(null)}

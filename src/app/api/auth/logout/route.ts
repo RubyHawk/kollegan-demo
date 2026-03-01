@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (rawToken) {
     // Look up session for audit metadata (opaque token — no JWT claims to read)
     let userId: string | undefined;
-    let orgId: string | null = null;
+    const orgId: string | null = null;
     try {
       const hash    = hashOpaqueToken(rawToken);
       const session = await sessionRepository.findByTokenHash(hash);
