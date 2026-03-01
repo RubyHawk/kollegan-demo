@@ -40,7 +40,7 @@ interface ReviewData {
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-function MfaBadge({ user }: { user: UserRow }) {
+function MfaBadge({ user, now }: { user: UserRow; now: number }) {
   if (user.mfaEnabled) {
     const methods: string[] = [];
     if (user.totpConfigured) methods.push('TOTP');
@@ -52,7 +52,7 @@ function MfaBadge({ user }: { user: UserRow }) {
     );
   }
   if (user.mfaGraceExpiresAt) {
-    const daysLeft = Math.ceil((new Date(user.mfaGraceExpiresAt).getTime() - Date.now()) / 86_400_000);
+    const daysLeft = Math.ceil((new Date(user.mfaGraceExpiresAt).getTime() - now) / 86_400_000);
     if (daysLeft > 0) {
       return (
         <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
@@ -101,6 +101,7 @@ function exportCsv(users: UserRow[]) {
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AccessReviewPage() {
+  const [now] = useState(Date.now);
   const [data, setData] = useState<ReviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -231,7 +232,7 @@ export default function AccessReviewPage() {
                         : <span className="text-gray-400">Inactive</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-500">{fmt(u.lastLoginAt)}</td>
-                    <td className="px-4 py-3"><MfaBadge user={u} /></td>
+                    <td className="px-4 py-3"><MfaBadge user={u} now={now} /></td>
                     <td className="px-4 py-3 text-center text-gray-700">{u.activeSessions}</td>
                   </tr>
                 ))}

@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
   // Try TOTP first, then backup code
   const totpValid = await verifyTotpCode(userId, code);
-  let amrMethod: 'otp' | 'hwk' = 'otp';
+  const amrMethod: 'otp' | 'hwk' = 'otp';
 
   if (!totpValid) {
     const backupValid = await consumeBackupCode(userId, code);
