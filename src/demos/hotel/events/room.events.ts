@@ -1,15 +1,16 @@
 import type { DomainEvent } from '@core/events';
-import { EventTypes } from '@core/events';
 
-// ─── Event type constants ───────────────────────────────────────────────────────
-// Format: hotel.room.{verb} — matches EventTypes registry in @core/events
+// ─── Event type constants ────────────────────────────────────────────────────
+// Hotel is a demo module — these strings are NOT registered in the core
+// EventTypes registry. Format follows the platform convention:
+//   {domain}.{aggregate}.{past-tense-verb}
 
-export const ROOM_LOCKED    = EventTypes.ROOM_LOCKED;    // 'hotel.room.locked'
-export const ROOM_BOOKED    = EventTypes.ROOM_BOOKED;    // 'hotel.room.booked'
-export const ROOM_CANCELLED = EventTypes.ROOM_CANCELLED; // 'hotel.room.cancelled'
-export const ROOM_QUERIED   = EventTypes.ROOM_QUERIED;   // 'hotel.room.queried'
+export const ROOM_LOCKED    = 'hotel.room.locked'    as const;
+export const ROOM_BOOKED    = 'hotel.room.booked'    as const;
+export const ROOM_CANCELLED = 'hotel.room.cancelled' as const;
+export const ROOM_QUERIED   = 'hotel.room.queried'   as const;
 
-// ─── Event interfaces ───────────────────────────────────────────────────────────
+// ─── Event interfaces ────────────────────────────────────────────────────────
 
 export interface RoomLockedEvent extends DomainEvent {
   type: typeof ROOM_LOCKED;
