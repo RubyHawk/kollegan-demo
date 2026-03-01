@@ -1,4 +1,5 @@
 // ─── Session repository ───────────────────────────────────────────────────────
+// Phase 2: refreshTokenJti replaced by refreshTokenHash (SHA-256 of opaque token).
 
 import { prisma } from '@core/database/prisma';
 import type { Session, CreateSessionInput } from '../domain/session.entity';
@@ -8,21 +9,22 @@ export const sessionRepository = {
     return prisma.session.create({
       data: {
         userId: input.userId,
-        refreshTokenJti: input.refreshTokenJti,
+        refreshTokenHash: input.refreshTokenHash,
         userAgent: input.userAgent ?? null,
         ipAddress: input.ipAddress ?? null,
         expiresAt: input.expiresAt,
+        mfaVerifiedAt: input.mfaVerifiedAt ?? null,
       },
     });
   },
 
-  async findByJti(jti: string): Promise<Session | null> {
-    return prisma.session.findUnique({ where: { refreshTokenJti: jti } });
+  async findByTokenHash(hash: string): Promise<Session | null> {
+    return prisma.session.findUnique({ where: { refreshTokenHash: hash } });
   },
 
-  async revoke(jti: string): Promise<void> {
+  async revoke(hash: string): Promise<void> {
     await prisma.session.updateMany({
-      where: { refreshTokenJti: jti, revokedAt: null },
+      where: { refreshTokenHash: hash, revokedAt: null },
       data: { revokedAt: new Date() },
     });
   },
@@ -38,6 +40,13 @@ export const sessionRepository = {
     return prisma.session.findMany({
       where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
       orderBy: { issuedAt: 'desc' },
+    });
+  },
+
+  async setMfaVerified(hash: string): Promise<void> {
+    await prisma.session.updateMany({
+      where: { refreshTokenHash: hash, revokedAt: null },
+      data: { mfaVerifiedAt: new Date() },
     });
   },
 };

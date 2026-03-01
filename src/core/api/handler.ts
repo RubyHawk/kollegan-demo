@@ -110,6 +110,14 @@ export interface HandlerConfig<
    * Phase 1: defined but not yet enforced. Phase 2: wired into middleware.
    */
   orgScoped?: boolean;
+
+  /**
+   * Require MFA completion in the access token's amr claim.
+   * When true, the handler returns 403 if amr does not include 'otp' or 'hwk'.
+   * Only meaningful when auth='jwt'.
+   * Apply to admin routes, destructive operations, and sensitive data.
+   */
+  requireMfa?: boolean;
 }
 
 export interface HandlerContext<
@@ -341,6 +349,14 @@ export function createHandler<
         // Rejects tokens whose iat predates the revocation timestamp stored in Redis.
         if (jwtPayload.sub && await isUserBlacklisted(jwtPayload.sub, jwtPayload.iat)) {
           return problem(Errors.unauthorized('Session has been revoked'));
+        }
+
+        // MFA enforcement: if requireMfa=true, the amr claim must include 'otp' or 'hwk'.
+        if (config.requireMfa) {
+          const amr: string[] = jwtPayload.amr ?? [];
+          if (!amr.includes('otp') && !amr.includes('hwk')) {
+            return problem(Errors.forbidden('This action requires multi-factor authentication'));
+          }
         }
       }
 

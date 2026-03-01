@@ -6,10 +6,15 @@
  * accounts that have not yet been migrated. Remove the StaffUser fallback in
  * Phase 3 after confirming all accounts are migrated.
  *
- * Password requirements (enforced here):
- *   - Minimum 12 characters
- *   - At least one uppercase, one lowercase, one digit
- *   - bcrypt cost >= 12 (re-hashed on login if lower)
+ * Phase 2 changes:
+ *   - Two-step login: password → optional MFA challenge → tokens issued.
+ *   - Opaque refresh tokens: 32-byte random value, SHA-256 hash stored in DB.
+ *   - Grace period: users without MFA get a warning period before hard enforcement.
+ *   - amr claim added to JWT: ['pwd'] or ['pwd','otp'] or ['pwd','hwk'].
+ *
+ * MFA enforcement rules (see requiresMfa()):
+ *   - All staff users (userType='staff')
+ *   - Customer admins (userType='customer' + role includes 'customer_admin')
  */
 
 import bcrypt from 'bcryptjs';
@@ -18,10 +23,9 @@ import { logger } from '@core/logging/logger';
 import {
   signAccessToken,
   signRefreshToken,
-  blacklistToken,
   blacklistUserTokens,
-  isTokenBlacklisted,
-  verifyToken,
+  generateOpaqueToken,
+  hashOpaqueToken,
 } from '@core/auth/jwt';
 import { userRepository } from '../infrastructure/user.repository';
 import { sessionRepository } from '../infrastructure/session.repository';
@@ -41,9 +45,10 @@ export interface LoginInput {
   ipAddress?: string;
 }
 
+/** Full token result — returned when MFA is not required or already completed. */
 export interface LoginResult {
   accessToken: string;
-  refreshToken: string;
+  refreshToken: string; // raw opaque token — goes in the httpOnly cookie
   user: {
     id: string;
     email: string;
@@ -51,14 +56,93 @@ export interface LoginResult {
     orgId: string | null;
     roles: string[];
   };
+  /** Non-null when MFA is not yet configured but grace period is still active. */
+  mfaWarning?: { expiresAt: Date };
+}
+
+/** Returned when MFA is required but not yet verified. */
+export interface MfaChallengeResult {
+  status: 'mfa_required';
+  userId: string;            // used by the login route to issue the mfa_challenge cookie
+  methods: MfaMethod[];
+}
+
+export type MfaMethod = 'totp' | 'webauthn' | 'backup_code';
+
+export type LoginOutcome = LoginResult | MfaChallengeResult;
+
+// ─── MFA enforcement helpers ───────────────────────────────────────────────────
+
+/**
+ * Returns true if this user MUST complete MFA to get tokens.
+ * Staff: always. Customer admins: yes. Customer viewers: no.
+ */
+function requiresMfa(userType: string, roles: string[]): boolean {
+  if (userType === 'staff') return true;
+  if (userType === 'customer' && roles.includes('customer_admin')) return true;
+  return false;
+}
+
+/**
+ * Returns true if the grace period has expired (user must set up MFA now).
+ * mfaGraceExpiresAt = null means enforce immediately.
+ */
+function isGracePeriodExpired(mfaGraceExpiresAt: Date | null): boolean {
+  if (mfaGraceExpiresAt === null) return true;
+  return new Date() > mfaGraceExpiresAt;
+}
+
+// ─── Token issuance (shared) ───────────────────────────────────────────────────
+
+async function issueTokens(
+  user: User,
+  roles: string[],
+  amr: string[],
+  ipAddress?: string,
+  userAgent?: string,
+  mfaVerifiedAt?: Date,
+): Promise<{ accessToken: string; refreshToken: string }> {
+  const orgId = user.organizationId;
+  const aud   = user.userType === 'staff' ? 'internal' : `customer:${orgId ?? 'unknown'}`;
+
+  const jwtPayload = {
+    sub: user.id,
+    userType: user.userType as 'staff' | 'customer',
+    orgId,
+    roles,
+    aud,
+    amr,
+  };
+
+  const refreshTtl  = user.userType === 'customer' ? '30d' : '7d';
+  const ttlDays     = user.userType === 'customer' ? CUSTOMER_REFRESH_TTL_DAYS : REFRESH_TTL_DAYS;
+
+  const [{ token: accessToken }, { raw: refreshToken, hash: refreshTokenHash }] = await Promise.all([
+    signAccessToken(jwtPayload),
+    Promise.resolve(generateOpaqueToken()),
+  ]);
+
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + ttlDays);
+
+  await sessionRepository.create({
+    userId: user.id,
+    refreshTokenHash,
+    userAgent,
+    ipAddress,
+    expiresAt,
+    mfaVerifiedAt,
+  });
+
+  return { accessToken, refreshToken };
 }
 
 // ─── login ─────────────────────────────────────────────────────────────────────
 
-export async function login(input: LoginInput): Promise<LoginResult> {
+export async function login(input: LoginInput): Promise<LoginOutcome> {
   const email = input.email.toLowerCase().trim();
 
-  // Step 1: try unified User table (Phase 1 dual-write)
+  // Step 1: resolve user (new table first, legacy fallback)
   let user: User | null = await userRepository.findByEmail(email);
   let roles: string[] = [];
 
@@ -70,7 +154,7 @@ export async function login(input: LoginInput): Promise<LoginResult> {
     if (!valid) {
       throw Object.assign(new Error('Invalid credentials'), { code: 'INVALID_CREDENTIALS' });
     }
-    // Re-hash if bcrypt cost is below minimum (on-login upgrade)
+    // On-login bcrypt cost upgrade
     const existingCost = Number(user.passwordHash.split('$')[2]);
     if (!isNaN(existingCost) && existingCost < MIN_BCRYPT_COST) {
       const newHash = await bcrypt.hash(input.password, MIN_BCRYPT_COST);
@@ -78,7 +162,7 @@ export async function login(input: LoginInput): Promise<LoginResult> {
     }
     roles = await userRepository.getUserRoles(user.id, user.organizationId ?? '');
   } else {
-    // Step 2: fallback to legacy StaffUser (dual-write period only, remove in Phase 3)
+    // Legacy StaffUser fallback (Phase 1 dual-write — remove in Phase 3)
     const staffUser = await prisma.staffUser.findUnique({ where: { email } });
     if (!staffUser) {
       throw Object.assign(new Error('Invalid credentials'), { code: 'INVALID_CREDENTIALS' });
@@ -87,83 +171,99 @@ export async function login(input: LoginInput): Promise<LoginResult> {
     if (!valid) {
       throw Object.assign(new Error('Invalid credentials'), { code: 'INVALID_CREDENTIALS' });
     }
-    // Auto-migrate this StaffUser to usr_users on first new-auth login
     user = await migrateStaffUser(staffUser);
     roles = await userRepository.getUserRoles(user.id, user.organizationId ?? '');
   }
 
   await userRepository.updateLastLogin(user.id, input.ipAddress ?? null);
 
-  const orgId = user.organizationId;
-  const aud = user.userType === 'staff' ? 'internal' : `customer:${orgId ?? 'unknown'}`;
-  const ttlDays = user.userType === 'customer' ? CUSTOMER_REFRESH_TTL_DAYS : REFRESH_TTL_DAYS;
+  // Step 2: MFA enforcement
+  if (requiresMfa(user.userType, roles)) {
+    if (user.mfaEnabled) {
+      // User has MFA configured — require challenge completion
+      const methods: MfaMethod[] = [];
+      if (user.totpSecret) methods.push('totp');
+      if (user.backupCodes.length > 0) methods.push('backup_code');
+      // WebAuthn: check separately (avoid eager DB query for every login)
+      const webAuthnCount = await prisma.webAuthnCredential.count({ where: { userId: user.id } });
+      if (webAuthnCount > 0) methods.push('webauthn');
 
-  const jwtPayload = {
-    sub: user.id,
-    userType: user.userType,
-    orgId,
-    roles,
-    aud,
-  };
+      logger.info(TAG, `Login step 1 complete — MFA required: ${email}`, { userId: user.id });
 
-  const refreshTtl = user.userType === 'customer' ? '30d' : '7d';
-  const [{ token: accessToken }, { token: refreshToken, jti: refreshJti }] = await Promise.all([
-    signAccessToken(jwtPayload),
-    signRefreshToken(jwtPayload, refreshTtl),
-  ]);
+      return { status: 'mfa_required', userId: user.id, methods };
+    }
 
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + ttlDays);
+    if (isGracePeriodExpired(user.mfaGraceExpiresAt)) {
+      // Grace period expired — hard block until MFA is configured
+      throw Object.assign(
+        new Error('MFA setup required'),
+        { code: 'MFA_SETUP_REQUIRED' },
+      );
+    }
 
-  await sessionRepository.create({
-    userId: user.id,
-    refreshTokenJti: refreshJti,
-    userAgent: input.userAgent,
-    ipAddress: input.ipAddress,
-    expiresAt,
-  });
+    // Grace period still active — issue tokens with warning
+    const tokens = await issueTokens(user, roles, ['pwd'], input.ipAddress, input.userAgent);
+    logger.info(TAG, `Login OK (MFA grace period): ${email}`, { userId: user.id });
+    return {
+      ...tokens,
+      user: { id: user.id, email: user.email, userType: user.userType as 'staff' | 'customer', orgId: user.organizationId, roles },
+      mfaWarning: { expiresAt: user.mfaGraceExpiresAt! },
+    };
+  }
 
+  // No MFA required for this user (customer viewers etc.)
+  const tokens = await issueTokens(user, roles, ['pwd'], input.ipAddress, input.userAgent);
   logger.info(TAG, `Login: ${email}`, { userId: user.id, userType: user.userType });
+  return {
+    ...tokens,
+    user: { id: user.id, email: user.email, userType: user.userType as 'staff' | 'customer', orgId: user.organizationId, roles },
+  };
+}
+
+// ─── completeMfaLogin ──────────────────────────────────────────────────────────
+//
+// Called after the MFA challenge is verified (TOTP or WebAuthn).
+// Looks up the user and issues the final tokens with amr=['pwd','otp'|'hwk'].
+
+export async function completeMfaLogin(
+  userId: string,
+  amrMethod: 'otp' | 'hwk', // IANA AMR values: otp=TOTP/backup, hwk=hardware key (WebAuthn)
+  ipAddress?: string,
+  userAgent?: string,
+): Promise<LoginResult> {
+  const user = await userRepository.findById(userId);
+  if (!user || !user.isActive) {
+    throw Object.assign(new Error('User not found or disabled'), { code: 'INVALID_CREDENTIALS' });
+  }
+
+  const roles = await userRepository.getUserRoles(userId, user.organizationId ?? '');
+  const amr   = ['pwd', amrMethod];
+  const tokens = await issueTokens(user, roles, amr, ipAddress, userAgent, new Date());
+
+  logger.info(TAG, `MFA login complete (${amrMethod}): ${user.email}`, { userId });
 
   return {
-    accessToken,
-    refreshToken,
-    user: { id: user.id, email: user.email, userType: user.userType, orgId, roles },
+    ...tokens,
+    user: { id: user.id, email: user.email, userType: user.userType as 'staff' | 'customer', orgId: user.organizationId, roles },
   };
 }
 
 // ─── logout ────────────────────────────────────────────────────────────────────
 
-export async function logout(refreshTokenRaw: string): Promise<void> {
+export async function logout(rawRefreshToken: string): Promise<void> {
   try {
-    const payload = await verifyToken(refreshTokenRaw);
-    if (!payload.jti) return;
-
-    const session = await sessionRepository.findByJti(payload.jti);
+    const hash = hashOpaqueToken(rawRefreshToken);
+    const session = await sessionRepository.findByTokenHash(hash);
     if (session) {
-      await sessionRepository.revoke(payload.jti);
+      await sessionRepository.revoke(hash);
     }
-
-    // Blacklist in Redis until token expires
-    const expiresInSec = payload.exp
-      ? Math.max(0, payload.exp - Math.floor(Date.now() / 1000))
-      : 60 * 60 * 24 * REFRESH_TTL_DAYS;
-    await blacklistToken(payload.jti, expiresInSec);
-
-    logger.info(TAG, 'Logout', { userId: payload.sub, jti: payload.jti });
+    logger.info(TAG, 'Logout', { sessionId: session?.id ?? 'unknown' });
   } catch {
-    // Ignore invalid tokens on logout — idempotent
+    // Ignore errors on logout — idempotent
   }
 }
 
 // ─── revokeAllSessions ─────────────────────────────────────────────────────────
-//
-// Revokes every active session for a user: sets revokedAt in DB and sets a
-// user-level revocation epoch in Redis so that any still-valid access tokens
-// (which are not individually tracked) are also rejected immediately.
-//
-// Call this for GDPR erasure requests and "sign out all devices".
-// Callers are responsible for writing the SESSIONS_REVOKED audit log entry.
 
 export async function revokeAllSessions(userId: string): Promise<void> {
   await Promise.all([
@@ -175,63 +275,48 @@ export async function revokeAllSessions(userId: string): Promise<void> {
 
 // ─── refreshTokens ─────────────────────────────────────────────────────────────
 
-export async function refreshTokens(refreshTokenRaw: string): Promise<{
+export async function refreshTokens(rawRefreshToken: string): Promise<{
   accessToken: string;
   refreshToken: string;
+  userId: string;
+  userType: 'staff' | 'customer';
+  orgId: string | null;
 }> {
-  const payload = await verifyToken(refreshTokenRaw);
+  const hash = hashOpaqueToken(rawRefreshToken);
 
-  if (payload.type !== 'refresh') {
-    throw Object.assign(new Error('Token type mismatch'), { code: 'INVALID_TOKEN_TYPE' });
-  }
-
-  if (!payload.jti) {
-    throw Object.assign(new Error('Token missing jti'), { code: 'INVALID_TOKEN' });
-  }
-
-  // Check blacklist
-  const blacklisted = await isTokenBlacklisted(payload.jti);
-  if (blacklisted) {
-    throw Object.assign(new Error('Token has been revoked'), { code: 'TOKEN_REVOKED' });
-  }
-
-  // Check DB session (authoritative when Redis is unavailable)
-  const session = await sessionRepository.findByJti(payload.jti);
-  if (!session || session.revokedAt) {
+  const session = await sessionRepository.findByTokenHash(hash);
+  if (!session || session.revokedAt || session.expiresAt < new Date()) {
     throw Object.assign(new Error('Session not found or revoked'), { code: 'SESSION_INVALID' });
   }
 
-  // Revoke old refresh token (rotation)
-  await sessionRepository.revoke(payload.jti);
-  await blacklistToken(payload.jti, 60); // short TTL — token is already being replaced
+  const user = await userRepository.findById(session.userId);
+  if (!user || !user.isActive) {
+    throw Object.assign(new Error('User not found or disabled'), { code: 'INVALID_CREDENTIALS' });
+  }
 
-  const jwtPayload = {
-    sub: payload.sub!,
-    userType: payload.userType,
-    orgId: payload.orgId,
-    roles: payload.roles,
-    aud: payload.aud as string,
+  const roles = await userRepository.getUserRoles(user.id, user.organizationId ?? '');
+
+  // Preserve amr from the session (mfaVerifiedAt presence = MFA was done)
+  const amr: string[] = session.mfaVerifiedAt ? ['pwd', 'otp'] : ['pwd'];
+
+  // Rotate: revoke old session, issue new tokens
+  await sessionRepository.revoke(hash);
+
+  const tokens = await issueTokens(
+    user,
+    roles,
+    amr,
+    session.ipAddress ?? undefined,
+    session.userAgent ?? undefined,
+    session.mfaVerifiedAt ?? undefined,
+  );
+
+  return {
+    ...tokens,
+    userId: user.id,
+    userType: user.userType as 'staff' | 'customer',
+    orgId: user.organizationId,
   };
-
-  const refreshTtl = payload.userType === 'customer' ? '30d' : '7d';
-  const [{ token: accessToken }, { token: newRefreshToken, jti: newJti }] = await Promise.all([
-    signAccessToken(jwtPayload),
-    signRefreshToken(jwtPayload, refreshTtl),
-  ]);
-
-  const ttlDays = payload.userType === 'customer' ? CUSTOMER_REFRESH_TTL_DAYS : REFRESH_TTL_DAYS;
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + ttlDays);
-
-  await sessionRepository.create({
-    userId: session.userId,
-    refreshTokenJti: newJti,
-    userAgent: session.userAgent ?? undefined,
-    ipAddress: session.ipAddress ?? undefined,
-    expiresAt,
-  });
-
-  return { accessToken, refreshToken: newRefreshToken };
 }
 
 // ─── migrateStaffUser (private) ───────────────────────────────────────────────
@@ -249,7 +334,6 @@ async function migrateStaffUser(staffUser: {
   const { identityService } = await import('@modules/supporting/identity/application/identity.service');
   const demoOrg = await identityService.getOrCreateDemoOrg();
 
-  // Map legacy role to new role name
   const roleMap: Record<string, string> = {
     receptionist: 'user',
     manager: 'admin',
@@ -257,8 +341,6 @@ async function migrateStaffUser(staffUser: {
   };
   const newRoleName = roleMap[staffUser.role] ?? 'user';
 
-  // Handle race condition: two concurrent logins may both fall through to migration.
-  // Catch P2002 (unique constraint on email) and return the already-created user.
   let user: User;
   try {
     user = await userRepository.create({
@@ -272,7 +354,7 @@ async function migrateStaffUser(staffUser: {
       typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'P2002';
     if (!isPrismaUniqueViolation) throw err;
     const existing = await userRepository.findByEmail(staffUser.email);
-    if (!existing) throw err; // should not happen — violation means row exists
+    if (!existing) throw err;
     user = existing;
     logger.info(TAG, `Race condition on migration resolved for ${staffUser.email}`, {
       existingId: existing.id,

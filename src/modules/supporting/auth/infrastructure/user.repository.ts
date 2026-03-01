@@ -21,6 +21,10 @@ function mapUser(raw: {
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
+  mfaEnabled: boolean;
+  totpSecret: string | null;
+  backupCodes: string[];
+  mfaGraceExpiresAt: Date | null;
 }): User {
   return {
     ...raw,
@@ -100,5 +104,16 @@ export const userRepository = {
 
   async findRoleByName(name: string): Promise<{ id: string; name: string } | null> {
     return prisma.role.findUnique({ where: { name } });
+  },
+
+  /** Returns a user with MFA grace period info — used by the login enforcement check. */
+  async findMfaState(id: string): Promise<{
+    mfaEnabled: boolean;
+    mfaGraceExpiresAt: Date | null;
+  } | null> {
+    return prisma.user.findUnique({
+      where: { id },
+      select: { mfaEnabled: true, mfaGraceExpiresAt: true },
+    });
   },
 };

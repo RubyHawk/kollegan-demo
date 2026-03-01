@@ -336,15 +336,25 @@ model User {
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime? // soft delete — GDPR anonymize then purge
 
+  // ── MFA (Phase 2) ────────────────────────────────────────────────────────────
+  mfaEnabled        Boolean   @default(false)
+  totpSecret        String?   // base32 TOTP secret — Phase 3: encrypt at rest
+  backupCodes       String[]  @default([]) // bcrypt-hashed one-time recovery codes
+  // Grace period: null = MFA enforced immediately; non-null = deadline for existing users
+  // New users: null (must enrol before or shortly after first login).
+  // Existing users on Phase 2 deploy: set to now()+7d via data migration.
+  mfaGraceExpiresAt DateTime?
+
   // null = super_admin with cross-org access
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
-  roles              UserRole[]
-  sessions           Session[]
-  emailVerifications EmailVerification[]
-  passwordResets     PasswordReset[]
-  auditLogs          AuditLog[]          @relation("ActorLogs")
+  roles               UserRole[]
+  sessions            Session[]
+  emailVerifications  EmailVerification[]
+  passwordResets      PasswordReset[]
+  auditLogs           AuditLog[]          @relation("ActorLogs")
+  webAuthnCredentials WebAuthnCredential[]
 
   @@index([email])
   @@index([organizationId])
@@ -414,21 +424,44 @@ model UserRole {
 // One row per refresh token. Enables revocation, auditing, and active-session UI.
 
 model Session {
-  id              String    @id @default(uuid())
-  userId          String
-  refreshTokenJti String    @unique // JWT JTI for blacklist lookup
-  userAgent       String?
-  ipAddress       String?
-  issuedAt        DateTime  @default(now())
-  expiresAt       DateTime
-  revokedAt       DateTime? // set on logout / forced revocation
+  id               String    @id @default(uuid())
+  userId           String
+  // Phase 2: opaque token — SHA-256 of the raw 32-byte random token stored in the httpOnly cookie.
+  // Replaced the JWT JTI approach; the raw token reveals no claims if stolen.
+  refreshTokenHash String    @unique
+  userAgent        String?
+  ipAddress        String?
+  issuedAt         DateTime  @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime? // set on logout / forced revocation
+  // MFA tracking: null = MFA not completed in this session; non-null = timestamp of MFA verification.
+  mfaVerifiedAt    DateTime?
 
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
-  @@index([refreshTokenJti])
+  @@index([refreshTokenHash])
   @@index([expiresAt])
   @@map("usr_sessions")
+}
+
+// ─── WebAuthn Credentials ─────────────────────────────────────────────────────
+// One row per registered passkey / security key. A user may have multiple.
+
+model WebAuthnCredential {
+  id           String    @id @default(uuid())
+  userId       String
+  credentialId Bytes     @unique // WebAuthn credential ID (variable-length bytes)
+  publicKey    Bytes              // COSE-encoded public key
+  counter      BigInt    @default(0) // signature counter — detect authenticator cloning
+  name         String             // human-readable label: "MacBook Touch ID", "YubiKey 5"
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("usr_webauthn_credentials")
 }
 
 // ─── Email Verification ───────────────────────────────────────────────────────

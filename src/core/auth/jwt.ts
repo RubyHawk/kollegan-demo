@@ -10,7 +10,7 @@ const REFRESH_TTL = '7d';
 
 export interface JWTPayload extends JosePayload {
   sub: string;           // User.id (was StaffUser.id during dual-write period)
-  type: 'access' | 'refresh';
+  type: 'access' | 'refresh' | 'mfa_challenge';
   // Phase 1 extensions — required on all new tokens
   userType: 'staff' | 'customer';
   orgId: string | null;  // null = super_admin (cross-org access)
@@ -20,6 +20,9 @@ export interface JWTPayload extends JosePayload {
   jti: string;           // mandatory on all tokens (set by .setJti())
   exp: number;           // unix timestamp — set by .setExpirationTime()
   iat: number;           // unix timestamp — set by .setIssuedAt()
+  // Phase 2: Authentication Method References (RFC 8176)
+  // e.g. ['pwd'] = password only; ['pwd','otp'] = password + TOTP; ['pwd','hwk'] = password + passkey
+  amr?: string[];
   // Legacy field kept for dual-write backward compat (deprecated, remove in Phase 3)
   role?: string;         // old StaffUser role — preserved for existing sessions during migration
 }
@@ -29,6 +32,55 @@ export interface JWTPayload extends JosePayload {
 function randomJti(): string {
   // crypto.randomUUID() is available in Node 14.17+ and all modern runtimes
   return crypto.randomUUID();
+}
+
+// ─── Opaque refresh token (Phase 2) ────────────────────────────────────────────
+//
+// A random 32-byte hex string stored in the httpOnly cookie.
+// The DB stores SHA-256(raw) so a stolen DB dump doesn't expose usable tokens.
+// Replaces the JWT refresh token, which embedded user claims in the cookie value.
+
+export function generateOpaqueToken(): { raw: string; hash: string } {
+  const rawBytes = crypto.getRandomValues(new Uint8Array(32));
+  const raw = Array.from(rawBytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  const hash = hashOpaqueToken(raw);
+  return { raw, hash };
+}
+
+export function hashOpaqueToken(raw: string): string {
+  // SHA-256 via SubtleCrypto is async; we use a sync hex approach with the
+  // Node.js crypto module instead so callers don't need to await.
+  // This function is deliberately not async — it's called on the hot path.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { createHash } = require('crypto') as typeof import('crypto');
+  return createHash('sha256').update(raw).digest('hex');
+}
+
+// ─── MFA challenge token ────────────────────────────────────────────────────────
+//
+// Short-lived JWT (5 minutes) set in an httpOnly cookie after password verification
+// when MFA is required. Consumed by /api/auth/mfa/verify or the WebAuthn verify route.
+// Contains only userId + type — no roles, no org claims.
+
+const MFA_CHALLENGE_TTL = '5m';
+
+export async function signMfaChallengeToken(userId: string): Promise<string> {
+  const jti = randomJti();
+  return new SignJWT({ sub: userId, type: 'mfa_challenge', roles: [], aud: 'mfa', orgId: null, userType: 'staff' } as Record<string, unknown>)
+    .setProtectedHeader({ alg: ALGORITHM })
+    .setIssuedAt()
+    .setExpirationTime(MFA_CHALLENGE_TTL)
+    .setJti(jti)
+    .sign(SECRET_KEY);
+}
+
+export async function verifyMfaChallengeToken(token: string): Promise<{ userId: string }> {
+  const { payload } = await jwtVerify(token, SECRET_KEY, { algorithms: [ALGORITHM] });
+  const p = payload as JWTPayload;
+  if (p.type !== 'mfa_challenge') {
+    throw new Error('Invalid token type');
+  }
+  return { userId: p.sub };
 }
 
 // ─── Token signing ─────────────────────────────────────────────────────────────

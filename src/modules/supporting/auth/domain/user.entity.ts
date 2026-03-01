@@ -20,6 +20,11 @@ export interface User {
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
+  // Phase 2: MFA
+  mfaEnabled: boolean;
+  totpSecret: string | null;
+  backupCodes: string[];         // bcrypt-hashed one-time codes
+  mfaGraceExpiresAt: Date | null; // null = enforce immediately; non-null = deadline
 }
 
 export interface CreateUserInput {
