@@ -50,8 +50,11 @@ export const EventTypes = {
   RECORD_CREATED:   'crm.record.created',
 
   // ── Supporting: Leads ─────────────────────────────────────────────────────
-  LEAD_CREATED:   'leads.lead.created',
-  LEAD_CONVERTED: 'leads.lead.converted',
+  LEAD_CREATED:       'leads.lead.created',
+  LEAD_STAGE_CHANGED: 'leads.lead.stage_changed',
+  LEAD_CONVERTED:     'leads.lead.converted',
+  LEAD_ASSIGNED:      'leads.lead.assigned',
+  LEAD_DELETED:       'leads.lead.deleted',
 
   // ── Generic: Hotel ────────────────────────────────────────────────────────
   ROOM_BOOKED:    'hotel.room.booked',
