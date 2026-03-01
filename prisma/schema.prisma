@@ -216,21 +216,25 @@ model WorkflowRun {
 }
 
 model WorkflowRunStep {
-  id          String    @id @default(uuid())
-  runId       String
-  stepId      String    // References a step ID in Workflow.steps JSON
-  status      String    @default("pending") // pending | running | completed | failed | skipped
-  input       Json?
-  output      Json?
-  startedAt   DateTime  @default(now())
-  completedAt DateTime?
-  error       String?
-  retryCount  Int       @default(0)
+  id             String    @id @default(uuid())
+  runId          String
+  // Denormalized from WorkflowRun for RLS query filtering. No Prisma @relation —
+  // FK integrity flows through runId → WorkflowRun.organizationId. Phase 3: RLS.
+  organizationId String?
+  stepId         String    // References a step ID in Workflow.steps JSON
+  status         String    @default("pending") // pending | running | completed | failed | skipped
+  input          Json?
+  output         Json?
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  error          String?
+  retryCount     Int       @default(0)
 
   run WorkflowRun @relation(fields: [runId], references: [id])
 
   @@index([runId])
   @@index([runId, stepId])
+  @@index([organizationId])
   @@map("wf_workflow_run_steps")
 }
 
@@ -242,16 +246,16 @@ model WorkflowRunStep {
 // Phase 3 (6mo+):  replay consumer re-runs events for debugging and migration.
 
 model DomainEventRecord {
-  id          String    @id @default(uuid())
-  type        String    // e.g. 'room.booked', 'crm.contact_upserted'
-  orgId       String
-  aggregateId String    // The primary entity: roomId, customerId, workflowId, ...
-  payload     Json
-  occurredAt  DateTime
-  processedAt DateTime? // null = pending downstream processing
+  id             String    @id @default(uuid())
+  type           String    // e.g. 'room.booked', 'crm.contact_upserted'
+  organizationId String    // was orgId — renamed for naming consistency
+  aggregateId    String    // The primary entity: roomId, customerId, workflowId, ...
+  payload        Json
+  occurredAt     DateTime
+  processedAt    DateTime? // null = pending downstream processing
 
-  @@index([orgId, type])
-  @@index([orgId, occurredAt])
+  @@index([organizationId, type])
+  @@index([organizationId, occurredAt])
   @@index([aggregateId])
   @@map("evt_domain_events")
 }
@@ -292,18 +296,22 @@ model Lead {
 // Activity timeline per lead: notes, calls, stage changes, AI interactions.
 
 model LeadActivity {
-  id        String    @id @default(uuid())
-  leadId    String
-  type      String    // note | call | email | stage_change | ai_interaction
-  content   String
-  createdBy String    // User.id or 'system'
-  createdAt DateTime  @default(now())
-  deletedAt DateTime? // soft delete
+  id             String    @id @default(uuid())
+  leadId         String
+  // Denormalized from Lead for RLS query filtering. No Prisma @relation —
+  // FK integrity flows through leadId → Lead.organizationId. Phase 3: RLS.
+  organizationId String?
+  type           String    // note | call | email | stage_change | ai_interaction
+  content        String
+  createdBy      String    // User.id or 'system'
+  createdAt      DateTime  @default(now())
+  deletedAt      DateTime? // soft delete
 
   lead Lead @relation(fields: [leadId], references: [id])
 
   @@index([leadId, createdAt])
   @@index([leadId, type])
+  @@index([organizationId])
   @@map("lead_activities")
 }
 
@@ -480,18 +488,22 @@ model Portal {
 }
 
 model PortalMember {
-  id          String    @id @default(uuid())
-  portalId    String
-  userId      String    // User.userType = 'customer'
-  inviteEmail String?
-  status      String    @default("invited") // invited | active | suspended
-  invitedAt   DateTime  @default(now())
-  joinedAt    DateTime?
+  id             String    @id @default(uuid())
+  portalId       String
+  userId         String    // User.userType = 'customer'
+  // Denormalized from Portal for RLS query filtering. No Prisma @relation —
+  // FK integrity flows through portalId → Portal.organizationId. Phase 3: RLS.
+  organizationId String?
+  inviteEmail    String?
+  status         String    @default("invited") // invited | active | suspended
+  invitedAt      DateTime  @default(now())
+  joinedAt       DateTime?
 
   portal Portal @relation(fields: [portalId], references: [id])
 
   @@index([portalId])
   @@index([userId])
+  @@index([organizationId])
   @@map("prt_portal_members")
 }
 

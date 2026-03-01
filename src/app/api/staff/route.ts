@@ -24,6 +24,9 @@ const DeleteQuerySchema = z.object({
  * GET /api/staff
  * Returns all staff users. Requires JWT authentication.
  * passwordHash is intentionally excluded from all responses.
+ *
+ * Phase 2: replace StaffUser with User; add organizationId filter from JWT payload
+ * so users can only see staff within their own organization.
  */
 export const GET = createHandler(
   {
@@ -43,7 +46,8 @@ export const GET = createHandler(
 /**
  * POST /api/staff
  * Creates a new staff user with a bcrypt-hashed password.
- * Requires JWT authentication. RBAC (admin-only) added in Phase 2.
+ * Requires JWT authentication.
+ * Phase 2: add permission: 'users.write' + org-scoped creation via User table.
  */
 export const POST = createHandler(
   {
@@ -69,6 +73,7 @@ export const POST = createHandler(
 /**
  * DELETE /api/staff?id=<userId>
  * Deletes a staff user by ID. Requires JWT authentication.
+ * Phase 2: add permission: 'users.delete' + verify target user is in same org.
  */
 export const DELETE = createHandler(
   {

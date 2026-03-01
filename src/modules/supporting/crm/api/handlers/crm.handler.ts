@@ -73,24 +73,31 @@ export const handleGetCustomerPost = createHandler(
 );
 
 // ── N8N CRM Update (no Vapi auth — called by n8n webhook) ─────────────────────
+// n8n is an internal automation tool; this endpoint is expected to be on a
+// private network. Zod validation still runs to prevent type confusion bugs.
+
+const N8nCrmUpdateSchema = CrmUpdateSchema.refine(
+  (d) => d.name ?? d.email ?? d.phone,
+  { message: 'At least one of name, email, or phone is required' },
+);
 
 export async function handleN8nCrmUpdate(req: NextRequest): Promise<NextResponse> {
-  let body: Record<string, string>;
+  let raw: unknown;
   try {
-    body = await req.json();
+    raw = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { name, email, phone, company, notes, summary } = body;
-
-  if (!name && !email && !phone) {
+  const parsed = N8nCrmUpdateSchema.safeParse(raw);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: 'At least one of name, email, or phone is required' },
+      { error: 'Validation failed', issues: parsed.error.issues },
       { status: 400 },
     );
   }
 
-  const result = await updateCrm({ name, email, phone, company, notes, summary });
+  const { booked_room_ids, vapi_call_id, ...rest } = parsed.data;
+  const result = await updateCrm({ ...rest, bookedRoomIds: booked_room_ids, vapiCallId: vapi_call_id });
   return NextResponse.json(result, { status: result.success ? 200 : 400 });
 }
