@@ -1,0 +1,163 @@
+// ─── Users, Roles, Sessions, MFA ──────────────────────────────────────────────
+// Unified user model covering staff and customer portal users. Table prefix: usr_*
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String
+  firstName       String?
+  lastName        String?
+  avatarUrl       String?
+  userType        String    @default("staff") // staff | customer
+  isActive        Boolean   @default(true)
+  emailVerified   Boolean   @default(false)
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  lastLoginIp     String?   // last octet masked (GDPR)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime? // soft delete — GDPR anonymize then purge
+
+  // MFA
+  mfaEnabled        Boolean   @default(false)
+  totpSecret        String?   // base32 TOTP secret
+  backupCodes       String[]  @default([])
+  mfaGraceExpiresAt DateTime?
+
+  // null = super_admin with cross-org access
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  roles               UserRole[]
+  sessions            Session[]
+  emailVerifications  EmailVerification[]
+  passwordResets      PasswordReset[]
+  auditLogs           AuditLog[]          @relation("ActorLogs")
+  webAuthnCredentials WebAuthnCredential[]
+
+  @@index([email])
+  @@index([organizationId])
+  @@index([userType, organizationId])
+  @@index([deletedAt])
+  @@map("usr_users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  displayName String
+  description String?
+  isSystem    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  userRoles   UserRole[]
+  permissions RolePermission[]
+
+  @@map("usr_roles")
+}
+
+model Permission {
+  id        String   @id @default(uuid())
+  resource  String
+  action    String
+  createdAt DateTime @default(now())
+
+  roles RolePermission[]
+
+  @@unique([resource, action])
+  @@index([resource])
+  @@map("usr_permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+  @@map("usr_role_permissions")
+}
+
+model UserRole {
+  userId         String
+  roleId         String
+  organizationId String
+  grantedAt      DateTime @default(now())
+  grantedBy      String?  // User.id
+
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId, organizationId])
+  @@index([userId, organizationId])
+  @@index([roleId])
+  @@map("usr_user_roles")
+}
+
+model Session {
+  id               String    @id @default(uuid())
+  userId           String
+  refreshTokenHash String    @unique
+  userAgent        String?
+  ipAddress        String?
+  issuedAt         DateTime  @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  mfaVerifiedAt    DateTime?
+  mfaMethod        String?   // 'totp' | 'webauthn' | null
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([refreshTokenHash])
+  @@index([expiresAt])
+  @@map("usr_sessions")
+}
+
+model WebAuthnCredential {
+  id           String    @id @default(uuid())
+  userId       String
+  credentialId Bytes     @unique
+  publicKey    Bytes
+  counter      BigInt    @default(0)
+  name         String
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("usr_webauthn_credentials")
+}
+
+model EmailVerification {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([token])
+  @@map("usr_email_verifications")
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  ipAddress String?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([token])
+  @@map("usr_password_resets")
+}

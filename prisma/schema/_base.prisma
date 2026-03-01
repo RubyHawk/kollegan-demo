@@ -1,0 +1,24 @@
+// ─── Generator + Datasource ───────────────────────────────────────────────────
+// Defined once here. All other .prisma files in this folder are merged at
+// build time by Prisma 7's multi-file schema support.
+//
+// Table naming conventions:
+//   org_*        → identity / organization
+//   usr_*        → unified users, roles, sessions, MFA
+//   wf_*         → automation / workflow engine
+//   lead_*       → leads (supporting domain)
+//   prt_*        → customer portal
+//   aud_*        → audit log (append-only)
+//   evt_*        → domain event log
+//   demo_hotel_* → hotel demo vertical
+//
+// Connection URL lives in prisma.config.ts (Prisma 7 convention).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}

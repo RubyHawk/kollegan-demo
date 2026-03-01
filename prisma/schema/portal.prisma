@@ -1,0 +1,41 @@
+// ─── Customer Portal ──────────────────────────────────────────────────────────
+// One portal per customer organization. Auto-provisioned on lead.converted event.
+// Table prefix: prt_*
+
+model Portal {
+  id             String    @id @default(uuid())
+  organizationId String    @unique // 1:1 with Organization
+  slug           String    @unique
+  isActive       Boolean   @default(true)
+  customDomain   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  provisionedBy  String?   // User.id
+  provisionedAt  DateTime?
+
+  organization Organization   @relation(fields: [organizationId], references: [id])
+  members      PortalMember[]
+
+  @@index([slug])
+  @@map("prt_portals")
+}
+
+model PortalMember {
+  id             String    @id @default(uuid())
+  portalId       String
+  userId         String    // User.userType = 'customer'
+  // Denormalized from Portal for RLS query filtering.
+  // FK integrity flows through portalId → Portal.organizationId.
+  organizationId String?
+  inviteEmail    String?
+  status         String    @default("invited") // invited | active | suspended
+  invitedAt      DateTime  @default(now())
+  joinedAt       DateTime?
+
+  portal Portal @relation(fields: [portalId], references: [id])
+
+  @@index([portalId])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("prt_portal_members")
+}

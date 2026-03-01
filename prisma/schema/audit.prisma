@@ -1,0 +1,27 @@
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+// Append-only. No updates. No deletes. Ever. Table prefix: aud_*
+//
+// GDPR: when a user is deleted, actorId is replaced with a tombstone UUID —
+// never set to null. The audit trail is immutable by design.
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  organizationId String?  // null for super-admin actions
+  actorId        String?  // User.id — null for system; tombstone UUID on GDPR delete
+  actorType      String   @default("user") // user | system | api_key
+  action         String   // e.g. 'lead.stage_changed', 'user.login'
+  resourceType   String   // e.g. 'Lead', 'User', 'WorkflowRun'
+  resourceId     String
+  before         Json?
+  after          Json?
+  metadata       Json?    // ip, userAgent, requestId, etc.
+  occurredAt     DateTime @default(now())
+
+  actor User? @relation("ActorLogs", fields: [actorId], references: [id])
+
+  @@index([organizationId, occurredAt])
+  @@index([actorId, occurredAt])
+  @@index([resourceType, resourceId])
+  @@index([action, occurredAt])
+  @@map("aud_audit_logs")
+}
