@@ -112,81 +112,47 @@ an architecture violation.
 
 ## 3. Modular Monolith Strategy
 
-### Directory structure (current + target)
+### Directory structure
 
 ```
 src/
 ├── app/                          Next.js App Router — HTTP layer ONLY
-│   └── api/                      Thin handlers, max ~20 lines, delegate to features
+│   └── api/                      Thin handlers, delegate to module application services
 │
-├── features/                     Business modules — vertical slices
+├── modules/                      Business modules — DDD classified
 │   │
-│   ├── automation/               ★ CORE — workflow engine (build this next)
-│   │   ├── engine/               Workflow executor, step runner, retry logic
-│   │   ├── triggers/             Event triggers, schedule triggers, webhook triggers
-│   │   ├── memory/               Run context, agent memory, per-org history
-│   │   ├── tools/                Tool registry — functions callable by LLMs
-│   │   ├── components/           Workflow builder UI (future)
-│   │   ├── types.ts
-│   │   └── index.ts              Public interface — what other modules may import
+│   ├── core/                     ★ Core domains — your competitive moat
+│   │   ├── automation/           Workflow engine, tool registry, triggers
+│   │   └── voice/                Vapi phone agent, LLM tool calls, call lifecycle
 │   │
-│   ├── voice/                    ★ CORE — Vapi phone agent & AI tools
-│   │   ├── ai-tools/             LLM-callable tool handlers
-│   │   ├── components/           Voice widget UI
-│   │   ├── types.ts
-│   │   └── index.ts
+│   ├── supporting/               Supporting domains — solid DDD, pragmatic shortcuts OK
+│   │   ├── auth/                 Unified user model, sessions, MFA (TOTP+WebAuthn), RBAC
+│   │   ├── crm/                  Customer profiles, call transcripts, CRM records
+│   │   ├── leads/                Lead pipeline, stage transitions, activities, conversion
+│   │   ├── audit/                Append-only audit trail (SOC 2)
+│   │   ├── identity/             Organizations, org settings, multi-tenancy
+│   │   └── offers/               Quotation builder (stub)
 │   │
-│   ├── crm/                      Supporting — contacts, history, segments
-│   ├── leads/                    Supporting — pipeline, scoring, conversion
-│   ├── offers/                   Supporting — quotes, PDFs, delivery
-│   │
-│   ├── identity/                 Supporting — orgs, members, auth, RBAC
-│   │   ├── auth/                 Login, JWT, sessions
-│   │   ├── organizations/        Org CRUD, settings, plan
-│   │   ├── members/              Membership, roles, invites
-│   │   └── index.ts
-│   │
-│   ├── integrations/             Supporting — connector registry
-│   │   ├── registry.ts           Central connector index
-│   │   ├── n8n/                  n8n workflow triggers + webhook receivers
-│   │   ├── slack/                Slack App events + posting
-│   │   ├── github/               GitHub App events + data fetch
-│   │   └── index.ts
-│   │
-│   ├── hotel/                    Generic — demo vertical
-│   │   ├── rooms/
-│   │   ├── services/
-│   │   └── index.ts
-│   │
-│   ├── team-hub/                 Generic — SaaS collaboration
-│   │   ├── workspace/
-│   │   ├── integrations/github/
-│   │   ├── integrations/slack/
-│   │   ├── meetings/
-│   │   ├── announcements/
-│   │   └── index.ts
-│   │
-│   ├── dashboard/                Generic — shell UI only
-│   ├── activity/                 Generic — audit trail + SSE feed
-│   ├── leads/                    Supporting (stub)
-│   └── offers/                   Supporting (stub)
+│   └── generic/                  Generic domains — commodity, keep simple
+│       ├── dashboard/            Shell UI — header, sidebar, navigation
+│       └── team-hub/             SaaS collaboration (GitHub, Slack, meetings)
+│
+├── demos/                        Sales / showcase verticals (never rename or move)
+│   └── hotel/                    Hotel AI Receptionist demo
 │
 ├── core/                         Framework-agnostic application utilities
-│   ├── auth/                     JWT sign/verify, Vapi auth
+│   ├── api/                      createHandler() pipeline, RFC 9457 errors, response helpers
+│   ├── auth/                     JWT sign/verify, Vapi webhook auth, token blacklist
 │   ├── cache/                    Redis client, rate limiter
 │   ├── database/                 Prisma singleton
-│   ├── events/                   ★ In-process event bus (add this)
+│   ├── events/                   In-process typed event bus
 │   ├── logging/                  Structured logger
-│   ├── queue/                    ★ Background job queue (add this)
-│   ├── resilience/               Retry, circuit breaker
-│   └── api/                      OpenAPI spec
+│   ├── queue/                    Background job queue
+│   └── resilience/               Retry, circuit breaker
 │
 ├── infrastructure/               External system adapters
-│   ├── ai/                       LLM provider adapters (Claude, OpenAI)
 │   ├── calendar/                 Google Calendar
-│   ├── storage/                  S3-compatible file storage
 │   ├── sse/                      Server-Sent Events manager
-│   ├── transcription/            Whisper/Deepgram/AssemblyAI
 │   └── persistence/              JSON fallback store
 │
 └── shared/                       Cross-cutting UI + utilities
@@ -199,48 +165,49 @@ src/
 
 ### Module internal structure
 
-Every non-trivial module follows this internal layout:
+Every non-trivial module follows DDD layering:
 
 ```
-features/my-module/
-├── components/          UI only — no business logic
-├── service.ts           ★ The domain service — all business logic lives here
-├── repository.ts        ★ All database queries — no raw Prisma in service.ts
-├── events.ts            Domain event definitions + publish helpers
-├── types.ts             TypeScript domain types
-├── api.ts               Client-side fetch wrappers (for React components)
-├── lib/
-│   └── my-store.ts      Zustand store (if real-time UI state needed)
+modules/supporting/my-module/
+├── domain/              Pure TypeScript types — no DB, no HTTP, no imports from outside domain/
+│   └── my-entity.ts
+├── application/         Business logic — orchestrates domain + infrastructure
+│   └── my.service.ts    ★ All business rules live here
+├── infrastructure/      All database access — no Prisma outside this layer
+│   └── my.repository.ts ★ All Prisma queries
+├── api/
+│   └── handlers/        Thin HTTP handlers — delegate to application service
+│       └── my.handler.ts
+├── events/              Domain event type definitions
+│   └── my.events.ts
+├── ui/                  React components (optional — only for display modules)
+│   └── components/
 └── index.ts             Public barrel — ONLY export what other modules need
 ```
 
-The `index.ts` is the **module contract**. It is the only file other modules may import from.
-Internal files (`service.ts`, `repository.ts`) are private by convention.
+The `index.ts` is the **module contract**. Other modules may only import from `index.ts`, never
+from internal paths (`application/`, `infrastructure/`, `domain/`). Enforced by dependency-cruiser.
 
 ### The service layer
 
 ```typescript
-// features/crm/service.ts — business logic only, no HTTP, no Prisma directly
-export class CrmService {
-  constructor(
-    private readonly repo: CrmRepository,
-    private readonly events: EventBus,
-  ) {}
-
-  async createContact(orgId: string, data: CreateContactInput): Promise<Customer> {
-    const customer = await this.repo.create(orgId, data);
-    await this.events.publish(new ContactCreatedEvent(customer));
-    return customer;
-  }
+// modules/supporting/crm/application/crm.service.ts — business logic only
+export async function upsertCustomerFromCall(
+  orgId: string,
+  data: CrmUpdateInput,
+): Promise<CrmUpdateResult> {
+  const customer = await upsertCustomer({ ...data, organizationId: orgId });
+  eventBus.publish<CrmContactUpsertedEvent>({ type: CRM_CONTACT_UPSERTED, orgId, ... });
+  return { success: true, customerId: customer.id };
 }
 
-// features/crm/repository.ts — database queries only
-export class CrmRepository {
-  async create(orgId: string, data: CreateContactInput): Promise<Customer> {
-    return prisma.customer.create({
-      data: { ...data, organizationId: orgId },
-    });
-  }
+// modules/supporting/crm/infrastructure/contact.repository.ts — database only
+export async function upsertCustomer(input: UpsertCustomerInput): Promise<Customer> {
+  return prisma.customer.upsert({
+    where: { phone: input.phone },
+    create: { ...input, organizationId: input.organizationId },
+    update: { ...input },
+  });
 }
 ```
 
@@ -260,30 +227,30 @@ Three legitimate patterns. Use them in priority order:
 Use when: module A needs data from module B as part of a user request.
 
 ```typescript
-// Allowed: CRM needs to check if a lead has an existing contact
-import { crmService } from '@features/crm';  // importing from public index.ts only
+// Allowed: CRM auto-creates a lead for new voice-call customers
+import { createLead } from '@modules/supporting/leads';  // public index.ts only
 
-const existing = await crmService.findByEmail(orgId, lead.email);
+await createLead({ organizationId: orgId, name, source: 'voice_call' }, 'system');
 ```
 
-Rule: only import from `@features/<module>/index.ts`, never from internal files.
+Rule: only import from `@modules/<layer>/<module>/index.ts`, never from internal files.
 
 ### Pattern 2 — Domain events (async, decoupled)
 
 Use when: something happened in module A, and module B should react — but A doesn't need to know B exists.
 
 ```typescript
-// features/leads/service.ts
-await this.events.publish(new LeadConvertedEvent({ leadId, customerId, orgId }));
-
-// features/automation/triggers/event-trigger.ts
-eventBus.subscribe(LeadConvertedEvent, async (event) => {
-  await automationEngine.triggerWorkflow('lead_converted', event);
+// modules/supporting/leads/application/leads.service.ts
+eventBus.publish<LeadConvertedEvent>({
+  type: LEAD_CONVERTED,
+  orgId,
+  occurredAt: new Date().toISOString(),
+  payload: { leadId: lead.id, customerId, convertedBy: actorId },
 });
 
-// features/crm/listeners.ts
-eventBus.subscribe(LeadConvertedEvent, async (event) => {
-  await crmService.linkLeadToCustomer(event.leadId, event.customerId);
+// modules/core/automation/ — subscribes in instrumentation.ts
+eventBus.subscribe(LEAD_CONVERTED, async (event) => {
+  await automationEngine.triggerWorkflow('lead_converted', event);
 });
 ```
 
@@ -304,15 +271,14 @@ orchestration capability inside the app.
 ### What is never allowed
 
 ```typescript
-// ❌ Never — direct cross-module internal import
-import { prisma } from '@core/database/prisma';
-const leads = await prisma.lead.findMany(...);  // from inside crm/service.ts
+// ❌ Never — direct cross-module internal import (bypass index.ts)
+import { leadsRepository } from '@modules/supporting/leads/infrastructure/leads.repository';
 
-// ❌ Never — HTTP call to your own API
-fetch('/api/crm/contacts');  // from inside another feature
+// ❌ Never — HTTP call to your own API from inside a module
+fetch('/api/leads/123');  // from inside crm/ application service
 
 // ❌ Never — shared mutable state between modules
-import { leadsStore } from '@features/leads/lib/leads-store';  // from crm/
+import { leadsStore } from '@modules/supporting/leads/lib/leads-store';  // from crm/
 ```
 
 ---
@@ -453,14 +419,12 @@ export interface DomainEvent {
   payload: unknown;
 }
 
-// Feature-specific events (in features/<module>/events.ts)
-export class LeadConvertedEvent implements DomainEvent {
-  type = 'lead.converted' as const;
-  constructor(
-    public readonly orgId: string,
-    public readonly payload: { leadId: string; customerId: string },
-    public readonly occurredAt = new Date().toISOString(),
-  ) {}
+// Module-specific events (in modules/<layer>/<module>/events/)
+// e.g. modules/supporting/leads/events/lead.events.ts
+export const LEAD_CONVERTED = 'lead.converted' as const;
+export interface LeadConvertedEvent extends DomainEvent {
+  type: typeof LEAD_CONVERTED;
+  payload: { leadId: string; customerId: string; convertedBy: string };
 }
 ```
 
@@ -1055,28 +1019,30 @@ should reach the DB without org scoping.
 `src/lib/*.ts` files are shims pointing to `src/core/*`. Developers will eventually import both.
 Fix: delete `src/lib/` entirely after confirming zero references. Don't leave the ladder hanging.
 
-**R3 — No event bus yet**
-Cross-module side effects are currently direct imports. This creates hidden coupling.
-Fix: add `core/events/event-bus.ts` before building the automation module. It will be too
-painful to untangle later.
+**R3 — Event bus is in-process (no persistence, no retry on handler failure)**
+`core/events/event-bus.ts` exists and is used. However, events are fire-and-forget in the same
+process. A handler failure does not retry, and events are lost on restart.
+Fix: persist events to `evt_domain_events` before Phase 4 automation work. BullMQ is already
+available (ioredis installed).
 
 **R4 — LLM calls are synchronous in the request path**
 Any timeout or provider outage blocks the HTTP response.
 Fix: wrap all LLM calls in `jobQueue.add('llm.complete', ...)` before they're in production flows.
 
-**R5 — No multi-tenancy enforcement layer**
-Currently, `organizationId` is on models but not enforced at query time.
-Fix: Implement RLS policies in the first migration that adds an `Organization` table.
+**R5 — Multi-tenancy enforcement is application-layer only**
+`organizationId` is on all tenant tables and queries filter by it in every repository.
+PostgreSQL RLS policies have not yet been applied — defense-in-depth at the DB layer is missing.
+Fix: Enable RLS on `wf_*` tables first (cleanest — all have non-nullable orgId), then extend.
 
 ### Technical debt to avoid
 
-1. **Never put Prisma calls in route handlers.** They belong in `repository.ts`.
+1. **Never put Prisma calls in route handlers.** They belong in `infrastructure/` repositories.
 
-2. **Never import a module's `service.ts` or `repository.ts` from another module.** Public interface is `index.ts` only.
+2. **Never import from a module's internal layers.** Public interface is `index.ts` only — never import from `application/`, `infrastructure/`, or `domain/` directly.
 
 3. **Never store secrets in code.** `.env.local` for development; Doppler/Vault in production.
 
-4. **Never let tools grow inside route handlers.** Vapi tools currently live in `features/voice/ai-tools/`. All new tools go in `features/automation/tools/registry.ts`.
+4. **Never let tools grow inside route handlers.** Vapi tools live in `modules/core/voice/ai-tools/`. New LLM-callable tools belong in the automation tool registry.
 
 5. **Never build synchronous analytics queries.** Any `COUNT(*)`, `GROUP BY`, or multi-join reporting query gets its own background job and materialized result.
 
@@ -1096,25 +1062,33 @@ Fix: Implement RLS policies in the first migration that adds an `Organization` t
 - [x] CRM with call transcripts
 - [x] Google Calendar sync
 - [x] n8n integration
-- [x] Clean module structure (`core/`, `features/`, `infrastructure/`, `shared/`)
+- [x] DDD module structure (`modules/core/`, `modules/supporting/`, `modules/generic/`, `demos/`)
 - [x] ERP stubs (leads, offers, team-hub)
 - [x] Multi-module documentation
 
-### Phase 2 — Platform Core (Months 1–3)
-- [ ] `core/events/` — in-process event bus with typed domain events
-- [ ] `core/queue/` — background job queue (BullMQ or simple in-process)
-- [ ] `features/identity/` — Organization model, multi-tenancy, RBAC
-- [ ] `features/automation/` — Workflow model, tool registry, basic trigger system
-- [ ] RLS policies on all tenant tables
-- [ ] Structured logging everywhere (`logger.*`, not `console.*`)
-- [ ] LLM adapter in `infrastructure/ai/`
+### Phase 2 — Auth + Security Hardening (Done)
+- [x] `core/events/` — typed in-process event bus
+- [x] `core/queue/` — background job queue (simple in-process, BullMQ-ready)
+- [x] `modules/supporting/auth/` — unified User model, sessions, email verification
+- [x] MFA: TOTP (otpauth), backup codes, WebAuthn (SimpleWebAuthn)
+- [x] Opaque refresh tokens (SHA-256 hash stored in DB, raw value in httpOnly cookie)
+- [x] `mfaMethod` persisted on session — AMR correctly reconstructed on token rotation
+- [x] `modules/supporting/audit/` — append-only audit log (`aud_audit_logs`)
+- [x] `modules/supporting/identity/` — Organization model, multi-tenancy foundation
+- [x] JWT extended: `userType`, `orgId`, `roles`, `aud`, `amr`
+- [x] `createHandler()` extended: cookie fallback auth, `permission`/`orgScoped` fields
+- [x] Critical security fixes: auth on `/api/staff`, `passwordHash` excluded from responses
+- [x] Docker Compose with Caddy, Postgres 16, Redis 7
+- [x] `/api/health` endpoint for container healthchecks
 
-### Phase 3 — CRM + Leads (Months 2–4)
-- [ ] Full customer profile (booking history, call timeline, interaction log)
-- [ ] Lead pipeline (kanban stages, assignment, activity feed)
-- [ ] Lead-to-customer conversion flow with domain events
-- [ ] Automation triggers on lead stage changes
-- [ ] Voice agent creates leads from call transcripts automatically
+### Phase 3 — CRM + Leads (Done)
+- [x] Full customer profile (booking history, call timeline, interaction log)
+- [x] Lead pipeline: CRUD, kanban stages, assignment, activity feed, soft delete
+- [x] Lead-to-customer conversion with `LEAD_CONVERTED` domain event
+- [x] Domain events: `LEAD_CREATED`, `LEAD_STAGE_CHANGED`, `LEAD_CONVERTED`, `LEAD_ASSIGNED`
+- [x] Voice agent auto-creates lead from call transcript for new customers
+- [x] n8n lead ingestion webhook (`POST /api/n8n/leads`)
+- [x] `POST /api/leads/:id/activities` — activity timeline for sales pipeline
 
 ### Phase 4 — Automation Builder (Months 3–6)
 - [ ] Workflow definition schema and storage

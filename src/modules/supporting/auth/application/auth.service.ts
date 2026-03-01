@@ -30,6 +30,8 @@ import {
 import { userRepository } from '../infrastructure/user.repository';
 import { sessionRepository } from '../infrastructure/session.repository';
 import type { User } from '../domain/user.entity';
+// SessionMfaMethod: the subset stored on the session row (backup_code maps to 'totp' for AMR purposes)
+type SessionMfaMethod = 'totp' | 'webauthn';
 
 const TAG = 'AuthService';
 const MIN_BCRYPT_COST = 12;
@@ -101,6 +103,7 @@ async function issueTokens(
   ipAddress?: string,
   userAgent?: string,
   mfaVerifiedAt?: Date,
+  mfaMethod?: SessionMfaMethod,
 ): Promise<{ accessToken: string; refreshToken: string }> {
   const orgId = user.organizationId;
   const aud   = user.userType === 'staff' ? 'internal' : `customer:${orgId ?? 'unknown'}`;
@@ -114,8 +117,7 @@ async function issueTokens(
     amr,
   };
 
-  const refreshTtl  = user.userType === 'customer' ? '30d' : '7d';
-  const ttlDays     = user.userType === 'customer' ? CUSTOMER_REFRESH_TTL_DAYS : REFRESH_TTL_DAYS;
+  const ttlDays = user.userType === 'customer' ? CUSTOMER_REFRESH_TTL_DAYS : REFRESH_TTL_DAYS;
 
   const [{ token: accessToken }, { raw: refreshToken, hash: refreshTokenHash }] = await Promise.all([
     signAccessToken(jwtPayload),
@@ -132,6 +134,7 @@ async function issueTokens(
     ipAddress,
     expiresAt,
     mfaVerifiedAt,
+    mfaMethod,
   });
 
   return { accessToken, refreshToken };
@@ -238,7 +241,8 @@ export async function completeMfaLogin(
 
   const roles = await userRepository.getUserRoles(userId, user.organizationId ?? '');
   const amr   = ['pwd', amrMethod];
-  const tokens = await issueTokens(user, roles, amr, ipAddress, userAgent, new Date());
+  const mfaMethod: SessionMfaMethod = amrMethod === 'hwk' ? 'webauthn' : 'totp';
+  const tokens = await issueTokens(user, roles, amr, ipAddress, userAgent, new Date(), mfaMethod);
 
   logger.info(TAG, `MFA login complete (${amrMethod}): ${user.email}`, { userId });
 
@@ -296,8 +300,12 @@ export async function refreshTokens(rawRefreshToken: string): Promise<{
 
   const roles = await userRepository.getUserRoles(user.id, user.organizationId ?? '');
 
-  // Preserve amr from the session (mfaVerifiedAt presence = MFA was done)
-  const amr: string[] = session.mfaVerifiedAt ? ['pwd', 'otp'] : ['pwd'];
+  // Reconstruct amr from the session — mfaMethod tells us exactly which factor was used.
+  // 'webauthn' → 'hwk' (hardware key); 'totp' → 'otp'; null → password-only.
+  let amr: string[] = ['pwd'];
+  if (session.mfaVerifiedAt && session.mfaMethod) {
+    amr = session.mfaMethod === 'webauthn' ? ['pwd', 'hwk'] : ['pwd', 'otp'];
+  }
 
   // Rotate: revoke old session, issue new tokens
   await sessionRepository.revoke(hash);
@@ -309,6 +317,7 @@ export async function refreshTokens(rawRefreshToken: string): Promise<{
     session.ipAddress ?? undefined,
     session.userAgent ?? undefined,
     session.mfaVerifiedAt ?? undefined,
+    session.mfaMethod ?? undefined,
   );
 
   return {

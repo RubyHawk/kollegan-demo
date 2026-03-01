@@ -14,9 +14,12 @@ export const auditLogRepository = {
         action: input.action,
         resourceType: input.resourceType,
         resourceId: input.resourceId,
-        before: (input.before ?? undefined) as Record<string, unknown> | undefined,
-        after: (input.after ?? undefined) as Record<string, unknown> | undefined,
-        metadata: (input.metadata ?? undefined) as Record<string, unknown> | undefined,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        before: (input.before ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        after: (input.after ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        metadata: (input.metadata ?? undefined) as any,
       },
     });
 

@@ -436,6 +436,8 @@ model Session {
   revokedAt        DateTime? // set on logout / forced revocation
   // MFA tracking: null = MFA not completed in this session; non-null = timestamp of MFA verification.
   mfaVerifiedAt    DateTime?
+  // Which MFA method was used: 'totp' (TOTP or backup code) | 'webauthn' | null
+  mfaMethod        String?
 
   user User @relation(fields: [userId], references: [id])
 

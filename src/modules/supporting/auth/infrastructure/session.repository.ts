@@ -1,8 +1,9 @@
 // ─── Session repository ───────────────────────────────────────────────────────
 // Phase 2: refreshTokenJti replaced by refreshTokenHash (SHA-256 of opaque token).
+// Phase 2 fix: mfaMethod added to preserve which MFA method was used across refreshes.
 
 import { prisma } from '@core/database/prisma';
-import type { Session, CreateSessionInput } from '../domain/session.entity';
+import type { Session, CreateSessionInput, MfaMethod } from '../domain/session.entity';
 
 export const sessionRepository = {
   async create(input: CreateSessionInput): Promise<Session> {
@@ -14,12 +15,13 @@ export const sessionRepository = {
         ipAddress: input.ipAddress ?? null,
         expiresAt: input.expiresAt,
         mfaVerifiedAt: input.mfaVerifiedAt ?? null,
+        mfaMethod: input.mfaMethod ?? null,
       },
-    });
+    }) as Promise<Session>;
   },
 
   async findByTokenHash(hash: string): Promise<Session | null> {
-    return prisma.session.findUnique({ where: { refreshTokenHash: hash } });
+    return prisma.session.findUnique({ where: { refreshTokenHash: hash } }) as Promise<Session | null>;
   },
 
   async revoke(hash: string): Promise<void> {
@@ -40,13 +42,13 @@ export const sessionRepository = {
     return prisma.session.findMany({
       where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
       orderBy: { issuedAt: 'desc' },
-    });
+    }) as Promise<Session[]>;
   },
 
-  async setMfaVerified(hash: string): Promise<void> {
+  async setMfaVerified(hash: string, method: MfaMethod): Promise<void> {
     await prisma.session.updateMany({
       where: { refreshTokenHash: hash, revokedAt: null },
-      data: { mfaVerifiedAt: new Date() },
+      data: { mfaVerifiedAt: new Date(), mfaMethod: method },
     });
   },
 };

@@ -1,5 +1,7 @@
 // ─── Session entity ───────────────────────────────────────────────────────────
 
+export type MfaMethod = 'totp' | 'webauthn';
+
 export interface Session {
   id: string;
   userId: string;
@@ -10,6 +12,7 @@ export interface Session {
   expiresAt: Date;
   revokedAt: Date | null;
   mfaVerifiedAt: Date | null; // null = MFA not completed in this session
+  mfaMethod: MfaMethod | null; // which MFA method was used ('totp' | 'webauthn')
 }
 
 export interface CreateSessionInput {
@@ -19,4 +22,5 @@ export interface CreateSessionInput {
   ipAddress?: string;
   expiresAt: Date;
   mfaVerifiedAt?: Date;
+  mfaMethod?: MfaMethod;
 }
