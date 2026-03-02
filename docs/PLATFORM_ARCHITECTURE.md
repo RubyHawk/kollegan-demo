@@ -1,7 +1,7 @@
 # Kollegan Platform Architecture & DevSecOps Guide
 
 > Reference document for infrastructure, security, and compliance decisions.
-> Covers: Docker scaling strategy, WireGuard networking, SOC 2 Type 2 roadmap, DevSecOps pipeline, and engineering role responsibilities.
+> Covers: Docker scaling strategy, WireGuard networking, ISO 27001:2022 roadmap, DevSecOps pipeline, and engineering role responsibilities.
 
 ---
 
@@ -11,7 +11,7 @@
 2. [Overall Platform Architecture](#2-overall-platform-architecture)
 3. [Network Security — WireGuard](#3-network-security--wireguard)
 4. [DevSecOps Pipeline](#4-devsecops-pipeline)
-5. [SOC 2 Type 2 Roadmap](#5-soc-2-type-2-roadmap)
+5. [ISO 27001:2022 Roadmap](#5-iso-270012022-roadmap)
 6. [Docker & Horizontal Scaling Strategy](#6-docker--horizontal-scaling-strategy)
 7. [Engineering Roles You Are Covering](#7-engineering-roles-you-are-covering)
 8. [Priority Execution Order](#8-priority-execution-order)
@@ -132,7 +132,7 @@ GitHub Actions        │  │ SSH (only on wg0)   ││
 1. **Pre-shared keys (PSK)** — symmetric key on top of WireGuard's asymmetric crypto (quantum-resistant layer)
 2. **Firewall allowlist** — only WireGuard peer IPs can SSH, even inside the tunnel
 3. **Fail2ban** — monitors WireGuard handshake failures and bans repeat offenders
-4. **Key rotation policy** — rotate peer keys quarterly (document in your SOC 2 policies)
+4. **Key rotation policy** — rotate peer keys quarterly (document in your ISO 27001 policies)
 5. **Peer allowedIPs** — each peer (you, CI/CD) can only reach specific internal IPs
 
 ### WireGuard setup checklist
@@ -248,97 +248,107 @@ GitHub Actions        │  │ SSH (only on wg0)   ││
 
 ---
 
-## 5. SOC 2 Type 2 Roadmap
+## 5. ISO 27001:2022 Roadmap
 
-SOC 2 Type 2 requires **6-12 months of continuous evidence** that controls are operating. You need to start the evidence clock as soon as the controls are in place.
+ISO 27001:2022 is the correct standard for EU/Nordic B2B customers. It aligns with GDPR, Swedish procurement requirements, and has affordable local auditors (~€15-25k for a certified body like BSI, Intertek, or DNV). Unlike SOC 2 (US-centric), ISO 27001 is internationally recognised and what Nordic enterprise buyers ask for.
 
-### Trust Service Criteria overview
+**Evidence collection is built-in** — the compliance module at `/admin/compliance` auto-collects evidence from the platform's own infrastructure daily. No third-party tool needed.
+
+### Annex A technological controls (A.8) — automated evidence
+
+These 13 controls are queried automatically by the compliance module:
+
+| Control | Name | Status |
+|---------|------|--------|
+| A.8.2 | Privileged Access Rights | ✅ Auto-evidenced — admin user count + role changes |
+| A.8.3 | Information Access Restriction (RBAC) | ✅ Auto-evidenced — role-permission count |
+| A.8.5 | Secure Authentication (MFA) | ✅ Auto-evidenced — staff MFA adoption rate |
+| A.8.6 | Capacity Management (Rate Limiting) | ✅ Auto-evidenced — Redis config snapshot |
+| A.8.7 | Protection Against Malware (Security Headers) | ✅ Auto-evidenced — HTTP self-check |
+| A.8.15 | Logging (Audit Trail) | ✅ Auto-evidenced — audit log row count + recency |
+| A.8.16 | Monitoring (Failed Logins) | ✅ Auto-evidenced — failed login count last 30d |
+| A.8.17 | Clock Synchronisation | ✅ Auto-evidenced — NTP config snapshot |
+| A.8.28 | Secure Coding (Token Security) | ✅ Auto-evidenced — JWT config snapshot |
+| A.8.29 | Security Testing | ✅ Auto-evidenced — Vitest config presence |
+| A.8.32 | Change Management (Session Tracking) | ✅ Auto-evidenced — session counts |
+| A.8.33 | Test Information Protection | ✅ Auto-evidenced — .env convention check |
+| A.8.34 | Protection During Audit (Access Review) | ✅ Auto-evidenced — last access review timestamp |
+
+### Controls requiring manual evidence
+
+These categories cannot be auto-evidenced from code — they need written documentation and process evidence:
+
+**Organizational (A.5) — policies and governance:**
+
+| Control | Action needed |
+|---------|---------------|
+| Information security policy (A.5.1) | Written policy document — see Policy Vault |
+| Roles and responsibilities (A.5.2) | Written document: who owns what |
+| Segregation of duties (A.5.3) | Document access boundaries |
+| Information classification (A.5.12) | Written scheme: public / internal / confidential |
+| Data retention and disposal (A.5.33) | Written policy: how long data kept, deletion process |
+| Supplier security (A.5.19-22) | Risk assessment docs for Vapi, Resend, n8n |
+
+**People (A.6) — HR and training:**
+
+| Control | Action needed |
+|---------|---------------|
+| Security awareness training (A.6.3) | Log training completion — even a free online course |
+| Acceptable use policy (A.6.2) | Written document |
+| Remote working policy (A.6.7) | Written document |
+
+**Physical (A.7) — facility controls:**
+
+| Control | Action needed |
+|---------|---------------|
+| Physical security perimeter (A.7.1) | Your hosting provider's ISO 27001 cert covers this — get their cert |
+| Secure areas and access control (A.7.2-4) | VPS provider cert + your home office policy |
+
+### Technical gaps still needed
+
+| Gap | Action needed |
+|-----|---------------|
+| Secrets management | Move from `.env` files to Doppler or Vault (A.8.13) |
+| Vulnerability scanning | Add Trivy + npm audit to CI (A.8.8) |
+| SAST | Add CodeQL to GitHub Actions (A.8.28) |
+| Uptime monitoring | BetterStack free tier (A.8.16) |
+| Automated DB backups | Daily `pg_dump`, off-site storage (A.8.13) |
+| Encryption at rest | Docker volume encryption or managed DB (A.8.24) |
+| Incident response plan | Written playbook with defined response times (A.5.26) |
+
+### Certification path
 
 ```
-SOC 2 Type 2
-├── CC6-CC9   Security          (most controls, biggest section)
-├── A1        Availability      (uptime, backups, incident response)
-├── C1        Confidentiality   (encryption, data handling)
-└── PI1       Processing Integrity (accurate, complete processing)
+Stage 1 — Document review (1-2 days)
+├── Auditor checks your ISMS documentation
+├── Policies, risk register, scope statement
+└── Gap analysis report issued
+
+Stage 2 — Audit (2-4 days on-site or remote)
+├── Auditor tests that controls are actually operating
+├── Reviews evidence from compliance module
+├── Interviews you about processes
+└── Issues certificate (valid 3 years) or nonconformity list
+
+Surveillance audits — annual check to maintain certificate
 ```
 
-### Security controls (CC6-CC9)
+**Timeline:** Stage 1 + Stage 2 can be scheduled back-to-back — no mandatory evidence collection period like SOC 2 Type 2. Typical timeline: 3-6 months from starting documentation to holding the certificate.
 
-| Control | Status | Action needed |
-|---------|--------|---------------|
-| MFA enforced for all users | ✅ Done | TOTP + WebAuthn already in codebase |
-| Secure session management | ✅ Done | JWT + httpOnly + Redis blacklist |
-| Rate limiting on APIs | ✅ Done | Redis sliding window |
-| Security headers (HSTS, CSP) | ✅ Done | Configured in `next.config.ts` |
-| Webhook authentication | ✅ Done | HMAC on Vapi webhooks |
-| Audit log (who did what, when) | ✅ Done | Append-only `aud_*` tables |
-| Multi-tenant data isolation | ✅ Done | `organizationId` enforced at query layer |
-| Secrets management | ❌ Missing | Move from `.env` files to Doppler or Vault |
-| Vulnerability scanning | ❌ Missing | Add Trivy + npm audit to CI |
-| SAST (code analysis) | ❌ Missing | Add CodeQL to GitHub Actions |
-| Penetration testing | ❌ Missing | Annual third-party pen test |
-| Vendor security reviews | ❌ Missing | Document Vapi, Resend, n8n risk assessments |
-| Access control policy | ❌ Missing | Written document: who can access what, how |
-| Security training records | ❌ Missing | Even for one person — log it |
+**Swedish auditors:** BSI Sverige, Intertek, DNV, Bureau Veritas — all certify to ISO 27001:2022. Cost: ~€15-25k for initial certification of a small scope.
 
-### Availability controls (A1)
-
-| Control | Status | Action needed |
-|---------|--------|---------------|
-| Health checks | ✅ Done | Docker health endpoints |
-| Redis data persistence | ✅ Done | AOF enabled |
-| HTTPS uptime | ✅ Done | Caddy auto-renews TLS |
-| Uptime monitoring | ❌ Missing | Set up BetterStack / UptimeRobot / Pagerduty |
-| Automated DB backups | ❌ Missing | Daily `pg_dump`, off-site storage |
-| Backup restore testing | ❌ Missing | Test restore quarterly, document results |
-| Incident response plan | ❌ Missing | Written playbook: who, what, how fast |
-| SLO definition | ❌ Missing | Define target uptime (e.g. 99.9%) |
-
-### Confidentiality controls (C1)
-
-| Control | Status | Action needed |
-|---------|--------|---------------|
-| Encryption in transit | ✅ Done | TLS everywhere via Caddy |
-| Tenant data isolation | ✅ Done | Row-level `organizationId` |
-| Audit trail | ✅ Done | Append-only event + audit logs |
-| Encryption at rest | ❌ Missing | Encrypt Docker volumes (LUKS or cloud disk encryption) |
-| Data retention policy | ❌ Missing | Written document: how long data is kept, deletion process |
-| Data classification | ❌ Missing | Written document: what data is PII, sensitive, public |
-
-### Processing Integrity controls (PI1)
-
-| Control | Status | Action needed |
-|---------|--------|---------------|
-| Domain event log | ✅ Done | Events table with actor tracking |
-| Audit trail on mutations | ✅ Done | Append-only `aud_*` tables |
-| RFC 9457 error format | ✅ Done | Standard error responses |
-| Error tracking | ❌ Missing | Sentry or Axiom error monitoring |
-| Validation coverage docs | ❌ Missing | Document input validation approach |
-
-### Evidence collection checklist (start the clock)
-
-Once controls are in place, you need to collect evidence continuously:
-
-- [ ] Export audit logs monthly (evidence of who accessed what)
-- [ ] Screenshot uptime dashboard monthly (evidence of availability)
-- [ ] Run and save vulnerability scan results monthly
-- [ ] Document any incidents + resolution (even minor ones)
-- [ ] Keep access control reviews (who has access, reviewed quarterly)
-- [ ] Save backup restore test results
-- [ ] Log security training completion (you completing a course counts)
-
-### SOC 2 tooling recommendations
+### Tooling
 
 | Need | Tool | Cost |
 |------|------|------|
-| Audit readiness platform | Vanta, Drata, or Sprinto | $500-1500/mo — automates evidence collection |
-| Uptime monitoring | BetterStack | Free tier available |
-| Error tracking | Sentry | Free tier available |
-| Secrets management | Doppler | Free tier available |
-| Pen testing (annual) | HackerOne, Cobalt, or freelance | $3k-15k per engagement |
-| SOC 2 auditor | Johanson Group, A-LIGN, Schellman | $15k-40k for Type 2 |
-
-> **Tip:** Vanta or Drata significantly reduces SOC 2 effort by auto-collecting evidence from GitHub, AWS, etc. Worth the cost if you're serious about the cert.
+| Evidence collection | Built-in — `/admin/compliance` | Free (self-hosted) |
+| Risk register | Built-in — `/admin/compliance/risks` | Free |
+| Policy vault | Built-in — `/admin/compliance/policies` | Free |
+| Uptime monitoring | BetterStack | Free tier |
+| Error tracking | Sentry | Free tier |
+| Secrets management | Doppler | Free tier |
+| Pen testing (recommended) | HackerOne, Cobalt, or Swedish freelance | €3-10k |
+| ISO 27001 auditor | BSI, DNV, Bureau Veritas Sverige | ~€15-25k |
 
 ---
 
@@ -400,17 +410,17 @@ As a solo founder, you are wearing all of these hats simultaneously. Here's how 
 |------|-----------------|---------|-------|
 | **Platform / DevOps Engineer** | Docker, CI/CD pipelines, GitHub Actions, deployment automation, container registry | High — now | The CI/CD gap is the biggest immediate risk |
 | **Cloud Infrastructure / NetSec Engineer** | VPS firewall rules, WireGuard setup, DNS, OS hardening | High — now | Closes the public SSH attack surface |
-| **Application Security Engineer** | SAST in CI, secrets management, threat modeling, security header tuning | High — for SOC 2 | Much of this is already done in the app; gaps are in CI |
-| **GRC Analyst** (Governance, Risk, Compliance) | SOC 2 policy writing, evidence collection, risk register, auditor liaison | Medium — 6-month runway | Most time-consuming, least technical. Consider fractional GRC hire |
-| **SRE** (Site Reliability Engineer) | SLO/SLA definitions, alerting, uptime monitoring, incident response playbooks, on-call | Medium | Needed before SOC 2 evidence collection starts |
+| **Application Security Engineer** | SAST in CI, secrets management, threat modeling, security header tuning | High — for ISO 27001 | Much of this is already done in the app; gaps are in CI |
+| **GRC Analyst** (Governance, Risk, Compliance) | ISO 27001 policy writing, evidence collection, risk register, auditor liaison | Medium — 3-6 month runway | Most time-consuming, least technical. Evidence collection built into `/admin/compliance`. Consider fractional GRC hire for policy docs |
+| **SRE** (Site Reliability Engineer) | SLO/SLA definitions, alerting, uptime monitoring, incident response playbooks, on-call | Medium | Needed before Stage 1 audit |
 | **Backend Engineer** | Product features, API design, domain logic | Ongoing | You're already doing this |
 | **Frontend Engineer** | UI components, UX, real-time features | Ongoing | You're already doing this |
 
 ### What to delegate or buy
 
-- **GRC policy writing** — hire a fractional compliance consultant for ~20-30 hours of specialized work. Not worth learning from scratch when auditors have templates.
-- **Pen testing** — must be a third party. Cannot self-attest for SOC 2.
-- **SOC 2 audit** — must be a certified CPA firm (not a SaaS tool alone).
+- **GRC policy writing** — hire a fractional compliance consultant for ~20-30 hours of specialized work. Not worth learning from scratch when auditors have templates. Evidence collection itself is built into `/admin/compliance`.
+- **Pen testing** — recommended but not strictly required for ISO 27001 (unlike SOC 2). Still valuable as supporting evidence.
+- **ISO 27001 audit** — must be a certified body (BSI, DNV, Bureau Veritas, etc.). Cannot self-certify.
 - **Uptime monitoring, error tracking** — buy tools (BetterStack, Sentry), don't build.
 
 ---
@@ -443,11 +453,11 @@ PHASE 4 — COMPLIANCE FOUNDATIONS (Month 2-3)
 ├── 13. Write Incident Response Plan
 └── 14. Write Data Retention & Classification Policy
 
-PHASE 5 — START SOC 2 CLOCK (Month 3+)
-├── 15. Engage SOC 2 auditor early (they guide what evidence to collect)
-├── 16. Consider Vanta/Drata for automated evidence collection
-├── 17. Begin 6-month evidence collection period
-└── 18. Schedule annual pen test
+PHASE 5 — ENGAGE ISO 27001 AUDITOR (Month 3+)
+├── 15. Engage certified body early (BSI, DNV, Bureau Veritas Sverige)
+├── 16. Evidence collection runs daily via /admin/compliance (already built)
+├── 17. Complete policy documentation in /admin/compliance/policies
+└── 18. Schedule Stage 1 + Stage 2 audit (~€15-25k, 9-12 months to cert)
 
 PHASE 6 — SCALING PREP (Month 6+, as needed)
 ├── 19. Move PostgreSQL + Redis to managed services

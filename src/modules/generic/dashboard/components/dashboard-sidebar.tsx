@@ -352,6 +352,23 @@ export default function DashboardSidebar({
 
       <div className="flex-1" />
 
+      {/* Admin section */}
+      <div className="mx-4 my-1 h-px bg-gradient-to-r from-transparent via-[var(--border)] dark:via-white/10 to-transparent" />
+      <div className="px-3 py-2">
+        <p className="text-[10px] font-semibold text-[var(--text-muted)] dark:text-white/25 uppercase tracking-widest px-3 mb-1.5">
+          Admin
+        </p>
+        <a
+          href="/admin/compliance"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:text-white/45 dark:hover:text-white/85 dark:hover:bg-white/10 transition-colors duration-150"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="opacity-70">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <span>ISO 27001</span>
+        </a>
+      </div>
+
       {/* Divider */}
       <div className="mx-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] dark:via-white/10 to-transparent" />
 
