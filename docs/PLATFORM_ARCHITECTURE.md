@@ -114,17 +114,17 @@ What is already built and production-grade:
 
 ```
 Your Laptop           VPS (Server)
-┌──────────┐          ┌────────────────────────┐
-│ wg0      │◄────────►│ wg0  10.0.0.1/24       │
-│10.0.0.2  │  tunnel  │ (WireGuard interface)   │
+┌──────────┐          ┌─────────────────────────┐
+│   wg0    │◄────────►│   wg0  10.0.0.1/24      │
+│ 10.0.0.2 │  tunnel  │ (WireGuard interface)   │
 └──────────┘  51820   │                         │
-                      │  ┌─────────────────────┐│
-GitHub Actions        │  │ SSH (only on wg0)   ││
-┌──────────┐          │  │ PostgreSQL (no pub) ││
-│ wg0      │◄────────►│  │ Redis (no pub)      ││
-│10.0.0.3  │          │  │ n8n  (no pub)       ││
-└──────────┘          │  └─────────────────────┘│
-                      └────────────────────────┘
+                      │ ┌─────────────────────┐ │
+GitHub Actions        │ │ SSH (only on wg0)   │ │
+┌──────────┐          │ │ PostgreSQL (no pub) │ │
+│   wg0    │◄────────►│ │ Redis (no pub)      │ │
+│ 10.0.0.3 │          │ │ n8n  (no pub)       │ │
+└──────────┘          │ └─────────────────────┘ │
+                      └─────────────────────────┘
 ```
 
 ### Extra safety layers on top of WireGuard
@@ -169,7 +169,7 @@ GitHub Actions        │  │ SSH (only on wg0)   ││
        │ triggers
        ▼
 ┌─────────────────────────────────────────────┐
-│           GitHub Actions CI                  │
+│           GitHub Actions CI                 │
 │                                             │
 │  ┌──────────────┐  ┌──────────────────────┐ │
 │  │ Dependency   │  │   Secret Scanning    │ │
@@ -219,12 +219,12 @@ GitHub Actions        │  │ SSH (only on wg0)   ││
                       │  /api/health poll   │
                       └──────────┬──────────┘
                                  │
-                    ┌────────────▼────────────┐
+                    ┌────────────▼─────────────┐
                     │      Observability       │
-                    │                         │
+                    │                          │
                     │  Axiom (structured logs) │
                     │  Uptime monitor alerts   │
-                    └─────────────────────────┘
+                    └──────────────────────────┘
 ```
 
 ### What each security gate checks
@@ -364,11 +364,11 @@ When you need more capacity but not full Kubernetes complexity:
 
 ```
 Manager Node (VPS 1)              Worker Nodes
-┌─────────────────────┐    ┌──────────────────┐
+┌─────────────────────┐    ┌───────────────────┐
 │  Docker Swarm       │    │  next-app replica │
 │  Manager            │───►│  next-app replica │
 │                     │    │  next-app replica │
-│  Caddy (load bal.)  │    └──────────────────┘
+│  Caddy (load bal.)  │    └───────────────────┘
 │  postgres (single)  │
 │  redis (single)     │    Shared storage / managed DB
 └─────────────────────┘    for stateful services
