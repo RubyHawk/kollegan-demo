@@ -1,0 +1,29 @@
+// ─── Identity / Organization ──────────────────────────────────────────────────
+// Multi-tenancy root. Every tenant-owned record has an organizationId here.
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  plan      String   @default("demo") // demo | starter | growth | enterprise
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Two-tier tenancy: internal org (the company) vs customer orgs (each client)
+  orgType     String  @default("internal") // internal | customer
+  parentOrgId String? // null for internal; customer → internal org id
+
+  // Back-relations — defined in their respective schema files
+  customers   Customer[]
+  bookings    HotelBooking[]
+  transcripts CallTranscript[]
+  crmRecords  CrmRecord[]
+  workflows   Workflow[]
+  leads       Lead[]
+  users       User[]
+  portal      Portal?
+
+  @@index([slug])
+  @@index([orgType])
+  @@map("org_organizations")
+}

@@ -1,0 +1,21 @@
+// ─── Domain Event Log ─────────────────────────────────────────────────────────
+// Persisted audit trail for all domain events. Table prefix: evt_*
+//
+// Phase 1: written on-demand by services that need an audit trail.
+// Phase 2: event bus middleware writes every published event here.
+// Phase 3: replay consumer re-runs events for debugging and migration.
+
+model DomainEventRecord {
+  id             String    @id @default(uuid())
+  type           String    // e.g. 'leads.lead.created', 'voice.call.ended'
+  organizationId String
+  aggregateId    String
+  payload        Json
+  occurredAt     DateTime
+  processedAt    DateTime? // null = pending downstream processing
+
+  @@index([organizationId, type])
+  @@index([organizationId, occurredAt])
+  @@index([aggregateId])
+  @@map("evt_domain_events")
+}

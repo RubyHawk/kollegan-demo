@@ -1,0 +1,65 @@
+// ─── Automation / Workflow Engine ─────────────────────────────────────────────
+// Core domain. Primary value-generating entities in the platform. Table prefix: wf_*
+
+model Workflow {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  trigger        Json     // TriggerConfig
+  steps          Json     // StepConfig[]
+  isActive       Boolean  @default(true)
+  version        Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  runs         WorkflowRun[]
+
+  @@index([organizationId, isActive])
+  @@index([organizationId, createdAt])
+  @@map("wf_workflows")
+}
+
+model WorkflowRun {
+  id             String    @id @default(uuid())
+  organizationId String
+  workflowId     String
+  status         String    @default("pending") // pending | running | completed | failed | cancelled
+  trigger        Json
+  context        Json      @default("{}")
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  error          String?
+
+  workflow Workflow          @relation(fields: [workflowId], references: [id])
+  steps    WorkflowRunStep[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, workflowId])
+  @@index([organizationId, startedAt])
+  @@map("wf_workflow_runs")
+}
+
+model WorkflowRunStep {
+  id             String    @id @default(uuid())
+  runId          String
+  // Denormalized from WorkflowRun for RLS query filtering.
+  // FK integrity flows through runId → WorkflowRun.organizationId.
+  organizationId String?
+  stepId         String
+  status         String    @default("pending") // pending | running | completed | failed | skipped
+  input          Json?
+  output         Json?
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  error          String?
+  retryCount     Int       @default(0)
+
+  run WorkflowRun @relation(fields: [runId], references: [id])
+
+  @@index([runId])
+  @@index([runId, stepId])
+  @@index([organizationId])
+  @@map("wf_workflow_run_steps")
+}

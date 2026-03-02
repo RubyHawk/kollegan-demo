@@ -1,0 +1,51 @@
+// ─── Leads ────────────────────────────────────────────────────────────────────
+// Supporting domain. Lead stage changes trigger automation workflows. Table prefix: lead_*
+
+model Lead {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  email          String?
+  phone          String?
+  company        String?
+  status         String    @default("new") // new | contacted | qualified | proposal | won | lost
+  source         String    @default("manual") // voice_call | web_form | manual | referral | n8n_webhook
+  score          Int?
+  assignedTo     String?   // User.id
+  notes          String?
+  estimatedValue Float?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  convertedAt    DateTime?
+  deletedAt      DateTime?
+  customerId     String?   // Customer.id — set on conversion
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  activities   LeadActivity[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, assignedTo])
+  @@index([deletedAt])
+  @@map("lead_leads")
+}
+
+model LeadActivity {
+  id             String    @id @default(uuid())
+  leadId         String
+  // Denormalized from Lead for RLS query filtering.
+  // FK integrity flows through leadId → Lead.organizationId.
+  organizationId String?
+  type           String    // note | call | email | stage_change | ai_interaction
+  content        String
+  createdBy      String    // User.id or 'system'
+  createdAt      DateTime  @default(now())
+  deletedAt      DateTime?
+
+  lead Lead @relation(fields: [leadId], references: [id])
+
+  @@index([leadId, createdAt])
+  @@index([leadId, type])
+  @@index([organizationId])
+  @@map("lead_activities")
+}

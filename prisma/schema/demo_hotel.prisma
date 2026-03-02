@@ -1,0 +1,104 @@
+// ─── Hotel Demo ───────────────────────────────────────────────────────────────
+// All models in this file are demo-only. Table prefix: demo_hotel_*
+// organizationId is nullable on these models for backward compat with existing rows.
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String?
+  phone     String?  @unique
+  email     String?
+  company   String?
+  notes     String?
+  callCount Int      @default(1)
+  firstSeen DateTime @default(now())
+  lastSeen  DateTime @updatedAt
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  bookings    HotelBooking[]
+  transcripts CallTranscript[]
+  crmRecords  CrmRecord[]
+
+  @@index([phone])
+  @@index([name])
+  @@index([organizationId])
+  @@map("demo_hotel_customers")
+}
+
+model HotelBooking {
+  id          String    @id @default(uuid())
+  roomId      String
+  guestName   String
+  checkIn     DateTime?
+  checkOut    DateTime?
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+
+  @@index([roomId])
+  @@index([customerId])
+  @@index([checkIn, checkOut])
+  @@index([organizationId])
+  @@map("demo_hotel_bookings")
+}
+
+model CallTranscript {
+  id             String    @id @default(uuid())
+  vapiCallId     String?   @unique
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  summary        String?
+  bookingsMade   String[]
+  cancelledRooms String[]
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+
+  @@index([vapiCallId])
+  @@index([customerId])
+  @@index([organizationId])
+  @@map("demo_hotel_call_transcripts")
+}
+
+model CrmRecord {
+  id          String   @id @default(uuid())
+  name        String?
+  email       String?
+  phone       String?
+  company     String?
+  notes       String?
+  summary     String?
+  bookedRooms String[]
+  createdAt   DateTime @default(now())
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+
+  @@index([customerId])
+  @@index([organizationId])
+  @@map("demo_hotel_crm_records")
+}
+
+model StaffUser {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  role         String    @default("receptionist") // receptionist | manager | admin
+  createdAt    DateTime  @default(now())
+  lastLogin    DateTime?
+
+  @@index([email])
+  @@map("demo_hotel_staff_users")
+}
