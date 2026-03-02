@@ -12,6 +12,7 @@
 
 import { registerVoiceTools }          from '@modules/core/voice/register';
 import { registerAutomationListeners } from '@modules/core/automation/events/subscribers/domain-events.subscriber';
+import { registerComplianceJobs }      from '@modules/supporting/compliance';
 import { logger }                      from '@core/logging/logger';
 
 let initialized = false;
@@ -30,6 +31,11 @@ export function initializeApp(): void {
   // 2. Register all cross-module event listeners
   registerAutomationListeners();
   // Future: registerCrmListeners(), registerLeadsListeners(), ...
+
+  // 3. Register scheduled jobs
+  registerComplianceJobs().catch(err =>
+    logger.error(TAG, 'Failed to register compliance jobs', { err })
+  );
 
   logger.info(TAG, 'Platform initialized');
 }
