@@ -1,0 +1,103 @@
+// ─── Compliance Module ─────────────────────────────────────────────────────────
+// ISO 27001:2022 Annex A control registry, evidence collection, risk register,
+// and policy vault. Table prefix: cmp_*
+//
+// Design rules:
+//   - cmp_controls  → seeded from ISO 27001:2022 Annex A; shared across all orgs (no orgId)
+//   - cmp_evidence  → append-only snapshots; NEVER update or delete, only INSERT
+//   - cmp_risks     → mutable risk register, per-org
+//   - cmp_policies  → versioned policy vault, per-org
+
+// ─── Control Registry (seeded, global) ─────────────────────────────────────────
+
+model ComplianceControl {
+  id           String  @id @default(uuid())
+  controlId    String  @unique          // ISO 27001 ID, e.g. "A.8.5"
+  name         String                  // e.g. "Secure Authentication"
+  description  String
+  category     String                  // "Technological"
+  evidenceType String                  // "automated" | "manual"
+  isActive     Boolean @default(true)
+
+  evidence ComplianceEvidence[]
+
+  @@index([controlId])
+  @@index([evidenceType])
+  @@map("cmp_controls")
+}
+
+// ─── Evidence Snapshots (append-only) ─────────────────────────────────────────
+// CRITICAL: This table is append-only. The evidence.repository.ts must never
+// expose update or delete methods. This makes evidence tamper-evident for auditors.
+
+model ComplianceEvidence {
+  id             String   @id @default(uuid())
+  organizationId String
+  controlId      String   // FK → ComplianceControl.id
+  status         String   // "pass" | "fail" | "warn" | "unknown"
+  payload        Json     // raw evidence values that were measured
+  summary        String   // human-readable sentence for auditors
+  collectedAt    DateTime @default(now())
+  collectedBy    String   @default("system") // "system" | User.id (manual trigger)
+
+  control ComplianceControl @relation(fields: [controlId], references: [id])
+
+  @@index([organizationId, controlId, collectedAt])
+  @@index([organizationId, collectedAt])
+  @@index([controlId, collectedAt])
+  @@map("cmp_evidence")
+}
+
+// ─── Risk Register ─────────────────────────────────────────────────────────────
+
+model ComplianceRisk {
+  id             String    @id @default(uuid())
+  organizationId String
+  asset          String    // what is being protected
+  threat         String
+  vulnerability  String
+  // Scoring: 1-5 each; riskScore computed server-side as likelihood × impact (1-25)
+  likelihood     Int
+  impact         Int
+  riskScore      Int       // never accepted from client input
+  treatment      String    // "accept" | "mitigate" | "transfer" | "avoid"
+  treatmentDesc  String?
+  owner          String?   // free text or User.id
+  dueDate        DateTime?
+  status         String    @default("open") // "open" | "in_progress" | "resolved" | "accepted"
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdBy      String    // User.id
+  deletedAt      DateTime?
+
+  @@index([organizationId, status])
+  @@index([organizationId, riskScore])
+  @@index([organizationId, createdAt])
+  @@map("cmp_risks")
+}
+
+// ─── Policy Vault ──────────────────────────────────────────────────────────────
+
+model CompliancePolicy {
+  id              String    @id @default(uuid())
+  organizationId  String
+  name            String
+  category        String    // e.g. "Access Control", "Incident Response"
+  version         String    @default("1.0")
+  content         String    // Markdown body
+  reviewCycleDays Int       @default(365) // annual by default
+  nextReviewDate  DateTime?
+  owner           String?   // User.id or free text
+  approvedAt      DateTime?
+  approvedBy      String?   // User.id
+  status          String    @default("draft") // "draft" | "active" | "retired"
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       String    // User.id
+  deletedAt       DateTime?
+
+  @@index([organizationId, status])
+  @@index([organizationId, category])
+  @@index([organizationId, nextReviewDate])
+  @@map("cmp_policies")
+}
