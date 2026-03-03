@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
   };
   res.cookies.set('token', '', cookieOpts);
   res.cookies.set('portal_token', '', cookieOpts);
+  res.cookies.set('at', '', cookieOpts);
   res.cookies.set('mfa_challenge', '', cookieOpts);
 
   return res;

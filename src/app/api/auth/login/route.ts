@@ -31,6 +31,7 @@ const LoginSchema = z.object({
 const REFRESH_TTL_SEC_STAFF    = 60 * 60 * 24 * 7;   // 7 days
 const REFRESH_TTL_SEC_CUSTOMER = 60 * 60 * 24 * 30;  // 30 days
 const MFA_CHALLENGE_TTL_SEC    = 60 * 5;              // 5 minutes
+const ACCESS_TTL_SEC           = 60 * 15;             // 15 minutes — matches ACCESS_TTL in jwt.ts
 
 export async function POST(req: NextRequest) {
   // ── Rate limiting ─────────────────────────────────────────────────────────────
@@ -168,13 +169,15 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  res.cookies.set(cookieName, loginResult.refreshToken, {
+  const sharedCookieOpts = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: ttlSec,
+    sameSite: 'lax' as const,
     path: '/',
-  });
+  };
+
+  res.cookies.set(cookieName, loginResult.refreshToken, { ...sharedCookieOpts, maxAge: ttlSec });
+  res.cookies.set('at', loginResult.accessToken, { ...sharedCookieOpts, maxAge: ACCESS_TTL_SEC });
 
   return res;
 }
