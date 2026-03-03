@@ -8,6 +8,7 @@ const SECRET_KEY = new TextEncoder().encode(
 /** Paths that don't require authentication */
 const PUBLIC_PREFIXES = [
   '/login',
+  '/register',
   '/api/auth/',
   '/api/docs',
   '/api/demo/',
