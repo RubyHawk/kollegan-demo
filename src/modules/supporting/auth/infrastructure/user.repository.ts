@@ -39,7 +39,7 @@ export const userRepository = {
   },
 
   async findByEmail(email: string): Promise<User | null> {
-    const raw = await prisma.user.findUnique({
+    const raw = await prisma.user.findFirst({
       where: { email, deletedAt: null },
     });
     return raw ? mapUser(raw) : null;
@@ -54,6 +54,7 @@ export const userRepository = {
         lastName: input.lastName ?? null,
         userType: input.userType,
         organizationId: input.organizationId,
+        mfaGraceExpiresAt: input.mfaGraceExpiresAt ?? null,
       },
     });
     return mapUser(raw);
