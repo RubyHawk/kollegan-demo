@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 type Step = 'credentials' | 'mfa';
 
@@ -137,6 +138,10 @@ export default function LoginPage() {
                 >
                   {loading ? 'Loggar in…' : 'Logga in'}
                 </button>
+
+                <Link href="/register" className="text-sm text-(--text-muted) hover:text-(--text-secondary) text-center transition-colors">
+                  Inget konto? Skapa ett
+                </Link>
               </form>
             </>
           ) : (
