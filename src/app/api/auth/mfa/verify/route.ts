@@ -22,6 +22,7 @@ const BodySchema = z.object({
 
 const REFRESH_TTL_SEC_STAFF    = 60 * 60 * 24 * 7;
 const REFRESH_TTL_SEC_CUSTOMER = 60 * 60 * 24 * 30;
+const ACCESS_TTL_SEC           = 60 * 15;
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
@@ -126,13 +127,15 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  res.cookies.set(cookieName, result.refreshToken, {
+  const sharedCookieOpts = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: ttlSec,
+    sameSite: 'lax' as const,
     path: '/',
-  });
+  };
+
+  res.cookies.set(cookieName, result.refreshToken, { ...sharedCookieOpts, maxAge: ttlSec });
+  res.cookies.set('at', result.accessToken, { ...sharedCookieOpts, maxAge: ACCESS_TTL_SEC });
 
   // Clear the challenge cookie
   res.cookies.set('mfa_challenge', '', { maxAge: 0, path: '/' });
