@@ -34,7 +34,8 @@ export async function POST(req: NextRequest) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await userRepository.create({ email, passwordHash, userType: 'staff', organizationId: null });
+  const mfaGraceExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30-day grace period
+  const user = await userRepository.create({ email, passwordHash, userType: 'staff', organizationId: null, mfaGraceExpiresAt });
 
   return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
 }

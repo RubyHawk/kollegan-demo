@@ -34,4 +34,5 @@ export interface CreateUserInput {
   lastName?: string;
   userType: UserType;
   organizationId: string | null;
+  mfaGraceExpiresAt?: Date | null;
 }
