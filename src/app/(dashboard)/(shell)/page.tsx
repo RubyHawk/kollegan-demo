@@ -1,21 +1,9 @@
-import { cookies } from 'next/headers';
-import { verifyToken } from '@core/auth/jwt';
+import { getSessionUser } from '@core/auth/session';
 import Link from 'next/link';
 
-async function getRole() {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
-    if (!token) return null;
-    const payload = await verifyToken(token);
-    return (payload.roles?.[0] ?? payload.role ?? null) as string | null;
-  } catch {
-    return null;
-  }
-}
-
 export default async function OverviewPage() {
-  const role = await getRole();
+  const user = await getSessionUser();
+  const role = user?.role ?? null;
 
   return (
     <div className="px-8 py-10 max-w-5xl mx-auto">
