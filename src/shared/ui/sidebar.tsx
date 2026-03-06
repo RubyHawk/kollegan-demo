@@ -217,11 +217,11 @@ function NavItem({
         aria-current={active ? 'page' : undefined}
         className={cn(
           'relative flex items-center justify-center w-10 h-10 rounded-xl outline-none',
-          'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+          'border focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
           'transition-colors duration-150',
           active
-            ? 'text-[var(--accent)]'
-            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]',
+            ? 'text-[var(--accent)] border-[var(--accent)]/20 bg-[var(--accent)]/8'
+            : 'text-[var(--text-secondary)] border-[var(--border-light)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] hover:border-[var(--border)]',
         )}
       >
         {/* Active bg */}
@@ -261,11 +261,11 @@ function NavItem({
         aria-current={active ? 'page' : undefined}
         className={cn(
           'relative flex items-center gap-2 pl-3 pr-3 py-[7px] rounded-lg text-sm outline-none',
-          'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+          'border focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
           'transition-colors duration-150',
           active
-            ? 'text-[var(--accent)] font-medium bg-[var(--accent)]/8'
-            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]',
+            ? 'text-[var(--accent)] font-medium bg-[var(--accent)]/8 border-[var(--accent)]/20'
+            : 'text-[var(--text-secondary)] border-[var(--border-light)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] hover:border-[var(--border)]',
         )}
       >
         {/* Dot indicator */}
@@ -286,11 +286,11 @@ function NavItem({
       aria-current={active ? 'page' : undefined}
       className={cn(
         'relative flex items-center gap-2.5 w-full px-2 py-[9px] rounded-xl text-sm font-medium outline-none group/navitem',
-        'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+        'border focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
         'transition-colors duration-150',
         active
-          ? 'text-[var(--accent)]'
-          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]',
+          ? 'text-[var(--accent)] border-[var(--accent)]/20'
+          : 'text-[var(--text-secondary)] border-[var(--border-light)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] hover:border-[var(--border)]',
       )}
     >
       {/* Active background */}
@@ -400,11 +400,11 @@ function NavDropdownItem({
             onClick={onToggle}
             className={cn(
               'relative flex items-center justify-center w-10 h-10 rounded-xl outline-none',
-              'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+              'border focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
               'transition-colors duration-150',
               hasActiveChild
-                ? 'text-[var(--accent)]'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]',
+                ? 'text-[var(--accent)] border-[var(--accent)]/20 bg-[var(--accent)]/8'
+                : 'text-[var(--text-secondary)] border-[var(--border-light)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] hover:border-[var(--border)]',
             )}
           >
             {hasActiveChild && (
@@ -442,11 +442,11 @@ function NavDropdownItem({
         aria-controls={contentId}
         className={cn(
           'relative flex items-center gap-2.5 w-full px-2 py-[9px] rounded-xl text-sm font-medium outline-none group/ddtrigger',
-          'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+          'border focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
           'transition-colors duration-150',
           isHighlighted
-            ? 'text-[var(--accent)]'
-            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]',
+            ? 'text-[var(--accent)] border-[var(--accent)]/20'
+            : 'text-[var(--text-secondary)] border-[var(--border-light)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] hover:border-[var(--border)]',
         )}
       >
         {/* Active/open background */}
@@ -951,18 +951,21 @@ export default function Sidebar({
          * Straddles the sidebar right border (translate-x-1/2).
          * Fades in on sidebar hover; chevron rotates 180° when expanded.
          */}
+        {/*
+         * Collapse tab — always visible, cuts seamlessly into the sidebar border.
+         * No left border: the sidebar's `border-r` becomes the tab's left edge.
+         * Rounded only on the right side, giving it a "tab" appearance that
+         * appears to grow organically from the sidebar surface.
+         */}
         <button
           onClick={onToggleCollapse}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className={cn(
-            'hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-20',
-            'w-[22px] h-[22px] rounded-full items-center justify-center',
-            'bg-[var(--surface)] border border-[var(--border)] shadow-sm',
-            'text-[var(--text-muted)] hover:text-[var(--accent)]',
-            'hover:border-[var(--accent)]/40',
-            'hover:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_8%,transparent)]',
-            'opacity-0 group-hover/sidebar:opacity-100',
-            'transition-all duration-150',
+            'hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-[12px] z-20',
+            'w-[14px] h-8 rounded-r-lg items-center justify-center',
+            'bg-[var(--surface)] border-y border-r border-[var(--border)]',
+            'text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40',
+            'transition-colors duration-150',
           )}
         >
           <motion.span
@@ -970,7 +973,7 @@ export default function Sidebar({
             animate={reducedMotion ? undefined : { rotate: collapsed ? 0 : 180 }}
             transition={SPRING_SNAPPY}
           >
-            <ChevronRightIcon size={11} />
+            <ChevronRightIcon size={9} />
           </motion.span>
         </button>
       </div>
