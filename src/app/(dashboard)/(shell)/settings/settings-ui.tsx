@@ -342,17 +342,16 @@ function UtseendeTab() {
       else setTheme('auto');
 
       const storedFs = localStorage.getItem('fontSize') as FontSize | null;
-      if (storedFs) {
-        setFontSize(storedFs);
-        const sizeMap: Record<FontSize, string> = { small: '13px', medium: '15px', large: '17px' };
-        document.body.style.fontSize = sizeMap[storedFs];
-      }
+      if (storedFs) applyFontSize(storedFs);
 
       const storedAccent = localStorage.getItem('accentColor') as AccentColorId | null;
       if (storedAccent && ACCENT_COLORS.some((c) => c.id === storedAccent)) setAccentColor(storedAccent);
 
       const storedFont = localStorage.getItem('fontFamily') as FontId | null;
-      if (storedFont && FONT_OPTIONS.some((f) => f.id === storedFont)) setFontFamily(storedFont);
+      if (storedFont) {
+        const f = FONT_OPTIONS.find((o) => o.id === storedFont);
+        if (f) applyFont(f);
+      }
     } catch { /* ignore */ }
   }, []);
 
@@ -383,19 +382,40 @@ function UtseendeTab() {
     } catch { /* ignore */ }
   }
 
+  function injectStyle(id: string, css: string) {
+    let el = document.getElementById(id) as HTMLStyleElement | null;
+    if (!el) {
+      el = document.createElement('style');
+      el.id = id;
+      document.head.appendChild(el);
+    }
+    el.textContent = css;
+  }
+
   function applyFont(f: typeof FONT_OPTIONS[number]) {
     setFontFamily(f.id);
     try {
-      document.body.style.fontFamily = f.css;
+      injectStyle('font-family-override',
+        f.id === 'inter' ? '' : `body { font-family: ${f.css} !important; }`
+      );
       localStorage.setItem('fontFamily', f.id);
     } catch { /* ignore */ }
   }
 
   function applyFontSize(f: FontSize) {
     setFontSize(f);
-    const sizeMap: Record<FontSize, string> = { small: '13px', medium: '15px', large: '17px' };
+    const scales: Record<FontSize, number> = { small: 0.875, medium: 1, large: 1.125 };
+    const s = scales[f];
     try {
-      document.body.style.fontSize = sizeMap[f];
+      injectStyle('font-size-override', s === 1 ? '' : `
+        .text-xs   { font-size: ${(0.75  * s).toFixed(4)}rem !important; line-height: ${(1     * s).toFixed(4)}rem !important; }
+        .text-sm   { font-size: ${(0.875 * s).toFixed(4)}rem !important; line-height: ${(1.25  * s).toFixed(4)}rem !important; }
+        .text-base { font-size: ${(1     * s).toFixed(4)}rem !important; line-height: ${(1.5   * s).toFixed(4)}rem !important; }
+        .text-lg   { font-size: ${(1.125 * s).toFixed(4)}rem !important; line-height: ${(1.75  * s).toFixed(4)}rem !important; }
+        .text-xl   { font-size: ${(1.25  * s).toFixed(4)}rem !important; line-height: ${(1.75  * s).toFixed(4)}rem !important; }
+        .text-2xl  { font-size: ${(1.5   * s).toFixed(4)}rem !important; line-height: ${(2     * s).toFixed(4)}rem !important; }
+        .text-3xl  { font-size: ${(1.875 * s).toFixed(4)}rem !important; line-height: ${(2.25  * s).toFixed(4)}rem !important; }
+      `);
       localStorage.setItem('fontSize', f);
     } catch { /* ignore */ }
   }
