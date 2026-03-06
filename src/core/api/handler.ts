@@ -323,12 +323,10 @@ export function createHandler<
         const authHeader = req.headers.get('authorization') ?? '';
         // Primary: Bearer token from Authorization header (API-to-API, mobile)
         let token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-        // Fallback: httpOnly cookie for same-origin browser requests
-        // 'token' = staff sessions, 'portal_token' = customer portal sessions
+        // Fallback: httpOnly `at` cookie (access JWT) for same-origin browser requests.
+        // Note: `token`/`portal_token` are opaque refresh tokens — not JWTs, not usable here.
         if (!token) {
-          token = req.cookies.get('token')?.value
-            ?? req.cookies.get('portal_token')?.value
-            ?? '';
+          token = req.cookies.get('at')?.value ?? '';
         }
         if (!token) return problem(Errors.unauthorized('Authentication required'));
 

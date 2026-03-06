@@ -19,12 +19,11 @@ import {
   SettingsIcon,
   LogOutIcon,
   MenuIcon,
-  ChevronRightIcon,
-  ChevronDownIcon,
   ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@shared/ui/icons';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 interface User {
   email: string;
@@ -38,22 +37,20 @@ interface Props {
   children: React.ReactNode;
 }
 
-// ─── Nav structure ───────────────────────────────────────────────────────────
+// ─── Nav config ─────────────────────────────────────────────────────────────
 
-const CRM_CHILDREN = [
-  { href: '/crm/contacts',  label: 'Kontakter', Icon: UserIcon    },
-  { href: '/crm/companies', label: 'Företag',   Icon: CompanyIcon },
+const NAV_ITEMS = [
+  { href: '/',    label: 'Översikt', Icon: HomeIcon,     exact: true },
+  { href: '/crm', label: 'CRM',      Icon: UsersIcon,    exact: false },
 ];
 
 // ─── Breadcrumb helpers ──────────────────────────────────────────────────────
 
 const SEG_LABELS: Record<string, string> = {
-  crm:       'CRM',
-  contacts:  'Kontakter',
-  companies: 'Företag',
-  demos:     'Demos',
-  settings:  'Inställningar',
-  admin:     'Admin',
+  crm:      'CRM',
+  demos:    'Demos',
+  settings: 'Inställningar',
+  admin:    'Admin',
 };
 
 function buildCrumbs(pathname: string) {
@@ -65,44 +62,56 @@ function buildCrumbs(pathname: string) {
   }));
 }
 
-// ─── Icon-only tooltip wrapper ───────────────────────────────────────────────
+// ─── Nav item (works both expanded and collapsed) ────────────────────────────
 
-function WithTooltip({ label, side = 'right', children }: { label: string; side?: 'right' | 'top'; children: React.ReactNode }) {
+interface NavItemProps {
+  href: string;
+  label: string;
+  Icon: React.ComponentType<{ size?: number }>;
+  active: boolean;
+  activeClass: string;
+  collapsed: boolean;
+  onClick?: () => void;
+}
+
+function NavItem({ href, label, Icon, active, activeClass, collapsed, onClick }: NavItemProps) {
+  const base = [
+    'flex items-center rounded-xl text-sm font-medium transition-all duration-150',
+    collapsed ? 'justify-center w-10 h-10' : 'gap-3 px-3 py-2.5 w-full',
+    active
+      ? activeClass
+      : 'text-[var(--text-secondary)] hover:bg-[var(--surface-1)] hover:text-[var(--text-primary)]',
+  ].join(' ');
+
+  const link = (
+    <Link href={href} onClick={onClick} className={base}>
+      <Icon size={16} />
+      {!collapsed && label}
+    </Link>
+  );
+
+  if (!collapsed) return link;
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{children as React.ReactElement}</TooltipTrigger>
-      <TooltipContent side={side}>{label}</TooltipContent>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
     </Tooltip>
   );
 }
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ─── AppShell ────────────────────────────────────────────────────────────────
 
 const LS_KEY = 'sidebar-collapsed';
-
-// Shared classes
-const NAV_BASE   = 'flex items-center gap-2.5 rounded-lg text-sm font-medium transition-all duration-150 border';
-const NAV_IDLE   = 'text-[var(--text-secondary)] border-transparent hover:bg-[var(--surface-1)] hover:border-[var(--border)] hover:text-[var(--text-primary)]';
-const NAV_ACTIVE = 'bg-[var(--accent)]/8 text-[var(--accent)] border-[var(--accent)]/20';
-const NAV_DEMOS_ACTIVE = 'bg-amber-500/8 text-amber-600 dark:text-amber-400 border-amber-400/20';
-
-// ─── AppShell ────────────────────────────────────────────────────────────────
 
 export default function AppShell({ user, children }: Props) {
   const pathname    = usePathname();
   const router      = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed,  setCollapsed]  = useState(false);
-  const [crmOpen,    setCrmOpen]    = useState(() => pathname.startsWith('/crm'));
 
   useEffect(() => {
     if (localStorage.getItem(LS_KEY) === 'true') setCollapsed(true);
   }, []);
-
-  // Auto-open CRM section when navigating to a CRM sub-route
-  useEffect(() => {
-    if (pathname.startsWith('/crm')) setCrmOpen(true);
-  }, [pathname]);
 
   function toggleCollapse() {
     const next = !collapsed;
@@ -120,193 +129,147 @@ export default function AppShell({ user, children }: Props) {
   const initials    = displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
   const crumbs      = buildCrumbs(pathname);
 
-  const crmActive = pathname.startsWith('/crm');
-
-  // ─── Sidebar ─────────────────────────────────────────────────────────────
+  // ─── Sidebar ────────────────────────────────────────────────────────────
 
   const sidebar = (
-    <TooltipProvider delayDuration={150}>
+    <TooltipProvider delayDuration={0}>
       <aside className={[
-        'h-full flex flex-col bg-[var(--surface-0)] border-r border-[var(--border)]',
-        'transition-[width] duration-200 ease-out',
-        collapsed ? 'w-[52px]' : 'w-[220px]',
+        'h-full flex flex-col glass-sidebar border-r border-[var(--border)]',
+        'transition-[width] duration-200 ease-out overflow-hidden',
+        collapsed ? 'w-14' : 'w-60',
       ].join(' ')}>
 
-        {/* Logo ─────────────────────────────────────────────────────────── */}
+        {/* Logo */}
         <div className={[
-          'flex items-center shrink-0 h-[52px] border-b border-[var(--border)]',
-          collapsed ? 'justify-center' : 'px-4 gap-2.5',
+          'flex items-center border-b border-[var(--border)] shrink-0 h-[61px]',
+          collapsed ? 'justify-center' : 'px-5 gap-2.5',
         ].join(' ')}>
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm shrink-0">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm shrink-0">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
             </svg>
           </div>
           {!collapsed && (
-            <span className="font-heading text-sm font-semibold text-[var(--text-primary)] tracking-tight whitespace-nowrap">
+            <span className="font-heading text-base font-semibold text-[var(--text-primary)] tracking-tight whitespace-nowrap">
               Kollegan
             </span>
           )}
         </div>
 
-        {/* Nav ─────────────────────────────────────────────────────────── */}
-        <nav
-          className={[
-            'flex-1 py-3 flex flex-col overflow-y-auto',
-            collapsed ? 'px-1.5 items-center gap-0.5 overflow-hidden' : 'px-2.5 gap-0.5',
-          ].join(' ')}
-          style={collapsed ? { scrollbarWidth: 'none' } : undefined}
-        >
+        {/* Nav */}
+        <nav className={[
+          'flex-1 py-4 flex flex-col gap-0.5 overflow-y-auto',
+          collapsed ? 'px-2 items-center' : 'px-3',
+        ].join(' ')}>
+          {NAV_ITEMS.map(({ href, label, Icon, exact }) => (
+            <NavItem
+              key={href}
+              href={href}
+              label={label}
+              Icon={Icon}
+              active={exact ? pathname === href : pathname.startsWith(href)}
+              activeClass="bg-[var(--accent)]/10 text-[var(--accent)] shadow-[inset_0_0_0_1px_var(--accent)]/20"
+              collapsed={collapsed}
+              onClick={() => setMobileOpen(false)}
+            />
+          ))}
 
-          {/* Översikt */}
-          {collapsed ? (
-            <WithTooltip label="Översikt">
-              <Link href="/" onClick={() => setMobileOpen(false)}
-                className={[NAV_BASE, 'justify-center w-8 h-8 p-0', pathname === '/' ? NAV_ACTIVE : NAV_IDLE].join(' ')}>
-                <HomeIcon size={15} />
-              </Link>
-            </WithTooltip>
-          ) : (
-            <Link href="/" onClick={() => setMobileOpen(false)}
-              className={[NAV_BASE, 'px-2.5 py-2', pathname === '/' ? NAV_ACTIVE : NAV_IDLE].join(' ')}>
-              <HomeIcon size={15} />
-              Översikt
-            </Link>
-          )}
-
-          {/* CRM (with dropdown) */}
-          {collapsed ? (
-            <WithTooltip label="CRM">
-              <Link href="/crm" onClick={() => setMobileOpen(false)}
-                className={[NAV_BASE, 'justify-center w-8 h-8 p-0', crmActive ? NAV_ACTIVE : NAV_IDLE].join(' ')}>
-                <UsersIcon size={15} />
-              </Link>
-            </WithTooltip>
-          ) : (
-            <div>
-              {/* CRM header — click toggles the submenu */}
-              <button
-                onClick={() => setCrmOpen((o) => !o)}
-                className={[
-                  NAV_BASE, 'w-full px-2.5 py-2 justify-between',
-                  crmActive ? NAV_ACTIVE : NAV_IDLE,
-                ].join(' ')}
-              >
-                <span className="flex items-center gap-2.5">
-                  <UsersIcon size={15} />
-                  CRM
-                </span>
-                <ChevronDownIcon
-                  size={13}
-                  className={['transition-transform duration-150 text-[var(--text-muted)]', crmOpen ? 'rotate-180' : ''].join(' ')}
-                />
-              </button>
-
-              {/* Sub-items */}
-              {crmOpen && (
-                <div className="mt-0.5 ml-3.5 pl-2.5 border-l border-[var(--border)] flex flex-col gap-0.5">
-                  {CRM_CHILDREN.map(({ href, label, Icon }) => {
-                    const active = pathname.startsWith(href);
-                    return (
-                      <Link key={href} href={href} onClick={() => setMobileOpen(false)}
-                        className={[
-                          NAV_BASE, 'px-2.5 py-1.5 text-xs',
-                          active ? NAV_ACTIVE : NAV_IDLE,
-                        ].join(' ')}>
-                        <Icon size={13} />
-                        {label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Divider */}
-          {!collapsed && (
-            <div className="my-2 border-t border-[var(--border)]" />
-          )}
-          {collapsed && <div className="my-1.5 w-5 border-t border-[var(--border)]" />}
-
-          {/* Demos */}
-          {collapsed ? (
-            <WithTooltip label="Demos">
-              <Link href="/demos" onClick={() => setMobileOpen(false)}
-                className={[NAV_BASE, 'justify-center w-8 h-8 p-0', pathname.startsWith('/demos') ? NAV_DEMOS_ACTIVE : NAV_IDLE].join(' ')}>
-                <BuildingIcon size={15} />
-              </Link>
-            </WithTooltip>
-          ) : (
-            <>
-              <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+          {/* Demos section */}
+          <div className={[
+            'mt-4 pt-4 border-t border-[var(--border)] flex flex-col gap-0.5',
+            collapsed ? 'w-full items-center' : '',
+          ].join(' ')}>
+            {!collapsed && (
+              <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">
                 Demos
               </p>
-              <Link href="/demos" onClick={() => setMobileOpen(false)}
-                className={[NAV_BASE, 'px-2.5 py-2', pathname.startsWith('/demos') ? NAV_DEMOS_ACTIVE : NAV_IDLE].join(' ')}>
-                <BuildingIcon size={15} />
-                Alla demos
-              </Link>
-            </>
-          )}
+            )}
+            <NavItem
+              href="/demos"
+              label="Demos"
+              Icon={BuildingIcon}
+              active={pathname.startsWith('/demos')}
+              activeClass="bg-amber-500/10 text-amber-600 dark:text-amber-400 shadow-[inset_0_0_0_1px_theme(colors.amber.400/0.25)]"
+              collapsed={collapsed}
+              onClick={() => setMobileOpen(false)}
+            />
+          </div>
         </nav>
 
-        {/* Bottom ─────────────────────────────────────────────────────────── */}
+        {/* Bottom */}
         <div className={[
-          'shrink-0 border-t border-[var(--border)] py-2 flex flex-col',
-          collapsed ? 'px-1.5 items-center gap-1' : 'px-2.5 gap-1',
+          'py-3 border-t border-[var(--border)] flex flex-col gap-1',
+          collapsed ? 'px-2 items-center' : 'px-3',
         ].join(' ')}>
 
           {/* Profile */}
           {collapsed ? (
-            <WithTooltip label={displayName}>
-              <Link href="/settings" onClick={() => setMobileOpen(false)}
-                className="w-8 h-8 rounded-lg border border-transparent hover:border-[var(--border)] hover:bg-[var(--surface-1)] flex items-center justify-center transition-all">
-                <div className="w-6 h-6 rounded-md bg-[var(--accent)]/15 flex items-center justify-center">
-                  <span className="text-[9px] font-bold text-[var(--accent)]">{initials}</span>
-                </div>
-              </Link>
-            </WithTooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/settings" onClick={() => setMobileOpen(false)}
+                  className="w-10 h-10 rounded-xl hover:bg-[var(--surface-1)] flex items-center justify-center transition-colors">
+                  <div className="w-7 h-7 rounded-lg bg-[var(--accent)]/15 flex items-center justify-center">
+                    <span className="text-[10px] font-semibold text-[var(--accent)]">{initials}</span>
+                  </div>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">{displayName}</TooltipContent>
+            </Tooltip>
           ) : (
             <Link href="/settings" onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg border border-transparent hover:border-[var(--border)] hover:bg-[var(--surface-1)] transition-all group">
-              <div className="w-6 h-6 rounded-md bg-[var(--accent)]/15 flex items-center justify-center shrink-0">
-                <span className="text-[9px] font-bold text-[var(--accent)]">{initials}</span>
+              className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[var(--surface-1)] transition-colors group">
+              <div className="w-7 h-7 rounded-lg bg-[var(--accent)]/15 flex items-center justify-center shrink-0">
+                <span className="text-[10px] font-semibold text-[var(--accent)]">{initials}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-[var(--text-primary)] truncate leading-tight">{displayName}</p>
-                <p className="text-[10px] text-[var(--text-muted)] truncate capitalize leading-tight">{user.role}</p>
+                <p className="text-xs font-medium text-[var(--text-primary)] truncate">{displayName}</p>
+                <p className="text-[10px] text-[var(--text-muted)] truncate capitalize">{user.role}</p>
               </div>
-              <SettingsIcon size={12} className="text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+              <SettingsIcon size={13} className="text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
           )}
 
-          {/* ThemeToggle */}
-          {collapsed ? (
-            <WithTooltip label="Byt tema">
-              <div>
-                <ThemeToggle className="w-8 h-8 flex items-center justify-center rounded-lg border border-transparent hover:border-[var(--border)] hover:bg-[var(--surface-1)] transition-all text-[var(--text-muted)]" />
-              </div>
-            </WithTooltip>
-          ) : (
-            <ThemeToggle className="w-full h-8 flex items-center justify-center rounded-lg border border-transparent hover:border-[var(--border)] hover:bg-[var(--surface-1)] transition-all text-[var(--text-muted)] text-xs gap-2" />
-          )}
+          {/* Controls row */}
+          <div className={[
+            'flex items-center gap-1 pt-0.5',
+            collapsed ? 'flex-col' : 'px-1',
+          ].join(' ')}>
+            <ThemeToggle className="w-8 h-8 flex items-center justify-center rounded-lg bg-transparent hover:bg-[var(--surface-1)] border border-transparent hover:border-[var(--border)] transition-all text-[var(--text-muted)] hover:text-[var(--text-secondary)]" />
 
-          {/* Logout */}
-          {collapsed ? (
-            <WithTooltip label="Logga ut">
+            {collapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button onClick={handleLogout} aria-label="Logga ut"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/8 transition-all">
+                    <LogOutIcon size={14} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Logga ut</TooltipContent>
+              </Tooltip>
+            ) : (
               <button onClick={handleLogout} aria-label="Logga ut"
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-transparent hover:border-red-200 dark:hover:border-red-900 hover:bg-red-500/8 text-[var(--text-muted)] hover:text-red-500 transition-all">
+                className="flex-1 flex items-center justify-center gap-2 h-8 rounded-lg text-xs text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/8 transition-all">
                 <LogOutIcon size={14} />
+                Logga ut
               </button>
-            </WithTooltip>
-          ) : (
-            <button onClick={handleLogout} aria-label="Logga ut"
-              className="flex items-center gap-2.5 px-2.5 h-8 rounded-lg border border-transparent hover:border-red-200 dark:hover:border-red-900 hover:bg-red-500/8 text-xs text-[var(--text-muted)] hover:text-red-500 transition-all">
-              <LogOutIcon size={13} />
-              Logga ut
-            </button>
-          )}
+            )}
+          </div>
+
+          {/* Collapse toggle (desktop only) */}
+          <button
+            onClick={toggleCollapse}
+            aria-label={collapsed ? 'Expandera sidebar' : 'Minimera sidebar'}
+            className={[
+              'hidden md:flex items-center justify-center h-7 rounded-lg',
+              'text-[var(--text-muted)] hover:bg-[var(--surface-1)] hover:text-[var(--text-secondary)] transition-all mt-0.5',
+              collapsed ? 'w-8' : 'w-full gap-1.5',
+            ].join(' ')}
+          >
+            {collapsed
+              ? <ChevronRightIcon size={13} />
+              : <><ChevronLeftIcon size={13} /><span className="text-[11px]">Minimera</span></>
+            }
+          </button>
         </div>
       </aside>
     </TooltipProvider>
@@ -315,32 +278,22 @@ export default function AppShell({ user, children }: Props) {
   // ─── Desktop topbar ──────────────────────────────────────────────────────
 
   const topbar = (
-    <div className="hidden md:flex items-center h-[52px] px-4 border-b border-[var(--border)] bg-[var(--surface-0)] shrink-0 gap-3">
-
-      {/* Collapse toggle */}
-      <button
-        onClick={toggleCollapse}
-        aria-label={collapsed ? 'Expandera sidebar' : 'Minimera sidebar'}
-        className="w-7 h-7 flex items-center justify-center rounded-lg border border-transparent hover:border-[var(--border)] hover:bg-[var(--surface-1)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-all shrink-0"
-      >
-        {collapsed ? <ChevronRightIcon size={14} /> : <ChevronLeftIcon size={14} />}
-      </button>
-
-      {/* Divider */}
-      <div className="h-4 w-px bg-[var(--border)] shrink-0" />
-
-      {/* Breadcrumbs */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1 min-w-0">
+    <div className="hidden md:flex items-center h-12 px-5 border-b border-[var(--border)] glass-header shrink-0">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1">
         {crumbs.map((crumb, i) => (
           <span key={i} className="flex items-center gap-1">
-            {i > 0 && <ChevronRightIcon size={11} className="text-[var(--text-muted)] shrink-0" />}
+            {i > 0 && (
+              <ChevronRightIcon size={12} className="text-[var(--text-muted)] mx-0.5 shrink-0" />
+            )}
             {crumb.href ? (
-              <Link href={crumb.href}
-                className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors px-1 py-0.5 rounded hover:bg-[var(--surface-1)]">
+              <Link
+                href={crumb.href}
+                className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              >
                 {crumb.label}
               </Link>
             ) : (
-              <span className="text-sm text-[var(--text-primary)] font-medium px-1">{crumb.label}</span>
+              <span className="text-sm text-[var(--text-primary)] font-medium">{crumb.label}</span>
             )}
           </span>
         ))}
@@ -360,7 +313,10 @@ export default function AppShell({ user, children }: Props) {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+          onClick={() => setMobileOpen(false)}
+        />
       )}
       <div className={`md:hidden fixed inset-y-0 left-0 z-50 transition-transform duration-200 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {sidebar}
@@ -370,15 +326,18 @@ export default function AppShell({ user, children }: Props) {
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
 
         {/* Mobile header */}
-        <div className="md:hidden flex items-center gap-3 px-4 h-[52px] border-b border-[var(--border)] bg-[var(--surface-0)]">
-          <button onClick={() => setMobileOpen(true)} aria-label="Öppna meny"
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-transparent hover:border-[var(--border)] hover:bg-[var(--surface-1)] text-[var(--text-secondary)] transition-all">
-            <MenuIcon size={17} />
+        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] glass-header">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--surface-1)] text-[var(--text-secondary)]"
+            aria-label="Öppna meny"
+          >
+            <MenuIcon size={18} />
           </button>
           <span className="font-heading text-sm font-semibold text-[var(--text-primary)]">Kollegan</span>
         </div>
 
-        {/* Desktop topbar */}
+        {/* Desktop topbar with breadcrumbs */}
         {topbar}
 
         <main className="flex-1 overflow-y-auto">
