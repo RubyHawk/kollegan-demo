@@ -31,22 +31,36 @@ interface Risk {
 }
 
 const STATUS_TABS: { key: RiskStatus | 'all'; label: string }[] = [
-  { key: 'all',         label: 'All' },
-  { key: 'open',        label: 'Open' },
-  { key: 'in_progress', label: 'In Progress' },
-  { key: 'resolved',    label: 'Resolved' },
-  { key: 'accepted',    label: 'Accepted' },
+  { key: 'all',         label: 'Alla' },
+  { key: 'open',        label: 'Öppna' },
+  { key: 'in_progress', label: 'Pågående' },
+  { key: 'resolved',    label: 'Lösta' },
+  { key: 'accepted',    label: 'Accepterade' },
 ];
 
-function riskColor(score: number): string {
-  if (score <= 6)  return 'bg-green-100 text-green-800';
-  if (score <= 14) return 'bg-amber-100 text-amber-800';
-  return 'bg-red-100 text-red-800';
-}
+const RISK_SCORE_STYLE = (score: number): { badge: string; label: string } => {
+  if (score <= 6)  return { badge: 'bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-400', label: 'Låg' };
+  if (score <= 14) return { badge: 'bg-amber-50 dark:bg-amber-900/25 text-amber-700 dark:text-amber-400',         label: 'Medium' };
+  return               { badge: 'bg-red-50 dark:bg-red-900/25 text-red-700 dark:text-red-400',                    label: 'Hög' };
+};
+
+const STATUS_BADGE: Record<RiskStatus, string> = {
+  open:        'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400',
+  in_progress: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400',
+  resolved:    'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400',
+  accepted:    'bg-[var(--surface-alt)] text-[var(--text-muted)]',
+};
+
+const STATUS_LABEL: Record<RiskStatus, string> = {
+  open:        'Öppen',
+  in_progress: 'Pågående',
+  resolved:    'Löst',
+  accepted:    'Accepterad',
+};
 
 function fmt(iso: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 const EMPTY_FORM = {
@@ -59,14 +73,14 @@ const EMPTY_FORM = {
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function RisksPage() {
-  const [risks, setRisks]         = useState<Risk[]>([]);
-  const [total, setTotal]         = useState(0);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState<string | null>(null);
-  const [tab, setTab]             = useState<RiskStatus | 'all'>('all');
-  const [showForm, setShowForm]   = useState(false);
-  const [form, setForm]           = useState(EMPTY_FORM);
-  const [saving, setSaving]       = useState(false);
+  const [risks, setRisks]       = useState<Risk[]>([]);
+  const [total, setTotal]       = useState(0);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState<string | null>(null);
+  const [tab, setTab]           = useState<RiskStatus | 'all'>('all');
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm]         = useState(EMPTY_FORM);
+  const [saving, setSaving]     = useState(false);
 
   const load = useCallback(async (status?: RiskStatus) => {
     setLoading(true);
@@ -74,7 +88,7 @@ export default function RisksPage() {
     try {
       const qs = status ? `?status=${status}` : '';
       const res = await fetch(`/api/admin/compliance/risks${qs}`);
-      if (!res.ok) throw new Error(`Failed to load (${res.status})`);
+      if (!res.ok) throw new Error(`Misslyckades att ladda (${res.status})`);
       const json = await res.json() as { data: Risk[]; pagination: { total: number } };
       setRisks(json.data);
       setTotal(json.pagination?.total ?? json.data.length);
@@ -107,7 +121,7 @@ export default function RisksPage() {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(`Failed to create risk (${res.status})`);
+      if (!res.ok) throw new Error(`Misslyckades att skapa risk (${res.status})`);
       setShowForm(false);
       setForm(EMPTY_FORM);
       await load(tab === 'all' ? undefined : tab);
@@ -119,7 +133,7 @@ export default function RisksPage() {
   }, [form, load, tab]);
 
   const deleteRisk = useCallback(async (id: string) => {
-    if (!confirm('Delete this risk?')) return;
+    if (!confirm('Ta bort denna risk?')) return;
     try {
       await fetch(`/api/admin/compliance/risks/${id}`, { method: 'DELETE' });
       await load(tab === 'all' ? undefined : tab);
@@ -128,171 +142,210 @@ export default function RisksPage() {
     }
   }, [load, tab]);
 
+  const scorePreview = form.likelihood * form.impact;
+  const scoreStyle   = RISK_SCORE_STYLE(scorePreview);
+
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8">
-      <div className="mx-auto max-w-7xl">
+    <div className="px-8 py-10 max-w-7xl mx-auto">
 
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Risk Register</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              ISO 27001 — information security risk assessment and treatment. {total} risk{total !== 1 ? 's' : ''} total.
-              {' '}<a href="/admin/compliance" className="text-indigo-600 hover:underline">← Controls</a>
-            </p>
+      {/* Header */}
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <a href="/admin/compliance" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5" /><path d="m12 19-7-7 7-7" />
+              </svg>
+            </a>
+            <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)]">Riskregister</h1>
           </div>
+          <p className="text-sm text-[var(--text-muted)]">
+            ISO 27001 — riskbedömning och hantering av informationssäkerhet.
+            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[var(--surface-alt)] border border-[var(--border)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
+              {total} risker totalt
+            </span>
+          </p>
+        </div>
+        <button
+          onClick={() => setShowForm(true)}
+          className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity shrink-0"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Ny risk
+        </button>
+      </div>
+
+      {error && (
+        <div className="mb-6 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+          {error}
+        </div>
+      )}
+
+      {/* Status tabs */}
+      <div className="flex gap-1 mb-6 bg-[var(--surface-alt)] border border-[var(--border)] rounded-xl p-1 w-fit">
+        {STATUS_TABS.map(t => (
           <button
-            onClick={() => setShowForm(true)}
-            className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={[
+              'px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+              tab === t.key
+                ? 'bg-[var(--surface)] text-[var(--text-primary)] shadow-sm border border-[var(--border)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
+            ].join(' ')}
           >
-            New Risk
+            {t.label}
           </button>
-        </div>
+        ))}
+      </div>
 
-        {error && (
-          <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-        )}
-
-        {/* Tabs */}
-        <div className="mb-4 flex gap-1 border-b border-gray-200">
-          {STATUS_TABS.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${
-                tab === t.key
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* New risk form */}
-        {showForm && (
-          <div className="mb-6 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-            <h2 className="mb-3 text-sm font-medium text-indigo-900">New Risk</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {(['asset','threat','vulnerability'] as const).map(field => (
-                <div key={field} className={field === 'vulnerability' ? 'sm:col-span-2' : ''}>
-                  <label className="block text-xs font-medium text-gray-700 capitalize">{field}</label>
-                  <input
-                    value={form[field]}
-                    onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
-                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none"
-                  />
-                </div>
-              ))}
-              <div>
-                <label className="block text-xs font-medium text-gray-700">Likelihood (1-5)</label>
-                <input type="number" min={1} max={5} value={form.likelihood}
-                  onChange={e => setForm(f => ({ ...f, likelihood: parseInt(e.target.value) }))}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm" />
+      {/* New risk form */}
+      {showForm && (
+        <div className="mb-6 rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-6">
+          <h2 className="mb-4 text-sm font-semibold text-[var(--text-primary)]">Ny risk</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(['asset', 'threat', 'vulnerability'] as const).map(field => (
+              <div key={field} className={field === 'vulnerability' ? 'sm:col-span-2' : ''}>
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5 capitalize">
+                  {field === 'asset' ? 'Tillgång' : field === 'threat' ? 'Hot' : 'Sårbarhet'}
+                </label>
+                <input
+                  value={form[field]}
+                  onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700">Impact (1-5)</label>
-                <input type="number" min={1} max={5} value={form.impact}
-                  onChange={e => setForm(f => ({ ...f, impact: parseInt(e.target.value) }))}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">
-                  Risk score: <strong className={`rounded px-1 ${riskColor(form.likelihood * form.impact)}`}>{form.likelihood * form.impact}</strong>
-                </p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700">Treatment</label>
-                <select value={form.treatment}
-                  onChange={e => setForm(f => ({ ...f, treatment: e.target.value as Treatment }))}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm">
-                  {(['mitigate','accept','transfer','avoid'] as Treatment[]).map(t => (
-                    <option key={t} value={t} className="capitalize">{t}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700">Owner</label>
-                <input value={form.owner}
-                  onChange={e => setForm(f => ({ ...f, owner: e.target.value }))}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700">Due date</label>
-                <input type="date" value={form.dueDate}
-                  onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm" />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-gray-700">Treatment description</label>
-                <textarea value={form.treatmentDesc} rows={2}
-                  onChange={e => setForm(f => ({ ...f, treatmentDesc: e.target.value }))}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 text-sm" />
-              </div>
+            ))}
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Sannolikhet (1–5)</label>
+              <input type="number" min={1} max={5} value={form.likelihood}
+                onChange={e => setForm(f => ({ ...f, likelihood: parseInt(e.target.value) }))}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
             </div>
-            <div className="mt-3 flex gap-2">
-              <button onClick={() => void saveRisk()} disabled={saving}
-                className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
-                {saving ? 'Saving…' : 'Save Risk'}
-              </button>
-              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}
-                className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
-                Cancel
-              </button>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Påverkan (1–5)</label>
+              <input type="number" min={1} max={5} value={form.impact}
+                onChange={e => setForm(f => ({ ...f, impact: parseInt(e.target.value) }))}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
+            </div>
+            <div className="sm:col-span-2 flex items-center gap-3">
+              <p className="text-xs text-[var(--text-muted)]">Riskpoäng:</p>
+              <span className={`rounded-lg px-3 py-1 text-sm font-bold ${scoreStyle.badge}`}>
+                {scorePreview} — {scoreStyle.label}
+              </span>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Åtgärd</label>
+              <select value={form.treatment}
+                onChange={e => setForm(f => ({ ...f, treatment: e.target.value as Treatment }))}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
+                <option value="mitigate">Minska</option>
+                <option value="accept">Acceptera</option>
+                <option value="transfer">Överför</option>
+                <option value="avoid">Undvik</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Ägare</label>
+              <input value={form.owner}
+                onChange={e => setForm(f => ({ ...f, owner: e.target.value }))}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Förfallodatum</label>
+              <input type="date" value={form.dueDate}
+                onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Åtgärdsbeskrivning</label>
+              <textarea value={form.treatmentDesc} rows={2}
+                onChange={e => setForm(f => ({ ...f, treatmentDesc: e.target.value }))}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none" />
             </div>
           </div>
-        )}
+          <div className="mt-4 flex gap-2">
+            <button onClick={() => void saveRisk()} disabled={saving}
+              className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
+              {saving ? 'Sparar…' : 'Spara risk'}
+            </button>
+            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}
+              className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors">
+              Avbryt
+            </button>
+          </div>
+        </div>
+      )}
 
-        {/* Table */}
-        {!loading && (
-          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
+      {/* Table */}
+      {!loading && (
+        <div className="rounded-2xl border border-[var(--border)] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-[var(--border)] text-sm">
+              <thead className="bg-[var(--surface-alt)]">
                 <tr>
-                  {['Asset','Threat','Score','Treatment','Owner','Due','Status',''].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{h}</th>
+                  {['Tillgång', 'Hot', 'Poäng', 'Åtgärd', 'Ägare', 'Förfall', 'Status', ''].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {risks.map(r => (
-                  <tr key={r.id}>
-                    <td className="px-4 py-3 font-medium text-gray-900">{r.asset}</td>
-                    <td className="px-4 py-3 max-w-xs text-gray-600 truncate">{r.threat}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-block rounded px-2 py-0.5 text-xs font-semibold ${riskColor(r.riskScore)}`}>
-                        {r.riskScore}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 capitalize text-gray-600">{r.treatment}</td>
-                    <td className="px-4 py-3 text-gray-500">{r.owner ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-500">{fmt(r.dueDate)}</td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs capitalize text-gray-700">{r.status.replace('_',' ')}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => void deleteRisk(r.id)}
-                        className="text-xs text-red-500 hover:text-red-700">Delete</button>
-                    </td>
-                  </tr>
-                ))}
+              <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)]">
+                {risks.map(r => {
+                  const rs = RISK_SCORE_STYLE(r.riskScore);
+                  return (
+                    <tr key={r.id} className="hover:bg-[var(--surface-alt)] transition-colors">
+                      <td className="px-4 py-3.5 font-medium text-[var(--text-primary)] max-w-[160px] truncate">{r.asset}</td>
+                      <td className="px-4 py-3.5 text-[var(--text-secondary)] max-w-[200px] truncate">{r.threat}</td>
+                      <td className="px-4 py-3.5">
+                        <span className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-bold ${rs.badge}`}>
+                          {r.riskScore}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-[var(--text-secondary)] capitalize">
+                        {r.treatment === 'mitigate' ? 'Minska' : r.treatment === 'accept' ? 'Acceptera' : r.treatment === 'transfer' ? 'Överför' : 'Undvik'}
+                      </td>
+                      <td className="px-4 py-3.5 text-[var(--text-muted)]">{r.owner ?? '—'}</td>
+                      <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmt(r.dueDate)}</td>
+                      <td className="px-4 py-3.5">
+                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGE[r.status]}`}>
+                          {STATUS_LABEL[r.status]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <button onClick={() => void deleteRisk(r.id)}
+                          className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors">
+                          Ta bort
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {risks.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-400">
-                      No risks {tab !== 'all' ? `with status "${tab.replace('_',' ')}"` : 'yet'} — click New Risk to add one.
+                    <td colSpan={8} className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">
+                      Inga risker {tab !== 'all' ? `med status "${STATUS_LABEL[tab as RiskStatus]?.toLowerCase()}"` : 'ännu'} — klicka på Ny risk för att lägga till.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-        )}
+        </div>
+      )}
 
-        {loading && (
-          <div className="flex items-center justify-center py-16 text-gray-400">Loading risks…</div>
-        )}
-      </div>
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--text-muted)]">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+          </svg>
+          <p className="text-sm text-[var(--text-muted)]">Laddar risker…</p>
+        </div>
+      )}
     </div>
   );
 }
