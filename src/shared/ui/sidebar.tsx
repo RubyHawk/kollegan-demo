@@ -4,12 +4,15 @@
  * Sidebar — modern SaaS/ERP navigation sidebar (2026 redesign)
  *
  * Visual design language:
- *  - Boxed icon containers (active: accent tinted; rest: transparent)
- *  - Left 3px accent bar on active items (animates in via Framer Motion)
+ *  - No item borders — cleaner, less cluttered look
+ *  - Alternating row backgrounds (zebra stripe, expanded only)
+ *  - Strong accent-colored hover — same for all items, clearly distinct
+ *  - Active: left 3px accent bar + accent tinted background
+ *  - Collapsed active: strong accent bg (/20) + left accent bar always visible
  *  - Dropdown children connected by a left tree-line (vertical rail + dot)
  *  - Footer as a distinct card surface with an internal divider
- *  - Section labels: small-caps, muted, with a horizontal rule on collapsed mode
- *  - Floating collapse toggle on right border (hover-reveal circle)
+ *  - Section labels: small-caps, muted, with a horizontal rule
+ *  - Always-visible collapse tab on right border
  *
  * Animations (Framer Motion):
  *  - Active bar: scaleY 0 → 1 spring on navigation
@@ -192,6 +195,7 @@ interface NavItemProps {
   collapsed: boolean;
   badge?: number;
   indent?: boolean;
+  itemIndex?: number;
   reducedMotion: boolean;
   onClick?: () => void;
 }
@@ -204,9 +208,11 @@ function NavItem({
   collapsed,
   badge,
   indent,
+  itemIndex = 0,
   reducedMotion,
   onClick,
 }: NavItemProps) {
+  const isEven = itemIndex % 2 === 0;
 
   // ── Collapsed icon-only button ──────────────────────────────────────────────
   if (collapsed) {
@@ -217,18 +223,18 @@ function NavItem({
         aria-current={active ? 'page' : undefined}
         className={cn(
           'relative flex items-center justify-center w-10 h-10 rounded-xl outline-none',
-          'border focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+          'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
           'transition-colors duration-150',
           active
-            ? 'text-[var(--accent)] border-[var(--accent)]/20 bg-[var(--accent)]/8'
-            : 'text-[var(--text-secondary)] border-[var(--border-light)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] hover:border-[var(--border)]',
+            ? 'text-[var(--accent)] bg-[var(--accent)]/20'
+            : 'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
         )}
       >
         {/* Active bg */}
         <AnimatePresence initial={false}>
           {active && (
             <motion.span
-              className="absolute inset-0 rounded-xl bg-[var(--accent)]/10"
+              className="absolute inset-0 rounded-xl bg-[var(--accent)]/12"
               initial={{ opacity: 0, scale: 0.85 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.85 }}
@@ -236,9 +242,24 @@ function NavItem({
             />
           )}
         </AnimatePresence>
+
+        {/* Left accent bar — always visible when active, even collapsed */}
+        <AnimatePresence initial={false}>
+          {active && (
+            <motion.span
+              className="absolute left-0 top-[15%] bottom-[15%] w-[3px] rounded-full bg-[var(--accent)]"
+              initial={{ scaleY: 0, opacity: 0 }}
+              animate={{ scaleY: 1, opacity: 1 }}
+              exit={{ scaleY: 0, opacity: 0 }}
+              transition={{ ...SPRING_SNAPPY, delay: 0.04 }}
+              style={{ originY: '50%' }}
+            />
+          )}
+        </AnimatePresence>
+
         <span className={cn(
           'relative z-10 w-[30px] h-[30px] rounded-lg flex items-center justify-center transition-colors duration-150',
-          active ? 'bg-[var(--accent)]/15' : '',
+          active ? 'bg-[var(--accent)]/25' : '',
         )}>
           {Icon && <Icon size={15} />}
         </span>
@@ -261,17 +282,20 @@ function NavItem({
         aria-current={active ? 'page' : undefined}
         className={cn(
           'relative flex items-center gap-2 pl-3 pr-3 py-[7px] rounded-lg text-sm outline-none',
-          'border focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+          'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
           'transition-colors duration-150',
           active
-            ? 'text-[var(--accent)] font-medium bg-[var(--accent)]/8 border-[var(--accent)]/20'
-            : 'text-[var(--text-secondary)] border-[var(--border-light)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] hover:border-[var(--border)]',
+            ? 'text-[var(--accent)] font-medium bg-[var(--accent)]/8'
+            : [
+                isEven ? 'bg-[var(--surface-3)]/50' : '',
+                'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
+              ].join(' '),
         )}
       >
         {/* Dot indicator */}
         <span className={cn(
           'w-1.5 h-1.5 rounded-full shrink-0 transition-colors duration-150',
-          active ? 'bg-[var(--accent)]' : 'bg-[var(--text-muted)]/40 group-hover:bg-[var(--text-secondary)]',
+          active ? 'bg-[var(--accent)]' : 'bg-[var(--text-muted)]/40',
         )} />
         <span className="truncate">{label}</span>
       </Link>
@@ -286,11 +310,14 @@ function NavItem({
       aria-current={active ? 'page' : undefined}
       className={cn(
         'relative flex items-center gap-2.5 w-full px-2 py-[9px] rounded-xl text-sm font-medium outline-none group/navitem',
-        'border focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+        'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
         'transition-colors duration-150',
         active
-          ? 'text-[var(--accent)] border-[var(--accent)]/20'
-          : 'text-[var(--text-secondary)] border-[var(--border-light)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] hover:border-[var(--border)]',
+          ? 'text-[var(--accent)]'
+          : [
+              isEven ? 'bg-[var(--surface-3)]/60' : '',
+              'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
+            ].join(' '),
       )}
     >
       {/* Active background */}
@@ -328,7 +355,7 @@ function NavItem({
             'transition-colors duration-150',
             active
               ? 'bg-[var(--accent)]/15'
-              : 'bg-transparent group-hover/navitem:bg-[var(--border-light)]/60',
+              : 'bg-transparent group-hover/navitem:bg-[var(--accent)]/10',
           )}
           whileHover={reducedMotion ? undefined : { y: -1, scale: 1.04 }}
           transition={SPRING_SNAPPY}
@@ -371,6 +398,7 @@ interface NavDropdownProps {
   open: boolean;
   onToggle: () => void;
   pathname: string;
+  itemIndex?: number;
   reducedMotion: boolean;
   onMobileClose?: () => void;
 }
@@ -381,6 +409,7 @@ function NavDropdownItem({
   open,
   onToggle,
   pathname,
+  itemIndex = 0,
   reducedMotion,
   onMobileClose,
 }: NavDropdownProps) {
@@ -390,6 +419,7 @@ function NavDropdownItem({
   const Icon = entry.icon;
   const contentId = `nav-dd-${entry.key}`;
   const isHighlighted = hasActiveChild || open;
+  const isEven = itemIndex % 2 === 0;
 
   // ── Collapsed mode: icon + tooltip ─────────────────────────────────────────
   if (collapsed) {
@@ -400,31 +430,42 @@ function NavDropdownItem({
             onClick={onToggle}
             className={cn(
               'relative flex items-center justify-center w-10 h-10 rounded-xl outline-none',
-              'border focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+              'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
               'transition-colors duration-150',
               hasActiveChild
-                ? 'text-[var(--accent)] border-[var(--accent)]/20 bg-[var(--accent)]/8'
-                : 'text-[var(--text-secondary)] border-[var(--border-light)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] hover:border-[var(--border)]',
+                ? 'text-[var(--accent)] bg-[var(--accent)]/20'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
             )}
           >
             {hasActiveChild && (
               <motion.span
-                className="absolute inset-0 rounded-xl bg-[var(--accent)]/10"
+                className="absolute inset-0 rounded-xl bg-[var(--accent)]/12"
                 initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={SPRING_STANDARD}
               />
             )}
+
+            {/* Left accent bar in collapsed mode */}
+            <AnimatePresence initial={false}>
+              {hasActiveChild && (
+                <motion.span
+                  className="absolute left-0 top-[15%] bottom-[15%] w-[3px] rounded-full bg-[var(--accent)]"
+                  initial={{ scaleY: 0, opacity: 0 }}
+                  animate={{ scaleY: 1, opacity: 1 }}
+                  exit={{ scaleY: 0, opacity: 0 }}
+                  transition={{ ...SPRING_SNAPPY, delay: 0.04 }}
+                  style={{ originY: '50%' }}
+                />
+              )}
+            </AnimatePresence>
+
             <span className={cn(
               'relative z-10 w-[30px] h-[30px] rounded-lg flex items-center justify-center',
-              hasActiveChild ? 'bg-[var(--accent)]/15' : '',
+              hasActiveChild ? 'bg-[var(--accent)]/25' : '',
             )}>
               <Icon size={15} />
             </span>
-            {/* Active dot */}
-            {hasActiveChild && (
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
-            )}
           </button>
         </TooltipTrigger>
         <TooltipContent side="right">{entry.label}</TooltipContent>
@@ -442,11 +483,14 @@ function NavDropdownItem({
         aria-controls={contentId}
         className={cn(
           'relative flex items-center gap-2.5 w-full px-2 py-[9px] rounded-xl text-sm font-medium outline-none group/ddtrigger',
-          'border focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+          'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
           'transition-colors duration-150',
           isHighlighted
-            ? 'text-[var(--accent)] border-[var(--accent)]/20'
-            : 'text-[var(--text-secondary)] border-[var(--border-light)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] hover:border-[var(--border)]',
+            ? 'text-[var(--accent)]'
+            : [
+                isEven ? 'bg-[var(--surface-3)]/60' : '',
+                'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
+              ].join(' '),
         )}
       >
         {/* Active/open background */}
@@ -483,7 +527,7 @@ function NavDropdownItem({
             'transition-colors duration-150',
             isHighlighted
               ? 'bg-[var(--accent)]/15'
-              : 'bg-transparent group-hover/ddtrigger:bg-[var(--border-light)]/60',
+              : 'bg-transparent group-hover/ddtrigger:bg-[var(--accent)]/10',
           )}
           whileHover={reducedMotion ? undefined : { y: -1, scale: 1.04 }}
           transition={SPRING_SNAPPY}
@@ -525,18 +569,13 @@ function NavDropdownItem({
             transition={{ duration: reducedMotion ? 0 : 0.22, ease: EASE_SPRING }}
             style={{ overflow: 'hidden' }}
           >
-            {/*
-             * Tree-line container:
-             * The left border acts as a vertical rail; children are indented
-             * with a horizontal gap, creating a classic folder-tree hierarchy.
-             */}
             <motion.div
               className="mt-0.5 mb-1 ml-[19px] pl-3 flex flex-col gap-0.5 border-l-2 border-[var(--border-light)]"
               variants={reducedMotion ? undefined : childContainerVariants}
               initial="hidden"
               animate="show"
             >
-              {entry.items.map((child) => {
+              {entry.items.map((child, childIdx) => {
                 const childActive =
                   pathname === child.href ||
                   pathname.startsWith(child.href + '/');
@@ -552,6 +591,7 @@ function NavDropdownItem({
                       active={childActive}
                       collapsed={false}
                       indent
+                      itemIndex={childIdx}
                       reducedMotion={reducedMotion}
                       onClick={onMobileClose}
                     />
@@ -620,13 +660,12 @@ function SectionGroup({
           </motion.div>
         </AnimatePresence>
       ) : (
-        /* Collapsed: tiny dot separator between sections */
         !isFirst && (
           <span className="w-4 h-px bg-[var(--border-light)] rounded-full mb-1" />
         )
       )}
 
-      {visibleItems.map((entry) => {
+      {visibleItems.map((entry, idx) => {
         if (entry.type === 'link') {
           return (
             <NavItem
@@ -641,6 +680,7 @@ function SectionGroup({
               }
               collapsed={collapsed}
               badge={entry.badge}
+              itemIndex={idx}
               reducedMotion={reducedMotion}
               onClick={onMobileClose}
             />
@@ -654,6 +694,7 @@ function SectionGroup({
             open={openDropdowns.includes(entry.key)}
             onToggle={() => onToggleDropdown(entry.key)}
             pathname={pathname}
+            itemIndex={idx}
             reducedMotion={reducedMotion}
             onMobileClose={onMobileClose}
           />
@@ -752,7 +793,7 @@ function SidebarFooter({
             <Link
               href="/settings"
               onClick={onMobileClose}
-              className="w-10 h-10 rounded-xl hover:bg-[var(--surface-hover)] flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-xl hover:bg-[var(--accent)]/10 flex items-center justify-center transition-colors"
             >
               <div className="w-[30px] h-[30px] rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-light)] flex items-center justify-center shadow-sm">
                 <span className="text-[10px] font-bold text-white">{initials}</span>
@@ -783,11 +824,6 @@ function SidebarFooter({
   // ── Expanded footer — card design ─────────────────────────────────────────
   return (
     <div className="p-3 border-t border-[var(--border)]">
-      {/*
-       * Profile card: a distinct elevated surface with an internal border
-       * separating the user identity row from the action controls.
-       * This clearly separates the "who you are" from the "what you can do".
-       */}
       <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] overflow-hidden">
         {/* User identity row */}
         <Link
@@ -820,14 +856,14 @@ function SidebarFooter({
 
         {/* Action controls row */}
         <div className="flex items-center px-2 py-1.5 gap-0.5">
-          <ThemeToggle className="flex-1 flex items-center justify-center h-8 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-all text-xs gap-1.5 border border-transparent hover:border-[var(--border-light)]" />
+          <ThemeToggle className="flex-1 flex items-center justify-center h-8 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-all text-xs gap-1.5" />
 
           <div className="w-px h-4 bg-[var(--border-light)] shrink-0" />
 
           <button
             onClick={onLogout}
             aria-label="Log out"
-            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/8 transition-all border border-transparent hover:border-red-500/20"
+            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/8 transition-all"
           >
             <LogOutIcon size={13} />
             <span>Log out</span>
@@ -899,10 +935,6 @@ export default function Sidebar({
 
   return (
     <TooltipProvider delayDuration={0}>
-      {/*
-       * Outer wrapper owns the width transition so the floating toggle
-       * button (absolute right-0) always tracks the sidebar edge.
-       */}
       <div
         className={cn(
           'relative h-full group/sidebar shrink-0',
@@ -947,15 +979,9 @@ export default function Sidebar({
         </aside>
 
         {/*
-         * Floating collapse toggle — desktop only.
-         * Straddles the sidebar right border (translate-x-1/2).
-         * Fades in on sidebar hover; chevron rotates 180° when expanded.
-         */}
-        {/*
          * Collapse tab — always visible, cuts seamlessly into the sidebar border.
          * No left border: the sidebar's `border-r` becomes the tab's left edge.
-         * Rounded only on the right side, giving it a "tab" appearance that
-         * appears to grow organically from the sidebar surface.
+         * Rounded only on the right side, giving it a "tab" appearance.
          */}
         <button
           onClick={onToggleCollapse}
