@@ -143,10 +143,10 @@ export default function CompliancePage() {
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
             </div>
-            <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)]">ISO 27001 Compliance</h1>
+            <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)]">Security Controls</h1>
           </div>
           <p className="text-sm text-[var(--text-muted)] flex items-center gap-2 flex-wrap">
-            Annex A teknologiska kontroller — automatisk bevisisamling.
+            ISO 27001 Annex A — automatisk insamling och verifiering av bevis.
             <span className="text-[var(--border)]">·</span>
             <a href="/admin/compliance/risks" className="text-[var(--accent)] hover:underline">Riskregister</a>
             <span className="text-[var(--border)]">·</span>
