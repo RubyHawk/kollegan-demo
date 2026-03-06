@@ -342,7 +342,11 @@ function UtseendeTab() {
       else setTheme('auto');
 
       const storedFs = localStorage.getItem('fontSize') as FontSize | null;
-      if (storedFs) setFontSize(storedFs);
+      if (storedFs) {
+        setFontSize(storedFs);
+        const sizeMap: Record<FontSize, string> = { small: '13px', medium: '15px', large: '17px' };
+        document.documentElement.style.fontSize = sizeMap[storedFs];
+      }
 
       const storedAccent = localStorage.getItem('accentColor') as AccentColorId | null;
       if (storedAccent && ACCENT_COLORS.some((c) => c.id === storedAccent)) setAccentColor(storedAccent);
@@ -387,9 +391,17 @@ function UtseendeTab() {
     } catch { /* ignore */ }
   }
 
+  function applyFontSize(f: FontSize) {
+    setFontSize(f);
+    const sizeMap: Record<FontSize, string> = { small: '13px', medium: '15px', large: '17px' };
+    try {
+      document.documentElement.style.fontSize = sizeMap[f];
+      localStorage.setItem('fontSize', f);
+    } catch { /* ignore */ }
+  }
+
   function save() {
     setPending(true);
-    try { localStorage.setItem('fontSize', fontSize); } catch { /* ignore */ }
     setTimeout(() => {
       setPending(false);
       setSaved(true);
@@ -449,7 +461,7 @@ function UtseendeTab() {
   ];
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       {/* ── Tema ── */}
       <SectionCard title="Tema" description="Välj hur Kollegan visas. Auto-läget anpassar sig till ditt systems inställning.">
         <div className="grid grid-cols-3 gap-3">
@@ -537,13 +549,13 @@ function UtseendeTab() {
         <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3">
           Typsnitt
         </p>
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-4">
           {FONT_OPTIONS.map((f) => (
             <button
               key={f.id}
               onClick={() => applyFont(f)}
               className={cn(
-                'flex flex-col items-center gap-2 py-4 px-3 rounded-xl border transition-all duration-150',
+                'flex flex-col items-center gap-1.5 py-3 px-3 rounded-xl border transition-all duration-150',
                 'focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40',
                 fontFamily === f.id
                   ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 shadow-sm'
@@ -580,17 +592,17 @@ function UtseendeTab() {
         </div>
 
         {/* Font size */}
-        <div className="border-t border-[var(--border-light)] pt-5">
+        <div className="border-t border-[var(--border-light)] pt-3">
           <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3">
             Textstorlek
           </p>
-          <div className="grid grid-cols-3 gap-3 mb-5">
+          <div className="grid grid-cols-3 gap-3 mb-4">
             {fontSizes.map((fs) => (
               <button
                 key={fs.id}
-                onClick={() => setFontSize(fs.id)}
+                onClick={() => applyFontSize(fs.id)}
                 className={cn(
-                  'flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border transition-all duration-150',
+                  'flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl border transition-all duration-150',
                   'focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40',
                   fontSize === fs.id
                     ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5'
@@ -885,9 +897,9 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     .toUpperCase();
 
   return (
-    <div className="px-4 sm:px-8 py-8 max-w-3xl mx-auto w-full">
+    <div className="px-4 sm:px-8 py-6 max-w-3xl mx-auto w-full">
       {/* Page header */}
-      <div className="mb-6">
+      <div className="mb-5">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent-light)] flex items-center justify-center shadow-md shrink-0">
             <span className="text-base font-bold text-white">{initials}</span>
@@ -906,7 +918,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
       {/* ── Horizontal tab bar ── */}
       <nav
         aria-label="Inställningssektioner"
-        className="flex border-b border-[var(--border)] mb-6 overflow-x-auto scrollbar-none"
+        className="flex border-b border-[var(--border)] mb-5 overflow-x-auto scrollbar-none"
       >
         {TABS.map((tab) => (
           <button
