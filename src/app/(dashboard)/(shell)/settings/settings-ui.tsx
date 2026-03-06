@@ -345,7 +345,7 @@ function UtseendeTab() {
       if (storedFs) {
         setFontSize(storedFs);
         const sizeMap: Record<FontSize, string> = { small: '13px', medium: '15px', large: '17px' };
-        document.documentElement.style.fontSize = sizeMap[storedFs];
+        document.body.style.fontSize = sizeMap[storedFs];
       }
 
       const storedAccent = localStorage.getItem('accentColor') as AccentColorId | null;
@@ -395,7 +395,7 @@ function UtseendeTab() {
     setFontSize(f);
     const sizeMap: Record<FontSize, string> = { small: '13px', medium: '15px', large: '17px' };
     try {
-      document.documentElement.style.fontSize = sizeMap[f];
+      document.body.style.fontSize = sizeMap[f];
       localStorage.setItem('fontSize', f);
     } catch { /* ignore */ }
   }
