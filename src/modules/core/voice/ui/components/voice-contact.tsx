@@ -641,24 +641,24 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
               </div>
             )}
 
-            {/* Expand / collapse — icon-only when collapsed */}
+            {/* Expand / collapse */}
             <button
               onMouseDown={(e) => e.stopPropagation()}
               onClick={() => setDraggableCollapsed((c) => !c)}
               className={[
-                'flex items-center shrink-0 rounded-lg border transition-all',
-                'text-[var(--text-secondary)] border-[var(--border)] bg-[var(--surface-alt)]',
-                'hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]/40',
-                draggableCollapsed ? 'p-1.5' : 'gap-1.5 px-2.5 py-1.5 text-xs font-medium',
+                'flex items-center gap-1.5 shrink-0 rounded-xl border transition-all font-medium',
+                draggableCollapsed
+                  ? 'px-3 py-2 text-sm bg-[var(--accent)] border-[var(--accent)] text-white hover:opacity-90'
+                  : 'px-2.5 py-1.5 text-xs text-[var(--text-secondary)] border-[var(--border)] bg-[var(--surface-alt)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]',
               ].join(' ')}
               aria-label={draggableCollapsed ? 'Expandera' : 'Minimera'}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width={draggableCollapsed ? 15 : 13} height={draggableCollapsed ? 15 : 13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 {draggableCollapsed
                   ? <polyline points="18 15 12 9 6 15" />
                   : <polyline points="6 9 12 15 18 9" />}
               </svg>
-              {!draggableCollapsed && <span>Minimera</span>}
+              <span>{draggableCollapsed ? 'Expandera' : 'Minimera'}</span>
             </button>
           </div>
 
