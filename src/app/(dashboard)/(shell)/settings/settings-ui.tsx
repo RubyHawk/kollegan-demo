@@ -6,11 +6,11 @@
  * Tabs: Profil · Utseende · Anslutningar · Säkerhet
  *
  * Design language:
- *  - Vertical sidebar tabs (desktop) / horizontal scroll (mobile)
+ *  - Horizontal underline tab bar at top (scrollable on mobile)
  *  - All cards: border border-[var(--border)] on every state
  *  - Smooth tab content fade via Framer Motion
  *  - Save action shows success feedback inline (demo — no real API call)
- *  - Appearance tab: live theme switching (same localStorage pattern as root layout)
+ *  - Appearance tab: live theme switching, accent color palette, font family
  */
 
 import React, { useState, useEffect } from 'react';
@@ -285,20 +285,70 @@ function ProfilTab({ user }: { user: UserProps }) {
 
 // ─── Utseende tab ─────────────────────────────────────────────────────────────
 
+const ACCENT_COLORS = [
+  { id: 'purple', label: 'Lila',    accent: '#6d28d9', light: '#7c3aed' },
+  { id: 'indigo', label: 'Indigo',  accent: '#4338ca', light: '#4f46e5' },
+  { id: 'blue',   label: 'Blå',     accent: '#1d4ed8', light: '#2563eb' },
+  { id: 'teal',   label: 'Teal',    accent: '#0f766e', light: '#0d9488' },
+  { id: 'rose',   label: 'Rosa',    accent: '#be123c', light: '#e11d48' },
+  { id: 'orange', label: 'Orange',  accent: '#c2410c', light: '#ea580c' },
+  { id: 'slate',  label: 'Grå',     accent: '#334155', light: '#475569' },
+] as const;
+
+type AccentColorId = typeof ACCENT_COLORS[number]['id'];
+
+const FONT_OPTIONS = [
+  {
+    id: 'inter',
+    label: 'Inter',
+    desc: 'Modern sans-serif',
+    sample: 'Aa',
+    css: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+    sampleStyle: { fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif' },
+  },
+  {
+    id: 'system',
+    label: 'System',
+    desc: 'Systemets standardfont',
+    sample: 'Aa',
+    css: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+    sampleStyle: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif' },
+  },
+  {
+    id: 'cormorant',
+    label: 'Cormorant',
+    desc: 'Elegant serif',
+    sample: 'Aa',
+    css: 'var(--font-cormorant), Georgia, serif',
+    sampleStyle: { fontFamily: 'var(--font-cormorant), Georgia, serif' },
+  },
+] as const;
+
+type FontId = typeof FONT_OPTIONS[number]['id'];
+
 function UtseendeTab() {
-  const [theme,    setTheme]    = useState<ThemeMode>('auto');
-  const [fontSize, setFontSize] = useState<FontSize>('medium');
-  const [pending, setPending]   = useState(false);
-  const [saved,   setSaved]     = useState(false);
+  const [theme,       setTheme]       = useState<ThemeMode>('auto');
+  const [fontSize,    setFontSize]    = useState<FontSize>('medium');
+  const [accentColor, setAccentColor] = useState<AccentColorId>('purple');
+  const [fontFamily,  setFontFamily]  = useState<FontId>('inter');
+  const [pending, setPending] = useState(false);
+  const [saved,   setSaved]   = useState(false);
 
   // Sync initial state from localStorage
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('theme') as ThemeMode | null;
-      if (stored === 'light' || stored === 'dark') setTheme(stored);
+      const storedTheme = localStorage.getItem('theme') as ThemeMode | null;
+      if (storedTheme === 'light' || storedTheme === 'dark') setTheme(storedTheme);
       else setTheme('auto');
-      const fs = localStorage.getItem('fontSize') as FontSize | null;
-      if (fs) setFontSize(fs);
+
+      const storedFs = localStorage.getItem('fontSize') as FontSize | null;
+      if (storedFs) setFontSize(storedFs);
+
+      const storedAccent = localStorage.getItem('accentColor') as AccentColorId | null;
+      if (storedAccent && ACCENT_COLORS.some((c) => c.id === storedAccent)) setAccentColor(storedAccent);
+
+      const storedFont = localStorage.getItem('fontFamily') as FontId | null;
+      if (storedFont && FONT_OPTIONS.some((f) => f.id === storedFont)) setFontFamily(storedFont);
     } catch { /* ignore */ }
   }, []);
 
@@ -313,6 +363,27 @@ function UtseendeTab() {
         localStorage.setItem('theme', t);
         document.documentElement.classList.toggle('dark', t === 'dark');
       }
+    } catch { /* ignore */ }
+  }
+
+  function applyAccent(color: typeof ACCENT_COLORS[number]) {
+    setAccentColor(color.id);
+    try {
+      document.documentElement.style.setProperty('--accent', color.accent);
+      document.documentElement.style.setProperty('--accent-light', color.light);
+      document.documentElement.style.setProperty('--accent-subtle', color.accent + '14');
+      document.documentElement.style.setProperty('--accent-border', color.accent + '38');
+      localStorage.setItem('accentColor', color.id);
+      localStorage.setItem('accentHex', color.accent);
+      localStorage.setItem('accentLightHex', color.light);
+    } catch { /* ignore */ }
+  }
+
+  function applyFont(f: typeof FONT_OPTIONS[number]) {
+    setFontFamily(f.id);
+    try {
+      document.body.style.fontFamily = f.css;
+      localStorage.setItem('fontFamily', f.id);
     } catch { /* ignore */ }
   }
 
@@ -379,9 +450,9 @@ function UtseendeTab() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Theme */}
+      {/* ── Tema ── */}
       <SectionCard title="Tema" description="Välj hur Kollegan visas. Auto-läget anpassar sig till ditt systems inställning.">
-        <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="grid grid-cols-3 gap-3">
           {themes.map((t) => (
             <button
               key={t.id}
@@ -413,6 +484,97 @@ function UtseendeTab() {
                   </motion.span>
                 )}
               </div>
+            </button>
+          ))}
+        </div>
+      </SectionCard>
+
+      {/* ── Accentfärg ── */}
+      <SectionCard title="Accentfärg" description="Välj en accentfärg som används i hela gränssnittet — knappar, aktiva element och indikatorer.">
+        <div className="flex gap-3 flex-wrap">
+          {ACCENT_COLORS.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => applyAccent(c)}
+              title={c.label}
+              className={cn(
+                'w-9 h-9 rounded-full border-2 transition-all duration-150 relative focus:outline-none focus:ring-2 focus:ring-offset-2',
+                accentColor === c.id
+                  ? 'border-white scale-110 shadow-lg'
+                  : 'border-transparent hover:scale-105 hover:shadow-md',
+              )}
+              style={{
+                backgroundColor: c.accent,
+                focusRingColor: c.accent,
+              } as React.CSSProperties}
+            >
+              <AnimatePresence>
+                {accentColor === c.id && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    transition={SPRING_SNAPPY}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <Icon path={<polyline points="20 6 9 17 4 12"/>} size={12} className="text-white drop-shadow" />
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
+          ))}
+        </div>
+        <div className="mt-4 flex items-center gap-2 text-[11px] text-[var(--text-muted)]">
+          <Icon path={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>} size={13} className="shrink-0 text-[var(--accent)]" />
+          Vald: <span className="font-medium text-[var(--text-secondary)]">{ACCENT_COLORS.find((c) => c.id === accentColor)?.label}</span>
+          — Ändringen tillämpas direkt.
+        </div>
+      </SectionCard>
+
+      {/* ── Typografi ── */}
+      <SectionCard title="Typografi" description="Anpassa typsnitt och textstorlek efter dina preferenser.">
+        {/* Font family */}
+        <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3">
+          Typsnitt
+        </p>
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {FONT_OPTIONS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => applyFont(f)}
+              className={cn(
+                'flex flex-col items-center gap-2 py-4 px-3 rounded-xl border transition-all duration-150',
+                'focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40',
+                fontFamily === f.id
+                  ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 shadow-sm'
+                  : 'border-[var(--border)] hover:border-[var(--accent)]/20 hover:bg-[var(--surface-hover)]',
+              )}
+            >
+              <span
+                className="text-2xl font-semibold text-[var(--text-primary)]"
+                style={f.sampleStyle}
+              >
+                {f.sample}
+              </span>
+              <div className="text-center">
+                <p className={cn(
+                  'text-xs font-semibold',
+                  fontFamily === f.id ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]',
+                )}>
+                  {f.label}
+                </p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{f.desc}</p>
+              </div>
+              {fontFamily === f.id && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={SPRING_SNAPPY}
+                  className="w-4 h-4 rounded-full bg-[var(--accent)] flex items-center justify-center"
+                >
+                  <Icon path={<polyline points="20 6 9 17 4 12"/>} size={9} className="text-white" />
+                </motion.span>
+              )}
             </button>
           ))}
         </div>
@@ -723,10 +885,10 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     .toUpperCase();
 
   return (
-    <div className="px-4 sm:px-8 py-8 max-w-5xl mx-auto w-full">
+    <div className="px-4 sm:px-8 py-8 max-w-3xl mx-auto w-full">
       {/* Page header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-4">
+      <div className="mb-6">
+        <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent-light)] flex items-center justify-center shadow-md shrink-0">
             <span className="text-base font-bold text-white">{initials}</span>
           </div>
@@ -741,61 +903,50 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* ── Sidebar tabs (desktop: vertical / mobile: horizontal scroll) ── */}
-        <nav
-          aria-label="Inställningssektioner"
-          className="flex md:flex-col gap-1 md:w-44 shrink-0 overflow-x-auto md:overflow-x-visible pb-1 md:pb-0 scrollbar-none"
-        >
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                'flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap',
-                'border transition-all duration-150 text-left shrink-0 md:w-full',
-                'focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40',
-                activeTab === tab.id
-                  ? 'bg-[var(--accent)]/8 border-[var(--accent)]/25 text-[var(--accent)]'
-                  : 'border-[var(--border-light)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:border-[var(--border)] hover:text-[var(--text-primary)]',
-              )}
-            >
-              <span className={cn(
-                'shrink-0 transition-colors duration-150',
-                activeTab === tab.id ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]',
-              )}>
-                {tab.icon}
-              </span>
-              <span className="hidden sm:inline md:inline">{tab.label}</span>
-              {/* Active indicator dot (mobile) */}
-              {activeTab === tab.id && (
-                <motion.span
-                  layoutId="tab-dot"
-                  className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--accent)] shrink-0 hidden md:block"
-                />
-              )}
-            </button>
-          ))}
-        </nav>
+      {/* ── Horizontal tab bar ── */}
+      <nav
+        aria-label="Inställningssektioner"
+        className="flex border-b border-[var(--border)] mb-6 overflow-x-auto scrollbar-none"
+      >
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              'flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap shrink-0',
+              'border-b-2 -mb-px transition-all duration-150',
+              'focus:outline-none',
+              activeTab === tab.id
+                ? 'border-[var(--accent)] text-[var(--accent)]'
+                : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border)]',
+            )}
+          >
+            <span className={cn(
+              'shrink-0 transition-colors duration-150',
+              activeTab === tab.id ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]',
+            )}>
+              {tab.icon}
+            </span>
+            {tab.label}
+          </button>
+        ))}
+      </nav>
 
-        {/* ── Tab content ── */}
-        <div className="flex-1 min-w-0">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.16, ease: EASE_SPRING }}
-            >
-              {activeTab === 'profil'        && <ProfilTab user={user} />}
-              {activeTab === 'utseende'      && <UtseendeTab />}
-              {activeTab === 'anslutningar'  && <AnslutningarTab />}
-              {activeTab === 'sakerhet'      && <SakerhetTab user={user} />}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
+      {/* ── Tab content ── */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.16, ease: EASE_SPRING }}
+        >
+          {activeTab === 'profil'        && <ProfilTab user={user} />}
+          {activeTab === 'utseende'      && <UtseendeTab />}
+          {activeTab === 'anslutningar'  && <AnslutningarTab />}
+          {activeTab === 'sakerhet'      && <SakerhetTab user={user} />}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
