@@ -40,7 +40,6 @@ import {
   BuildingIcon,
   SettingsIcon,
   LogOutIcon,
-  ChevronLeftIcon,
   ChevronRightIcon,
   ChevronDownIcon,
   BarChart2Icon,
@@ -558,7 +557,6 @@ function SidebarHeader({ collapsed }: { collapsed: boolean }) {
 interface SidebarFooterProps {
   user: User;
   collapsed: boolean;
-  onToggleCollapse: () => void;
   onLogout: () => void;
   onMobileClose?: () => void;
   reducedMotion: boolean;
@@ -567,7 +565,6 @@ interface SidebarFooterProps {
 function SidebarFooter({
   user,
   collapsed,
-  onToggleCollapse,
   onLogout,
   onMobileClose,
   reducedMotion,
@@ -658,33 +655,6 @@ function SidebarFooter({
         )}
       </div>
 
-      {/* Collapse toggle — desktop only (hidden on mobile) */}
-      <button
-        onClick={onToggleCollapse}
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        className={cn(
-          'hidden md:flex items-center justify-center h-7 rounded-lg mt-0.5',
-          'text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-secondary)] transition-all',
-          collapsed ? 'w-8' : 'w-full gap-1.5',
-        )}
-      >
-        {collapsed ? (
-          <ChevronRightIcon size={13} />
-        ) : (
-          <>
-            <ChevronLeftIcon size={13} />
-            <motion.span
-              className="text-[11px]"
-              variants={reducedMotion ? undefined : labelVariants}
-              initial="hidden"
-              animate="visible"
-              transition={labelTransition}
-            >
-              Collapse
-            </motion.span>
-          </>
-        )}
-      </button>
     </div>
   );
 }
@@ -760,47 +730,82 @@ export default function Sidebar({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <aside
+      {/*
+       * Wrapper owns the width transition so the floating toggle button
+       * (absolutely positioned at right-0) tracks the sidebar edge correctly.
+       * overflow-visible here lets the button "bleed" onto the page content.
+       */}
+      <div
         className={cn(
-          'h-full flex flex-col glass-sidebar border-r border-[var(--border)]',
-          'transition-[width] duration-200 ease-out overflow-hidden',
+          'relative h-full group/sidebar',
+          'transition-[width] duration-200 ease-out',
           collapsed ? 'w-14' : 'w-60',
         )}
       >
-        <SidebarHeader collapsed={collapsed} />
+        {/* Sidebar panel */}
+        <aside className="h-full w-full flex flex-col glass-sidebar border-r border-[var(--border)] overflow-hidden">
+          <SidebarHeader collapsed={collapsed} />
 
-        {/* Scrollable nav area */}
-        <div
+          {/* Scrollable nav area */}
+          <div
+            className={cn(
+              'flex-1 py-4 flex flex-col overflow-y-auto',
+              collapsed ? 'px-2' : 'px-3',
+            )}
+          >
+            {visibleSections.map((section, idx) => (
+              <SectionGroup
+                key={section.section}
+                section={section}
+                collapsed={collapsed}
+                openDropdowns={openDropdowns}
+                onToggleDropdown={toggleDropdown}
+                pathname={pathname}
+                userRole={user.role}
+                reducedMotion={reducedMotion}
+                onMobileClose={onMobileClose}
+                isFirst={idx === 0}
+              />
+            ))}
+          </div>
+
+          <SidebarFooter
+            user={user}
+            collapsed={collapsed}
+            onLogout={onLogout}
+            onMobileClose={onMobileClose}
+            reducedMotion={reducedMotion}
+          />
+        </aside>
+
+        {/*
+         * Floating collapse toggle — desktop only.
+         * Sits on the right border of the sidebar, vertically centered.
+         * translate-x-1/2 places it half inside / half outside the sidebar,
+         * straddling the border. Fades in on sidebar hover.
+         */}
+        <button
+          onClick={onToggleCollapse}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className={cn(
-            'flex-1 py-4 flex flex-col overflow-y-auto',
-            collapsed ? 'px-2' : 'px-3',
+            'hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-20',
+            'w-6 h-6 rounded-full items-center justify-center',
+            'bg-[var(--surface)] border border-[var(--border)] shadow-sm',
+            'text-[var(--text-muted)] hover:text-[var(--accent)]',
+            'hover:border-[var(--accent)]/40 hover:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_8%,transparent)]',
+            'opacity-0 group-hover/sidebar:opacity-100',
+            'transition-all duration-150',
           )}
         >
-          {visibleSections.map((section, idx) => (
-            <SectionGroup
-              key={section.section}
-              section={section}
-              collapsed={collapsed}
-              openDropdowns={openDropdowns}
-              onToggleDropdown={toggleDropdown}
-              pathname={pathname}
-              userRole={user.role}
-              reducedMotion={reducedMotion}
-              onMobileClose={onMobileClose}
-              isFirst={idx === 0}
-            />
-          ))}
-        </div>
-
-        <SidebarFooter
-          user={user}
-          collapsed={collapsed}
-          onToggleCollapse={onToggleCollapse}
-          onLogout={onLogout}
-          onMobileClose={onMobileClose}
-          reducedMotion={reducedMotion}
-        />
-      </aside>
+          <motion.span
+            className="flex items-center justify-center"
+            animate={reducedMotion ? undefined : { rotate: collapsed ? 0 : 180 }}
+            transition={SPRING_SNAPPY}
+          >
+            <ChevronRightIcon size={11} />
+          </motion.span>
+        </button>
+      </div>
     </TooltipProvider>
   );
 }
