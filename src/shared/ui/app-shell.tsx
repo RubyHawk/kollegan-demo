@@ -13,6 +13,8 @@ import {
 import {
   HomeIcon,
   UsersIcon,
+  UserIcon,
+  CompanyIcon,
   BuildingIcon,
   SettingsIcon,
   LogOutIcon,
