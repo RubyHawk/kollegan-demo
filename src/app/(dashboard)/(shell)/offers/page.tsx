@@ -122,8 +122,8 @@ export default function OffersPage() {
   const [acting,   setActing]   = useState<string | null>(null); // offerId being actioned
 
   // ── Load offers ─────────────────────────────────────────────────────────────
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({ limit: '50', offset: '0' });
@@ -177,7 +177,7 @@ export default function OffersPage() {
       }
       setShowForm(false);
       setForm(EMPTY_FORM);
-      await load();
+      await load(true);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -195,7 +195,7 @@ export default function OffersPage() {
         body:    JSON.stringify({}),
       });
       if (!res.ok) throw new Error(`Fel ${res.status}`);
-      await load();
+      await load(true);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -208,7 +208,7 @@ export default function OffersPage() {
     if (!confirm('Ta bort detta offert?')) return;
     try {
       await fetch(`/api/offers/${id}`, { method: 'DELETE' });
-      await load();
+      await load(true);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -565,6 +565,7 @@ export default function OffersPage() {
                       <div className="flex items-center gap-1.5 justify-end">
                         {offer.status === 'draft' && (
                           <button
+                            type="button"
                             onClick={() => void doAction(offer.id, 'send')}
                             disabled={acting === offer.id}
                             className="text-xs text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-40"
@@ -575,6 +576,7 @@ export default function OffersPage() {
                         {(offer.status === 'sent' || offer.status === 'viewed') && (
                           <>
                             <button
+                              type="button"
                               onClick={() => void doAction(offer.id, 'accept')}
                               disabled={acting === offer.id}
                               className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-40"
@@ -583,6 +585,7 @@ export default function OffersPage() {
                             </button>
                             <span className="text-[var(--border)]">·</span>
                             <button
+                              type="button"
                               onClick={() => void doAction(offer.id, 'decline')}
                               disabled={acting === offer.id}
                               className="text-xs text-red-500 hover:underline disabled:opacity-40"
@@ -593,6 +596,7 @@ export default function OffersPage() {
                         )}
                         <span className="text-[var(--border)] mx-0.5">·</span>
                         <button
+                          type="button"
                           onClick={() => void deleteOffer(offer.id)}
                           className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors"
                         >

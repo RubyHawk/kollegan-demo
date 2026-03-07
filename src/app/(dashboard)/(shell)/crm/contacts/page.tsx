@@ -1,20 +1,132 @@
+'use client';
+
 /**
  * /crm/contacts
  *
- * Contact book — individual contacts linked to customers and leads.
- * Placeholder with visible table preview; full CRUD coming once the
- * contacts service is wired up.
+ * Contact book — individual contacts (Customer records) with full CRUD.
+ * Connected to GET/POST /api/crm/contacts and PATCH/DELETE /api/crm/contacts/[id].
  */
 
+import { useState, useEffect, useCallback } from 'react';
+import { cn } from '@shared/lib/utils';
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface Contact {
+  id:        string;
+  name:      string | null;
+  phone:     string | null;
+  email:     string | null;
+  company:   string | null;
+  notes:     string | null;
+  callCount: number;
+  firstSeen: string;
+  lastSeen:  string;
+}
+
+const AVATAR_COLORS = ['bg-violet-500','bg-blue-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-sky-500'];
+const avatarColor = (id: string) => AVATAR_COLORS[id.charCodeAt(0) % AVATAR_COLORS.length];
+
+function initials(name: string | null): string {
+  if (!name) return '?';
+  return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+}
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+const EMPTY_FORM = { name: '', phone: '', email: '', company: '', notes: '' };
+
+// ─── Page ────────────────────────────────────────────────────────────────────
+
 export default function ContactsPage() {
-  const mock = [
-    { name: 'Anna Lindström',   email: 'anna.l@lindstrom.se',  phone: '070-111 22 33', company: 'Lindström AB',  title: 'VD',              initials: 'AL', color: 'bg-violet-500' },
-    { name: 'Erik Bergström',   email: 'erik@bergbygg.se',     phone: '073-444 55 66', company: 'Bergström Bygg', title: 'Inköpschef',      initials: 'EB', color: 'bg-blue-500' },
-    { name: 'Maria Johansson',  email: 'maria@mjconsult.se',   phone: '072-777 88 99', company: 'MJ Consulting',  title: 'Konsultchef',     initials: 'MJ', color: 'bg-emerald-500' },
-    { name: 'Lars Nilsson',     email: 'lars@nilssonco.se',    phone: '076-000 11 22', company: 'Nilsson & Co',   title: 'Säljare',         initials: 'LN', color: 'bg-amber-500' },
-    { name: 'Sofia Karlsson',   email: 'sofia@karlsson.se',    phone: '070-333 44 55', company: 'Karlsson Tech',  title: 'CTO',             initials: 'SK', color: 'bg-rose-500' },
-    { name: 'Johan Persson',    email: 'johan@persson.se',     phone: '073-666 77 88', company: 'Persson Invest', title: 'Investerare',     initials: 'JP', color: 'bg-sky-500' },
-  ];
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [total,    setTotal]    = useState(0);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState<string | null>(null);
+  const [search,   setSearch]   = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [form,     setForm]     = useState(EMPTY_FORM);
+  const [saving,   setSaving]   = useState(false);
+  const [editing,  setEditing]  = useState<Contact | null>(null);
+  const [acting,   setActing]   = useState<string | null>(null);
+
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({ limit: '50', offset: '0' });
+      if (search.trim()) params.set('search', search.trim());
+      const res = await fetch(`/api/crm/contacts?${params}`);
+      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      const json = await res.json() as { data: { contacts: Contact[]; total: number } };
+      setContacts(json.data.contacts);
+      setTotal(json.data.total);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [search]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const openCreate = () => { setEditing(null); setForm(EMPTY_FORM); setShowForm(true); setError(null); };
+
+  const openEdit = (c: Contact) => {
+    setEditing(c);
+    setForm({ name: c.name ?? '', phone: c.phone ?? '', email: c.email ?? '', company: c.company ?? '', notes: c.notes ?? '' });
+    setShowForm(true);
+    setError(null);
+  };
+
+  const saveContact = useCallback(async () => {
+    if (!form.name.trim()) { setError('Namn krävs.'); return; }
+    setSaving(true);
+    setError(null);
+    try {
+      const method = editing ? 'PATCH' : 'POST';
+      const url    = editing ? `/api/crm/contacts/${editing.id}` : '/api/crm/contacts';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:    form.name.trim()    || undefined,
+          phone:   form.phone.trim()   || null,
+          email:   form.email.trim()   || null,
+          company: form.company.trim() || null,
+          notes:   form.notes.trim()   || null,
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({})) as { detail?: string };
+        throw new Error(j.detail ?? `Fel ${res.status}`);
+      }
+      setShowForm(false);
+      setEditing(null);
+      setForm(EMPTY_FORM);
+      await load(true);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }, [form, editing, load]);
+
+  const deleteContact = useCallback(async (id: string) => {
+    if (!confirm('Ta bort kontakten permanent?')) return;
+    setActing(id);
+    try {
+      const res = await fetch(`/api/crm/contacts/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      await load(true);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setActing(null);
+    }
+  }, [load]);
 
   return (
     <div className="px-8 py-10 max-w-6xl mx-auto">
@@ -29,12 +141,17 @@ export default function ContactsPage() {
               </svg>
             </a>
             <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)]">Kontakter</h1>
+            <span className="ml-2 inline-flex items-center rounded-full bg-[var(--surface-alt)] border border-[var(--border)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
+              {total}
+            </span>
           </div>
-          <p className="text-sm text-[var(--text-muted)]">
-            Individer kopplade till kunder och leads.
-          </p>
+          <p className="text-sm text-[var(--text-muted)]">Individer kopplade till kunder och leads.</p>
         </div>
-        <button disabled className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-medium opacity-40 cursor-not-allowed">
+        <button
+          type="button"
+          onClick={openCreate}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity shrink-0"
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
@@ -42,65 +159,202 @@ export default function ContactsPage() {
         </button>
       </div>
 
-      {/* Search bar */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex-1 relative max-w-sm">
+      {/* Error banner */}
+      {error && (
+        <div className="mb-6 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center justify-between gap-3">
+          <span>{error}</span>
+          <button type="button" onClick={() => setError(null)} className="shrink-0 opacity-60 hover:opacity-100">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* Create / edit form */}
+      {showForm && (
+        <div className="mb-8 rounded-2xl border border-[var(--accent)]/30 bg-[var(--surface)] shadow-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">{editing ? 'Redigera kontakt' : 'Ny kontakt'}</h2>
+            <button type="button" onClick={() => { setShowForm(false); setEditing(null); setError(null); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div className="p-6 grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Namn *</label>
+              <input
+                value={form.name}
+                onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="Anna Lindström"
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">E-post</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
+                placeholder="anna@example.com"
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Telefon</label>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))}
+                placeholder="070-111 22 33"
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Företag</label>
+              <input
+                value={form.company}
+                onChange={(e) => setForm(f => ({ ...f, company: e.target.value }))}
+                placeholder="Lindström AB"
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Anteckningar</label>
+              <input
+                value={form.notes}
+                onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))}
+                placeholder="Valfri notering…"
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+              />
+            </div>
+            <div className="sm:col-span-2 flex gap-2 pt-2 border-t border-[var(--border-light)]">
+              <button
+                type="button"
+                onClick={() => void saveContact()}
+                disabled={saving}
+                className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                {saving ? 'Sparar…' : editing ? 'Spara ändringar' : 'Skapa kontakt'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowForm(false); setEditing(null); setError(null); }}
+                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors"
+              >
+                Avbryt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="mb-5">
+        <div className="relative max-w-sm">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
             <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input disabled type="search" placeholder="Sök kontakt…"
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm placeholder:text-[var(--text-muted)] opacity-40 cursor-not-allowed focus:outline-none" />
+          <input
+            type="search"
+            placeholder="Sök kontakt…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+          />
         </div>
       </div>
 
-      {/* Table with overlay */}
-      <div className="relative rounded-2xl border border-[var(--border)] overflow-hidden">
-
-        {/* Coming soon overlay */}
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--surface)]/80 backdrop-blur-sm">
-          <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center mb-3">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </div>
-          <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">Under utveckling</p>
-          <p className="text-xs text-[var(--text-muted)] max-w-xs text-center leading-relaxed">
-            Kontakthantering med kopplingar till leads och kunder kommer snart.
-          </p>
+      {/* Table */}
+      {loading ? (
+        <div className="flex items-center justify-center py-20 gap-3">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--text-muted)]">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+          </svg>
+          <p className="text-sm text-[var(--text-muted)]">Laddar kontakter…</p>
         </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-[var(--border)] text-sm">
-            <thead className="bg-[var(--surface-alt)]">
-              <tr>
-                {['Namn', 'Titel', 'Företag', 'E-post', 'Telefon'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)]">
-              {mock.map((c) => (
-                <tr key={c.name} className="hover:bg-[var(--surface-alt)] transition-colors select-none">
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-7 h-7 rounded-full ${c.color} flex items-center justify-center text-white text-[10px] font-bold shrink-0`}>
-                        {c.initials}
-                      </div>
-                      <span className="font-medium text-[var(--text-primary)]">{c.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5 text-[var(--text-secondary)]">{c.title}</td>
-                  <td className="px-4 py-3.5 text-[var(--text-secondary)]">{c.company}</td>
-                  <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">{c.email}</td>
-                  <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">{c.phone}</td>
+      ) : (
+        <div className="rounded-2xl border border-[var(--border)] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-[var(--border)] text-sm">
+              <thead className="bg-[var(--surface-alt)]">
+                <tr>
+                  {['Namn', 'Titel / Företag', 'E-post', 'Telefon', 'Samtal', 'Senast sedd', ''].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)]">
+                {contacts.map((c) => (
+                  <tr key={c.id} className={cn('hover:bg-[var(--surface-hover)] transition-colors', acting === c.id && 'opacity-50')}>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-7 h-7 rounded-full ${avatarColor(c.id)} flex items-center justify-center text-white text-[10px] font-bold shrink-0`}>
+                          {initials(c.name)}
+                        </div>
+                        <span className="font-medium text-[var(--text-primary)]">{c.name ?? '—'}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 text-[var(--text-secondary)]">{c.company ?? <span className="text-[var(--text-muted)]">—</span>}</td>
+                    <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">{c.email ?? '—'}</td>
+                    <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">{c.phone ?? '—'}</td>
+                    <td className="px-4 py-3.5">
+                      {c.callCount > 0 ? (
+                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold">
+                          {c.callCount}
+                        </span>
+                      ) : <span className="text-[var(--text-muted)]">—</span>}
+                    </td>
+                    <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">{fmtDate(c.lastSeen)}</td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-2 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(c)}
+                          className="text-xs text-[var(--accent)] hover:underline"
+                        >
+                          Redigera
+                        </button>
+                        <span className="text-[var(--border)]">·</span>
+                        <button
+                          type="button"
+                          onClick={() => void deleteContact(c.id)}
+                          disabled={acting === c.id}
+                          className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40"
+                        >
+                          Ta bort
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {contacts.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-16 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center">
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                          </svg>
+                        </div>
+                        <p className="text-sm font-medium text-[var(--text-primary)]">Inga kontakter ännu</p>
+                        <p className="text-xs text-[var(--text-muted)]">Klicka på &ldquo;Ny kontakt&rdquo; för att lägga till.</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {total > contacts.length && (
+            <div className="px-4 py-3 border-t border-[var(--border)] bg-[var(--surface-alt)] text-xs text-[var(--text-muted)] text-center">
+              Visar {contacts.length} av {total} kontakter
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

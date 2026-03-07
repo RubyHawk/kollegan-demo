@@ -56,6 +56,8 @@ import {
   CreditCardIcon,
   ShieldIcon,
   ReceiptIcon,
+  CalendarIcon,
+  NoteIcon,
 } from '@shared/ui/icons';
 import { SPRING_SNAPPY, SPRING_STANDARD, EASE_SPRING } from '@shared/lib/motion';
 import { cn } from '@shared/lib/utils';
@@ -132,8 +134,10 @@ const NAV_CONFIG: NavSection[] = [
           { href: '/crm/contacts', label: 'Contacts' },
         ],
       },
-      { type: 'link', href: '/messages', label: 'Messages',  icon: MessageSquareIcon },
-      { type: 'link', href: '/offers',   label: 'Offers',    icon: ReceiptIcon },
+      { type: 'link', href: '/messages',      label: 'Messages',      icon: MessageSquareIcon },
+      { type: 'link', href: '/offers',         label: 'Offers',        icon: ReceiptIcon },
+      { type: 'link', href: '/announcements',  label: 'Announcements', icon: NoteIcon },
+      { type: 'link', href: '/meetings',       label: 'Meetings',      icon: CalendarIcon },
     ],
   },
   {

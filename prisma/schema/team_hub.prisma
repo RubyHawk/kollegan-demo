@@ -1,0 +1,94 @@
+// ─── Team Hub ─────────────────────────────────────────────────────────────────
+// Announcements + Meetings. Table prefix: th_*
+
+model Announcement {
+  id             String    @id @default(uuid())
+  organizationId String
+  title          String
+  content        String    // Markdown
+  priority       String    @default("normal") // normal | important | urgent
+  isPinned       Boolean   @default(false)
+  authorId       String    // User.id
+  publishedAt    DateTime  @default(now())
+  expiresAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization          @relation(fields: [organizationId], references: [id])
+  reads        AnnouncementRead[]
+
+  @@index([organizationId, isPinned, publishedAt])
+  @@index([organizationId, publishedAt])
+  @@index([deletedAt])
+  @@map("th_announcements")
+}
+
+model AnnouncementRead {
+  id             String   @id @default(uuid())
+  announcementId String
+  userId         String
+  readAt         DateTime @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([userId])
+  @@map("th_announcement_reads")
+}
+
+model Meeting {
+  id             String    @id @default(uuid())
+  organizationId String
+  title          String
+  status         String    @default("scheduled") // scheduled | in_progress | completed | cancelled
+  provider       String    @default("manual")    // daily | google_meet | zoom | manual
+  meetingUrl     String?
+  agenda         String?
+  scheduledAt    DateTime
+  startedAt      DateTime?
+  endedAt        DateTime?
+  durationSeconds Int?
+  createdBy      String    // User.id
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization       @relation(fields: [organizationId], references: [id])
+  participants MeetingParticipant[]
+  summary      MeetingSummary?
+
+  @@index([organizationId, scheduledAt])
+  @@index([organizationId, status])
+  @@index([deletedAt])
+  @@map("th_meetings")
+}
+
+model MeetingParticipant {
+  id        String  @id @default(uuid())
+  meetingId String
+  userId    String? // User.id (null for external)
+  name      String
+  email     String?
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+  @@map("th_meeting_participants")
+}
+
+model MeetingSummary {
+  id          String    @id @default(uuid())
+  meetingId   String    @unique
+  status      String    @default("pending") // pending | generating | completed | failed
+  model       String    @default("claude-sonnet-4-6")
+  summary     String?
+  keyDecisions String[]
+  nextSteps   String?
+  generatedAt DateTime?
+  errorMessage String?
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@map("th_meeting_summaries")
+}

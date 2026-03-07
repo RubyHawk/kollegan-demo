@@ -21,8 +21,12 @@ model Organization {
   workflows   Workflow[]
   leads       Lead[]
   users       User[]
-  portal      Portal?
-  offers      Offer[]
+  portal        Portal?
+  offers        Offer[]
+  conversations Conversation[]
+  projects      Project[]
+  announcements Announcement[]
+  meetings      Meeting[]
 
   @@index([slug])
   @@index([orgType])
