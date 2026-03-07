@@ -143,6 +143,17 @@ function LoginForm() {
                   Inget konto? Skapa ett
                 </Link>
               </form>
+
+              {process.env.NODE_ENV !== 'production' && (
+                <div className="mt-6 pt-5 border-t border-(--border) text-center">
+                  <a
+                    href={`/api/auth/dev-login?redirect=${encodeURIComponent(redirect)}`}
+                    className="text-xs text-(--text-muted) hover:text-(--text-secondary) transition-colors"
+                  >
+                    Dev: logga in utan konto →
+                  </a>
+                </div>
+              )}
             </>
           ) : (
             <>
