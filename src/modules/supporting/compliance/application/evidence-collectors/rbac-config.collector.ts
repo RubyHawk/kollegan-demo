@@ -1,6 +1,6 @@
 // A.8.3 — Information Access Restriction: RBAC roles and permission counts
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { CollectorResult } from '../../domain/evidence.entity';
 
 export async function rbacConfigCollector(

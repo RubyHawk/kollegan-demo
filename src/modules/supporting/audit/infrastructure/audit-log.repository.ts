@@ -1,7 +1,7 @@
 // ─── Audit log repository ─────────────────────────────────────────────────────
 // CRITICAL: append-only. This repository must NEVER expose update or delete methods.
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { AuditLogEntry, CreateAuditLogInput } from '../domain/audit-log.entity';
 
 export const auditLogRepository = {

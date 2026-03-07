@@ -1,8 +1,8 @@
-import type { DomainEvent } from '@core/events';
-import { EventTypes } from '@core/events';
+import type { DomainEvent } from '@platform/events';
+import { EventTypes } from '@platform/events';
 
 // ─── Event type constants ───────────────────────────────────────────────────────
-// Format: crm.{aggregate}.{verb} — matches EventTypes registry in @core/events
+// Format: crm.{aggregate}.{verb} — matches EventTypes registry in @platform/events
 
 export const CRM_CONTACT_UPSERTED = EventTypes.CONTACT_UPSERTED; // 'crm.contact.upserted'
 export const CRM_RECORD_CREATED   = EventTypes.RECORD_CREATED;   // 'crm.record.created'

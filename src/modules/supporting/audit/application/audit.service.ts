@@ -8,7 +8,7 @@
  * route handlers may call audit.log().
  */
 
-import { logger } from '@core/logging/logger';
+import { logger } from '@platform/logging/logger';
 import { auditLogRepository } from '../infrastructure/audit-log.repository';
 import type { CreateAuditLogInput, AuditLogEntry } from '../domain/audit-log.entity';
 

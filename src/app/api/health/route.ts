@@ -7,8 +7,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import { prisma } from '@core/database/prisma';
-import { redis } from '@core/cache/redis';
+import { prisma } from '@platform/database/prisma';
+import { redis } from '@platform/cache/redis';
 
 export const dynamic = 'force-dynamic';
 

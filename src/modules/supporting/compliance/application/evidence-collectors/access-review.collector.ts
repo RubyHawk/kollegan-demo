@@ -1,6 +1,6 @@
 // A.8.34 — Protection During Audit: last access review completion date
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { CollectorResult } from '../../domain/evidence.entity';
 
 export async function accessReviewCollector(

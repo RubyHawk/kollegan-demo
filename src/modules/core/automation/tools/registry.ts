@@ -18,7 +18,7 @@
  * Tools are namespaced: '<module>.<action>' e.g. 'hotel.check_availability'
  */
 
-import { logger } from '@core/logging/logger';
+import { logger } from '@platform/logging/logger';
 
 const TAG = 'ToolRegistry';
 

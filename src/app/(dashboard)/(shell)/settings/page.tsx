@@ -1,4 +1,4 @@
-import { getSessionUser } from '@core/auth/session';
+import { getSessionUser } from '@platform/auth/session';
 import { redirect } from 'next/navigation';
 import SettingsClient from './settings-ui';
 

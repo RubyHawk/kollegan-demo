@@ -1,7 +1,7 @@
 /**
  * Voice AI tool handlers — colocated with the voice module.
  *
- * All handlers use createHandler from @core/api which provides:
+ * All handlers use createHandler from @platform/api which provides:
  *   - Vapi JWT authentication
  *   - Rate limiting
  *   - Zod validation (body or query)
@@ -12,7 +12,7 @@
  */
 
 import { z } from 'zod';
-import { createHandler, Errors, ok } from '@core/api';
+import { createHandler, Errors, ok } from '@platform/api';
 import {
   checkAvailability,
   cancelBooking,

@@ -5,7 +5,7 @@
  * Delegates all persistence to identityRepository.
  */
 
-import { logger } from '@core/logging/logger';
+import { logger } from '@platform/logging/logger';
 import type { CreateOrgInput, Organization } from '../domain/organization.entity';
 import { identityRepository } from '../infrastructure/identity.repository';
 

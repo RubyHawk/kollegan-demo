@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@core/database/prisma';
-import { createHandler } from '@core/api/handler';
-import { Errors } from '@core/api/errors';
-import { ok, created } from '@core/api/response';
+import { prisma } from '@platform/database/prisma';
+import { createHandler } from '@platform/api/handler';
+import { Errors } from '@platform/api/errors';
+import { ok, created } from '@platform/api/response';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

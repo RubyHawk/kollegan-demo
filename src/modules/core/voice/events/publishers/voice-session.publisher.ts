@@ -8,8 +8,8 @@
  * Phase 2: hook into actual Vapi session lifecycle.
  */
 
-import { eventBus, EventTypes } from '@core/events';
-import { logger } from '@core/logging/logger';
+import { eventBus, EventTypes } from '@platform/events';
+import { logger } from '@platform/logging/logger';
 
 const DEMO_ORG_ID = process.env.DEMO_ORG_ID ?? 'demo';
 const TAG = 'VoiceSessionPublisher';

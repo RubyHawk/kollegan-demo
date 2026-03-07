@@ -8,8 +8,8 @@
 import bcrypt from 'bcryptjs';
 import { generateSecret, verify as totpVerify, generateURI } from 'otplib';
 import qrcode from 'qrcode';
-import { prisma } from '@core/database/prisma';
-import { logger } from '@core/logging/logger';
+import { prisma } from '@platform/database/prisma';
+import { logger } from '@platform/logging/logger';
 
 const TAG = 'MfaService';
 const BACKUP_CODE_COUNT = 10;

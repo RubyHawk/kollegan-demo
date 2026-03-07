@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { validateVapiAuth } from '@core/auth/vapi-auth';
+import { validateVapiAuth } from '@platform/auth/vapi-auth';
 import { NextRequest } from 'next/server';
 
 function makeRequest(secretHeader?: string): NextRequest {

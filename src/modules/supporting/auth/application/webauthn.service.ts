@@ -18,7 +18,7 @@ import {
   type RegistrationResponseJSON,
   type AuthenticationResponseJSON,
 } from '@simplewebauthn/server';
-import { logger } from '@core/logging/logger';
+import { logger } from '@platform/logging/logger';
 import { webAuthnRepository } from '../infrastructure/webauthn.repository';
 
 const TAG = 'WebAuthnService';
@@ -32,12 +32,12 @@ const CHALLENGE_TTL_SEC = 300;
 // ─── Challenge storage helpers ─────────────────────────────────────────────────
 
 async function storeChallenge(key: string, challenge: string): Promise<void> {
-  const { redis } = await import('@core/cache/redis');
+  const { redis } = await import('@platform/cache/redis');
   await redis.setex(key, CHALLENGE_TTL_SEC, challenge);
 }
 
 async function consumeChallenge(key: string): Promise<string | null> {
-  const { redis } = await import('@core/cache/redis');
+  const { redis } = await import('@platform/cache/redis');
   const challenge = await redis.get(key);
   if (challenge) await redis.del(key);
   return challenge;

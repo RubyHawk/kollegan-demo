@@ -8,8 +8,8 @@
  * Lead conversion creates a Customer record in the CRM module.
  */
 
-import { eventBus } from '@core/events';
-import { logger } from '@core/logging/logger';
+import { eventBus } from '@platform/events';
+import { logger } from '@platform/logging/logger';
 import { leadsRepository } from '../infrastructure/leads.repository';
 import type { CreateLeadInput, UpdateLeadInput, ListLeadsFilter } from '../infrastructure/leads.repository';
 import type { Lead, LeadActivity, LeadStatus } from '../domain/lead.entity';

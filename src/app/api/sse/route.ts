@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
-import { addClient, removeClient } from '@infra/sse/sse-manager';
+import { addClient, removeClient } from '@platform/sse/sse-manager';
 import { getFullState } from '@demos/hotel/infrastructure/room-store';
-import { checkRateLimit } from '@core/cache/rate-limiter';
+import { checkRateLimit } from '@platform/cache/rate-limiter';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

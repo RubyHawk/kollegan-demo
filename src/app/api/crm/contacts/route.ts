@@ -5,11 +5,11 @@
 
 import { z } from 'zod';
 import { NextRequest } from 'next/server';
-import { createHandler } from '@core/api/handler';
-import { ok, created } from '@core/api/response';
-import { Errors } from '@core/api/errors';
-import { verifyToken } from '@core/auth/jwt';
-import { prisma } from '@core/database/prisma';
+import { createHandler } from '@platform/api/handler';
+import { ok, created } from '@platform/api/response';
+import { Errors } from '@platform/api/errors';
+import { verifyToken } from '@platform/auth/jwt';
+import { prisma } from '@platform/database/prisma';
 
 // ─── GET ──────────────────────────────────────────────────────────────────────
 

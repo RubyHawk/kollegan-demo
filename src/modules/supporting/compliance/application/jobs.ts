@@ -12,8 +12,8 @@
  *   stay identical — just add { repeat: { pattern: '0 2 * * *' } }.
  */
 
-import { prisma }   from '@core/database/prisma';
-import { logger }   from '@core/logging/logger';
+import { prisma }   from '@platform/database/prisma';
+import { logger }   from '@platform/logging/logger';
 import { collectAllEvidence } from './evidence.service';
 
 const TAG = 'ComplianceJobs';

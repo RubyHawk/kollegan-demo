@@ -26,3 +26,19 @@ export {
 export { buildEvidencePackage } from './application/report.service';
 
 export { registerComplianceJobs } from './application/jobs';
+
+// ── API Handlers ─────────────────────────────────────────────────────────────
+export {
+  handleListControls,
+  handleControlEvidence,
+  handleCollectEvidence,
+  handleComplianceReport,
+  handleListRisks,
+  handleCreateRisk,
+  handleUpdateRisk,
+  handleDeleteRisk,
+  handleListPolicies,
+  handleCreatePolicy,
+  handleUpdatePolicy,
+  handleDeletePolicy,
+} from './api/handlers/compliance.handler';

@@ -1,7 +1,7 @@
 // ─── User repository ──────────────────────────────────────────────────────────
 // All User / Role / Permission DB queries. No business logic here.
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { User, CreateUserInput } from '../domain/user.entity';
 
 function mapUser(raw: {

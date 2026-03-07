@@ -1,6 +1,6 @@
 // A.8.5 — Secure Authentication: MFA adoption rate for staff users
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { CollectorResult } from '../../domain/evidence.entity';
 
 export async function mfaAdoptionCollector(

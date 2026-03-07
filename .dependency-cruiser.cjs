@@ -7,10 +7,11 @@
  * Install: npm install --save-dev dependency-cruiser
  *
  * Dependency hierarchy:
- *   demos      → can import modules, core, infrastructure, shared
- *   generic    → can import supporting, core, infrastructure, shared
- *   supporting → can import core, infrastructure, shared
- *   core       → can import infrastructure, shared only
+ *   demos      → can import modules, core, platform, shared
+ *   generic    → can import supporting, core, platform, shared
+ *   supporting → can import core, platform, shared
+ *   core       → can import platform, shared only
+ *   platform   → can import shared only (no module deps)
  */
 
 /** @type {import('dependency-cruiser').IConfiguration} */
@@ -22,7 +23,7 @@ module.exports = {
       name: 'core-no-supporting',
       severity: 'error',
       comment:
-        'Core domains (automation, voice) must not depend on supporting domains (crm, leads, identity, offers). ' +
+        'Core domains (automation, voice) must not depend on supporting domains (crm, leads, identity, offers, etc.). ' +
         'Use the event bus with string event types instead.',
       from: {
         path: '^src/modules/core',
@@ -35,12 +36,12 @@ module.exports = {
       name: 'core-no-generic',
       severity: 'error',
       comment:
-        'Core domains must not depend on generic domains (team-hub, dashboard) or demos (hotel).',
+        'Core domains must not depend on generic domains (team-hub, dashboard, projects) or demos.',
       from: {
         path: '^src/modules/core',
       },
       to: {
-        path: ['^src/modules/generic', '^src/demos'],
+        path: ['^src/modules/generic', '^src/modules/demos'],
       },
     },
 
@@ -49,7 +50,7 @@ module.exports = {
       name: 'supporting-no-generic',
       severity: 'error',
       comment:
-        'Supporting domains (crm, leads, identity) must not depend on generic domains (team-hub, dashboard). ' +
+        'Supporting domains must not depend on generic domains. ' +
         'Use the event bus for cross-domain communication.',
       from: {
         path: '^src/modules/supporting',
@@ -64,7 +65,7 @@ module.exports = {
       comment:
         'Supporting modules must not import directly from each other. ' +
         'Cross-supporting communication must go through domain events (event bus). ' +
-        'Exception: the known voice→crm violation in core/voice/register.ts is tracked for Phase 5 refactor.',
+        'Exception: auth handlers import audit for audit logging.',
       from: {
         path: '^src/modules/supporting/([^/]+)',
       },
@@ -74,16 +75,42 @@ module.exports = {
       },
     },
     {
+      name: 'supporting-no-demos',
+      severity: 'error',
+      comment:
+        'Supporting modules must not depend on demo modules.',
+      from: {
+        path: '^src/modules/supporting',
+      },
+      to: {
+        path: '^src/modules/demos',
+      },
+    },
+    {
       name: 'generic-no-demos',
       severity: 'warn',
       comment:
         'Generic modules should not import from demo verticals. ' +
-        'Move shared types (e.g. ActivityEvent) to a shared/ location or the owning module\'s index.ts.',
+        'Move shared types to a shared/ location or the owning module\'s index.ts.',
       from: {
         path: '^src/modules/generic',
       },
       to: {
-        path: '^src/demos',
+        path: '^src/modules/demos',
+      },
+    },
+
+    // ─── Platform isolation ─────────────────────────────────────────────────────
+    {
+      name: 'platform-no-modules',
+      severity: 'error',
+      comment:
+        'Platform layer must not import from any business modules or demos.',
+      from: {
+        path: '^src/platform',
+      },
+      to: {
+        path: ['^src/modules'],
       },
     },
 
@@ -98,7 +125,7 @@ module.exports = {
         path: '^src/shared',
       },
       to: {
-        path: ['^src/modules', '^src/demos'],
+        path: ['^src/modules'],
       },
     },
 
@@ -132,7 +159,7 @@ module.exports = {
         collapsePattern: 'node_modules/[^/]+',
       },
       archi: {
-        collapsePattern: '^(node_modules|src/(shared|infrastructure))/[^/]+',
+        collapsePattern: '^(node_modules|src/(shared|platform))/[^/]+',
       },
     },
   },

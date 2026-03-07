@@ -13,7 +13,7 @@
 import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
 import { createLead } from '@modules/supporting/leads';
-import { logger } from '@core/logging/logger';
+import { logger } from '@platform/logging/logger';
 
 const TAG = 'N8nLeadsWebhook';
 const DEMO_ORG_ID = process.env.DEMO_ORG_ID ?? 'demo';

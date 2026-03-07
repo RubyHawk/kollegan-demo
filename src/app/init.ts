@@ -13,7 +13,7 @@
 import { registerVoiceTools }          from '@modules/core/voice/register';
 import { registerAutomationListeners } from '@modules/core/automation/events/subscribers/domain-events.subscriber';
 import { registerComplianceJobs }      from '@modules/supporting/compliance';
-import { logger }                      from '@core/logging/logger';
+import { logger }                      from '@platform/logging/logger';
 
 let initialized = false;
 

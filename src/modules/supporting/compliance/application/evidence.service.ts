@@ -6,7 +6,7 @@
  * append-only snapshot.
  */
 
-import { logger } from '@core/logging/logger';
+import { logger } from '@platform/logging/logger';
 import { controlRepository }  from '../infrastructure/control.repository';
 import { evidenceRepository } from '../infrastructure/evidence.repository';
 import type { CollectorResult } from '../domain/evidence.entity';
