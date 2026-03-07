@@ -370,6 +370,17 @@ export function FileTextIcon({ size = DEFAULT_SIZE, className, strokeWidth = DEF
   );
 }
 
+export function ReceiptIcon({ size = DEFAULT_SIZE, className, strokeWidth = DEFAULT_STROKE }: IconProps) {
+  return (
+    <svg {...svgProps(size, strokeWidth)} className={className}>
+      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z" />
+      <line x1="8" y1="9" x2="16" y2="9" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="12" y2="17" />
+    </svg>
+  );
+}
+
 export function FolderIcon({ size = DEFAULT_SIZE, className, strokeWidth = DEFAULT_STROKE }: IconProps) {
   return (
     <svg {...svgProps(size, strokeWidth)} className={className}>
