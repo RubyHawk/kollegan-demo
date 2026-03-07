@@ -888,6 +888,10 @@ export default function Sidebar({
   const pathname      = usePathname();
   const reducedMotion = useReducedMotion() ?? false;
   const [openDropdowns, setOpenDropdowns] = useState<string[]>([]);
+  const [mounted, setMounted]             = useState(false);
+
+  // Defer active-state computation to client to avoid SSR/client pathname mismatch
+  useEffect(() => { setMounted(true); }, []);
 
   // Restore dropdown state from localStorage
   useEffect(() => {
@@ -960,7 +964,7 @@ export default function Sidebar({
                 collapsed={collapsed}
                 openDropdowns={openDropdowns}
                 onToggleDropdown={toggleDropdown}
-                pathname={pathname}
+                pathname={mounted ? pathname : ''}
                 userRole={user.role}
                 reducedMotion={reducedMotion}
                 onMobileClose={onMobileClose}
