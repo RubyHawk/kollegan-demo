@@ -1,0 +1,58 @@
+// ─── Offers / Quotation Builder ───────────────────────────────────────────────
+// Supporting domain. Table prefix: off_*
+
+model Offer {
+  id               String    @id @default(uuid())
+  organizationId   String
+  title            String
+  status           String    @default("draft") // draft | sent | viewed | accepted | declined | expired
+  recipientName    String
+  recipientEmail   String
+  recipientCompany String?
+  notes            String?
+  validUntil       DateTime
+  createdBy        String    // User.id
+
+  // Computed totals (SEK, stored for fast list queries)
+  totalExVat  Float @default(0)
+  totalIncVat Float @default(0)
+
+  // Lifecycle timestamps
+  sentAt     DateTime?
+  viewedAt   DateTime?
+  acceptedAt DateTime?
+  declinedAt DateTime?
+
+  // Cross-domain links
+  leadId     String?   // lead_leads.id
+  customerId String?   // crm_customers.id
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  lineItems    OfferLineItem[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, recipientEmail])
+  @@index([deletedAt])
+  @@map("off_offers")
+}
+
+model OfferLineItem {
+  id          String  @id @default(uuid())
+  offerId     String
+  description String
+  quantity    Float
+  unitPrice   Float              // SEK, ex VAT
+  vatRate     Float  @default(0.25) // 0.25 = 25%
+  discount    Float? @default(0)   // percentage 0–100
+  sortOrder   Int    @default(0)
+
+  offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([offerId])
+  @@map("off_line_items")
+}

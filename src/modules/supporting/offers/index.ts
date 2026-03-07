@@ -1,17 +1,38 @@
 /**
- * Offer / Quotation Builder Module
+ * Offer / Quotation Builder Module — public interface.
  *
- * Status: PLANNED — not yet implemented.
- *
- * To add this module:
- * 1. Create Prisma models: Offer, OfferLineItem
- * 2. Add API routes under /api/offers/
- * 3. Build OfferBuilder component (line-item editor with preview)
- * 4. Add PDF generation (react-pdf or puppeteer)
- * 5. Add email delivery via n8n or direct SMTP
- * 6. Register in DashboardSidebar NAV_ITEMS
- *
- * See docs/ARCHITECTURE.md for the full ERP module roadmap.
+ * Other modules ONLY import from this file.
  */
 
+// Domain types
 export type { Offer, OfferLineItem, OfferStatus } from './domain/offer.entity';
+
+// Application use cases
+export {
+  createOffer,
+  getOffer,
+  listOffers,
+  updateOffer,
+  sendOffer,
+  acceptOffer,
+  declineOffer,
+  deleteOffer,
+} from './application/offers.service';
+export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter } from './application/offers.service';
+
+// Domain events
+export {
+  OFFER_CREATED,
+  OFFER_SENT,
+  OFFER_VIEWED,
+  OFFER_ACCEPTED,
+  OFFER_DECLINED,
+  OFFER_EXPIRED,
+} from './events/offer.events';
+export type {
+  OfferEvent,
+  OfferCreatedEvent,
+  OfferSentEvent,
+  OfferAcceptedEvent,
+  OfferDeclinedEvent,
+} from './events/offer.events';
