@@ -15,13 +15,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@':              resolve(__dirname, 'src'),
-      '@core':          resolve(__dirname, 'src/core'),
-      '@demos':         resolve(__dirname, 'src/demos'),
+      '@platform':      resolve(__dirname, 'src/platform'),
+      '@demos':         resolve(__dirname, 'src/modules/demos'),
       '@modules/core':  resolve(__dirname, 'src/modules/core'),
       '@modules/supporting': resolve(__dirname, 'src/modules/supporting'),
       '@modules/generic': resolve(__dirname, 'src/modules/generic'),
       '@shared':        resolve(__dirname, 'src/shared'),
-      '@infra':         resolve(__dirname, 'src/infrastructure'),
     },
   },
 });

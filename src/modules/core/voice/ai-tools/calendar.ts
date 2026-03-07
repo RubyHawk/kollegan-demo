@@ -4,9 +4,9 @@ import {
   updateCalendarEvent,
   listCalendarEvents,
   isCalendarConfigured,
-} from '@infra/calendar/google-calendar';
-import type { CalendarEventInput, CalendarEventSummary } from '@infra/calendar/google-calendar';
-import { withRetry } from '@core/resilience/with-retry';
+} from '@platform/calendar/google-calendar';
+import type { CalendarEventInput, CalendarEventSummary } from '@platform/calendar/google-calendar';
+import { withRetry } from '@platform/resilience/with-retry';
 
 export type { CalendarEventInput, CalendarEventSummary };
 

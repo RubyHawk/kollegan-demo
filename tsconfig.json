@@ -22,17 +22,16 @@
       "@/*": ["./src/*"],
 
       // ── Demos ─────────────────────────────────────────────────────────────
-      "@demos/*": ["./src/demos/*"],
+      "@demos/*": ["./src/modules/demos/*"],
 
       // ── Canonical module aliases ───────────────────────────────────────────
       "@modules/core/*": ["./src/modules/core/*"],
       "@modules/supporting/*": ["./src/modules/supporting/*"],
       "@modules/generic/*": ["./src/modules/generic/*"],
 
-      // ── Infrastructure and shared ─────────────────────────────────────────
+      // ── Platform and shared ──────────────────────────────────────────────
       "@shared/*": ["./src/shared/*"],
-      "@infra/*": ["./src/infrastructure/*"],
-      "@core/*": ["./src/core/*"]
+      "@platform/*": ["./src/platform/*"]
     }
   },
   "include": [

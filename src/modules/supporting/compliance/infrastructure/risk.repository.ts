@@ -1,4 +1,4 @@
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { ComplianceRisk, CreateRiskInput, UpdateRiskInput } from '../domain/risk.entity';
 
 type RiskRow = {

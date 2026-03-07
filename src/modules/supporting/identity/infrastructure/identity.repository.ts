@@ -5,7 +5,7 @@
  * Identity service calls these methods; route handlers do not.
  */
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { CreateOrgInput, Organization } from '../domain/organization.entity';
 
 function toOrg(raw: {

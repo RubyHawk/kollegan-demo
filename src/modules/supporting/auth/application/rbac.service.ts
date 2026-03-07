@@ -8,8 +8,8 @@
  * Invalidated on any RolePermission change (call invalidatePermissionCache()).
  */
 
-import { prisma } from '@core/database/prisma';
-import { logger } from '@core/logging/logger';
+import { prisma } from '@platform/database/prisma';
+import { logger } from '@platform/logging/logger';
 
 const TAG = 'RbacService';
 const CACHE_TTL_SEC = 300; // 5 minutes
@@ -43,7 +43,7 @@ async function getPermissions(roleNames: string[]): Promise<Set<string>> {
   const cacheKey = `perms:${roleNames.slice().sort().join(',')}`;
 
   try {
-    const { redis } = await import('@core/cache/redis');
+    const { redis } = await import('@platform/cache/redis');
     const cached = await redis.get(cacheKey);
     if (cached) {
       return new Set(JSON.parse(cached) as string[]);
@@ -79,7 +79,7 @@ export async function hasPermission(
 export async function invalidatePermissionCache(roleNames: string[]): Promise<void> {
   const cacheKey = `perms:${roleNames.slice().sort().join(',')}`;
   try {
-    const { redis } = await import('@core/cache/redis');
+    const { redis } = await import('@platform/cache/redis');
     await redis.del(cacheKey);
   } catch {
     logger.warn(TAG, 'Failed to invalidate permission cache', { roleNames });

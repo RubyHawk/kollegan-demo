@@ -1,6 +1,6 @@
 // A.8.15 — Logging: audit log health check (row count, recency)
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { CollectorResult } from '../../domain/evidence.entity';
 
 export async function auditLogHealthCollector(

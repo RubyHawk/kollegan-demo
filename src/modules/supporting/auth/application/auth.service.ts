@@ -18,15 +18,15 @@
  */
 
 import bcrypt from 'bcryptjs';
-import { prisma } from '@core/database/prisma';
-import { logger } from '@core/logging/logger';
+import { prisma } from '@platform/database/prisma';
+import { logger } from '@platform/logging/logger';
 import {
   signAccessToken,
   signRefreshToken,
   blacklistUserTokens,
   generateOpaqueToken,
   hashOpaqueToken,
-} from '@core/auth/jwt';
+} from '@platform/auth/jwt';
 import { userRepository } from '../infrastructure/user.repository';
 import { sessionRepository } from '../infrastructure/session.repository';
 import type { User } from '../domain/user.entity';

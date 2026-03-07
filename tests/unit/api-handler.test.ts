@@ -17,19 +17,19 @@ import { z } from 'zod';
 
 // ─── Mocks (hoisted so vi.mock factory runs before imports) ────────────────────
 
-vi.mock('@core/auth/vapi-auth', () => ({
+vi.mock('@platform/auth/vapi-auth', () => ({
   validateVapiAuth: vi.fn(),
 }));
 
-vi.mock('@core/auth/jwt', () => ({
+vi.mock('@platform/auth/jwt', () => ({
   verifyToken: vi.fn(),
 }));
 
-vi.mock('@core/cache/rate-limiter', () => ({
+vi.mock('@platform/cache/rate-limiter', () => ({
   checkRateLimit: vi.fn(),
 }));
 
-vi.mock('@core/logging/logger', () => ({
+vi.mock('@platform/logging/logger', () => ({
   logger: {
     info:  vi.fn(),
     warn:  vi.fn(),
@@ -39,12 +39,12 @@ vi.mock('@core/logging/logger', () => ({
 
 // ─── Imports (after mocks) ─────────────────────────────────────────────────────
 
-import { createHandler } from '@core/api/handler';
-import { ok, created, paginated, noContent } from '@core/api/response';
-import { Errors } from '@core/api/errors';
-import { validateVapiAuth } from '@core/auth/vapi-auth';
-import { verifyToken, type JWTPayload } from '@core/auth/jwt';
-import { checkRateLimit, type RateLimitResult } from '@core/cache/rate-limiter';
+import { createHandler } from '@platform/api/handler';
+import { ok, created, paginated, noContent } from '@platform/api/response';
+import { Errors } from '@platform/api/errors';
+import { validateVapiAuth } from '@platform/auth/vapi-auth';
+import { verifyToken, type JWTPayload } from '@platform/auth/jwt';
+import { checkRateLimit, type RateLimitResult } from '@platform/cache/rate-limiter';
 
 // ─── Test helpers ──────────────────────────────────────────────────────────────
 

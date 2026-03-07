@@ -13,12 +13,12 @@
  * ARCHITECTURE NOTE: This file must NEVER import from other feature modules
  * (hotel, crm, leads, etc.). Automation is a core domain — it depends on
  * zero supporting or generic modules. Subscribe by event type string only;
- * use DomainEvent and EventTypes from @core/events for typing.
+ * use DomainEvent and EventTypes from @platform/events for typing.
  */
 
-import { eventBus, EventTypes } from '@core/events';
-import { logger }               from '@core/logging/logger';
-import type { DomainEvent }     from '@core/events';
+import { eventBus, EventTypes } from '@platform/events';
+import { logger }               from '@platform/logging/logger';
+import type { DomainEvent }     from '@platform/events';
 
 const TAG = 'AutomationListeners';
 

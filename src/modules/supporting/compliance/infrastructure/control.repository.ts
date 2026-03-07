@@ -1,6 +1,6 @@
 // Read-only repository — cmp_controls is seeded data, never mutated at runtime.
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { ComplianceControl } from '../domain/control.entity';
 
 function toEntity(raw: {

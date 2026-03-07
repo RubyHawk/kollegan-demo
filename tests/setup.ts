@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 
 // ── Mock Prisma ───────────────────────────────────────────────────────────────
-vi.mock('@core/database/prisma', () => ({
+vi.mock('@platform/database/prisma', () => ({
   prisma: {
     customer:      { findFirst: vi.fn(), create: vi.fn(), upsert: vi.fn() },
     booking:       { updateMany: vi.fn() },
@@ -11,7 +11,7 @@ vi.mock('@core/database/prisma', () => ({
 }));
 
 // ── Mock Redis ────────────────────────────────────────────────────────────────
-vi.mock('@core/cache/redis', () => ({
+vi.mock('@platform/cache/redis', () => ({
   redis: {
     pipeline: vi.fn(() => ({
       zadd:            vi.fn().mockReturnThis(),
@@ -65,7 +65,7 @@ vi.mock('@demos/hotel/infrastructure/room-store', () => ({
 }));
 
 // ── Mock Google Calendar ──────────────────────────────────────────────────────
-vi.mock('@infra/calendar/google-calendar', () => ({
+vi.mock('@platform/calendar/google-calendar', () => ({
   isCalendarConfigured: vi.fn(() => false),
   createCalendarEvent:  vi.fn().mockResolvedValue('mock-event-id'),
   deleteCalendarEvent:  vi.fn().mockResolvedValue(true),

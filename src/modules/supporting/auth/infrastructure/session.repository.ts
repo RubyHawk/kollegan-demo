@@ -2,7 +2,7 @@
 // Phase 2: refreshTokenJti replaced by refreshTokenHash (SHA-256 of opaque token).
 // Phase 2 fix: mfaMethod added to preserve which MFA method was used across refreshes.
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { Session, CreateSessionInput, MfaMethod } from '../domain/session.entity';
 
 export const sessionRepository = {

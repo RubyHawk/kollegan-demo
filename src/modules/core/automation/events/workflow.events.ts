@@ -1,8 +1,8 @@
-import type { DomainEvent } from '@core/events';
-import { EventTypes } from '@core/events';
+import type { DomainEvent } from '@platform/events';
+import { EventTypes } from '@platform/events';
 
 // ─── Event type constants ───────────────────────────────────────────────────────
-// Format: automation.workflow.{verb} — matches EventTypes registry in @core/events
+// Format: automation.workflow.{verb} — matches EventTypes registry in @platform/events
 
 export const WORKFLOW_TRIGGERED = EventTypes.WORKFLOW_TRIGGERED;      // 'automation.workflow.triggered'
 export const WORKFLOW_COMPLETED = EventTypes.WORKFLOW_COMPLETED;      // 'automation.workflow.completed'

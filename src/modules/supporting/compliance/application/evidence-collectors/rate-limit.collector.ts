@@ -1,6 +1,6 @@
 // A.8.6 — Capacity Management: Redis-backed rate limiting configuration snapshot
 
-import { redis } from '@core/cache/redis';
+import { redis } from '@platform/cache/redis';
 import type { CollectorResult } from '../../domain/evidence.entity';
 
 // Mirrors the rate limit config defined in route handlers.

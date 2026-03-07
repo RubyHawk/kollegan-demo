@@ -1,4 +1,4 @@
-import { getSessionUser } from '@core/auth/session';
+import { getSessionUser } from '@platform/auth/session';
 import Link from 'next/link';
 
 export default async function OverviewPage() {

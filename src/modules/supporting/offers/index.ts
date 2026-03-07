@@ -36,3 +36,12 @@ export type {
   OfferAcceptedEvent,
   OfferDeclinedEvent,
 } from './events/offer.events';
+
+// ── API Handlers ─────────────────────────────────────────────────────────────
+export {
+  handleListOffers,
+  handleCreateOffer,
+  handleGetOffer,
+  handleUpdateOffer,
+  handleDeleteOffer,
+} from './api/handlers/offer.handler';

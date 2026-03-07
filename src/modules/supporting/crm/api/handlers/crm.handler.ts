@@ -1,7 +1,7 @@
 /**
  * CRM API handlers — colocated with the CRM module.
  *
- * All Vapi-facing handlers use createHandler from @core/api which provides:
+ * All Vapi-facing handlers use createHandler from @platform/api which provides:
  *   - Vapi JWT authentication
  *   - Rate limiting
  *   - Zod validation
@@ -11,7 +11,7 @@
  */
 
 import { z } from 'zod';
-import { createHandler, ok } from '@core/api';
+import { createHandler, ok } from '@platform/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { lookupCustomer, updateCrm, startCallTranscript } from '../../application/crm.service';
 

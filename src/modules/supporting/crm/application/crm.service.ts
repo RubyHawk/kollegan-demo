@@ -1,6 +1,6 @@
-import { logger } from '@core/logging/logger';
-import { eventBus } from '@core/events';
-import { logActivity } from '@demos/hotel/infrastructure/room-store'; // TODO: extract to shared @infra/activity
+import { logger } from '@platform/logging/logger';
+import { eventBus } from '@platform/events';
+import { logActivity } from '@demos/hotel/infrastructure/room-store'; // TODO: extract to shared @platform/activity
 import {
   findCustomerByPhone,
   findCustomerByName,

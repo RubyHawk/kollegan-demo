@@ -46,3 +46,20 @@ export type {
   UserLoggedOutEvent,
   UserLoginFailedEvent,
 } from './events/auth.events';
+
+// ── API Handlers ─────────────────────────────────────────────────────────────
+export { handleLogin, handleLogout, handleRefresh, handleRegister } from './api/handlers/auth.handler';
+export {
+  handleMfaSetup,
+  handleMfaEnable,
+  handleMfaDisable,
+  handleBackupCodeCount,
+  handleRegenerateBackupCodes,
+  handleMfaVerify,
+} from './api/handlers/mfa.handler';
+export {
+  handleRegisterOptions,
+  handleRegisterVerify,
+  handleAuthenticateOptions,
+  handleAuthenticateVerify,
+} from './api/handlers/webauthn.handler';

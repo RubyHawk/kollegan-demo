@@ -1,5 +1,5 @@
-import { logger }    from '@core/logging/logger';
-import { eventBus }  from '@core/events';
+import { logger }    from '@platform/logging/logger';
+import { eventBus }  from '@platform/events';
 import { offersRepository } from '../infrastructure/offers.repository';
 import type { CreateOfferInput, UpdateOfferInput, ListOffersFilter } from '../infrastructure/offers.repository';
 import type { Offer } from '../domain/offer.entity';

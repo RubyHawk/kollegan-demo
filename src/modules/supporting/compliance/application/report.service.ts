@@ -4,7 +4,7 @@
  * certified auditor (BSI, Bureau Veritas, etc.).
  */
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import { controlRepository }  from '../infrastructure/control.repository';
 import { evidenceRepository } from '../infrastructure/evidence.repository';
 import { riskRepository }     from '../infrastructure/risk.repository';

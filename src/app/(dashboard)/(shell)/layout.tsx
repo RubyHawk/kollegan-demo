@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getSessionUser } from '@core/auth/session';
+import { getSessionUser } from '@platform/auth/session';
 import AppShell from '@shared/ui/app-shell';
 import type { ReactNode } from 'react';
 

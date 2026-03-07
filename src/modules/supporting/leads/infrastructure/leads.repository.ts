@@ -1,7 +1,7 @@
 // ─── Leads repository ─────────────────────────────────────────────────────────
 // All Prisma access for the leads module goes through this file.
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { Lead, LeadActivity, LeadStatus, LeadSource } from '../domain/lead.entity';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

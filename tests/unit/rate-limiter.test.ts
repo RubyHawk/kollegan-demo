@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { checkRateLimit } from '@core/cache/rate-limiter';
+import { checkRateLimit } from '@platform/cache/rate-limiter';
 
 describe('checkRateLimit', () => {
   beforeEach(() => {
@@ -15,7 +15,7 @@ describe('checkRateLimit', () => {
   });
 
   it('returns allowed=true on Redis failure (fail-open)', async () => {
-    const { redis } = await import('@core/cache/redis');
+    const { redis } = await import('@platform/cache/redis');
     vi.mocked(redis.pipeline).mockImplementationOnce(() => {
       throw new Error('Redis connection refused');
     });

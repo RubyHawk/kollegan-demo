@@ -2,7 +2,7 @@
 // CRITICAL: append-only. This repository must NEVER expose update or delete methods.
 // Evidence snapshots are the tamper-evident audit trail for ISO 27001 auditors.
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { ComplianceEvidence, CreateEvidenceInput } from '../domain/evidence.entity';
 
 type EvidenceRow = {

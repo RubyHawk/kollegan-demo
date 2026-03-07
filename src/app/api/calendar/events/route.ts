@@ -1,5 +1,5 @@
-import { isCalendarConfigured } from '@infra/calendar/google-calendar';
-import { createHandler, ok } from '@core/api';
+import { isCalendarConfigured } from '@platform/calendar/google-calendar';
+import { createHandler, ok } from '@platform/api';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

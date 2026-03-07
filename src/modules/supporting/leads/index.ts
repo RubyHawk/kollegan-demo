@@ -25,3 +25,15 @@ export {
   LEAD_CONVERTED,
   LEAD_ASSIGNED,
 } from './events/lead.events';
+
+// ── API Handlers ─────────────────────────────────────────────────────────────
+export {
+  handleListLeads,
+  handleCreateLead,
+  handleGetLead,
+  handleUpdateLead,
+  handleDeleteLead,
+  handleListActivities,
+  handleAddActivity,
+  handleConvertLead,
+} from './api/handlers/leads.handler';

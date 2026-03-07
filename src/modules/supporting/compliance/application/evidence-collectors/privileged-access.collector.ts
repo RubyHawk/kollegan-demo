@@ -1,6 +1,6 @@
 // A.8.2 — Privileged Access Rights: admin user count and privilege changes
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { CollectorResult } from '../../domain/evidence.entity';
 
 export async function privilegedAccessCollector(

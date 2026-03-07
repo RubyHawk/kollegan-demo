@@ -6,7 +6,7 @@
  * extract them here so the service only deals with business logic.
  */
 
-import { eventBus } from '@core/events';
+import { eventBus } from '@platform/events';
 import type { CrmContactUpsertedEvent, CrmRecordCreatedEvent } from '../contact.events';
 import { CRM_CONTACT_UPSERTED, CRM_RECORD_CREATED } from '../contact.events';
 

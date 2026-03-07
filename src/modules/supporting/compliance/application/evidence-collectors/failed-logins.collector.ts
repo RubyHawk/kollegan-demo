@@ -1,6 +1,6 @@
 // A.8.16 — Monitoring Activities: failed login attempts in last 30 days
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { CollectorResult } from '../../domain/evidence.entity';
 
 export async function failedLoginsCollector(

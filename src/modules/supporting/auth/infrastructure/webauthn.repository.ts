@@ -2,7 +2,7 @@
 // Prisma 7 returns BYTEA columns as Uint8Array<ArrayBuffer>.
 // @simplewebauthn/server v13 expects Uint8Array for credential bytes.
 
-import { prisma } from '@core/database/prisma';
+import { prisma } from '@platform/database/prisma';
 import type { WebAuthnCredential, CreateWebAuthnCredentialInput } from '../domain/webauthn.entity';
 
 type PrismaRow = {

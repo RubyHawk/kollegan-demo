@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { signAccessToken } from '@core/auth/jwt';
+import { signAccessToken } from '@platform/auth/jwt';
 
 const ACCESS_TTL_SEC = 60 * 60 * 24; // 24 h — convenient for dev sessions
 
