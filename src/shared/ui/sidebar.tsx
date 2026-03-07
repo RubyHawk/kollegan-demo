@@ -138,6 +138,7 @@ const NAV_CONFIG: NavSection[] = [
       { type: 'link', href: '/offers',         label: 'Offers',        icon: ReceiptIcon },
       { type: 'link', href: '/announcements',  label: 'Announcements', icon: NoteIcon },
       { type: 'link', href: '/meetings',       label: 'Meetings',      icon: CalendarIcon },
+      { type: 'link', href: '/admin/compliance', label: 'ISO 27001',   icon: ShieldIcon },
     ],
   },
   {
@@ -157,7 +158,6 @@ const NAV_CONFIG: NavSection[] = [
           { href: '/settings/integrations', label: 'Integrations' },
         ],
       },
-      { type: 'link', href: '/admin/compliance', label: 'Compliance', icon: ShieldIcon, adminOnly: true },
     ],
   },
   {
