@@ -1,0 +1,56 @@
+// ─── Internal Messaging ───────────────────────────────────────────────────────
+// Table prefix: msg_*
+
+model Conversation {
+  id             String   @id @default(uuid())
+  organizationId String
+  title          String?
+  type           String   @default("direct") // direct | group | channel
+  createdBy      String   // User.id
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  organization  Organization      @relation(fields: [organizationId], references: [id])
+  messages      DirectMessage[]
+  participants  ConversationParticipant[]
+
+  @@index([organizationId, updatedAt])
+  @@index([deletedAt])
+  @@map("msg_conversations")
+}
+
+model ConversationParticipant {
+  id             String   @id @default(uuid())
+  conversationId String
+  userId         String   // User.id
+  joinedAt       DateTime @default(now())
+  lastReadAt     DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@map("msg_participants")
+}
+
+model DirectMessage {
+  id             String   @id @default(uuid())
+  conversationId String
+  organizationId String
+  senderId       String   // User.id or 'system'
+  senderName     String
+  body           String
+  type           String   @default("text") // text | system | transcript_ref
+  refId          String?  // e.g. CallTranscript.id when type=transcript_ref
+  createdAt      DateTime @default(now())
+  editedAt       DateTime?
+  deletedAt      DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([organizationId, createdAt])
+  @@index([deletedAt])
+  @@map("msg_messages")
+}
