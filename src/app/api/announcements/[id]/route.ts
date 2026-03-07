@@ -9,7 +9,9 @@ import { createHandler } from '@core/api/handler';
 import { ok, noContent } from '@core/api/response';
 import { Errors } from '@core/api/errors';
 import { verifyToken } from '@core/auth/jwt';
-import { prisma } from '@core/database/prisma';
+import { prisma as _prisma } from '@core/database/prisma';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const prisma = _prisma as any;
 
 function extractId(req: NextRequest): string {
   const parts = new URL(req.url).pathname.split('/');
