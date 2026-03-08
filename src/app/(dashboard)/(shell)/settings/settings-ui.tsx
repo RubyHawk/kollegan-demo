@@ -17,6 +17,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@shared/lib/utils';
 import { SPRING_SNAPPY, EASE_SPRING } from '@shared/lib/motion';
+import { Tabs, TabsList, TabsTab, TabsPanel } from '@shared/ui/tabs';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1016,8 +1017,6 @@ function SakerhetTab({ user }: { user: UserProps }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function SettingsClient({ user }: SettingsClientProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('profil');
-
   const displayName =
     [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
   const initials = displayName
@@ -1046,50 +1045,23 @@ export default function SettingsClient({ user }: SettingsClientProps) {
         </div>
       </div>
 
-      {/* ── Horizontal tab bar ── */}
-      <nav
-        aria-label="Inställningssektioner"
-        className="flex border-b border-[var(--border)] mb-5 overflow-x-auto scrollbar-none"
-      >
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              'flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap shrink-0',
-              'border-b-2 -mb-px transition-all duration-150',
-              'focus:outline-none',
-              activeTab === tab.id
-                ? 'border-[var(--accent)] text-[var(--accent)]'
-                : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border)]',
-            )}
-          >
-            <span className={cn(
-              'shrink-0 transition-colors duration-150',
-              activeTab === tab.id ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]',
-            )}>
-              {tab.icon}
-            </span>
-            {tab.label}
-          </button>
-        ))}
-      </nav>
+      {/* ── Tabs ── */}
+      <Tabs defaultValue="profil">
+        <div className="border-b border-[var(--border)] mb-5">
+          <TabsList>
+            {TABS.map((tab) => (
+              <TabsTab key={tab.id} value={tab.id} icon={tab.icon}>
+                {tab.label}
+              </TabsTab>
+            ))}
+          </TabsList>
+        </div>
 
-      {/* ── Tab content ── */}
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.16, ease: EASE_SPRING }}
-        >
-          {activeTab === 'profil'        && <ProfilTab user={user} />}
-          {activeTab === 'utseende'      && <UtseendeTab />}
-          {activeTab === 'anslutningar'  && <AnslutningarTab />}
-          {activeTab === 'sakerhet'      && <SakerhetTab user={user} />}
-        </motion.div>
-      </AnimatePresence>
+        <TabsPanel value="profil"><ProfilTab user={user} /></TabsPanel>
+        <TabsPanel value="utseende"><UtseendeTab /></TabsPanel>
+        <TabsPanel value="anslutningar"><AnslutningarTab /></TabsPanel>
+        <TabsPanel value="sakerhet"><SakerhetTab user={user} /></TabsPanel>
+      </Tabs>
     </div>
   );
 }
