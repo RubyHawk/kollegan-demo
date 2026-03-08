@@ -1025,7 +1025,7 @@ export default function SettingsClient({ user }: SettingsClientProps) {
     .toUpperCase();
 
   return (
-    <div className="px-4 sm:px-8 py-6 max-w-3xl mx-auto w-full">
+    <div className="px-4 sm:px-8 py-6 max-w-4xl mx-auto w-full">
       {/* Page header */}
       <div className="mb-5">
         <div className="flex items-center gap-4">

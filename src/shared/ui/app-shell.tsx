@@ -151,7 +151,7 @@ export default function AppShell({ user, children }: Props) {
         {/* Desktop topbar with breadcrumbs */}
         {topbar}
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto scrollbar-none">
           {children}
         </main>
       </div>

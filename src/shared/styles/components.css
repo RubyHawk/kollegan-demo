@@ -258,6 +258,15 @@ table td {
   background: var(--surface-alt);
 }
 
+/* Hide scrollbar but keep scroll */
+.scrollbar-none {
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE/Edge */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;                  /* Chrome/Safari */
+}
+
 /* Smooth scrollbar for calendar */
 .calendar-scroll::-webkit-scrollbar {
   height: 6px;
