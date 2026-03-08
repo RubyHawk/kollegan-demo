@@ -285,17 +285,74 @@ function ProfilTab({ user }: { user: UserProps }) {
 
 // ─── Utseende tab ─────────────────────────────────────────────────────────────
 
-const ACCENT_COLORS = [
-  { id: 'purple', label: 'Lila',    accent: '#6d28d9', light: '#7c3aed' },
-  { id: 'indigo', label: 'Indigo',  accent: '#4338ca', light: '#4f46e5' },
-  { id: 'blue',   label: 'Blå',     accent: '#1d4ed8', light: '#2563eb' },
-  { id: 'teal',   label: 'Teal',    accent: '#0f766e', light: '#0d9488' },
-  { id: 'rose',   label: 'Rosa',    accent: '#be123c', light: '#e11d48' },
-  { id: 'orange', label: 'Orange',  accent: '#c2410c', light: '#ea580c' },
-  { id: 'slate',  label: 'Grå',     accent: '#334155', light: '#475569' },
+const THEMES = [
+  {
+    id: 'default',
+    label: 'Standard',
+    desc: 'Klassisk lila tema',
+    accent: 'oklch(0.44 0.19 285)',
+    light: 'oklch(0.51 0.19 285)',
+    swatches: ['oklch(0.44 0.19 285)', 'oklch(0.51 0.19 285)', 'oklch(0.71 0.14 285)', 'oklch(0.94 0.04 290)'],
+  },
+  {
+    id: 'zinc',
+    label: 'Zinc',
+    desc: 'Ren och neutral',
+    accent: 'oklch(0.21 0.006 285)',
+    light: 'oklch(0.27 0.006 285)',
+    swatches: ['oklch(0.21 0.006 285)', 'oklch(0.37 0.013 285)', 'oklch(0.55 0.014 285)', 'oklch(0.92 0.004 285)'],
+  },
+  {
+    id: 'rose',
+    label: 'Rose',
+    desc: 'Mjuk och varm',
+    accent: 'oklch(0.55 0.22 12)',
+    light: 'oklch(0.64 0.22 15)',
+    swatches: ['oklch(0.55 0.22 12)', 'oklch(0.64 0.22 15)', 'oklch(0.72 0.17 18)', 'oklch(0.94 0.04 10)'],
+  },
+  {
+    id: 'blue',
+    label: 'Blue',
+    desc: 'Professionell och trygg',
+    accent: 'oklch(0.55 0.18 255)',
+    light: 'oklch(0.62 0.18 255)',
+    swatches: ['oklch(0.55 0.18 255)', 'oklch(0.62 0.18 255)', 'oklch(0.72 0.14 255)', 'oklch(0.94 0.04 250)'],
+  },
+  {
+    id: 'green',
+    label: 'Green',
+    desc: 'Frisk och naturlig',
+    accent: 'oklch(0.59 0.16 145)',
+    light: 'oklch(0.67 0.17 150)',
+    swatches: ['oklch(0.59 0.16 145)', 'oklch(0.67 0.17 150)', 'oklch(0.77 0.15 150)', 'oklch(0.95 0.05 148)'],
+  },
+  {
+    id: 'orange',
+    label: 'Orange',
+    desc: 'Energisk och kreativ',
+    accent: 'oklch(0.58 0.16 45)',
+    light: 'oklch(0.68 0.17 50)',
+    swatches: ['oklch(0.58 0.16 45)', 'oklch(0.68 0.17 50)', 'oklch(0.76 0.13 55)', 'oklch(0.95 0.04 60)'],
+  },
+  {
+    id: 'violet',
+    label: 'Violet',
+    desc: 'Modern och elegant',
+    accent: 'oklch(0.51 0.19 293)',
+    light: 'oklch(0.59 0.18 293)',
+    swatches: ['oklch(0.51 0.19 293)', 'oklch(0.59 0.18 293)', 'oklch(0.71 0.14 293)', 'oklch(0.94 0.04 293)'],
+  },
+  {
+    id: 'yellow',
+    label: 'Yellow',
+    desc: 'Ljus och optimistisk',
+    accent: 'oklch(0.63 0.14 85)',
+    light: 'oklch(0.73 0.15 90)',
+    swatches: ['oklch(0.63 0.14 85)', 'oklch(0.73 0.15 90)', 'oklch(0.83 0.14 92)', 'oklch(0.96 0.06 95)'],
+  },
 ] as const;
 
-type AccentColorId = typeof ACCENT_COLORS[number]['id'];
+type ThemeId = typeof THEMES[number]['id'];
 
 const FONT_OPTIONS = [
   {
@@ -329,11 +386,10 @@ type FontId = typeof FONT_OPTIONS[number]['id'];
 function UtseendeTab() {
   const [theme,       setTheme]       = useState<ThemeMode>('auto');
   const [fontSize,    setFontSize]    = useState<FontSize>('medium');
-  const [accentColor, setAccentColor] = useState<AccentColorId>('purple');
+  const [selectedTheme, setSelectedTheme] = useState<ThemeId>('default');
   const [fontFamily,  setFontFamily]  = useState<FontId>('inter');
   const [pending, setPending] = useState(false);
   const [saved,   setSaved]   = useState(false);
-
   // Sync initial state from localStorage
   useEffect(() => {
     try {
@@ -344,8 +400,8 @@ function UtseendeTab() {
       const storedFs = localStorage.getItem('fontSize') as FontSize | null;
       if (storedFs) applyFontSize(storedFs);
 
-      const storedAccent = localStorage.getItem('accentColor') as AccentColorId | null;
-      if (storedAccent && ACCENT_COLORS.some((c) => c.id === storedAccent)) setAccentColor(storedAccent);
+      const storedAccent = localStorage.getItem('accentColor') as ThemeId | null;
+      if (storedAccent && THEMES.some((c) => c.id === storedAccent)) setSelectedTheme(storedAccent);
 
       const storedFont = localStorage.getItem('fontFamily') as FontId | null;
       if (storedFont) {
@@ -369,16 +425,16 @@ function UtseendeTab() {
     } catch { /* ignore */ }
   }
 
-  function applyAccent(color: typeof ACCENT_COLORS[number]) {
-    setAccentColor(color.id);
+  function applySelectedTheme(t: typeof THEMES[number]) {
+    setSelectedTheme(t.id);
     try {
-      document.documentElement.style.setProperty('--accent', color.accent);
-      document.documentElement.style.setProperty('--accent-light', color.light);
-      document.documentElement.style.setProperty('--accent-subtle', color.accent + '14');
-      document.documentElement.style.setProperty('--accent-border', color.accent + '38');
-      localStorage.setItem('accentColor', color.id);
-      localStorage.setItem('accentHex', color.accent);
-      localStorage.setItem('accentLightHex', color.light);
+      document.documentElement.style.setProperty('--accent', t.accent);
+      document.documentElement.style.setProperty('--accent-light', t.light);
+      document.documentElement.style.setProperty('--accent-subtle', t.swatches[3]);
+      document.documentElement.style.setProperty('--accent-border', t.swatches[2]);
+      localStorage.setItem('accentColor', t.id);
+      localStorage.setItem('accentHex', t.accent);
+      localStorage.setItem('accentLightHex', t.light);
     } catch { /* ignore */ }
   }
 
@@ -436,10 +492,10 @@ function UtseendeTab() {
       desc: 'Alltid ljust läge',
       preview: (
         <div className="w-full h-10 rounded-lg overflow-hidden border border-[var(--border-light)] flex">
-          <div className="w-8 bg-[#f1eef9] border-r border-[#e4e0f5]" />
-          <div className="flex-1 bg-[#fafafd] p-1.5 flex flex-col gap-1">
-            <div className="h-1.5 w-3/4 rounded-full bg-[#ccc6e8]/60" />
-            <div className="h-1.5 w-1/2 rounded-full bg-[#ccc6e8]/40" />
+          <div className="w-8 border-r border-[var(--border-light)]" style={{ backgroundColor: 'oklch(0.95 0.02 290)' }} />
+          <div className="flex-1 p-1.5 flex flex-col gap-1" style={{ backgroundColor: 'oklch(0.98 0.01 290)' }}>
+            <div className="h-1.5 w-3/4 rounded-full" style={{ backgroundColor: 'oklch(0.82 0.04 285 / 0.6)' }} />
+            <div className="h-1.5 w-1/2 rounded-full" style={{ backgroundColor: 'oklch(0.82 0.04 285 / 0.4)' }} />
           </div>
         </div>
       ),
@@ -450,9 +506,9 @@ function UtseendeTab() {
       desc: 'Alltid mörkt läge',
       preview: (
         <div className="w-full h-10 rounded-lg overflow-hidden border border-[var(--border-light)] flex">
-          <div className="w-8 bg-[#1a1528] border-r border-[#2d2245]" />
-          <div className="flex-1 bg-[#13101e] p-1.5 flex flex-col gap-1">
-            <div className="h-1.5 w-3/4 rounded-full bg-[#6d28d9]/40" />
+          <div className="w-8 border-r" style={{ backgroundColor: 'oklch(0.20 0.04 290)', borderColor: 'oklch(0.27 0.04 285)' }} />
+          <div className="flex-1 p-1.5 flex flex-col gap-1" style={{ backgroundColor: 'oklch(0.17 0.03 290)' }}>
+            <div className="h-1.5 w-3/4 rounded-full" style={{ backgroundColor: 'oklch(0.44 0.19 285 / 0.4)' }} />
             <div className="h-1.5 w-1/2 rounded-full bg-white/10" />
           </div>
         </div>
@@ -464,10 +520,10 @@ function UtseendeTab() {
       desc: 'Följer systeminställning',
       preview: (
         <div className="w-full h-10 rounded-lg overflow-hidden border border-[var(--border-light)] flex">
-          <div className="w-8 bg-gradient-to-b from-[#f1eef9] to-[#1a1528] border-r border-[var(--border-light)]" />
-          <div className="flex-1 bg-gradient-to-b from-[#fafafd] to-[#13101e] p-1.5 flex flex-col gap-1">
-            <div className="h-1.5 w-3/4 rounded-full bg-[#ccc6e8]/50" />
-            <div className="h-1.5 w-1/2 rounded-full bg-[#ccc6e8]/30" />
+          <div className="w-8 border-r border-[var(--border-light)]" style={{ background: 'linear-gradient(to bottom, oklch(0.95 0.02 290), oklch(0.20 0.04 290))' }} />
+          <div className="flex-1 p-1.5 flex flex-col gap-1" style={{ background: 'linear-gradient(to bottom, oklch(0.98 0.01 290), oklch(0.17 0.03 290))' }}>
+            <div className="h-1.5 w-3/4 rounded-full" style={{ backgroundColor: 'oklch(0.82 0.04 285 / 0.5)' }} />
+            <div className="h-1.5 w-1/2 rounded-full" style={{ backgroundColor: 'oklch(0.82 0.04 285 / 0.3)' }} />
           </div>
         </div>
       ),
@@ -521,45 +577,54 @@ function UtseendeTab() {
         </div>
       </SectionCard>
 
-      {/* ── Accentfärg ── */}
-      <SectionCard title="Accentfärg" description="Välj en accentfärg som används i hela gränssnittet — knappar, aktiva element och indikatorer.">
-        <div className="flex gap-3 flex-wrap">
-          {ACCENT_COLORS.map((c) => (
+      {/* ── Tema ── */}
+      <SectionCard title="Färgtema" description="Välj ett tema som sätter tonen för hela gränssnittet — knappar, aktiva element och indikatorer.">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {THEMES.map((t) => (
             <button
-              key={c.id}
-              onClick={() => applyAccent(c)}
-              title={c.label}
+              key={t.id}
+              onClick={() => applySelectedTheme(t)}
               className={cn(
-                'w-9 h-9 rounded-full border-2 transition-all duration-150 relative focus:outline-none focus:ring-2 focus:ring-offset-2',
-                accentColor === c.id
-                  ? 'border-white scale-110 shadow-lg'
-                  : 'border-transparent hover:scale-105 hover:shadow-md',
+                'flex flex-col gap-2 p-3 rounded-xl border text-left transition-all duration-150',
+                'focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40',
+                selectedTheme === t.id
+                  ? 'border-[var(--accent)]/50 bg-[var(--accent)]/5 shadow-sm'
+                  : 'border-[var(--border)] hover:border-[var(--accent)]/20 hover:bg-[var(--surface-hover)]',
               )}
-              style={{
-                backgroundColor: c.accent,
-                focusRingColor: c.accent,
-              } as React.CSSProperties}
             >
-              <AnimatePresence>
-                {accentColor === c.id && (
+              {/* Color swatches preview */}
+              <div className="flex gap-0.5 w-full h-6 rounded-lg overflow-hidden">
+                {t.swatches.map((s, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 first:rounded-l-md last:rounded-r-md"
+                    style={{ backgroundColor: s }}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center justify-between w-full">
+                <div className="min-w-0">
+                  <p className={cn(
+                    'text-xs font-semibold truncate',
+                    selectedTheme === t.id ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]',
+                  )}>
+                    {t.label}
+                  </p>
+                  <p className="text-[10px] text-[var(--text-muted)] mt-0.5 truncate">{t.desc}</p>
+                </div>
+                {selectedTheme === t.id && (
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
                     transition={SPRING_SNAPPY}
-                    className="absolute inset-0 flex items-center justify-center"
+                    className="w-4 h-4 rounded-full bg-[var(--accent)] flex items-center justify-center shrink-0 ml-1"
                   >
-                    <Icon path={<polyline points="20 6 9 17 4 12"/>} size={12} className="text-white drop-shadow" />
+                    <Icon path={<polyline points="20 6 9 17 4 12"/>} size={9} className="text-white" />
                   </motion.span>
                 )}
-              </AnimatePresence>
+              </div>
             </button>
           ))}
-        </div>
-        <div className="mt-4 flex items-center gap-2 text-[11px] text-[var(--text-muted)]">
-          <Icon path={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>} size={13} className="shrink-0 text-[var(--accent)]" />
-          Vald: <span className="font-medium text-[var(--text-secondary)]">{ACCENT_COLORS.find((c) => c.id === accentColor)?.label}</span>
-          — Ändringen tillämpas direkt.
         </div>
       </SectionCard>
 
@@ -611,38 +676,69 @@ function UtseendeTab() {
           ))}
         </div>
 
-        {/* Font size */}
+        {/* Font size slider */}
         <div className="border-t border-[var(--border-light)] pt-3">
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-5">
             Textstorlek
           </p>
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            {fontSizes.map((fs) => (
-              <button
-                key={fs.id}
-                onClick={() => applyFontSize(fs.id)}
-                className={cn(
-                  'flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl border transition-all duration-150',
-                  'focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40',
-                  fontSize === fs.id
-                    ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5'
-                    : 'border-[var(--border)] hover:border-[var(--accent)]/20 hover:bg-[var(--surface-hover)]',
-                )}
-              >
-                <span className={cn(
-                  'font-semibold text-[var(--text-secondary)]',
-                  fs.id === 'small' ? 'text-sm' : fs.id === 'large' ? 'text-xl' : 'text-base',
-                )}>
-                  {fs.sample}
-                </span>
-                <span className={cn(
-                  'text-[10px] font-medium',
-                  fontSize === fs.id ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]',
-                )}>
-                  {fs.label}
-                </span>
-              </button>
-            ))}
+          <div className="px-2 mb-4">
+            {/* Slider track */}
+            <div className="relative h-10 flex items-center">
+              {/* Background track */}
+              <div className="absolute inset-x-0 h-1 rounded-full bg-[var(--border)]" />
+              {/* Active track */}
+              <div
+                className="absolute left-0 h-1 rounded-full bg-[var(--accent)] transition-all duration-200"
+                style={{ width: fontSize === 'small' ? '0%' : fontSize === 'medium' ? '50%' : '100%' }}
+              />
+              {/* Dots and labels */}
+              {fontSizes.map((fs, idx) => {
+                const isActive = fontSize === fs.id;
+                const position = idx === 0 ? '0%' : idx === 1 ? '50%' : '100%';
+                return (
+                  <button
+                    key={fs.id}
+                    onClick={() => applyFontSize(fs.id)}
+                    className="absolute -translate-x-1/2 flex flex-col items-center gap-1.5 focus:outline-none group"
+                    style={{ left: position }}
+                  >
+                    <motion.div
+                      animate={{
+                        scale: isActive ? 1 : 0.75,
+                        backgroundColor: isActive ? 'var(--accent)' : 'var(--border)',
+                      }}
+                      whileHover={{ scale: isActive ? 1.1 : 0.9 }}
+                      transition={{ duration: 0.15 }}
+                      className={cn(
+                        'rounded-full border-2 border-[var(--surface-0)] shadow-sm cursor-pointer',
+                        isActive ? 'w-5 h-5' : 'w-4 h-4',
+                      )}
+                    />
+                    <span className={cn(
+                      'text-[10px] font-medium mt-0.5 whitespace-nowrap',
+                      isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]',
+                    )}>
+                      {fs.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {/* Sample text preview */}
+            <div className="mt-6 flex items-center justify-center gap-4 py-3 rounded-xl border border-[var(--border-light)] bg-[var(--surface-alt)]">
+              <span className={cn(
+                'font-medium text-[var(--text-primary)] transition-all duration-200',
+                fontSize === 'small' ? 'text-sm' : fontSize === 'large' ? 'text-xl' : 'text-base',
+              )}>
+                Aa
+              </span>
+              <span className={cn(
+                'text-[var(--text-muted)] transition-all duration-200',
+                fontSize === 'small' ? 'text-xs' : fontSize === 'large' ? 'text-base' : 'text-sm',
+              )}>
+                Förhandsvisning av textstorlek
+              </span>
+            </div>
           </div>
         </div>
 

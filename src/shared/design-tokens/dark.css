@@ -1,31 +1,31 @@
-/* ───── Dark mode semantic tokens ───── */
+/* ───── Dark mode semantic tokens (OKLCH) ───── */
 .dark {
-  --page-bg: #121212;
+  --page-bg: oklch(0.16 0 0);
 
   /* Backward-compatible surface aliases */
-  --surface: #1c1c1c;
-  --surface-alt: #202020;
-  --surface-hover: #2e2e2e;
+  --surface: oklch(0.22 0 0);
+  --surface-alt: oklch(0.23 0 0);
+  --surface-hover: oklch(0.28 0 0);
 
   /* Surface layer system — 6 visually separable tones */
-  --surface-0: #1c1c1c;
-  --surface-1: #202020;
-  --surface-2: #242424;
-  --surface-3: #2a2a2a;
-  --surface-active: #333333;
+  --surface-0: oklch(0.22 0 0);
+  --surface-1: oklch(0.23 0 0);
+  --surface-2: oklch(0.25 0 0);
+  --surface-3: oklch(0.27 0 0);
+  --surface-active: oklch(0.31 0 0);
 
-  --border: #3d3d3d;
-  --border-light: #2a2a2a;
-  --text-primary: #efefef;
-  --text-secondary: #c2c2c2;
-  --text-muted: #909090;
-  --dot-color: rgba(102, 102, 102, 0.1);
-  --accent: #f59e0b;
-  --accent-light: #fbbf24;
-  --accent-subtle: rgba(245, 158, 11, 0.1);
-  --accent-border: rgba(245, 158, 11, 0.22);
+  --border: oklch(0.36 0 0);
+  --border-light: oklch(0.27 0 0);
+  --text-primary: oklch(0.95 0 0);
+  --text-secondary: oklch(0.80 0 0);
+  --text-muted: oklch(0.63 0 0);
+  --dot-color: oklch(0.50 0 0 / 0.1);
+  --accent: oklch(0.73 0.15 85);
+  --accent-light: oklch(0.80 0.14 90);
+  --accent-subtle: oklch(0.73 0.15 85 / 0.1);
+  --accent-border: oklch(0.73 0.15 85 / 0.22);
 
   /* Grid system */
-  --grid-line-color: rgba(255, 255, 255, 0.032);
+  --grid-line-color: oklch(1.0 0 0 / 0.032);
   --grid-size: 28px;
 }
