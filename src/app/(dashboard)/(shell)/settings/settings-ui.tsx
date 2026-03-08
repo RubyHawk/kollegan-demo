@@ -485,265 +485,277 @@ function UtseendeTab() {
     }, 500);
   }
 
-  const themes: { id: ThemeMode; label: string; desc: string; preview: React.ReactNode }[] = [
-    {
-      id: 'light',
-      label: 'Ljust',
-      desc: 'Alltid ljust läge',
-      preview: (
-        <div className="w-full h-10 rounded-lg overflow-hidden border border-[var(--border-light)] flex">
-          <div className="w-8 border-r border-[var(--border-light)]" style={{ backgroundColor: 'oklch(0.95 0.02 290)' }} />
-          <div className="flex-1 p-1.5 flex flex-col gap-1" style={{ backgroundColor: 'oklch(0.98 0.01 290)' }}>
-            <div className="h-1.5 w-3/4 rounded-full" style={{ backgroundColor: 'oklch(0.82 0.04 285 / 0.6)' }} />
-            <div className="h-1.5 w-1/2 rounded-full" style={{ backgroundColor: 'oklch(0.82 0.04 285 / 0.4)' }} />
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: 'dark',
-      label: 'Mörkt',
-      desc: 'Alltid mörkt läge',
-      preview: (
-        <div className="w-full h-10 rounded-lg overflow-hidden border border-[var(--border-light)] flex">
-          <div className="w-8 border-r" style={{ backgroundColor: 'oklch(0.20 0.04 290)', borderColor: 'oklch(0.27 0.04 285)' }} />
-          <div className="flex-1 p-1.5 flex flex-col gap-1" style={{ backgroundColor: 'oklch(0.17 0.03 290)' }}>
-            <div className="h-1.5 w-3/4 rounded-full" style={{ backgroundColor: 'oklch(0.44 0.19 285 / 0.4)' }} />
-            <div className="h-1.5 w-1/2 rounded-full bg-white/10" />
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: 'auto',
-      label: 'Auto',
-      desc: 'Följer systeminställning',
-      preview: (
-        <div className="w-full h-10 rounded-lg overflow-hidden border border-[var(--border-light)] flex">
-          <div className="w-8 border-r border-[var(--border-light)]" style={{ background: 'linear-gradient(to bottom, oklch(0.95 0.02 290), oklch(0.20 0.04 290))' }} />
-          <div className="flex-1 p-1.5 flex flex-col gap-1" style={{ background: 'linear-gradient(to bottom, oklch(0.98 0.01 290), oklch(0.17 0.03 290))' }}>
-            <div className="h-1.5 w-3/4 rounded-full" style={{ backgroundColor: 'oklch(0.82 0.04 285 / 0.5)' }} />
-            <div className="h-1.5 w-1/2 rounded-full" style={{ backgroundColor: 'oklch(0.82 0.04 285 / 0.3)' }} />
-          </div>
-        </div>
-      ),
-    },
+  const modes: { id: ThemeMode; label: string; desc: string }[] = [
+    { id: 'light', label: 'Ljust',  desc: 'Alltid ljust läge' },
+    { id: 'dark',  label: 'Mörkt',  desc: 'Alltid mörkt läge' },
+    { id: 'auto',  label: 'Auto',   desc: 'Följer systeminställning' },
   ];
 
-  const fontSizes: { id: FontSize; label: string; sample: string }[] = [
-    { id: 'small',  label: 'Liten',  sample: 'Aa' },
-    { id: 'medium', label: 'Normal', sample: 'Aa' },
-    { id: 'large',  label: 'Stor',   sample: 'Aa' },
+  const fontSizes: { id: FontSize; label: string }[] = [
+    { id: 'small',  label: 'Liten' },
+    { id: 'medium', label: 'Normal' },
+    { id: 'large',  label: 'Stor' },
   ];
+
+  /* Tiny preview component for light / dark / auto cards */
+  function ModePreview({ mode }: { mode: ThemeMode }) {
+    const light = (
+      <>
+        <div className="w-7 shrink-0 rounded-l-md" style={{ backgroundColor: 'oklch(0.94 0.02 290)' }} />
+        <div className="flex-1 flex flex-col gap-[3px] p-2" style={{ backgroundColor: 'oklch(0.98 0.01 290)' }}>
+          <div className="h-[3px] w-3/4 rounded-full" style={{ backgroundColor: 'oklch(0.80 0.04 285 / 0.5)' }} />
+          <div className="h-[3px] w-1/2 rounded-full" style={{ backgroundColor: 'oklch(0.80 0.04 285 / 0.3)' }} />
+          <div className="h-[3px] w-2/3 rounded-full" style={{ backgroundColor: 'oklch(0.80 0.04 285 / 0.2)' }} />
+        </div>
+      </>
+    );
+    const dark = (
+      <>
+        <div className="w-7 shrink-0 rounded-l-md" style={{ backgroundColor: 'oklch(0.22 0.02 285)' }} />
+        <div className="flex-1 flex flex-col gap-[3px] p-2" style={{ backgroundColor: 'oklch(0.17 0.01 285)' }}>
+          <div className="h-[3px] w-3/4 rounded-full" style={{ backgroundColor: 'oklch(0.40 0.08 285 / 0.4)' }} />
+          <div className="h-[3px] w-1/2 rounded-full bg-white/8" />
+          <div className="h-[3px] w-2/3 rounded-full bg-white/5" />
+        </div>
+      </>
+    );
+
+    if (mode === 'light') return <div className="flex h-full w-full rounded-md overflow-hidden">{light}</div>;
+    if (mode === 'dark')  return <div className="flex h-full w-full rounded-md overflow-hidden">{dark}</div>;
+    return (
+      <div className="flex h-full w-full rounded-md overflow-hidden">
+        <div className="w-7 shrink-0 rounded-l-md" style={{ background: 'linear-gradient(to bottom, oklch(0.94 0.02 290), oklch(0.22 0.02 285))' }} />
+        <div className="flex-1 flex flex-col gap-[3px] p-2" style={{ background: 'linear-gradient(to bottom, oklch(0.98 0.01 290), oklch(0.17 0.01 285))' }}>
+          <div className="h-[3px] w-3/4 rounded-full" style={{ backgroundColor: 'oklch(0.65 0.04 285 / 0.4)' }} />
+          <div className="h-[3px] w-1/2 rounded-full" style={{ backgroundColor: 'oklch(0.65 0.04 285 / 0.25)' }} />
+          <div className="h-[3px] w-2/3 rounded-full" style={{ backgroundColor: 'oklch(0.65 0.04 285 / 0.15)' }} />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* ── Tema ── */}
-      <SectionCard title="Tema" description="Välj hur Kollegan visas. Auto-läget anpassar sig till ditt systems inställning.">
-        <div className="grid grid-cols-3 gap-3">
-          {themes.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => applyTheme(t.id)}
-              className={cn(
-                'flex flex-col gap-2 p-3 rounded-xl border text-left transition-all duration-150',
-                'focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40',
-                theme === t.id
-                  ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 shadow-sm'
-                  : 'border-[var(--border)] hover:border-[var(--accent)]/20 hover:bg-[var(--surface-hover)]',
-              )}
-            >
-              {t.preview}
-              <div className="flex items-center justify-between mt-0.5">
-                <div>
-                  <p className={cn('text-xs font-semibold', theme === t.id ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]')}>
-                    {t.label}
-                  </p>
-                  <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{t.desc}</p>
-                </div>
-                {theme === t.id && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={SPRING_SNAPPY}
-                    className="w-4 h-4 rounded-full bg-[var(--accent)] flex items-center justify-center shrink-0"
-                  >
-                    <Icon path={<polyline points="20 6 9 17 4 12"/>} size={9} className="text-white" />
-                  </motion.span>
-                )}
-              </div>
-            </button>
-          ))}
+    <div>
+      {/* ── Section: Läge ── */}
+      <div className="pb-6">
+        <div className="mb-1">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Läge</h3>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">Välj hur Kollegan visas.</p>
         </div>
-      </SectionCard>
-
-      {/* ── Tema ── */}
-      <SectionCard title="Färgtema" description="Välj ett tema som sätter tonen för hela gränssnittet — knappar, aktiva element och indikatorer.">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {THEMES.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => applySelectedTheme(t)}
-              className={cn(
-                'flex flex-col gap-2 p-3 rounded-xl border text-left transition-all duration-150',
-                'focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40',
-                selectedTheme === t.id
-                  ? 'border-[var(--accent)]/50 bg-[var(--accent)]/5 shadow-sm'
-                  : 'border-[var(--border)] hover:border-[var(--accent)]/20 hover:bg-[var(--surface-hover)]',
-              )}
-            >
-              {/* Color swatches preview */}
-              <div className="flex gap-0.5 w-full h-6 rounded-lg overflow-hidden">
-                {t.swatches.map((s, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 first:rounded-l-md last:rounded-r-md"
-                    style={{ backgroundColor: s }}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center justify-between w-full">
-                <div className="min-w-0">
-                  <p className={cn(
-                    'text-xs font-semibold truncate',
-                    selectedTheme === t.id ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]',
-                  )}>
-                    {t.label}
-                  </p>
-                  <p className="text-[10px] text-[var(--text-muted)] mt-0.5 truncate">{t.desc}</p>
-                </div>
-                {selectedTheme === t.id && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={SPRING_SNAPPY}
-                    className="w-4 h-4 rounded-full bg-[var(--accent)] flex items-center justify-center shrink-0 ml-1"
-                  >
-                    <Icon path={<polyline points="20 6 9 17 4 12"/>} size={9} className="text-white" />
-                  </motion.span>
+        <div className="grid grid-cols-3 gap-4 mt-4">
+          {modes.map((m) => {
+            const selected = theme === m.id;
+            return (
+              <button
+                key={m.id}
+                onClick={() => applyTheme(m.id)}
+                className={cn(
+                  'relative rounded-lg border-2 overflow-hidden text-left transition-all duration-150',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40',
+                  selected
+                    ? 'border-[var(--accent)]'
+                    : 'border-[var(--border)] hover:border-[var(--text-muted)]/40',
                 )}
-              </div>
-            </button>
-          ))}
-        </div>
-      </SectionCard>
-
-      {/* ── Typografi ── */}
-      <SectionCard title="Typografi" description="Anpassa typsnitt och textstorlek efter dina preferenser.">
-        {/* Font family */}
-        <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3">
-          Typsnitt
-        </p>
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          {FONT_OPTIONS.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => applyFont(f)}
-              className={cn(
-                'flex flex-col items-center gap-1.5 py-3 px-3 rounded-xl border transition-all duration-150',
-                'focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40',
-                fontFamily === f.id
-                  ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 shadow-sm'
-                  : 'border-[var(--border)] hover:border-[var(--accent)]/20 hover:bg-[var(--surface-hover)]',
-              )}
-            >
-              <span
-                className="text-2xl font-semibold text-[var(--text-primary)]"
-                style={f.sampleStyle}
               >
-                {f.sample}
-              </span>
-              <div className="text-center">
-                <p className={cn(
-                  'text-xs font-semibold',
-                  fontFamily === f.id ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]',
-                )}>
-                  {f.label}
-                </p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{f.desc}</p>
-              </div>
-              {fontFamily === f.id && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={SPRING_SNAPPY}
-                  className="w-4 h-4 rounded-full bg-[var(--accent)] flex items-center justify-center"
-                >
-                  <Icon path={<polyline points="20 6 9 17 4 12"/>} size={9} className="text-white" />
-                </motion.span>
-              )}
-            </button>
-          ))}
+                {/* Preview thumbnail */}
+                <div className="h-16 w-full">
+                  <ModePreview mode={m.id} />
+                </div>
+                {/* Label area */}
+                <div className="px-3 py-2.5">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{m.label}</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{m.desc}</p>
+                </div>
+                {/* Checkmark badge */}
+                <AnimatePresence>
+                  {selected && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      transition={SPRING_SNAPPY}
+                      className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[var(--accent)] flex items-center justify-center"
+                    >
+                      <Icon path={<polyline points="20 6 9 17 4 12"/>} size={10} className="text-white" />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Font size slider */}
-        <div className="border-t border-[var(--border-light)] pt-3">
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-5">
-            Textstorlek
-          </p>
-          <div className="px-2 mb-4">
-            {/* Slider track */}
-            <div className="relative h-10 flex items-center">
-              {/* Background track */}
-              <div className="absolute inset-x-0 h-1 rounded-full bg-[var(--border)]" />
-              {/* Active track */}
-              <div
-                className="absolute left-0 h-1 rounded-full bg-[var(--accent)] transition-all duration-200"
-                style={{ width: fontSize === 'small' ? '0%' : fontSize === 'medium' ? '50%' : '100%' }}
-              />
-              {/* Dots and labels */}
-              {fontSizes.map((fs, idx) => {
-                const isActive = fontSize === fs.id;
-                const position = idx === 0 ? '0%' : idx === 1 ? '50%' : '100%';
-                return (
-                  <button
-                    key={fs.id}
-                    onClick={() => applyFontSize(fs.id)}
-                    className="absolute -translate-x-1/2 flex flex-col items-center gap-1.5 focus:outline-none group"
-                    style={{ left: position }}
-                  >
-                    <motion.div
-                      animate={{
-                        scale: isActive ? 1 : 0.75,
-                        backgroundColor: isActive ? 'var(--accent)' : 'var(--border)',
-                      }}
-                      whileHover={{ scale: isActive ? 1.1 : 0.9 }}
-                      transition={{ duration: 0.15 }}
-                      className={cn(
-                        'rounded-full border-2 border-[var(--surface-0)] shadow-sm cursor-pointer',
-                        isActive ? 'w-5 h-5' : 'w-4 h-4',
-                      )}
+      <div className="border-t border-[var(--border-light)]" />
+
+      {/* ── Section: Färgtema ── */}
+      <div className="py-6">
+        <div className="mb-1">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Färgtema</h3>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">Sätter tonen för hela gränssnittet.</p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+          {THEMES.map((t) => {
+            const selected = selectedTheme === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => applySelectedTheme(t)}
+                className={cn(
+                  'relative rounded-lg border-2 p-3 text-left transition-all duration-150',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40',
+                  selected
+                    ? 'border-[var(--accent)]'
+                    : 'border-[var(--border)] hover:border-[var(--text-muted)]/40',
+                )}
+              >
+                {/* Color swatches */}
+                <div className="flex gap-1 mb-2.5">
+                  {t.swatches.map((s, i) => (
+                    <div
+                      key={i}
+                      className="w-5 h-5 rounded-full"
+                      style={{ backgroundColor: s }}
                     />
-                    <span className={cn(
-                      'text-[10px] font-medium mt-0.5 whitespace-nowrap',
-                      isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]',
-                    )}>
-                      {fs.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            {/* Sample text preview */}
-            <div className="mt-6 flex items-center justify-center gap-4 py-3 rounded-xl border border-[var(--border-light)] bg-[var(--surface-alt)]">
-              <span className={cn(
-                'font-medium text-[var(--text-primary)] transition-all duration-200',
-                fontSize === 'small' ? 'text-sm' : fontSize === 'large' ? 'text-xl' : 'text-base',
-              )}>
-                Aa
+                  ))}
+                </div>
+                <p className="text-sm font-medium text-[var(--text-primary)]">{t.label}</p>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">{t.desc}</p>
+                {/* Checkmark badge */}
+                <AnimatePresence>
+                  {selected && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      transition={SPRING_SNAPPY}
+                      className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[var(--accent)] flex items-center justify-center"
+                    >
+                      <Icon path={<polyline points="20 6 9 17 4 12"/>} size={10} className="text-white" />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="border-t border-[var(--border-light)]" />
+
+      {/* ── Section: Typsnitt ── */}
+      <div className="py-6">
+        <div className="mb-1">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Typsnitt</h3>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">Välj typsnitt för gränssnittet.</p>
+        </div>
+        <div className="grid grid-cols-3 gap-4 mt-4">
+          {FONT_OPTIONS.map((f) => {
+            const selected = fontFamily === f.id;
+            return (
+              <button
+                key={f.id}
+                onClick={() => applyFont(f)}
+                className={cn(
+                  'relative flex flex-col items-center gap-2 py-5 px-3 rounded-lg border-2 transition-all duration-150',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40',
+                  selected
+                    ? 'border-[var(--accent)]'
+                    : 'border-[var(--border)] hover:border-[var(--text-muted)]/40',
+                )}
+              >
+                <span
+                  className="text-3xl font-semibold text-[var(--text-primary)]"
+                  style={f.sampleStyle}
+                >
+                  {f.sample}
+                </span>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">{f.label}</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{f.desc}</p>
+                </div>
+                <AnimatePresence>
+                  {selected && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      transition={SPRING_SNAPPY}
+                      className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[var(--accent)] flex items-center justify-center"
+                    >
+                      <Icon path={<polyline points="20 6 9 17 4 12"/>} size={10} className="text-white" />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="border-t border-[var(--border-light)]" />
+
+      {/* ── Section: Textstorlek ── */}
+      <div className="py-6">
+        <div className="mb-1">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Textstorlek</h3>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">Justera storleken på all text.</p>
+        </div>
+        <div className="mt-5 px-1">
+          {/* Track */}
+          <div className="relative h-6 flex items-center">
+            <div className="absolute inset-x-0 h-[3px] rounded-full bg-[var(--border)]" />
+            <div
+              className="absolute left-0 h-[3px] rounded-full bg-[var(--accent)] transition-all duration-200"
+              style={{ width: fontSize === 'small' ? '0%' : fontSize === 'medium' ? '50%' : '100%' }}
+            />
+            {fontSizes.map((fs, idx) => {
+              const active = fontSize === fs.id;
+              const left = idx === 0 ? '0%' : idx === 1 ? '50%' : '100%';
+              return (
+                <button
+                  key={fs.id}
+                  onClick={() => applyFontSize(fs.id)}
+                  className="absolute -translate-x-1/2 focus:outline-none group"
+                  style={{ left }}
+                >
+                  <div
+                    className={cn(
+                      'rounded-full transition-all duration-150 border-[3px] border-[var(--surface-0)]',
+                      active
+                        ? 'w-5 h-5 bg-[var(--accent)] shadow-sm'
+                        : 'w-3.5 h-3.5 bg-[var(--border)] group-hover:bg-[var(--text-muted)]',
+                    )}
+                  />
+                </button>
+              );
+            })}
+          </div>
+          {/* Labels under track */}
+          <div className="flex justify-between mt-2">
+            {fontSizes.map((fs) => (
+              <span
+                key={fs.id}
+                className={cn(
+                  'text-xs',
+                  fontSize === fs.id ? 'font-medium text-[var(--text-primary)]' : 'text-[var(--text-muted)]',
+                  fs.id === 'medium' && 'text-center',
+                  fs.id === 'large' && 'text-right',
+                )}
+              >
+                {fs.label}
               </span>
-              <span className={cn(
-                'text-[var(--text-muted)] transition-all duration-200',
-                fontSize === 'small' ? 'text-xs' : fontSize === 'large' ? 'text-base' : 'text-sm',
-              )}>
-                Förhandsvisning av textstorlek
-              </span>
-            </div>
+            ))}
           </div>
         </div>
+      </div>
 
+      <div className="border-t border-[var(--border-light)]" />
+
+      {/* ── Save row ── */}
+      <div className="flex justify-end pt-5">
         <SaveButton pending={pending} saved={saved} onClick={save} />
-      </SectionCard>
+      </div>
     </div>
   );
 }
