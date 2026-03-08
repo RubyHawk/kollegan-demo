@@ -67,9 +67,21 @@ export const ModelName = {
   DomainEventRecord: 'DomainEventRecord',
   Lead: 'Lead',
   LeadActivity: 'LeadActivity',
+  Conversation: 'Conversation',
+  ConversationParticipant: 'ConversationParticipant',
+  DirectMessage: 'DirectMessage',
+  Offer: 'Offer',
+  OfferLineItem: 'OfferLineItem',
   Organization: 'Organization',
   Portal: 'Portal',
   PortalMember: 'PortalMember',
+  Project: 'Project',
+  ProjectTask: 'ProjectTask',
+  Announcement: 'Announcement',
+  AnnouncementRead: 'AnnouncementRead',
+  Meeting: 'Meeting',
+  MeetingParticipant: 'MeetingParticipant',
+  MeetingSummary: 'MeetingSummary',
   User: 'User',
   Role: 'Role',
   Permission: 'Permission',
@@ -359,6 +371,89 @@ export const LeadActivityScalarFieldEnum = {
 export type LeadActivityScalarFieldEnum = (typeof LeadActivityScalarFieldEnum)[keyof typeof LeadActivityScalarFieldEnum]
 
 
+export const ConversationScalarFieldEnum = {
+  id: 'id',
+  organizationId: 'organizationId',
+  title: 'title',
+  type: 'type',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type ConversationScalarFieldEnum = (typeof ConversationScalarFieldEnum)[keyof typeof ConversationScalarFieldEnum]
+
+
+export const ConversationParticipantScalarFieldEnum = {
+  id: 'id',
+  conversationId: 'conversationId',
+  userId: 'userId',
+  joinedAt: 'joinedAt',
+  lastReadAt: 'lastReadAt'
+} as const
+
+export type ConversationParticipantScalarFieldEnum = (typeof ConversationParticipantScalarFieldEnum)[keyof typeof ConversationParticipantScalarFieldEnum]
+
+
+export const DirectMessageScalarFieldEnum = {
+  id: 'id',
+  conversationId: 'conversationId',
+  organizationId: 'organizationId',
+  senderId: 'senderId',
+  senderName: 'senderName',
+  body: 'body',
+  type: 'type',
+  refId: 'refId',
+  createdAt: 'createdAt',
+  editedAt: 'editedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type DirectMessageScalarFieldEnum = (typeof DirectMessageScalarFieldEnum)[keyof typeof DirectMessageScalarFieldEnum]
+
+
+export const OfferScalarFieldEnum = {
+  id: 'id',
+  organizationId: 'organizationId',
+  title: 'title',
+  status: 'status',
+  recipientName: 'recipientName',
+  recipientEmail: 'recipientEmail',
+  recipientCompany: 'recipientCompany',
+  notes: 'notes',
+  validUntil: 'validUntil',
+  createdBy: 'createdBy',
+  totalExVat: 'totalExVat',
+  totalIncVat: 'totalIncVat',
+  sentAt: 'sentAt',
+  viewedAt: 'viewedAt',
+  acceptedAt: 'acceptedAt',
+  declinedAt: 'declinedAt',
+  leadId: 'leadId',
+  customerId: 'customerId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type OfferScalarFieldEnum = (typeof OfferScalarFieldEnum)[keyof typeof OfferScalarFieldEnum]
+
+
+export const OfferLineItemScalarFieldEnum = {
+  id: 'id',
+  offerId: 'offerId',
+  description: 'description',
+  quantity: 'quantity',
+  unitPrice: 'unitPrice',
+  vatRate: 'vatRate',
+  discount: 'discount',
+  sortOrder: 'sortOrder'
+} as const
+
+export type OfferLineItemScalarFieldEnum = (typeof OfferLineItemScalarFieldEnum)[keyof typeof OfferLineItemScalarFieldEnum]
+
+
 export const OrganizationScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -400,6 +495,121 @@ export const PortalMemberScalarFieldEnum = {
 } as const
 
 export type PortalMemberScalarFieldEnum = (typeof PortalMemberScalarFieldEnum)[keyof typeof PortalMemberScalarFieldEnum]
+
+
+export const ProjectScalarFieldEnum = {
+  id: 'id',
+  organizationId: 'organizationId',
+  name: 'name',
+  description: 'description',
+  status: 'status',
+  priority: 'priority',
+  progress: 'progress',
+  ownerId: 'ownerId',
+  dueDate: 'dueDate',
+  startDate: 'startDate',
+  tags: 'tags',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type ProjectScalarFieldEnum = (typeof ProjectScalarFieldEnum)[keyof typeof ProjectScalarFieldEnum]
+
+
+export const ProjectTaskScalarFieldEnum = {
+  id: 'id',
+  projectId: 'projectId',
+  title: 'title',
+  description: 'description',
+  status: 'status',
+  priority: 'priority',
+  assigneeId: 'assigneeId',
+  dueDate: 'dueDate',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  completedAt: 'completedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type ProjectTaskScalarFieldEnum = (typeof ProjectTaskScalarFieldEnum)[keyof typeof ProjectTaskScalarFieldEnum]
+
+
+export const AnnouncementScalarFieldEnum = {
+  id: 'id',
+  organizationId: 'organizationId',
+  title: 'title',
+  content: 'content',
+  priority: 'priority',
+  isPinned: 'isPinned',
+  authorId: 'authorId',
+  publishedAt: 'publishedAt',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type AnnouncementScalarFieldEnum = (typeof AnnouncementScalarFieldEnum)[keyof typeof AnnouncementScalarFieldEnum]
+
+
+export const AnnouncementReadScalarFieldEnum = {
+  id: 'id',
+  announcementId: 'announcementId',
+  userId: 'userId',
+  readAt: 'readAt'
+} as const
+
+export type AnnouncementReadScalarFieldEnum = (typeof AnnouncementReadScalarFieldEnum)[keyof typeof AnnouncementReadScalarFieldEnum]
+
+
+export const MeetingScalarFieldEnum = {
+  id: 'id',
+  organizationId: 'organizationId',
+  title: 'title',
+  status: 'status',
+  provider: 'provider',
+  meetingUrl: 'meetingUrl',
+  agenda: 'agenda',
+  scheduledAt: 'scheduledAt',
+  startedAt: 'startedAt',
+  endedAt: 'endedAt',
+  durationSeconds: 'durationSeconds',
+  createdBy: 'createdBy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type MeetingScalarFieldEnum = (typeof MeetingScalarFieldEnum)[keyof typeof MeetingScalarFieldEnum]
+
+
+export const MeetingParticipantScalarFieldEnum = {
+  id: 'id',
+  meetingId: 'meetingId',
+  userId: 'userId',
+  name: 'name',
+  email: 'email'
+} as const
+
+export type MeetingParticipantScalarFieldEnum = (typeof MeetingParticipantScalarFieldEnum)[keyof typeof MeetingParticipantScalarFieldEnum]
+
+
+export const MeetingSummaryScalarFieldEnum = {
+  id: 'id',
+  meetingId: 'meetingId',
+  status: 'status',
+  model: 'model',
+  summary: 'summary',
+  keyDecisions: 'keyDecisions',
+  nextSteps: 'nextSteps',
+  generatedAt: 'generatedAt',
+  errorMessage: 'errorMessage'
+} as const
+
+export type MeetingSummaryScalarFieldEnum = (typeof MeetingSummaryScalarFieldEnum)[keyof typeof MeetingSummaryScalarFieldEnum]
 
 
 export const UserScalarFieldEnum = {

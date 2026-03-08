@@ -98,6 +98,31 @@ export type Lead = Prisma.LeadModel
  */
 export type LeadActivity = Prisma.LeadActivityModel
 /**
+ * Model Conversation
+ * 
+ */
+export type Conversation = Prisma.ConversationModel
+/**
+ * Model ConversationParticipant
+ * 
+ */
+export type ConversationParticipant = Prisma.ConversationParticipantModel
+/**
+ * Model DirectMessage
+ * 
+ */
+export type DirectMessage = Prisma.DirectMessageModel
+/**
+ * Model Offer
+ * 
+ */
+export type Offer = Prisma.OfferModel
+/**
+ * Model OfferLineItem
+ * 
+ */
+export type OfferLineItem = Prisma.OfferLineItemModel
+/**
  * Model Organization
  * 
  */
@@ -112,6 +137,41 @@ export type Portal = Prisma.PortalModel
  * 
  */
 export type PortalMember = Prisma.PortalMemberModel
+/**
+ * Model Project
+ * 
+ */
+export type Project = Prisma.ProjectModel
+/**
+ * Model ProjectTask
+ * 
+ */
+export type ProjectTask = Prisma.ProjectTaskModel
+/**
+ * Model Announcement
+ * 
+ */
+export type Announcement = Prisma.AnnouncementModel
+/**
+ * Model AnnouncementRead
+ * 
+ */
+export type AnnouncementRead = Prisma.AnnouncementReadModel
+/**
+ * Model Meeting
+ * 
+ */
+export type Meeting = Prisma.MeetingModel
+/**
+ * Model MeetingParticipant
+ * 
+ */
+export type MeetingParticipant = Prisma.MeetingParticipantModel
+/**
+ * Model MeetingSummary
+ * 
+ */
+export type MeetingSummary = Prisma.MeetingSummaryModel
 /**
  * Model User
  * 

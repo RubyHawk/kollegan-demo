@@ -214,6 +214,11 @@ export type OrganizationWhereInput = {
   leads?: Prisma.LeadListRelationFilter
   users?: Prisma.UserListRelationFilter
   portal?: Prisma.XOR<Prisma.PortalNullableScalarRelationFilter, Prisma.PortalWhereInput> | null
+  offers?: Prisma.OfferListRelationFilter
+  conversations?: Prisma.ConversationListRelationFilter
+  projects?: Prisma.ProjectListRelationFilter
+  announcements?: Prisma.AnnouncementListRelationFilter
+  meetings?: Prisma.MeetingListRelationFilter
 }
 
 export type OrganizationOrderByWithRelationInput = {
@@ -233,6 +238,11 @@ export type OrganizationOrderByWithRelationInput = {
   leads?: Prisma.LeadOrderByRelationAggregateInput
   users?: Prisma.UserOrderByRelationAggregateInput
   portal?: Prisma.PortalOrderByWithRelationInput
+  offers?: Prisma.OfferOrderByRelationAggregateInput
+  conversations?: Prisma.ConversationOrderByRelationAggregateInput
+  projects?: Prisma.ProjectOrderByRelationAggregateInput
+  announcements?: Prisma.AnnouncementOrderByRelationAggregateInput
+  meetings?: Prisma.MeetingOrderByRelationAggregateInput
 }
 
 export type OrganizationWhereUniqueInput = Prisma.AtLeast<{
@@ -255,6 +265,11 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<{
   leads?: Prisma.LeadListRelationFilter
   users?: Prisma.UserListRelationFilter
   portal?: Prisma.XOR<Prisma.PortalNullableScalarRelationFilter, Prisma.PortalWhereInput> | null
+  offers?: Prisma.OfferListRelationFilter
+  conversations?: Prisma.ConversationListRelationFilter
+  projects?: Prisma.ProjectListRelationFilter
+  announcements?: Prisma.AnnouncementListRelationFilter
+  meetings?: Prisma.MeetingListRelationFilter
 }, "id" | "slug">
 
 export type OrganizationOrderByWithAggregationInput = {
@@ -302,6 +317,11 @@ export type OrganizationCreateInput = {
   leads?: Prisma.LeadCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateInput = {
@@ -321,6 +341,11 @@ export type OrganizationUncheckedCreateInput = {
   leads?: Prisma.LeadUncheckedCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalUncheckedCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferUncheckedCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUpdateInput = {
@@ -340,6 +365,11 @@ export type OrganizationUpdateInput = {
   leads?: Prisma.LeadUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateInput = {
@@ -359,6 +389,11 @@ export type OrganizationUncheckedUpdateInput = {
   leads?: Prisma.LeadUncheckedUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUncheckedUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUncheckedUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateManyInput = {
@@ -529,6 +564,34 @@ export type OrganizationUpdateOneRequiredWithoutLeadsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutLeadsInput, Prisma.OrganizationUpdateWithoutLeadsInput>, Prisma.OrganizationUncheckedUpdateWithoutLeadsInput>
 }
 
+export type OrganizationCreateNestedOneWithoutConversationsInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutConversationsInput, Prisma.OrganizationUncheckedCreateWithoutConversationsInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutConversationsInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+}
+
+export type OrganizationUpdateOneRequiredWithoutConversationsNestedInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutConversationsInput, Prisma.OrganizationUncheckedCreateWithoutConversationsInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutConversationsInput
+  upsert?: Prisma.OrganizationUpsertWithoutConversationsInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutConversationsInput, Prisma.OrganizationUpdateWithoutConversationsInput>, Prisma.OrganizationUncheckedUpdateWithoutConversationsInput>
+}
+
+export type OrganizationCreateNestedOneWithoutOffersInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutOffersInput, Prisma.OrganizationUncheckedCreateWithoutOffersInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutOffersInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+}
+
+export type OrganizationUpdateOneRequiredWithoutOffersNestedInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutOffersInput, Prisma.OrganizationUncheckedCreateWithoutOffersInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutOffersInput
+  upsert?: Prisma.OrganizationUpsertWithoutOffersInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutOffersInput, Prisma.OrganizationUpdateWithoutOffersInput>, Prisma.OrganizationUncheckedUpdateWithoutOffersInput>
+}
+
 export type OrganizationCreateNestedOneWithoutPortalInput = {
   create?: Prisma.XOR<Prisma.OrganizationCreateWithoutPortalInput, Prisma.OrganizationUncheckedCreateWithoutPortalInput>
   connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutPortalInput
@@ -541,6 +604,48 @@ export type OrganizationUpdateOneRequiredWithoutPortalNestedInput = {
   upsert?: Prisma.OrganizationUpsertWithoutPortalInput
   connect?: Prisma.OrganizationWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutPortalInput, Prisma.OrganizationUpdateWithoutPortalInput>, Prisma.OrganizationUncheckedUpdateWithoutPortalInput>
+}
+
+export type OrganizationCreateNestedOneWithoutProjectsInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutProjectsInput, Prisma.OrganizationUncheckedCreateWithoutProjectsInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutProjectsInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+}
+
+export type OrganizationUpdateOneRequiredWithoutProjectsNestedInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutProjectsInput, Prisma.OrganizationUncheckedCreateWithoutProjectsInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutProjectsInput
+  upsert?: Prisma.OrganizationUpsertWithoutProjectsInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutProjectsInput, Prisma.OrganizationUpdateWithoutProjectsInput>, Prisma.OrganizationUncheckedUpdateWithoutProjectsInput>
+}
+
+export type OrganizationCreateNestedOneWithoutAnnouncementsInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutAnnouncementsInput, Prisma.OrganizationUncheckedCreateWithoutAnnouncementsInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutAnnouncementsInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+}
+
+export type OrganizationUpdateOneRequiredWithoutAnnouncementsNestedInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutAnnouncementsInput, Prisma.OrganizationUncheckedCreateWithoutAnnouncementsInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutAnnouncementsInput
+  upsert?: Prisma.OrganizationUpsertWithoutAnnouncementsInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutAnnouncementsInput, Prisma.OrganizationUpdateWithoutAnnouncementsInput>, Prisma.OrganizationUncheckedUpdateWithoutAnnouncementsInput>
+}
+
+export type OrganizationCreateNestedOneWithoutMeetingsInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutMeetingsInput, Prisma.OrganizationUncheckedCreateWithoutMeetingsInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutMeetingsInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+}
+
+export type OrganizationUpdateOneRequiredWithoutMeetingsNestedInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutMeetingsInput, Prisma.OrganizationUncheckedCreateWithoutMeetingsInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutMeetingsInput
+  upsert?: Prisma.OrganizationUpsertWithoutMeetingsInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutMeetingsInput, Prisma.OrganizationUpdateWithoutMeetingsInput>, Prisma.OrganizationUncheckedUpdateWithoutMeetingsInput>
 }
 
 export type OrganizationCreateNestedOneWithoutUsersInput = {
@@ -575,6 +680,11 @@ export type OrganizationCreateWithoutWorkflowsInput = {
   leads?: Prisma.LeadCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutWorkflowsInput = {
@@ -593,6 +703,11 @@ export type OrganizationUncheckedCreateWithoutWorkflowsInput = {
   leads?: Prisma.LeadUncheckedCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalUncheckedCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferUncheckedCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutWorkflowsInput = {
@@ -627,6 +742,11 @@ export type OrganizationUpdateWithoutWorkflowsInput = {
   leads?: Prisma.LeadUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutWorkflowsInput = {
@@ -645,6 +765,11 @@ export type OrganizationUncheckedUpdateWithoutWorkflowsInput = {
   leads?: Prisma.LeadUncheckedUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUncheckedUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUncheckedUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateWithoutCustomersInput = {
@@ -663,6 +788,11 @@ export type OrganizationCreateWithoutCustomersInput = {
   leads?: Prisma.LeadCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutCustomersInput = {
@@ -681,6 +811,11 @@ export type OrganizationUncheckedCreateWithoutCustomersInput = {
   leads?: Prisma.LeadUncheckedCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalUncheckedCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferUncheckedCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutCustomersInput = {
@@ -715,6 +850,11 @@ export type OrganizationUpdateWithoutCustomersInput = {
   leads?: Prisma.LeadUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutCustomersInput = {
@@ -733,6 +873,11 @@ export type OrganizationUncheckedUpdateWithoutCustomersInput = {
   leads?: Prisma.LeadUncheckedUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUncheckedUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUncheckedUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateWithoutBookingsInput = {
@@ -751,6 +896,11 @@ export type OrganizationCreateWithoutBookingsInput = {
   leads?: Prisma.LeadCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutBookingsInput = {
@@ -769,6 +919,11 @@ export type OrganizationUncheckedCreateWithoutBookingsInput = {
   leads?: Prisma.LeadUncheckedCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalUncheckedCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferUncheckedCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutBookingsInput = {
@@ -803,6 +958,11 @@ export type OrganizationUpdateWithoutBookingsInput = {
   leads?: Prisma.LeadUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutBookingsInput = {
@@ -821,6 +981,11 @@ export type OrganizationUncheckedUpdateWithoutBookingsInput = {
   leads?: Prisma.LeadUncheckedUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUncheckedUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUncheckedUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateWithoutTranscriptsInput = {
@@ -839,6 +1004,11 @@ export type OrganizationCreateWithoutTranscriptsInput = {
   leads?: Prisma.LeadCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutTranscriptsInput = {
@@ -857,6 +1027,11 @@ export type OrganizationUncheckedCreateWithoutTranscriptsInput = {
   leads?: Prisma.LeadUncheckedCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalUncheckedCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferUncheckedCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutTranscriptsInput = {
@@ -891,6 +1066,11 @@ export type OrganizationUpdateWithoutTranscriptsInput = {
   leads?: Prisma.LeadUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutTranscriptsInput = {
@@ -909,6 +1089,11 @@ export type OrganizationUncheckedUpdateWithoutTranscriptsInput = {
   leads?: Prisma.LeadUncheckedUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUncheckedUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUncheckedUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateWithoutCrmRecordsInput = {
@@ -927,6 +1112,11 @@ export type OrganizationCreateWithoutCrmRecordsInput = {
   leads?: Prisma.LeadCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutCrmRecordsInput = {
@@ -945,6 +1135,11 @@ export type OrganizationUncheckedCreateWithoutCrmRecordsInput = {
   leads?: Prisma.LeadUncheckedCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalUncheckedCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferUncheckedCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutCrmRecordsInput = {
@@ -979,6 +1174,11 @@ export type OrganizationUpdateWithoutCrmRecordsInput = {
   leads?: Prisma.LeadUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutCrmRecordsInput = {
@@ -997,6 +1197,11 @@ export type OrganizationUncheckedUpdateWithoutCrmRecordsInput = {
   leads?: Prisma.LeadUncheckedUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUncheckedUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUncheckedUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateWithoutLeadsInput = {
@@ -1015,6 +1220,11 @@ export type OrganizationCreateWithoutLeadsInput = {
   workflows?: Prisma.WorkflowCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutLeadsInput = {
@@ -1033,6 +1243,11 @@ export type OrganizationUncheckedCreateWithoutLeadsInput = {
   workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalUncheckedCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferUncheckedCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutLeadsInput = {
@@ -1067,6 +1282,11 @@ export type OrganizationUpdateWithoutLeadsInput = {
   workflows?: Prisma.WorkflowUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutLeadsInput = {
@@ -1085,6 +1305,227 @@ export type OrganizationUncheckedUpdateWithoutLeadsInput = {
   workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUncheckedUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUncheckedUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationCreateWithoutConversationsInput = {
+  id?: string
+  name: string
+  slug: string
+  plan?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  orgType?: string
+  parentOrgId?: string | null
+  customers?: Prisma.CustomerCreateNestedManyWithoutOrganizationInput
+  bookings?: Prisma.HotelBookingCreateNestedManyWithoutOrganizationInput
+  transcripts?: Prisma.CallTranscriptCreateNestedManyWithoutOrganizationInput
+  crmRecords?: Prisma.CrmRecordCreateNestedManyWithoutOrganizationInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutOrganizationInput
+  leads?: Prisma.LeadCreateNestedManyWithoutOrganizationInput
+  users?: Prisma.UserCreateNestedManyWithoutOrganizationInput
+  portal?: Prisma.PortalCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationUncheckedCreateWithoutConversationsInput = {
+  id?: string
+  name: string
+  slug: string
+  plan?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  orgType?: string
+  parentOrgId?: string | null
+  customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutOrganizationInput
+  bookings?: Prisma.HotelBookingUncheckedCreateNestedManyWithoutOrganizationInput
+  transcripts?: Prisma.CallTranscriptUncheckedCreateNestedManyWithoutOrganizationInput
+  crmRecords?: Prisma.CrmRecordUncheckedCreateNestedManyWithoutOrganizationInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutOrganizationInput
+  leads?: Prisma.LeadUncheckedCreateNestedManyWithoutOrganizationInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
+  portal?: Prisma.PortalUncheckedCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationCreateOrConnectWithoutConversationsInput = {
+  where: Prisma.OrganizationWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutConversationsInput, Prisma.OrganizationUncheckedCreateWithoutConversationsInput>
+}
+
+export type OrganizationUpsertWithoutConversationsInput = {
+  update: Prisma.XOR<Prisma.OrganizationUpdateWithoutConversationsInput, Prisma.OrganizationUncheckedUpdateWithoutConversationsInput>
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutConversationsInput, Prisma.OrganizationUncheckedCreateWithoutConversationsInput>
+  where?: Prisma.OrganizationWhereInput
+}
+
+export type OrganizationUpdateToOneWithWhereWithoutConversationsInput = {
+  where?: Prisma.OrganizationWhereInput
+  data: Prisma.XOR<Prisma.OrganizationUpdateWithoutConversationsInput, Prisma.OrganizationUncheckedUpdateWithoutConversationsInput>
+}
+
+export type OrganizationUpdateWithoutConversationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orgType?: Prisma.StringFieldUpdateOperationsInput | string
+  parentOrgId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customers?: Prisma.CustomerUpdateManyWithoutOrganizationNestedInput
+  bookings?: Prisma.HotelBookingUpdateManyWithoutOrganizationNestedInput
+  transcripts?: Prisma.CallTranscriptUpdateManyWithoutOrganizationNestedInput
+  crmRecords?: Prisma.CrmRecordUpdateManyWithoutOrganizationNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutOrganizationNestedInput
+  leads?: Prisma.LeadUpdateManyWithoutOrganizationNestedInput
+  users?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
+  portal?: Prisma.PortalUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationUncheckedUpdateWithoutConversationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orgType?: Prisma.StringFieldUpdateOperationsInput | string
+  parentOrgId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customers?: Prisma.CustomerUncheckedUpdateManyWithoutOrganizationNestedInput
+  bookings?: Prisma.HotelBookingUncheckedUpdateManyWithoutOrganizationNestedInput
+  transcripts?: Prisma.CallTranscriptUncheckedUpdateManyWithoutOrganizationNestedInput
+  crmRecords?: Prisma.CrmRecordUncheckedUpdateManyWithoutOrganizationNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutOrganizationNestedInput
+  leads?: Prisma.LeadUncheckedUpdateManyWithoutOrganizationNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
+  portal?: Prisma.PortalUncheckedUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationCreateWithoutOffersInput = {
+  id?: string
+  name: string
+  slug: string
+  plan?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  orgType?: string
+  parentOrgId?: string | null
+  customers?: Prisma.CustomerCreateNestedManyWithoutOrganizationInput
+  bookings?: Prisma.HotelBookingCreateNestedManyWithoutOrganizationInput
+  transcripts?: Prisma.CallTranscriptCreateNestedManyWithoutOrganizationInput
+  crmRecords?: Prisma.CrmRecordCreateNestedManyWithoutOrganizationInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutOrganizationInput
+  leads?: Prisma.LeadCreateNestedManyWithoutOrganizationInput
+  users?: Prisma.UserCreateNestedManyWithoutOrganizationInput
+  portal?: Prisma.PortalCreateNestedOneWithoutOrganizationInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationUncheckedCreateWithoutOffersInput = {
+  id?: string
+  name: string
+  slug: string
+  plan?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  orgType?: string
+  parentOrgId?: string | null
+  customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutOrganizationInput
+  bookings?: Prisma.HotelBookingUncheckedCreateNestedManyWithoutOrganizationInput
+  transcripts?: Prisma.CallTranscriptUncheckedCreateNestedManyWithoutOrganizationInput
+  crmRecords?: Prisma.CrmRecordUncheckedCreateNestedManyWithoutOrganizationInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutOrganizationInput
+  leads?: Prisma.LeadUncheckedCreateNestedManyWithoutOrganizationInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
+  portal?: Prisma.PortalUncheckedCreateNestedOneWithoutOrganizationInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationCreateOrConnectWithoutOffersInput = {
+  where: Prisma.OrganizationWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutOffersInput, Prisma.OrganizationUncheckedCreateWithoutOffersInput>
+}
+
+export type OrganizationUpsertWithoutOffersInput = {
+  update: Prisma.XOR<Prisma.OrganizationUpdateWithoutOffersInput, Prisma.OrganizationUncheckedUpdateWithoutOffersInput>
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutOffersInput, Prisma.OrganizationUncheckedCreateWithoutOffersInput>
+  where?: Prisma.OrganizationWhereInput
+}
+
+export type OrganizationUpdateToOneWithWhereWithoutOffersInput = {
+  where?: Prisma.OrganizationWhereInput
+  data: Prisma.XOR<Prisma.OrganizationUpdateWithoutOffersInput, Prisma.OrganizationUncheckedUpdateWithoutOffersInput>
+}
+
+export type OrganizationUpdateWithoutOffersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orgType?: Prisma.StringFieldUpdateOperationsInput | string
+  parentOrgId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customers?: Prisma.CustomerUpdateManyWithoutOrganizationNestedInput
+  bookings?: Prisma.HotelBookingUpdateManyWithoutOrganizationNestedInput
+  transcripts?: Prisma.CallTranscriptUpdateManyWithoutOrganizationNestedInput
+  crmRecords?: Prisma.CrmRecordUpdateManyWithoutOrganizationNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutOrganizationNestedInput
+  leads?: Prisma.LeadUpdateManyWithoutOrganizationNestedInput
+  users?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
+  portal?: Prisma.PortalUpdateOneWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationUncheckedUpdateWithoutOffersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orgType?: Prisma.StringFieldUpdateOperationsInput | string
+  parentOrgId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customers?: Prisma.CustomerUncheckedUpdateManyWithoutOrganizationNestedInput
+  bookings?: Prisma.HotelBookingUncheckedUpdateManyWithoutOrganizationNestedInput
+  transcripts?: Prisma.CallTranscriptUncheckedUpdateManyWithoutOrganizationNestedInput
+  crmRecords?: Prisma.CrmRecordUncheckedUpdateManyWithoutOrganizationNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutOrganizationNestedInput
+  leads?: Prisma.LeadUncheckedUpdateManyWithoutOrganizationNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
+  portal?: Prisma.PortalUncheckedUpdateOneWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateWithoutPortalInput = {
@@ -1103,6 +1544,11 @@ export type OrganizationCreateWithoutPortalInput = {
   workflows?: Prisma.WorkflowCreateNestedManyWithoutOrganizationInput
   leads?: Prisma.LeadCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserCreateNestedManyWithoutOrganizationInput
+  offers?: Prisma.OfferCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutPortalInput = {
@@ -1121,6 +1567,11 @@ export type OrganizationUncheckedCreateWithoutPortalInput = {
   workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutOrganizationInput
   leads?: Prisma.LeadUncheckedCreateNestedManyWithoutOrganizationInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
+  offers?: Prisma.OfferUncheckedCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutPortalInput = {
@@ -1155,6 +1606,11 @@ export type OrganizationUpdateWithoutPortalInput = {
   workflows?: Prisma.WorkflowUpdateManyWithoutOrganizationNestedInput
   leads?: Prisma.LeadUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutPortalInput = {
@@ -1173,6 +1629,335 @@ export type OrganizationUncheckedUpdateWithoutPortalInput = {
   workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutOrganizationNestedInput
   leads?: Prisma.LeadUncheckedUpdateManyWithoutOrganizationNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUncheckedUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationCreateWithoutProjectsInput = {
+  id?: string
+  name: string
+  slug: string
+  plan?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  orgType?: string
+  parentOrgId?: string | null
+  customers?: Prisma.CustomerCreateNestedManyWithoutOrganizationInput
+  bookings?: Prisma.HotelBookingCreateNestedManyWithoutOrganizationInput
+  transcripts?: Prisma.CallTranscriptCreateNestedManyWithoutOrganizationInput
+  crmRecords?: Prisma.CrmRecordCreateNestedManyWithoutOrganizationInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutOrganizationInput
+  leads?: Prisma.LeadCreateNestedManyWithoutOrganizationInput
+  users?: Prisma.UserCreateNestedManyWithoutOrganizationInput
+  portal?: Prisma.PortalCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationUncheckedCreateWithoutProjectsInput = {
+  id?: string
+  name: string
+  slug: string
+  plan?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  orgType?: string
+  parentOrgId?: string | null
+  customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutOrganizationInput
+  bookings?: Prisma.HotelBookingUncheckedCreateNestedManyWithoutOrganizationInput
+  transcripts?: Prisma.CallTranscriptUncheckedCreateNestedManyWithoutOrganizationInput
+  crmRecords?: Prisma.CrmRecordUncheckedCreateNestedManyWithoutOrganizationInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutOrganizationInput
+  leads?: Prisma.LeadUncheckedCreateNestedManyWithoutOrganizationInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
+  portal?: Prisma.PortalUncheckedCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferUncheckedCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationCreateOrConnectWithoutProjectsInput = {
+  where: Prisma.OrganizationWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutProjectsInput, Prisma.OrganizationUncheckedCreateWithoutProjectsInput>
+}
+
+export type OrganizationUpsertWithoutProjectsInput = {
+  update: Prisma.XOR<Prisma.OrganizationUpdateWithoutProjectsInput, Prisma.OrganizationUncheckedUpdateWithoutProjectsInput>
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutProjectsInput, Prisma.OrganizationUncheckedCreateWithoutProjectsInput>
+  where?: Prisma.OrganizationWhereInput
+}
+
+export type OrganizationUpdateToOneWithWhereWithoutProjectsInput = {
+  where?: Prisma.OrganizationWhereInput
+  data: Prisma.XOR<Prisma.OrganizationUpdateWithoutProjectsInput, Prisma.OrganizationUncheckedUpdateWithoutProjectsInput>
+}
+
+export type OrganizationUpdateWithoutProjectsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orgType?: Prisma.StringFieldUpdateOperationsInput | string
+  parentOrgId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customers?: Prisma.CustomerUpdateManyWithoutOrganizationNestedInput
+  bookings?: Prisma.HotelBookingUpdateManyWithoutOrganizationNestedInput
+  transcripts?: Prisma.CallTranscriptUpdateManyWithoutOrganizationNestedInput
+  crmRecords?: Prisma.CrmRecordUpdateManyWithoutOrganizationNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutOrganizationNestedInput
+  leads?: Prisma.LeadUpdateManyWithoutOrganizationNestedInput
+  users?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
+  portal?: Prisma.PortalUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationUncheckedUpdateWithoutProjectsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orgType?: Prisma.StringFieldUpdateOperationsInput | string
+  parentOrgId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customers?: Prisma.CustomerUncheckedUpdateManyWithoutOrganizationNestedInput
+  bookings?: Prisma.HotelBookingUncheckedUpdateManyWithoutOrganizationNestedInput
+  transcripts?: Prisma.CallTranscriptUncheckedUpdateManyWithoutOrganizationNestedInput
+  crmRecords?: Prisma.CrmRecordUncheckedUpdateManyWithoutOrganizationNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutOrganizationNestedInput
+  leads?: Prisma.LeadUncheckedUpdateManyWithoutOrganizationNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
+  portal?: Prisma.PortalUncheckedUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUncheckedUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationCreateWithoutAnnouncementsInput = {
+  id?: string
+  name: string
+  slug: string
+  plan?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  orgType?: string
+  parentOrgId?: string | null
+  customers?: Prisma.CustomerCreateNestedManyWithoutOrganizationInput
+  bookings?: Prisma.HotelBookingCreateNestedManyWithoutOrganizationInput
+  transcripts?: Prisma.CallTranscriptCreateNestedManyWithoutOrganizationInput
+  crmRecords?: Prisma.CrmRecordCreateNestedManyWithoutOrganizationInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutOrganizationInput
+  leads?: Prisma.LeadCreateNestedManyWithoutOrganizationInput
+  users?: Prisma.UserCreateNestedManyWithoutOrganizationInput
+  portal?: Prisma.PortalCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationUncheckedCreateWithoutAnnouncementsInput = {
+  id?: string
+  name: string
+  slug: string
+  plan?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  orgType?: string
+  parentOrgId?: string | null
+  customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutOrganizationInput
+  bookings?: Prisma.HotelBookingUncheckedCreateNestedManyWithoutOrganizationInput
+  transcripts?: Prisma.CallTranscriptUncheckedCreateNestedManyWithoutOrganizationInput
+  crmRecords?: Prisma.CrmRecordUncheckedCreateNestedManyWithoutOrganizationInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutOrganizationInput
+  leads?: Prisma.LeadUncheckedCreateNestedManyWithoutOrganizationInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
+  portal?: Prisma.PortalUncheckedCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferUncheckedCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationCreateOrConnectWithoutAnnouncementsInput = {
+  where: Prisma.OrganizationWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutAnnouncementsInput, Prisma.OrganizationUncheckedCreateWithoutAnnouncementsInput>
+}
+
+export type OrganizationUpsertWithoutAnnouncementsInput = {
+  update: Prisma.XOR<Prisma.OrganizationUpdateWithoutAnnouncementsInput, Prisma.OrganizationUncheckedUpdateWithoutAnnouncementsInput>
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutAnnouncementsInput, Prisma.OrganizationUncheckedCreateWithoutAnnouncementsInput>
+  where?: Prisma.OrganizationWhereInput
+}
+
+export type OrganizationUpdateToOneWithWhereWithoutAnnouncementsInput = {
+  where?: Prisma.OrganizationWhereInput
+  data: Prisma.XOR<Prisma.OrganizationUpdateWithoutAnnouncementsInput, Prisma.OrganizationUncheckedUpdateWithoutAnnouncementsInput>
+}
+
+export type OrganizationUpdateWithoutAnnouncementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orgType?: Prisma.StringFieldUpdateOperationsInput | string
+  parentOrgId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customers?: Prisma.CustomerUpdateManyWithoutOrganizationNestedInput
+  bookings?: Prisma.HotelBookingUpdateManyWithoutOrganizationNestedInput
+  transcripts?: Prisma.CallTranscriptUpdateManyWithoutOrganizationNestedInput
+  crmRecords?: Prisma.CrmRecordUpdateManyWithoutOrganizationNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutOrganizationNestedInput
+  leads?: Prisma.LeadUpdateManyWithoutOrganizationNestedInput
+  users?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
+  portal?: Prisma.PortalUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationUncheckedUpdateWithoutAnnouncementsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orgType?: Prisma.StringFieldUpdateOperationsInput | string
+  parentOrgId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customers?: Prisma.CustomerUncheckedUpdateManyWithoutOrganizationNestedInput
+  bookings?: Prisma.HotelBookingUncheckedUpdateManyWithoutOrganizationNestedInput
+  transcripts?: Prisma.CallTranscriptUncheckedUpdateManyWithoutOrganizationNestedInput
+  crmRecords?: Prisma.CrmRecordUncheckedUpdateManyWithoutOrganizationNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutOrganizationNestedInput
+  leads?: Prisma.LeadUncheckedUpdateManyWithoutOrganizationNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
+  portal?: Prisma.PortalUncheckedUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUncheckedUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationCreateWithoutMeetingsInput = {
+  id?: string
+  name: string
+  slug: string
+  plan?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  orgType?: string
+  parentOrgId?: string | null
+  customers?: Prisma.CustomerCreateNestedManyWithoutOrganizationInput
+  bookings?: Prisma.HotelBookingCreateNestedManyWithoutOrganizationInput
+  transcripts?: Prisma.CallTranscriptCreateNestedManyWithoutOrganizationInput
+  crmRecords?: Prisma.CrmRecordCreateNestedManyWithoutOrganizationInput
+  workflows?: Prisma.WorkflowCreateNestedManyWithoutOrganizationInput
+  leads?: Prisma.LeadCreateNestedManyWithoutOrganizationInput
+  users?: Prisma.UserCreateNestedManyWithoutOrganizationInput
+  portal?: Prisma.PortalCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationUncheckedCreateWithoutMeetingsInput = {
+  id?: string
+  name: string
+  slug: string
+  plan?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  orgType?: string
+  parentOrgId?: string | null
+  customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutOrganizationInput
+  bookings?: Prisma.HotelBookingUncheckedCreateNestedManyWithoutOrganizationInput
+  transcripts?: Prisma.CallTranscriptUncheckedCreateNestedManyWithoutOrganizationInput
+  crmRecords?: Prisma.CrmRecordUncheckedCreateNestedManyWithoutOrganizationInput
+  workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutOrganizationInput
+  leads?: Prisma.LeadUncheckedCreateNestedManyWithoutOrganizationInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutOrganizationInput
+  portal?: Prisma.PortalUncheckedCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferUncheckedCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationCreateOrConnectWithoutMeetingsInput = {
+  where: Prisma.OrganizationWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutMeetingsInput, Prisma.OrganizationUncheckedCreateWithoutMeetingsInput>
+}
+
+export type OrganizationUpsertWithoutMeetingsInput = {
+  update: Prisma.XOR<Prisma.OrganizationUpdateWithoutMeetingsInput, Prisma.OrganizationUncheckedUpdateWithoutMeetingsInput>
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutMeetingsInput, Prisma.OrganizationUncheckedCreateWithoutMeetingsInput>
+  where?: Prisma.OrganizationWhereInput
+}
+
+export type OrganizationUpdateToOneWithWhereWithoutMeetingsInput = {
+  where?: Prisma.OrganizationWhereInput
+  data: Prisma.XOR<Prisma.OrganizationUpdateWithoutMeetingsInput, Prisma.OrganizationUncheckedUpdateWithoutMeetingsInput>
+}
+
+export type OrganizationUpdateWithoutMeetingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orgType?: Prisma.StringFieldUpdateOperationsInput | string
+  parentOrgId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customers?: Prisma.CustomerUpdateManyWithoutOrganizationNestedInput
+  bookings?: Prisma.HotelBookingUpdateManyWithoutOrganizationNestedInput
+  transcripts?: Prisma.CallTranscriptUpdateManyWithoutOrganizationNestedInput
+  crmRecords?: Prisma.CrmRecordUpdateManyWithoutOrganizationNestedInput
+  workflows?: Prisma.WorkflowUpdateManyWithoutOrganizationNestedInput
+  leads?: Prisma.LeadUpdateManyWithoutOrganizationNestedInput
+  users?: Prisma.UserUpdateManyWithoutOrganizationNestedInput
+  portal?: Prisma.PortalUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationUncheckedUpdateWithoutMeetingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  plan?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  orgType?: Prisma.StringFieldUpdateOperationsInput | string
+  parentOrgId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customers?: Prisma.CustomerUncheckedUpdateManyWithoutOrganizationNestedInput
+  bookings?: Prisma.HotelBookingUncheckedUpdateManyWithoutOrganizationNestedInput
+  transcripts?: Prisma.CallTranscriptUncheckedUpdateManyWithoutOrganizationNestedInput
+  crmRecords?: Prisma.CrmRecordUncheckedUpdateManyWithoutOrganizationNestedInput
+  workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutOrganizationNestedInput
+  leads?: Prisma.LeadUncheckedUpdateManyWithoutOrganizationNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutOrganizationNestedInput
+  portal?: Prisma.PortalUncheckedUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUncheckedUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationCreateWithoutUsersInput = {
@@ -1191,6 +1976,11 @@ export type OrganizationCreateWithoutUsersInput = {
   workflows?: Prisma.WorkflowCreateNestedManyWithoutOrganizationInput
   leads?: Prisma.LeadCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationUncheckedCreateWithoutUsersInput = {
@@ -1209,6 +1999,11 @@ export type OrganizationUncheckedCreateWithoutUsersInput = {
   workflows?: Prisma.WorkflowUncheckedCreateNestedManyWithoutOrganizationInput
   leads?: Prisma.LeadUncheckedCreateNestedManyWithoutOrganizationInput
   portal?: Prisma.PortalUncheckedCreateNestedOneWithoutOrganizationInput
+  offers?: Prisma.OfferUncheckedCreateNestedManyWithoutOrganizationInput
+  conversations?: Prisma.ConversationUncheckedCreateNestedManyWithoutOrganizationInput
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutOrganizationInput
+  announcements?: Prisma.AnnouncementUncheckedCreateNestedManyWithoutOrganizationInput
+  meetings?: Prisma.MeetingUncheckedCreateNestedManyWithoutOrganizationInput
 }
 
 export type OrganizationCreateOrConnectWithoutUsersInput = {
@@ -1243,6 +2038,11 @@ export type OrganizationUpdateWithoutUsersInput = {
   workflows?: Prisma.WorkflowUpdateManyWithoutOrganizationNestedInput
   leads?: Prisma.LeadUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUpdateManyWithoutOrganizationNestedInput
 }
 
 export type OrganizationUncheckedUpdateWithoutUsersInput = {
@@ -1261,6 +2061,11 @@ export type OrganizationUncheckedUpdateWithoutUsersInput = {
   workflows?: Prisma.WorkflowUncheckedUpdateManyWithoutOrganizationNestedInput
   leads?: Prisma.LeadUncheckedUpdateManyWithoutOrganizationNestedInput
   portal?: Prisma.PortalUncheckedUpdateOneWithoutOrganizationNestedInput
+  offers?: Prisma.OfferUncheckedUpdateManyWithoutOrganizationNestedInput
+  conversations?: Prisma.ConversationUncheckedUpdateManyWithoutOrganizationNestedInput
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutOrganizationNestedInput
+  announcements?: Prisma.AnnouncementUncheckedUpdateManyWithoutOrganizationNestedInput
+  meetings?: Prisma.MeetingUncheckedUpdateManyWithoutOrganizationNestedInput
 }
 
 
@@ -1276,6 +2081,11 @@ export type OrganizationCountOutputType = {
   workflows: number
   leads: number
   users: number
+  offers: number
+  conversations: number
+  projects: number
+  announcements: number
+  meetings: number
 }
 
 export type OrganizationCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1286,6 +2096,11 @@ export type OrganizationCountOutputTypeSelect<ExtArgs extends runtime.Types.Exte
   workflows?: boolean | OrganizationCountOutputTypeCountWorkflowsArgs
   leads?: boolean | OrganizationCountOutputTypeCountLeadsArgs
   users?: boolean | OrganizationCountOutputTypeCountUsersArgs
+  offers?: boolean | OrganizationCountOutputTypeCountOffersArgs
+  conversations?: boolean | OrganizationCountOutputTypeCountConversationsArgs
+  projects?: boolean | OrganizationCountOutputTypeCountProjectsArgs
+  announcements?: boolean | OrganizationCountOutputTypeCountAnnouncementsArgs
+  meetings?: boolean | OrganizationCountOutputTypeCountMeetingsArgs
 }
 
 /**
@@ -1347,6 +2162,41 @@ export type OrganizationCountOutputTypeCountUsersArgs<ExtArgs extends runtime.Ty
   where?: Prisma.UserWhereInput
 }
 
+/**
+ * OrganizationCountOutputType without action
+ */
+export type OrganizationCountOutputTypeCountOffersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.OfferWhereInput
+}
+
+/**
+ * OrganizationCountOutputType without action
+ */
+export type OrganizationCountOutputTypeCountConversationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ConversationWhereInput
+}
+
+/**
+ * OrganizationCountOutputType without action
+ */
+export type OrganizationCountOutputTypeCountProjectsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProjectWhereInput
+}
+
+/**
+ * OrganizationCountOutputType without action
+ */
+export type OrganizationCountOutputTypeCountAnnouncementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AnnouncementWhereInput
+}
+
+/**
+ * OrganizationCountOutputType without action
+ */
+export type OrganizationCountOutputTypeCountMeetingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MeetingWhereInput
+}
+
 
 export type OrganizationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1365,6 +2215,11 @@ export type OrganizationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   leads?: boolean | Prisma.Organization$leadsArgs<ExtArgs>
   users?: boolean | Prisma.Organization$usersArgs<ExtArgs>
   portal?: boolean | Prisma.Organization$portalArgs<ExtArgs>
+  offers?: boolean | Prisma.Organization$offersArgs<ExtArgs>
+  conversations?: boolean | Prisma.Organization$conversationsArgs<ExtArgs>
+  projects?: boolean | Prisma.Organization$projectsArgs<ExtArgs>
+  announcements?: boolean | Prisma.Organization$announcementsArgs<ExtArgs>
+  meetings?: boolean | Prisma.Organization$meetingsArgs<ExtArgs>
   _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["organization"]>
 
@@ -1411,6 +2266,11 @@ export type OrganizationInclude<ExtArgs extends runtime.Types.Extensions.Interna
   leads?: boolean | Prisma.Organization$leadsArgs<ExtArgs>
   users?: boolean | Prisma.Organization$usersArgs<ExtArgs>
   portal?: boolean | Prisma.Organization$portalArgs<ExtArgs>
+  offers?: boolean | Prisma.Organization$offersArgs<ExtArgs>
+  conversations?: boolean | Prisma.Organization$conversationsArgs<ExtArgs>
+  projects?: boolean | Prisma.Organization$projectsArgs<ExtArgs>
+  announcements?: boolean | Prisma.Organization$announcementsArgs<ExtArgs>
+  meetings?: boolean | Prisma.Organization$meetingsArgs<ExtArgs>
   _count?: boolean | Prisma.OrganizationCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type OrganizationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1427,6 +2287,11 @@ export type $OrganizationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     leads: Prisma.$LeadPayload<ExtArgs>[]
     users: Prisma.$UserPayload<ExtArgs>[]
     portal: Prisma.$PortalPayload<ExtArgs> | null
+    offers: Prisma.$OfferPayload<ExtArgs>[]
+    conversations: Prisma.$ConversationPayload<ExtArgs>[]
+    projects: Prisma.$ProjectPayload<ExtArgs>[]
+    announcements: Prisma.$AnnouncementPayload<ExtArgs>[]
+    meetings: Prisma.$MeetingPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1839,6 +2704,11 @@ export interface Prisma__OrganizationClient<T, Null = never, ExtArgs extends run
   leads<T extends Prisma.Organization$leadsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$leadsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LeadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   users<T extends Prisma.Organization$usersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$usersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   portal<T extends Prisma.Organization$portalArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$portalArgs<ExtArgs>>): Prisma.Prisma__PortalClient<runtime.Types.Result.GetResult<Prisma.$PortalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  offers<T extends Prisma.Organization$offersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$offersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OfferPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  conversations<T extends Prisma.Organization$conversationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$conversationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConversationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  projects<T extends Prisma.Organization$projectsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$projectsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProjectPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  announcements<T extends Prisma.Organization$announcementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$announcementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnnouncementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  meetings<T extends Prisma.Organization$meetingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$meetingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MeetingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2448,6 +3318,126 @@ export type Organization$portalArgs<ExtArgs extends runtime.Types.Extensions.Int
    */
   include?: Prisma.PortalInclude<ExtArgs> | null
   where?: Prisma.PortalWhereInput
+}
+
+/**
+ * Organization.offers
+ */
+export type Organization$offersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Offer
+   */
+  select?: Prisma.OfferSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Offer
+   */
+  omit?: Prisma.OfferOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OfferInclude<ExtArgs> | null
+  where?: Prisma.OfferWhereInput
+  orderBy?: Prisma.OfferOrderByWithRelationInput | Prisma.OfferOrderByWithRelationInput[]
+  cursor?: Prisma.OfferWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.OfferScalarFieldEnum | Prisma.OfferScalarFieldEnum[]
+}
+
+/**
+ * Organization.conversations
+ */
+export type Organization$conversationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Conversation
+   */
+  select?: Prisma.ConversationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Conversation
+   */
+  omit?: Prisma.ConversationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ConversationInclude<ExtArgs> | null
+  where?: Prisma.ConversationWhereInput
+  orderBy?: Prisma.ConversationOrderByWithRelationInput | Prisma.ConversationOrderByWithRelationInput[]
+  cursor?: Prisma.ConversationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ConversationScalarFieldEnum | Prisma.ConversationScalarFieldEnum[]
+}
+
+/**
+ * Organization.projects
+ */
+export type Organization$projectsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Project
+   */
+  select?: Prisma.ProjectSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Project
+   */
+  omit?: Prisma.ProjectOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProjectInclude<ExtArgs> | null
+  where?: Prisma.ProjectWhereInput
+  orderBy?: Prisma.ProjectOrderByWithRelationInput | Prisma.ProjectOrderByWithRelationInput[]
+  cursor?: Prisma.ProjectWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ProjectScalarFieldEnum | Prisma.ProjectScalarFieldEnum[]
+}
+
+/**
+ * Organization.announcements
+ */
+export type Organization$announcementsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Announcement
+   */
+  select?: Prisma.AnnouncementSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Announcement
+   */
+  omit?: Prisma.AnnouncementOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AnnouncementInclude<ExtArgs> | null
+  where?: Prisma.AnnouncementWhereInput
+  orderBy?: Prisma.AnnouncementOrderByWithRelationInput | Prisma.AnnouncementOrderByWithRelationInput[]
+  cursor?: Prisma.AnnouncementWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AnnouncementScalarFieldEnum | Prisma.AnnouncementScalarFieldEnum[]
+}
+
+/**
+ * Organization.meetings
+ */
+export type Organization$meetingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Meeting
+   */
+  select?: Prisma.MeetingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Meeting
+   */
+  omit?: Prisma.MeetingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MeetingInclude<ExtArgs> | null
+  where?: Prisma.MeetingWhereInput
+  orderBy?: Prisma.MeetingOrderByWithRelationInput | Prisma.MeetingOrderByWithRelationInput[]
+  cursor?: Prisma.MeetingWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MeetingScalarFieldEnum | Prisma.MeetingScalarFieldEnum[]
 }
 
 /**
