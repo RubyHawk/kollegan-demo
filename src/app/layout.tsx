@@ -30,8 +30,16 @@ const themeScript = `
 (function() {
   try {
     var theme = localStorage.getItem('theme');
-    if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
+    var isDark = theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (isDark) document.documentElement.classList.add('dark');
+    var td = localStorage.getItem('themeData');
+    if (td) {
+      var data = JSON.parse(td);
+      var vars = isDark ? data.dark : data.light;
+      if (vars) {
+        var root = document.documentElement;
+        for (var k in vars) root.style.setProperty(k, vars[k]);
+      }
     }
   } catch(e) {}
 })();
