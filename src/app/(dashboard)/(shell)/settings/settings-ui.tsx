@@ -673,26 +673,58 @@ const FONT_OPTIONS = [
   {
     id: 'inter',
     label: 'Inter',
-    desc: 'Modern sans-serif',
-    sample: 'Aa',
+    desc: 'Sans-serif',
     css: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
     sampleStyle: { fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif' },
   },
   {
     id: 'system',
     label: 'System',
-    desc: 'Systemets standardfont',
-    sample: 'Aa',
+    desc: 'Standard',
     css: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
     sampleStyle: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif' },
+  },
+  {
+    id: 'dm-sans',
+    label: 'DM Sans',
+    desc: 'Geometrisk',
+    css: '"DM Sans", ui-sans-serif, system-ui, sans-serif',
+    sampleStyle: { fontFamily: '"DM Sans", ui-sans-serif, system-ui, sans-serif' },
+  },
+  {
+    id: 'geist',
+    label: 'Geist',
+    desc: 'Modern',
+    css: '"Geist", ui-sans-serif, system-ui, sans-serif',
+    sampleStyle: { fontFamily: '"Geist", ui-sans-serif, system-ui, sans-serif' },
+  },
+  {
+    id: 'lora',
+    label: 'Lora',
+    desc: 'Serif',
+    css: '"Lora", Georgia, serif',
+    sampleStyle: { fontFamily: '"Lora", Georgia, serif' },
   },
   {
     id: 'cormorant',
     label: 'Cormorant',
     desc: 'Elegant serif',
-    sample: 'Aa',
     css: 'var(--font-cormorant), Georgia, serif',
     sampleStyle: { fontFamily: 'var(--font-cormorant), Georgia, serif' },
+  },
+  {
+    id: 'jetbrains',
+    label: 'JetBrains Mono',
+    desc: 'Monospace',
+    css: '"JetBrains Mono", ui-monospace, monospace',
+    sampleStyle: { fontFamily: '"JetBrains Mono", ui-monospace, monospace' },
+  },
+  {
+    id: 'source-serif',
+    label: 'Source Serif',
+    desc: 'Klassisk serif',
+    css: '"Source Serif 4", Georgia, serif',
+    sampleStyle: { fontFamily: '"Source Serif 4", Georgia, serif' },
   },
 ] as const;
 
@@ -752,9 +784,24 @@ function UtseendeTab() {
     } catch { /* ignore */ }
   }
 
+  // All CSS custom properties that themes control
+  const THEME_PROPS = [
+    '--page-bg', '--surface', '--surface-alt', '--surface-hover',
+    '--surface-0', '--surface-1', '--surface-2', '--surface-3', '--surface-active',
+    '--border', '--border-light', '--text-primary', '--text-secondary', '--text-muted',
+    '--accent', '--accent-light', '--accent-subtle', '--accent-border',
+  ];
+
+  /** Clear all theme inline styles so CSS cascade takes over */
+  function clearThemeInlineStyles() {
+    const root = document.documentElement;
+    for (const prop of THEME_PROPS) root.style.removeProperty(prop);
+  }
+
   function applySelectedTheme(t: ThemeDef) {
     setSelectedTheme(t.id);
     try {
+      clearThemeInlineStyles();
       const root = document.documentElement;
       const isDark = root.classList.contains('dark');
       const vars = isDark ? t.dark : t.light;
@@ -770,6 +817,7 @@ function UtseendeTab() {
   function reapplyThemeForMode(isDark: boolean) {
     const t = THEMES.find((x) => x.id === selectedTheme);
     if (!t) return;
+    clearThemeInlineStyles();
     const root = document.documentElement;
     const vars = isDark ? t.dark : t.light;
     for (const [prop, val] of Object.entries(vars)) {
@@ -988,7 +1036,7 @@ function UtseendeTab() {
           <h3 className="text-sm font-semibold text-[var(--text-primary)]">Typsnitt</h3>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">Välj typsnitt för gränssnittet.</p>
         </div>
-        <div className="grid grid-cols-3 gap-4 mt-4">
+        <div className="mt-3 rounded-lg border border-[var(--border)] divide-y divide-[var(--border-light)] overflow-hidden">
           {FONT_OPTIONS.map((f) => {
             const selected = fontFamily === f.id;
             return (
@@ -996,36 +1044,38 @@ function UtseendeTab() {
                 key={f.id}
                 onClick={() => applyFont(f)}
                 className={cn(
-                  'relative flex flex-col items-center gap-2 py-5 px-3 rounded-lg border-2 transition-all duration-150',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40',
+                  'w-full flex items-center gap-3 px-3.5 py-2.5 text-left transition-colors duration-100',
+                  'focus:outline-none',
                   selected
-                    ? 'border-[var(--accent)]'
-                    : 'border-[var(--border)] hover:border-[var(--text-muted)]/40',
+                    ? 'bg-[var(--accent)]/5'
+                    : 'hover:bg-[var(--surface-hover)]',
                 )}
               >
-                <span
-                  className="text-3xl font-semibold text-[var(--text-primary)]"
-                  style={f.sampleStyle}
-                >
-                  {f.sample}
-                </span>
-                <div className="text-center">
-                  <p className="text-sm font-medium text-[var(--text-primary)]">{f.label}</p>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{f.desc}</p>
-                </div>
-                <AnimatePresence>
+                {/* Radio dot */}
+                <span className={cn(
+                  'w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors',
+                  selected
+                    ? 'border-[var(--accent)]'
+                    : 'border-[var(--border)]',
+                )}>
                   {selected && (
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      transition={SPRING_SNAPPY}
-                      className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[var(--accent)] flex items-center justify-center"
-                    >
-                      <Icon path={<polyline points="20 6 9 17 4 12"/>} size={10} className="text-white" />
-                    </motion.span>
+                      transition={{ duration: 0.15 }}
+                      className="w-2 h-2 rounded-full bg-[var(--accent)]"
+                    />
                   )}
-                </AnimatePresence>
+                </span>
+                {/* Font sample + name */}
+                <span
+                  className="text-base font-medium text-[var(--text-primary)] w-8"
+                  style={f.sampleStyle}
+                >
+                  Aa
+                </span>
+                <span className="text-sm font-medium text-[var(--text-primary)]">{f.label}</span>
+                <span className="text-xs text-[var(--text-muted)] ml-auto">{f.desc}</span>
               </button>
             );
           })}
