@@ -51,6 +51,12 @@ export default function RootLayout({
     <html lang="sv" suppressHydrationWarning className={`${inter.variable} ${cormorant.variable} h-full overflow-hidden`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Lora:wght@400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body className="h-dvh overflow-hidden antialiased">
         <Providers>{children}</Providers>
