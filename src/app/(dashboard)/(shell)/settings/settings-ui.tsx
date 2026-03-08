@@ -285,70 +285,71 @@ function ProfilTab({ user }: { user: UserProps }) {
 
 // ─── Utseende tab ─────────────────────────────────────────────────────────────
 
+// shadcn/ui-based color themes — accent values derived from the official shadcn palette
 const THEMES = [
-  {
-    id: 'default',
-    label: 'Standard',
-    desc: 'Klassisk lila tema',
-    accent: 'oklch(0.44 0.19 285)',
-    light: 'oklch(0.51 0.19 285)',
-    swatches: ['oklch(0.44 0.19 285)', 'oklch(0.51 0.19 285)', 'oklch(0.71 0.14 285)', 'oklch(0.94 0.04 290)'],
-  },
   {
     id: 'zinc',
     label: 'Zinc',
     desc: 'Ren och neutral',
-    accent: 'oklch(0.21 0.006 285)',
-    light: 'oklch(0.27 0.006 285)',
-    swatches: ['oklch(0.21 0.006 285)', 'oklch(0.37 0.013 285)', 'oklch(0.55 0.014 285)', 'oklch(0.92 0.004 285)'],
+    accent: 'oklch(0.24 0.006 286)',   // zinc-900
+    light:  'oklch(0.37 0.011 286)',   // zinc-700
+    swatches: ['#18181b', '#3f3f46', '#71717a', '#a1a1aa', '#d4d4d8'],
+  },
+  {
+    id: 'slate',
+    label: 'Slate',
+    desc: 'Mjuk och balanserad',
+    accent: 'oklch(0.24 0.014 253)',   // slate-900
+    light:  'oklch(0.37 0.017 253)',   // slate-700
+    swatches: ['#0f172a', '#334155', '#64748b', '#94a3b8', '#cbd5e1'],
   },
   {
     id: 'rose',
     label: 'Rose',
     desc: 'Mjuk och varm',
-    accent: 'oklch(0.55 0.22 12)',
-    light: 'oklch(0.64 0.22 15)',
-    swatches: ['oklch(0.55 0.22 12)', 'oklch(0.64 0.22 15)', 'oklch(0.72 0.17 18)', 'oklch(0.94 0.04 10)'],
+    accent: 'oklch(0.59 0.21 7)',      // rose-500
+    light:  'oklch(0.65 0.20 12)',     // rose-400
+    swatches: ['#e11d48', '#f43f5e', '#fb7185', '#fda4af', '#fecdd3'],
   },
   {
     id: 'blue',
     label: 'Blue',
     desc: 'Professionell och trygg',
-    accent: 'oklch(0.55 0.18 255)',
-    light: 'oklch(0.62 0.18 255)',
-    swatches: ['oklch(0.55 0.18 255)', 'oklch(0.62 0.18 255)', 'oklch(0.72 0.14 255)', 'oklch(0.94 0.04 250)'],
+    accent: 'oklch(0.59 0.20 262)',    // blue-500
+    light:  'oklch(0.65 0.19 260)',    // blue-400
+    swatches: ['#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'],
   },
   {
     id: 'green',
     label: 'Green',
     desc: 'Frisk och naturlig',
-    accent: 'oklch(0.59 0.16 145)',
-    light: 'oklch(0.67 0.17 150)',
-    swatches: ['oklch(0.59 0.16 145)', 'oklch(0.67 0.17 150)', 'oklch(0.77 0.15 150)', 'oklch(0.95 0.05 148)'],
+    accent: 'oklch(0.59 0.16 163)',    // green-500
+    light:  'oklch(0.65 0.15 160)',    // green-400
+    swatches: ['#16a34a', '#22c55e', '#4ade80', '#86efac', '#bbf7d0'],
   },
   {
     id: 'orange',
     label: 'Orange',
     desc: 'Energisk och kreativ',
-    accent: 'oklch(0.58 0.16 45)',
-    light: 'oklch(0.68 0.17 50)',
-    swatches: ['oklch(0.58 0.16 45)', 'oklch(0.68 0.17 50)', 'oklch(0.76 0.13 55)', 'oklch(0.95 0.04 60)'],
+    accent: 'oklch(0.65 0.17 47)',     // orange-500
+    light:  'oklch(0.70 0.16 52)',     // orange-400
+    swatches: ['#ea580c', '#f97316', '#fb923c', '#fdba74', '#fed7aa'],
   },
   {
     id: 'violet',
     label: 'Violet',
     desc: 'Modern och elegant',
-    accent: 'oklch(0.51 0.19 293)',
-    light: 'oklch(0.59 0.18 293)',
-    swatches: ['oklch(0.51 0.19 293)', 'oklch(0.59 0.18 293)', 'oklch(0.71 0.14 293)', 'oklch(0.94 0.04 293)'],
+    accent: 'oklch(0.55 0.22 293)',    // violet-500
+    light:  'oklch(0.61 0.21 293)',    // violet-400
+    swatches: ['#7c3aed', '#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe'],
   },
   {
     id: 'yellow',
     label: 'Yellow',
     desc: 'Ljus och optimistisk',
-    accent: 'oklch(0.63 0.14 85)',
-    light: 'oklch(0.73 0.15 90)',
-    swatches: ['oklch(0.63 0.14 85)', 'oklch(0.73 0.15 90)', 'oklch(0.83 0.14 92)', 'oklch(0.96 0.06 95)'],
+    accent: 'oklch(0.79 0.16 86)',     // yellow-400
+    light:  'oklch(0.85 0.15 90)',     // yellow-300
+    swatches: ['#ca8a04', '#eab308', '#facc15', '#fde047', '#fef08a'],
   },
 ] as const;
 
@@ -386,7 +387,7 @@ type FontId = typeof FONT_OPTIONS[number]['id'];
 function UtseendeTab() {
   const [theme,       setTheme]       = useState<ThemeMode>('auto');
   const [fontSize,    setFontSize]    = useState<FontSize>('medium');
-  const [selectedTheme, setSelectedTheme] = useState<ThemeId>('default');
+  const [selectedTheme, setSelectedTheme] = useState<ThemeId>('zinc');
   const [fontFamily,  setFontFamily]  = useState<FontId>('inter');
   const [pending, setPending] = useState(false);
   const [saved,   setSaved]   = useState(false);
@@ -428,10 +429,12 @@ function UtseendeTab() {
   function applySelectedTheme(t: typeof THEMES[number]) {
     setSelectedTheme(t.id);
     try {
-      document.documentElement.style.setProperty('--accent', t.accent);
-      document.documentElement.style.setProperty('--accent-light', t.light);
-      document.documentElement.style.setProperty('--accent-subtle', t.swatches[3]);
-      document.documentElement.style.setProperty('--accent-border', t.swatches[2]);
+      const root = document.documentElement;
+      root.style.setProperty('--accent', t.accent);
+      root.style.setProperty('--accent-light', t.light);
+      // Derive subtle/border from accent with alpha
+      root.style.setProperty('--accent-subtle', t.accent.replace(')', ' / 0.08)'));
+      root.style.setProperty('--accent-border', t.accent.replace(')', ' / 0.22)'));
       localStorage.setItem('accentColor', t.id);
       localStorage.setItem('accentHex', t.accent);
       localStorage.setItem('accentLightHex', t.light);
