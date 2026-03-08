@@ -285,70 +285,71 @@ function ProfilTab({ user }: { user: UserProps }) {
 
 // ─── Utseende tab ─────────────────────────────────────────────────────────────
 
+// Color themes curated from tweakcn.com community presets
 const THEMES = [
   {
-    id: 'default',
-    label: 'Standard',
-    desc: 'Klassisk lila tema',
-    accent: 'oklch(0.44 0.19 285)',
-    light: 'oklch(0.51 0.19 285)',
-    swatches: ['oklch(0.44 0.19 285)', 'oklch(0.51 0.19 285)', 'oklch(0.71 0.14 285)', 'oklch(0.94 0.04 290)'],
+    id: 'claude',
+    label: 'Claude',
+    desc: 'Varm terracotta',
+    accent: 'oklch(0.62 0.16 40)',     // #c96442 warm clay
+    light:  'oklch(0.68 0.15 42)',     // #d97757
+    swatches: ['#c96442', '#d97757', '#e09070', '#e9b8a0', '#f5ddd0'],
   },
   {
-    id: 'zinc',
-    label: 'Zinc',
-    desc: 'Ren och neutral',
-    accent: 'oklch(0.21 0.006 285)',
-    light: 'oklch(0.27 0.006 285)',
-    swatches: ['oklch(0.21 0.006 285)', 'oklch(0.37 0.013 285)', 'oklch(0.55 0.014 285)', 'oklch(0.92 0.004 285)'],
+    id: 'catppuccin',
+    label: 'Catppuccin',
+    desc: 'Mjuk pastell lila',
+    accent: 'oklch(0.55 0.24 310)',    // #8839ef mauve
+    light:  'oklch(0.72 0.15 310)',    // #cba6f7 lavender
+    swatches: ['#8839ef', '#cba6f7', '#89dceb', '#f38ba8', '#a6e3a1'],
   },
   {
-    id: 'rose',
-    label: 'Rose',
-    desc: 'Mjuk och varm',
-    accent: 'oklch(0.55 0.22 12)',
-    light: 'oklch(0.64 0.22 15)',
-    swatches: ['oklch(0.55 0.22 12)', 'oklch(0.64 0.22 15)', 'oklch(0.72 0.17 18)', 'oklch(0.94 0.04 10)'],
+    id: 'cosmic-night',
+    label: 'Cosmic Night',
+    desc: 'Djupt rymdlila',
+    accent: 'oklch(0.53 0.20 295)',    // #6e56cf indigo
+    light:  'oklch(0.66 0.18 295)',    // #a48fff
+    swatches: ['#6e56cf', '#a48fff', '#d8e6ff', '#ff5470', '#e4dfff'],
   },
   {
-    id: 'blue',
-    label: 'Blue',
-    desc: 'Professionell och trygg',
-    accent: 'oklch(0.55 0.18 255)',
-    light: 'oklch(0.62 0.18 255)',
-    swatches: ['oklch(0.55 0.18 255)', 'oklch(0.62 0.18 255)', 'oklch(0.72 0.14 255)', 'oklch(0.94 0.04 250)'],
+    id: 'perpetuity',
+    label: 'Perpetuity',
+    desc: 'Fräsch teal',
+    accent: 'oklch(0.58 0.12 195)',    // #06858e deep teal
+    light:  'oklch(0.82 0.12 190)',    // #4de8e8 cyan
+    swatches: ['#06858e', '#4de8e8', '#c9e5e7', '#164955', '#e8f0f0'],
   },
   {
-    id: 'green',
-    label: 'Green',
+    id: 'nature',
+    label: 'Nature',
     desc: 'Frisk och naturlig',
-    accent: 'oklch(0.59 0.16 145)',
-    light: 'oklch(0.67 0.17 150)',
-    swatches: ['oklch(0.59 0.16 145)', 'oklch(0.67 0.17 150)', 'oklch(0.77 0.15 150)', 'oklch(0.95 0.05 148)'],
+    accent: 'oklch(0.52 0.14 150)',    // #2e7d32 forest
+    light:  'oklch(0.62 0.16 145)',    // #4caf50
+    swatches: ['#2e7d32', '#4caf50', '#81c784', '#c8e6c9', '#e8f5e9'],
   },
   {
-    id: 'orange',
-    label: 'Orange',
-    desc: 'Energisk och kreativ',
-    accent: 'oklch(0.58 0.16 45)',
-    light: 'oklch(0.68 0.17 50)',
-    swatches: ['oklch(0.58 0.16 45)', 'oklch(0.68 0.17 50)', 'oklch(0.76 0.13 55)', 'oklch(0.95 0.04 60)'],
+    id: 'mocha-mousse',
+    label: 'Mocha Mousse',
+    desc: 'Varm och jordnära',
+    accent: 'oklch(0.58 0.08 40)',     // #A37764 warm brown
+    light:  'oklch(0.68 0.07 42)',     // #C39E88
+    swatches: ['#A37764', '#C39E88', '#BAAB92', '#E4C7B8', '#F1F0E5'],
   },
   {
-    id: 'violet',
-    label: 'Violet',
-    desc: 'Modern och elegant',
-    accent: 'oklch(0.51 0.19 293)',
-    light: 'oklch(0.59 0.18 293)',
-    swatches: ['oklch(0.51 0.19 293)', 'oklch(0.59 0.18 293)', 'oklch(0.71 0.14 293)', 'oklch(0.94 0.04 293)'],
+    id: 'tangerine',
+    label: 'Tangerine',
+    desc: 'Energisk och djärv',
+    accent: 'oklch(0.60 0.19 30)',     // #e05d38 deep orange
+    light:  'oklch(0.65 0.17 35)',
+    swatches: ['#e05d38', '#f07050', '#f3a080', '#f6c4a8', '#fde8d8'],
   },
   {
-    id: 'yellow',
-    label: 'Yellow',
-    desc: 'Ljus och optimistisk',
-    accent: 'oklch(0.63 0.14 85)',
-    light: 'oklch(0.73 0.15 90)',
-    swatches: ['oklch(0.63 0.14 85)', 'oklch(0.73 0.15 90)', 'oklch(0.83 0.14 92)', 'oklch(0.96 0.06 95)'],
+    id: 'bold-tech',
+    label: 'Bold Tech',
+    desc: 'Modern och kraftfull',
+    accent: 'oklch(0.55 0.22 290)',    // #8b5cf6 vivid violet
+    light:  'oklch(0.62 0.20 290)',    // #a78bfa
+    swatches: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#dbeafe', '#f3f0ff'],
   },
 ] as const;
 
@@ -386,7 +387,7 @@ type FontId = typeof FONT_OPTIONS[number]['id'];
 function UtseendeTab() {
   const [theme,       setTheme]       = useState<ThemeMode>('auto');
   const [fontSize,    setFontSize]    = useState<FontSize>('medium');
-  const [selectedTheme, setSelectedTheme] = useState<ThemeId>('default');
+  const [selectedTheme, setSelectedTheme] = useState<ThemeId>('claude');
   const [fontFamily,  setFontFamily]  = useState<FontId>('inter');
   const [pending, setPending] = useState(false);
   const [saved,   setSaved]   = useState(false);
@@ -428,10 +429,12 @@ function UtseendeTab() {
   function applySelectedTheme(t: typeof THEMES[number]) {
     setSelectedTheme(t.id);
     try {
-      document.documentElement.style.setProperty('--accent', t.accent);
-      document.documentElement.style.setProperty('--accent-light', t.light);
-      document.documentElement.style.setProperty('--accent-subtle', t.swatches[3]);
-      document.documentElement.style.setProperty('--accent-border', t.swatches[2]);
+      const root = document.documentElement;
+      root.style.setProperty('--accent', t.accent);
+      root.style.setProperty('--accent-light', t.light);
+      // Derive subtle/border from accent with alpha
+      root.style.setProperty('--accent-subtle', t.accent.replace(')', ' / 0.08)'));
+      root.style.setProperty('--accent-border', t.accent.replace(')', ' / 0.22)'));
       localStorage.setItem('accentColor', t.id);
       localStorage.setItem('accentHex', t.accent);
       localStorage.setItem('accentLightHex', t.light);
