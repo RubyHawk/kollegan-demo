@@ -1,26 +1,20 @@
 'use client';
 
 /**
- * Sidebar — modern SaaS/ERP navigation sidebar (2026 redesign)
+ * Sidebar — modern SaaS/ERP navigation sidebar (Linear-inspired redesign)
  *
  * Visual design language:
- *  - No item borders — cleaner, less cluttered look
- *  - Alternating row backgrounds (zebra stripe, expanded only)
- *  - Strong accent-colored hover — same for all items, clearly distinct
- *  - Active: left 3px accent bar + accent tinted background
- *  - Collapsed active: strong accent bg (/20) + left accent bar always visible
- *  - Dropdown children connected by a left tree-line (vertical rail + dot)
- *  - Footer as a distinct card surface with an internal divider
- *  - Section labels: small-caps, muted, with a horizontal rule
- *  - Always-visible collapse tab on right border
+ *  - Clean, minimal — no icon boxes, no left bars, no tree lines
+ *  - Active: surface-hover bg + font-medium + accent icon (Linear-style)
+ *  - Hover: surface-hover bg + primary text
+ *  - Collapse: hover-reveal button in header
+ *  - Section labels: small uppercase, spacing-only separation (no borders)
+ *  - Footer: minimal identity row + compact icon buttons
  *
  * Animations (Framer Motion):
- *  - Active bar: scaleY 0 → 1 spring on navigation
- *  - Active bg: opacity 0 → 1 fade
  *  - Labels: opacity + x slide when sidebar expands/collapses
  *  - Dropdown: height + opacity + stagger children
- *  - Chevron: rotate 0 → 180° spring
- *  - Icon hover: y -1 + slight scale spring
+ *  - Chevron: rotate 0 → 90° spring
  *  - Badge: subtle pulse on mount
  *  Sidebar width: CSS transition (no Framer layout reflow)
  */
@@ -48,7 +42,7 @@ import {
   SettingsIcon,
   LogOutIcon,
   ChevronRightIcon,
-  ChevronDownIcon,
+  ChevronLeftIcon,
   BarChart2Icon,
   FileTextIcon,
   FolderIcon,
@@ -214,7 +208,6 @@ function NavItem({
   collapsed,
   badge,
   indent,
-  itemIndex = 0,
   reducedMotion,
   onClick,
 }: NavItemProps) {
@@ -226,47 +219,15 @@ function NavItem({
         onClick={onClick}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'relative flex items-center justify-center w-10 h-10 rounded-xl outline-none',
+          'relative flex items-center justify-center w-9 h-9 rounded-lg outline-none mx-auto',
           'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
           'transition-colors duration-150',
           active
-            ? 'text-[var(--accent)] bg-[var(--accent)]/20'
-            : 'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
+            ? 'text-[var(--accent)] bg-[var(--accent)]/10'
+            : 'text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]',
         )}
       >
-        {/* Active bg */}
-        <AnimatePresence initial={false}>
-          {active && (
-            <motion.span
-              className="absolute inset-0 rounded-xl bg-[var(--accent)]/12"
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.85 }}
-              transition={SPRING_STANDARD}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Left accent bar — always visible when active, even collapsed */}
-        <AnimatePresence initial={false}>
-          {active && (
-            <motion.span
-              className="absolute left-0 top-[15%] bottom-[15%] w-[3px] rounded-full bg-[var(--accent)]"
-              initial={{ scaleY: 0, opacity: 0 }}
-              animate={{ scaleY: 1, opacity: 1 }}
-              exit={{ scaleY: 0, opacity: 0 }}
-              transition={{ ...SPRING_SNAPPY, delay: 0.04 }}
-              style={{ originY: '50%' }}
-            />
-          )}
-        </AnimatePresence>
-
-        <span className={cn(
-          'relative z-10 w-[30px] h-[30px] rounded-lg flex items-center justify-center transition-colors duration-150',
-          active ? 'bg-[var(--accent)]/25' : '',
-        )}>
-          {Icon && <Icon size={15} />}
-        </span>
+        {Icon && <Icon size={16} />}
       </Link>
     );
     return (
@@ -277,7 +238,7 @@ function NavItem({
     );
   }
 
-  // ── Child item (indented, no icon, dot + tree-line) ─────────────────────────
+  // ── Child item (indented, no icon) ────────────────────────────────────────
   if (indent) {
     return (
       <Link
@@ -285,21 +246,14 @@ function NavItem({
         onClick={onClick}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'relative flex items-center gap-2 pl-3 pr-3 py-[7px] rounded-lg text-sm outline-none',
+          'relative flex items-center pl-[34px] pr-2 py-1.5 rounded-lg text-[13px] outline-none',
           'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
           'transition-colors duration-150',
           active
-            ? 'text-[var(--accent)] font-medium bg-[var(--accent)]/8'
-            : [
-                'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
-              ].join(' '),
+            ? 'text-[var(--text-primary)] font-medium bg-[var(--surface-hover)]'
+            : 'text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]',
         )}
       >
-        {/* Dot indicator */}
-        <span className={cn(
-          'w-1.5 h-1.5 rounded-full shrink-0 transition-colors duration-150',
-          active ? 'bg-[var(--accent)]' : 'bg-[var(--text-muted)]/40',
-        )} />
         <span className="truncate">{label}</span>
       </Link>
     );
@@ -312,65 +266,29 @@ function NavItem({
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'relative flex items-center gap-2.5 w-full px-2 py-[9px] rounded-xl text-sm font-medium outline-none group/navitem',
+        'relative flex items-center gap-3 w-full px-2 py-1.5 rounded-lg text-[13px] outline-none group/navitem',
         'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
         'transition-colors duration-150',
         active
-          ? 'text-[var(--accent)]'
-          : [
-              'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
-            ].join(' '),
+          ? 'text-[var(--text-primary)] font-medium bg-[var(--surface-hover)]'
+          : 'text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]',
       )}
     >
-      {/* Active background */}
-      <AnimatePresence initial={false}>
-        {active && (
-          <motion.span
-            className="absolute inset-0 rounded-xl bg-[var(--accent)]/8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Left accent bar */}
-      <AnimatePresence initial={false}>
-        {active && (
-          <motion.span
-            className="absolute left-0 top-[18%] bottom-[18%] w-[3px] rounded-full bg-[var(--accent)]"
-            initial={{ scaleY: 0, opacity: 0 }}
-            animate={{ scaleY: 1, opacity: 1 }}
-            exit={{ scaleY: 0, opacity: 0 }}
-            transition={{ ...SPRING_SNAPPY, delay: 0.04 }}
-            style={{ originY: '50%' }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Boxed icon */}
+      {/* Bare icon */}
       {Icon && (
-        <motion.span
-          className={cn(
-            'relative z-10 w-[30px] h-[30px] rounded-lg flex items-center justify-center shrink-0',
-            'transition-colors duration-150',
-            active
-              ? 'bg-[var(--accent)]/15'
-              : 'bg-transparent group-hover/navitem:bg-[var(--accent)]/10',
-          )}
-          whileHover={reducedMotion ? undefined : { y: -1, scale: 1.04 }}
-          transition={SPRING_SNAPPY}
-        >
-          <Icon size={15} />
-        </motion.span>
+        <Icon size={16} className={cn(
+          'shrink-0 transition-colors duration-150',
+          active
+            ? 'text-[var(--accent)]'
+            : 'text-[var(--text-muted)] group-hover/navitem:text-[var(--text-secondary)]',
+        )} />
       )}
 
       {/* Label */}
       <AnimatePresence initial={false}>
         <motion.span
           key="label"
-          className="relative z-10 flex-1 truncate"
+          className="flex-1 truncate"
           {...(reducedMotion ? {} : labelMotion)}
         >
           {label}
@@ -380,7 +298,7 @@ function NavItem({
       {/* Badge */}
       {badge !== undefined && badge > 0 && (
         <motion.span
-          className="relative z-10 ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--accent)] text-white text-[10px] font-semibold flex items-center justify-center leading-none"
+          className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--accent)] text-white text-[10.5px] font-semibold flex items-center justify-center leading-none"
           initial={{ scale: 0.6, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ ...SPRING_SNAPPY, delay: 0.1 }}
@@ -411,7 +329,6 @@ function NavDropdownItem({
   open,
   onToggle,
   pathname,
-  itemIndex = 0,
   reducedMotion,
   onMobileClose,
 }: NavDropdownProps) {
@@ -421,7 +338,8 @@ function NavDropdownItem({
   const Icon = entry.icon;
   const contentId = `nav-dd-${entry.key}`;
   const isHighlighted = hasActiveChild || open;
-  // ── Collapsed mode: icon + tooltip ─────────────────────────────────────────
+
+  // ── Collapsed mode: navigate to first child ───────────────────────────────
   if (collapsed) {
     return (
       <Tooltip>
@@ -430,43 +348,15 @@ function NavDropdownItem({
             href={entry.items[0]?.href ?? '#'}
             onClick={onMobileClose}
             className={cn(
-              'relative flex items-center justify-center w-10 h-10 rounded-xl outline-none',
+              'relative flex items-center justify-center w-9 h-9 rounded-lg outline-none mx-auto',
               'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
               'transition-colors duration-150',
               hasActiveChild
-                ? 'text-[var(--accent)] bg-[var(--accent)]/20'
-                : 'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
+                ? 'text-[var(--accent)] bg-[var(--accent)]/10'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]',
             )}
           >
-            {hasActiveChild && (
-              <motion.span
-                className="absolute inset-0 rounded-xl bg-[var(--accent)]/12"
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={SPRING_STANDARD}
-              />
-            )}
-
-            {/* Left accent bar in collapsed mode */}
-            <AnimatePresence initial={false}>
-              {hasActiveChild && (
-                <motion.span
-                  className="absolute left-0 top-[15%] bottom-[15%] w-[3px] rounded-full bg-[var(--accent)]"
-                  initial={{ scaleY: 0, opacity: 0 }}
-                  animate={{ scaleY: 1, opacity: 1 }}
-                  exit={{ scaleY: 0, opacity: 0 }}
-                  transition={{ ...SPRING_SNAPPY, delay: 0.04 }}
-                  style={{ originY: '50%' }}
-                />
-              )}
-            </AnimatePresence>
-
-            <span className={cn(
-              'relative z-10 w-[30px] h-[30px] rounded-lg flex items-center justify-center',
-              hasActiveChild ? 'bg-[var(--accent)]/25' : '',
-            )}>
-              <Icon size={15} />
-            </span>
+            <Icon size={16} />
           </Link>
         </TooltipTrigger>
         <TooltipContent side="right">{entry.label}</TooltipContent>
@@ -483,78 +373,44 @@ function NavDropdownItem({
         aria-expanded={open}
         aria-controls={contentId}
         className={cn(
-          'relative flex items-center gap-2.5 w-full px-2 py-[9px] rounded-xl text-sm font-medium outline-none group/ddtrigger',
+          'relative flex items-center gap-3 w-full px-2 py-1.5 rounded-lg text-[13px] outline-none group/ddtrigger',
           'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
           'transition-colors duration-150',
           isHighlighted
-            ? 'text-[var(--accent)]'
-            : 'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
+            ? 'text-[var(--text-primary)] font-medium bg-[var(--surface-hover)]'
+            : 'text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]',
         )}
       >
-        {/* Active/open background */}
-        <AnimatePresence initial={false}>
-          {isHighlighted && (
-            <motion.span
-              className="absolute inset-0 rounded-xl bg-[var(--accent)]/8"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Left bar when a child is active (and group is closed) */}
-        <AnimatePresence initial={false}>
-          {hasActiveChild && !open && (
-            <motion.span
-              className="absolute left-0 top-[18%] bottom-[18%] w-[3px] rounded-full bg-[var(--accent)]"
-              initial={{ scaleY: 0, opacity: 0 }}
-              animate={{ scaleY: 1, opacity: 1 }}
-              exit={{ scaleY: 0, opacity: 0 }}
-              transition={{ ...SPRING_SNAPPY, delay: 0.04 }}
-              style={{ originY: '50%' }}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Boxed icon */}
-        <motion.span
-          className={cn(
-            'relative z-10 w-[30px] h-[30px] rounded-lg flex items-center justify-center shrink-0',
-            'transition-colors duration-150',
-            isHighlighted
-              ? 'bg-[var(--accent)]/15'
-              : 'bg-transparent group-hover/ddtrigger:bg-[var(--accent)]/10',
-          )}
-          whileHover={reducedMotion ? undefined : { y: -1, scale: 1.04 }}
-          transition={SPRING_SNAPPY}
-        >
-          <Icon size={15} />
-        </motion.span>
+        {/* Bare icon */}
+        <Icon size={16} className={cn(
+          'shrink-0 transition-colors duration-150',
+          isHighlighted
+            ? 'text-[var(--accent)]'
+            : 'text-[var(--text-muted)] group-hover/ddtrigger:text-[var(--text-secondary)]',
+        )} />
 
         {/* Label */}
         <AnimatePresence initial={false}>
           <motion.span
             key="dd-label"
-            className="relative z-10 flex-1 truncate text-left"
+            className="flex-1 truncate text-left"
             {...(reducedMotion ? {} : labelMotion)}
           >
             {entry.label}
           </motion.span>
         </AnimatePresence>
 
-        {/* Rotating chevron */}
+        {/* Rotating chevron — right arrow rotates to point down */}
         <motion.span
-          className="relative z-10 shrink-0 text-[var(--text-muted)]"
-          animate={reducedMotion ? undefined : { rotate: open ? 180 : 0 }}
+          className="shrink-0 text-[var(--text-muted)]"
+          animate={reducedMotion ? undefined : { rotate: open ? 90 : 0 }}
           transition={SPRING_SNAPPY}
         >
-          <ChevronDownIcon size={13} />
+          <ChevronRightIcon size={12} />
         </motion.span>
       </button>
 
-      {/* Children — tree line + staggered items */}
+      {/* Children — indented, staggered */}
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
@@ -568,7 +424,7 @@ function NavDropdownItem({
             style={{ overflow: 'hidden' }}
           >
             <motion.div
-              className="mt-0.5 mb-1 ml-[19px] pl-3 flex flex-col gap-0.5 border-l-2 border-[var(--border-light)]"
+              className="mt-0.5 mb-0.5 flex flex-col gap-px"
               variants={reducedMotion ? undefined : childContainerVariants}
               initial="hidden"
               animate="show"
@@ -646,27 +502,26 @@ function SectionGroup({
       aria-label={section.section}
       className={cn(
         'flex flex-col gap-0.5',
-        !isFirst && 'mt-5 pt-5 border-t border-[var(--border-light)]',
+        !isFirst && 'mt-4 pt-1',
         collapsed && 'items-center',
       )}
     >
-      {/* Section label row */}
+      {/* Section label */}
       {!collapsed ? (
         <AnimatePresence initial={false}>
           <motion.div
             key="sec-label"
-            className="flex items-center gap-2 px-2 mb-1"
+            className="px-2 mb-1"
             {...(reducedMotion ? {} : { ...labelMotion })}
           >
-            <span className="text-[10.5px] font-semibold uppercase tracking-widest text-[var(--text-muted)] select-none whitespace-nowrap">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-muted)] select-none whitespace-nowrap">
               {section.section}
             </span>
-            <span className="flex-1 h-px bg-[var(--border-light)]" />
           </motion.div>
         </AnimatePresence>
       ) : (
         !isFirst && (
-          <span className="w-4 h-px bg-[var(--border-light)] rounded-full mb-1" />
+          <span className="w-5 h-px bg-[var(--border-light)] rounded-full my-1" />
         )
       )}
 
@@ -711,23 +566,28 @@ function SectionGroup({
 
 // ─── SidebarHeader ────────────────────────────────────────────────────────────
 
-function SidebarHeader({ collapsed }: { collapsed: boolean }) {
+interface SidebarHeaderProps {
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+}
+
+function SidebarHeader({ collapsed, onToggleCollapse }: SidebarHeaderProps) {
   return (
     <div
       className={cn(
-        'flex items-center shrink-0 h-[61px]',
+        'flex items-center shrink-0 h-12',
         'border-b border-[var(--border)]',
-        collapsed ? 'justify-center px-0' : 'px-4 gap-3',
+        collapsed ? 'justify-center px-0' : 'px-3 gap-2.5',
       )}
     >
       {/* Logo mark */}
       <motion.div
-        className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm shrink-0"
-        whileHover={{ scale: 1.05, rotate: 3 }}
+        className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center shrink-0"
+        whileHover={{ scale: 1.04 }}
         transition={SPRING_SNAPPY}
       >
         <svg
-          width="15" height="15" viewBox="0 0 24 24"
+          width="14" height="14" viewBox="0 0 24 24"
           fill="none" stroke="white" strokeWidth="1.75"
           strokeLinecap="round" strokeLinejoin="round"
           aria-hidden="true"
@@ -738,27 +598,37 @@ function SidebarHeader({ collapsed }: { collapsed: boolean }) {
         </svg>
       </motion.div>
 
-      {/* Wordmark + version pill */}
+      {/* Wordmark */}
       {!collapsed && (
         <AnimatePresence initial={false}>
-          <motion.div
+          <motion.span
             key="wordmark"
-            className="flex items-center gap-2 min-w-0"
+            className="font-heading text-[13.5px] font-semibold text-[var(--text-primary)] tracking-tight whitespace-nowrap min-w-0"
             variants={{ hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0 } }}
             initial="hidden"
             animate="show"
             exit="hidden"
             transition={{ duration: 0.14, ease: EASE_SPRING }}
           >
-            <span className="font-heading text-[15px] font-semibold text-[var(--text-primary)] tracking-tight whitespace-nowrap">
-              Kollegan
-            </span>
-            <span className="px-1.5 py-0.5 rounded-md bg-[var(--accent)]/10 text-[var(--accent)] text-[9px] font-bold tracking-wide uppercase shrink-0">
-              ERP
-            </span>
-          </motion.div>
+            Kollegan
+          </motion.span>
         </AnimatePresence>
       )}
+
+      {/* Collapse toggle — hover-reveal */}
+      <button
+        onClick={onToggleCollapse}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        className={cn(
+          'hidden md:flex items-center justify-center w-7 h-7 rounded-md',
+          'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]',
+          'transition-all duration-150',
+          'opacity-0 group-hover/sidebar:opacity-100',
+          !collapsed && 'ml-auto',
+        )}
+      >
+        {collapsed ? <ChevronRightIcon size={14} /> : <ChevronLeftIcon size={14} />}
+      </button>
     </div>
   );
 }
@@ -770,7 +640,6 @@ interface SidebarFooterProps {
   collapsed: boolean;
   onLogout: () => void;
   onMobileClose?: () => void;
-  reducedMotion: boolean;
 }
 
 function SidebarFooter({
@@ -778,7 +647,6 @@ function SidebarFooter({
   collapsed,
   onLogout,
   onMobileClose,
-  reducedMotion,
 }: SidebarFooterProps) {
   const displayName =
     [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
@@ -792,30 +660,30 @@ function SidebarFooter({
   // ── Collapsed footer ──────────────────────────────────────────────────────
   if (collapsed) {
     return (
-      <div className="pb-3 pt-2 flex flex-col items-center gap-1.5 border-t border-[var(--border)]">
+      <div className="py-3 flex flex-col items-center gap-1.5 border-t border-[var(--border)]">
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
               href="/settings"
               onClick={onMobileClose}
-              className="w-10 h-10 rounded-xl hover:bg-[var(--accent)]/10 flex items-center justify-center transition-colors"
+              className="w-9 h-9 rounded-lg hover:bg-[var(--surface-hover)] flex items-center justify-center transition-colors"
             >
-              <div className="w-[30px] h-[30px] rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-light)] flex items-center justify-center shadow-sm">
-                <span className="text-[10px] font-bold text-white">{initials}</span>
+              <div className="w-7 h-7 rounded-md bg-[var(--accent)]/15 flex items-center justify-center">
+                <span className="text-[10px] font-semibold text-[var(--accent)]">{initials}</span>
               </div>
             </Link>
           </TooltipTrigger>
           <TooltipContent side="right">{displayName}</TooltipContent>
         </Tooltip>
 
-        <ThemeToggle className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-all" />
+        <ThemeToggle className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-all" />
 
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               onClick={onLogout}
               aria-label="Log out"
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/8 transition-all"
+              className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/8 transition-all"
             >
               <LogOutIcon size={14} />
             </button>
@@ -826,54 +694,39 @@ function SidebarFooter({
     );
   }
 
-  // ── Expanded footer — card design ─────────────────────────────────────────
+  // ── Expanded footer — flat layout ──────────────────────────────────────────
   return (
-    <div className="p-3 border-t border-[var(--border)]">
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] overflow-hidden">
-        {/* User identity row */}
-        <Link
-          href="/settings"
-          onClick={onMobileClose}
-          className="flex items-center gap-3 px-3 py-2.5 hover:bg-[var(--surface-hover)] transition-colors duration-150 group"
-        >
-          {/* Avatar with gradient */}
-          <div className="w-[30px] h-[30px] rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-light)] flex items-center justify-center shrink-0 shadow-sm">
-            <span className="text-[10px] font-bold text-white">{initials}</span>
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-[var(--text-primary)] truncate leading-tight">
-              {displayName}
-            </p>
-            <p className="text-[10px] text-[var(--text-muted)] truncate capitalize mt-0.5">
-              {user.role}
-            </p>
-          </div>
-
-          <SettingsIcon
-            size={13}
-            className="text-[var(--text-muted)] opacity-0 group-hover:opacity-60 transition-opacity shrink-0"
-          />
-        </Link>
-
-        {/* Divider */}
-        <div className="border-t border-[var(--border-light)]" />
-
-        {/* Action controls row */}
-        <div className="flex items-center px-2 py-1.5 gap-0.5">
-          <ThemeToggle className="flex-1 flex items-center justify-center h-8 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-all text-xs gap-1.5" />
-
-          <div className="w-px h-4 bg-[var(--border-light)] shrink-0" />
-
-          <button
-            onClick={onLogout}
-            aria-label="Log out"
-            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-xs text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/8 transition-all"
-          >
-            <LogOutIcon size={13} />
-            <span>Log out</span>
-          </button>
+    <div className="px-3 py-3 border-t border-[var(--border)] flex flex-col gap-2">
+      {/* User identity row */}
+      <Link
+        href="/settings"
+        onClick={onMobileClose}
+        className="flex items-center gap-2.5 rounded-lg px-1 py-1 -mx-1 hover:bg-[var(--surface-hover)] transition-colors group"
+      >
+        <div className="w-7 h-7 rounded-md bg-[var(--accent)]/15 flex items-center justify-center shrink-0">
+          <span className="text-[10px] font-semibold text-[var(--accent)]">{initials}</span>
         </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-medium text-[var(--text-primary)] truncate">
+            {displayName}
+          </p>
+        </div>
+        <SettingsIcon
+          size={13}
+          className="text-[var(--text-muted)] opacity-0 group-hover:opacity-60 transition-opacity shrink-0"
+        />
+      </Link>
+
+      {/* Quick actions */}
+      <div className="flex items-center gap-1">
+        <ThemeToggle className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-all" />
+        <button
+          onClick={onLogout}
+          aria-label="Log out"
+          className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/8 transition-all"
+        >
+          <LogOutIcon size={14} />
+        </button>
       </div>
     </div>
   );
@@ -948,18 +801,18 @@ export default function Sidebar({
         className={cn(
           'relative h-full group/sidebar shrink-0',
           'transition-[width] duration-200 ease-out',
-          collapsed ? 'w-14' : 'w-60',
+          collapsed ? 'w-16' : 'w-60',
         )}
       >
         {/* Sidebar panel */}
         <aside className="h-full w-full flex flex-col glass-sidebar border-r border-[var(--border)] overflow-hidden">
-          <SidebarHeader collapsed={collapsed} />
+          <SidebarHeader collapsed={collapsed} onToggleCollapse={onToggleCollapse} />
 
           {/* Scrollable nav */}
           <div
             className={cn(
-              'flex-1 py-3 flex flex-col overflow-y-auto scrollbar-thin',
-              collapsed ? 'px-2' : 'px-2.5',
+              'flex-1 py-2 flex flex-col overflow-y-auto scrollbar-thin',
+              collapsed ? 'px-2' : 'px-3',
             )}
           >
             {visibleSections.map((section, idx) => (
@@ -983,34 +836,8 @@ export default function Sidebar({
             collapsed={collapsed}
             onLogout={onLogout}
             onMobileClose={onMobileClose}
-            reducedMotion={reducedMotion}
           />
         </aside>
-
-        {/*
-         * Collapse tab — always visible, cuts seamlessly into the sidebar border.
-         * No left border: the sidebar's `border-r` becomes the tab's left edge.
-         * Rounded only on the right side, giving it a "tab" appearance.
-         */}
-        <button
-          onClick={onToggleCollapse}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className={cn(
-            'hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-[12px] z-20',
-            'w-[14px] h-8 rounded-r-lg items-center justify-center',
-            'bg-[var(--surface)] border-y border-r border-[var(--border)]',
-            'text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40',
-            'transition-colors duration-150',
-          )}
-        >
-          <motion.span
-            className="flex items-center justify-center"
-            animate={reducedMotion ? undefined : { rotate: collapsed ? 0 : 180 }}
-            transition={SPRING_SNAPPY}
-          >
-            <ChevronRightIcon size={9} />
-          </motion.span>
-        </button>
       </div>
     </TooltipProvider>
   );
