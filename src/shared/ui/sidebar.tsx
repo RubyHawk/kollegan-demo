@@ -487,10 +487,7 @@ function NavDropdownItem({
           'transition-colors duration-150',
           isHighlighted
             ? 'text-[var(--accent)]'
-            : [
-                isEven ? 'bg-[var(--surface-3)]/60' : '',
-                'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
-              ].join(' '),
+            : 'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
         )}
       >
         {/* Active/open background */}
