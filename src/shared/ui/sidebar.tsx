@@ -218,8 +218,6 @@ function NavItem({
   reducedMotion,
   onClick,
 }: NavItemProps) {
-  const isEven = itemIndex % 2 === 0;
-
   // ── Collapsed icon-only button ──────────────────────────────────────────────
   if (collapsed) {
     const btn = (
@@ -293,7 +291,6 @@ function NavItem({
           active
             ? 'text-[var(--accent)] font-medium bg-[var(--accent)]/8'
             : [
-                isEven ? 'bg-[var(--surface-3)]/50' : '',
                 'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
               ].join(' '),
         )}
@@ -321,7 +318,6 @@ function NavItem({
         active
           ? 'text-[var(--accent)]'
           : [
-              isEven ? 'bg-[var(--surface-3)]/60' : '',
               'text-[var(--text-secondary)] hover:bg-[var(--accent)]/10 hover:text-[var(--accent)]',
             ].join(' '),
       )}
@@ -425,8 +421,6 @@ function NavDropdownItem({
   const Icon = entry.icon;
   const contentId = `nav-dd-${entry.key}`;
   const isHighlighted = hasActiveChild || open;
-  const isEven = itemIndex % 2 === 0;
-
   // ── Collapsed mode: icon + tooltip ─────────────────────────────────────────
   if (collapsed) {
     return (

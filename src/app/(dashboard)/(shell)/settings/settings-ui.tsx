@@ -784,11 +784,13 @@ function UtseendeTab() {
     } catch { /* ignore */ }
   }
 
-  // All CSS custom properties that themes control
+  // All CSS custom properties that themes control — must clear before reapplying
+  // so inline styles from a previous mode don't override the CSS cascade
   const THEME_PROPS = [
     '--page-bg', '--surface', '--surface-alt', '--surface-hover',
     '--surface-0', '--surface-1', '--surface-2', '--surface-3', '--surface-active',
     '--border', '--border-light', '--text-primary', '--text-secondary', '--text-muted',
+    '--dot-color', '--grid-line-color', '--icon-muted',
     '--accent', '--accent-light', '--accent-subtle', '--accent-border',
   ];
 
