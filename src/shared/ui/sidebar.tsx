@@ -426,8 +426,9 @@ function NavDropdownItem({
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <button
-            onClick={onToggle}
+          <Link
+            href={entry.items[0]?.href ?? '#'}
+            onClick={onMobileClose}
             className={cn(
               'relative flex items-center justify-center w-10 h-10 rounded-xl outline-none',
               'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
@@ -466,7 +467,7 @@ function NavDropdownItem({
             )}>
               <Icon size={15} />
             </span>
-          </button>
+          </Link>
         </TooltipTrigger>
         <TooltipContent side="right">{entry.label}</TooltipContent>
       </Tooltip>
