@@ -572,10 +572,16 @@ function NavDropdownItem({
               initial="hidden"
               animate="show"
             >
-              {entry.items.map((child, childIdx) => {
-                const childActive =
-                  pathname === child.href ||
-                  pathname.startsWith(child.href + '/');
+              {(() => {
+              // Find the best (most specific) matching child so short
+              // prefixes like "/crm" don't false-match "/crm/contacts"
+              const bestMatch = entry.items.reduce<string | null>((best, c) => {
+                const matches = pathname === c.href || pathname.startsWith(c.href + '/');
+                if (matches && (best === null || c.href.length > best.length)) return c.href;
+                return best;
+              }, null);
+              return entry.items.map((child, childIdx) => {
+                const childActive = child.href === bestMatch;
                 return (
                   <motion.div
                     key={child.href}
@@ -594,7 +600,8 @@ function NavDropdownItem({
                     />
                   </motion.div>
                 );
-              })}
+              });
+            })()}
             </motion.div>
           </motion.div>
         )}
