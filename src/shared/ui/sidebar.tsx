@@ -238,7 +238,7 @@ function NavItem({
     );
   }
 
-  // ── Child item (indented, no icon) ────────────────────────────────────────
+  // ── Child item (indented, with dot indicator) ─────────────────────────────
   if (indent) {
     return (
       <Link
@@ -246,7 +246,7 @@ function NavItem({
         onClick={onClick}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'relative flex items-center pl-[34px] pr-2 py-1.5 rounded-lg text-[13px] outline-none',
+          'relative flex items-center pl-[34px] pr-2 py-1.5 rounded-lg text-[13px] outline-none group/child',
           'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
           'transition-colors duration-150',
           active
@@ -254,6 +254,15 @@ function NavItem({
             : 'text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]',
         )}
       >
+        {/* Dot indicator */}
+        <span
+          className={cn(
+            'absolute left-[19px] w-[5px] h-[5px] rounded-full transition-colors duration-150',
+            active
+              ? 'bg-[var(--accent)]'
+              : 'bg-[var(--text-muted)]/40 group-hover/child:bg-[var(--text-muted)]',
+          )}
+        />
         <span className="truncate">{label}</span>
       </Link>
     );
@@ -424,11 +433,13 @@ function NavDropdownItem({
             style={{ overflow: 'hidden' }}
           >
             <motion.div
-              className="mt-0.5 mb-0.5 flex flex-col gap-px"
+              className="relative mt-0.5 mb-0.5 flex flex-col gap-px"
               variants={reducedMotion ? undefined : childContainerVariants}
               initial="hidden"
               animate="show"
             >
+              {/* Vertical tree line */}
+              <span className="absolute left-[21px] top-1 bottom-1 w-px bg-[var(--border)]" />
               {(() => {
               // Find the best (most specific) matching child so short
               // prefixes like "/crm" don't false-match "/crm/contacts"
@@ -615,20 +626,6 @@ function SidebarHeader({ collapsed, onToggleCollapse }: SidebarHeaderProps) {
         </AnimatePresence>
       )}
 
-      {/* Collapse toggle — hover-reveal */}
-      <button
-        onClick={onToggleCollapse}
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        className={cn(
-          'hidden md:flex items-center justify-center w-7 h-7 rounded-md',
-          'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]',
-          'transition-all duration-150',
-          'opacity-0 group-hover/sidebar:opacity-100',
-          !collapsed && 'ml-auto',
-        )}
-      >
-        {collapsed ? <ChevronRightIcon size={14} /> : <ChevronLeftIcon size={14} />}
-      </button>
     </div>
   );
 }
@@ -804,6 +801,23 @@ export default function Sidebar({
           collapsed ? 'w-16' : 'w-60',
         )}
       >
+        {/* Collapse toggle — centered on sidebar edge */}
+        <button
+          onClick={onToggleCollapse}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className={cn(
+            'hidden md:flex items-center justify-center',
+            'absolute top-1/2 -translate-y-1/2 -right-3 z-10',
+            'w-6 h-6 rounded-full',
+            'bg-[var(--surface)] border border-[var(--border)]',
+            'text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)]/50 hover:shadow-sm',
+            'transition-all duration-150',
+            'opacity-0 group-hover/sidebar:opacity-100',
+          )}
+        >
+          {collapsed ? <ChevronRightIcon size={12} /> : <ChevronLeftIcon size={12} />}
+        </button>
+
         {/* Sidebar panel */}
         <aside className="h-full w-full flex flex-col glass-sidebar border-r border-[var(--border)] overflow-hidden">
           <SidebarHeader collapsed={collapsed} onToggleCollapse={onToggleCollapse} />
