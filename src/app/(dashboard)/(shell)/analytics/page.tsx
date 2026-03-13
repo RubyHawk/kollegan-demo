@@ -47,9 +47,9 @@ export default function AnalyticsPage() {
       {/* KPI tiles */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((k) => (
-          <div key={k.label} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div key={k.label} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 min-h-[120px]">
             <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">{k.label}</p>
-            <p className="text-3xl font-bold text-[var(--text-primary)] mb-1">{k.value}</p>
+            <p className="text-3xl font-bold text-[var(--text-primary)] mb-1 tabular-nums">{k.value}</p>
             <span className={[
               'inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2 py-0.5',
               k.up

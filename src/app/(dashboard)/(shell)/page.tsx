@@ -18,6 +18,29 @@ export default async function OverviewPage() {
         </p>
       </div>
 
+      {/* Quick Stats */}
+      <div>
+        <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-4">Snabbstatistik</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: 'Kunder',       value: '128', icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>), color: 'text-[var(--accent)] bg-[var(--accent)]/10' },
+            { label: 'Aktiva leads', value: '34',  icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>), color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' },
+            { label: 'Projekt',      value: '12',  icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>), color: 'text-violet-600 dark:text-violet-400 bg-violet-500/10' },
+            { label: 'Meddelanden', value: '7',   icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>), color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10' },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 min-h-[100px]">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{stat.label}</p>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${stat.color}`}>
+                  {stat.icon}
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">{stat.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Hero banner */}
       <div className="relative rounded-3xl overflow-hidden border border-[var(--border)] bg-gradient-to-br from-[var(--accent)]/8 via-[var(--surface-alt)] to-[var(--surface-alt)]">
         <div className="absolute inset-0 pointer-events-none">
