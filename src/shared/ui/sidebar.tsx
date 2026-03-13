@@ -801,21 +801,20 @@ export default function Sidebar({
           collapsed ? 'w-16' : 'w-60',
         )}
       >
-        {/* Collapse toggle — centered on sidebar edge */}
+        {/* Collapse toggle — centered on sidebar edge, always visible */}
         <button
           onClick={onToggleCollapse}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className={cn(
             'hidden md:flex items-center justify-center',
-            'absolute top-1/2 -translate-y-1/2 -right-3 z-10',
-            'w-6 h-6 rounded-full',
+            'absolute top-1/2 -translate-y-1/2 -right-3.5 z-10',
+            'w-7 h-7 rounded-full',
             'bg-[var(--surface)] border border-[var(--border)]',
-            'text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)]/50 hover:shadow-sm',
+            'text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)]/50 hover:shadow-md',
             'transition-all duration-150',
-            'opacity-0 group-hover/sidebar:opacity-100',
           )}
         >
-          {collapsed ? <ChevronRightIcon size={12} /> : <ChevronLeftIcon size={12} />}
+          {collapsed ? <ChevronRightIcon size={14} /> : <ChevronLeftIcon size={14} />}
         </button>
 
         {/* Sidebar panel */}

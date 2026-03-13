@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@shared/ui/sidebar';
 import { MenuIcon, ChevronRightIcon } from '@shared/ui/icons';
+import { SearchTrigger } from '@shared/ui/search-command';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -78,7 +79,7 @@ export default function AppShell({ user, children }: Props) {
   // ─── Desktop topbar ──────────────────────────────────────────────────────
 
   const topbar = (
-    <div className="hidden md:flex items-center h-12 px-5 border-b border-[var(--border)] glass-header shrink-0">
+    <div className="hidden md:flex items-center justify-between h-12 px-5 border-b border-[var(--border)] glass-header shrink-0">
       <nav aria-label="Breadcrumb" className="flex items-center gap-1">
         {crumbs.map((crumb, i) => (
           <span key={i} className="flex items-center gap-1">
@@ -98,6 +99,7 @@ export default function AppShell({ user, children }: Props) {
           </span>
         ))}
       </nav>
+      <SearchTrigger />
     </div>
   );
 

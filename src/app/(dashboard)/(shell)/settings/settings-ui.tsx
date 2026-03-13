@@ -852,7 +852,14 @@ function UtseendeTab() {
     const scales: Record<FontSize, number> = { small: 0.875, medium: 1, large: 1.125 };
     const s = scales[f];
     try {
-      injectStyle('font-size-override', s === 1 ? '' : `
+      injectStyle('font-size-override', s === 1 ? `
+        .text-xs, .text-sm, .text-base, .text-lg, .text-xl, .text-2xl, .text-3xl {
+          transition: font-size 150ms ease-out, line-height 150ms ease-out;
+        }
+      ` : `
+        .text-xs, .text-sm, .text-base, .text-lg, .text-xl, .text-2xl, .text-3xl {
+          transition: font-size 150ms ease-out, line-height 150ms ease-out;
+        }
         .text-xs   { font-size: ${(0.75  * s).toFixed(4)}rem !important; line-height: ${(1     * s).toFixed(4)}rem !important; }
         .text-sm   { font-size: ${(0.875 * s).toFixed(4)}rem !important; line-height: ${(1.25  * s).toFixed(4)}rem !important; }
         .text-base { font-size: ${(1     * s).toFixed(4)}rem !important; line-height: ${(1.5   * s).toFixed(4)}rem !important; }
