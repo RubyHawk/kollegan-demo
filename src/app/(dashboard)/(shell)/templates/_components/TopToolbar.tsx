@@ -4,9 +4,16 @@
  * TopToolbar — Word/Office 365-style tabbed ribbon.
  *
  * Tabs: Hem (Home) | Infoga (Insert) | Layout
+ *
+ * REACTIVITY NOTE:
+ * The editor instance from context is a stable reference — it never changes,
+ * so React won't re-render this component when cursor moves or formatting
+ * changes. We subscribe to 'transaction' + 'selectionUpdate' and force a
+ * re-render via a state counter so all isActive() / getAttributes() calls
+ * always reflect the live editor state.
  */
 
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { useTemplateEditor } from './editor-context';
 
 // ── Constants ───────────────────────────────────────────────────────────────────
@@ -26,7 +33,6 @@ const TEXT_COLORS = [
   '#8e44ad', '#9b59b6', '#c0392b', '#16a085', '#27ae60',
 ];
 
-// Word's 15 highlight colours
 const HIGHLIGHT_COLORS = [
   '#ffff00', '#00ff00', '#00ffff', '#ff00ff', '#0000ff',
   '#ff0000', '#00008b', '#008080', '#006400', '#800080',
@@ -34,23 +40,51 @@ const HIGHLIGHT_COLORS = [
 ];
 
 const LINE_SPACINGS = [
-  { label: 'Enkel (1.0)',   value: '1' },
+  { label: 'Enkel (1.0)',   value: '1'    },
   { label: '1,15',          value: '1.15' },
-  { label: '1,5 rad',       value: '1.5' },
-  { label: 'Dubbel (2.0)',  value: '2' },
-  { label: '2,5',           value: '2.5' },
-  { label: 'Trippel (3.0)', value: '3' },
+  { label: '1,5 rad',       value: '1.5'  },
+  { label: 'Dubbel (2.0)',  value: '2'    },
+  { label: '2,5',           value: '2.5'  },
+  { label: 'Trippel (3.0)', value: '3'    },
 ];
+
+// Heading default display sizes (CSS-driven, not marks)
+const HEADING_DISPLAY_SIZES: Record<number, string> = { 1: '20', 2: '15', 3: '13' };
 
 // ── Main component ──────────────────────────────────────────────────────────────
 
 export default function TopToolbar() {
   const editor = useTemplateEditor();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRef  = useRef<HTMLInputElement>(null);
+  const barRef   = useRef<HTMLDivElement>(null);
 
-  const [tab, setTab] = useState<'hem' | 'infoga' | 'layout'>('hem');
-  // One open dropdown at a time — string key identifies it
+  const [tab,      setTab]      = useState<'hem' | 'infoga' | 'layout'>('hem');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+  // ── Force re-render on every editor state change ──────────────────────────
+  // Without this, isActive() / getAttributes() are stale after initial render.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!editor) return;
+    const bump = () => setTick((n) => n + 1);
+    editor.on('transaction',    bump);
+    editor.on('selectionUpdate', bump);
+    return () => {
+      editor.off('transaction',    bump);
+      editor.off('selectionUpdate', bump);
+    };
+  }, [editor]);
+
+  // ── Close any open dropdown when clicking outside the toolbar ─────────────
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (barRef.current && !barRef.current.contains(e.target as Node)) {
+        setOpenMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const toggle = useCallback((name: string) => {
     setOpenMenu((prev) => (prev === name ? null : name));
@@ -59,7 +93,7 @@ export default function TopToolbar() {
 
   if (!editor) return null;
 
-  // ── Derived state ─────────────────────────────────────────────────────────
+  // ── Live derived state (fresh every render, guaranteed by subscription) ───
 
   const activeStyle = editor.isActive('heading', { level: 1 }) ? 'Rubrik 1'
     : editor.isActive('heading', { level: 2 }) ? 'Rubrik 2'
@@ -67,9 +101,21 @@ export default function TopToolbar() {
     : 'Normal';
 
   const activeFontFamily = (editor.getAttributes('textStyle').fontFamily as string | undefined) ?? 'Calibri';
-  const activeFontSize   = String((editor.getAttributes('textStyle').fontSize as string | undefined) ?? '13');
-  const activeColor      = (editor.getAttributes('textStyle').color          as string | undefined) ?? '#000000';
-  const activeHighlight  = editor.getAttributes('highlight').color            as string | undefined;
+
+  // Font size: prefer explicit mark; fall back to heading CSS default so the
+  // input always shows a meaningful number.
+  const markFontSize = editor.getAttributes('textStyle').fontSize as string | undefined;
+  const activeFontSize = markFontSize
+    ?? (editor.isActive('heading', { level: 1 }) ? HEADING_DISPLAY_SIZES[1]
+      : editor.isActive('heading', { level: 2 }) ? HEADING_DISPLAY_SIZES[2]
+      : editor.isActive('heading', { level: 3 }) ? HEADING_DISPLAY_SIZES[3]
+      : '13');
+
+  const activeColor     = (editor.getAttributes('textStyle').color as string | undefined) ?? '#000000';
+  const activeHighlight = editor.getAttributes('highlight').color  as string | undefined;
+  const activeLineH     = editor.getAttributes('paragraph').lineHeight as string | undefined
+    ?? editor.getAttributes('heading').lineHeight as string | undefined;
+  const activeIndent    = (editor.getAttributes('paragraph').indent as number | undefined) ?? 0;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -82,12 +128,12 @@ export default function TopToolbar() {
   }
 
   function growFont() {
-    const cur = Number(activeFontSize);
+    const cur  = Number(activeFontSize);
     const next = FONT_SIZES.find((s) => s > cur) ?? cur + 2;
     editor!.chain().focus().setFontSize(String(next)).run();
   }
   function shrinkFont() {
-    const cur = Number(activeFontSize);
+    const cur  = Number(activeFontSize);
     const prev = [...FONT_SIZES].reverse().find((s) => s < cur) ?? Math.max(6, cur - 1);
     editor!.chain().focus().setFontSize(String(prev)).run();
   }
@@ -103,9 +149,10 @@ export default function TopToolbar() {
 
   return (
     <div
+      ref={barRef}
       style={{ background: '#f3f2f1', borderBottom: '1px solid #d2d0ce', userSelect: 'none' }}
       onMouseDown={(e) => {
-        // Prevent editor blur for most elements, but NOT for real inputs
+        // Don't preventDefault on real inputs — they need native focus
         const tag = (e.target as HTMLElement).tagName;
         if (tag !== 'INPUT') e.preventDefault();
       }}
@@ -139,11 +186,7 @@ export default function TopToolbar() {
       </div>
 
       {/* ── Ribbon content ─────────────────────────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'stretch',
-        padding: '4px 6px', gap: 6,
-        flexWrap: 'wrap', minHeight: 58,
-      }}>
+      <div style={{ display: 'flex', alignItems: 'stretch', padding: '4px 6px', gap: 6, flexWrap: 'wrap', minHeight: 58 }}>
 
         {/* ══ HEM ══════════════════════════════════════════════════════ */}
         {tab === 'hem' && (
@@ -165,7 +208,11 @@ export default function TopToolbar() {
               <Dropdown
                 open={openMenu === 'style'}
                 onToggle={() => toggle('style')}
-                trigger={<span style={{ fontSize: 12, fontFamily: 'Calibri, Arial, sans-serif', minWidth: 96, textAlign: 'left', color: '#1e1e1e' }}>{activeStyle}</span>}
+                trigger={
+                  <span style={{ fontSize: 12, fontFamily: 'Calibri, Arial, sans-serif', minWidth: 96, textAlign: 'left', color: '#1e1e1e' }}>
+                    {activeStyle}
+                  </span>
+                }
                 triggerTitle="Styckeformat — välj rubriknivå eller normaltext"
                 minWidth={200}
               >
@@ -191,7 +238,11 @@ export default function TopToolbar() {
               <Dropdown
                 open={openMenu === 'font'}
                 onToggle={() => toggle('font')}
-                trigger={<span style={{ fontSize: 12, fontFamily: activeFontFamily + ', sans-serif', minWidth: 110, textAlign: 'left', color: '#1e1e1e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeFontFamily}</span>}
+                trigger={
+                  <span style={{ fontSize: 12, fontFamily: activeFontFamily + ', sans-serif', minWidth: 110, maxWidth: 130, textAlign: 'left', color: '#1e1e1e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                    {activeFontFamily}
+                  </span>
+                }
                 triggerTitle="Välj teckensnitt"
                 minWidth={180}
               >
@@ -207,7 +258,7 @@ export default function TopToolbar() {
                 ))}
               </Dropdown>
 
-              {/* Font size — single editable input + dropdown */}
+              {/* Font size — single control: editable input + chevron opens list */}
               <FontSizeControl
                 value={activeFontSize}
                 open={openMenu === 'size'}
@@ -217,13 +268,13 @@ export default function TopToolbar() {
                 onFocusEditor={() => setTimeout(() => editor.commands.focus(), 0)}
               />
 
-              {/* Grow / shrink */}
+              {/* Grow / Shrink */}
               <RBtn onClick={growFont}   title="Öka teckenstorlek (Ctrl+Skift+>)"><GrowIcon /></RBtn>
               <RBtn onClick={shrinkFont} title="Minska teckenstorlek (Ctrl+Skift+<)"><ShrinkIcon /></RBtn>
 
               <InlineSep />
 
-              {/* B I U S */}
+              {/* B I U S — active states are now live (subscription above) */}
               <RBtn onClick={() => editor.chain().focus().toggleBold().run()}      active={editor.isActive('bold')}      title="Fet (Ctrl+B)">
                 <span style={{ fontWeight: 700, fontFamily: 'Georgia, serif', fontSize: 13, lineHeight: 1 }}>B</span>
               </RBtn>
@@ -239,7 +290,6 @@ export default function TopToolbar() {
 
               <InlineSep />
 
-              {/* Subscript / Superscript */}
               <RBtn onClick={() => editor.chain().focus().toggleSubscript().run()}   active={editor.isActive('subscript')}   title="Nedsänkt skrift (Ctrl+=)">
                 <span style={{ fontSize: 11, fontFamily: 'Calibri, Arial, sans-serif', lineHeight: 1 }}>x<sub style={{ fontSize: 8 }}>2</sub></span>
               </RBtn>
@@ -249,58 +299,68 @@ export default function TopToolbar() {
 
               <InlineSep />
 
-              {/* Highlight colour */}
-              <ColorSwatchBtn
-                icon={<HighlightIcon />}
-                color={activeHighlight ?? '#ffff00'}
-                title="Markera text — klicka för att välja färg"
-                open={openMenu === 'highlight'}
-                onToggle={() => toggle('highlight')}
-              />
-              {openMenu === 'highlight' && (
-                <ColorPalette
-                  colors={HIGHLIGHT_COLORS}
-                  active={activeHighlight}
-                  onSelect={(c) => { editor.chain().focus().toggleHighlight({ color: c }).run(); close(); }}
-                  onClear={() => { editor.chain().focus().unsetHighlight().run(); close(); }}
-                  clearLabel="Ingen markering"
-                />
-              )}
+              {/* Highlight — swatch + palette in a single positioned wrapper */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); toggle('highlight'); }}
+                  title="Textmarkering — klicka för att välja färg"
+                  style={swatchBtnStyle(openMenu === 'highlight')}
+                >
+                  <HighlightIcon />
+                  <div style={{ width: 14, height: 3, background: activeHighlight ?? '#ffff00', borderRadius: 1 }} />
+                </button>
+                {openMenu === 'highlight' && (
+                  <ColorPalette
+                    colors={HIGHLIGHT_COLORS}
+                    active={activeHighlight}
+                    onSelect={(c) => { editor.chain().focus().toggleHighlight({ color: c }).run(); close(); }}
+                    onClear={() => { editor.chain().focus().unsetHighlight().run(); close(); }}
+                    clearLabel="Ingen markering"
+                  />
+                )}
+              </div>
 
-              {/* Text colour */}
-              <ColorSwatchBtn
-                icon={<span style={{ fontWeight: 700, fontFamily: 'Calibri, Arial, sans-serif', fontSize: 13, lineHeight: 1, color: '#1e1e1e' }}>A</span>}
-                color={activeColor}
-                title="Teckenfärg — klicka för att välja färg"
-                open={openMenu === 'color'}
-                onToggle={() => toggle('color')}
-              />
-              {openMenu === 'color' && (
-                <ColorPalette
-                  colors={TEXT_COLORS}
-                  active={activeColor}
-                  onSelect={(c) => { editor.chain().focus().setColor(c).run(); close(); }}
-                  onClear={() => { editor.chain().focus().unsetColor().run(); close(); }}
-                  clearLabel="Automatisk färg"
-                />
-              )}
+              {/* Text colour — swatch + palette in a single positioned wrapper */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); toggle('color'); }}
+                  title="Teckenfärg — klicka för att välja färg"
+                  style={swatchBtnStyle(openMenu === 'color')}
+                >
+                  <span style={{ fontWeight: 700, fontFamily: 'Calibri, Arial, sans-serif', fontSize: 13, lineHeight: 1, color: '#1e1e1e' }}>A</span>
+                  <div style={{ width: 14, height: 3, background: activeColor, borderRadius: 1 }} />
+                </button>
+                {openMenu === 'color' && (
+                  <ColorPalette
+                    colors={TEXT_COLORS}
+                    active={activeColor}
+                    onSelect={(c) => { editor.chain().focus().setColor(c).run(); close(); }}
+                    onClear={() => { editor.chain().focus().unsetColor().run(); close(); }}
+                    clearLabel="Automatisk färg"
+                  />
+                )}
+              </div>
 
               {/* Clear formatting */}
-              <RBtn
-                onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
-                title="Rensa all formatering"
-              >
+              <RBtn onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()} title="Rensa all formatering">
                 <ClearIcon />
               </RBtn>
+
             </RibbonGroup>
 
             <GroupSep />
 
             {/* Stycke */}
             <RibbonGroup label="Stycke">
-              {/* Indent */}
-              <RBtn onClick={() => editor.chain().focus().decreaseIndent().run()} title="Minska indrag (Skift+Tabb)"><IndentDecIcon /></RBtn>
-              <RBtn onClick={() => editor.chain().focus().increaseIndent().run()} title="Öka indrag (Tabb)"><IndentIncIcon /></RBtn>
+              {/* Indent — dim decrease when already at 0 */}
+              <RBtn onClick={() => editor.chain().focus().decreaseIndent().run()} disabled={activeIndent === 0} title="Minska indrag (Skift+Tabb)">
+                <IndentDecIcon />
+              </RBtn>
+              <RBtn onClick={() => editor.chain().focus().increaseIndent().run()} active={activeIndent > 0} title={`Öka indrag (Tabb)${activeIndent > 0 ? ` — nivå ${activeIndent}` : ''}`}>
+                <IndentIncIcon />
+              </RBtn>
 
               <InlineSep />
 
@@ -318,17 +378,21 @@ export default function TopToolbar() {
 
               <InlineSep />
 
-              {/* Line spacing */}
+              {/* Line spacing — shows active spacing in the dropdown */}
               <div style={{ position: 'relative' }}>
-                <RBtn onClick={() => toggle('linespacing')} active={openMenu === 'linespacing'} title="Radavstånd — ändra mellanrum mellan rader">
+                <RBtn
+                  onClick={() => toggle('linespacing')}
+                  active={openMenu === 'linespacing' || !!activeLineH}
+                  title={`Radavstånd${activeLineH ? `: ${activeLineH}` : ' — standard'}`}
+                >
                   <LineSpacingIcon />
                 </RBtn>
                 {openMenu === 'linespacing' && (
-                  <DropdownPanel minWidth={170}>
+                  <DropdownPanel minWidth={175}>
                     {LINE_SPACINGS.map(({ label, value }) => (
                       <DropdownItem
                         key={value}
-                        active={false}
+                        active={activeLineH === value}
                         onSelect={() => { editor.chain().focus().setLineHeight(value).run(); close(); }}
                         style={{ fontSize: 13, fontFamily: 'Calibri, Arial, sans-serif' }}
                       >
@@ -337,7 +401,7 @@ export default function TopToolbar() {
                     ))}
                     <div style={{ height: 1, background: '#d2d0ce', margin: '4px 0' }} />
                     <DropdownItem
-                      active={false}
+                      active={!activeLineH}
                       onSelect={() => { editor.chain().focus().unsetLineHeight().run(); close(); }}
                       style={{ fontSize: 13, fontFamily: 'Calibri, Arial, sans-serif', color: '#0078d4' }}
                     >
@@ -353,13 +417,12 @@ export default function TopToolbar() {
         {/* ══ INFOGA ══════════════════════════════════════════════════ */}
         {tab === 'infoga' && (
           <>
-            {/* Tabell — hover grid picker */}
             <RibbonGroup label="Tabeller">
               <div style={{ position: 'relative' }}>
                 <BigBtn
                   icon={<TableIcon big />}
                   label="Tabell"
-                  title="Infoga tabell — håll musen för att välja storlek"
+                  title="Infoga tabell — hovra för att välja storlek"
                   active={openMenu === 'table'}
                   onClick={() => toggle('table')}
                 />
@@ -406,7 +469,7 @@ export default function TopToolbar() {
                 active={editor.isActive('link')}
                 onClick={() => {
                   const prev = editor.getAttributes('link').href as string | undefined;
-                  const url = window.prompt('Ange URL:', prev ?? 'https://');
+                  const url  = window.prompt('Ange URL:', prev ?? 'https://');
                   if (url === null) return;
                   if (url.trim() === '') editor.chain().focus().unsetLink().run();
                   else editor.chain().focus().setLink({ href: url.trim() }).run();
@@ -435,13 +498,18 @@ export default function TopToolbar() {
                 <RBtn
                   key={value}
                   onClick={() => editor.chain().focus().setLineHeight(value).run()}
+                  active={activeLineH === value}
                   title={`Radavstånd: ${label}`}
                   style={{ fontSize: 11, minWidth: 36, padding: '0 6px' }}
                 >
                   {value}×
                 </RBtn>
               ))}
-              <RBtn onClick={() => editor.chain().focus().unsetLineHeight().run()} title="Återställ standardradavstånd">
+              <RBtn
+                onClick={() => editor.chain().focus().unsetLineHeight().run()}
+                active={!activeLineH}
+                title="Återställ standardradavstånd"
+              >
                 <ResetIcon />
               </RBtn>
             </RibbonGroup>
@@ -455,7 +523,7 @@ export default function TopToolbar() {
                     key={c}
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().setColor(c).run(); }}
-                    title={`Sätt teckenfärg: ${c}`}
+                    title={`Teckenfärg: ${c}`}
                     style={{
                       width: 22, height: 22, background: c,
                       border: c === activeColor ? '2px solid #0078d4' : '1px solid #d2d0ce',
@@ -469,8 +537,8 @@ export default function TopToolbar() {
             <GroupSep />
 
             <RibbonGroup label="Indrag">
-              <RBtn onClick={() => editor.chain().focus().decreaseIndent().run()} title="Minska indrag"><IndentDecIcon /></RBtn>
-              <RBtn onClick={() => editor.chain().focus().increaseIndent().run()} title="Öka indrag"><IndentIncIcon /></RBtn>
+              <RBtn onClick={() => editor.chain().focus().decreaseIndent().run()} disabled={activeIndent === 0} title="Minska indrag"><IndentDecIcon /></RBtn>
+              <RBtn onClick={() => editor.chain().focus().increaseIndent().run()} active={activeIndent > 0} title={`Öka indrag — nivå ${activeIndent}`}><IndentIncIcon /></RBtn>
             </RibbonGroup>
           </>
         )}
@@ -480,8 +548,6 @@ export default function TopToolbar() {
 }
 
 // ── Font size control ───────────────────────────────────────────────────────────
-// Single control: editable input that also opens a size list.
-// Does NOT call .focus() on change — avoids stealing focus from the input.
 
 function FontSizeControl({
   value, open, onToggle, onSelect, onApply, onFocusEditor,
@@ -495,22 +561,19 @@ function FontSizeControl({
 }) {
   return (
     <div style={{ position: 'relative', display: 'flex' }}>
-      {/* Editable size input — uncontrolled, keyed by value so it resets on external change */}
+      {/* Editable input — uncontrolled; key resets it when activeFontSize changes */}
       <input
         key={value}
         type="text"
         defaultValue={value}
         title="Teckenstorlek — skriv ett värde och tryck Enter"
         onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); (e.currentTarget as HTMLInputElement).select(); }}
         onKeyDown={(e) => {
           e.stopPropagation();
           if (e.key === 'Enter') {
             const v = (e.currentTarget as HTMLInputElement).value;
-            if (v && Number(v) >= 1) {
-              onApply(v);
-              onFocusEditor();
-            }
+            if (v && Number(v) >= 1) { onApply(v); onFocusEditor(); }
             e.preventDefault();
           } else if (e.key === 'Escape') {
             onFocusEditor();
@@ -523,15 +586,14 @@ function FontSizeControl({
         style={{
           width: 38, height: 26, padding: '0 4px', fontSize: 12,
           border: open ? '1px solid #0078d4' : '1px solid #d2d0ce',
-          borderRight: 'none',
-          borderRadius: '2px 0 0 2px',
+          borderRight: 'none', borderRadius: '2px 0 0 2px',
           fontFamily: 'Calibri, Arial, sans-serif',
           background: '#fff', color: '#1e1e1e',
           outline: 'none', textAlign: 'center',
         }}
         onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#0078d4'; }}
       />
-      {/* Dropdown arrow */}
+      {/* Chevron opens size list */}
       <button
         type="button"
         onMouseDown={(e) => { e.preventDefault(); onToggle(); }}
@@ -540,15 +602,13 @@ function FontSizeControl({
           width: 18, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: open ? '#ddeeff' : '#f3f2f1',
           border: open ? '1px solid #0078d4' : '1px solid #d2d0ce',
-          borderRadius: '0 2px 2px 0',
-          cursor: 'pointer', padding: 0, flexShrink: 0,
+          borderRadius: '0 2px 2px 0', cursor: 'pointer', padding: 0, flexShrink: 0,
         }}
       >
         <ChevronIcon />
       </button>
-      {/* Size dropdown */}
       {open && (
-        <DropdownPanel minWidth={64}>
+        <DropdownPanel minWidth={70}>
           {FONT_SIZES.map((s) => (
             <DropdownItem
               key={s}
@@ -567,10 +627,9 @@ function FontSizeControl({
 
 // ── Table hover-grid picker ─────────────────────────────────────────────────────
 
-const TABLE_MAX = 8;
-
 function TablePicker({ onInsert }: { onInsert: (rows: number, cols: number) => void }) {
   const [hovered, setHovered] = useState({ r: 0, c: 0 });
+  const MAX = 8;
 
   return (
     <div style={{
@@ -579,19 +638,16 @@ function TablePicker({ onInsert }: { onInsert: (rows: number, cols: number) => v
       boxShadow: '0 4px 16px rgba(0,0,0,0.15)', zIndex: 300,
       padding: '10px', borderRadius: 2,
     }}>
-      <p style={{
-        textAlign: 'center', marginBottom: 8,
-        fontSize: 12, fontFamily: 'Calibri, Arial, sans-serif', color: '#323130',
-      }}>
+      <p style={{ textAlign: 'center', marginBottom: 8, fontSize: 12, fontFamily: 'Calibri, Arial, sans-serif', color: '#323130' }}>
         {hovered.r > 0 ? `${hovered.c} × ${hovered.r}` : 'Markera tabellstorlek'}
       </p>
       <div
-        style={{ display: 'grid', gridTemplateColumns: `repeat(${TABLE_MAX}, 18px)`, gap: 2 }}
+        style={{ display: 'grid', gridTemplateColumns: `repeat(${MAX}, 18px)`, gap: 2 }}
         onMouseLeave={() => setHovered({ r: 0, c: 0 })}
       >
-        {Array.from({ length: TABLE_MAX * TABLE_MAX }, (_, i) => {
-          const row = Math.floor(i / TABLE_MAX) + 1;
-          const col = (i % TABLE_MAX) + 1;
+        {Array.from({ length: MAX * MAX }, (_, i) => {
+          const row = Math.floor(i / MAX) + 1;
+          const col = (i % MAX) + 1;
           const on = row <= hovered.r && col <= hovered.c;
           return (
             <div
@@ -602,66 +658,32 @@ function TablePicker({ onInsert }: { onInsert: (rows: number, cols: number) => v
               style={{
                 width: 18, height: 18, cursor: 'pointer',
                 background: on ? '#ddeeff' : '#fff',
-                border: `1px solid ${on ? '#c0d8f0' : '#d2d0ce'}`,
-                borderRadius: 1,
+                border: `1px solid ${on ? '#c0d8f0' : '#d2d0ce'}`, borderRadius: 1,
               }}
             />
           );
         })}
       </div>
-      <p style={{ textAlign: 'center', marginTop: 8, fontSize: 10, color: '#a19f9d', fontFamily: 'Calibri, Arial, sans-serif' }}>
+      <p style={{ textAlign: 'center', marginTop: 6, fontSize: 10, color: '#a19f9d', fontFamily: 'Calibri, Arial, sans-serif' }}>
         Klicka för att infoga
       </p>
     </div>
   );
 }
 
-// ── Colour swatch button ────────────────────────────────────────────────────────
-
-function ColorSwatchBtn({ icon, color, title, open, onToggle }: {
-  icon: React.ReactNode;
-  color: string;
-  title: string;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <div style={{ position: 'relative' }}>
-      <button
-        type="button"
-        onMouseDown={(e) => { e.preventDefault(); onToggle(); }}
-        title={title}
-        style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          width: 28, height: 26, padding: '2px 4px', gap: 1,
-          background: open ? '#ddeeff' : 'transparent',
-          border: open ? '1px solid #c0d8f0' : '1px solid transparent',
-          borderRadius: 2, cursor: 'pointer',
-        }}
-      >
-        {icon}
-        <div style={{ width: 14, height: 3, background: color, borderRadius: 1 }} />
-      </button>
-    </div>
-  );
-}
-
-// ── Colour palette dropdown ─────────────────────────────────────────────────────
+// ── Colour palette popup ────────────────────────────────────────────────────────
 
 function ColorPalette({ colors, active, onSelect, onClear, clearLabel }: {
-  colors: string[];
-  active?: string;
-  onSelect: (c: string) => void;
-  onClear: () => void;
-  clearLabel: string;
+  colors: string[]; active?: string;
+  onSelect: (c: string) => void; onClear: () => void; clearLabel: string;
 }) {
-  const cols = colors.length > 10 ? 5 : colors.length;
+  const cols = colors.length >= 15 ? 5 : colors.length;
   return (
     <div style={{
       position: 'absolute', top: '100%', left: 0, marginTop: 2,
       background: '#fff', border: '1px solid #d2d0ce',
       boxShadow: '0 4px 16px rgba(0,0,0,0.15)', zIndex: 300,
-      padding: '8px 10px', borderRadius: 2,
+      padding: '8px 10px', borderRadius: 2, minWidth: 130,
     }}>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 22px)`, gap: 3, marginBottom: 6 }}>
         {colors.map((c) => (
@@ -695,7 +717,17 @@ function ColorPalette({ colors, active, onSelect, onClear, clearLabel }: {
   );
 }
 
-// ── Ribbon building blocks ──────────────────────────────────────────────────────
+// ── Building blocks ─────────────────────────────────────────────────────────────
+
+function swatchBtnStyle(active: boolean): React.CSSProperties {
+  return {
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    width: 28, height: 26, padding: '2px 4px', gap: 1,
+    background: active ? '#ddeeff' : 'transparent',
+    border: active ? '1px solid #c0d8f0' : '1px solid transparent',
+    borderRadius: 2, cursor: 'pointer',
+  };
+}
 
 function RibbonGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -703,11 +735,7 @@ function RibbonGroup({ label, children }: { label: string; children: React.React
       <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2, flex: 1, paddingBottom: 2 }}>
         {children}
       </div>
-      <p style={{
-        fontSize: 9, textAlign: 'center', color: '#a19f9d',
-        fontFamily: 'Calibri, Arial, sans-serif',
-        borderTop: '1px solid #e8e6e3', paddingTop: 2, margin: 0,
-      }}>
+      <p style={{ fontSize: 9, textAlign: 'center', color: '#a19f9d', fontFamily: 'Calibri, Arial, sans-serif', borderTop: '1px solid #e8e6e3', paddingTop: 2, margin: 0 }}>
         {label}
       </p>
     </div>
@@ -725,12 +753,8 @@ function InlineSep() {
 function RBtn({
   onClick, active, disabled, title, children, style,
 }: {
-  onClick: () => void;
-  active?: boolean;
-  disabled?: boolean;
-  title?: string;
-  children: React.ReactNode;
-  style?: React.CSSProperties;
+  onClick: () => void; active?: boolean; disabled?: boolean;
+  title?: string; children: React.ReactNode; style?: React.CSSProperties;
 }) {
   return (
     <button
@@ -746,7 +770,7 @@ function RBtn({
         color: active ? '#004e8c' : '#1e1e1e',
         borderRadius: 2, cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.4 : 1, flexShrink: 0, padding: '0 4px',
-        transition: 'background 0.08s',
+        transition: 'background 0.08s, border-color 0.08s',
         ...style,
       }}
       onMouseEnter={(e) => { if (!active && !disabled) (e.currentTarget as HTMLElement).style.background = '#e8e6e3'; }}
@@ -825,9 +849,7 @@ function DropdownPanel({ children, minWidth }: { children: React.ReactNode; minW
   );
 }
 
-function DropdownItem({
-  children, active, onSelect, style,
-}: {
+function DropdownItem({ children, active, onSelect, style }: {
   children: React.ReactNode; active: boolean; onSelect: () => void; style?: React.CSSProperties;
 }) {
   return (
