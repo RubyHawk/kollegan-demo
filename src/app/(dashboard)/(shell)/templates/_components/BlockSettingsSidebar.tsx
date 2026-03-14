@@ -39,7 +39,7 @@ export default function BlockSettingsSidebar() {
   }, [editor]);
 
   return (
-    <div className="w-64 shrink-0 border-l border-[var(--border)] bg-[var(--surface)] flex-col overflow-y-auto hidden lg:flex">
+    <div className="w-64 shrink-0 hidden lg:flex flex-col overflow-y-auto" style={{ background: '#f3f2f1', borderLeft: '1px solid #d2d0ce' }}>
       {active === 'image'          && editor && <ImageSettings editor={editor} />}
       {active === 'table'          && editor && <TableSettings editor={editor} />}
       {active === 'signatureBlock' && editor && <SignatureSettings editor={editor} />}
@@ -61,19 +61,21 @@ function ImageSettings({ editor }: { editor: Editor }) {
   return (
     <PanelWrap title="Bild">
       <Label>Justering</Label>
-      <div className="flex gap-1 mb-4">
+      <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
         {(['left', 'center', 'right'] as const).map((a) => (
           <button
             key={a}
             type="button"
             onClick={() => editor.chain().focus().updateAttributes('image', { align: a }).run()}
-            className={`flex-1 py-1 text-xs rounded-lg border transition-colors ${
-              align === a
-                ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]'
-            }`}
+            style={{
+              flex: 1, padding: '4px 0', fontSize: 12, borderRadius: 2, cursor: 'pointer',
+              fontFamily: 'Calibri, Arial, sans-serif',
+              background: align === a ? '#ddeeff' : '#ffffff',
+              border: align === a ? '1px solid #c0d8f0' : '1px solid #d2d0ce',
+              color: align === a ? '#004e8c' : '#323130',
+            }}
           >
-            {a === 'left' ? 'Vänster' : a === 'center' ? 'Centrera' : 'Höger'}
+            {a === 'left' ? 'Vänster' : a === 'center' ? 'Center' : 'Höger'}
           </button>
         ))}
       </div>
@@ -85,9 +87,9 @@ function ImageSettings({ editor }: { editor: Editor }) {
         step={10}
         value={width || 400}
         onChange={(e) => editor.chain().focus().updateAttributes('image', { width: Number(e.target.value) }).run()}
-        className="w-full accent-[var(--accent)] mb-1"
+        style={{ width: '100%', accentColor: '#0078d4', marginBottom: 4 }}
       />
-      <p className="text-xs text-[var(--text-muted)] text-right">{width || 400}px</p>
+      <p style={{ fontSize: 11, color: '#605e5c', textAlign: 'right', fontFamily: 'Calibri, Arial, sans-serif' }}>{width || 400}px</p>
     </PanelWrap>
   );
 }
@@ -118,11 +120,17 @@ function TableBtn({ label, onClick, disabled, danger }: { label: string; onClick
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`w-full py-1.5 px-3 text-xs rounded-lg border transition-colors text-left ${
-        danger
-          ? 'border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-40'
-          : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] disabled:opacity-40'
-      } disabled:cursor-not-allowed`}
+      style={{
+        width: '100%', padding: '5px 10px', textAlign: 'left', cursor: disabled ? 'not-allowed' : 'pointer',
+        fontSize: 12, borderRadius: 2, fontFamily: 'Calibri, Arial, sans-serif',
+        opacity: disabled ? 0.4 : 1,
+        background: 'transparent',
+        border: danger ? '1px solid #f1bbbc' : '1px solid #d2d0ce',
+        color: danger ? '#a4262c' : '#323130',
+        transition: 'background 0.08s',
+      }}
+      onMouseEnter={(e) => { if (!disabled) (e.currentTarget as HTMLElement).style.background = danger ? '#fdf3f4' : '#e8e6e3'; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
     >
       {label}
     </button>
@@ -139,7 +147,7 @@ function SignatureSettings({ editor }: { editor: Editor }) {
   return (
     <PanelWrap title="Signaturfält">
       <Label>Fälttyp</Label>
-      <div className="flex flex-col gap-1 mb-4">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 16 }}>
         {(['signature', 'name', 'date'] as const).map((ft) => {
           const labels: Record<string, string> = { signature: 'Signatur', name: 'Namnfält', date: 'Datumfält' };
           return (
@@ -147,11 +155,13 @@ function SignatureSettings({ editor }: { editor: Editor }) {
               key={ft}
               type="button"
               onClick={() => editor.chain().focus().updateAttributes('signatureBlock', { fieldType: ft }).run()}
-              className={`py-1.5 px-3 text-xs rounded-lg border text-left transition-colors ${
-                fieldType === ft
-                  ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                  : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]'
-              }`}
+              style={{
+                padding: '5px 10px', fontSize: 12, textAlign: 'left', cursor: 'pointer',
+                borderRadius: 2, fontFamily: 'Calibri, Arial, sans-serif',
+                background: fieldType === ft ? '#ddeeff' : 'transparent',
+                border: fieldType === ft ? '1px solid #c0d8f0' : '1px solid #d2d0ce',
+                color: fieldType === ft ? '#004e8c' : '#323130',
+              }}
             >
               {labels[ft]}
             </button>
@@ -163,7 +173,14 @@ function SignatureSettings({ editor }: { editor: Editor }) {
         type="text"
         value={label}
         onChange={(e) => editor.chain().focus().updateAttributes('signatureBlock', { label: e.target.value }).run()}
-        className="w-full px-2 py-1.5 text-sm rounded-lg border border-[var(--border)] bg-[var(--surface-alt,#f8fafc)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+        style={{
+          width: '100%', padding: '5px 8px', fontSize: 13, borderRadius: 2,
+          border: '1px solid #d2d0ce', background: '#ffffff', color: '#1e1e1e',
+          fontFamily: 'Calibri, Arial, sans-serif', boxSizing: 'border-box',
+          outline: 'none',
+        }}
+        onFocus={(e) => { (e.currentTarget as HTMLElement).style.border = '1px solid #0078d4'; }}
+        onBlur={(e) => { (e.currentTarget as HTMLElement).style.border = '1px solid #d2d0ce'; }}
       />
     </PanelWrap>
   );
@@ -177,13 +194,13 @@ function VariableInfo({ editor }: { editor: Editor }) {
   const label = (attrs.label as string) ?? '';
   return (
     <PanelWrap title="Variabel">
-      <p className="text-xs text-[var(--text-muted)] mb-1">Variabelnamn</p>
-      <code className="text-xs font-mono bg-violet-50 text-violet-700 px-2 py-1 rounded border border-violet-200 block break-all">
+      <Label>Variabelnamn</Label>
+      <code style={{ display: 'block', wordBreak: 'break-all', fontSize: 11, fontFamily: 'monospace', color: '#7b5ea7', background: '#f4f0fa', border: '1px solid #d6c8f0', padding: '4px 8px', borderRadius: 2, marginBottom: 12 }}>
         {`{{${key}}}`}
       </code>
-      <p className="text-xs text-[var(--text-muted)] mt-3 mb-1">Etikett</p>
-      <p className="text-sm text-[var(--text-primary)]">{label}</p>
-      <p className="text-xs text-[var(--text-muted)] mt-4">
+      <Label>Etikett</Label>
+      <p style={{ fontSize: 13, color: '#1e1e1e', fontFamily: 'Calibri, Arial, sans-serif', marginBottom: 12 }}>{label}</p>
+      <p style={{ fontSize: 11, color: '#a19f9d', fontFamily: 'Calibri, Arial, sans-serif', fontStyle: 'italic' }}>
         Tryck Backspace för att ta bort variabeln.
       </p>
     </PanelWrap>
@@ -195,16 +212,16 @@ function VariableInfo({ editor }: { editor: Editor }) {
 function PlaceholderReference() {
   return (
     <PanelWrap title="Platshållare">
-      <p className="text-xs text-[var(--text-muted)] mb-3">
-        Tillgängliga variabler du kan infoga från panelen till vänster:
+      <p style={{ fontSize: 12, color: '#605e5c', marginBottom: 10, fontFamily: 'Calibri, Arial, sans-serif' }}>
+        Tillgängliga variabler att infoga:
       </p>
-      <div className="flex flex-col gap-1">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {OFFER_PLACEHOLDERS.map((p) => (
-          <div key={p.key} className="flex items-start gap-2">
-            <code className="shrink-0 text-[9px] font-mono text-violet-600 bg-violet-50 px-1 py-0.5 rounded border border-violet-100 mt-0.5">
+          <div key={p.key} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <code style={{ flexShrink: 0, fontSize: 9, fontFamily: 'monospace', color: '#7b5ea7', background: '#f4f0fa', border: '1px solid #d6c8f0', padding: '1px 4px', borderRadius: 2, marginTop: 2 }}>
               {p.key}
             </code>
-            <span className="text-xs text-[var(--text-muted)]">{p.label}</span>
+            <span style={{ fontSize: 12, color: '#605e5c', fontFamily: 'Calibri, Arial, sans-serif' }}>{p.label}</span>
           </div>
         ))}
       </div>
@@ -216,13 +233,17 @@ function PlaceholderReference() {
 
 function PanelWrap({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="p-4">
-      <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">{title}</h3>
-      {children}
+    <div>
+      <div style={{ padding: '8px 16px 4px', borderBottom: '1px solid #d2d0ce', background: '#f3f2f1' }}>
+        <h3 style={{ fontSize: 11, fontWeight: 600, color: '#605e5c', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'Calibri, Arial, sans-serif', margin: 0 }}>{title}</h3>
+      </div>
+      <div style={{ padding: '12px 16px', fontFamily: 'Calibri, Arial, sans-serif' }}>
+        {children}
+      </div>
     </div>
   );
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs text-[var(--text-muted)] mb-1.5">{children}</p>;
+  return <p style={{ fontSize: 11, color: '#605e5c', marginBottom: 6, fontFamily: 'Calibri, Arial, sans-serif' }}>{children}</p>;
 }

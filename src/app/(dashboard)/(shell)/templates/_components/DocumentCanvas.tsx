@@ -69,8 +69,8 @@ export default function DocumentCanvas() {
       )}
 
       {/* ── Scrollable document area ─────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto" style={{ background: '#f0f2f5' }}>
-        <div className="px-8 py-12">
+      <div className="flex-1 overflow-y-auto" style={{ background: '#e8e8e8' }}>
+        <div className="px-8 py-10">
           {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
           <div
             className="mx-auto bg-white cursor-text"
@@ -78,7 +78,7 @@ export default function DocumentCanvas() {
               maxWidth: 816,
               minHeight: 1056,
               padding: '96px 96px',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
             }}
             onClick={() => editor?.commands.focus()}
           >
@@ -94,9 +94,58 @@ export default function DocumentCanvas() {
             border: none !important;
             min-height: 720px;
             cursor: text;
+            font-family: Calibri, Carlito, Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #1e1e1e;
           }
           /* Clearfix so floated images never overflow the editor */
           .doc-editor .ProseMirror::after { content: ''; display: table; clear: both; }
+
+          /* ── Word-like typography ─────────────────────────────────────── */
+          .doc-editor .ProseMirror p {
+            margin: 0 0 8px 0;
+            font-family: Calibri, Carlito, Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.6;
+          }
+          .doc-editor .ProseMirror h1 {
+            font-family: Calibri, Carlito, Arial, sans-serif;
+            font-size: 20px; font-weight: 700;
+            color: #1f3864;
+            margin: 20px 0 6px 0;
+            line-height: 1.2;
+            border-bottom: 1px solid #dce6f1;
+            padding-bottom: 4px;
+          }
+          .doc-editor .ProseMirror h2 {
+            font-family: Calibri, Carlito, Arial, sans-serif;
+            font-size: 15px; font-weight: 700;
+            color: #2e74b5;
+            margin: 16px 0 4px 0;
+            line-height: 1.3;
+          }
+          .doc-editor .ProseMirror h3 {
+            font-family: Calibri, Carlito, Arial, sans-serif;
+            font-size: 13px; font-weight: 700;
+            color: #1f3864;
+            margin: 12px 0 4px 0;
+            line-height: 1.4;
+          }
+          .doc-editor .ProseMirror ul,
+          .doc-editor .ProseMirror ol {
+            padding-left: 24px;
+            margin: 0 0 8px 0;
+          }
+          .doc-editor .ProseMirror li { margin-bottom: 2px; }
+          .doc-editor .ProseMirror strong { font-weight: 700; }
+          .doc-editor .ProseMirror em { font-style: italic; }
+          .doc-editor .ProseMirror a { color: #0563c1; text-decoration: underline; }
+          .doc-editor .ProseMirror hr {
+            border: none;
+            border-top: 1px solid #c8c8c8;
+            margin: 16px 0;
+          }
 
           /* ── Image NodeView toolbar buttons ──────────────────────────────── */
           .img-tb-btn {
@@ -136,13 +185,13 @@ export default function DocumentCanvas() {
           /* Tables */
           .doc-editor .ProseMirror table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
           .doc-editor .ProseMirror td,
-          .doc-editor .ProseMirror th { border: 1px solid #e2e8f0; padding: 8px 12px; vertical-align: top; }
-          .doc-editor .ProseMirror th { background: #f8fafc; font-weight: 600; font-size: 12px; }
-          .doc-editor .ProseMirror .selectedCell { background: #dbeafe; }
-          .doc-editor .ProseMirror .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: var(--accent,#6366f1); pointer-events: none; }
+          .doc-editor .ProseMirror th { border: 1px solid #d2d0ce; padding: 6px 10px; vertical-align: top; font-size: 13px; }
+          .doc-editor .ProseMirror th { background: #f3f2f1; font-weight: 600; font-size: 12px; color: #323130; }
+          .doc-editor .ProseMirror .selectedCell { background: #deecf9; }
+          .doc-editor .ProseMirror .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: #0078d4; pointer-events: none; }
 
           /* Empty paragraph placeholder */
-          .doc-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #94a3b8; pointer-events: none; height: 0; display: block; }
+          .doc-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #a19f9d; pointer-events: none; height: 0; display: block; font-style: italic; }
         `}</style>
       </div>
     </div>
