@@ -44,3 +44,15 @@ export const OFFER_PLACEHOLDERS = [
 ] as const;
 
 export type PlaceholderKey = (typeof OFFER_PLACEHOLDERS)[number]['key'];
+
+// ── Variable node definitions (used by BlocksSidebar) ─────────────────────────
+
+export interface VariableNodeDef {
+  key:   string;  // e.g. 'recipientName' (without {{ }})
+  label: string;  // e.g. 'Mottagarens namn'
+}
+
+export const VARIABLE_NODES: VariableNodeDef[] = OFFER_PLACEHOLDERS.map((p) => ({
+  key:   p.key.replace(/[{}]/g, ''),
+  label: p.label,
+}));
