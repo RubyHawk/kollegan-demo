@@ -92,12 +92,13 @@ export const handleCreateOffer = createHandler(
     const payload = await requireStaff(req);
     const offer = await createOffer({
       organizationId: payload.orgId!,
+      createdBy:      payload.sub,
       title: body.title, recipientName: body.recipientName,
       recipientEmail: body.recipientEmail, recipientCompany: body.recipientCompany,
       notes: body.notes, validUntil: new Date(body.validUntil),
       leadId: body.leadId, customerId: body.customerId, lineItems: body.lineItems,
     }, payload.sub);
-    return created(`/api/offers/${offer.id}`, offer);
+    return created(offer, `/api/offers/${offer.id}`);
   },
 );
 

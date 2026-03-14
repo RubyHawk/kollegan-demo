@@ -4,10 +4,13 @@
  * /offers
  *
  * Offer / Quotation Builder.
- * - List of all offers with status tabs
+ * - List of all offers with status tabs + search
  * - Slide-out panel to create a new offer with line-item editor
+ * - Template dropdown: select a WYSIWYG template before creating
  * - Real-time totals (ex VAT, VAT amount, total inc VAT)
  * - Send / Accept / Decline actions
+ * - Preview generated document in modal
+ * - Copy public signing link to clipboard
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -27,21 +30,30 @@ interface LineItem {
 }
 
 interface Offer {
-  id:               string;
-  title:            string;
-  status:           OfferStatus;
-  recipientName:    string;
-  recipientEmail:   string;
-  recipientCompany?: string;
-  notes?:           string;
-  validUntil:       string;
-  totalExVat:       number;
-  totalIncVat:      number;
-  lineItems:        LineItem[];
-  createdAt:        string;
-  sentAt?:          string;
-  acceptedAt?:      string;
-  leadId?:          string;
+  id:                   string;
+  title:                string;
+  status:               OfferStatus;
+  recipientName:        string;
+  recipientEmail:       string;
+  recipientCompany?:    string;
+  notes?:               string;
+  validUntil:           string;
+  totalExVat:           number;
+  totalIncVat:          number;
+  lineItems:            LineItem[];
+  createdAt:            string;
+  sentAt?:              string;
+  acceptedAt?:          string;
+  leadId?:              string;
+  templateId?:          string;
+  generatedDocument?:   string;
+  publicToken:          string;
+  publicTokenExpiresAt?: string;
+}
+
+interface OfferTemplate {
+  id:   string;
+  name: string;
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -76,7 +88,7 @@ const STATUS_LABEL: Record<OfferStatus, string> = {
 const EMPTY_LINE: LineItem = { description: '', quantity: 1, unitPrice: 0, vatRate: 0.25, discount: 0 };
 
 const EMPTY_FORM = {
-  title: '', recipientName: '', recipientEmail: '', recipientCompany: '',
+  templateId: '', title: '', recipientName: '', recipientEmail: '', recipientCompany: '',
   notes: '', validUntil: '', lineItems: [{ ...EMPTY_LINE }],
 };
 
@@ -91,8 +103,7 @@ function fmtSEK(n: number) {
 }
 
 function computeTotals(items: LineItem[]) {
-  let exVat = 0;
-  let vatAmt = 0;
+  let exVat = 0; let vatAmt = 0;
   for (const item of items) {
     if (!item.description || item.quantity <= 0 || item.unitPrice < 0) continue;
     const disc = 1 - (item.discount / 100);
@@ -107,21 +118,39 @@ function computeTotals(items: LineItem[]) {
   };
 }
 
+function publicUrl(token: string): string {
+  const base = typeof window !== 'undefined' ? window.location.origin : '';
+  return `${base}/offers/public/${token}`;
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function OffersPage() {
-  const [offers,   setOffers]   = useState<Offer[]>([]);
-  const [total,    setTotal]    = useState(0);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState<string | null>(null);
-  const [tab,      setTab]      = useState<OfferStatus | 'all'>('all');
-  const [search,   setSearch]   = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [form,     setForm]     = useState(EMPTY_FORM);
-  const [saving,   setSaving]   = useState(false);
-  const [acting,   setActing]   = useState<string | null>(null); // offerId being actioned
+  const [offers,     setOffers]     = useState<Offer[]>([]);
+  const [total,      setTotal]      = useState(0);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState<string | null>(null);
+  const [tab,        setTab]        = useState<OfferStatus | 'all'>('all');
+  const [search,     setSearch]     = useState('');
+  const [showForm,   setShowForm]   = useState(false);
+  const [form,       setForm]       = useState(EMPTY_FORM);
+  const [saving,     setSaving]     = useState(false);
+  const [acting,     setActing]     = useState<string | null>(null);
+  const [templates,  setTemplates]  = useState<OfferTemplate[]>([]);
+  const [previewDoc, setPreviewDoc] = useState<string | null>(null); // HTML to preview
+  const [copied,     setCopied]     = useState<string | null>(null); // offerId copied
 
-  // ── Load offers ─────────────────────────────────────────────────────────────
+  // ── Load templates ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    void fetch('/api/templates').then(async (r) => {
+      if (r.ok) {
+        const j = await r.json() as { data: OfferTemplate[] };
+        setTemplates(j.data);
+      }
+    });
+  }, []);
+
+  // ── Load offers ───────────────────────────────────────────────────────────────
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     setError(null);
@@ -143,40 +172,39 @@ export default function OffersPage() {
 
   useEffect(() => { void load(); }, [load]);
 
-  // ── Create offer ─────────────────────────────────────────────────────────────
+  // ── Create offer ──────────────────────────────────────────────────────────────
   const createOffer = useCallback(async () => {
-    const tots = computeTotals(form.lineItems);
     if (!form.title || !form.recipientName || !form.recipientEmail || !form.validUntil) {
       setError('Fyll i alla obligatoriska fält (titel, mottagare, e-post, giltig till).');
       return;
     }
     const validItems = form.lineItems.filter((i) => i.description.trim() && i.quantity > 0);
     if (validItems.length === 0) {
-      setError('Minst en raden måste ha beskrivning och kvantitet.');
+      setError('Minst en rad måste ha beskrivning och kvantitet.');
       return;
     }
-    setSaving(true);
-    setError(null);
+    setSaving(true); setError(null);
     try {
+      const body: Record<string, unknown> = {
+        title:            form.title,
+        recipientName:    form.recipientName,
+        recipientEmail:   form.recipientEmail,
+        recipientCompany: form.recipientCompany || undefined,
+        notes:            form.notes || undefined,
+        validUntil:       new Date(form.validUntil).toISOString(),
+        lineItems:        validItems,
+      };
+      if (form.templateId) body.templateId = form.templateId;
+
       const res = await fetch('/api/offers', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title:            form.title,
-          recipientName:    form.recipientName,
-          recipientEmail:   form.recipientEmail,
-          recipientCompany: form.recipientCompany || undefined,
-          notes:            form.notes || undefined,
-          validUntil:       new Date(form.validUntil).toISOString(),
-          lineItems:        validItems,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body:   JSON.stringify(body),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({})) as { detail?: string };
         throw new Error(j.detail ?? `Fel ${res.status}`);
       }
-      setShowForm(false);
-      setForm(EMPTY_FORM);
+      setShowForm(false); setForm(EMPTY_FORM);
       await load(true);
     } catch (e) {
       setError((e as Error).message);
@@ -185,14 +213,12 @@ export default function OffersPage() {
     }
   }, [form, load]);
 
-  // ── Status action (send / accept / decline) ──────────────────────────────────
+  // ── Status actions (send / accept / decline) ──────────────────────────────────
   const doAction = useCallback(async (id: string, action: 'send' | 'accept' | 'decline') => {
     setActing(id);
     try {
       const res = await fetch(`/api/offers/${id}?action=${action}`, {
-        method:  'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({}),
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error(`Fel ${res.status}`);
       await load(true);
@@ -214,20 +240,20 @@ export default function OffersPage() {
     }
   }, [load]);
 
+  // ── Copy public link ───────────────────────────────────────────────────────────
+  const copyLink = useCallback(async (offer: Offer) => {
+    const url = publicUrl(offer.publicToken);
+    await navigator.clipboard.writeText(url).catch(() => {});
+    setCopied(offer.id);
+    setTimeout(() => setCopied(null), 2000);
+  }, []);
+
   // ── Line item helpers ─────────────────────────────────────────────────────────
   function updateLine(idx: number, field: keyof LineItem, value: string | number) {
-    setForm((f) => {
-      const items = [...f.lineItems];
-      items[idx] = { ...items[idx], [field]: value };
-      return { ...f, lineItems: items };
-    });
+    setForm((f) => { const items = [...f.lineItems]; items[idx] = { ...items[idx], [field]: value }; return { ...f, lineItems: items }; });
   }
-  function addLine() {
-    setForm((f) => ({ ...f, lineItems: [...f.lineItems, { ...EMPTY_LINE }] }));
-  }
-  function removeLine(idx: number) {
-    setForm((f) => ({ ...f, lineItems: f.lineItems.filter((_, i) => i !== idx) }));
-  }
+  function addLine() { setForm((f) => ({ ...f, lineItems: [...f.lineItems, { ...EMPTY_LINE }] })); }
+  function removeLine(idx: number) { setForm((f) => ({ ...f, lineItems: f.lineItems.filter((_, i) => i !== idx) })); }
 
   const tots = computeTotals(form.lineItems);
 
@@ -240,16 +266,14 @@ export default function OffersPage() {
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)] mb-1">Offerter</h1>
-          <p className="text-sm text-[var(--text-muted)]">
-            Skapa, skicka och följ upp offerter direkt från plattformen.
-          </p>
+          <p className="text-sm text-[var(--text-muted)]">Skapa, skicka och följ upp offerter direkt från plattformen.</p>
         </div>
         <button
           onClick={() => { setShowForm(true); setError(null); }}
           className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity shrink-0"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
           Ny offert
         </button>
@@ -261,7 +285,7 @@ export default function OffersPage() {
           <span>{error}</span>
           <button onClick={() => setError(null)} className="shrink-0 opacity-60 hover:opacity-100">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
         </div>
@@ -272,74 +296,63 @@ export default function OffersPage() {
         <div className="mb-8 rounded-2xl border border-[var(--accent)]/30 bg-[var(--surface)] shadow-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">Ny offert</h2>
-            <button
-              onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); }}
-              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-            >
+            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             </button>
           </div>
 
           <div className="p-6 space-y-6">
+            {/* Template selector */}
+            {templates.length > 0 && (
+              <div>
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Offertmall</label>
+                <select
+                  value={form.templateId}
+                  onChange={(e) => setForm((f) => ({ ...f, templateId: e.target.value }))}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                >
+                  <option value="">Ingen mall (fritext)</option>
+                  {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+                {form.templateId && (
+                  <p className="text-xs text-[var(--text-muted)] mt-1">Dokumentet genereras med vald mall när offerten skickas.</p>
+                )}
+              </div>
+            )}
+
             {/* Basic info */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Rubrik *</label>
-                <input
-                  value={form.title}
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="t.ex. Hotellprojekt Q2 2026"
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
+                <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="t.ex. Hotellprojekt Q2 2026"
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Mottagarens namn *</label>
-                <input
-                  value={form.recipientName}
-                  onChange={(e) => setForm((f) => ({ ...f, recipientName: e.target.value }))}
-                  placeholder="Anna Lindström"
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
+                <input value={form.recipientName} onChange={(e) => setForm((f) => ({ ...f, recipientName: e.target.value }))} placeholder="Anna Lindström"
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">E-postadress *</label>
-                <input
-                  type="email"
-                  value={form.recipientEmail}
-                  onChange={(e) => setForm((f) => ({ ...f, recipientEmail: e.target.value }))}
-                  placeholder="anna@example.com"
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
+                <input type="email" value={form.recipientEmail} onChange={(e) => setForm((f) => ({ ...f, recipientEmail: e.target.value }))} placeholder="anna@example.com"
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Företag</label>
-                <input
-                  value={form.recipientCompany}
-                  onChange={(e) => setForm((f) => ({ ...f, recipientCompany: e.target.value }))}
-                  placeholder="Lindström AB"
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
+                <input value={form.recipientCompany} onChange={(e) => setForm((f) => ({ ...f, recipientCompany: e.target.value }))} placeholder="Lindström AB"
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Giltig till *</label>
-                <input
-                  type="date"
-                  value={form.validUntil}
-                  onChange={(e) => setForm((f) => ({ ...f, validUntil: e.target.value }))}
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
+                <input type="date" value={form.validUntil} onChange={(e) => setForm((f) => ({ ...f, validUntil: e.target.value }))}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Anteckningar</label>
-                <textarea
-                  value={form.notes}
-                  rows={2}
-                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                  placeholder="Eventuella villkor eller kommentarer…"
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"
-                />
+                <textarea value={form.notes} rows={2} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Eventuella villkor eller kommentarer…"
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"/>
               </div>
             </div>
 
@@ -347,19 +360,15 @@ export default function OffersPage() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Rader</p>
-                <button
-                  onClick={addLine}
-                  className="text-xs text-[var(--accent)] font-medium hover:opacity-80 transition-opacity flex items-center gap-1"
-                >
+                <button onClick={addLine} className="text-xs text-[var(--accent)] font-medium hover:opacity-80 transition-opacity flex items-center gap-1">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                   </svg>
                   Lägg till rad
                 </button>
               </div>
 
               <div className="rounded-xl border border-[var(--border)] overflow-hidden">
-                {/* Header row */}
                 <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-[var(--surface-alt)] text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   <span className="col-span-4">Beskrivning</span>
                   <span className="col-span-2 text-right">Antal</span>
@@ -367,71 +376,42 @@ export default function OffersPage() {
                   <span className="col-span-1 text-right">Moms %</span>
                   <span className="col-span-1 text-right">Rabatt %</span>
                   <span className="col-span-1 text-right">Summa</span>
-                  <span className="col-span-1" />
+                  <span className="col-span-1"/>
                 </div>
-
                 {form.lineItems.map((item, idx) => {
                   const disc = 1 - (item.discount / 100);
                   const lineExVat = item.quantity * item.unitPrice * disc;
                   return (
                     <div key={idx} className="grid grid-cols-12 gap-2 px-3 py-2 border-t border-[var(--border)] items-center">
                       <div className="col-span-4">
-                        <input
-                          value={item.description}
-                          onChange={(e) => updateLine(idx, 'description', e.target.value)}
-                          placeholder="Tjänst eller produkt"
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                        />
+                        <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} placeholder="Tjänst eller produkt"
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
                       </div>
                       <div className="col-span-2">
-                        <input
-                          type="number" min={0} step={0.1}
-                          value={item.quantity}
-                          onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                        />
+                        <input type="number" min={0} step={0.1} value={item.quantity} onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
                       </div>
                       <div className="col-span-2">
-                        <input
-                          type="number" min={0}
-                          value={item.unitPrice}
-                          onChange={(e) => updateLine(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                        />
+                        <input type="number" min={0} value={item.unitPrice} onChange={(e) => updateLine(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
                       </div>
                       <div className="col-span-1">
-                        <select
-                          value={item.vatRate}
-                          onChange={(e) => updateLine(idx, 'vatRate', parseFloat(e.target.value))}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-1.5 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                        >
-                          <option value={0}>0%</option>
-                          <option value={0.06}>6%</option>
-                          <option value={0.12}>12%</option>
-                          <option value={0.25}>25%</option>
+                        <select value={item.vatRate} onChange={(e) => updateLine(idx, 'vatRate', parseFloat(e.target.value))}
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-1.5 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
+                          <option value={0}>0%</option><option value={0.06}>6%</option>
+                          <option value={0.12}>12%</option><option value={0.25}>25%</option>
                         </select>
                       </div>
                       <div className="col-span-1">
-                        <input
-                          type="number" min={0} max={100}
-                          value={item.discount}
-                          onChange={(e) => updateLine(idx, 'discount', parseFloat(e.target.value) || 0)}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                        />
+                        <input type="number" min={0} max={100} value={item.discount} onChange={(e) => updateLine(idx, 'discount', parseFloat(e.target.value) || 0)}
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
                       </div>
-                      <div className="col-span-1 text-right text-xs font-medium text-[var(--text-primary)]">
-                        {fmtSEK(lineExVat)}
-                      </div>
+                      <div className="col-span-1 text-right text-xs font-medium text-[var(--text-primary)]">{fmtSEK(lineExVat)}</div>
                       <div className="col-span-1 flex justify-end">
                         {form.lineItems.length > 1 && (
-                          <button
-                            onClick={() => removeLine(idx)}
-                            className="text-[var(--text-muted)] hover:text-red-500 transition-colors"
-                          >
+                          <button onClick={() => removeLine(idx)} className="text-[var(--text-muted)] hover:text-red-500 transition-colors">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6l-1 14H6L5 6" />
-                              <path d="M10 11v6M14 11v6" />
+                              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
                             </svg>
                           </button>
                         )}
@@ -445,16 +425,13 @@ export default function OffersPage() {
               <div className="mt-4 flex justify-end">
                 <div className="space-y-1.5 text-sm min-w-[220px]">
                   <div className="flex justify-between gap-8 text-[var(--text-secondary)]">
-                    <span>Summa ex. moms</span>
-                    <span className="font-medium">{fmtSEK(tots.exVat)}</span>
+                    <span>Summa ex. moms</span><span className="font-medium">{fmtSEK(tots.exVat)}</span>
                   </div>
                   <div className="flex justify-between gap-8 text-[var(--text-muted)] text-xs">
-                    <span>Moms</span>
-                    <span>{fmtSEK(tots.vat)}</span>
+                    <span>Moms</span><span>{fmtSEK(tots.vat)}</span>
                   </div>
                   <div className="flex justify-between gap-8 text-[var(--text-primary)] font-semibold border-t border-[var(--border)] pt-2 mt-2">
-                    <span>Totalt inkl. moms</span>
-                    <span>{fmtSEK(tots.incVat)}</span>
+                    <span>Totalt inkl. moms</span><span>{fmtSEK(tots.incVat)}</span>
                   </div>
                 </div>
               </div>
@@ -462,17 +439,12 @@ export default function OffersPage() {
 
             {/* Actions */}
             <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-light)]">
-              <button
-                onClick={() => void createOffer()}
-                disabled={saving}
-                className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
-              >
+              <button onClick={() => void createOffer()} disabled={saving}
+                className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
                 {saving ? 'Sparar…' : 'Spara som utkast'}
               </button>
-              <button
-                onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); }}
-                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors"
-              >
+              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); }}
+                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors">
                 Avbryt
               </button>
             </div>
@@ -484,30 +456,19 @@ export default function OffersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
         <div className="flex gap-0 border-b border-[var(--border)] overflow-x-auto scrollbar-none flex-1">
           {STATUS_TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={cn(
-                'px-3.5 py-2.5 text-xs font-medium whitespace-nowrap shrink-0 border-b-2 -mb-px transition-all duration-150',
-                tab === t.id
-                  ? 'border-[var(--accent)] text-[var(--accent)]'
-                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border)]',
-              )}
-            >
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className={cn('px-3.5 py-2.5 text-xs font-medium whitespace-nowrap shrink-0 border-b-2 -mb-px transition-all duration-150',
+                tab === t.id ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border)]')}>
               {t.label}
             </button>
           ))}
         </div>
         <div className="relative shrink-0">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Sök offert…"
-            className="pl-9 pr-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors w-48"
-          />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Sök offert…"
+            className="pl-9 pr-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors w-48"/>
         </div>
       </div>
 
@@ -515,7 +476,7 @@ export default function OffersPage() {
       {loading ? (
         <div className="flex items-center justify-center py-20 gap-3">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--text-muted)]">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
           </svg>
           <p className="text-sm text-[var(--text-muted)]">Laddar offerter…</p>
         </div>
@@ -526,9 +487,7 @@ export default function OffersPage() {
               <thead className="bg-[var(--surface-alt)]">
                 <tr>
                   {['Rubrik', 'Mottagare', 'Status', 'Totalt inkl. moms', 'Giltig till', 'Skapad', ''].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                      {h}
-                    </th>
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -537,16 +496,13 @@ export default function OffersPage() {
                   <tr key={offer.id} className="hover:bg-[var(--surface-hover)] transition-colors">
                     <td className="px-4 py-3.5">
                       <p className="font-medium text-[var(--text-primary)]">{offer.title}</p>
-                      {offer.leadId && (
-                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Kopplad till lead</p>
-                      )}
+                      {offer.templateId && <p className="text-[10px] text-[var(--accent)] mt-0.5">Mallbaserad</p>}
+                      {offer.leadId    && <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Kopplad till lead</p>}
                     </td>
                     <td className="px-4 py-3.5">
                       <p className="text-[var(--text-primary)]">{offer.recipientName}</p>
                       <p className="text-xs text-[var(--text-muted)]">{offer.recipientEmail}</p>
-                      {offer.recipientCompany && (
-                        <p className="text-[10px] text-[var(--text-muted)]">{offer.recipientCompany}</p>
-                      )}
+                      {offer.recipientCompany && <p className="text-[10px] text-[var(--text-muted)]">{offer.recipientCompany}</p>}
                     </td>
                     <td className="px-4 py-3.5">
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[offer.status]}`}>
@@ -555,51 +511,49 @@ export default function OffersPage() {
                     </td>
                     <td className="px-4 py-3.5 font-semibold text-[var(--text-primary)]">
                       {fmtSEK(offer.totalIncVat)}
-                      <p className="text-[10px] font-normal text-[var(--text-muted)]">
-                        ex. moms: {fmtSEK(offer.totalExVat)}
-                      </p>
+                      <p className="text-[10px] font-normal text-[var(--text-muted)]">ex. moms: {fmtSEK(offer.totalExVat)}</p>
                     </td>
                     <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmtDate(offer.validUntil)}</td>
                     <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmtDate(offer.createdAt)}</td>
                     <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1.5 justify-end">
+                      <div className="flex items-center gap-1.5 justify-end flex-wrap">
+                        {/* Preview document */}
+                        {offer.generatedDocument && (
+                          <button type="button" onClick={() => setPreviewDoc(offer.generatedDocument!)}
+                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline">
+                            Förhandsgranska
+                          </button>
+                        )}
+                        {/* Copy public link */}
+                        {(offer.status === 'sent' || offer.status === 'viewed') && (
+                          <button type="button" onClick={() => void copyLink(offer)}
+                            className="text-xs text-violet-500 hover:underline">
+                            {copied === offer.id ? 'Kopierat!' : 'Kopiera länk'}
+                          </button>
+                        )}
                         {offer.status === 'draft' && (
-                          <button
-                            type="button"
-                            onClick={() => void doAction(offer.id, 'send')}
-                            disabled={acting === offer.id}
-                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-40"
-                          >
+                          <button type="button" onClick={() => void doAction(offer.id, 'send')} disabled={acting === offer.id}
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-40">
                             Skicka
                           </button>
                         )}
                         {(offer.status === 'sent' || offer.status === 'viewed') && (
                           <>
-                            <button
-                              type="button"
-                              onClick={() => void doAction(offer.id, 'accept')}
-                              disabled={acting === offer.id}
-                              className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-40"
-                            >
+                            <span className="text-[var(--border)]">·</span>
+                            <button type="button" onClick={() => void doAction(offer.id, 'accept')} disabled={acting === offer.id}
+                              className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-40">
                               Acceptera
                             </button>
                             <span className="text-[var(--border)]">·</span>
-                            <button
-                              type="button"
-                              onClick={() => void doAction(offer.id, 'decline')}
-                              disabled={acting === offer.id}
-                              className="text-xs text-red-500 hover:underline disabled:opacity-40"
-                            >
+                            <button type="button" onClick={() => void doAction(offer.id, 'decline')} disabled={acting === offer.id}
+                              className="text-xs text-red-500 hover:underline disabled:opacity-40">
                               Avvisa
                             </button>
                           </>
                         )}
                         <span className="text-[var(--border)] mx-0.5">·</span>
-                        <button
-                          type="button"
-                          onClick={() => void deleteOffer(offer.id)}
-                          className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors"
-                        >
+                        <button type="button" onClick={() => void deleteOffer(offer.id)}
+                          className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors">
                           Ta bort
                         </button>
                       </div>
@@ -612,10 +566,8 @@ export default function OffersPage() {
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center">
                           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z" />
-                            <line x1="8" y1="9" x2="16" y2="9" />
-                            <line x1="8" y1="13" x2="16" y2="13" />
-                            <line x1="8" y1="17" x2="12" y2="17" />
+                            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/>
+                            <line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/>
                           </svg>
                         </div>
                         <p className="text-sm font-medium text-[var(--text-primary)]">Inga offerter ännu</p>
@@ -627,12 +579,31 @@ export default function OffersPage() {
               </tbody>
             </table>
           </div>
-
           {total > offers.length && (
             <div className="px-4 py-3 border-t border-[var(--border)] bg-[var(--surface-alt)] text-xs text-[var(--text-muted)] text-center">
               Visar {offers.length} av {total} offerter
             </div>
           )}
+        </div>
+      )}
+
+      {/* Document preview modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setPreviewDoc(null)}>
+          <div className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-[var(--surface)] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)] bg-[var(--surface-alt)] shrink-0">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">Förhandsvisning av offertdokument</span>
+              <button onClick={() => setPreviewDoc(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <iframe srcDoc={previewDoc} title="Offertdokument" className="w-full h-full min-h-[70vh] border-0"/>
+            </div>
+          </div>
         </div>
       )}
     </div>

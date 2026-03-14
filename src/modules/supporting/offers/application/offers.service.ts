@@ -9,6 +9,9 @@ import {
   OFFER_ACCEPTED,
   OFFER_DECLINED,
 } from '../events/offer.events';
+import { enqueueOfferEmail, enqueueCreatorNotification } from './offer-email';
+import { generateDocument } from './document-generator';
+import { templatesRepository } from '../infrastructure/templates.repository';
 
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
 
@@ -70,9 +73,26 @@ export async function updateOffer(
 // ─── sendOffer ────────────────────────────────────────────────────────────────
 
 export async function sendOffer(id: string, orgId: string): Promise<Offer | null> {
+  const existing = await offersRepository.findById(id, orgId);
+  if (!existing) return null;
+
+  // Generate document snapshot if a template is linked and no document yet
+  let generatedDocument: string | undefined;
+  if (existing.templateId && !existing.generatedDocument) {
+    const template = await templatesRepository.findById(existing.templateId, orgId);
+    if (template) {
+      generatedDocument = generateDocument(template.content, existing);
+    }
+  }
+
+  // Token expires 30 days from now
+  const publicTokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
   const updated = await offersRepository.update(id, orgId, {
     status: 'sent',
     sentAt: new Date(),
+    ...(generatedDocument ? { generatedDocument } : {}),
+    publicTokenExpiresAt,
   });
   if (!updated) return null;
 
@@ -87,11 +107,181 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
     },
   });
 
+  // Enqueue email (non-blocking)
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const publicUrl = `${appUrl}/offers/public/${updated.publicToken}`;
+  await enqueueOfferEmail(updated, publicUrl).catch((err: unknown) =>
+    logger.warn(TAG, 'Failed to enqueue offer email', { err })
+  );
+
   logger.info(TAG, `Offer sent: ${id}`, { recipientEmail: updated.recipientEmail });
   return updated;
 }
 
-// ─── acceptOffer ──────────────────────────────────────────────────────────────
+// ─── viewOffer (public — triggered when recipient opens the offer) ─────────────
+
+export async function viewOffer(
+  publicToken: string,
+  ip: string,
+  userAgent: string,
+): Promise<Offer | null> {
+  const existing = await offersRepository.findByPublicToken(publicToken);
+  if (!existing) return null;
+
+  // Check token expiration
+  if (existing.publicTokenExpiresAt && new Date(existing.publicTokenExpiresAt) < new Date()) {
+    return null; // caller should return 410 Gone
+  }
+
+  // Mark as viewed if currently in 'sent' state
+  let updated = existing;
+  if (existing.status === 'sent') {
+    updated = (await offersRepository.updateById(existing.id, {
+      status:   'viewed',
+      viewedAt: new Date(),
+    })) ?? existing;
+  }
+
+  // Audit log (fire-and-forget — compliance but non-blocking)
+  void import('@modules/supporting/audit').then(({ log }) =>
+    log({
+      action:        'offer.viewed',
+      resourceType:  'Offer',
+      resourceId:    existing.id,
+      organizationId: null,
+      actorId:       null,
+      actorType:     'system',
+      metadata:      { ip, userAgent },
+    }).catch((err: unknown) => logger.warn(TAG, 'Audit log failed for offer.viewed', { err }))
+  );
+
+  return updated;
+}
+
+// ─── signOffer (public — recipient submits signature) ─────────────────────────
+
+export async function signOffer(
+  publicToken: string,
+  signatureImage: string,
+  ip: string,
+  userAgent: string,
+): Promise<Offer | null> {
+  const existing = await offersRepository.findByPublicToken(publicToken);
+  if (!existing) return null;
+
+  // Check expiration
+  if (existing.publicTokenExpiresAt && new Date(existing.publicTokenExpiresAt) < new Date()) {
+    return null;
+  }
+
+  // Only allow signing if status is sent or viewed
+  if (existing.status !== 'sent' && existing.status !== 'viewed') {
+    return null;
+  }
+
+  const final = await offersRepository.updateById(existing.id, {
+    status:         'accepted',
+    acceptedAt:     new Date(),
+    signatureImage,
+  });
+  if (!final) return null;
+
+  eventBus.publish({
+    type:       OFFER_ACCEPTED,
+    orgId:      '', // orgId not available in public context; subscribers handle gracefully
+    occurredAt: new Date().toISOString(),
+    payload: {
+      offerId:     final.id,
+      totalIncVat: final.totalIncVat,
+      leadId:      final.leadId,
+    },
+  });
+
+  // Auto-update linked lead to 'won'
+  if (final.leadId) {
+    const { updateLead } = await import('@modules/supporting/leads');
+    await updateLead(final.leadId, '', { status: 'won' }, 'system').catch((err: unknown) =>
+      logger.warn(TAG, 'Failed to auto-update lead on offer signature', { err })
+    );
+  }
+
+  // Notify creator
+  await enqueueCreatorNotification(final, 'signed').catch((err: unknown) =>
+    logger.warn(TAG, 'Failed to enqueue creator notification', { err })
+  );
+
+  // Audit log
+  void import('@modules/supporting/audit').then(({ log }) =>
+    log({
+      action:        'offer.signed',
+      resourceType:  'Offer',
+      resourceId:    final.id,
+      organizationId: null,
+      actorId:       null,
+      actorType:     'system',
+      metadata:      { ip, userAgent },
+    }).catch((err: unknown) => logger.warn(TAG, 'Audit log failed for offer.signed', { err }))
+  );
+
+  logger.info(TAG, `Offer signed: ${final.id}`);
+  return final;
+}
+
+// ─── declineOfferByToken (public) ─────────────────────────────────────────────
+
+export async function declineOfferByToken(
+  publicToken: string,
+  comment: string | undefined,
+  ip: string,
+  userAgent: string,
+): Promise<Offer | null> {
+  const existing = await offersRepository.findByPublicToken(publicToken);
+  if (!existing) return null;
+
+  // Check expiration
+  if (existing.publicTokenExpiresAt && new Date(existing.publicTokenExpiresAt) < new Date()) {
+    return null;
+  }
+
+  if (existing.status !== 'sent' && existing.status !== 'viewed') {
+    return null;
+  }
+
+  const final = await offersRepository.updateById(existing.id, {
+    status:     'declined',
+    declinedAt: new Date(),
+  });
+  if (!final) return null;
+
+  eventBus.publish({
+    type:       OFFER_DECLINED,
+    orgId:      '',
+    occurredAt: new Date().toISOString(),
+    payload:    { offerId: final.id },
+  });
+
+  await enqueueCreatorNotification(final, 'declined', { comment }).catch((err: unknown) =>
+    logger.warn(TAG, 'Failed to enqueue decline notification', { err })
+  );
+
+  // Audit log
+  void import('@modules/supporting/audit').then(({ log }) =>
+    log({
+      action:        'offer.declined',
+      resourceType:  'Offer',
+      resourceId:    final.id,
+      organizationId: null,
+      actorId:       null,
+      actorType:     'system',
+      metadata:      { ip, userAgent, comment },
+    }).catch((err: unknown) => logger.warn(TAG, 'Audit log failed for offer.declined', { err }))
+  );
+
+  logger.info(TAG, `Offer declined: ${final.id}`);
+  return final;
+}
+
+// ─── acceptOffer (internal — staff action) ────────────────────────────────────
 
 export async function acceptOffer(id: string, orgId: string): Promise<Offer | null> {
   const updated = await offersRepository.update(id, orgId, {
@@ -111,10 +301,9 @@ export async function acceptOffer(id: string, orgId: string): Promise<Offer | nu
     },
   });
 
-  // Auto-update linked lead to 'won'
   if (updated.leadId) {
     const { updateLead } = await import('@modules/supporting/leads');
-    await updateLead(updated.leadId, orgId, { status: 'won' }).catch((err: unknown) =>
+    await updateLead(updated.leadId, orgId, { status: 'won' }, 'system').catch((err: unknown) =>
       logger.warn(TAG, 'Failed to auto-update lead on offer acceptance', { err })
     );
   }
@@ -123,7 +312,7 @@ export async function acceptOffer(id: string, orgId: string): Promise<Offer | nu
   return updated;
 }
 
-// ─── declineOffer ─────────────────────────────────────────────────────────────
+// ─── declineOffer (internal — staff action) ───────────────────────────────────
 
 export async function declineOffer(id: string, orgId: string): Promise<Offer | null> {
   const updated = await offersRepository.update(id, orgId, {
