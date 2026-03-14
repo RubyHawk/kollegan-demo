@@ -35,6 +35,7 @@ export default function NewTemplatePage() {
   const [error,  setError]  = useState<string | null>(null);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Placeholder.configure({ placeholder: 'Börja skriva din offertmall här… Använd platshållare som {{recipientName}} för dynamisk data.' }),
