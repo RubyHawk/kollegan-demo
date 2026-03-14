@@ -339,3 +339,47 @@ export async function deleteOffer(id: string, orgId: string): Promise<boolean> {
   if (deleted) logger.info(TAG, `Offer deleted: ${id}`);
   return deleted;
 }
+
+// ─── expireStaleOffers (cron) ─────────────────────────────────────────────────
+
+export async function expireStaleOffers(): Promise<number> {
+  const count = await offersRepository.bulkExpireOffers();
+  if (count > 0) logger.info(TAG, `Expired ${count} stale offers`);
+  return count;
+}
+
+// ─── duplicateOffer ───────────────────────────────────────────────────────────
+
+export async function duplicateOffer(
+  id: string,
+  orgId: string,
+  actorId: string,
+): Promise<Offer | null> {
+  const existing = await offersRepository.findById(id, orgId);
+  if (!existing) return null;
+
+  const copy = await offersRepository.create({
+    organizationId:   orgId,
+    createdBy:        actorId,
+    title:            `${existing.title} (kopia)`,
+    recipientName:    existing.recipientName,
+    recipientEmail:   existing.recipientEmail,
+    recipientCompany: existing.recipientCompany,
+    notes:            existing.notes,
+    validUntil:       new Date(existing.validUntil),
+    leadId:           existing.leadId,
+    customerId:       existing.customerId,
+    templateId:       existing.templateId,
+    lineItems:        existing.lineItems.map((item, idx) => ({
+      description: item.description,
+      quantity:    item.quantity,
+      unitPrice:   item.unitPrice,
+      vatRate:     item.vatRate,
+      discount:    item.discount ?? 0,
+      sortOrder:   idx,
+    })),
+  });
+
+  logger.info(TAG, `Offer duplicated: ${id} → ${copy.id}`);
+  return copy;
+}

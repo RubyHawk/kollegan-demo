@@ -43,7 +43,9 @@ interface Offer {
   lineItems:            LineItem[];
   createdAt:            string;
   sentAt?:              string;
+  viewedAt?:            string;
   acceptedAt?:          string;
+  declinedAt?:          string;
   leadId?:              string;
   templateId?:          string;
   generatedDocument?:   string;
@@ -136,9 +138,10 @@ export default function OffersPage() {
   const [form,       setForm]       = useState(EMPTY_FORM);
   const [saving,     setSaving]     = useState(false);
   const [acting,     setActing]     = useState<string | null>(null);
-  const [templates,  setTemplates]  = useState<OfferTemplate[]>([]);
-  const [previewDoc, setPreviewDoc] = useState<string | null>(null); // HTML to preview
-  const [copied,     setCopied]     = useState<string | null>(null); // offerId copied
+  const [templates,   setTemplates]   = useState<OfferTemplate[]>([]);
+  const [previewDoc,  setPreviewDoc]  = useState<string | null>(null); // HTML to preview
+  const [copied,      setCopied]      = useState<string | null>(null); // offerId copied
+  const [confirmSend, setConfirmSend] = useState<Offer | null>(null);  // offer pending send confirmation
 
   // ── Load templates ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -213,8 +216,8 @@ export default function OffersPage() {
     }
   }, [form, load]);
 
-  // ── Status actions (send / accept / decline) ──────────────────────────────────
-  const doAction = useCallback(async (id: string, action: 'send' | 'accept' | 'decline') => {
+  // ── Status actions (send / accept / decline / duplicate) ─────────────────────
+  const doAction = useCallback(async (id: string, action: 'send' | 'accept' | 'decline' | 'duplicate') => {
     setActing(id);
     try {
       const res = await fetch(`/api/offers/${id}?action=${action}`, {
@@ -508,6 +511,29 @@ export default function OffersPage() {
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[offer.status]}`}>
                         {STATUS_LABEL[offer.status]}
                       </span>
+                      {/* Activity timeline — key timestamps */}
+                      <div className="mt-1.5 space-y-0.5">
+                        {offer.sentAt && (
+                          <p className="text-[10px] text-[var(--text-muted)]">
+                            Skickad {fmtDate(offer.sentAt)}
+                          </p>
+                        )}
+                        {offer.viewedAt && (
+                          <p className="text-[10px] text-violet-500 dark:text-violet-400">
+                            Öppnad {fmtDate(offer.viewedAt)}
+                          </p>
+                        )}
+                        {offer.acceptedAt && (
+                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                            Accepterad {fmtDate(offer.acceptedAt)}
+                          </p>
+                        )}
+                        {offer.declinedAt && (
+                          <p className="text-[10px] text-red-500">
+                            Avvisad {fmtDate(offer.declinedAt)}
+                          </p>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 font-semibold text-[var(--text-primary)]">
                       {fmtSEK(offer.totalIncVat)}
@@ -532,7 +558,7 @@ export default function OffersPage() {
                           </button>
                         )}
                         {offer.status === 'draft' && (
-                          <button type="button" onClick={() => void doAction(offer.id, 'send')} disabled={acting === offer.id}
+                          <button type="button" onClick={() => setConfirmSend(offer)} disabled={acting === offer.id}
                             className="text-xs text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-40">
                             Skicka
                           </button>
@@ -551,6 +577,11 @@ export default function OffersPage() {
                             </button>
                           </>
                         )}
+                        <span className="text-[var(--border)] mx-0.5">·</span>
+                        <button type="button" onClick={() => void doAction(offer.id, 'duplicate')} disabled={acting === offer.id}
+                          className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:underline transition-colors disabled:opacity-40">
+                          Duplicera
+                        </button>
                         <span className="text-[var(--border)] mx-0.5">·</span>
                         <button type="button" onClick={() => void deleteOffer(offer.id)}
                           className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors">
@@ -584,6 +615,58 @@ export default function OffersPage() {
               Visar {offers.length} av {total} offerter
             </div>
           )}
+        </div>
+      )}
+
+      {/* Send confirmation modal */}
+      {confirmSend && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmSend(null)}>
+          <div className="relative w-full max-w-sm bg-[var(--surface)] rounded-2xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-[var(--border)]">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">Bekräfta utskick</h2>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <p className="text-sm text-[var(--text-secondary)]">
+                Offerten skickas via e-post och kan inte redigeras efter utskick.
+              </p>
+              <div className="rounded-xl bg-[var(--surface-alt)] border border-[var(--border)] p-4 space-y-2 text-sm">
+                <div className="flex justify-between gap-4">
+                  <span className="text-[var(--text-muted)]">Mottagare</span>
+                  <span className="font-medium text-[var(--text-primary)] text-right">{confirmSend.recipientName}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-[var(--text-muted)]">E-post</span>
+                  <span className="text-[var(--text-primary)] text-right">{confirmSend.recipientEmail}</span>
+                </div>
+                {confirmSend.recipientCompany && (
+                  <div className="flex justify-between gap-4">
+                    <span className="text-[var(--text-muted)]">Företag</span>
+                    <span className="text-[var(--text-primary)] text-right">{confirmSend.recipientCompany}</span>
+                  </div>
+                )}
+                <div className="flex justify-between gap-4 pt-2 border-t border-[var(--border)] font-semibold">
+                  <span className="text-[var(--text-secondary)]">Totalt inkl. moms</span>
+                  <span className="text-[var(--text-primary)]">{fmtSEK(confirmSend.totalIncVat)}</span>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 pb-5 flex gap-2">
+              <button
+                onClick={() => { void doAction(confirmSend.id, 'send'); setConfirmSend(null); }}
+                disabled={acting === confirmSend.id}
+                className="flex-1 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                Skicka offert
+              </button>
+              <button
+                onClick={() => setConfirmSend(null)}
+                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors"
+              >
+                Avbryt
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -22,6 +22,8 @@ export {
   acceptOffer,
   declineOffer,
   deleteOffer,
+  duplicateOffer,
+  expireStaleOffers,
 } from './application/offers.service';
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter } from './application/offers.service';
 
@@ -64,6 +66,7 @@ export {
   handleGetOffer,
   handleUpdateOffer,
   handleDeleteOffer,
+  handleExpireOffers,
 } from './api/handlers/offer.handler';
 
 // ── API Handlers — templates ──────────────────────────────────────────────────

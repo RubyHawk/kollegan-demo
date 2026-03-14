@@ -38,6 +38,7 @@ export interface Offer {
   createdBy: string;        // StaffUser.id
   createdAt: string;
   sentAt?: string;
+  viewedAt?: string;
   acceptedAt?: string;
   declinedAt?: string;
   leadId?: string;          // Link to Leads module

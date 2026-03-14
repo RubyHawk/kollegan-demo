@@ -19,6 +19,8 @@ import {
   acceptOffer,
   declineOffer,
   deleteOffer,
+  duplicateOffer,
+  expireStaleOffers,
 } from '../../application/offers.service';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -130,7 +132,7 @@ const PatchBodySchema = z.object({
 });
 
 const PatchQuerySchema = z.object({
-  action: z.enum(['send', 'accept', 'decline']).optional(),
+  action: z.enum(['send', 'accept', 'decline', 'duplicate']).optional(),
 });
 
 export const handleUpdateOffer = createHandler(
@@ -143,6 +145,12 @@ export const handleUpdateOffer = createHandler(
     };
     const id = extractId(req);
     const payload = await requireStaff(req);
+
+    if (query.action === 'duplicate') {
+      const dup = await duplicateOffer(id, payload.orgId!, payload.sub);
+      if (!dup) throw Errors.notFound('Offer not found');
+      return created(dup, `/api/offers/${dup.id}`);
+    }
 
     let updated;
     if (query.action === 'send') updated = await sendOffer(id, payload.orgId!);
@@ -176,5 +184,20 @@ export const handleDeleteOffer = createHandler(
     const deleted = await deleteOffer(id, payload.orgId);
     if (!deleted) throw Errors.notFound('Offer not found');
     return ok(null);
+  },
+);
+
+// ── Expire Offers (cron) ─────────────────────────────────────────────────────
+
+export const handleExpireOffers = createHandler(
+  { auth: 'none', tag: 'Offers:ExpireCron', rateLimit: { max: 10, windowMs: 60_000 } },
+  async (ctx) => {
+    const { req } = ctx as { req: NextRequest };
+    const secret = req.headers.get('x-cron-secret');
+    if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+      throw Errors.forbidden('Invalid cron secret');
+    }
+    const expired = await expireStaleOffers();
+    return ok({ expired });
   },
 );
