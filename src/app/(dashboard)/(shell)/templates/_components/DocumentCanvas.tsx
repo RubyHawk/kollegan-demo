@@ -92,6 +92,10 @@ export default function DocumentCanvas() {
           .tiptap-drag-handle { display: flex; align-items: center; }
           .tiptap { height: 100%; }
           .tiptap .ProseMirror { outline: none; min-height: 600px; }
+          .tiptap img { display: block; height: auto; }
+          .tiptap img[data-align="left"]   { margin-right: auto; }
+          .tiptap img[data-align="center"] { margin-left: auto; margin-right: auto; }
+          .tiptap img[data-align="right"]  { margin-left: auto; }
           .tiptap table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
           .tiptap td, .tiptap th { border: 1px solid #e2e8f0; padding: 8px 12px; vertical-align: top; }
           .tiptap th { background: #f8fafc; font-weight: 600; font-size: 12px; }
