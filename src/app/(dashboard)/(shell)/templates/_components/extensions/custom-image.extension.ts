@@ -1,12 +1,15 @@
 /**
  * CustomImage — extends the default Tiptap Image extension with
- * `align` and `width` attributes so BlockSettingsSidebar can control them.
+ * `align` and `width` attributes and a React NodeView.
  *
- * Alignment is stored as `data-align` and applied via CSS in DocumentCanvas.
- * Width is stored as `data-width` and applied as an inline style on the <img>.
+ * Alignment and width are stored as `data-align` / `data-width` in the HTML
+ * output (used by renderHTML / PDF generation).  The editor uses the
+ * ImageNodeView React component for live rendering instead of the raw <img>.
  */
 
 import Image from '@tiptap/extension-image';
+import { ReactNodeViewRenderer } from '@tiptap/react';
+import { ImageNodeView } from './ImageNodeView';
 
 export const CustomImage = Image.extend({
   addAttributes() {
@@ -34,5 +37,9 @@ export const CustomImage = Image.extend({
             : { style: 'max-width: 100%; height: auto;' },
       },
     };
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(ImageNodeView);
   },
 });
