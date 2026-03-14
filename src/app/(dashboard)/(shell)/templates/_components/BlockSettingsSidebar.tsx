@@ -39,7 +39,7 @@ export default function BlockSettingsSidebar() {
   }, [editor]);
 
   return (
-    <div className="w-64 shrink-0 border-l border-[var(--border)] bg-[var(--surface)] flex flex-col overflow-y-auto hidden lg:flex">
+    <div className="w-64 shrink-0 border-l border-[var(--border)] bg-[var(--surface)] flex-col overflow-y-auto hidden lg:flex">
       {active === 'image'          && editor && <ImageSettings editor={editor} />}
       {active === 'table'          && editor && <TableSettings editor={editor} />}
       {active === 'signatureBlock' && editor && <SignatureSettings editor={editor} />}

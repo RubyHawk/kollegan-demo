@@ -61,6 +61,7 @@ export default function DocumentCanvas({ initialContent, editorRef }: Props) {
   const initialContentRef = useRef(initialContent);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         dropcursor: { color: 'var(--accent)', width: 2 },
