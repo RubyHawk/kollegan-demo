@@ -545,10 +545,18 @@ export default function OffersPage() {
                       <div className="flex items-center gap-1.5 justify-end flex-wrap">
                         {/* Preview document */}
                         {offer.generatedDocument && (
-                          <button type="button" onClick={() => setPreviewDoc(offer.generatedDocument!)}
-                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline">
-                            Förhandsgranska
-                          </button>
+                          <>
+                            <button type="button" onClick={() => setPreviewDoc(offer.generatedDocument!)}
+                              className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline">
+                              Förhandsgranska
+                            </button>
+                            <span className="text-[var(--border)]">·</span>
+                            <button type="button"
+                              onClick={() => window.open(`/api/offers/${offer.id}/pdf`, '_blank')}
+                              className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline">
+                              PDF
+                            </button>
+                          </>
                         )}
                         {/* Copy public link */}
                         {(offer.status === 'sent' || offer.status === 'viewed') && (
