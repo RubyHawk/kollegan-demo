@@ -24,9 +24,16 @@ import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
+import FontFamily from '@tiptap/extension-font-family';
+import Highlight from '@tiptap/extension-highlight';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
 import { VariableNode } from './extensions/variable-node.extension';
 import { SignatureBlockNode } from './extensions/signature-block.extension';
 import { DragHandleExtension } from './extensions/drag-handle.extension';
+import { FontSize } from './extensions/font-size.extension';
+import { LineHeight } from './extensions/line-height.extension';
+import { TextIndent } from './extensions/indent.extension';
 import type { EditorView } from '@tiptap/pm/view';
 
 import dynamic from 'next/dynamic';
@@ -78,6 +85,13 @@ export default function TemplateEditor({ initialContent, editorRef }: Props) {
       TableRow,
       TableHeader,
       TableCell,
+      FontFamily,
+      FontSize,
+      Highlight.configure({ multicolor: true }),
+      Subscript,
+      Superscript,
+      LineHeight,
+      TextIndent,
       VariableNode,
       SignatureBlockNode,
       DragHandleExtension,
