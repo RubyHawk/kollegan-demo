@@ -240,26 +240,6 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
           style={{ display: 'block', width: '100%', height: 'auto', borderRadius: 2 }}
         />
 
-        {/* Right mid-edge resize handle */}
-        {selected && (
-          <div
-            onMouseDown={onResizeStart}
-            style={{
-              position: 'absolute',
-              right: -4,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: 8,
-              height: 28,
-              borderRadius: 4,
-              background: '#3b82f6',
-              cursor: 'ew-resize',
-              zIndex: 2,
-              boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
-            }}
-          />
-        )}
-
         {/* Bottom-right corner resize handle */}
         {selected && (
           <div
