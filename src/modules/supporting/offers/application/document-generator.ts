@@ -7,7 +7,8 @@
  *
  * TipTap JSON node types handled:
  *   doc, paragraph, heading (levels 1-3), bulletList, orderedList, listItem,
- *   text (with bold / italic marks), hardBreak, horizontalRule
+ *   text (with bold / italic / underline / color marks), hardBreak, horizontalRule,
+ *   image (with width / align attrs)
  */
 
 import type { Offer, OfferLineItem } from '../domain/offer.entity';
@@ -42,8 +43,10 @@ function nodeToHtml(node: TipTapNode): string {
       return (node.content ?? []).map(nodeToHtml).join('');
 
     case 'paragraph': {
-      const inner = (node.content ?? []).map(nodeToHtml).join('');
-      return `<p style="margin:0 0 0.75em 0;">${inner || '&nbsp;'}</p>`;
+      const inner     = (node.content ?? []).map(nodeToHtml).join('');
+      const align     = (node.attrs?.textAlign as string | undefined) ?? '';
+      const alignStyle = align ? `text-align:${align};` : '';
+      return `<p style="margin:0 0 0.75em 0;${alignStyle}">${inner || '&nbsp;'}</p>`;
     }
 
     case 'heading': {
@@ -51,8 +54,22 @@ function nodeToHtml(node: TipTapNode): string {
       const tag   = `h${Math.min(level, 6)}`;
       const sizes: Record<number, string> = { 1: '1.8em', 2: '1.4em', 3: '1.2em' };
       const size  = sizes[level] ?? '1em';
+      const align = (node.attrs?.textAlign as string | undefined) ?? '';
+      const alignStyle = align ? `text-align:${align};` : '';
       const inner = (node.content ?? []).map(nodeToHtml).join('');
-      return `<${tag} style="margin:0.5em 0;font-size:${size};font-weight:700;">${inner}</${tag}>`;
+      return `<${tag} style="margin:0.5em 0;font-size:${size};font-weight:700;${alignStyle}">${inner}</${tag}>`;
+    }
+
+    case 'image': {
+      const a = node.attrs ?? {};
+      const src   = String(a.src ?? '');
+      const alt   = escapeHtml(String(a.alt ?? ''));
+      const title = escapeHtml(String(a.title ?? ''));
+      const width = a.width ? `width:${a.width}px;` : 'max-width:100%;';
+      const align = String(a.align ?? 'left');
+      const justifyMap: Record<string, string> = { center: 'center', right: 'flex-end', left: 'flex-start' };
+      const justify = justifyMap[align] ?? 'flex-start';
+      return `<div style="display:flex;justify-content:${justify};margin:12px 0;"><img src="${src}" alt="${alt}" title="${title}" style="${width}display:block;border-radius:4px;" /></div>`;
     }
 
     case 'bulletList':
@@ -73,9 +90,13 @@ function nodeToHtml(node: TipTapNode): string {
     case 'text': {
       let text = escapeHtml(node.text ?? '');
       for (const mark of (node.marks ?? [])) {
-        if (mark.type === 'bold')   text = `<strong>${text}</strong>`;
-        if (mark.type === 'italic') text = `<em>${text}</em>`;
-        if (mark.type === 'code')   text = `<code style="background:#f1f5f9;padding:0.1em 0.3em;border-radius:3px;">${text}</code>`;
+        if (mark.type === 'bold')      text = `<strong>${text}</strong>`;
+        if (mark.type === 'italic')    text = `<em>${text}</em>`;
+        if (mark.type === 'underline') text = `<u>${text}</u>`;
+        if (mark.type === 'code')      text = `<code style="background:#f1f5f9;padding:0.1em 0.3em;border-radius:3px;font-family:monospace;">${text}</code>`;
+        if (mark.type === 'textStyle' && mark.attrs?.color) {
+          text = `<span style="color:${String(mark.attrs.color)};">${text}</span>`;
+        }
       }
       return text;
     }
