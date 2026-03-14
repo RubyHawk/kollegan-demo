@@ -4,6 +4,13 @@ import { useState } from 'react';
 import { Room } from '../../domain/room.entity';
 import { bookRoom, cancelBooking } from '../../api/rooms';
 
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 const TYPE_LABELS: Record<string, string> = {
   Enkel: 'Enkelt rum',
   Dubbel: 'Dubbelrum',
@@ -17,14 +24,14 @@ interface Props {
 }
 
 export default function BookingDialog({ room, onClose, onBooked }: Props) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = toLocalDateStr(new Date());
 
   const [guestName, setGuestName] = useState('');
   const [checkIn, setCheckIn] = useState(today);
   const [checkOut, setCheckOut] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 2);
-    return d.toISOString().split('T')[0];
+    return toLocalDateStr(d);
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -32,7 +39,7 @@ export default function BookingDialog({ room, onClose, onBooked }: Props) {
   const minCheckOut = (() => {
     const d = new Date(checkIn + 'T00:00:00');
     d.setDate(d.getDate() + 1);
-    return d.toISOString().split('T')[0];
+    return toLocalDateStr(d);
   })();
 
   const handleCheckInChange = (val: string) => {
@@ -40,7 +47,7 @@ export default function BookingDialog({ room, onClose, onBooked }: Props) {
     if (checkOut <= val) {
       const d = new Date(val + 'T00:00:00');
       d.setDate(d.getDate() + 1);
-      setCheckOut(d.toISOString().split('T')[0]);
+      setCheckOut(toLocalDateStr(d));
     }
   };
 
