@@ -1,14 +1,13 @@
 'use client';
 
 /**
- * DocumentCanvas — renders the A4 canvas and BubbleMenus.
+ * DocumentCanvas — A4 canvas + text-formatting BubbleMenu.
  *
- * BubbleMenu 1 (text)  — Bold / Italic / Underline / Link — text selections only
- * BubbleMenu 2 (image) — Layout mode + Delete — image NodeSelection only
+ * The image toolbar is rendered INSIDE ImageNodeView (driven by the `selected`
+ * prop from ProseMirror — synchronous, zero timing issues).  There is NO image
+ * BubbleMenu here.
  *
- *   Layout modes (image BubbleMenu):
- *     [■ Block]  [⬒ Float L]  [⬓ Float R]  ─  [↔ Center]  [🗑]
- *   When block mode is active, the three align buttons (L/C/R) are also shown.
+ * Only the text-formatting BubbleMenu lives here.
  */
 
 export { EditorCtx, useTemplateEditor } from './editor-context';
@@ -24,34 +23,35 @@ export default function DocumentCanvas() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
 
-      {/* ── BubbleMenu 1: text formatting ─────────────────────────────────── */}
+      {/* ── Text formatting BubbleMenu ──────────────────────────────────────── */}
       {editor && (
         <BubbleMenu
           editor={editor}
           options={{ placement: 'top' }}
           shouldShow={({ state }) => {
             const { selection } = state;
+            // Never show on node selections (images, signature blocks, variables, etc.)
             if (selection instanceof NodeSelection) return false;
             return selection.from !== selection.to;
           }}
           className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-lg shadow-md p-1"
         >
-          <TBtn
-            active={editor.isActive('bold')}
+          <TBtn active={editor.isActive('bold')}
             onClick={() => editor.chain().focus().toggleBold().run()}
-            title="Fet (Ctrl+B)"
-          ><strong className="text-xs">B</strong></TBtn>
-          <TBtn
-            active={editor.isActive('italic')}
+            title="Fet (Ctrl+B)">
+            <strong className="text-xs font-bold">B</strong>
+          </TBtn>
+          <TBtn active={editor.isActive('italic')}
             onClick={() => editor.chain().focus().toggleItalic().run()}
-            title="Kursiv (Ctrl+I)"
-          ><em className="text-xs">I</em></TBtn>
-          <TBtn
-            active={editor.isActive('underline')}
+            title="Kursiv (Ctrl+I)">
+            <em className="text-xs">I</em>
+          </TBtn>
+          <TBtn active={editor.isActive('underline')}
             onClick={() => editor.chain().focus().toggleUnderline().run()}
-            title="Understruken (Ctrl+U)"
-          ><u className="text-xs">U</u></TBtn>
-          <Sep />
+            title="Understruken (Ctrl+U)">
+            <u className="text-xs">U</u>
+          </TBtn>
+          <div className="w-px h-4 bg-slate-200 mx-0.5" />
           <TBtn
             active={editor.isActive('link')}
             onClick={() => {
@@ -68,76 +68,7 @@ export default function DocumentCanvas() {
         </BubbleMenu>
       )}
 
-      {/* ── BubbleMenu 2: image controls ──────────────────────────────────── */}
-      {editor && (
-        <BubbleMenu
-          editor={editor}
-          options={{ placement: 'top' }}
-          shouldShow={({ state }) => {
-            const { selection } = state;
-            return selection instanceof NodeSelection && selection.node.type.name === 'image';
-          }}
-          className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-lg shadow-md px-1.5 py-1"
-        >
-          {/* ── Layout / text-wrap section ──── */}
-          <span className="text-[10px] text-slate-400 px-1 select-none">Layout</span>
-
-          {/* Block (no float) — aligns left */}
-          <IBtn
-            active={!editor.getAttributes('image').float}
-            onClick={() => editor.chain().focus().updateAttributes('image', { float: null, align: 'left' }).run()}
-            title="Block — text över och under bilden"
-          ><BlockIcon /></IBtn>
-
-          {/* Float left */}
-          <IBtn
-            active={editor.getAttributes('image').float === 'left'}
-            onClick={() => editor.chain().focus().updateAttributes('image', { float: 'left' }).run()}
-            title="Text flödar till höger om bilden"
-          ><FloatLeftIcon /></IBtn>
-
-          {/* Float right */}
-          <IBtn
-            active={editor.getAttributes('image').float === 'right'}
-            onClick={() => editor.chain().focus().updateAttributes('image', { float: 'right' }).run()}
-            title="Text flödar till vänster om bilden"
-          ><FloatRightIcon /></IBtn>
-
-          {/* ── Alignment (only relevant in block mode) ── */}
-          {!editor.getAttributes('image').float && (
-            <>
-              <Sep />
-              <IBtn
-                active={!editor.getAttributes('image').align || editor.getAttributes('image').align === 'left'}
-                onClick={() => editor.chain().focus().updateAttributes('image', { align: 'left' }).run()}
-                title="Vänsterjustera"
-              ><AlignLeftIcon /></IBtn>
-              <IBtn
-                active={editor.getAttributes('image').align === 'center'}
-                onClick={() => editor.chain().focus().updateAttributes('image', { align: 'center' }).run()}
-                title="Centrera"
-              ><AlignCenterIcon /></IBtn>
-              <IBtn
-                active={editor.getAttributes('image').align === 'right'}
-                onClick={() => editor.chain().focus().updateAttributes('image', { align: 'right' }).run()}
-                title="Högerjustera"
-              ><AlignRightIcon /></IBtn>
-            </>
-          )}
-
-          <Sep />
-
-          {/* Delete */}
-          <IBtn
-            active={false}
-            onClick={() => editor.chain().focus().deleteSelection().run()}
-            title="Ta bort bild"
-            danger
-          ><TrashIcon /></IBtn>
-        </BubbleMenu>
-      )}
-
-      {/* ── Scrollable document area ───────────────────────────────────────── */}
+      {/* ── Scrollable document area ─────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto" style={{ background: '#f0f2f5' }}>
         <div className="px-8 py-12">
           {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
@@ -164,8 +95,43 @@ export default function DocumentCanvas() {
             min-height: 720px;
             cursor: text;
           }
-          /* Clearfix so floated images don't overflow their paragraph containers */
+          /* Clearfix so floated images never overflow the editor */
           .doc-editor .ProseMirror::after { content: ''; display: table; clear: both; }
+
+          /* ── Image NodeView toolbar buttons ──────────────────────────────── */
+          .img-tb-btn {
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            border: none; border-radius: 6px;
+            background: transparent; color: #64748b;
+            cursor: pointer; position: relative;
+            flex-shrink: 0;
+            transition: background 0.1s, color 0.1s;
+          }
+          .img-tb-btn:hover { background: #f1f5f9; color: #1e293b; }
+          .img-tb-btn[data-active="true"] {
+            background: #dbeafe; color: #1d4ed8;
+            outline: 1px solid #bfdbfe;
+          }
+          .img-tb-btn[data-danger="true"]:hover { background: #fef2f2; color: #ef4444; }
+
+          /* ── CSS tooltip (data-tooltip attr, shows on hover after 0.5s) ──── */
+          .img-tb-btn::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b; color: white;
+            font-size: 11px; font-family: system-ui, -apple-system, sans-serif;
+            font-weight: normal; line-height: 1.4;
+            padding: 4px 8px; border-radius: 4px;
+            white-space: nowrap; opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s; transition-delay: 0.5s;
+            z-index: 200;
+          }
+          .img-tb-btn:hover::after { opacity: 1; }
 
           /* Tables */
           .doc-editor .ProseMirror table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
@@ -183,13 +149,8 @@ export default function DocumentCanvas() {
   );
 }
 
-// ── Shared helpers ─────────────────────────────────────────────────────────────
+// ── Text BubbleMenu button ─────────────────────────────────────────────────────
 
-function Sep() {
-  return <div className="w-px h-4 bg-slate-200 mx-0.5 shrink-0" />;
-}
-
-/** Text-BubbleMenu button — accent-colored active state */
 function TBtn({ active, onClick, title, children }: {
   active?: boolean; onClick: () => void; title?: string; children: React.ReactNode;
 }) {
@@ -206,105 +167,6 @@ function TBtn({ active, onClick, title, children }: {
     >
       {children}
     </button>
-  );
-}
-
-/** Image-BubbleMenu button — soft active state (no brand color) */
-function IBtn({ active, onClick, title, children, danger }: {
-  active?: boolean; onClick: () => void; title?: string;
-  children: React.ReactNode; danger?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
-      title={title}
-      className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${
-        danger
-          ? 'text-slate-400 hover:bg-red-50 hover:text-red-500'
-          : active
-            ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-200'
-            : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-// ── SVG icons ──────────────────────────────────────────────────────────────────
-
-/** Block: image fills its own line (no float) */
-function BlockIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-      <rect x="2" y="7" width="16" height="6" rx="1.5"/>
-      <rect x="2" y="2" width="16" height="2" rx="1" opacity=".4"/>
-      <rect x="2" y="16" width="16" height="2" rx="1" opacity=".4"/>
-    </svg>
-  );
-}
-
-/** Float left: small image on left, text lines on right */
-function FloatLeftIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-      <rect x="2" y="3" width="7" height="7" rx="1"/>
-      <rect x="11" y="3" width="7" height="1.5" rx=".75" opacity=".5"/>
-      <rect x="11" y="6" width="7" height="1.5" rx=".75" opacity=".5"/>
-      <rect x="11" y="9" width="5" height="1.5" rx=".75" opacity=".5"/>
-      <rect x="2" y="13" width="16" height="1.5" rx=".75" opacity=".5"/>
-      <rect x="2" y="16" width="12" height="1.5" rx=".75" opacity=".5"/>
-    </svg>
-  );
-}
-
-/** Float right: small image on right, text lines on left */
-function FloatRightIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-      <rect x="11" y="3" width="7" height="7" rx="1"/>
-      <rect x="2" y="3" width="7" height="1.5" rx=".75" opacity=".5"/>
-      <rect x="2" y="6" width="7" height="1.5" rx=".75" opacity=".5"/>
-      <rect x="2" y="9" width="5" height="1.5" rx=".75" opacity=".5"/>
-      <rect x="2" y="13" width="16" height="1.5" rx=".75" opacity=".5"/>
-      <rect x="2" y="16" width="12" height="1.5" rx=".75" opacity=".5"/>
-    </svg>
-  );
-}
-
-function AlignLeftIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/>
-    </svg>
-  );
-}
-
-function AlignCenterIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
-    </svg>
-  );
-}
-
-function AlignRightIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/>
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="3 6 5 6 21 6"/>
-      <path d="M19 6l-1 14H6L5 6"/>
-      <path d="M10 11v6"/><path d="M14 11v6"/>
-      <path d="M9 6V4h6v2"/>
-    </svg>
   );
 }
 
