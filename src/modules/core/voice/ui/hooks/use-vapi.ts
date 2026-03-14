@@ -141,7 +141,7 @@ export function useVapi(brand: VoiceBrand): UseVapiReturn {
       let hotelInfoContext: string | undefined;
       if (brandRef.current.fetchHotelInfo) {
         try {
-          const res = await fetch('/api/hotel-info');
+          const res = await fetch('/api/ai/hotel-info');
           if (res.ok) {
             hotelInfoContext = JSON.stringify(await res.json());
           }

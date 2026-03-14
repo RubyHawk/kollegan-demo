@@ -43,7 +43,9 @@ interface Offer {
   lineItems:            LineItem[];
   createdAt:            string;
   sentAt?:              string;
+  viewedAt?:            string;
   acceptedAt?:          string;
+  declinedAt?:          string;
   leadId?:              string;
   templateId?:          string;
   generatedDocument?:   string;
@@ -136,9 +138,13 @@ export default function OffersPage() {
   const [form,       setForm]       = useState(EMPTY_FORM);
   const [saving,     setSaving]     = useState(false);
   const [acting,     setActing]     = useState<string | null>(null);
-  const [templates,  setTemplates]  = useState<OfferTemplate[]>([]);
-  const [previewDoc, setPreviewDoc] = useState<string | null>(null); // HTML to preview
-  const [copied,     setCopied]     = useState<string | null>(null); // offerId copied
+  const [templates,   setTemplates]   = useState<OfferTemplate[]>([]);
+  const [previewDoc,  setPreviewDoc]  = useState<string | null>(null); // HTML to preview
+  const [copied,      setCopied]      = useState<string | null>(null); // offerId copied
+  const [confirmSend, setConfirmSend] = useState<Offer | null>(null);  // offer pending send confirmation
+  const [selected,    setSelected]    = useState<Set<string>>(new Set()); // bulk-selected offer ids
+  const [bulkSending, setBulkSending] = useState(false);
+  const [bulkResult,  setBulkResult]  = useState<{ sent: number; failed: number } | null>(null);
 
   // ── Load templates ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -170,7 +176,7 @@ export default function OffersPage() {
     }
   }, [tab, search]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void load(); setSelected(new Set()); setBulkResult(null); }, [load]);
 
   // ── Create offer ──────────────────────────────────────────────────────────────
   const createOffer = useCallback(async () => {
@@ -213,8 +219,8 @@ export default function OffersPage() {
     }
   }, [form, load]);
 
-  // ── Status actions (send / accept / decline) ──────────────────────────────────
-  const doAction = useCallback(async (id: string, action: 'send' | 'accept' | 'decline') => {
+  // ── Status actions (send / accept / decline / duplicate) ─────────────────────
+  const doAction = useCallback(async (id: string, action: 'send' | 'accept' | 'decline' | 'duplicate') => {
     setActing(id);
     try {
       const res = await fetch(`/api/offers/${id}?action=${action}`, {
@@ -247,6 +253,47 @@ export default function OffersPage() {
     setCopied(offer.id);
     setTimeout(() => setCopied(null), 2000);
   }, []);
+
+  // ── Bulk send ─────────────────────────────────────────────────────────────
+  const doBulkSend = useCallback(async () => {
+    const ids = Array.from(selected).filter((id) => {
+      const o = offers.find((o) => o.id === id);
+      return o?.status === 'draft';
+    });
+    if (ids.length === 0) return;
+    setBulkSending(true); setBulkResult(null); setError(null);
+    try {
+      const res = await fetch('/api/offers/bulk-send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body:   JSON.stringify({ ids }),
+      });
+      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      const j = await res.json() as { data: { sent: number; failed: number } };
+      setBulkResult(j.data);
+      setSelected(new Set());
+      await load(true);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBulkSending(false);
+    }
+  }, [selected, offers, load]);
+
+  // ── Selection helpers ─────────────────────────────────────────────────────
+  const draftOffers = offers.filter((o) => o.status === 'draft');
+  const selectedDraftCount = Array.from(selected).filter((id) => offers.find((o) => o.id === id)?.status === 'draft').length;
+  const allDraftsSelected  = draftOffers.length > 0 && draftOffers.every((o) => selected.has(o.id));
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  }
+  function toggleSelectAllDrafts() {
+    if (allDraftsSelected) {
+      setSelected((prev) => { const s = new Set(prev); draftOffers.forEach((o) => s.delete(o.id)); return s; });
+    } else {
+      setSelected((prev) => { const s = new Set(prev); draftOffers.forEach((o) => s.add(o.id)); return s; });
+    }
+  }
 
   // ── Line item helpers ─────────────────────────────────────────────────────────
   function updateLine(idx: number, field: keyof LineItem, value: string | number) {
@@ -284,6 +331,21 @@ export default function OffersPage() {
         <div className="mb-6 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center justify-between gap-3">
           <span>{error}</span>
           <button onClick={() => setError(null)} className="shrink-0 opacity-60 hover:opacity-100">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* Bulk send result banner */}
+      {bulkResult && (
+        <div className="mb-6 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400 flex items-center justify-between gap-3">
+          <span>
+            {bulkResult.sent} offert{bulkResult.sent !== 1 ? 'er' : ''} skickade
+            {bulkResult.failed > 0 ? ` · ${bulkResult.failed} misslyckades` : ''}
+          </span>
+          <button onClick={() => setBulkResult(null)} className="shrink-0 opacity-60 hover:opacity-100">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -452,6 +514,41 @@ export default function OffersPage() {
         </div>
       )}
 
+      {/* Floating bulk action bar */}
+      {selected.size > 0 && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--surface)] px-4 py-3 shadow-md">
+          <span className="text-sm font-medium text-[var(--text-primary)]">
+            {selected.size} vald{selected.size !== 1 ? 'a' : ''}
+            {selectedDraftCount > 0 && selectedDraftCount < selected.size && ` · ${selectedDraftCount} utkast`}
+          </span>
+          <div className="flex-1"/>
+          {selectedDraftCount > 0 && (
+            <button
+              onClick={() => void doBulkSend()}
+              disabled={bulkSending}
+              className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {bulkSending ? (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                  </svg>
+                  Skickar…
+                </>
+              ) : (
+                `Skicka ${selectedDraftCount} offert${selectedDraftCount !== 1 ? 'er' : ''}`
+              )}
+            </button>
+          )}
+          <button
+            onClick={() => setSelected(new Set())}
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            Rensa urval
+          </button>
+        </div>
+      )}
+
       {/* Status tabs + search */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
         <div className="flex gap-0 border-b border-[var(--border)] overflow-x-auto scrollbar-none flex-1">
@@ -486,6 +583,17 @@ export default function OffersPage() {
             <table className="min-w-full divide-y divide-[var(--border)] text-sm">
               <thead className="bg-[var(--surface-alt)]">
                 <tr>
+                  <th className="px-4 py-3 w-8">
+                    {draftOffers.length > 0 && (
+                      <input
+                        type="checkbox"
+                        checked={allDraftsSelected}
+                        onChange={toggleSelectAllDrafts}
+                        title="Välj alla utkast"
+                        className="rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"
+                      />
+                    )}
+                  </th>
                   {['Rubrik', 'Mottagare', 'Status', 'Totalt inkl. moms', 'Giltig till', 'Skapad', ''].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
                   ))}
@@ -494,6 +602,16 @@ export default function OffersPage() {
               <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)]">
                 {offers.map((offer) => (
                   <tr key={offer.id} className="hover:bg-[var(--surface-hover)] transition-colors">
+                    <td className="px-4 py-3.5 w-8">
+                      {offer.status === 'draft' && (
+                        <input
+                          type="checkbox"
+                          checked={selected.has(offer.id)}
+                          onChange={() => toggleSelect(offer.id)}
+                          className="rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"
+                        />
+                      )}
+                    </td>
                     <td className="px-4 py-3.5">
                       <p className="font-medium text-[var(--text-primary)]">{offer.title}</p>
                       {offer.templateId && <p className="text-[10px] text-[var(--accent)] mt-0.5">Mallbaserad</p>}
@@ -508,6 +626,29 @@ export default function OffersPage() {
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[offer.status]}`}>
                         {STATUS_LABEL[offer.status]}
                       </span>
+                      {/* Activity timeline — key timestamps */}
+                      <div className="mt-1.5 space-y-0.5">
+                        {offer.sentAt && (
+                          <p className="text-[10px] text-[var(--text-muted)]">
+                            Skickad {fmtDate(offer.sentAt)}
+                          </p>
+                        )}
+                        {offer.viewedAt && (
+                          <p className="text-[10px] text-violet-500 dark:text-violet-400">
+                            Öppnad {fmtDate(offer.viewedAt)}
+                          </p>
+                        )}
+                        {offer.acceptedAt && (
+                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                            Accepterad {fmtDate(offer.acceptedAt)}
+                          </p>
+                        )}
+                        {offer.declinedAt && (
+                          <p className="text-[10px] text-red-500">
+                            Avvisad {fmtDate(offer.declinedAt)}
+                          </p>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 font-semibold text-[var(--text-primary)]">
                       {fmtSEK(offer.totalIncVat)}
@@ -519,10 +660,18 @@ export default function OffersPage() {
                       <div className="flex items-center gap-1.5 justify-end flex-wrap">
                         {/* Preview document */}
                         {offer.generatedDocument && (
-                          <button type="button" onClick={() => setPreviewDoc(offer.generatedDocument!)}
-                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline">
-                            Förhandsgranska
-                          </button>
+                          <>
+                            <button type="button" onClick={() => setPreviewDoc(offer.generatedDocument!)}
+                              className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline">
+                              Förhandsgranska
+                            </button>
+                            <span className="text-[var(--border)]">·</span>
+                            <button type="button"
+                              onClick={() => window.open(`/api/offers/${offer.id}/pdf`, '_blank')}
+                              className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline">
+                              PDF
+                            </button>
+                          </>
                         )}
                         {/* Copy public link */}
                         {(offer.status === 'sent' || offer.status === 'viewed') && (
@@ -532,7 +681,7 @@ export default function OffersPage() {
                           </button>
                         )}
                         {offer.status === 'draft' && (
-                          <button type="button" onClick={() => void doAction(offer.id, 'send')} disabled={acting === offer.id}
+                          <button type="button" onClick={() => setConfirmSend(offer)} disabled={acting === offer.id}
                             className="text-xs text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-40">
                             Skicka
                           </button>
@@ -552,6 +701,11 @@ export default function OffersPage() {
                           </>
                         )}
                         <span className="text-[var(--border)] mx-0.5">·</span>
+                        <button type="button" onClick={() => void doAction(offer.id, 'duplicate')} disabled={acting === offer.id}
+                          className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:underline transition-colors disabled:opacity-40">
+                          Duplicera
+                        </button>
+                        <span className="text-[var(--border)] mx-0.5">·</span>
                         <button type="button" onClick={() => void deleteOffer(offer.id)}
                           className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors">
                           Ta bort
@@ -562,7 +716,7 @@ export default function OffersPage() {
                 ))}
                 {offers.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-16 text-center">
+                    <td colSpan={8} className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center">
                           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -584,6 +738,58 @@ export default function OffersPage() {
               Visar {offers.length} av {total} offerter
             </div>
           )}
+        </div>
+      )}
+
+      {/* Send confirmation modal */}
+      {confirmSend && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmSend(null)}>
+          <div className="relative w-full max-w-sm bg-[var(--surface)] rounded-2xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-[var(--border)]">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">Bekräfta utskick</h2>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <p className="text-sm text-[var(--text-secondary)]">
+                Offerten skickas via e-post och kan inte redigeras efter utskick.
+              </p>
+              <div className="rounded-xl bg-[var(--surface-alt)] border border-[var(--border)] p-4 space-y-2 text-sm">
+                <div className="flex justify-between gap-4">
+                  <span className="text-[var(--text-muted)]">Mottagare</span>
+                  <span className="font-medium text-[var(--text-primary)] text-right">{confirmSend.recipientName}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-[var(--text-muted)]">E-post</span>
+                  <span className="text-[var(--text-primary)] text-right">{confirmSend.recipientEmail}</span>
+                </div>
+                {confirmSend.recipientCompany && (
+                  <div className="flex justify-between gap-4">
+                    <span className="text-[var(--text-muted)]">Företag</span>
+                    <span className="text-[var(--text-primary)] text-right">{confirmSend.recipientCompany}</span>
+                  </div>
+                )}
+                <div className="flex justify-between gap-4 pt-2 border-t border-[var(--border)] font-semibold">
+                  <span className="text-[var(--text-secondary)]">Totalt inkl. moms</span>
+                  <span className="text-[var(--text-primary)]">{fmtSEK(confirmSend.totalIncVat)}</span>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 pb-5 flex gap-2">
+              <button
+                onClick={() => { void doAction(confirmSend.id, 'send'); setConfirmSend(null); }}
+                disabled={acting === confirmSend.id}
+                className="flex-1 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                Skicka offert
+              </button>
+              <button
+                onClick={() => setConfirmSend(null)}
+                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors"
+              >
+                Avbryt
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

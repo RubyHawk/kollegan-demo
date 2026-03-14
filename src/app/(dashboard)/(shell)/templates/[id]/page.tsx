@@ -71,6 +71,7 @@ export default function TemplateEditorPage() {
 
   // ── TipTap editor ────────────────────────────────────────────────────────────
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Placeholder.configure({ placeholder: 'Börja skriva din offertmall här… Använd platshållare som {{recipientName}} för dynamisk data.' }),
@@ -92,7 +93,13 @@ export default function TemplateEditorPage() {
         if (!res.ok) throw new Error(`Hittade inte mallen (${res.status})`);
         const json = await res.json() as { data: OfferTemplate };
         setName(json.data.name);
-        editor.commands.setContent(JSON.parse(json.data.content) as object);
+        let parsedContent: object | string;
+        try {
+          parsedContent = JSON.parse(json.data.content) as object;
+        } catch {
+          parsedContent = json.data.content;
+        }
+        editor.commands.setContent(parsedContent);
       } catch (e) {
         setError((e as Error).message);
       } finally {

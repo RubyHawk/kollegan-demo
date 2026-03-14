@@ -1,4 +1,4 @@
-import { prisma } from '@platform/database/prisma';
+import { prisma, Prisma } from '@platform/database/prisma';
 import type { Offer, OfferLineItem } from '../domain/offer.entity';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -87,6 +87,7 @@ function mapOffer(r: Record<string, unknown>): Offer {
     createdBy:            r.createdBy as string,
     createdAt:            (r.createdAt as Date).toISOString(),
     sentAt:               r.sentAt ? (r.sentAt as Date).toISOString() : undefined,
+    viewedAt:             r.viewedAt ? (r.viewedAt as Date).toISOString() : undefined,
     acceptedAt:           r.acceptedAt ? (r.acceptedAt as Date).toISOString() : undefined,
     declinedAt:           r.declinedAt ? (r.declinedAt as Date).toISOString() : undefined,
     leadId:               (r.leadId as string | null) ?? undefined,
@@ -206,14 +207,14 @@ export const offersRepository = {
 
     const [rows, total] = await Promise.all([
       prisma.offer.findMany({
-        where: where as Parameters<typeof prisma.offer.findMany>[0]['where'],
+        where: where as Prisma.OfferWhereInput,
         select: OFFER_SELECT,
         orderBy: { createdAt: 'desc' },
         take:  filter.limit  ?? 50,
         skip:  filter.offset ?? 0,
       }),
       prisma.offer.count({
-        where: where as Parameters<typeof prisma.offer.count>[0]['where'],
+        where: where as Prisma.OfferWhereInput,
       }),
     ]);
 
@@ -285,6 +286,19 @@ export const offersRepository = {
     });
     if (!row) return null;
     return mapOffer(row as unknown as Record<string, unknown>);
+  },
+
+  // Bulk-expire sent/viewed offers whose validUntil has passed — used by cron
+  async bulkExpireOffers(): Promise<number> {
+    const result = await prisma.offer.updateMany({
+      where: {
+        deletedAt: null,
+        status: { in: ['sent', 'viewed'] },
+        validUntil: { lt: new Date() },
+      },
+      data: { status: 'expired' },
+    });
+    return result.count;
   },
 
   // Internal update by id only — used for public signing flow where orgId is not available

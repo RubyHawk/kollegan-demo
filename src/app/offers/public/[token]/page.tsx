@@ -23,6 +23,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import SignatureCanvas from 'react-signature-canvas';
 
+// Injected at build time — if NEXT_PUBLIC_DOCUSIGN_ENABLED=true the DocuSign
+// button is shown instead of the canvas pad.
+const DOCUSIGN_ENABLED = process.env.NEXT_PUBLIC_DOCUSIGN_ENABLED === 'true';
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 type OfferStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
@@ -61,11 +65,20 @@ export default function PublicOfferPage() {
   const params = useParams<{ token: string }>();
   const token  = params.token;
 
-  const [state,   setState]   = useState<PageState>('loading');
-  const [offer,   setOffer]   = useState<PublicOffer | null>(null);
-  const [errMsg,  setErrMsg]  = useState('');
-  const [comment, setComment] = useState('');
-  const [busy,    setBusy]    = useState(false);
+  // Handle DocuSign return query params (?signed=1 or ?declined=1)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get('signed')   === '1') setState('accepted');
+    if (sp.get('declined') === '1') setState('declined');
+  }, []);
+
+  const [state,        setState]        = useState<PageState>('loading');
+  const [offer,        setOffer]        = useState<PublicOffer | null>(null);
+  const [errMsg,       setErrMsg]       = useState('');
+  const [comment,      setComment]      = useState('');
+  const [busy,         setBusy]         = useState(false);
+  const [dsRedirecting, setDsRedirecting] = useState(false);
 
   const sigRef = useRef<SignatureCanvas>(null);
 
@@ -116,6 +129,26 @@ export default function PublicOfferPage() {
       setErrMsg((e as Error).message);
     } finally {
       setBusy(false);
+    }
+  }, [token]);
+
+  // ── DocuSign redirect ─────────────────────────────────────────────────────────
+  const handleDocuSign = useCallback(async () => {
+    setDsRedirecting(true); setErrMsg('');
+    try {
+      const res = await fetch('/api/offers/docusign/session', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body:   JSON.stringify({ token }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(j.error ?? `Fel ${res.status}`);
+      }
+      const j = await res.json() as { signingUrl: string };
+      window.location.href = j.signingUrl;
+    } catch (e) {
+      setErrMsg((e as Error).message);
+      setDsRedirecting(false);
     }
   }, [token]);
 
@@ -261,33 +294,65 @@ export default function PublicOfferPage() {
         {/* Signature / Decline section */}
         {!isDeclineMode ? (
           <div style={s.section}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>E-signatur</h3>
-            <p style={{ ...s.muted, marginBottom: '16px' }}>Rita din namnteckning i fältet nedan och klicka på &ldquo;Signera&rdquo;.</p>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>Signera offert</h3>
 
             {errMsg && <div style={s.err}>{errMsg}</div>}
 
-            {/* Signature pad */}
-            <div style={{ border: '2px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', marginBottom: '12px', background: '#fff' }}>
-              <SignatureCanvas
-                ref={sigRef}
-                penColor="#0f172a"
-                canvasProps={{ style: { width: '100%', height: '160px', display: 'block' } }}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-              <button onClick={() => sigRef.current?.clear()} style={{ ...s.btn, ...s.btnGry, padding: '8px 16px', fontSize: '13px' }}>
-                Rensa
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <button onClick={() => void handleSign()} disabled={busy} style={{ ...s.btn, ...s.btnPri, opacity: busy ? 0.6 : 1 }}>
-                {busy ? 'Signerar…' : '✍️  Signera offert'}
-              </button>
-              <button onClick={() => setState('declining')} style={{ ...s.btn, ...s.btnDng }}>
-                Avvisa offerten
-              </button>
-            </div>
+            {DOCUSIGN_ENABLED ? (
+              /* ── DocuSign embedded signing ── */
+              <>
+                <p style={{ ...s.muted, marginBottom: '20px' }}>
+                  Klicka nedan för att signera offerten med säker e-signatur via DocuSign. Du omdirigeras tillbaka när du är klar.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button
+                    onClick={() => void handleDocuSign()}
+                    disabled={dsRedirecting}
+                    style={{ ...s.btn, ...s.btnPri, opacity: dsRedirecting ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    {dsRedirecting ? 'Omdirigerar…' : (
+                      <>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                        Signera med DocuSign
+                      </>
+                    )}
+                  </button>
+                  <button onClick={() => setState('declining')} style={{ ...s.btn, ...s.btnDng }}>
+                    Avvisa offerten
+                  </button>
+                </div>
+                <p style={{ marginTop: '16px', fontSize: '11px', color: '#94a3b8' }}>
+                  Din signatur är rättsligt bindande enligt EU eIDAS-förordningen.
+                </p>
+              </>
+            ) : (
+              /* ── Canvas signature (default) ── */
+              <>
+                <p style={{ ...s.muted, marginBottom: '16px' }}>Rita din namnteckning i fältet nedan och klicka på &ldquo;Signera&rdquo;.</p>
+                <div style={{ border: '2px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', marginBottom: '12px', background: '#fff' }}>
+                  <SignatureCanvas
+                    ref={sigRef}
+                    penColor="#0f172a"
+                    canvasProps={{ style: { width: '100%', height: '160px', display: 'block' } }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+                  <button onClick={() => sigRef.current?.clear()} style={{ ...s.btn, ...s.btnGry, padding: '8px 16px', fontSize: '13px' }}>
+                    Rensa
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <button onClick={() => void handleSign()} disabled={busy} style={{ ...s.btn, ...s.btnPri, opacity: busy ? 0.6 : 1 }}>
+                    {busy ? 'Signerar…' : '✍️  Signera offert'}
+                  </button>
+                  <button onClick={() => setState('declining')} style={{ ...s.btn, ...s.btnDng }}>
+                    Avvisa offerten
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <div style={s.section}>

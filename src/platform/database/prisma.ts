@@ -1,5 +1,6 @@
 // Prisma 7: prisma-client engine type requires a driver adapter
 import { PrismaClient } from '../../generated/prisma/client';
+export { Prisma } from '../../generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 function createPrismaClient() {

@@ -19,6 +19,9 @@ import {
   acceptOffer,
   declineOffer,
   deleteOffer,
+  duplicateOffer,
+  expireStaleOffers,
+  bulkSendOffers,
 } from '../../application/offers.service';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -130,7 +133,7 @@ const PatchBodySchema = z.object({
 });
 
 const PatchQuerySchema = z.object({
-  action: z.enum(['send', 'accept', 'decline']).optional(),
+  action: z.enum(['send', 'accept', 'decline', 'duplicate']).optional(),
 });
 
 export const handleUpdateOffer = createHandler(
@@ -143,6 +146,12 @@ export const handleUpdateOffer = createHandler(
     };
     const id = extractId(req);
     const payload = await requireStaff(req);
+
+    if (query.action === 'duplicate') {
+      const dup = await duplicateOffer(id, payload.orgId!, payload.sub);
+      if (!dup) throw Errors.notFound('Offer not found');
+      return created(dup, `/api/offers/${dup.id}`);
+    }
 
     let updated;
     if (query.action === 'send') updated = await sendOffer(id, payload.orgId!);
@@ -176,5 +185,36 @@ export const handleDeleteOffer = createHandler(
     const deleted = await deleteOffer(id, payload.orgId);
     if (!deleted) throw Errors.notFound('Offer not found');
     return ok(null);
+  },
+);
+
+// ── Bulk Send Offers ─────────────────────────────────────────────────────────
+
+const BulkSendSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(50),
+});
+
+export const handleBulkSendOffers = createHandler(
+  { auth: 'jwt', tag: 'Offers:BulkSend', body: BulkSendSchema, rateLimit: { max: 10, windowMs: 60_000 } },
+  async (ctx) => {
+    const { body, req } = ctx as { body: z.infer<typeof BulkSendSchema>; req: NextRequest };
+    const payload = await requireStaff(req);
+    const result = await bulkSendOffers(body.ids, payload.orgId!);
+    return ok(result);
+  },
+);
+
+// ── Expire Offers (cron) ─────────────────────────────────────────────────────
+
+export const handleExpireOffers = createHandler(
+  { auth: 'none', tag: 'Offers:ExpireCron', rateLimit: { max: 10, windowMs: 60_000 } },
+  async (ctx) => {
+    const { req } = ctx as { req: NextRequest };
+    const secret = req.headers.get('x-cron-secret');
+    if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+      throw Errors.forbidden('Invalid cron secret');
+    }
+    const expired = await expireStaleOffers();
+    return ok({ expired });
   },
 );
