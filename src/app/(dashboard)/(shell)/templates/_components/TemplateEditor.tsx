@@ -90,7 +90,7 @@ export default function TemplateEditor({ initialContent, editorRef }: Props) {
       : '<p></p>',
     editorProps: {
       attributes: {
-        class: 'outline-none min-h-[600px]',
+        class: 'outline-none',
         spellcheck: 'true',
       },
       handlePaste(view, event) {
