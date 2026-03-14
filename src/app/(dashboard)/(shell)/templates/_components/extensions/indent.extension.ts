@@ -75,8 +75,28 @@ export const TextIndent = Extension.create({
 
   addKeyboardShortcuts() {
     return {
-      Tab: () => this.editor.commands.increaseIndent(),
-      'Shift-Tab': () => this.editor.commands.decreaseIndent(),
+      // Only handle Tab for indent when NOT inside a list — let listKeymap
+      // handle Tab/Shift-Tab for nested list indentation.
+      Tab: () => {
+        if (
+          this.editor.isActive('bulletList') ||
+          this.editor.isActive('orderedList') ||
+          this.editor.isActive('listItem')
+        ) {
+          return false; // fall through to listKeymap
+        }
+        return this.editor.commands.increaseIndent();
+      },
+      'Shift-Tab': () => {
+        if (
+          this.editor.isActive('bulletList') ||
+          this.editor.isActive('orderedList') ||
+          this.editor.isActive('listItem')
+        ) {
+          return false;
+        }
+        return this.editor.commands.decreaseIndent();
+      },
     };
   },
 });
