@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useTemplateEditor } from './DocumentCanvas';
+import { useTemplateEditor } from './editor-context';
 import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
 
 type ActiveBlock = 'image' | 'table' | 'signatureBlock' | 'variable' | null;

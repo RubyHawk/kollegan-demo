@@ -9,7 +9,7 @@
  */
 
 import { useRef, useState } from 'react';
-import { useTemplateEditor } from './DocumentCanvas';
+import { useTemplateEditor } from './editor-context';
 
 export default function TopToolbar() {
   const editor = useTemplateEditor();

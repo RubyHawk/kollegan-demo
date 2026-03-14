@@ -1,148 +1,25 @@
 'use client';
 
 /**
- * DocumentCanvas — owns the TipTap editor instance.
+ * DocumentCanvas — renders the A4 canvas and BubbleMenu.
  *
- * Renders an A4-like page canvas with all extensions initialized.
- * Exposes the editor to siblings via EditorContext.
- * Handles image paste and image drop via editorProps (correct ProseMirror pipeline).
+ * The editor instance is provided by TemplateEditor via EditorCtx.
+ * This component only handles rendering; all editor creation lives in
+ * TemplateEditor so the context is available to all three panels.
  */
 
-import { useEffect, createContext, useContext, useRef } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+// Re-export context so sibling components can keep their existing imports.
+export { EditorCtx, useTemplateEditor } from './editor-context';
+
+import { EditorContent } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
-import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
-import TextAlign from '@tiptap/extension-text-align';
-import { TextStyle } from '@tiptap/extension-text-style';
-import Color from '@tiptap/extension-color';
-import Underline from '@tiptap/extension-underline';
-import Link from '@tiptap/extension-link';
-import { Table } from '@tiptap/extension-table';
-import TableRow from '@tiptap/extension-table-row';
-import TableHeader from '@tiptap/extension-table-header';
-import TableCell from '@tiptap/extension-table-cell';
-import { VariableNode } from './extensions/variable-node.extension';
-import { SignatureBlockNode } from './extensions/signature-block.extension';
-import { DragHandleExtension } from './extensions/drag-handle.extension';
-import type { Editor } from '@tiptap/core';
-import type { EditorView } from '@tiptap/pm/view';
-import type { TemplateEditorHandle } from './TemplateEditor';
+import { useTemplateEditor } from './editor-context';
 
-// ── Context ───────────────────────────────────────────────────────────────────
-
-export const EditorCtx = createContext<Editor | null>(null);
-export function useTemplateEditor() { return useContext(EditorCtx); }
-
-// ── Image helpers ──────────────────────────────────────────────────────────────
-
-function insertImageFile(view: EditorView, file: File) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const src = e.target?.result as string;
-    const node = view.state.schema.nodes['image']?.create({ src });
-    if (!node) return;
-    const tr = view.state.tr.replaceSelectionWith(node);
-    view.dispatch(tr);
-  };
-  reader.readAsDataURL(file);
-}
-
-// ── Props ─────────────────────────────────────────────────────────────────────
-
-interface Props {
-  initialContent?: string;
-  editorRef?:      React.MutableRefObject<TemplateEditorHandle | null>;
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
-
-export default function DocumentCanvas({ initialContent, editorRef }: Props) {
-  const initialContentRef = useRef(initialContent);
-
-  const editor = useEditor({
-    immediatelyRender: false,
-    extensions: [
-      StarterKit.configure({
-        dropcursor: { color: 'var(--accent)', width: 2 },
-      }),
-      Image.configure({ allowBase64: true }),
-      TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      TextStyle,
-      Color,
-      Underline,
-      Link.configure({ openOnClick: false }),
-      Table.configure({ resizable: true }),
-      TableRow,
-      TableHeader,
-      TableCell,
-      VariableNode,
-      SignatureBlockNode,
-      DragHandleExtension,
-    ],
-    content: initialContentRef.current
-      ? (() => {
-          try { return JSON.parse(initialContentRef.current!) as object; }
-          catch { return initialContentRef.current; }
-        })()
-      : '<p></p>',
-    editorProps: {
-      attributes: {
-        class: 'outline-none min-h-[600px]',
-        spellcheck: 'true',
-      },
-      handlePaste(view, event) {
-        const items = Array.from(event.clipboardData?.items ?? []);
-        const imageItem = items.find((i) => i.type.startsWith('image/'));
-        if (!imageItem) return false;
-        event.preventDefault();
-        const file = imageItem.getAsFile();
-        if (file) insertImageFile(view, file);
-        return true;
-      },
-      handleDrop(view, event, _slice, moved) {
-        if (moved) return false; // let ProseMirror handle node moves
-        const file = Array.from((event as DragEvent).dataTransfer?.files ?? []).find((f) =>
-          f.type.startsWith('image/'),
-        );
-        if (!file) return false;
-        event.preventDefault();
-        insertImageFile(view, file);
-        return true;
-      },
-    },
-  });
-
-  // Expose handle
-  useEffect(() => {
-    if (!editorRef || !editor) return;
-    editorRef.current = {
-      getJSON() { return editor.getJSON(); },
-      setContent(json) {
-        if (typeof json === 'string') {
-          try { editor.commands.setContent(JSON.parse(json)); }
-          catch { editor.commands.setContent(json); }
-        } else {
-          editor.commands.setContent(json);
-        }
-      },
-    };
-    return () => { if (editorRef.current) editorRef.current = null; };
-  }, [editor, editorRef]);
-
-  // Apply initial content when editor mounts after async load
-  const appliedRef = useRef(false);
-  useEffect(() => {
-    if (!editor || appliedRef.current) return;
-    if (initialContent && initialContent !== initialContentRef.current) {
-      appliedRef.current = true;
-      try { editor.commands.setContent(JSON.parse(initialContent)); }
-      catch { editor.commands.setContent(initialContent); }
-    }
-  }, [editor, initialContent]);
+export default function DocumentCanvas() {
+  const editor = useTemplateEditor();
 
   return (
-    <EditorCtx.Provider value={editor}>
+    <>
       {/* BubbleMenu for inline text formatting */}
       {editor && (
         <BubbleMenu
@@ -214,7 +91,7 @@ export default function DocumentCanvas({ initialContent, editorRef }: Props) {
           .tiptap p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #94a3b8; pointer-events: none; height: 0; display: block; }
         `}</style>
       </div>
-    </EditorCtx.Provider>
+    </>
   );
 }
 
