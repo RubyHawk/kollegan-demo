@@ -37,31 +37,34 @@ interface TipTapNode {
   marks?:  Array<{ type: string; attrs?: Record<string, unknown> }>;
 }
 
-function nodeToHtml(node: TipTapNode): string {
+function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): string {
+  // Curry replacements into recursive calls
+  const r = (n: TipTapNode) => nodeToHtml(n, replacements);
+
   switch (node.type) {
     case 'doc':
-      return (node.content ?? []).map(nodeToHtml).join('');
+      return (node.content ?? []).map(r).join('');
 
     case 'paragraph': {
-      const inner     = (node.content ?? []).map(nodeToHtml).join('');
-      const align     = (node.attrs?.textAlign as string | undefined) ?? '';
+      const inner      = (node.content ?? []).map(r).join('');
+      const align      = (node.attrs?.textAlign as string | undefined) ?? '';
       const alignStyle = align ? `text-align:${align};` : '';
       return `<p style="margin:0 0 0.75em 0;${alignStyle}">${inner || '&nbsp;'}</p>`;
     }
 
     case 'heading': {
-      const level = (node.attrs?.level as number) ?? 1;
-      const tag   = `h${Math.min(level, 6)}`;
+      const level      = (node.attrs?.level as number) ?? 1;
+      const tag        = `h${Math.min(level, 6)}`;
       const sizes: Record<number, string> = { 1: '1.8em', 2: '1.4em', 3: '1.2em' };
-      const size  = sizes[level] ?? '1em';
-      const align = (node.attrs?.textAlign as string | undefined) ?? '';
+      const size       = sizes[level] ?? '1em';
+      const align      = (node.attrs?.textAlign as string | undefined) ?? '';
       const alignStyle = align ? `text-align:${align};` : '';
-      const inner = (node.content ?? []).map(nodeToHtml).join('');
+      const inner      = (node.content ?? []).map(r).join('');
       return `<${tag} style="margin:0.5em 0;font-size:${size};font-weight:700;${alignStyle}">${inner}</${tag}>`;
     }
 
     case 'image': {
-      const a = node.attrs ?? {};
+      const a     = node.attrs ?? {};
       const src   = String(a.src ?? '');
       const alt   = escapeHtml(String(a.alt ?? ''));
       const title = escapeHtml(String(a.title ?? ''));
@@ -73,13 +76,13 @@ function nodeToHtml(node: TipTapNode): string {
     }
 
     case 'bulletList':
-      return `<ul style="margin:0 0 0.75em 1.5em;padding:0;">${(node.content ?? []).map(nodeToHtml).join('')}</ul>`;
+      return `<ul style="margin:0 0 0.75em 1.5em;padding:0;">${(node.content ?? []).map(r).join('')}</ul>`;
 
     case 'orderedList':
-      return `<ol style="margin:0 0 0.75em 1.5em;padding:0;">${(node.content ?? []).map(nodeToHtml).join('')}</ol>`;
+      return `<ol style="margin:0 0 0.75em 1.5em;padding:0;">${(node.content ?? []).map(r).join('')}</ol>`;
 
     case 'listItem':
-      return `<li style="margin-bottom:0.25em;">${(node.content ?? []).map(nodeToHtml).join('')}</li>`;
+      return `<li style="margin-bottom:0.25em;">${(node.content ?? []).map(r).join('')}</li>`;
 
     case 'hardBreak':
       return '<br/>';
@@ -101,9 +104,54 @@ function nodeToHtml(node: TipTapNode): string {
       return text;
     }
 
+    // ── New node types ────────────────────────────────────────────────────────
+
+    case 'variable': {
+      // Resolve variable value from replacements map; fall back to chip label
+      const key   = String(node.attrs?.key ?? '');
+      const label = String(node.attrs?.label ?? key);
+      const value = replacements?.[`{{${key}}}`];
+      return value ?? escapeHtml(label);
+    }
+
+    case 'signatureBlock': {
+      const fieldType = String(node.attrs?.fieldType ?? 'signature');
+      const label     = escapeHtml(String(node.attrs?.label ?? 'Signatur'));
+      const icons: Record<string, string> = { signature: '✍', name: '👤', date: '📅' };
+      const subtext: Record<string, string> = {
+        signature: 'Underteckna med e-signatur via länken',
+        name:      'Fullständigt namn',
+        date:      'Signeringsdatum fylls i automatiskt',
+      };
+      return `
+        <div style="display:flex;align-items:center;gap:12px;border:2px dashed #cbd5e1;border-radius:10px;padding:20px 24px;margin:16px 0;background:#f8fafc;">
+          <span style="font-size:20px;">${icons[fieldType] ?? '✍'}</span>
+          <div>
+            <p style="font-weight:600;color:#334155;margin:0 0 2px;">${label}</p>
+            <p style="font-size:11px;color:#94a3b8;margin:0;">${escapeHtml(subtext[fieldType] ?? '')}</p>
+          </div>
+        </div>`;
+    }
+
+    case 'table':
+      return `<table style="width:100%;border-collapse:collapse;margin-bottom:1em;">${(node.content ?? []).map(r).join('')}</table>`;
+
+    case 'tableRow':
+      return `<tr>${(node.content ?? []).map(r).join('')}</tr>`;
+
+    case 'tableHeader': {
+      const inner = (node.content ?? []).map(r).join('');
+      return `<th style="padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;font-size:12px;font-weight:600;text-align:left;">${inner}</th>`;
+    }
+
+    case 'tableCell': {
+      const inner = (node.content ?? []).map(r).join('');
+      return `<td style="padding:8px 12px;border:1px solid #e2e8f0;font-size:13px;vertical-align:top;">${inner}</td>`;
+    }
+
     default:
       // Unknown node type — render children if any
-      return (node.content ?? []).map(nodeToHtml).join('');
+      return (node.content ?? []).map(r).join('');
   }
 }
 
@@ -173,21 +221,10 @@ const SIGNATURE_FIELD_HTML = `
  * The result is stored as Offer.generatedDocument (immutable after send).
  */
 export function generateDocument(templateContent: string, offer: Offer): string {
-  // Parse TipTap JSON
-  let rootNode: TipTapNode;
-  try {
-    rootNode = JSON.parse(templateContent) as TipTapNode;
-  } catch {
-    // If content is not valid JSON, treat as plain text
-    rootNode = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: templateContent }] }] };
-  }
-
-  let html = nodeToHtml(rootNode);
-
-  // Compute VAT amount
+  // Compute VAT amount (needed by replacements map below)
   const vatAmount = offer.totalIncVat - offer.totalExVat;
 
-  // Replace placeholders
+  // Build replacements map (used by both nodeToHtml variable nodes and legacy {{}} substitution)
   const replacements: Record<string, string> = {
     '{{offerTitle}}':       escapeHtml(offer.title),
     '{{recipientName}}':    escapeHtml(offer.recipientName),
@@ -202,8 +239,20 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     '{{signature}}':        SIGNATURE_FIELD_HTML,
   };
 
+  // Parse TipTap JSON
+  let rootNode: TipTapNode;
+  try {
+    rootNode = JSON.parse(templateContent) as TipTapNode;
+  } catch {
+    // If content is not valid JSON, treat as plain text
+    rootNode = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: templateContent }] }] };
+  }
+
+  let html = nodeToHtml(rootNode, replacements);
+
+  // Legacy {{}} substitution — keeps old plain-text templates working.
+  // New templates use variable nodes (handled above in nodeToHtml).
   for (const [key, value] of Object.entries(replacements)) {
-    // Replace all occurrences (placeholder may appear multiple times)
     html = html.split(key).join(value);
   }
 
