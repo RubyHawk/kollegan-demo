@@ -4,11 +4,11 @@
  * DocumentCanvas — renders the A4 canvas and BubbleMenu.
  *
  * The editor instance is provided by TemplateEditor via EditorCtx.
- * This component only handles rendering; all editor creation lives in
- * TemplateEditor so the context is available to all three panels.
+ * Returns a proper div (not a Fragment) so flex-1 reliably fills the
+ * remaining height inside TemplateEditor's center column.
  */
 
-// Re-export context so sibling components can keep their existing imports.
+// Re-export context so sibling components keep their existing imports.
 export { EditorCtx, useTemplateEditor } from './editor-context';
 
 import { EditorContent } from '@tiptap/react';
@@ -19,8 +19,8 @@ export default function DocumentCanvas() {
   const editor = useTemplateEditor();
 
   return (
-    <>
-      {/* BubbleMenu for inline text formatting */}
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* BubbleMenu for inline text formatting — renders as a floating portal */}
       {editor && (
         <BubbleMenu
           editor={editor}
@@ -71,18 +71,27 @@ export default function DocumentCanvas() {
         </BubbleMenu>
       )}
 
-      {/* A4 Canvas */}
-      <div className="flex-1 overflow-y-auto bg-[var(--surface-alt,#f1f5f9)] px-4 py-8">
-        <div
-          className="mx-auto bg-white rounded-xl shadow-sm border border-[var(--border)]"
-          style={{ maxWidth: 780, minHeight: 1040, padding: '60px 72px' }}
-        >
-          <EditorContent editor={editor} />
+      {/* Scrollable document background — Google Docs / Word style */}
+      <div className="flex-1 overflow-y-auto" style={{ background: '#f0f2f5' }}>
+        <div className="px-8 py-12">
+          {/* A4 paper */}
+          <div
+            className="mx-auto bg-white"
+            style={{
+              maxWidth: 816,
+              minHeight: 1056,
+              padding: '96px 96px',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
+            }}
+          >
+            <EditorContent editor={editor} />
+          </div>
         </div>
 
         <style>{`
           .tiptap-drag-handle { display: flex; align-items: center; }
-          .tiptap .ProseMirror { outline: none; }
+          .tiptap { height: 100%; }
+          .tiptap .ProseMirror { outline: none; min-height: 600px; }
           .tiptap table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
           .tiptap td, .tiptap th { border: 1px solid #e2e8f0; padding: 8px 12px; vertical-align: top; }
           .tiptap th { background: #f8fafc; font-weight: 600; font-size: 12px; }
@@ -91,7 +100,7 @@ export default function DocumentCanvas() {
           .tiptap p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #94a3b8; pointer-events: none; height: 0; display: block; }
         `}</style>
       </div>
-    </>
+    </div>
   );
 }
 
