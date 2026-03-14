@@ -169,7 +169,12 @@ export default function BlocksSidebar() {
 
 function SidebarShell({ children }: { children?: React.ReactNode }) {
   return (
-    <div className="w-52 shrink-0 border-r border-[var(--border)] bg-[var(--surface)] flex-col overflow-y-auto hidden md:flex">
+    <div className="w-52 shrink-0 border-r hidden md:flex flex-col overflow-y-auto" style={{ background: '#f3f2f1', borderColor: '#d2d0ce' }}>
+      <div style={{ padding: '8px 0 4px', borderBottom: '1px solid #d2d0ce', background: '#f3f2f1' }}>
+        <p style={{ fontSize: 11, fontWeight: 600, color: '#605e5c', padding: '0 12px 4px', fontFamily: 'Calibri, Arial, sans-serif', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+          Infoga
+        </p>
+      </div>
       {children}
     </div>
   );
@@ -177,8 +182,14 @@ function SidebarShell({ children }: { children?: React.ReactNode }) {
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="py-2">
-      <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-[var(--text-muted)] tracking-wider uppercase">{label}</p>
+    <div style={{ paddingBottom: 4 }}>
+      <p style={{
+        padding: '10px 12px 3px',
+        fontSize: 10, fontWeight: 600,
+        color: '#a19f9d',
+        fontFamily: 'Calibri, Arial, sans-serif',
+        letterSpacing: '0.06em', textTransform: 'uppercase',
+      }}>{label}</p>
       {children}
     </div>
   );
@@ -196,12 +207,26 @@ function InsertItem({
     <button
       type="button"
       onClick={onClick}
-      className="w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors text-left"
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        width: '100%', padding: '5px 12px',
+        background: 'transparent', border: 'none',
+        cursor: 'pointer', textAlign: 'left',
+        fontFamily: 'Calibri, Arial, sans-serif',
+        fontSize: 13, color: '#323130',
+        transition: 'background 0.08s',
+      }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#e8e6e3'; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
     >
-      <span className="shrink-0 text-[var(--text-muted)]">{icon}</span>
-      <span className="truncate">{label}</span>
+      <span style={{ color: '#605e5c', flexShrink: 0 }}>{icon}</span>
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{label}</span>
       {chip && (
-        <span className="ml-auto shrink-0 text-[9px] font-mono text-violet-500 bg-violet-50 border border-violet-200 px-1 py-0.5 rounded">
+        <span style={{
+          fontSize: 9, fontFamily: 'monospace', color: '#7b5ea7',
+          background: '#f4f0fa', border: '1px solid #d6c8f0',
+          padding: '1px 4px', borderRadius: 2, flexShrink: 0,
+        }}>
           var
         </span>
       )}
