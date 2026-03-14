@@ -14,6 +14,8 @@ export interface CreateOfferInput {
   createdBy:        string;
   leadId?:          string;
   customerId?:      string;
+  templateId?:      string;
+  generatedDocument?: string;
   lineItems: Array<{
     description: string;
     quantity:    number;
@@ -25,17 +27,20 @@ export interface CreateOfferInput {
 }
 
 export interface UpdateOfferInput {
-  title?:            string;
-  recipientName?:    string;
-  recipientEmail?:   string;
-  recipientCompany?: string;
-  notes?:            string;
-  validUntil?:       Date;
-  status?:           string;
-  sentAt?:           Date;
-  viewedAt?:         Date;
-  acceptedAt?:       Date;
-  declinedAt?:       Date;
+  title?:                string;
+  recipientName?:        string;
+  recipientEmail?:       string;
+  recipientCompany?:     string;
+  notes?:                string;
+  validUntil?:           Date;
+  status?:               string;
+  sentAt?:               Date;
+  viewedAt?:             Date;
+  acceptedAt?:           Date;
+  declinedAt?:           Date;
+  generatedDocument?:    string;
+  signatureImage?:       string;
+  publicTokenExpiresAt?: Date;
   lineItems?: Array<{
     id?:         string; // present = update; absent = insert
     description: string;
@@ -71,23 +76,29 @@ function mapLineItem(r: Record<string, unknown>): OfferLineItem {
 function mapOffer(r: Record<string, unknown>): Offer {
   const items = (r.lineItems as Record<string, unknown>[] | undefined) ?? [];
   return {
-    id:               r.id as string,
-    title:            r.title as string,
-    status:           r.status as Offer['status'],
-    recipientName:    r.recipientName as string,
-    recipientEmail:   r.recipientEmail as string,
-    recipientCompany: (r.recipientCompany as string | null) ?? undefined,
-    notes:            (r.notes as string | null) ?? undefined,
-    validUntil:       (r.validUntil as Date).toISOString(),
-    createdBy:        r.createdBy as string,
-    createdAt:        (r.createdAt as Date).toISOString(),
-    sentAt:           r.sentAt ? (r.sentAt as Date).toISOString() : undefined,
-    acceptedAt:       r.acceptedAt ? (r.acceptedAt as Date).toISOString() : undefined,
-    leadId:           (r.leadId as string | null) ?? undefined,
-    customerId:       (r.customerId as string | null) ?? undefined,
-    totalExVat:       r.totalExVat as number,
-    totalIncVat:      r.totalIncVat as number,
-    lineItems:        items.map(mapLineItem),
+    id:                   r.id as string,
+    title:                r.title as string,
+    status:               r.status as Offer['status'],
+    recipientName:        r.recipientName as string,
+    recipientEmail:       r.recipientEmail as string,
+    recipientCompany:     (r.recipientCompany as string | null) ?? undefined,
+    notes:                (r.notes as string | null) ?? undefined,
+    validUntil:           (r.validUntil as Date).toISOString(),
+    createdBy:            r.createdBy as string,
+    createdAt:            (r.createdAt as Date).toISOString(),
+    sentAt:               r.sentAt ? (r.sentAt as Date).toISOString() : undefined,
+    acceptedAt:           r.acceptedAt ? (r.acceptedAt as Date).toISOString() : undefined,
+    declinedAt:           r.declinedAt ? (r.declinedAt as Date).toISOString() : undefined,
+    leadId:               (r.leadId as string | null) ?? undefined,
+    customerId:           (r.customerId as string | null) ?? undefined,
+    totalExVat:           r.totalExVat as number,
+    totalIncVat:          r.totalIncVat as number,
+    templateId:           (r.templateId as string | null) ?? undefined,
+    generatedDocument:    (r.generatedDocument as string | null) ?? undefined,
+    signatureImage:       (r.signatureImage as string | null) ?? undefined,
+    publicToken:          r.publicToken as string,
+    publicTokenExpiresAt: r.publicTokenExpiresAt ? (r.publicTokenExpiresAt as Date).toISOString() : undefined,
+    lineItems:            items.map(mapLineItem),
   };
 }
 
@@ -124,6 +135,8 @@ const OFFER_SELECT = {
   totalExVat: true, totalIncVat: true,
   sentAt: true, viewedAt: true, acceptedAt: true, declinedAt: true,
   leadId: true, customerId: true,
+  templateId: true, generatedDocument: true, signatureImage: true,
+  publicToken: true, publicTokenExpiresAt: true,
   createdAt: true, updatedAt: true,
   lineItems: { select: LINE_ITEM_SELECT, orderBy: { sortOrder: 'asc' as const } },
 };
@@ -137,16 +150,18 @@ export const offersRepository = {
 
     const row = await prisma.offer.create({
       data: {
-        organizationId:   input.organizationId,
-        title:            input.title,
-        recipientName:    input.recipientName,
-        recipientEmail:   input.recipientEmail,
-        recipientCompany: input.recipientCompany ?? null,
-        notes:            input.notes ?? null,
-        validUntil:       input.validUntil,
-        createdBy:        input.createdBy,
-        leadId:           input.leadId ?? null,
-        customerId:       input.customerId ?? null,
+        organizationId:    input.organizationId,
+        title:             input.title,
+        recipientName:     input.recipientName,
+        recipientEmail:    input.recipientEmail,
+        recipientCompany:  input.recipientCompany ?? null,
+        notes:             input.notes ?? null,
+        validUntil:        input.validUntil,
+        createdBy:         input.createdBy,
+        leadId:            input.leadId ?? null,
+        customerId:        input.customerId ?? null,
+        templateId:        input.templateId ?? null,
+        generatedDocument: input.generatedDocument ?? null,
         totalExVat,
         totalIncVat,
         lineItems: {
@@ -203,7 +218,7 @@ export const offersRepository = {
     ]);
 
     return {
-      offers: rows.map((r) => mapOffer(r as unknown as Record<string, unknown>)),
+      offers: rows.map((r: unknown) => mapOffer(r as Record<string, unknown>)),
       total,
     };
   },
@@ -229,10 +244,13 @@ export const offersRepository = {
         ...(input.notes            !== undefined ? { notes: input.notes }                       : {}),
         ...(input.validUntil       !== undefined ? { validUntil: input.validUntil }             : {}),
         ...(input.status           !== undefined ? { status: input.status }                     : {}),
-        ...(input.sentAt           !== undefined ? { sentAt: input.sentAt }                     : {}),
-        ...(input.viewedAt         !== undefined ? { viewedAt: input.viewedAt }                 : {}),
-        ...(input.acceptedAt       !== undefined ? { acceptedAt: input.acceptedAt }             : {}),
-        ...(input.declinedAt       !== undefined ? { declinedAt: input.declinedAt }             : {}),
+        ...(input.sentAt               !== undefined ? { sentAt: input.sentAt }                             : {}),
+        ...(input.viewedAt             !== undefined ? { viewedAt: input.viewedAt }                         : {}),
+        ...(input.acceptedAt           !== undefined ? { acceptedAt: input.acceptedAt }                     : {}),
+        ...(input.declinedAt           !== undefined ? { declinedAt: input.declinedAt }                     : {}),
+        ...(input.generatedDocument    !== undefined ? { generatedDocument: input.generatedDocument }       : {}),
+        ...(input.signatureImage       !== undefined ? { signatureImage: input.signatureImage }             : {}),
+        ...(input.publicTokenExpiresAt !== undefined ? { publicTokenExpiresAt: input.publicTokenExpiresAt } : {}),
         ...(totals ? { totalExVat: totals.totalExVat, totalIncVat: totals.totalIncVat } : {}),
         ...(input.lineItems ? {
           lineItems: {
@@ -257,5 +275,57 @@ export const offersRepository = {
     if (!existing) return false;
     await prisma.offer.update({ where: { id }, data: { deletedAt: new Date() } });
     return true;
+  },
+
+  // Public route lookup — no orgId needed (token is globally unique)
+  async findByPublicToken(token: string): Promise<Offer | null> {
+    const row = await prisma.offer.findFirst({
+      where:  { publicToken: token, deletedAt: null },
+      select: OFFER_SELECT,
+    });
+    if (!row) return null;
+    return mapOffer(row as unknown as Record<string, unknown>);
+  },
+
+  // Internal update by id only — used for public signing flow where orgId is not available
+  async updateById(id: string, input: UpdateOfferInput): Promise<Offer | null> {
+    const existing = await prisma.offer.findFirst({ where: { id, deletedAt: null } });
+    if (!existing) return null;
+
+    let totals: { totalExVat: number; totalIncVat: number } | undefined;
+    if (input.lineItems) {
+      totals = computeTotals(input.lineItems);
+      await prisma.offerLineItem.deleteMany({ where: { offerId: id } });
+    }
+
+    const row = await prisma.offer.update({
+      where: { id },
+      data: {
+        ...(input.title            !== undefined ? { title: input.title }                                   : {}),
+        ...(input.status           !== undefined ? { status: input.status }                                 : {}),
+        ...(input.sentAt           !== undefined ? { sentAt: input.sentAt }                                 : {}),
+        ...(input.viewedAt         !== undefined ? { viewedAt: input.viewedAt }                             : {}),
+        ...(input.acceptedAt       !== undefined ? { acceptedAt: input.acceptedAt }                         : {}),
+        ...(input.declinedAt       !== undefined ? { declinedAt: input.declinedAt }                         : {}),
+        ...(input.signatureImage   !== undefined ? { signatureImage: input.signatureImage }                 : {}),
+        ...(input.generatedDocument !== undefined ? { generatedDocument: input.generatedDocument }          : {}),
+        ...(input.publicTokenExpiresAt !== undefined ? { publicTokenExpiresAt: input.publicTokenExpiresAt } : {}),
+        ...(totals ? { totalExVat: totals.totalExVat, totalIncVat: totals.totalIncVat } : {}),
+        ...(input.lineItems ? {
+          lineItems: {
+            create: input.lineItems.map((item, idx) => ({
+              description: item.description,
+              quantity:    item.quantity,
+              unitPrice:   item.unitPrice,
+              vatRate:     item.vatRate,
+              discount:    item.discount ?? 0,
+              sortOrder:   item.sortOrder ?? idx,
+            })),
+          },
+        } : {}),
+      },
+      select: OFFER_SELECT,
+    });
+    return mapOffer(row as unknown as Record<string, unknown>);
   },
 };

@@ -6,19 +6,36 @@
 
 // Domain types
 export type { Offer, OfferLineItem, OfferStatus } from './domain/offer.entity';
+export type { OfferTemplate, PlaceholderKey }      from './domain/template.entity';
+export { OFFER_PLACEHOLDERS }                       from './domain/template.entity';
 
-// Application use cases
+// Application use cases — offers
 export {
   createOffer,
   getOffer,
   listOffers,
   updateOffer,
   sendOffer,
+  viewOffer,
+  signOffer,
+  declineOfferByToken,
   acceptOffer,
   declineOffer,
   deleteOffer,
 } from './application/offers.service';
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter } from './application/offers.service';
+
+// Application use cases — templates
+export {
+  createTemplate,
+  getTemplate,
+  listTemplates,
+  updateTemplate,
+  deleteTemplate,
+} from './application/templates.service';
+
+// Document generator (server-side only)
+export { generateDocument } from './application/document-generator';
 
 // Domain events
 export {
@@ -37,7 +54,10 @@ export type {
   OfferDeclinedEvent,
 } from './events/offer.events';
 
-// ── API Handlers ─────────────────────────────────────────────────────────────
+// Job registration — call once at app startup
+export { registerOfferEmailJobs } from './jobs/offer-email.jobs';
+
+// ── API Handlers — offers ─────────────────────────────────────────────────────
 export {
   handleListOffers,
   handleCreateOffer,
@@ -45,3 +65,19 @@ export {
   handleUpdateOffer,
   handleDeleteOffer,
 } from './api/handlers/offer.handler';
+
+// ── API Handlers — templates ──────────────────────────────────────────────────
+export {
+  handleListTemplates,
+  handleCreateTemplate,
+  handleGetTemplate,
+  handleUpdateTemplate,
+  handleDeleteTemplate,
+} from './api/handlers/template.handler';
+
+// ── API Handlers — public signing flow ────────────────────────────────────────
+export {
+  handleGetPublicOffer,
+  handleSignPublicOffer,
+  handleDeclinePublicOffer,
+} from './api/handlers/public-offer.handler';

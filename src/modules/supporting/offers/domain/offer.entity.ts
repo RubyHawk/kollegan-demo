@@ -39,8 +39,15 @@ export interface Offer {
   createdAt: string;
   sentAt?: string;
   acceptedAt?: string;
+  declinedAt?: string;
   leadId?: string;          // Link to Leads module
   customerId?: string;      // Link to CRM module
   totalExVat: number;
   totalIncVat: number;
+  // Template & document fields
+  templateId?: string;
+  generatedDocument?: string;    // immutable HTML snapshot (set at send time)
+  signatureImage?: string;       // data URL of the recipient's e-signature
+  publicToken: string;           // UUID used as the signing URL token
+  publicTokenExpiresAt?: string; // ISO — 30 days after sentAt
 }
