@@ -21,7 +21,14 @@ import {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function extractToken(req: NextRequest): string {
-  return req.headers.get('authorization')?.slice(7) ?? req.cookies.get('at')?.value ?? '';
+  // Try Authorization header first, then the 'at' access-token cookie (set at login),
+  // then 'token' (used in some handlers for compatibility).
+  return (
+    req.headers.get('authorization')?.slice(7) ??
+    req.cookies.get('at')?.value ??
+    req.cookies.get('token')?.value ??
+    ''
+  );
 }
 
 function extractId(req: NextRequest): string {

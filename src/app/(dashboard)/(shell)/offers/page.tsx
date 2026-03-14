@@ -13,7 +13,7 @@
  * - Copy public signing link to clipboard
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@shared/lib/utils';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -58,6 +58,13 @@ interface OfferTemplate {
   name: string;
 }
 
+interface ContactResult {
+  id:      string;
+  name:    string | null;
+  email:   string | null;
+  company: string | null;
+}
+
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
 const STATUS_TABS: { id: OfferStatus | 'all'; label: string }[] = [
@@ -90,7 +97,8 @@ const STATUS_LABEL: Record<OfferStatus, string> = {
 const EMPTY_LINE: LineItem = { description: '', quantity: 1, unitPrice: 0, vatRate: 0.25, discount: 0 };
 
 const EMPTY_FORM = {
-  templateId: '', title: '', recipientName: '', recipientEmail: '', recipientCompany: '',
+  templateId: '', contactId: '',
+  title: '', recipientName: '', recipientEmail: '', recipientCompany: '',
   notes: '', validUntil: '', lineItems: [{ ...EMPTY_LINE }],
 };
 
@@ -142,9 +150,13 @@ export default function OffersPage() {
   const [previewDoc,  setPreviewDoc]  = useState<string | null>(null); // HTML to preview
   const [copied,      setCopied]      = useState<string | null>(null); // offerId copied
   const [confirmSend, setConfirmSend] = useState<Offer | null>(null);  // offer pending send confirmation
-  const [selected,    setSelected]    = useState<Set<string>>(new Set()); // bulk-selected offer ids
-  const [bulkSending, setBulkSending] = useState(false);
-  const [bulkResult,  setBulkResult]  = useState<{ sent: number; failed: number } | null>(null);
+  const [selected,       setSelected]       = useState<Set<string>>(new Set()); // bulk-selected offer ids
+  const [bulkSending,    setBulkSending]    = useState(false);
+  const [bulkResult,     setBulkResult]     = useState<{ sent: number; failed: number } | null>(null);
+  const [contactSearch,  setContactSearch]  = useState('');
+  const [contactResults, setContactResults] = useState<ContactResult[]>([]);
+  const [contactLoading, setContactLoading] = useState(false);
+  const contactSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Load templates ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -201,6 +213,7 @@ export default function OffersPage() {
         lineItems:        validItems,
       };
       if (form.templateId) body.templateId = form.templateId;
+      if (form.contactId)  body.customerId  = form.contactId;
 
       const res = await fetch('/api/offers', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -295,6 +308,37 @@ export default function OffersPage() {
     }
   }
 
+  // ── Contact search (debounced) ────────────────────────────────────────────
+  const searchContacts = useCallback((q: string) => {
+    setContactSearch(q);
+    if (contactSearchRef.current) clearTimeout(contactSearchRef.current);
+    if (!q.trim()) { setContactResults([]); return; }
+    contactSearchRef.current = setTimeout(async () => {
+      setContactLoading(true);
+      try {
+        const res = await fetch(`/api/crm/contacts?search=${encodeURIComponent(q)}&limit=8`);
+        if (res.ok) {
+          const j = await res.json() as { data: { contacts: ContactResult[] } };
+          setContactResults(j.data.contacts);
+        }
+      } catch { /* ignore */ } finally {
+        setContactLoading(false);
+      }
+    }, 280);
+  }, []);
+
+  const pickContact = useCallback((c: ContactResult) => {
+    setForm((f) => ({
+      ...f,
+      contactId:        c.id,
+      recipientName:    c.name    ?? f.recipientName,
+      recipientEmail:   c.email   ?? f.recipientEmail,
+      recipientCompany: c.company ?? f.recipientCompany,
+    }));
+    setContactSearch('');
+    setContactResults([]);
+  }, []);
+
   // ── Line item helpers ─────────────────────────────────────────────────────────
   function updateLine(idx: number, field: keyof LineItem, value: string | number) {
     setForm((f) => { const items = [...f.lineItems]; items[idx] = { ...items[idx], [field]: value }; return { ...f, lineItems: items }; });
@@ -358,7 +402,7 @@ export default function OffersPage() {
         <div className="mb-8 rounded-2xl border border-[var(--accent)]/30 bg-[var(--surface)] shadow-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">Ny offert</h2>
-            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); setContactSearch(''); setContactResults([]); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
@@ -366,6 +410,73 @@ export default function OffersPage() {
           </div>
 
           <div className="p-6 space-y-6">
+
+            {/* Contact picker */}
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+                Sök kontakt
+                <span className="ml-1 font-normal text-[var(--text-muted)]">— fyller i mottagarfälten automatiskt</span>
+              </label>
+              <div className="relative">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  value={form.contactId
+                    ? (contactResults.find((c) => c.id === form.contactId)?.name ?? (contactSearch || 'Kontakt vald ✓'))
+                    : contactSearch}
+                  onChange={(e) => { if (form.contactId) setForm((f) => ({ ...f, contactId: '' })); searchContacts(e.target.value); }}
+                  placeholder="Sök på namn, e-post eller företag…"
+                  className="w-full pl-9 pr-10 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                />
+                {(contactSearch || form.contactId) && (
+                  <button type="button" onClick={() => { setForm((f) => ({ ...f, contactId: '' })); setContactSearch(''); setContactResults([]); }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                )}
+                {/* Dropdown */}
+                {contactSearch && !form.contactId && (
+                  <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
+                    {contactLoading ? (
+                      <div className="flex items-center gap-2 px-4 py-3 text-sm text-[var(--text-muted)]">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin shrink-0">
+                          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                        </svg>
+                        Söker…
+                      </div>
+                    ) : contactResults.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-[var(--text-muted)]">Inga kontakter hittades</div>
+                    ) : (
+                      contactResults.map((c) => (
+                        <button key={c.id} type="button" onClick={() => pickContact(c)}
+                          className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-hover)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
+                          <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-xs font-semibold shrink-0">
+                            {(c.name ?? '?').charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[var(--text-primary)] truncate">{c.name ?? '—'}</p>
+                            <p className="text-xs text-[var(--text-muted)] truncate">{[c.email, c.company].filter(Boolean).join(' · ')}</p>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+              {form.contactId && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  Fält ifyllda från kontakt
+                </p>
+              )}
+            </div>
+
             {/* Template selector */}
             {templates.length > 0 && (
               <div>
@@ -505,7 +616,7 @@ export default function OffersPage() {
                 className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
                 {saving ? 'Sparar…' : 'Spara som utkast'}
               </button>
-              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); }}
+              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); setContactSearch(''); setContactResults([]); }}
                 className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors">
                 Avbryt
               </button>
