@@ -1,11 +1,13 @@
 'use client';
 
 /**
- * DocumentCanvas — renders the A4 canvas and BubbleMenu.
+ * DocumentCanvas — renders the A4 canvas and BubbleMenus.
+ *
+ * Two BubbleMenus:
+ *  1. Text formatting (Bold/Italic/Underline/Link) — shows for text selections only
+ *  2. Image controls (Align/Delete) — shows when an image node is selected
  *
  * The editor instance is provided by TemplateEditor via EditorCtx.
- * Returns a proper div (not a Fragment) so flex-1 reliably fills the
- * remaining height inside TemplateEditor's center column.
  */
 
 // Re-export context so sibling components keep their existing imports.
@@ -13,6 +15,7 @@ export { EditorCtx, useTemplateEditor } from './editor-context';
 
 import { EditorContent } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
+import { NodeSelection } from '@tiptap/pm/state';
 import { useTemplateEditor } from './editor-context';
 
 export default function DocumentCanvas() {
@@ -20,11 +23,17 @@ export default function DocumentCanvas() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* BubbleMenu for inline text formatting — renders as a floating portal */}
+      {/* ── BubbleMenu 1: inline text formatting ──────────────────────────── */}
       {editor && (
         <BubbleMenu
           editor={editor}
           options={{ placement: 'top' }}
+          shouldShow={({ state }) => {
+            const { selection } = state;
+            // Never show on node selections (images, signature blocks, etc.)
+            if (selection instanceof NodeSelection) return false;
+            return selection.from !== selection.to;
+          }}
           className="flex items-center gap-0.5 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg p-1"
         >
           <BubbleButton
@@ -71,7 +80,62 @@ export default function DocumentCanvas() {
         </BubbleMenu>
       )}
 
-      {/* Scrollable document background — Google Docs / Word style */}
+      {/* ── BubbleMenu 2: image controls ──────────────────────────────────── */}
+      {editor && (
+        <BubbleMenu
+          editor={editor}
+          options={{ placement: 'top' }}
+          shouldShow={({ state }) => {
+            const { selection } = state;
+            return (
+              selection instanceof NodeSelection &&
+              selection.node.type.name === 'image'
+            );
+          }}
+          className="flex items-center gap-0.5 bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg p-1"
+        >
+          <BubbleButton
+            active={
+              !editor.getAttributes('image').align ||
+              editor.getAttributes('image').align === 'left'
+            }
+            onClick={() =>
+              editor.chain().focus().updateAttributes('image', { align: 'left' }).run()
+            }
+            title="Justera vänster"
+          >
+            <AlignLeftIcon />
+          </BubbleButton>
+          <BubbleButton
+            active={editor.getAttributes('image').align === 'center'}
+            onClick={() =>
+              editor.chain().focus().updateAttributes('image', { align: 'center' }).run()
+            }
+            title="Centrera"
+          >
+            <AlignCenterIcon />
+          </BubbleButton>
+          <BubbleButton
+            active={editor.getAttributes('image').align === 'right'}
+            onClick={() =>
+              editor.chain().focus().updateAttributes('image', { align: 'right' }).run()
+            }
+            title="Justera höger"
+          >
+            <AlignRightIcon />
+          </BubbleButton>
+          <div className="w-px h-4 bg-[var(--border)] mx-0.5" />
+          <BubbleButton
+            active={false}
+            onClick={() => editor.chain().focus().deleteSelection().run()}
+            title="Ta bort bild"
+          >
+            <TrashIcon />
+          </BubbleButton>
+        </BubbleMenu>
+      )}
+
+      {/* ── Scrollable document background ────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto" style={{ background: '#f0f2f5' }}>
         <div className="px-8 py-12">
           {/* A4 paper — clicking empty space focuses the editor */}
@@ -103,12 +167,6 @@ export default function DocumentCanvas() {
             min-height: 720px;
             cursor: text;
           }
-
-          /* Image alignment via data-align attribute */
-          .doc-editor .ProseMirror img { display: block; height: auto; }
-          .doc-editor .ProseMirror img[data-align="left"]   { margin-right: auto; }
-          .doc-editor .ProseMirror img[data-align="center"] { margin-left: auto; margin-right: auto; }
-          .doc-editor .ProseMirror img[data-align="right"]  { margin-left: auto; }
 
           /* Tables */
           .doc-editor .ProseMirror table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
@@ -149,5 +207,42 @@ function BubbleButton({
     >
       {children}
     </button>
+  );
+}
+
+// ── Image toolbar icons ────────────────────────────────────────────────────────
+
+function AlignLeftIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/>
+    </svg>
+  );
+}
+
+function AlignCenterIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
+    </svg>
+  );
+}
+
+function AlignRightIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/>
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6l-1 14H6L5 6"/>
+      <path d="M10 11v6"/><path d="M14 11v6"/>
+      <path d="M9 6V4h6v2"/>
+    </svg>
   );
 }
