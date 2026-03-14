@@ -22,8 +22,7 @@ import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
-import TableHeader from '@tiptap/extension-table-header';
-import TableCell from '@tiptap/extension-table-cell';
+import { TableCellWithBg, TableHeaderWithBg } from './extensions/table-cell-background.extension';
 import FontFamily from '@tiptap/extension-font-family';
 import Highlight from '@tiptap/extension-highlight';
 import Subscript from '@tiptap/extension-subscript';
@@ -83,8 +82,8 @@ export default function TemplateEditor({ initialContent, editorRef }: Props) {
       Link.configure({ openOnClick: false }),
       Table.configure({ resizable: true }),
       TableRow,
-      TableHeader,
-      TableCell,
+      TableHeaderWithBg,
+      TableCellWithBg,
       FontFamily,
       FontSize,
       Highlight.configure({ multicolor: true }),
