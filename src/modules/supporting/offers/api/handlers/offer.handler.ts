@@ -21,6 +21,7 @@ import {
   deleteOffer,
   duplicateOffer,
   expireStaleOffers,
+  bulkSendOffers,
 } from '../../application/offers.service';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -184,6 +185,22 @@ export const handleDeleteOffer = createHandler(
     const deleted = await deleteOffer(id, payload.orgId);
     if (!deleted) throw Errors.notFound('Offer not found');
     return ok(null);
+  },
+);
+
+// ── Bulk Send Offers ─────────────────────────────────────────────────────────
+
+const BulkSendSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(50),
+});
+
+export const handleBulkSendOffers = createHandler(
+  { auth: 'jwt', tag: 'Offers:BulkSend', body: BulkSendSchema, rateLimit: { max: 10, windowMs: 60_000 } },
+  async (ctx) => {
+    const { body, req } = ctx as { body: z.infer<typeof BulkSendSchema>; req: NextRequest };
+    const payload = await requireStaff(req);
+    const result = await bulkSendOffers(body.ids, payload.orgId!);
+    return ok(result);
   },
 );
 

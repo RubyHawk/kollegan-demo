@@ -24,7 +24,9 @@ export {
   deleteOffer,
   duplicateOffer,
   expireStaleOffers,
+  bulkSendOffers,
 } from './application/offers.service';
+export type { BulkSendResult } from './application/offers.service';
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter } from './application/offers.service';
 
 // Application use cases — templates
@@ -59,6 +61,10 @@ export type {
 // Job registration — call once at app startup
 export { registerOfferEmailJobs } from './jobs/offer-email.jobs';
 
+// Signature providers
+export { isDocuSignConfigured, createSigningSession, resolveReturnAction } from './application/signature-providers/docusign';
+export type { DocuSignConfig, SigningSession, DocuSignReturnEvent }         from './application/signature-providers/docusign';
+
 // ── API Handlers — offers ─────────────────────────────────────────────────────
 export {
   handleListOffers,
@@ -67,6 +73,7 @@ export {
   handleUpdateOffer,
   handleDeleteOffer,
   handleExpireOffers,
+  handleBulkSendOffers,
 } from './api/handlers/offer.handler';
 
 // ── API Handlers — templates ──────────────────────────────────────────────────

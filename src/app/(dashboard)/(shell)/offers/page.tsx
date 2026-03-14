@@ -142,6 +142,9 @@ export default function OffersPage() {
   const [previewDoc,  setPreviewDoc]  = useState<string | null>(null); // HTML to preview
   const [copied,      setCopied]      = useState<string | null>(null); // offerId copied
   const [confirmSend, setConfirmSend] = useState<Offer | null>(null);  // offer pending send confirmation
+  const [selected,    setSelected]    = useState<Set<string>>(new Set()); // bulk-selected offer ids
+  const [bulkSending, setBulkSending] = useState(false);
+  const [bulkResult,  setBulkResult]  = useState<{ sent: number; failed: number } | null>(null);
 
   // ── Load templates ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -173,7 +176,7 @@ export default function OffersPage() {
     }
   }, [tab, search]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void load(); setSelected(new Set()); setBulkResult(null); }, [load]);
 
   // ── Create offer ──────────────────────────────────────────────────────────────
   const createOffer = useCallback(async () => {
@@ -251,6 +254,47 @@ export default function OffersPage() {
     setTimeout(() => setCopied(null), 2000);
   }, []);
 
+  // ── Bulk send ─────────────────────────────────────────────────────────────
+  const doBulkSend = useCallback(async () => {
+    const ids = Array.from(selected).filter((id) => {
+      const o = offers.find((o) => o.id === id);
+      return o?.status === 'draft';
+    });
+    if (ids.length === 0) return;
+    setBulkSending(true); setBulkResult(null); setError(null);
+    try {
+      const res = await fetch('/api/offers/bulk-send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body:   JSON.stringify({ ids }),
+      });
+      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      const j = await res.json() as { data: { sent: number; failed: number } };
+      setBulkResult(j.data);
+      setSelected(new Set());
+      await load(true);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBulkSending(false);
+    }
+  }, [selected, offers, load]);
+
+  // ── Selection helpers ─────────────────────────────────────────────────────
+  const draftOffers = offers.filter((o) => o.status === 'draft');
+  const selectedDraftCount = Array.from(selected).filter((id) => offers.find((o) => o.id === id)?.status === 'draft').length;
+  const allDraftsSelected  = draftOffers.length > 0 && draftOffers.every((o) => selected.has(o.id));
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  }
+  function toggleSelectAllDrafts() {
+    if (allDraftsSelected) {
+      setSelected((prev) => { const s = new Set(prev); draftOffers.forEach((o) => s.delete(o.id)); return s; });
+    } else {
+      setSelected((prev) => { const s = new Set(prev); draftOffers.forEach((o) => s.add(o.id)); return s; });
+    }
+  }
+
   // ── Line item helpers ─────────────────────────────────────────────────────────
   function updateLine(idx: number, field: keyof LineItem, value: string | number) {
     setForm((f) => { const items = [...f.lineItems]; items[idx] = { ...items[idx], [field]: value }; return { ...f, lineItems: items }; });
@@ -287,6 +331,21 @@ export default function OffersPage() {
         <div className="mb-6 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center justify-between gap-3">
           <span>{error}</span>
           <button onClick={() => setError(null)} className="shrink-0 opacity-60 hover:opacity-100">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* Bulk send result banner */}
+      {bulkResult && (
+        <div className="mb-6 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400 flex items-center justify-between gap-3">
+          <span>
+            {bulkResult.sent} offert{bulkResult.sent !== 1 ? 'er' : ''} skickade
+            {bulkResult.failed > 0 ? ` · ${bulkResult.failed} misslyckades` : ''}
+          </span>
+          <button onClick={() => setBulkResult(null)} className="shrink-0 opacity-60 hover:opacity-100">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -455,6 +514,41 @@ export default function OffersPage() {
         </div>
       )}
 
+      {/* Floating bulk action bar */}
+      {selected.size > 0 && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--surface)] px-4 py-3 shadow-md">
+          <span className="text-sm font-medium text-[var(--text-primary)]">
+            {selected.size} vald{selected.size !== 1 ? 'a' : ''}
+            {selectedDraftCount > 0 && selectedDraftCount < selected.size && ` · ${selectedDraftCount} utkast`}
+          </span>
+          <div className="flex-1"/>
+          {selectedDraftCount > 0 && (
+            <button
+              onClick={() => void doBulkSend()}
+              disabled={bulkSending}
+              className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {bulkSending ? (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                  </svg>
+                  Skickar…
+                </>
+              ) : (
+                `Skicka ${selectedDraftCount} offert${selectedDraftCount !== 1 ? 'er' : ''}`
+              )}
+            </button>
+          )}
+          <button
+            onClick={() => setSelected(new Set())}
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            Rensa urval
+          </button>
+        </div>
+      )}
+
       {/* Status tabs + search */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
         <div className="flex gap-0 border-b border-[var(--border)] overflow-x-auto scrollbar-none flex-1">
@@ -489,6 +583,17 @@ export default function OffersPage() {
             <table className="min-w-full divide-y divide-[var(--border)] text-sm">
               <thead className="bg-[var(--surface-alt)]">
                 <tr>
+                  <th className="px-4 py-3 w-8">
+                    {draftOffers.length > 0 && (
+                      <input
+                        type="checkbox"
+                        checked={allDraftsSelected}
+                        onChange={toggleSelectAllDrafts}
+                        title="Välj alla utkast"
+                        className="rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"
+                      />
+                    )}
+                  </th>
                   {['Rubrik', 'Mottagare', 'Status', 'Totalt inkl. moms', 'Giltig till', 'Skapad', ''].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
                   ))}
@@ -497,6 +602,16 @@ export default function OffersPage() {
               <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)]">
                 {offers.map((offer) => (
                   <tr key={offer.id} className="hover:bg-[var(--surface-hover)] transition-colors">
+                    <td className="px-4 py-3.5 w-8">
+                      {offer.status === 'draft' && (
+                        <input
+                          type="checkbox"
+                          checked={selected.has(offer.id)}
+                          onChange={() => toggleSelect(offer.id)}
+                          className="rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"
+                        />
+                      )}
+                    </td>
                     <td className="px-4 py-3.5">
                       <p className="font-medium text-[var(--text-primary)]">{offer.title}</p>
                       {offer.templateId && <p className="text-[10px] text-[var(--accent)] mt-0.5">Mallbaserad</p>}
@@ -601,7 +716,7 @@ export default function OffersPage() {
                 ))}
                 {offers.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-16 text-center">
+                    <td colSpan={8} className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center">
                           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

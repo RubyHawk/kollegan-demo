@@ -340,6 +340,39 @@ export async function deleteOffer(id: string, orgId: string): Promise<boolean> {
   return deleted;
 }
 
+// ─── bulkSendOffers ───────────────────────────────────────────────────────────
+
+export interface BulkSendResult {
+  sent:   number;
+  failed: number;
+  errors: Array<{ id: string; error: string }>;
+}
+
+export async function bulkSendOffers(
+  ids: string[],
+  orgId: string,
+): Promise<BulkSendResult> {
+  const results = await Promise.allSettled(ids.map((id) => sendOffer(id, orgId)));
+
+  let sent   = 0;
+  let failed = 0;
+  const errors: BulkSendResult['errors'] = [];
+
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (r.status === 'fulfilled' && r.value) {
+      sent++;
+    } else {
+      failed++;
+      const reason = r.status === 'rejected' ? String(r.reason) : 'Offer not found or already sent';
+      errors.push({ id: ids[i], error: reason });
+    }
+  }
+
+  logger.info(TAG, `Bulk send: ${sent} sent, ${failed} failed`, { orgId });
+  return { sent, failed, errors };
+}
+
 // ─── expireStaleOffers (cron) ─────────────────────────────────────────────────
 
 export async function expireStaleOffers(): Promise<number> {
