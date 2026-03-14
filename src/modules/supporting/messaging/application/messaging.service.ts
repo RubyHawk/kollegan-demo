@@ -61,7 +61,7 @@ export async function listConversations(
   input: ListConversationsInput,
 ): Promise<ListConversationsResult> {
   const result = await repoListConversations(input);
-  logger.debug(TAG, `Listed ${result.conversations.length} conversations for user ${input.userId}`);
+  logger.info(TAG, `Listed ${result.conversations.length} conversations for user ${input.userId}`);
   return result;
 }
 

@@ -1,4 +1,4 @@
-import { prisma } from '@platform/database/prisma';
+import { prisma, Prisma } from '@platform/database/prisma';
 import type { Offer, OfferLineItem } from '../domain/offer.entity';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -206,14 +206,14 @@ export const offersRepository = {
 
     const [rows, total] = await Promise.all([
       prisma.offer.findMany({
-        where: where as Parameters<typeof prisma.offer.findMany>[0]['where'],
+        where: where as Prisma.OfferWhereInput,
         select: OFFER_SELECT,
         orderBy: { createdAt: 'desc' },
         take:  filter.limit  ?? 50,
         skip:  filter.offset ?? 0,
       }),
       prisma.offer.count({
-        where: where as Parameters<typeof prisma.offer.count>[0]['where'],
+        where: where as Prisma.OfferWhereInput,
       }),
     ]);
 

@@ -5,11 +5,16 @@ import { ALERT_CREATED } from '../events/alert.events';
 
 export async function createAlert(input: CreateAlertInput) {
   const alert = await alertRepository.create(input);
-  eventBus.emit(ALERT_CREATED, {
-    alertId: alert.id,
-    organizationId: alert.organizationId,
-    severity: alert.severity,
-    source: alert.source,
+  eventBus.publish({
+    type: ALERT_CREATED,
+    orgId: alert.organizationId,
+    occurredAt: new Date().toISOString(),
+    payload: {
+      alertId: alert.id,
+      organizationId: alert.organizationId,
+      severity: alert.severity,
+      source: alert.source,
+    },
   });
   return alert;
 }

@@ -63,7 +63,7 @@ export const handleListConversations = createHandler(
     const payload = await extractAuth(req);
 
     const result = await listConversations({
-      organizationId: payload.orgId,
+      organizationId: payload.orgId!,
       userId: payload.sub,
       limit: query.limit,
       offset: query.offset,
@@ -97,7 +97,7 @@ export const handleCreateConversation = createHandler(
     const payload = await extractAuth(req);
 
     const result = await createConversation({
-      organizationId: payload.orgId,
+      organizationId: payload.orgId!,
       title: body.title,
       type: body.type,
       createdBy: payload.sub,
@@ -133,7 +133,7 @@ export const handleListMessages = createHandler(
 
     const result = await listMessages({
       conversationId: convId,
-      organizationId: payload.orgId,
+      organizationId: payload.orgId!,
       userId: payload.sub,
       limit: query.limit,
       offset: query.offset,
@@ -168,7 +168,7 @@ export const handleSendMessage = createHandler(
 
     const result = await sendMessage({
       conversationId: convId,
-      organizationId: payload.orgId,
+      organizationId: payload.orgId!,
       senderId: payload.sub,
       body: body.body,
       type: body.type,
