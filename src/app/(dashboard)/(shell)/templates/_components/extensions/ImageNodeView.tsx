@@ -3,25 +3,32 @@
 /**
  * ImageNodeView — React NodeView for the CustomImage extension.
  *
- * Provides:
- *  - Blue selection ring when the image node is selected
- *  - Right-edge and bottom-right resize handles (drag to resize width)
- *  - Alignment via NodeViewWrapper's justify-content (replaces CSS data-align approach)
+ * Layout modes
+ * ────────────
+ *  float='left'  → image floats left,  text wraps to the right
+ *  float='right' → image floats right, text wraps to the left
+ *  float=null    → block: full-width row, aligned left/center/right
+ *
+ * In both modes:
+ *  • Blue selection ring when the node is selected
+ *  • Right-edge resize handle (drag to adjust width, 80–700 px)
  */
 
 import { NodeViewWrapper } from '@tiptap/react';
 import type { NodeViewProps } from '@tiptap/react';
 import { useRef, useCallback } from 'react';
+import type { CSSProperties } from 'react';
 
 const MIN_WIDTH = 80;
 const MAX_WIDTH = 700;
 
 export function ImageNodeView({ node, updateAttributes, selected }: NodeViewProps) {
-  const { src, alt, align, width } = node.attrs as {
+  const { src, alt, align, width, float: imgFloat } = node.attrs as {
     src: string;
     alt: string | null;
     align: 'left' | 'center' | 'right' | null;
     width: number | null;
+    float: 'left' | 'right' | null;
   };
 
   const startRef = useRef<{ x: number; w: number } | null>(null);
@@ -30,14 +37,12 @@ export function ImageNodeView({ node, updateAttributes, selected }: NodeViewProp
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      const currentWidth = width ?? 400;
-      startRef.current = { x: e.clientX, w: currentWidth };
+      startRef.current = { x: e.clientX, w: width ?? 400 };
 
       const onMove = (ev: MouseEvent) => {
         if (!startRef.current) return;
-        const delta = ev.clientX - startRef.current.x;
         const newW = Math.round(
-          Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startRef.current.w + delta)),
+          Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startRef.current.w + (ev.clientX - startRef.current.x))),
         );
         updateAttributes({ width: newW });
       };
@@ -54,22 +59,38 @@ export function ImageNodeView({ node, updateAttributes, selected }: NodeViewProp
     [width, updateAttributes],
   );
 
-  const justifyContent =
-    align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
+  // ── Outer wrapper style ──────────────────────────────────────────────────────
+  let wrapperStyle: CSSProperties;
 
-  const imgWidth = width ? `${width}px` : undefined;
+  if (imgFloat === 'left' || imgFloat === 'right') {
+    // Float mode: image sits beside text
+    wrapperStyle = {
+      float: imgFloat,
+      margin: imgFloat === 'left' ? '4px 20px 8px 0' : '4px 0 8px 20px',
+      // width is controlled by the inner div; wrapper just needs display:block for float
+      display: 'block',
+      lineHeight: 0,
+    };
+  } else {
+    // Block mode: image is on its own line, aligned left/center/right
+    wrapperStyle = {
+      display: 'flex',
+      justifyContent: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
+      lineHeight: 0,
+      margin: '4px 0',
+    };
+  }
+
+  const innerWidth = width ? `${width}px` : imgFloat ? '200px' : undefined;
 
   return (
-    <NodeViewWrapper
-      style={{ display: 'flex', justifyContent, lineHeight: 0, margin: '4px 0' }}
-    >
+    <NodeViewWrapper style={wrapperStyle}>
       <div
         style={{
           position: 'relative',
           display: 'inline-block',
-          width: imgWidth,
+          width: innerWidth,
           maxWidth: '100%',
-          // Prevent browser native image drag from conflicting with resize
           userSelect: 'none',
         }}
       >

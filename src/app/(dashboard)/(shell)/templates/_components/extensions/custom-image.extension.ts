@@ -29,12 +29,20 @@ export const CustomImage = Image.extend({
           const v = (el as HTMLElement).getAttribute('data-width');
           return v ? Number(v) : null;
         },
-        // Emit both a data attribute (for round-trip storage) and an inline
-        // style (so the image actually renders at the right size immediately).
         renderHTML: (attrs) =>
           attrs.width
             ? { 'data-width': String(attrs.width), style: `width: ${attrs.width}px; max-width: 100%; height: auto;` }
             : { style: 'max-width: 100%; height: auto;' },
+      },
+
+      // float: how the image interacts with surrounding text.
+      // null / 'none' = block (takes full line, text above/below)
+      // 'left'        = floated left, text wraps to the right
+      // 'right'       = floated right, text wraps to the left
+      float: {
+        default: null,
+        parseHTML: (el) => (el as HTMLElement).getAttribute('data-float') ?? null,
+        renderHTML: (attrs) => (attrs.float ? { 'data-float': attrs.float } : {}),
       },
     };
   },
