@@ -74,30 +74,52 @@ export default function DocumentCanvas() {
       {/* Scrollable document background — Google Docs / Word style */}
       <div className="flex-1 overflow-y-auto" style={{ background: '#f0f2f5' }}>
         <div className="px-8 py-12">
-          {/* A4 paper */}
+          {/* A4 paper — clicking empty space focuses the editor */}
+          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
           <div
-            className="mx-auto bg-white"
+            className="mx-auto bg-white cursor-text"
             style={{
               maxWidth: 816,
               minHeight: 1056,
               padding: '96px 96px',
               boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
             }}
+            onClick={() => editor?.commands.focus()}
           >
-            <EditorContent editor={editor} />
+            <EditorContent editor={editor} className="doc-editor" />
           </div>
         </div>
 
         <style>{`
           .tiptap-drag-handle { display: flex; align-items: center; }
-          .tiptap { height: 100%; }
-          .tiptap .ProseMirror { outline: none; min-height: 600px; }
-          .tiptap table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
-          .tiptap td, .tiptap th { border: 1px solid #e2e8f0; padding: 8px 12px; vertical-align: top; }
-          .tiptap th { background: #f8fafc; font-weight: 600; font-size: 12px; }
-          .tiptap .selectedCell { background: #dbeafe; }
-          .tiptap .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: var(--accent,#6366f1); pointer-events: none; }
-          .tiptap p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #94a3b8; pointer-events: none; height: 0; display: block; }
+
+          /* doc-editor is the className passed to <EditorContent>.
+             In Tiptap v3 EditorContent renders a plain <div> wrapper;
+             inside it is the ProseMirror div directly (no .tiptap layer). */
+          .doc-editor { display: contents; }
+          .doc-editor .ProseMirror {
+            outline: none !important;
+            border: none !important;
+            min-height: 720px;
+            cursor: text;
+          }
+
+          /* Image alignment via data-align attribute */
+          .doc-editor .ProseMirror img { display: block; height: auto; }
+          .doc-editor .ProseMirror img[data-align="left"]   { margin-right: auto; }
+          .doc-editor .ProseMirror img[data-align="center"] { margin-left: auto; margin-right: auto; }
+          .doc-editor .ProseMirror img[data-align="right"]  { margin-left: auto; }
+
+          /* Tables */
+          .doc-editor .ProseMirror table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
+          .doc-editor .ProseMirror td,
+          .doc-editor .ProseMirror th   { border: 1px solid #e2e8f0; padding: 8px 12px; vertical-align: top; }
+          .doc-editor .ProseMirror th   { background: #f8fafc; font-weight: 600; font-size: 12px; }
+          .doc-editor .ProseMirror .selectedCell { background: #dbeafe; }
+          .doc-editor .ProseMirror .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: var(--accent,#6366f1); pointer-events: none; }
+
+          /* Empty paragraph placeholder */
+          .doc-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #94a3b8; pointer-events: none; height: 0; display: block; }
         `}</style>
       </div>
     </div>

@@ -14,7 +14,7 @@
 import { useEffect, useRef } from 'react';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
+import { CustomImage } from './extensions/custom-image.extension';
 import TextAlign from '@tiptap/extension-text-align';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
@@ -68,7 +68,7 @@ export default function TemplateEditor({ initialContent, editorRef }: Props) {
       StarterKit.configure({
         dropcursor: { color: 'var(--accent)', width: 2 },
       }),
-      Image.configure({ allowBase64: true }),
+      CustomImage.configure({ allowBase64: true }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       TextStyle,
       Color,
