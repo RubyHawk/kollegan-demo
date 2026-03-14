@@ -18,7 +18,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { cn } from '@shared/lib/utils';
-import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers';
+import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
