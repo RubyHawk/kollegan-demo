@@ -132,12 +132,18 @@ export default function DocumentCanvas() {
             margin: 12px 0 4px 0;
             line-height: 1.4;
           }
-          .doc-editor .ProseMirror ul,
-          .doc-editor .ProseMirror ol {
-            padding-left: 24px;
-            margin: 0 0 8px 0;
+          /* Lists — Tailwind preflight resets list-style to none; restore Word defaults */
+          .doc-editor .ProseMirror ul { list-style: disc;    padding-left: 28px; margin: 0 0 6px 0; }
+          .doc-editor .ProseMirror ol { list-style: decimal; padding-left: 28px; margin: 0 0 6px 0; }
+          .doc-editor .ProseMirror ul ul  { list-style: circle; margin: 0; }
+          .doc-editor .ProseMirror ul ul ul { list-style: square; margin: 0; }
+          .doc-editor .ProseMirror ol ol  { list-style: lower-alpha; margin: 0; }
+          .doc-editor .ProseMirror li {
+            margin-bottom: 2px;
+            font-family: Calibri, Carlito, Arial, sans-serif;
+            font-size: 13px; line-height: 1.6;
           }
-          .doc-editor .ProseMirror li { margin-bottom: 2px; }
+          .doc-editor .ProseMirror li > p { margin: 0; }
           .doc-editor .ProseMirror strong { font-weight: 700; }
           .doc-editor .ProseMirror em { font-style: italic; }
           .doc-editor .ProseMirror a { color: #0563c1; text-decoration: underline; }
