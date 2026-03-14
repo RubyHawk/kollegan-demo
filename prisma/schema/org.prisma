@@ -23,6 +23,7 @@ model Organization {
   users       User[]
   portal        Portal?
   offers        Offer[]
+  offerTemplates OfferTemplate[]
   conversations Conversation[]
   projects      Project[]
   announcements Announcement[]
