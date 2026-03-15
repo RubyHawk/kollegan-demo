@@ -55,8 +55,10 @@ export function isDocuSignConfigured(): boolean {
 function getConfig(): DocuSignConfig {
   const key = process.env.DOCUSIGN_PRIVATE_KEY;
   if (!key) throw new Error('DOCUSIGN_PRIVATE_KEY is not set');
-  // Decode base64 if needed
-  const pem = key.includes('-----BEGIN') ? key : Buffer.from(key, 'base64').toString('utf-8');
+  // Decode from base64 if not a raw PEM
+  let pem = key.includes('-----BEGIN') ? key : Buffer.from(key, 'base64').toString('utf-8');
+  // Normalize literal \n sequences → real newlines (common when storing PEM in .env)
+  pem = pem.replace(/\\n/g, '\n');
   return {
     integrationKey: process.env.DOCUSIGN_INTEGRATION_KEY!,
     userId:         process.env.DOCUSIGN_USER_ID!,
@@ -81,9 +83,10 @@ function buildJwt(cfg: DocuSignConfig): string {
     scope: 'signature impersonation',
   })).toString('base64url');
 
+  const privateKey = crypto.createPrivateKey(cfg.privateKeyPem);
   const sign = crypto.createSign('RSA-SHA256');
   sign.update(`${header}.${payload}`);
-  const sig = sign.sign(cfg.privateKeyPem, 'base64url');
+  const sig = sign.sign(privateKey, 'base64url');
 
   return `${header}.${payload}.${sig}`;
 }
