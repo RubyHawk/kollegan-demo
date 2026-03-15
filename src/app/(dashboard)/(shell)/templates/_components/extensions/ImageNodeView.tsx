@@ -19,16 +19,24 @@
  *    │                  │  relative to the A4 page canvas       │
  *    └─────────────────────────────────────────────────────────┘
  *
- * 4. Z-index layering
- *    The A4 page div uses `isolation:isolate` so z-index values on free images
- *    are relative to that stacking context. Negative z-index → behind text.
+ * 4. Layer management (free mode only)
+ *    Free images form a bounded stack tracked by their `zIndex` attribute.
+ *    Values are always ≥ 0.  The rank (1-based position in the sorted stack)
+ *    is computed live from the document on every render.
+ *
+ *    bringForward / sendBackward swap the z-index of THIS image with its
+ *    immediate neighbour in the stack via a single ProseMirror transaction
+ *    (two setNodeAttribute calls, atomically committed).
+ *
+ *    Buttons are disabled at the stack boundaries — no element can move
+ *    beyond the occupied range.
  *
  * 5. Free-mode drag-to-move
- *    mousedown on the image body starts a move drag.  Delta from the drag start
- *    is added to posX/posY.  The NodeViewWrapper's left/top style is mutated
- *    directly for zero-latency movement; updateAttributes fires once on mouseup.
- *    The A4 page ancestor is found via `data-a4-page` attribute so the image
- *    can be clamped to the page bounds.
+ *    mousedown on the image body starts a move drag.  Delta from the drag
+ *    start is added to posX/posY.  The NodeViewWrapper's left/top style is
+ *    mutated directly for zero-latency movement; updateAttributes fires once
+ *    on mouseup.  The A4 page ancestor is found via `data-a4-page` attribute
+ *    for bounds clamping.
  */
 
 import { NodeViewWrapper } from '@tiptap/react';
@@ -45,9 +53,11 @@ type ImgPosition = 'inline' | 'free';
 type ImgFloat    = 'left' | 'right' | null;
 type ImgAlign    = 'left' | 'center' | 'right' | null;
 
+interface StackItem { pos: number; zIndex: number }
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function ImageNodeView({ node, updateAttributes, selected, editor }: NodeViewProps) {
+export function ImageNodeView({ node, updateAttributes, selected, editor, getPos }: NodeViewProps) {
   const {
     src, alt,
     align,
@@ -81,6 +91,88 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
     latestX: number; latestY: number;
   } | null>(null);
 
+  // ── Layer management helpers ──────────────────────────────────────────────────
+
+  /** Sorted (asc) list of all free images currently in the document. */
+  const buildStack = (): StackItem[] => {
+    const items: StackItem[] = [];
+    editor?.state.doc.descendants((n, pos) => {
+      if (n.type.name === 'image' && n.attrs.position === 'free') {
+        items.push({ pos, zIndex: Math.max(0, n.attrs.zIndex ?? 0) });
+      }
+    });
+    return items.sort((a, b) => a.zIndex - b.zIndex);
+  };
+
+  /** Absolute document position of THIS node. */
+  const myDocPos = (): number | null => {
+    if (typeof getPos === 'function') {
+      const p = getPos();
+      return typeof p === 'number' ? p : null;
+    }
+    // Fallback: scan by reference
+    let found: number | null = null;
+    editor?.state.doc.descendants((n, pos) => {
+      if (found !== null) return false;
+      if (n === node) { found = pos; return false; }
+    });
+    return found;
+  };
+
+  // ── Layer rank — computed every render so it's always fresh ──────────────────
+  //
+  // Both images involved in a swap re-render (their zIndex attrs changed).
+  // Uninvolved images don't re-render, but their rank is unchanged anyway.
+
+  let layerRank  = 1;   // 1-based
+  let layerTotal = 1;
+  let atBottom   = true;
+  let atTop      = true;
+
+  if (isFree && editor) {
+    const stack = buildStack();
+    const mp    = myDocPos();
+    const idx   = mp !== null ? stack.findIndex(s => s.pos === mp) : -1;
+    layerTotal  = stack.length;
+    layerRank   = idx >= 0 ? idx + 1 : layerTotal;
+    atBottom    = idx <= 0;
+    atTop       = idx >= layerTotal - 1;
+  }
+
+  // ── Layer operations ──────────────────────────────────────────────────────────
+
+  const bringForward = useCallback(() => {
+    if (!editor || !isFree) return;
+    const stack = buildStack();
+    const mp    = myDocPos();
+    if (mp === null) return;
+    const idx = stack.findIndex(s => s.pos === mp);
+    if (idx === -1 || idx >= stack.length - 1) return; // already on top
+    const me    = stack[idx];
+    const above = stack[idx + 1];
+    const { tr } = editor.state;
+    tr.setNodeAttribute(me.pos,    'zIndex', above.zIndex);
+    tr.setNodeAttribute(above.pos, 'zIndex', me.zIndex);
+    editor.view.dispatch(tr);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, isFree, getPos, node]);
+
+  const sendBackward = useCallback(() => {
+    if (!editor || !isFree) return;
+    const stack = buildStack();
+    const mp    = myDocPos();
+    if (mp === null) return;
+    const idx = stack.findIndex(s => s.pos === mp);
+    if (idx <= 0) return; // already at bottom
+    const me    = stack[idx];
+    const below = stack[idx - 1];
+    const { tr } = editor.state;
+    tr.setNodeAttribute(me.pos,    'zIndex', below.zIndex);
+    tr.setNodeAttribute(below.pos, 'zIndex', me.zIndex);
+    editor.view.dispatch(tr);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, isFree, getPos, node]);
+
   // ── Resize (bottom-right handle) ────────────────────────────────────────────
 
   const onResizeStart = useCallback(
@@ -98,7 +190,6 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
         )));
         resizeRef.current.latestW = newW;
         containerRef.current.style.width = `${newW}px`;
-        // In free mode the NodeViewWrapper also needs to track width
         if (isFree) {
           const wrapper = containerRef.current.parentElement;
           if (wrapper) wrapper.style.width = `${newW}px`;
@@ -126,7 +217,6 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
       e.preventDefault();
       e.stopPropagation();
 
-      // Find the NodeViewWrapper (parent of containerRef)
       const wrapper = containerRef.current?.parentElement as HTMLElement | null;
       if (!wrapper) return;
 
@@ -136,7 +226,6 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
         latestX: posX, latestY: posY,
       };
 
-      // Find the A4 page div to compute clamping bounds
       let pageEl: HTMLElement | null = wrapper;
       while (pageEl && !pageEl.dataset.a4Page) pageEl = pageEl.parentElement;
       const pageW = pageEl?.offsetWidth  ?? 816;
@@ -152,7 +241,6 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
           moveRef.current.origY + (ev.clientY - moveRef.current.startY)));
         moveRef.current.latestX = newX;
         moveRef.current.latestY = newY;
-        // Direct DOM write — zero transactions while dragging
         wrapper.style.left = `${newX}px`;
         wrapper.style.top  = `${newY}px`;
       };
@@ -184,15 +272,12 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
   const setAlign = (a: ImgAlign) =>
     editor?.chain().focus().updateAttributes('image', { align: a }).run();
 
-  const setZIndex = (z: number) =>
-    editor?.chain().focus().updateAttributes('image', { zIndex: z }).run();
-
-  /** Switch to free mode — tries to compute the image's current visual position
-   *  relative to the A4 page so it lands where it was visually. */
+  /** Switch to free mode — snaps to the image's current visual position and
+   *  places it on top of any existing free images. */
   const toFree = () => {
     let px = posX, py = posY;
     if (containerRef.current) {
-      const imgRect  = containerRef.current.getBoundingClientRect();
+      const imgRect = containerRef.current.getBoundingClientRect();
       let el: HTMLElement | null = containerRef.current.parentElement;
       while (el && !el.dataset.a4Page) el = el.parentElement;
       if (el) {
@@ -201,8 +286,16 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
         py = Math.round(Math.max(0, imgRect.top  - pageRect.top + el.scrollTop));
       }
     }
+    // Place on top of existing free-image stack
+    let maxZ = -1;
+    editor?.state.doc.descendants((n) => {
+      if (n.type.name === 'image' && n.attrs.position === 'free') {
+        maxZ = Math.max(maxZ, n.attrs.zIndex ?? 0);
+      }
+    });
     editor?.chain().focus().updateAttributes('image', {
       position: 'free', float: null, posX: px, posY: py,
+      zIndex: Math.max(0, maxZ + 1),
     }).run();
   };
 
@@ -217,48 +310,35 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
 
   const imgW = width ?? (isFree ? 200 : undefined);
 
-  // z-index < 0 means "behind body text" in the final output.  In the editor we
-  // must clamp to 0 so the NodeViewWrapper stays above the ProseMirror content
-  // layer; otherwise clicks hit the text instead of the image and the image
-  // becomes completely unreachable.  The attribute value is preserved as-is so
-  // it round-trips correctly into the exported document.
-  const isBehindText   = (zIndex ?? 1) < 0;
-  const editorZIndex   = isFree ? Math.max(zIndex ?? 1, 0) : undefined;
-
-  // NodeViewWrapper style
   const wrapperStyle: CSSProperties = isFree
     ? {
-        position: 'absolute',
-        left:     posX,
-        top:      posY,
-        zIndex:   editorZIndex,
-        width:    imgW ? `${imgW}px` : '200px',
-        display:  'block',
+        position:   'absolute',
+        left:       posX,
+        top:        posY,
+        zIndex:     Math.max(0, zIndex ?? 0),
+        width:      imgW ? `${imgW}px` : '200px',
+        display:    'block',
         lineHeight: 0,
       }
     : isFloating
       ? {
-          float:  imgFloat as 'left' | 'right',
-          margin: imgFloat === 'left' ? '4px 20px 8px 0' : '4px 0 8px 20px',
-          display: 'block',
+          float:      imgFloat as 'left' | 'right',
+          margin:     imgFloat === 'left' ? '4px 20px 8px 0' : '4px 0 8px 20px',
+          display:    'block',
           lineHeight: 0,
         }
       : {
-          display: 'flex',
-          justifyContent:
-            align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
-          lineHeight: 0,
-          margin: '4px 0',
+          display:        'flex',
+          justifyContent: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
+          lineHeight:     0,
+          margin:         '4px 0',
         };
 
-  // Inner container width (managed by resize)
   const containerWidth = imgW ? `${imgW}px` : isFloating ? '200px' : undefined;
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
-    // In free mode: not draggable by ProseMirror (we handle moves ourselves).
-    // In inline mode: draggable so ProseMirror can reorder blocks via HTML5 DnD.
     <NodeViewWrapper draggable={!isFree} style={wrapperStyle}>
       <div
         ref={containerRef}
@@ -270,11 +350,10 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
           userSelect: 'none',
           cursor:     isFree && !selected ? 'move' : 'default',
         }}
-        // In free mode, drag the image by clicking anywhere on its body
         onMouseDown={isFree ? onMoveStart : undefined}
       >
 
-        {/* ── Floating toolbar — shown when selected ─────────────────────── */}
+        {/* ── Floating toolbar — shown when selected ──────────────────────── */}
         {selected && (
           <div
             contentEditable={false}
@@ -295,49 +374,28 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
               whiteSpace: 'nowrap',
             }}
           >
-            {/* Layout section label */}
             <span style={{ fontSize: 10, color: '#94a3b8', paddingRight: 2,
               fontFamily: 'system-ui,sans-serif', userSelect: 'none' }}>
               Layout
             </span>
 
-            {/* Inline block */}
-            <ImgBtn
-              active={!isFree && !imgFloat}
-              tooltip="Infogad i text — tar upp hela raden"
-              onClick={() => setFloat(null)}
-            >
+            <ImgBtn active={!isFree && !imgFloat} tooltip="Infogad i text — tar upp hela raden" onClick={() => setFloat(null)}>
               <BlockIcon />
             </ImgBtn>
 
-            {/* Float left */}
-            <ImgBtn
-              active={!isFree && imgFloat === 'left'}
-              tooltip="Text flödar till höger om bilden"
-              onClick={() => setFloat('left')}
-            >
+            <ImgBtn active={!isFree && imgFloat === 'left'} tooltip="Text flödar till höger om bilden" onClick={() => setFloat('left')}>
               <FloatLeftIcon />
             </ImgBtn>
 
-            {/* Float right */}
-            <ImgBtn
-              active={!isFree && imgFloat === 'right'}
-              tooltip="Text flödar till vänster om bilden"
-              onClick={() => setFloat('right')}
-            >
+            <ImgBtn active={!isFree && imgFloat === 'right'} tooltip="Text flödar till vänster om bilden" onClick={() => setFloat('right')}>
               <FloatRightIcon />
             </ImgBtn>
 
-            {/* Free position */}
-            <ImgBtn
-              active={isFree}
-              tooltip="Fri placering — absolut position, ignorerar textflöde"
-              onClick={isFree ? toInline : toFree}
-            >
+            <ImgBtn active={isFree} tooltip="Fri placering — absolut position, ignorerar textflöde" onClick={isFree ? toInline : toFree}>
               <FreeIcon />
             </ImgBtn>
 
-            {/* Alignment (inline block mode only) */}
+            {/* Alignment — inline block mode only */}
             {!isFree && !imgFloat && (
               <>
                 <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
@@ -353,43 +411,36 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
               </>
             )}
 
-            {/* Z-index stepper (always visible, essential in free mode) */}
+            {/* Layer controls — free mode only */}
+            {isFree && layerTotal > 1 && (
+              <>
+                <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
+
+                <span style={{ fontSize: 10, color: '#94a3b8', paddingRight: 1,
+                  fontFamily: 'system-ui,sans-serif', userSelect: 'none' }}>
+                  Lager
+                </span>
+
+                <ImgBtn active={false} disabled={atBottom} tooltip="Skicka bakåt" onClick={sendBackward}>
+                  <LayerDownIcon />
+                </ImgBtn>
+
+                <span style={{
+                  fontSize: 10, minWidth: 24, textAlign: 'center',
+                  fontFamily: 'system-ui,sans-serif',
+                  color: '#475569', fontWeight: 600,
+                }}>
+                  {layerRank}/{layerTotal}
+                </span>
+
+                <ImgBtn active={false} disabled={atTop} tooltip="Flytta framåt" onClick={bringForward}>
+                  <LayerUpIcon />
+                </ImgBtn>
+              </>
+            )}
+
             <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
 
-            <span style={{ fontSize: 10, color: '#94a3b8', paddingRight: 1,
-              fontFamily: 'system-ui,sans-serif', userSelect: 'none' }}>
-              Lager
-            </span>
-
-            <ImgBtn
-              active={false}
-              tooltip="Bakåt (minska z-index)"
-              onClick={() => setZIndex((zIndex ?? 1) - 1)}
-            >
-              <LayerDownIcon />
-            </ImgBtn>
-
-            <span
-              style={{
-                fontSize: 10, minWidth: 20, textAlign: 'center',
-                fontFamily: 'system-ui,sans-serif',
-                color: (zIndex ?? 1) < 0 ? '#ef4444' : '#475569',
-                fontWeight: 600,
-              }}
-            >
-              {zIndex ?? 1}
-            </span>
-
-            <ImgBtn
-              active={false}
-              tooltip="Framåt (öka z-index)"
-              onClick={() => setZIndex((zIndex ?? 1) + 1)}
-            >
-              <LayerUpIcon />
-            </ImgBtn>
-
-            {/* Delete */}
-            <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
             <ImgBtn active={false} danger tooltip="Ta bort bild" onClick={deleteImage}>
               <TrashIcon />
             </ImgBtn>
@@ -398,18 +449,16 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
 
         {/* Blue selection ring */}
         {selected && (
-          <div
-            style={{
-              position: 'absolute', inset: -2,
-              outline:  '2px solid #3b82f6',
-              borderRadius: 2,
-              pointerEvents: 'none',
-              zIndex: 1,
-            }}
-          />
+          <div style={{
+            position: 'absolute', inset: -2,
+            outline: '2px solid #3b82f6',
+            borderRadius: 2,
+            pointerEvents: 'none',
+            zIndex: 1,
+          }} />
         )}
 
-        {/* Free-mode position indicator */}
+        {/* Free-mode coordinate badge */}
         {selected && isFree && (
           <div
             contentEditable={false}
@@ -424,27 +473,8 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
               border: '1px solid #e2e8f0',
             }}
           >
-            {Math.round(posX)}, {Math.round(posY)} px · z {zIndex ?? 1}
-          </div>
-        )}
-
-        {/* "Behind text" badge — always visible when z < 0 so the image is
-            discoverable even when not selected. In the editor the image is
-            clamped to z=0 (stays clickable); the badge communicates that it
-            will render behind text in the exported document. */}
-        {isBehindText && (
-          <div
-            contentEditable={false}
-            style={{
-              position: 'absolute', top: 4, left: 4,
-              fontSize: 9, fontFamily: 'system-ui,sans-serif',
-              background: 'rgba(15,23,42,0.62)', color: '#e2e8f0',
-              padding: '2px 5px', borderRadius: 3,
-              pointerEvents: 'none', userSelect: 'none',
-              letterSpacing: '0.04em',
-            }}
-          >
-            BAKOM TEXT
+            {Math.round(posX)}, {Math.round(posY)} px
+            {layerTotal > 1 && ` · lager ${layerRank}/${layerTotal}`}
           </div>
         )}
 
@@ -478,10 +508,11 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
 // ── Toolbar button ─────────────────────────────────────────────────────────────
 
 function ImgBtn({
-  active, danger, tooltip, onClick, children,
+  active, danger, disabled, tooltip, onClick, children,
 }: {
   active: boolean;
   danger?: boolean;
+  disabled?: boolean;
   tooltip: string;
   onClick: () => void;
   children: React.ReactNode;
@@ -490,10 +521,11 @@ function ImgBtn({
     <button
       type="button"
       className="img-tb-btn"
+      disabled={disabled}
       data-active={active ? 'true' : undefined}
       data-danger={danger ? 'true' : undefined}
       data-tooltip={tooltip}
-      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
+      onMouseDown={(e) => { e.preventDefault(); if (!disabled) onClick(); }}
     >
       {children}
     </button>
@@ -538,14 +570,11 @@ function FloatRightIcon() {
   );
 }
 
-/** Free-position icon: a "pin" / move-arrow motif */
 function FreeIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-      {/* Dashed border rectangle */}
       <rect x="2" y="2" width="16" height="16" rx="1.5" fill="none"
         stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2"/>
-      {/* Four-way arrow at centre */}
       <path d="M10 5.5 7.5 8h5L10 5.5zm0 9 2.5-2.5h-5L10 14.5zm-4.5-4.5L8 12.5v-5L5.5 10zm9 0L12 7.5v5l2.5-2.5z"
         fillRule="evenodd"/>
     </svg>
