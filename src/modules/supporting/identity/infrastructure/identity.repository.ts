@@ -42,7 +42,7 @@ export const identityRepository = {
       data: {
         name: input.name,
         slug: input.slug,
-        plan: input.plan ?? 'demo',
+        plan: input.plan ?? 'starter',
       },
     });
     return toOrg(org);
@@ -58,7 +58,7 @@ export const identityRepository = {
   async upsertOrg(input: CreateOrgInput): Promise<Organization> {
     const org = await prisma.organization.upsert({
       where: { slug: input.slug },
-      create: { name: input.name, slug: input.slug, plan: input.plan ?? 'demo' },
+      create: { name: input.name, slug: input.slug, plan: input.plan ?? 'starter' },
       update: { name: input.name },
     });
     return toOrg(org);

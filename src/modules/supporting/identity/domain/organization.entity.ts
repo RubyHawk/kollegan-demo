@@ -6,7 +6,7 @@
  * by providing org context for every request and every domain event.
  */
 
-export type OrgPlan = 'demo' | 'starter' | 'growth' | 'enterprise';
+export type OrgPlan = 'dev' | 'demo' | 'starter' | 'growth' | 'enterprise';
 
 export interface Organization {
   id: string;
