@@ -52,7 +52,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       if (!payload) return null;
       return {
         id:        payload.sub,
-        email:     '',
+        email:     payload.sub,
         firstName: null,
         lastName:  null,
         userType:  payload.userType ?? 'staff',
