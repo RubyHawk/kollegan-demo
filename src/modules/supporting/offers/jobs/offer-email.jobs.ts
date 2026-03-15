@@ -20,10 +20,20 @@ import type {
 
 const TAG = 'OfferEmailJobs';
 
-function getResend(): Resend {
+function getResend(): Resend | null {
   const key = process.env.RESEND_API_KEY;
-  if (!key) throw new Error('RESEND_API_KEY is not set');
+  if (!key) return null;
   return new Resend(key);
+}
+
+async function sendEmail(opts: { from: string; to: string; subject: string; html: string }): Promise<void> {
+  const resend = getResend();
+  if (!resend) {
+    logger.info(TAG, `[DEV] Email not sent — RESEND_API_KEY missing. Would have sent:\n  To: ${opts.to}\n  Subject: ${opts.subject}\n  URL: ${opts.html.match(/href="([^"]+)"/)?.[1] ?? '(no link)'}`);
+    return;
+  }
+  const { error } = await resend.emails.send(opts);
+  if (error) throw new Error(`Resend error: ${JSON.stringify(error)}`);
 }
 
 function fromAddress(): string {
@@ -118,14 +128,7 @@ export function registerOfferEmailJobs(): void {
     'offer.email.send_to_recipient',
     async (job) => {
       const p      = job.payload;
-      const resend = getResend();
-      const { error } = await resend.emails.send({
-        from:    fromAddress(),
-        to:      p.recipientEmail,
-        subject: `Offert: ${p.offerTitle}`,
-        html:    sendToRecipientHtml(p),
-      });
-      if (error) throw new Error(`Resend error: ${JSON.stringify(error)}`);
+      await sendEmail({ from: fromAddress(), to: p.recipientEmail, subject: `Offert: ${p.offerTitle}`, html: sendToRecipientHtml(p) });
       logger.info(TAG, `Sent offer email to ${p.recipientEmail}`, { offerId: p.offerId });
     },
   );
@@ -146,18 +149,10 @@ export function registerOfferEmailJobs(): void {
         return;
       }
 
-      const resend  = getResend();
       const subject = p.event === 'signed'
         ? `Offert signerad: ${p.offerTitle}`
         : `Offert avvisad: ${p.offerTitle}`;
-
-      const { error } = await resend.emails.send({
-        from:    fromAddress(),
-        to:      user.email,
-        subject,
-        html:    notifyCreatorHtml(p),
-      });
-      if (error) throw new Error(`Resend error: ${JSON.stringify(error)}`);
+      await sendEmail({ from: fromAddress(), to: user.email, subject, html: notifyCreatorHtml(p) });
       logger.info(TAG, `Sent creator notification (${p.event}) to ${user.email}`, { offerId: p.offerId });
     },
   );
@@ -167,14 +162,7 @@ export function registerOfferEmailJobs(): void {
     'offer.email.reminder',
     async (job) => {
       const p      = job.payload;
-      const resend = getResend();
-      const { error } = await resend.emails.send({
-        from:    fromAddress(),
-        to:      p.recipientEmail,
-        subject: `Påminnelse: ${p.offerTitle}`,
-        html:    reminderHtml(p),
-      });
-      if (error) throw new Error(`Resend error: ${JSON.stringify(error)}`);
+      await sendEmail({ from: fromAddress(), to: p.recipientEmail, subject: `Påminnelse: ${p.offerTitle}`, html: reminderHtml(p) });
       logger.info(TAG, `Sent reminder email to ${p.recipientEmail}`, { offerId: p.offerId });
     },
   );
