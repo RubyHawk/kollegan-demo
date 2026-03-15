@@ -39,6 +39,13 @@ model Offer {
   totalExVat  Float @default(0)
   totalIncVat Float @default(0)
 
+  // Sequential offer number (assigned on first send, e.g. 2026-001)
+  offerNumber Int?
+
+  // Reminder tracking
+  reminderSentAt DateTime?
+  reminderCount  Int       @default(0)
+
   // Lifecycle timestamps
   sentAt     DateTime?
   viewedAt   DateTime?
@@ -64,6 +71,7 @@ model Offer {
   organization Organization   @relation(fields: [organizationId], references: [id])
   lineItems    OfferLineItem[]
 
+  @@unique([organizationId, offerNumber])
   @@index([organizationId, status])
   @@index([organizationId, createdAt])
   @@index([organizationId, recipientEmail])
@@ -85,4 +93,27 @@ model OfferLineItem {
 
   @@index([offerId])
   @@map("off_line_items")
+}
+
+// ─── Product / Service Library ────────────────────────────────────────────────
+// Reusable line-item presets for fast offer creation.
+
+model OfferProduct {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  unitPrice      Float
+  vatRate        Float     @default(0.25)  // 0.25 = 25%
+  unit           String?                   // "st", "tim", "mån", etc.
+  createdBy      String                    // User.id
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([deletedAt])
+  @@map("off_products")
 }

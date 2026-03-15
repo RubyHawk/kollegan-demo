@@ -22,6 +22,7 @@ import {
   duplicateOffer,
   expireStaleOffers,
   bulkSendOffers,
+  sendOfferReminder,
 } from '../../application/offers.service';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -133,7 +134,7 @@ const PatchBodySchema = z.object({
 });
 
 const PatchQuerySchema = z.object({
-  action: z.enum(['send', 'accept', 'decline', 'duplicate']).optional(),
+  action: z.enum(['send', 'accept', 'decline', 'duplicate', 'remind']).optional(),
 });
 
 export const handleUpdateOffer = createHandler(
@@ -157,6 +158,7 @@ export const handleUpdateOffer = createHandler(
     if (query.action === 'send') updated = await sendOffer(id, payload.orgId!);
     else if (query.action === 'accept') updated = await acceptOffer(id, payload.orgId!);
     else if (query.action === 'decline') updated = await declineOffer(id, payload.orgId!);
+    else if (query.action === 'remind') updated = await sendOfferReminder(id, payload.orgId!);
     else {
       updated = await updateOffer(id, payload.orgId!, {
         title: body.title, recipientName: body.recipientName,

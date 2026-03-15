@@ -34,10 +34,13 @@ export interface UpdateOfferInput {
   notes?:                string;
   validUntil?:           Date;
   status?:               string;
+  offerNumber?:          number;
   sentAt?:               Date;
   viewedAt?:             Date;
   acceptedAt?:           Date;
   declinedAt?:           Date;
+  reminderSentAt?:       Date;
+  reminderCount?:        number;
   generatedDocument?:    string;
   signatureImage?:       string;
   publicTokenExpiresAt?: Date;
@@ -79,6 +82,7 @@ function mapOffer(r: Record<string, unknown>): Offer {
     id:                   r.id as string,
     title:                r.title as string,
     status:               r.status as Offer['status'],
+    offerNumber:          (r.offerNumber as number | null) ?? undefined,
     recipientName:        r.recipientName as string,
     recipientEmail:       r.recipientEmail as string,
     recipientCompany:     (r.recipientCompany as string | null) ?? undefined,
@@ -90,6 +94,8 @@ function mapOffer(r: Record<string, unknown>): Offer {
     viewedAt:             r.viewedAt ? (r.viewedAt as Date).toISOString() : undefined,
     acceptedAt:           r.acceptedAt ? (r.acceptedAt as Date).toISOString() : undefined,
     declinedAt:           r.declinedAt ? (r.declinedAt as Date).toISOString() : undefined,
+    reminderSentAt:       r.reminderSentAt ? (r.reminderSentAt as Date).toISOString() : undefined,
+    reminderCount:        (r.reminderCount as number) ?? 0,
     leadId:               (r.leadId as string | null) ?? undefined,
     customerId:           (r.customerId as string | null) ?? undefined,
     totalExVat:           r.totalExVat as number,
@@ -131,10 +137,12 @@ const LINE_ITEM_SELECT = {
 
 const OFFER_SELECT = {
   id: true, organizationId: true, title: true, status: true,
+  offerNumber: true,
   recipientName: true, recipientEmail: true, recipientCompany: true,
   notes: true, validUntil: true, createdBy: true,
   totalExVat: true, totalIncVat: true,
   sentAt: true, viewedAt: true, acceptedAt: true, declinedAt: true,
+  reminderSentAt: true, reminderCount: true,
   leadId: true, customerId: true,
   templateId: true, generatedDocument: true, signatureImage: true,
   publicToken: true, publicTokenExpiresAt: true,
@@ -245,10 +253,13 @@ export const offersRepository = {
         ...(input.notes            !== undefined ? { notes: input.notes }                       : {}),
         ...(input.validUntil       !== undefined ? { validUntil: input.validUntil }             : {}),
         ...(input.status           !== undefined ? { status: input.status }                     : {}),
+        ...(input.offerNumber          !== undefined ? { offerNumber: input.offerNumber }                   : {}),
         ...(input.sentAt               !== undefined ? { sentAt: input.sentAt }                             : {}),
         ...(input.viewedAt             !== undefined ? { viewedAt: input.viewedAt }                         : {}),
         ...(input.acceptedAt           !== undefined ? { acceptedAt: input.acceptedAt }                     : {}),
         ...(input.declinedAt           !== undefined ? { declinedAt: input.declinedAt }                     : {}),
+        ...(input.reminderSentAt       !== undefined ? { reminderSentAt: input.reminderSentAt }             : {}),
+        ...(input.reminderCount        !== undefined ? { reminderCount: input.reminderCount }               : {}),
         ...(input.generatedDocument    !== undefined ? { generatedDocument: input.generatedDocument }       : {}),
         ...(input.signatureImage       !== undefined ? { signatureImage: input.signatureImage }             : {}),
         ...(input.publicTokenExpiresAt !== undefined ? { publicTokenExpiresAt: input.publicTokenExpiresAt } : {}),
@@ -301,6 +312,15 @@ export const offersRepository = {
     return result.count;
   },
 
+  // Returns the next sequential offer number for the given org
+  async getNextOfferNumber(orgId: string): Promise<number> {
+    const result = await prisma.offer.aggregate({
+      where: { organizationId: orgId, offerNumber: { not: null } },
+      _max:  { offerNumber: true },
+    });
+    return (result._max.offerNumber ?? 0) + 1;
+  },
+
   // Internal update by id only — used for public signing flow where orgId is not available
   async updateById(id: string, input: UpdateOfferInput): Promise<Offer | null> {
     const existing = await prisma.offer.findFirst({ where: { id, deletedAt: null } });
@@ -317,10 +337,13 @@ export const offersRepository = {
       data: {
         ...(input.title            !== undefined ? { title: input.title }                                   : {}),
         ...(input.status           !== undefined ? { status: input.status }                                 : {}),
+        ...(input.offerNumber      !== undefined ? { offerNumber: input.offerNumber }                       : {}),
         ...(input.sentAt           !== undefined ? { sentAt: input.sentAt }                                 : {}),
         ...(input.viewedAt         !== undefined ? { viewedAt: input.viewedAt }                             : {}),
         ...(input.acceptedAt       !== undefined ? { acceptedAt: input.acceptedAt }                         : {}),
         ...(input.declinedAt       !== undefined ? { declinedAt: input.declinedAt }                         : {}),
+        ...(input.reminderSentAt   !== undefined ? { reminderSentAt: input.reminderSentAt }                 : {}),
+        ...(input.reminderCount    !== undefined ? { reminderCount: input.reminderCount }                   : {}),
         ...(input.signatureImage   !== undefined ? { signatureImage: input.signatureImage }                 : {}),
         ...(input.generatedDocument !== undefined ? { generatedDocument: input.generatedDocument }          : {}),
         ...(input.publicTokenExpiresAt !== undefined ? { publicTokenExpiresAt: input.publicTokenExpiresAt } : {}),

@@ -5,6 +5,11 @@
  * with offer data. Called at offer-send time to create an immutable HTML snapshot
  * stored in Offer.generatedDocument.
  *
+ * Available template variables: {{offerNumber}}, {{offerTitle}}, {{quoteNumber}},
+ * {{createdDate}}, {{validUntil}}, {{recipientName}}, {{recipientEmail}},
+ * {{recipientCompany}}, {{totalExVat}}, {{totalIncVat}}, {{vatAmount}},
+ * {{notes}}, {{lineItems}}, {{signature}}.
+ *
  * TipTap JSON node types handled:
  *   doc, paragraph, heading (levels 1-3), bulletList, orderedList, listItem,
  *   text (with bold / italic / underline / color marks), hardBreak, horizontalRule,
@@ -225,10 +230,16 @@ export function generateDocument(templateContent: string, offer: Offer): string 
   const vatAmount = offer.totalIncVat - offer.totalExVat;
 
   // Build replacements map (used by both nodeToHtml variable nodes and legacy {{}} substitution)
+  // Format offer number as YYYY-NNN (e.g. 2026-001)
+  const offerNumberStr = offer.offerNumber
+    ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
+    : offer.id.slice(0, 8).toUpperCase();
+
   const replacements: Record<string, string> = {
     // Document metadata
     '{{offerTitle}}':       escapeHtml(offer.title),
-    '{{quoteNumber}}':      offer.id.slice(0, 8).toUpperCase(),
+    '{{offerNumber}}':      offerNumberStr,
+    '{{quoteNumber}}':      offerNumberStr, // alias for backwards compat
     '{{createdDate}}':      fmtDate(offer.createdAt),
     '{{validUntil}}':       fmtDate(offer.validUntil),
     // Recipient

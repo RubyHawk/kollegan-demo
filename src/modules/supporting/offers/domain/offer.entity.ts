@@ -29,6 +29,7 @@ export interface Offer {
   id: string;
   title: string;
   status: OfferStatus;
+  offerNumber?: number;          // sequential per org, assigned on first send
   recipientName: string;
   recipientEmail: string;
   recipientCompany?: string;
@@ -41,6 +42,8 @@ export interface Offer {
   viewedAt?: string;
   acceptedAt?: string;
   declinedAt?: string;
+  reminderSentAt?: string;       // ISO — last reminder timestamp
+  reminderCount: number;         // how many reminders have been sent
   leadId?: string;          // Link to Leads module
   customerId?: string;      // Link to CRM module
   totalExVat: number;
@@ -51,4 +54,18 @@ export interface Offer {
   signatureImage?: string;       // data URL of the recipient's e-signature
   publicToken: string;           // UUID used as the signing URL token
   publicTokenExpiresAt?: string; // ISO — 30 days after sentAt
+}
+
+// ─── Product / Service Library ────────────────────────────────────────────────
+
+export interface OfferProduct {
+  id: string;
+  organizationId: string;
+  name: string;
+  description?: string;
+  unitPrice: number;    // SEK, ex VAT
+  vatRate: number;      // 0.25 = 25%
+  unit?: string;        // "st", "tim", "mån", etc.
+  createdBy: string;
+  createdAt: string;
 }

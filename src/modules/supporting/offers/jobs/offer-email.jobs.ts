@@ -15,6 +15,7 @@ import { logger }     from '@platform/logging/logger';
 import type {
   SendToRecipientPayload,
   NotifyCreatorPayload,
+  ReminderPayload,
 } from '../application/offer-email';
 
 const TAG = 'OfferEmailJobs';
@@ -84,6 +85,26 @@ function notifyCreatorHtml(p: NotifyCreatorPayload): string {
     </div>`;
 }
 
+function reminderHtml(p: ReminderPayload): string {
+  return `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
+      <h2 style="margin:0 0 8px 0;font-size:22px;">Påminnelse om offert 📄</h2>
+      <p style="color:#64748b;margin:0 0 24px 0;">Hej ${p.recipientName},</p>
+      <p style="margin:0 0 16px 0;">Vi vill påminna om en offert som väntar på ditt svar: <strong>${p.offerTitle}</strong></p>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+        <tr><td style="padding:8px 0;color:#64748b;font-size:14px;">Totalt inkl. moms</td><td style="padding:8px 0;font-weight:700;text-align:right;">${fmtSEK(p.totalIncVat)}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b;font-size:14px;">Giltig till</td><td style="padding:8px 0;text-align:right;">${fmtDate(p.validUntil)}</td></tr>
+      </table>
+      <a href="${p.publicUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">
+        Visa &amp; signera offert →
+      </a>
+      <p style="margin:24px 0 0 0;font-size:12px;color:#94a3b8;">
+        Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/>
+        <a href="${p.publicUrl}" style="color:#94a3b8;">${p.publicUrl}</a>
+      </p>
+    </div>`;
+}
+
 // ─── Job registration ──────────────────────────────────────────────────────────
 
 let registered = false;
@@ -138,6 +159,23 @@ export function registerOfferEmailJobs(): void {
       });
       if (error) throw new Error(`Resend error: ${JSON.stringify(error)}`);
       logger.info(TAG, `Sent creator notification (${p.event}) to ${user.email}`, { offerId: p.offerId });
+    },
+  );
+
+  // ── Reminder email to recipient ─────────────────────────────────────────────
+  jobQueue.register<ReminderPayload>(
+    'offer.email.reminder',
+    async (job) => {
+      const p      = job.payload;
+      const resend = getResend();
+      const { error } = await resend.emails.send({
+        from:    fromAddress(),
+        to:      p.recipientEmail,
+        subject: `Påminnelse: ${p.offerTitle}`,
+        html:    reminderHtml(p),
+      });
+      if (error) throw new Error(`Resend error: ${JSON.stringify(error)}`);
+      logger.info(TAG, `Sent reminder email to ${p.recipientEmail}`, { offerId: p.offerId });
     },
   );
 
