@@ -268,7 +268,8 @@ export async function handleRegister(req: NextRequest): Promise<NextResponse> {
   const suffix    = Date.now().toString(36).slice(-4);
   const orgSlug   = `${localPart}-${suffix}`;
   const resolvedOrgName = orgName?.trim() || `${email.split('@')[0]}'s Organization`;
-  const org = await identityService.createOrg({ name: resolvedOrgName, slug: orgSlug, plan: 'demo' });
+  const plan = process.env.NODE_ENV === 'production' ? 'starter' : 'dev';
+  const org  = await identityService.createOrg({ name: resolvedOrgName, slug: orgSlug, plan });
 
   // 2. Create the user assigned to the new org.
   const passwordHash      = await bcrypt.hash(password, 12);
