@@ -10,7 +10,7 @@ import {
   OFFER_DECLINED,
 } from '../events/offer.events';
 import { enqueueOfferEmail, enqueueCreatorNotification, enqueueReminderEmail } from './offer-email';
-import { generateDocument } from './document-generator';
+import { generateDocument, generateFallbackDocument } from './document-generator';
 import { templatesRepository } from '../infrastructure/templates.repository';
 
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
@@ -76,12 +76,18 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   const existing = await offersRepository.findById(id, orgId);
   if (!existing) return null;
 
-  // Generate document snapshot if a template is linked and no document yet
+  // Generate document snapshot (always, if not already set)
   let generatedDocument: string | undefined;
-  if (existing.templateId && !existing.generatedDocument) {
-    const template = await templatesRepository.findById(existing.templateId, orgId);
-    if (template) {
-      generatedDocument = generateDocument(template.content, existing);
+  if (!existing.generatedDocument) {
+    if (existing.templateId) {
+      const template = await templatesRepository.findById(existing.templateId, orgId);
+      if (template) {
+        generatedDocument = generateDocument(template.content, existing);
+      }
+    }
+    // No template (or template not found) → generate a clean fallback document
+    if (!generatedDocument) {
+      generatedDocument = generateFallbackDocument(existing);
     }
   }
 

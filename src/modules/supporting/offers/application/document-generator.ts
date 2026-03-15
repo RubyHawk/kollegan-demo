@@ -219,6 +219,70 @@ const SIGNATURE_FIELD_HTML = `
 // ─── Main generator ────────────────────────────────────────────────────────────
 
 /**
+ * Generates a clean fallback HTML document from offer data alone (no template).
+ * Used when an offer is sent without a linked template.
+ */
+export function generateFallbackDocument(offer: Offer): string {
+  const vatAmount      = offer.totalIncVat - offer.totalExVat;
+  const offerNumberStr = offer.offerNumber
+    ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
+    : offer.id.slice(0, 8).toUpperCase();
+
+  return `<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>${escapeHtml(offer.title)}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; background: #fff; margin: 0; padding: 0; }
+    .doc-wrapper { max-width: 700px; margin: 40px auto; padding: 40px 48px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+    @media (max-width: 640px) { .doc-wrapper { margin: 0; padding: 24px 20px; border: none; border-radius: 0; } }
+    @media print { .doc-wrapper { margin: 0; padding: 0; border: none; } }
+  </style>
+</head>
+<body>
+  <div class="doc-wrapper">
+    <h1 style="font-size:1.8em;font-weight:700;margin:0 0 6px 0;">${escapeHtml(offer.title)}</h1>
+    <p style="color:#64748b;font-size:13px;margin:0 0 32px 0;">Offert ${escapeHtml(offerNumberStr)} · Giltig till ${fmtDate(offer.validUntil)}</p>
+
+    <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;margin:0 0 4px 0;">Till</p>
+    <p style="font-weight:600;margin:0 0 2px 0;">${escapeHtml(offer.recipientName)}</p>
+    ${offer.recipientCompany ? `<p style="color:#64748b;margin:0 0 2px 0;">${escapeHtml(offer.recipientCompany)}</p>` : ''}
+    <p style="color:#64748b;margin:0 0 32px 0;">${escapeHtml(offer.recipientEmail)}</p>
+
+    <hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 24px 0;"/>
+
+    ${buildLineItemsTable(offer.lineItems)}
+
+    <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+      <tr>
+        <td style="text-align:right;padding:4px 12px;font-size:13px;color:#64748b;">Totalt exkl. moms</td>
+        <td style="text-align:right;padding:4px 12px;font-size:13px;font-weight:600;white-space:nowrap;">${fmtSEK(offer.totalExVat)}</td>
+      </tr>
+      <tr>
+        <td style="text-align:right;padding:4px 12px;font-size:13px;color:#64748b;">Moms</td>
+        <td style="text-align:right;padding:4px 12px;font-size:13px;white-space:nowrap;">${fmtSEK(vatAmount)}</td>
+      </tr>
+      <tr>
+        <td style="text-align:right;padding:8px 12px;font-size:15px;font-weight:700;border-top:2px solid #e2e8f0;">Totalt inkl. moms</td>
+        <td style="text-align:right;padding:8px 12px;font-size:15px;font-weight:700;border-top:2px solid #e2e8f0;white-space:nowrap;">${fmtSEK(offer.totalIncVat)}</td>
+      </tr>
+    </table>
+
+    ${offer.notes ? `
+    <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;"/>
+    <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;margin:0 0 8px 0;">Anteckningar</p>
+    <p style="color:#334155;margin:0;">${escapeHtml(offer.notes)}</p>` : ''}
+
+    ${SIGNATURE_FIELD_HTML}
+  </div>
+</body>
+</html>`;
+}
+
+/**
  * Generates an HTML document by:
  * 1. Parsing the TipTap JSON template to HTML
  * 2. Replacing all {{placeholder}} variables with offer data
