@@ -84,6 +84,7 @@ const CreateBodySchema = z.object({
   validUntil: z.string().datetime(),
   leadId: z.string().optional(),
   customerId: z.string().optional(),
+  templateId: z.string().optional(),
   lineItems: z.array(LineItemSchema).min(1).max(100),
 });
 
@@ -98,7 +99,9 @@ export const handleCreateOffer = createHandler(
       title: body.title, recipientName: body.recipientName,
       recipientEmail: body.recipientEmail, recipientCompany: body.recipientCompany,
       notes: body.notes, validUntil: new Date(body.validUntil),
-      leadId: body.leadId, customerId: body.customerId, lineItems: body.lineItems,
+      leadId: body.leadId, customerId: body.customerId,
+      templateId: body.templateId,
+      lineItems: body.lineItems,
     }, payload.sub);
     return created(offer, `/api/offers/${offer.id}`);
   },

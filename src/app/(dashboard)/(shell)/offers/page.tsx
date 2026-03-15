@@ -193,12 +193,14 @@ export default function OffersPage() {
 
   // ── Load templates ────────────────────────────────────────────────────────────
   useEffect(() => {
-    void fetch('/api/templates').then(async (r) => {
-      if (r.ok) {
-        const j = await r.json() as { data: OfferTemplate[] };
-        setTemplates(j.data);
-      }
-    });
+    void fetch('/api/templates')
+      .then(async (r) => {
+        if (r.ok) {
+          const j = await r.json() as { data: OfferTemplate[] };
+          setTemplates(j.data);
+        }
+      })
+      .catch(() => { /* templates unavailable — dropdown stays empty */ });
   }, []);
 
   // ── Load products ─────────────────────────────────────────────────────────────
@@ -222,7 +224,8 @@ export default function OffersPage() {
       if (search.trim()) params.set('search', search.trim());
       const res = await fetch(`/api/offers?${params}`);
       if (!res.ok) throw new Error(`Fel ${res.status}`);
-      const json = await res.json() as { data: { offers: Offer[]; total: number } };
+      const json = await res.json().catch(() => null) as { data: { offers: Offer[]; total: number } } | null;
+      if (!json) throw new Error('Serverfel — försök igen.');
       setOffers(json.data.offers);
       setTotal(json.data.total);
     } catch (e) {

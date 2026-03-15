@@ -22,15 +22,23 @@ function mapTemplate(r: Record<string, unknown>): OfferTemplate {
     id:             r.id as string,
     organizationId: r.organizationId as string,
     name:           r.name as string,
-    content:        r.content as string,
+    content:        (r.content as string | null | undefined) ?? '',
     createdBy:      r.createdBy as string,
     createdAt:      (r.createdAt as Date).toISOString(),
     updatedAt:      (r.updatedAt as Date).toISOString(),
   };
 }
 
-const TEMPLATE_SELECT = {
+// Full select — used for get-by-id, create, update (includes the potentially large content)
+const TEMPLATE_SELECT_FULL = {
   id: true, organizationId: true, name: true, content: true,
+  createdBy: true, createdAt: true, updatedAt: true,
+};
+
+// List select — omits content so the list response stays small even when templates have
+// large base64-embedded images. The offers page dropdown only needs id + name.
+const TEMPLATE_SELECT_LIST = {
+  id: true, organizationId: true, name: true,
   createdBy: true, createdAt: true, updatedAt: true,
 };
 
@@ -46,7 +54,7 @@ export const templatesRepository = {
         content:        input.content,
         createdBy:      input.createdBy,
       },
-      select: TEMPLATE_SELECT,
+      select: TEMPLATE_SELECT_FULL,
     });
     return mapTemplate(row as unknown as Record<string, unknown>);
   },
@@ -54,7 +62,7 @@ export const templatesRepository = {
   async findById(id: string, orgId: string): Promise<OfferTemplate | null> {
     const row = await prisma.offerTemplate.findFirst({
       where: { id, organizationId: orgId, deletedAt: null },
-      select: TEMPLATE_SELECT,
+      select: TEMPLATE_SELECT_FULL,
     });
     if (!row) return null;
     return mapTemplate(row as unknown as Record<string, unknown>);
@@ -63,7 +71,7 @@ export const templatesRepository = {
   async list(orgId: string): Promise<OfferTemplate[]> {
     const rows = await prisma.offerTemplate.findMany({
       where:   { organizationId: orgId, deletedAt: null },
-      select:  TEMPLATE_SELECT,
+      select:  TEMPLATE_SELECT_LIST,
       orderBy: { createdAt: 'desc' },
     });
     return rows.map((r: unknown) => mapTemplate(r as Record<string, unknown>));
@@ -81,7 +89,7 @@ export const templatesRepository = {
         ...(input.name    !== undefined ? { name: input.name }       : {}),
         ...(input.content !== undefined ? { content: input.content } : {}),
       },
-      select: TEMPLATE_SELECT,
+      select: TEMPLATE_SELECT_FULL,
     });
     return mapTemplate(row as unknown as Record<string, unknown>);
   },
