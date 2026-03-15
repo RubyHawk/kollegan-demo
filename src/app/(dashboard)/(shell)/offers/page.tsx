@@ -33,6 +33,7 @@ interface Offer {
   id:                   string;
   title:                string;
   status:               OfferStatus;
+  offerNumber?:         number;
   recipientName:        string;
   recipientEmail:       string;
   recipientCompany?:    string;
@@ -46,6 +47,8 @@ interface Offer {
   viewedAt?:            string;
   acceptedAt?:          string;
   declinedAt?:          string;
+  reminderSentAt?:      string;
+  reminderCount:        number;
   leadId?:              string;
   templateId?:          string;
   generatedDocument?:   string;
@@ -56,6 +59,15 @@ interface Offer {
 interface OfferTemplate {
   id:   string;
   name: string;
+}
+
+interface OfferProduct {
+  id:          string;
+  name:        string;
+  description?: string;
+  unitPrice:   number;
+  vatRate:     number;
+  unit?:       string;
 }
 
 interface ContactResult {
@@ -133,6 +145,19 @@ function publicUrl(token: string): string {
   return `${base}/offers/public/${token}`;
 }
 
+function fmtOfferNumber(offer: Offer): string {
+  if (!offer.offerNumber) return offer.id.slice(0, 8).toUpperCase();
+  const year = new Date(offer.createdAt).getFullYear();
+  return `${year}-${String(offer.offerNumber).padStart(3, '0')}`;
+}
+
+/** Returns true if a reminder can be sent (no reminder yet, or cooldown of 3 days has passed) */
+function canRemind(offer: Offer): boolean {
+  if (offer.status !== 'sent' && offer.status !== 'viewed') return false;
+  if (!offer.reminderSentAt) return true;
+  return Date.now() - new Date(offer.reminderSentAt).getTime() >= 3 * 24 * 60 * 60 * 1000;
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function OffersPage() {
@@ -158,6 +183,14 @@ export default function OffersPage() {
   const [contactLoading, setContactLoading] = useState(false);
   const contactSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Product library state
+  const [products,        setProducts]        = useState<OfferProduct[]>([]);
+  const [productPickerRow, setProductPickerRow] = useState<number | null>(null);
+  const [productSearch,   setProductSearch]   = useState('');
+  const [showProducts,    setShowProducts]    = useState(false);
+  const [productForm,     setProductForm]     = useState({ name: '', description: '', unitPrice: 0, vatRate: 0.25, unit: '' });
+  const [savingProduct,   setSavingProduct]   = useState(false);
+
   // ── Load templates ────────────────────────────────────────────────────────────
   useEffect(() => {
     void fetch('/api/templates').then(async (r) => {
@@ -167,6 +200,17 @@ export default function OffersPage() {
       }
     });
   }, []);
+
+  // ── Load products ─────────────────────────────────────────────────────────────
+  const loadProducts = useCallback(async () => {
+    const r = await fetch('/api/offers/products');
+    if (r.ok) {
+      const j = await r.json() as { data: { products: OfferProduct[] } };
+      setProducts(j.data.products);
+    }
+  }, []);
+
+  useEffect(() => { void loadProducts(); }, [loadProducts]);
 
   // ── Load offers ───────────────────────────────────────────────────────────────
   const load = useCallback(async (silent = false) => {
@@ -232,8 +276,8 @@ export default function OffersPage() {
     }
   }, [form, load]);
 
-  // ── Status actions (send / accept / decline / duplicate) ─────────────────────
-  const doAction = useCallback(async (id: string, action: 'send' | 'accept' | 'decline' | 'duplicate') => {
+  // ── Status actions (send / accept / decline / duplicate / remind) ────────────
+  const doAction = useCallback(async (id: string, action: 'send' | 'accept' | 'decline' | 'duplicate' | 'remind') => {
     setActing(id);
     try {
       const res = await fetch(`/api/offers/${id}?action=${action}`, {
@@ -339,6 +383,54 @@ export default function OffersPage() {
     setContactResults([]);
   }, []);
 
+  // ── Product management ────────────────────────────────────────────────────────
+  const pickProduct = useCallback((idx: number, p: OfferProduct) => {
+    setForm((f) => {
+      const items = [...f.lineItems];
+      items[idx] = {
+        ...items[idx],
+        description: p.name + (p.description ? ` — ${p.description}` : ''),
+        unitPrice:   p.unitPrice,
+        vatRate:     p.vatRate,
+      };
+      return { ...f, lineItems: items };
+    });
+    setProductPickerRow(null);
+    setProductSearch('');
+  }, []);
+
+  const saveProduct = useCallback(async () => {
+    if (!productForm.name.trim() || productForm.unitPrice < 0) return;
+    setSavingProduct(true);
+    try {
+      const res = await fetch('/api/offers/products', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:        productForm.name,
+          description: productForm.description || undefined,
+          unitPrice:   productForm.unitPrice,
+          vatRate:     productForm.vatRate,
+          unit:        productForm.unit || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      setProductForm({ name: '', description: '', unitPrice: 0, vatRate: 0.25, unit: '' });
+      await loadProducts();
+    } catch { /* ignore */ } finally {
+      setSavingProduct(false);
+    }
+  }, [productForm, loadProducts]);
+
+  const removeProduct = useCallback(async (id: string) => {
+    if (!confirm('Ta bort produkt?')) return;
+    await fetch(`/api/offers/products/${id}`, { method: 'DELETE' });
+    await loadProducts();
+  }, [loadProducts]);
+
+  const filteredProducts = products.filter((p) =>
+    !productSearch.trim() || p.name.toLowerCase().includes(productSearch.toLowerCase())
+  );
+
   // ── Line item helpers ─────────────────────────────────────────────────────────
   function updateLine(idx: number, field: keyof LineItem, value: string | number) {
     setForm((f) => { const items = [...f.lineItems]; items[idx] = { ...items[idx], [field]: value }; return { ...f, lineItems: items }; });
@@ -359,15 +451,23 @@ export default function OffersPage() {
           <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)] mb-1">Offerter</h1>
           <p className="text-sm text-[var(--text-muted)]">Skapa, skicka och följ upp offerter direkt från plattformen.</p>
         </div>
-        <button
-          onClick={() => { setShowForm(true); setError(null); }}
-          className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity shrink-0"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Ny offert
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setShowProducts((v) => !v)}
+            className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors"
+          >
+            Produktbibliotek
+          </button>
+          <button
+            onClick={() => { setShowForm(true); setError(null); }}
+            className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Ny offert
+          </button>
+        </div>
       </div>
 
       {/* Error banner */}
@@ -394,6 +494,80 @@ export default function OffersPage() {
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
+        </div>
+      )}
+
+      {/* Product library panel */}
+      {showProducts && (
+        <div className="mb-8 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Produktbibliotek</h2>
+            <button onClick={() => setShowProducts(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div className="p-6 space-y-5">
+            {/* Add new product form */}
+            <div>
+              <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3">Lägg till produkt</p>
+              <div className="grid gap-3 sm:grid-cols-5">
+                <div className="sm:col-span-2">
+                  <input value={productForm.name} onChange={(e) => setProductForm((f) => ({ ...f, name: e.target.value }))}
+                    placeholder="Produktnamn *"
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                </div>
+                <div>
+                  <input type="number" min={0} value={productForm.unitPrice} onChange={(e) => setProductForm((f) => ({ ...f, unitPrice: parseFloat(e.target.value) || 0 }))}
+                    placeholder="Á-pris (SEK)"
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                </div>
+                <div>
+                  <select value={productForm.vatRate} onChange={(e) => setProductForm((f) => ({ ...f, vatRate: parseFloat(e.target.value) }))}
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
+                    <option value={0}>0% moms</option><option value={0.06}>6% moms</option>
+                    <option value={0.12}>12% moms</option><option value={0.25}>25% moms</option>
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <input value={productForm.unit} onChange={(e) => setProductForm((f) => ({ ...f, unit: e.target.value }))}
+                    placeholder="Enhet (tim, st…)"
+                    className="flex-1 min-w-0 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                  <button onClick={() => void saveProduct()} disabled={!productForm.name.trim() || savingProduct}
+                    className="shrink-0 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
+                    {savingProduct ? '…' : 'Spara'}
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* Existing products list */}
+            {products.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Dina produkter ({products.length})</p>
+                <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+                  {products.map((p, i) => (
+                    <div key={p.id} className={cn('flex items-center gap-3 px-4 py-3 text-sm', i > 0 && 'border-t border-[var(--border)]')}>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-[var(--text-primary)] truncate">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
+                        {p.description && <p className="text-xs text-[var(--text-muted)] truncate">{p.description}</p>}
+                      </div>
+                      <p className="text-sm font-semibold text-[var(--text-primary)] shrink-0">{fmtSEK(p.unitPrice)}</p>
+                      <p className="text-xs text-[var(--text-muted)] shrink-0">{Math.round(p.vatRate * 100)}% moms</p>
+                      <button onClick={() => void removeProduct(p.id)} className="text-[var(--text-muted)] hover:text-red-500 transition-colors shrink-0">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {products.length === 0 && (
+              <p className="text-xs text-[var(--text-muted)]">Inga produkter ännu. Lägg till en produkt ovan för att kunna välja den vid offertsskapande.</p>
+            )}
+          </div>
         </div>
       )}
 
@@ -540,6 +714,11 @@ export default function OffersPage() {
                   Lägg till rad
                 </button>
               </div>
+              {products.length > 0 && (
+                <p className="text-[10px] text-[var(--text-muted)] mb-2">
+                  Tips: Klicka på <span className="font-semibold">«</span> i beskrivningsfältet för att välja från produktbiblioteket.
+                </p>
+              )}
 
               <div className="rounded-xl border border-[var(--border)] overflow-hidden">
                 <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-[var(--surface-alt)] text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
@@ -556,9 +735,38 @@ export default function OffersPage() {
                   const lineExVat = item.quantity * item.unitPrice * disc;
                   return (
                     <div key={idx} className="grid grid-cols-12 gap-2 px-3 py-2 border-t border-[var(--border)] items-center">
-                      <div className="col-span-4">
-                        <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} placeholder="Tjänst eller produkt"
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                      <div className="col-span-4 relative">
+                        <div className="flex gap-1">
+                          <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} placeholder="Tjänst eller produkt"
+                            className="flex-1 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                          {products.length > 0 && (
+                            <button type="button" onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }}
+                              title="Välj från produktbibliotek"
+                              className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-1.5 py-1.5 text-[10px] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
+                              «
+                            </button>
+                          )}
+                        </div>
+                        {productPickerRow === idx && (
+                          <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
+                            <div className="p-2 border-b border-[var(--border)]">
+                              <input autoFocus value={productSearch} onChange={(e) => setProductSearch(e.target.value)}
+                                placeholder="Sök produkt…"
+                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                            </div>
+                            <div className="max-h-40 overflow-y-auto">
+                              {filteredProducts.length === 0 ? (
+                                <div className="px-3 py-2 text-xs text-[var(--text-muted)]">Inga produkter hittades</div>
+                              ) : filteredProducts.map((p) => (
+                                <button key={p.id} type="button" onClick={() => pickProduct(idx, p)}
+                                  className="w-full text-left px-3 py-2 hover:bg-[var(--surface-hover)] transition-colors border-b border-[var(--border)] last:border-0 text-xs">
+                                  <p className="font-medium text-[var(--text-primary)]">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
+                                  <p className="text-[var(--text-muted)]">{fmtSEK(p.unitPrice)} · moms {Math.round(p.vatRate * 100)}%</p>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div className="col-span-2">
                         <input type="number" min={0} step={0.1} value={item.quantity} onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
@@ -725,6 +933,7 @@ export default function OffersPage() {
                     </td>
                     <td className="px-4 py-3.5">
                       <p className="font-medium text-[var(--text-primary)]">{offer.title}</p>
+                      <p className="text-[10px] text-[var(--text-muted)] mt-0.5 font-mono">{fmtOfferNumber(offer)}</p>
                       {offer.templateId && <p className="text-[10px] text-[var(--accent)] mt-0.5">Mallbaserad</p>}
                       {offer.leadId    && <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Kopplad till lead</p>}
                     </td>
@@ -799,6 +1008,16 @@ export default function OffersPage() {
                         )}
                         {(offer.status === 'sent' || offer.status === 'viewed') && (
                           <>
+                            {canRemind(offer) && (
+                              <>
+                                <span className="text-[var(--border)]">·</span>
+                                <button type="button" onClick={() => void doAction(offer.id, 'remind')} disabled={acting === offer.id}
+                                  className="text-xs text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-40"
+                                  title="Skicka påminnelse till mottagaren">
+                                  Påminn{offer.reminderCount > 0 ? ` (${offer.reminderCount})` : ''}
+                                </button>
+                              </>
+                            )}
                             <span className="text-[var(--border)]">·</span>
                             <button type="button" onClick={() => void doAction(offer.id, 'accept')} disabled={acting === offer.id}
                               className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-40">

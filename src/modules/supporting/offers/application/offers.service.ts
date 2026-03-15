@@ -9,7 +9,7 @@ import {
   OFFER_ACCEPTED,
   OFFER_DECLINED,
 } from '../events/offer.events';
-import { enqueueOfferEmail, enqueueCreatorNotification } from './offer-email';
+import { enqueueOfferEmail, enqueueCreatorNotification, enqueueReminderEmail } from './offer-email';
 import { generateDocument } from './document-generator';
 import { templatesRepository } from '../infrastructure/templates.repository';
 
@@ -85,12 +85,19 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
     }
   }
 
+  // Assign sequential offer number on first send
+  let offerNumber = existing.offerNumber;
+  if (!offerNumber) {
+    offerNumber = await offersRepository.getNextOfferNumber(orgId);
+  }
+
   // Token expires 30 days from now
   const publicTokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
   const updated = await offersRepository.update(id, orgId, {
     status: 'sent',
     sentAt: new Date(),
+    offerNumber,
     ...(generatedDocument ? { generatedDocument } : {}),
     publicTokenExpiresAt,
   });
@@ -415,4 +422,37 @@ export async function duplicateOffer(
 
   logger.info(TAG, `Offer duplicated: ${id} → ${copy.id}`);
   return copy;
+}
+
+// ─── sendOfferReminder ────────────────────────────────────────────────────────
+
+export async function sendOfferReminder(id: string, orgId: string): Promise<Offer | null> {
+  const existing = await offersRepository.findById(id, orgId);
+  if (!existing) return null;
+
+  // Only remind on sent/viewed offers
+  if (existing.status !== 'sent' && existing.status !== 'viewed') return null;
+
+  // Enforce 3-day cooldown between reminders
+  if (existing.reminderSentAt) {
+    const cooldownMs = 3 * 24 * 60 * 60 * 1000;
+    if (new Date().getTime() - new Date(existing.reminderSentAt).getTime() < cooldownMs) {
+      return null; // too soon
+    }
+  }
+
+  const updated = await offersRepository.update(id, orgId, {
+    reminderSentAt: new Date(),
+    reminderCount:  (existing.reminderCount ?? 0) + 1,
+  });
+  if (!updated) return null;
+
+  const appUrl   = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const publicUrl = `${appUrl}/offers/public/${updated.publicToken}`;
+  await enqueueReminderEmail(updated, publicUrl).catch((err: unknown) =>
+    logger.warn(TAG, 'Failed to enqueue reminder email', { err })
+  );
+
+  logger.info(TAG, `Reminder sent for offer: ${id}`, { reminderCount: updated.reminderCount });
+  return updated;
 }

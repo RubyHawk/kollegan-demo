@@ -33,6 +33,17 @@ export interface NotifyCreatorPayload {
   comment?:     string;
 }
 
+export interface ReminderPayload {
+  offerId:        string;
+  offerTitle:     string;
+  recipientName:  string;
+  recipientEmail: string;
+  publicUrl:      string;
+  validUntil:     string;
+  totalIncVat:    number;
+  reminderCount:  number;
+}
+
 // ─── Enqueue helpers ───────────────────────────────────────────────────────────
 
 /**
@@ -50,6 +61,24 @@ export async function enqueueOfferEmail(offer: Offer, publicUrl: string): Promis
     totalIncVat:    offer.totalIncVat,
   };
   await jobQueue.add('offer.email.send_to_recipient', payload, { retries: 3 });
+}
+
+/**
+ * Enqueue reminder email to the offer recipient.
+ * Called from sendOfferReminder() after cooldown validation.
+ */
+export async function enqueueReminderEmail(offer: Offer, publicUrl: string): Promise<void> {
+  const payload: ReminderPayload = {
+    offerId:        offer.id,
+    offerTitle:     offer.title,
+    recipientName:  offer.recipientName,
+    recipientEmail: offer.recipientEmail,
+    publicUrl,
+    validUntil:     offer.validUntil,
+    totalIncVat:    offer.totalIncVat,
+    reminderCount:  offer.reminderCount ?? 1,
+  };
+  await jobQueue.add('offer.email.reminder', payload, { retries: 3 });
 }
 
 /**

@@ -33,8 +33,9 @@ export interface OfferTemplate {
 
 export const OFFER_PLACEHOLDERS = [
   // ── Document metadata ──
+  { key: '{{offerNumber}}',      label: 'Offertnummer (ÅÅÅÅ-NNN)' },
   { key: '{{offerTitle}}',       label: 'Offertrubrik' },
-  { key: '{{quoteNumber}}',      label: 'Offertnummer' },
+  { key: '{{quoteNumber}}',      label: 'Offertnummer (alias)' },
   { key: '{{createdDate}}',      label: 'Skapad datum' },
   { key: '{{validUntil}}',       label: 'Giltig till' },
   // ── Recipient ──
