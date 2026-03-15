@@ -7,6 +7,8 @@
  *
  * Predefined placeholders:
  *   {{offerTitle}}       → offer title
+ *   {{quoteNumber}}      → short reference number (first 8 chars of offer ID, uppercased)
+ *   {{createdDate}}      → offer creation date (sv-SE locale)
  *   {{recipientName}}    → recipient's full name
  *   {{recipientEmail}}   → recipient's email
  *   {{recipientCompany}} → recipient's company (empty string if not set)
@@ -30,14 +32,20 @@ export interface OfferTemplate {
 }
 
 export const OFFER_PLACEHOLDERS = [
+  // ── Document metadata ──
   { key: '{{offerTitle}}',       label: 'Offertrubrik' },
+  { key: '{{quoteNumber}}',      label: 'Offertnummer' },
+  { key: '{{createdDate}}',      label: 'Skapad datum' },
+  { key: '{{validUntil}}',       label: 'Giltig till' },
+  // ── Recipient ──
   { key: '{{recipientName}}',    label: 'Mottagarens namn' },
   { key: '{{recipientEmail}}',   label: 'Mottagarens e-post' },
   { key: '{{recipientCompany}}', label: 'Mottagarens företag' },
+  // ── Pricing ──
   { key: '{{totalExVat}}',       label: 'Summa ex. moms' },
   { key: '{{totalIncVat}}',      label: 'Summa inkl. moms' },
   { key: '{{vatAmount}}',        label: 'Momsbelopp' },
-  { key: '{{validUntil}}',       label: 'Giltig till' },
+  // ── Content ──
   { key: '{{notes}}',            label: 'Anteckningar' },
   { key: '{{lineItems}}',        label: 'Radartiklar (tabell)' },
   { key: '{{signature}}',        label: 'Signaturfält' },
