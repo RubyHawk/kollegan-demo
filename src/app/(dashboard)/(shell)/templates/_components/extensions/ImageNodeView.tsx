@@ -217,13 +217,21 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
 
   const imgW = width ?? (isFree ? 200 : undefined);
 
+  // z-index < 0 means "behind body text" in the final output.  In the editor we
+  // must clamp to 0 so the NodeViewWrapper stays above the ProseMirror content
+  // layer; otherwise clicks hit the text instead of the image and the image
+  // becomes completely unreachable.  The attribute value is preserved as-is so
+  // it round-trips correctly into the exported document.
+  const isBehindText   = (zIndex ?? 1) < 0;
+  const editorZIndex   = isFree ? Math.max(zIndex ?? 1, 0) : undefined;
+
   // NodeViewWrapper style
   const wrapperStyle: CSSProperties = isFree
     ? {
         position: 'absolute',
         left:     posX,
         top:      posY,
-        zIndex:   zIndex ?? 1,
+        zIndex:   editorZIndex,
         width:    imgW ? `${imgW}px` : '200px',
         display:  'block',
         lineHeight: 0,
@@ -417,6 +425,26 @@ export function ImageNodeView({ node, updateAttributes, selected, editor }: Node
             }}
           >
             {Math.round(posX)}, {Math.round(posY)} px · z {zIndex ?? 1}
+          </div>
+        )}
+
+        {/* "Behind text" badge — always visible when z < 0 so the image is
+            discoverable even when not selected. In the editor the image is
+            clamped to z=0 (stays clickable); the badge communicates that it
+            will render behind text in the exported document. */}
+        {isBehindText && (
+          <div
+            contentEditable={false}
+            style={{
+              position: 'absolute', top: 4, left: 4,
+              fontSize: 9, fontFamily: 'system-ui,sans-serif',
+              background: 'rgba(15,23,42,0.62)', color: '#e2e8f0',
+              padding: '2px 5px', borderRadius: 3,
+              pointerEvents: 'none', userSelect: 'none',
+              letterSpacing: '0.04em',
+            }}
+          >
+            BAKOM TEXT
           </div>
         )}
 
