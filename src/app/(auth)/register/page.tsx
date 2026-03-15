@@ -8,7 +8,6 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
-  const [done, setDone]         = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -27,7 +26,8 @@ export default function RegisterPage() {
         setError(data.error ?? 'Something went wrong.');
         return;
       }
-      setDone(true);
+      // Auth cookies are set by the server — go straight to the dashboard.
+      window.location.href = '/';
     } catch {
       setError('Network error. Please try again.');
     } finally {
@@ -41,15 +41,7 @@ export default function RegisterPage() {
         <div className="p-8 rounded-2xl border border-(--border) bg-(--surface-0) shadow-lg">
           <h1 className="text-lg font-semibold text-(--text-primary) mb-6">Create account</h1>
 
-          {done ? (
-            <div className="flex flex-col gap-4 text-sm">
-              <p className="text-green-500">Account created! You can now log in.</p>
-              <Link href="/login" className="w-full py-2 px-4 rounded-lg bg-(--accent) text-white text-sm font-medium hover:bg-(--accent-light) transition-colors text-center">
-                Go to login
-              </Link>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
                 <label className="block text-sm text-(--text-secondary) mb-1" htmlFor="email">Email</label>
                 <input
@@ -91,7 +83,6 @@ export default function RegisterPage() {
                 Already have an account? Log in
               </Link>
             </form>
-          )}
         </div>
       </div>
     </div>

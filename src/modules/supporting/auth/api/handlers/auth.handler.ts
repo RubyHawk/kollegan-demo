@@ -18,6 +18,7 @@ import type { LoginResult } from '../../application/auth.service';
 import { userRepository } from '../../infrastructure/user.repository';
 import { sessionRepository } from '../../infrastructure/session.repository';
 import { log, AUDIT_ACTIONS } from '@modules/supporting/audit';
+import { identityService } from '@modules/supporting/identity';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -232,11 +233,16 @@ export async function handleRefresh(req: NextRequest): Promise<NextResponse> {
   return res;
 }
 
-// ── Register (dev-only) ──────────────────────────────────────────────────────
+// ── Register ─────────────────────────────────────────────────────────────────
+//
+// Creates a new staff user, provisions a personal default organization,
+// assigns the 'admin' role, and auto-logs them in so they land in the app
+// with a valid session (at cookie) — no separate login step required.
 
 const RegisterSchema = z.object({
-  email: z.string().email(),
+  email:    z.string().email(),
   password: z.string().min(8),
+  orgName:  z.string().min(1).max(100).optional(),
 });
 
 export async function handleRegister(req: NextRequest): Promise<NextResponse> {
@@ -250,15 +256,53 @@ export async function handleRegister(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Email is required and password must be at least 8 characters.' }, { status: 400 });
   }
 
-  const { email, password } = parsed.data;
+  const { email, password, orgName } = parsed.data;
   const existing = await userRepository.findByEmail(email);
   if (existing) {
     return NextResponse.json({ error: 'An account with that email already exists.' }, { status: 409 });
   }
 
-  const passwordHash = await bcrypt.hash(password, 12);
-  const mfaGraceExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  const user = await userRepository.create({ email, passwordHash, userType: 'staff', organizationId: null, mfaGraceExpiresAt });
+  // 1. Provision a default organization for this user.
+  //    Slug is derived from the email local-part + a short time suffix for uniqueness.
+  const localPart = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 24);
+  const suffix    = Date.now().toString(36).slice(-4);
+  const orgSlug   = `${localPart}-${suffix}`;
+  const resolvedOrgName = orgName?.trim() || `${email.split('@')[0]}'s Organization`;
+  const org = await identityService.createOrg({ name: resolvedOrgName, slug: orgSlug, plan: 'demo' });
 
-  return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
+  // 2. Create the user assigned to the new org.
+  const passwordHash      = await bcrypt.hash(password, 12);
+  const mfaGraceExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const user = await userRepository.create({
+    email, passwordHash, userType: 'staff',
+    organizationId: org.id, mfaGraceExpiresAt,
+  });
+
+  // 3. Grant admin role so the user can manage templates, offers, etc.
+  const adminRole = await userRepository.findRoleByName('admin');
+  if (adminRole) {
+    await userRepository.assignRole(user.id, adminRole.id, org.id, user.id);
+  }
+
+  // 4. Auto-login: issue access + refresh tokens so the browser is immediately
+  //    authenticated — no separate /login call needed after registration.
+  let loginOutcome;
+  try {
+    loginOutcome = await login({ email, password });
+  } catch {
+    // If login fails for any reason, still return 201 — user can log in manually.
+    return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
+  }
+
+  if ('status' in loginOutcome) {
+    // MFA challenge (shouldn't happen for brand-new users within the grace window).
+    return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
+  }
+
+  const loginResult = loginOutcome as LoginResult;
+
+  const res = NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
+  res.cookies.set('token', loginResult.refreshToken, { ...sharedCookieOpts, maxAge: REFRESH_TTL_SEC_STAFF });
+  res.cookies.set('at',    loginResult.accessToken,  { ...sharedCookieOpts, maxAge: ACCESS_TTL_SEC });
+  return res;
 }

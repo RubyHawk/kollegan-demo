@@ -748,7 +748,7 @@ function FontSizeControl({ value, open, onToggle, onSelect, onApply, onFocusEdit
         }}
         onBlur={(e) => { const v = e.currentTarget.value; if (v && Number(v) >= 1) onApply(v); }}
         onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#0078d4'; }}
-        style={{ width: 38, height: 26, padding: '0 4px', fontSize: 12, border: open ? '1px solid #0078d4' : '1px solid #d2d0ce', borderRight: 'none', borderRadius: '2px 0 0 2px', fontFamily: 'Calibri, Arial, sans-serif', background: '#fff', color: '#1e1e1e', outline: 'none', textAlign: 'center' }}
+        style={{ width: 38, height: 26, padding: '0 4px', fontSize: 12, borderTop: open ? '1px solid #0078d4' : '1px solid #d2d0ce', borderBottom: open ? '1px solid #0078d4' : '1px solid #d2d0ce', borderLeft: open ? '1px solid #0078d4' : '1px solid #d2d0ce', borderRight: 'none', borderRadius: '2px 0 0 2px', fontFamily: 'Calibri, Arial, sans-serif', background: '#fff', color: '#1e1e1e', outline: 'none', textAlign: 'center' }}
       />
       <button type="button" onMouseDown={(e) => { e.preventDefault(); onToggle(); }} title="Vanliga storlekar"
         style={{ width: 18, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', background: open ? '#ddeeff' : '#f3f2f1', border: open ? '1px solid #0078d4' : '1px solid #d2d0ce', borderRadius: '0 2px 2px 0', cursor: 'pointer', padding: 0, flexShrink: 0 }}>
