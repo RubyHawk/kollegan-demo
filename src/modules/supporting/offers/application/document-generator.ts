@@ -245,12 +245,40 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     '{{signature}}':        SIGNATURE_FIELD_HTML,
   };
 
-  // Parse TipTap JSON
+  // ─── Parse TipTap JSON (supports TemplateDoc v2 and legacy v1) ──────────────
+
   let rootNode: TipTapNode;
+  let headerHtml = '';
+  let footerHtml = '';
+
   try {
-    rootNode = JSON.parse(templateContent) as TipTapNode;
+    const parsed = JSON.parse(templateContent) as Record<string, unknown>;
+
+    if (parsed._v === 2) {
+      // TemplateDoc v2 format: body + optional header/footer zones
+      rootNode = (parsed.body as TipTapNode) ?? { type: 'doc', content: [] };
+
+      const settings = (parsed.settings ?? {}) as {
+        headerEnabled?: boolean;
+        footerEnabled?: boolean;
+        differentFirstPage?: boolean;
+      };
+
+      if (settings.headerEnabled) {
+        const hdr = (parsed.header as { default?: TipTapNode } | undefined)?.default;
+        if (hdr) headerHtml = nodeToHtml(hdr, replacements);
+      }
+
+      if (settings.footerEnabled) {
+        const ftr = (parsed.footer as { default?: TipTapNode } | undefined)?.default;
+        if (ftr) footerHtml = nodeToHtml(ftr, replacements);
+      }
+    } else {
+      // Legacy v1: the whole JSON is the body doc
+      rootNode = parsed as unknown as TipTapNode;
+    }
   } catch {
-    // If content is not valid JSON, treat as plain text
+    // Unparseable — treat as plain text
     rootNode = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: templateContent }] }] };
   }
 
@@ -259,10 +287,20 @@ export function generateDocument(templateContent: string, offer: Offer): string 
   // Legacy {{}} substitution — keeps old plain-text templates working.
   // New templates use variable nodes (handled above in nodeToHtml).
   for (const [key, value] of Object.entries(replacements)) {
-    html = html.split(key).join(value);
+    html  = html.split(key).join(value);
+    if (headerHtml) headerHtml = headerHtml.split(key).join(value);
+    if (footerHtml) footerHtml = footerHtml.split(key).join(value);
   }
 
-  // Wrap in a styled document shell
+  // ─── Wrap in a styled document shell ────────────────────────────────────────
+
+  const headerSection = headerHtml
+    ? `<div class="doc-header">${headerHtml}</div><hr class="doc-divider"/>`
+    : '';
+  const footerSection = footerHtml
+    ? `<hr class="doc-divider"/><div class="doc-footer">${footerHtml}</div>`
+    : '';
+
   return `<!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -273,13 +311,22 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; background: #fff; margin: 0; padding: 0; }
     .doc-wrapper { max-width: 700px; margin: 40px auto; padding: 40px 48px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+    .doc-header { font-size: 12px; color: #64748b; margin-bottom: 0; }
+    .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
+    .doc-divider { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
     @media (max-width: 640px) { .doc-wrapper { margin: 0; padding: 24px 20px; border: none; border-radius: 0; } }
-    @media print { .doc-wrapper { margin: 0; padding: 0; border: none; } }
+    @media print {
+      .doc-wrapper { margin: 0; padding: 0; border: none; }
+      .doc-header { position: running(header); }
+      .doc-footer { position: running(footer); }
+    }
   </style>
 </head>
 <body>
   <div class="doc-wrapper">
+    ${headerSection}
     ${html}
+    ${footerSection}
   </div>
 </body>
 </html>`;

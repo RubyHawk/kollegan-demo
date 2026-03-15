@@ -1,10 +1,14 @@
 'use client';
 
 /**
- * DocumentCanvas — A4 canvas + text-formatting BubbleMenu.
+ * DocumentCanvas — A4 canvas + text-formatting BubbleMenu + header/footer zones.
+ *
+ * Header/footer zones are rendered above and below the body area when enabled.
+ * Each zone uses its own mini TipTap editor (from HFCtx) and shares the same
+ * horizontal margins as the body so text aligns.
  *
  * The image toolbar is rendered INSIDE ImageNodeView (driven by the `selected`
- * prop from ProseMirror — synchronous, zero timing issues).  There is NO image
+ * prop from ProseMirror — synchronous, zero timing issues). There is NO image
  * BubbleMenu here.
  *
  * Only the text-formatting BubbleMenu lives here.
@@ -12,13 +16,23 @@
 
 export { EditorCtx, useTemplateEditor } from './editor-context';
 
+import type { Editor } from '@tiptap/core';
 import { EditorContent } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import { NodeSelection } from '@tiptap/pm/state';
 import { useTemplateEditor } from './editor-context';
+import { useHeaderFooter } from './header-footer-context';
+
+// ── Horizontal margin shared by body, header, and footer (px) ─────────────────
+const H_PAD = 96;
 
 export default function DocumentCanvas() {
   const editor = useTemplateEditor();
+  const hf     = useHeaderFooter();
+
+  const { headerEnabled, footerEnabled, differentFirstPage } = hf?.settings ?? {
+    headerEnabled: false, footerEnabled: false, differentFirstPage: false,
+  };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -71,18 +85,63 @@ export default function DocumentCanvas() {
       {/* ── Scrollable document area ─────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto" style={{ background: '#e8e8e8' }}>
         <div className="px-8 py-10">
-          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
           <div
-            className="mx-auto bg-white cursor-text"
+            className="mx-auto bg-white"
             style={{
               maxWidth: 816,
               minHeight: 1056,
-              padding: '96px 96px',
               boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
             }}
-            onClick={() => editor?.commands.focus()}
           >
-            <EditorContent editor={editor} className="doc-editor" />
+
+            {/* ── Header zone ───────────────────────────────────────────────── */}
+            {headerEnabled && hf && (
+              <>
+                {differentFirstPage && (
+                  <HFZone
+                    label="Sidhuvud — Första sida"
+                    editor={hf.headerFirstPage}
+                    zone="header"
+                  />
+                )}
+                <HFZone
+                  label={differentFirstPage ? 'Sidhuvud — Övriga sidor' : 'Sidhuvud'}
+                  editor={hf.headerDefault}
+                  zone="header"
+                  isLast
+                />
+              </>
+            )}
+
+            {/* ── Body ──────────────────────────────────────────────────────── */}
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+            <div
+              className="cursor-text"
+              style={{ padding: `${H_PAD}px ${H_PAD}px` }}
+              onClick={() => editor?.commands.focus()}
+            >
+              <EditorContent editor={editor} className="doc-editor" />
+            </div>
+
+            {/* ── Footer zone ───────────────────────────────────────────────── */}
+            {footerEnabled && hf && (
+              <>
+                <HFZone
+                  label={differentFirstPage ? 'Sidfot — Övriga sidor' : 'Sidfot'}
+                  editor={hf.footerDefault}
+                  zone="footer"
+                  isFirst
+                />
+                {differentFirstPage && (
+                  <HFZone
+                    label="Sidfot — Första sida"
+                    editor={hf.footerFirstPage}
+                    zone="footer"
+                  />
+                )}
+              </>
+            )}
+
           </div>
         </div>
 
@@ -99,6 +158,9 @@ export default function DocumentCanvas() {
             line-height: 1.6;
             color: #1e1e1e;
           }
+          /* Header/footer mini-editors have a smaller minimum height */
+          .hf-editor .ProseMirror { min-height: 32px !important; }
+
           /* Clearfix so floated images never overflow the editor */
           .doc-editor .ProseMirror::after { content: ''; display: table; clear: both; }
 
@@ -146,11 +208,47 @@ export default function DocumentCanvas() {
           .doc-editor .ProseMirror li > p { margin: 0; }
           .doc-editor .ProseMirror strong { font-weight: 700; }
           .doc-editor .ProseMirror em { font-style: italic; }
+          .doc-editor .ProseMirror s { text-decoration: line-through; }
           .doc-editor .ProseMirror a { color: #0563c1; text-decoration: underline; }
           .doc-editor .ProseMirror hr {
             border: none;
             border-top: 1px solid #c8c8c8;
             margin: 16px 0;
+          }
+
+          /* Highlighted text */
+          .doc-editor .ProseMirror mark { border-radius: 2px; padding: 0 1px; }
+
+          /* Blockquote */
+          .doc-editor .ProseMirror blockquote {
+            border-left: 3px solid #4472C4;
+            margin: 12px 0;
+            padding: 8px 0 8px 16px;
+            color: #44546a;
+            font-style: italic;
+            background: #f8f9fc;
+          }
+          .doc-editor .ProseMirror blockquote p { margin: 0; }
+
+          /* Inline code */
+          .doc-editor .ProseMirror code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            background: #f1f3f4;
+            border: 1px solid #e1e3e6;
+            border-radius: 3px;
+            padding: 0.1em 0.35em;
+          }
+
+          /* Variable chips */
+          .doc-editor .ProseMirror .variable-chip {
+            display: inline-flex; align-items: center; gap: 3px;
+            background: #ede9fe; color: #5b21b6;
+            border: 1px solid #c4b5fd;
+            border-radius: 4px; padding: 1px 6px;
+            font-size: 12px; font-family: system-ui, sans-serif;
+            font-weight: 500; white-space: nowrap;
+            user-select: none; cursor: default;
           }
 
           /* ── Image NodeView toolbar buttons ──────────────────────────────── */
@@ -196,44 +294,6 @@ export default function DocumentCanvas() {
           .doc-editor .ProseMirror .selectedCell { background: #deecf9; }
           .doc-editor .ProseMirror .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: #0078d4; pointer-events: none; }
 
-          /* Strikethrough */
-          .doc-editor .ProseMirror s { text-decoration: line-through; }
-
-          /* Highlighted text (from extension-highlight) */
-          .doc-editor .ProseMirror mark { border-radius: 2px; padding: 0 1px; }
-
-          /* Blockquote */
-          .doc-editor .ProseMirror blockquote {
-            border-left: 3px solid #4472C4;
-            margin: 12px 0 12px 0;
-            padding: 8px 0 8px 16px;
-            color: #44546a;
-            font-style: italic;
-            background: #f8f9fc;
-          }
-          .doc-editor .ProseMirror blockquote p { margin: 0; }
-
-          /* Code inline */
-          .doc-editor .ProseMirror code {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
-            background: #f1f3f4;
-            border: 1px solid #e1e3e6;
-            border-radius: 3px;
-            padding: 0.1em 0.35em;
-          }
-
-          /* Variable chips */
-          .doc-editor .ProseMirror .variable-chip {
-            display: inline-flex; align-items: center; gap: 3px;
-            background: #ede9fe; color: #5b21b6;
-            border: 1px solid #c4b5fd;
-            border-radius: 4px; padding: 1px 6px;
-            font-size: 12px; font-family: system-ui, sans-serif;
-            font-weight: 500; white-space: nowrap;
-            user-select: none; cursor: default;
-          }
-
           /* Empty paragraph placeholder */
           .doc-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #a19f9d; pointer-events: none; height: 0; display: block; font-style: italic; }
 
@@ -245,6 +305,61 @@ export default function DocumentCanvas() {
             .doc-editor .ProseMirror h3 { font-size: 12pt; }
           }
         `}</style>
+      </div>
+    </div>
+  );
+}
+
+// ── Header/Footer Zone ────────────────────────────────────────────────────────
+
+function HFZone({
+  label, editor, zone, isFirst = false, isLast = false,
+}: {
+  label:    string;
+  editor:   Editor | null;
+  zone:     'header' | 'footer';
+  isFirst?: boolean;
+  isLast?:  boolean;
+}) {
+  const isHeader = zone === 'header';
+
+  return (
+    <div
+      style={{
+        borderTop:    isHeader && !isFirst ? '1px dashed #c0bfbd' : undefined,
+        borderBottom: isHeader && isLast   ? '2px solid #d2d0ce'
+                    : !isHeader && isFirst ? '2px solid #d2d0ce'
+                    : !isHeader            ? '1px dashed #c0bfbd'
+                    : undefined,
+        background: '#fafaf9',
+      }}
+    >
+      {/* Zone label */}
+      <div style={{
+        padding:    isHeader ? `8px ${H_PAD}px 2px` : `2px ${H_PAD}px 8px`,
+        order:      isHeader ? 0 : 1,
+        fontSize:   10,
+        fontWeight: 600,
+        color:      '#a19f9d',
+        fontFamily: 'Calibri, Arial, sans-serif',
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+        userSelect: 'none',
+      }}>
+        {label}
+      </div>
+
+      {/* Editable mini-editor */}
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+      <div
+        style={{
+          padding:   `4px ${H_PAD}px`,
+          minHeight: 48,
+          cursor:    'text',
+        }}
+        onClick={() => editor?.commands.focus()}
+      >
+        <EditorContent editor={editor} className="doc-editor hf-editor" />
       </div>
     </div>
   );
