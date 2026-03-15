@@ -32,7 +32,12 @@ async function sendEmail(opts: { from: string; to: string; subject: string; html
     logger.info(TAG, `[DEV] Email not sent — RESEND_API_KEY missing. Would have sent:\n  To: ${opts.to}\n  Subject: ${opts.subject}\n  URL: ${opts.html.match(/href="([^"]+)"/)?.[1] ?? '(no link)'}`);
     return;
   }
-  const { error } = await resend.emails.send(opts);
+  const testTo = process.env.RESEND_TEST_TO;
+  const effective = testTo ? { ...opts, to: testTo } : opts;
+  if (testTo) {
+    logger.info(TAG, `[DEV] Redirecting email to test address ${testTo} (original: ${opts.to})`);
+  }
+  const { error } = await resend.emails.send(effective);
   if (error) throw new Error(`Resend error: ${JSON.stringify(error)}`);
 }
 
