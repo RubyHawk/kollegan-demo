@@ -54,45 +54,152 @@ export default function BlockSettingsSidebar() {
 import type { Editor } from '@tiptap/core';
 
 function ImageSettings({ editor }: { editor: Editor }) {
-  const attrs  = editor.getAttributes('image');
-  const width  = (attrs.width as number | undefined) ?? 0;
-  const align  = (attrs.align as string | undefined) ?? 'left';
+  const attrs    = editor.getAttributes('image');
+  const width    = (attrs.width    as number | undefined) ?? 0;
+  const align    = (attrs.align    as string | undefined) ?? 'left';
+  const isFree   = (attrs.position as string | undefined) === 'free';
+  const zIndex   = (attrs.zIndex   as number | undefined) ?? 1;
+  const posX     = Math.round((attrs.posX as number | undefined) ?? 100);
+  const posY     = Math.round((attrs.posY as number | undefined) ?? 100);
+
+  const set = (patch: Record<string, unknown>) =>
+    editor.chain().focus().updateAttributes('image', patch).run();
+
+  const btnStyle = (active: boolean): React.CSSProperties => ({
+    flex: 1, padding: '4px 0', fontSize: 11, borderRadius: 2, cursor: 'pointer',
+    fontFamily: 'Calibri, Arial, sans-serif',
+    background: active ? '#ddeeff' : '#ffffff',
+    border:     active ? '1px solid #c0d8f0' : '1px solid #d2d0ce',
+    color:      active ? '#004e8c' : '#323130',
+  });
 
   return (
     <PanelWrap title="Bild">
-      <Label>Justering</Label>
+
+      {/* ── Position mode ────────────────────────────────────────────────── */}
+      <Label>Placering</Label>
       <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-        {(['left', 'center', 'right'] as const).map((a) => (
-          <button
-            key={a}
-            type="button"
-            onClick={() => editor.chain().focus().updateAttributes('image', { align: a }).run()}
-            style={{
-              flex: 1, padding: '4px 0', fontSize: 12, borderRadius: 2, cursor: 'pointer',
-              fontFamily: 'Calibri, Arial, sans-serif',
-              background: align === a ? '#ddeeff' : '#ffffff',
-              border: align === a ? '1px solid #c0d8f0' : '1px solid #d2d0ce',
-              color: align === a ? '#004e8c' : '#323130',
-            }}
-          >
-            {a === 'left' ? 'Vänster' : a === 'center' ? 'Center' : 'Höger'}
-          </button>
-        ))}
+        <button type="button" style={btnStyle(!isFree)}
+          onClick={() => set({ position: 'inline', float: null, align: 'left' })}>
+          Infogad
+        </button>
+        <button type="button" style={btnStyle(isFree)}
+          onClick={() => set({ position: 'free', float: null })}>
+          Fri
+        </button>
       </div>
+
+      {/* ── Alignment (inline / block mode only) ─────────────────────────── */}
+      {!isFree && (
+        <>
+          <Label>Justering</Label>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+            {(['left', 'center', 'right'] as const).map((a) => (
+              <button key={a} type="button" style={btnStyle(align === a)}
+                onClick={() => set({ align: a, float: null })}>
+                {a === 'left' ? 'Vänster' : a === 'center' ? 'Center' : 'Höger'}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ── Width ────────────────────────────────────────────────────────── */}
       <Label>Bredd (px)</Label>
       <input
-        type="range"
-        min={80}
-        max={700}
-        step={10}
+        type="range" min={80} max={700} step={10}
         value={width || 400}
-        onChange={(e) => editor.chain().focus().updateAttributes('image', { width: Number(e.target.value) }).run()}
+        onChange={(e) => set({ width: Number(e.target.value) })}
         style={{ width: '100%', accentColor: '#0078d4', marginBottom: 4 }}
       />
-      <p style={{ fontSize: 11, color: '#605e5c', textAlign: 'right', fontFamily: 'Calibri, Arial, sans-serif' }}>{width || 400}px</p>
+      <p style={{ fontSize: 11, color: '#605e5c', textAlign: 'right',
+        fontFamily: 'Calibri, Arial, sans-serif', marginBottom: 16 }}>
+        {width || 400} px
+      </p>
+
+      {/* ── Z-index (depth / layer) ───────────────────────────────────────── */}
+      <Label>Lager (z-index)</Label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+        <button type="button" onClick={() => set({ zIndex: zIndex - 1 })}
+          style={{ ...stepBtnStyle, color: '#c00000' }} title="Bakåt">−</button>
+        <input
+          type="number"
+          value={zIndex}
+          onChange={(e) => set({ zIndex: Number(e.target.value) })}
+          style={{
+            flex: 1, textAlign: 'center', fontSize: 12,
+            borderTop: '1px solid #d2d0ce', borderBottom: '1px solid #d2d0ce',
+            borderLeft: 'none', borderRight: 'none',
+            padding: '3px 0', fontFamily: 'Calibri, Arial, sans-serif',
+            color: zIndex < 0 ? '#c00000' : '#1e1e1e',
+            background: '#fff',
+          }}
+        />
+        <button type="button" onClick={() => set({ zIndex: zIndex + 1 })}
+          style={{ ...stepBtnStyle, color: '#0078d4' }} title="Framåt">+</button>
+      </div>
+      <p style={{ fontSize: 10, color: '#a19f9d', fontFamily: 'Calibri, Arial, sans-serif', marginBottom: 16 }}>
+        {zIndex < 0 ? 'Bakom text' : zIndex === 0 ? 'Under text' : zIndex === 1 ? 'Framför text' : `Framför text (+${zIndex - 1})`}
+      </p>
+
+      {/* ── Free position coordinates ─────────────────────────────────────── */}
+      {isFree && (
+        <>
+          <Label>Position (px från sidkant)</Label>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 10, color: '#605e5c', fontFamily: 'Calibri, Arial, sans-serif', marginBottom: 2 }}>X (vänster)</p>
+              <input
+                type="number" value={posX} min={0} step={1}
+                onChange={(e) => set({ posX: Number(e.target.value) })}
+                style={coordInputStyle}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 10, color: '#605e5c', fontFamily: 'Calibri, Arial, sans-serif', marginBottom: 2 }}>Y (topp)</p>
+              <input
+                type="number" value={posY} min={0} step={1}
+                onChange={(e) => set({ posY: Number(e.target.value) })}
+                style={coordInputStyle}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+            <button type="button" style={{ ...quickBtnStyle }}
+              onClick={() => set({ posX: 0, posY: 0 })} title="Placera i sidans övre vänstra hörn">
+              Hela sidan (0, 0)
+            </button>
+            <button type="button" style={{ ...quickBtnStyle }}
+              onClick={() => set({ posX: 96, posY: 96 })} title="Placera i textområdets övre vänstra hörn (96px marginal)">
+              Textyta
+            </button>
+          </div>
+        </>
+      )}
+
     </PanelWrap>
   );
 }
+
+const stepBtnStyle: React.CSSProperties = {
+  width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
+  border: '1px solid #d2d0ce', borderRadius: 2, background: '#fff',
+  fontSize: 16, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
+  fontFamily: 'system-ui, sans-serif',
+};
+
+const coordInputStyle: React.CSSProperties = {
+  width: '100%', padding: '3px 6px', fontSize: 12,
+  border: '1px solid #d2d0ce', borderRadius: 2,
+  fontFamily: 'Calibri, Arial, sans-serif',
+  color: '#1e1e1e', background: '#fff',
+};
+
+const quickBtnStyle: React.CSSProperties = {
+  flex: 1, padding: '3px 4px', fontSize: 10, borderRadius: 2, cursor: 'pointer',
+  border: '1px solid #d2d0ce', background: '#fff',
+  fontFamily: 'Calibri, Arial, sans-serif', color: '#323130',
+};
 
 // ── Table settings ──────────────────────────────────────────────────────────────
 
