@@ -8,6 +8,7 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { useTemplateEditor } from './editor-context';
+import { useHeaderFooter } from './header-footer-context';
 
 // ── Color utilities ──────────────────────────────────────────────────────────
 
@@ -98,6 +99,7 @@ const HEADING_DISPLAY_SIZES: Record<number, string> = { 1: '20', 2: '15', 3: '13
 
 export default function TopToolbar() {
   const editor  = useTemplateEditor();
+  const hf      = useHeaderFooter();
   const fileRef = useRef<HTMLInputElement>(null);
   const barRef  = useRef<HTMLDivElement>(null);
 
@@ -564,6 +566,39 @@ export default function TopToolbar() {
                 </span>
               </div>
             </RibbonGroup>
+
+            <GroupSep />
+
+            {/* Sidhuvud & Sidfot ──────────────────────────── */}
+            <RibbonGroup label="Sidhuvud & Sidfot">
+              <BigBtn
+                icon={<HeaderIcon />}
+                label="Sidhuvud"
+                active={hf?.settings.headerEnabled}
+                onClick={() => hf?.patchSettings({ headerEnabled: !hf.settings.headerEnabled })}
+                title={hf?.settings.headerEnabled ? 'Stäng av sidhuvud' : 'Aktivera sidhuvud'}
+              />
+              <BigBtn
+                icon={<FooterIcon />}
+                label="Sidfot"
+                active={hf?.settings.footerEnabled}
+                onClick={() => hf?.patchSettings({ footerEnabled: !hf.settings.footerEnabled })}
+                title={hf?.settings.footerEnabled ? 'Stäng av sidfot' : 'Aktivera sidfot'}
+              />
+              <InlineSep />
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+                <RBtn
+                  active={hf?.settings.differentFirstPage}
+                  disabled={!hf?.settings.headerEnabled && !hf?.settings.footerEnabled}
+                  onClick={() => hf?.patchSettings({ differentFirstPage: !hf.settings.differentFirstPage })}
+                  title="Unik sidhuvud/sidfot för första sidan"
+                  style={{ whiteSpace: 'nowrap', padding: '0 6px', fontSize: 11 }}
+                >
+                  <FirstPageIcon />
+                  <span style={{ marginLeft: 4 }}>Unik 1:a</span>
+                </RBtn>
+              </div>
+            </RibbonGroup>
           </>
         )}
       </div>
@@ -909,6 +944,10 @@ function IndentDecIcon()    { return <svg width="13" height="13" viewBox="0 0 24
 function IndentIncIcon()    { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="11" y2="12"/><line x1="21" y1="18" x2="11" y2="18"/><polyline points="3 9 7 12 3 15"/></svg>; }
 function LineSpacingIcon()  { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><polyline points="4 3 2 6 4 9"/><polyline points="4 15 2 18 4 21"/></svg>; }
 function ResetIcon()        { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>; }
+// Header/footer icons
+function HeaderIcon()       { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><rect x="3" y="3" width="18" height="6" rx="2" fill="currentColor" fillOpacity="0.15" stroke="none"/></svg>; }
+function FooterIcon()       { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="15" x2="21" y2="15"/><rect x="3" y="15" width="18" height="6" rx="2" fill="currentColor" fillOpacity="0.15" stroke="none"/></svg>; }
+function FirstPageIcon()    { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><path d="M9 6h1"/></svg>; }
 // Table operation icons
 function FillIcon()         { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><path d="M16.5 10.5c0 0-5 5.5-5 8a5 5 0 0 0 10 0c0-2.5-5-8-5-8z"/><path d="M4 4l7.07 7.07"/><path d="M2 6l4-4 3 3-2 2z"/></svg>; }
 function MergeIcon()        { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><rect x="2" y="4" width="9" height="16" rx="1"/><rect x="13" y="4" width="9" height="16" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><polyline points="12 9 15 12 12 15"/></svg>; }
