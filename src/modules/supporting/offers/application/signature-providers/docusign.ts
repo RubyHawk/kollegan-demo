@@ -52,13 +52,35 @@ export function isDocuSignConfigured(): boolean {
   );
 }
 
+/**
+ * Robustly normalizes a PEM key from any common storage format:
+ *  - base64-encoded full PEM
+ *  - raw PEM with literal \n sequences
+ *  - raw PEM with Windows \r\n line endings
+ *  - raw PEM with body on a single long line (no 64-char wrapping)
+ */
+function normalizePem(raw: string): string {
+  let s = raw.trim();
+  // If no PEM markers, assume the entire PEM is base64-encoded
+  if (!s.includes('-----')) {
+    s = Buffer.from(s, 'base64').toString('utf-8').trim();
+  }
+  // Convert literal escape sequences to real newlines
+  s = s.replace(/\\r\\n|\\n/g, '\n').replace(/\r\n|\r/g, '\n');
+  // Extract header, body, footer and re-wrap body at 64 chars (strict PEM)
+  const m = s.match(/(-----BEGIN [^-]+-----)([\s\S]*?)(-----END [^-]+-----)/);
+  if (!m) return s;
+  const header  = m[1].trim();
+  const body    = m[2].replace(/\s/g, ''); // strip all whitespace from body
+  const footer  = m[3].trim();
+  const wrapped = (body.match(/.{1,64}/g) ?? []).join('\n');
+  return `${header}\n${wrapped}\n${footer}\n`;
+}
+
 function getConfig(): DocuSignConfig {
   const key = process.env.DOCUSIGN_PRIVATE_KEY;
   if (!key) throw new Error('DOCUSIGN_PRIVATE_KEY is not set');
-  // Decode from base64 if not a raw PEM
-  let pem = key.includes('-----BEGIN') ? key : Buffer.from(key, 'base64').toString('utf-8');
-  // Normalize literal \n sequences → real newlines (common when storing PEM in .env)
-  pem = pem.replace(/\\n/g, '\n');
+  const pem = normalizePem(key);
   return {
     integrationKey: process.env.DOCUSIGN_INTEGRATION_KEY!,
     userId:         process.env.DOCUSIGN_USER_ID!,
