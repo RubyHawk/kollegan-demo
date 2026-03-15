@@ -87,10 +87,16 @@ export default function DocumentCanvas() {
         <div className="px-8 py-10">
           <div
             className="mx-auto bg-white"
+            data-a4-page="true"
             style={{
-              maxWidth: 816,
+              maxWidth:  816,
               minHeight: 1056,
               boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
+              // Free-positioned images are absolutely placed relative to this div.
+              // isolation:isolate creates a stacking context so their z-index values
+              // are self-contained (negative z-index → behind body text).
+              position:  'relative',
+              isolation: 'isolate',
             }}
           >
 
