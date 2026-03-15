@@ -62,10 +62,10 @@ export const CustomImage = Image.extend({
       },
 
       // ── Stacking order (z-index) ──────────────────────────────────────────
-      // Negative values place the image behind body text.
-      // Useful range: -5 (deep background) … 50 (always on top).
+      // Values are always ≥ 0.  The bounded stack is managed by the layer
+      // system: the bottom image is 0, each image above increments by 1.
       zIndex: {
-        default: 1,
+        default: 0,
         parseHTML: (el) => {
           const v = (el as HTMLElement).getAttribute('data-zindex');
           return v !== null && v !== '' ? Number(v) : 1;

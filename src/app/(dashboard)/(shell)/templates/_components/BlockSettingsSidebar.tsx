@@ -53,17 +53,82 @@ export default function BlockSettingsSidebar() {
 
 import type { Editor } from '@tiptap/core';
 
+// ── Layer helpers (mirrors ImageNodeView logic, operating from the sidebar) ───
+
+interface StackItem { pos: number; zIndex: number }
+
+function buildFreeImageStack(editor: Editor): StackItem[] {
+  const items: StackItem[] = [];
+  editor.state.doc.descendants((n, pos) => {
+    if (n.type.name === 'image' && n.attrs.position === 'free') {
+      items.push({ pos, zIndex: Math.max(0, n.attrs.zIndex ?? 0) });
+    }
+  });
+  return items.sort((a, b) => a.zIndex - b.zIndex);
+}
+
+/** Position of the currently selected image node, or null. */
+function getSelectedImagePos(editor: Editor): number | null {
+  const sel = editor.state.selection as { from: number; node?: { type: { name: string } } };
+  return sel.node?.type.name === 'image' ? sel.from : null;
+}
+
+function dispatchLayerSwap(editor: Editor, posA: number, posB: number): void {
+  const { doc, tr } = editor.state;
+  const nodeA = doc.nodeAt(posA);
+  const nodeB = doc.nodeAt(posB);
+  if (!nodeA || !nodeB) return;
+  tr.setNodeAttribute(posA, 'zIndex', nodeB.attrs.zIndex);
+  tr.setNodeAttribute(posB, 'zIndex', nodeA.attrs.zIndex);
+  editor.view.dispatch(tr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function ImageSettings({ editor }: { editor: Editor }) {
-  const attrs    = editor.getAttributes('image');
-  const width    = (attrs.width    as number | undefined) ?? 0;
-  const align    = (attrs.align    as string | undefined) ?? 'left';
-  const isFree   = (attrs.position as string | undefined) === 'free';
-  const zIndex   = (attrs.zIndex   as number | undefined) ?? 1;
-  const posX     = Math.round((attrs.posX as number | undefined) ?? 100);
-  const posY     = Math.round((attrs.posY as number | undefined) ?? 100);
+  const attrs  = editor.getAttributes('image');
+  const width  = (attrs.width    as number | undefined) ?? 0;
+  const align  = (attrs.align    as string | undefined) ?? 'left';
+  const isFree = (attrs.position as string | undefined) === 'free';
+  const posX   = Math.round((attrs.posX as number | undefined) ?? 100);
+  const posY   = Math.round((attrs.posY as number | undefined) ?? 100);
+
+  // Layer rank info — computed from the live document state
+  let layerRank  = 1;
+  let layerTotal = 1;
+  let atBottom   = true;
+  let atTop      = true;
+
+  if (isFree) {
+    const stack   = buildFreeImageStack(editor);
+    const myPos   = getSelectedImagePos(editor);
+    const myIdx   = myPos !== null ? stack.findIndex(s => s.pos === myPos) : -1;
+    layerTotal    = stack.length;
+    layerRank     = myIdx >= 0 ? myIdx + 1 : layerTotal;
+    atBottom      = myIdx <= 0;
+    atTop         = myIdx >= layerTotal - 1;
+  }
 
   const set = (patch: Record<string, unknown>) =>
     editor.chain().focus().updateAttributes('image', patch).run();
+
+  const bringForward = () => {
+    const stack = buildFreeImageStack(editor);
+    const myPos = getSelectedImagePos(editor);
+    if (myPos === null) return;
+    const idx = stack.findIndex(s => s.pos === myPos);
+    if (idx === -1 || idx >= stack.length - 1) return;
+    dispatchLayerSwap(editor, stack[idx].pos, stack[idx + 1].pos);
+  };
+
+  const sendBackward = () => {
+    const stack = buildFreeImageStack(editor);
+    const myPos = getSelectedImagePos(editor);
+    if (myPos === null) return;
+    const idx = stack.findIndex(s => s.pos === myPos);
+    if (idx <= 0) return;
+    dispatchLayerSwap(editor, stack[idx].pos, stack[idx - 1].pos);
+  };
 
   const btnStyle = (active: boolean): React.CSSProperties => ({
     flex: 1, padding: '4px 0', fontSize: 11, borderRadius: 2, cursor: 'pointer',
@@ -117,30 +182,45 @@ function ImageSettings({ editor }: { editor: Editor }) {
         {width || 400} px
       </p>
 
-      {/* ── Z-index (depth / layer) ───────────────────────────────────────── */}
-      <Label>Lager (z-index)</Label>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-        <button type="button" onClick={() => set({ zIndex: zIndex - 1 })}
-          style={{ ...stepBtnStyle, color: '#c00000' }} title="Bakåt">−</button>
-        <input
-          type="number"
-          value={zIndex}
-          onChange={(e) => set({ zIndex: Number(e.target.value) })}
-          style={{
-            flex: 1, textAlign: 'center', fontSize: 12,
-            borderTop: '1px solid #d2d0ce', borderBottom: '1px solid #d2d0ce',
-            borderLeft: 'none', borderRight: 'none',
-            padding: '3px 0', fontFamily: 'Calibri, Arial, sans-serif',
-            color: zIndex < 0 ? '#c00000' : '#1e1e1e',
-            background: '#fff',
-          }}
-        />
-        <button type="button" onClick={() => set({ zIndex: zIndex + 1 })}
-          style={{ ...stepBtnStyle, color: '#0078d4' }} title="Framåt">+</button>
-      </div>
-      <p style={{ fontSize: 10, color: '#a19f9d', fontFamily: 'Calibri, Arial, sans-serif', marginBottom: 16 }}>
-        {zIndex < 0 ? 'Bakom text' : zIndex === 0 ? 'Under text' : zIndex === 1 ? 'Framför text' : `Framför text (+${zIndex - 1})`}
-      </p>
+      {/* ── Layer order (free mode only, only when > 1 free image) ──────── */}
+      {isFree && layerTotal > 1 && (
+        <>
+          <Label>Lagerordning</Label>
+
+          {/* Rank display */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 8, marginBottom: 8,
+          }}>
+            <span style={{
+              fontSize: 11, fontFamily: 'Calibri, Arial, sans-serif',
+              color: '#323130',
+            }}>
+              Lager {layerRank} av {layerTotal}
+            </span>
+          </div>
+
+          {/* Forward / backward buttons */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+            <button
+              type="button"
+              disabled={atBottom}
+              onClick={sendBackward}
+              style={{ ...layerBtnStyle, opacity: atBottom ? 0.35 : 1, cursor: atBottom ? 'default' : 'pointer' }}
+            >
+              ↓ Bakåt
+            </button>
+            <button
+              type="button"
+              disabled={atTop}
+              onClick={bringForward}
+              style={{ ...layerBtnStyle, opacity: atTop ? 0.35 : 1, cursor: atTop ? 'default' : 'pointer' }}
+            >
+              ↑ Framåt
+            </button>
+          </div>
+        </>
+      )}
 
       {/* ── Free position coordinates ─────────────────────────────────────── */}
       {isFree && (
@@ -149,19 +229,15 @@ function ImageSettings({ editor }: { editor: Editor }) {
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 10, color: '#605e5c', fontFamily: 'Calibri, Arial, sans-serif', marginBottom: 2 }}>X (vänster)</p>
-              <input
-                type="number" value={posX} min={0} step={1}
+              <input type="number" value={posX} min={0} step={1}
                 onChange={(e) => set({ posX: Number(e.target.value) })}
-                style={coordInputStyle}
-              />
+                style={coordInputStyle} />
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 10, color: '#605e5c', fontFamily: 'Calibri, Arial, sans-serif', marginBottom: 2 }}>Y (topp)</p>
-              <input
-                type="number" value={posY} min={0} step={1}
+              <input type="number" value={posY} min={0} step={1}
                 onChange={(e) => set({ posY: Number(e.target.value) })}
-                style={coordInputStyle}
-              />
+                style={coordInputStyle} />
             </div>
           </div>
           <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
@@ -181,11 +257,10 @@ function ImageSettings({ editor }: { editor: Editor }) {
   );
 }
 
-const stepBtnStyle: React.CSSProperties = {
-  width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
-  border: '1px solid #d2d0ce', borderRadius: 2, background: '#fff',
-  fontSize: 16, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
-  fontFamily: 'system-ui, sans-serif',
+const layerBtnStyle: React.CSSProperties = {
+  flex: 1, padding: '4px 0', fontSize: 11, borderRadius: 2,
+  border: '1px solid #d2d0ce', background: '#fff',
+  fontFamily: 'Calibri, Arial, sans-serif', color: '#323130',
 };
 
 const coordInputStyle: React.CSSProperties = {

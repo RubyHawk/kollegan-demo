@@ -273,6 +273,8 @@ export default function DocumentCanvas() {
             outline: 1px solid #bfdbfe;
           }
           .img-tb-btn[data-danger="true"]:hover { background: #fef2f2; color: #ef4444; }
+          .img-tb-btn:disabled { opacity: 0.28; cursor: default; }
+          .img-tb-btn:disabled:hover { background: transparent; color: #64748b; }
 
           /* ── CSS tooltip (data-tooltip attr, shows on hover after 0.5s) ──── */
           .img-tb-btn::after {
