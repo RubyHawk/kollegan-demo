@@ -652,22 +652,32 @@ export default function OffersPage() {
             </div>
 
             {/* Template selector */}
-            {templates.length > 0 && (
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Offertmall</label>
-                <select
-                  value={form.templateId}
-                  onChange={(e) => setForm((f) => ({ ...f, templateId: e.target.value }))}
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                >
-                  <option value="">Ingen mall (fritext)</option>
-                  {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </select>
-                {form.templateId && (
-                  <p className="text-xs text-[var(--text-muted)] mt-1">Dokumentet genereras med vald mall när offerten skickas.</p>
-                )}
-              </div>
-            )}
+            <div>
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+                Offertmall
+                <a href="/templates" target="_blank" rel="noreferrer"
+                  className="ml-2 font-normal text-[var(--accent)] hover:underline">
+                  {templates.length === 0 ? 'Skapa mall →' : 'Hantera mallar →'}
+                </a>
+              </label>
+              <select
+                value={form.templateId}
+                onChange={(e) => setForm((f) => ({ ...f, templateId: e.target.value }))}
+                disabled={templates.length === 0}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors disabled:opacity-50"
+              >
+                <option value="">{templates.length === 0 ? 'Inga mallar skapade ännu' : 'Ingen mall (fritext)'}</option>
+                {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              {form.templateId && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  Dokumentet genereras med vald mall när offerten skickas.
+                </p>
+              )}
+            </div>
 
             {/* Basic info */}
             <div className="grid gap-4 sm:grid-cols-2">
