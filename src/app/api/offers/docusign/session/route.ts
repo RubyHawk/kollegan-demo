@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { offersRepository } from '@modules/supporting/offers/infrastructure/offers.repository';
 import { createSigningSession, isDocuSignConfigured } from '@modules/supporting/offers/application/signature-providers/docusign';
+import { generateFallbackDocument } from '@modules/supporting/offers/application/document-generator';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!isDocuSignConfigured()) {
@@ -35,9 +36,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!offer) {
     return NextResponse.json({ error: 'Offer not found' }, { status: 404 });
   }
-  if (!offer.generatedDocument) {
-    return NextResponse.json({ error: 'Offer has no generated document' }, { status: 422 });
-  }
   if (offer.status !== 'sent' && offer.status !== 'viewed') {
     return NextResponse.json({ error: 'Offer cannot be signed in its current status' }, { status: 409 });
   }
@@ -45,13 +43,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Offer link has expired' }, { status: 410 });
   }
 
+  // Use stored document or generate a fallback for offers sent before auto-generation was added
+  const document = offer.generatedDocument ?? generateFallbackDocument(offer);
+
   const appUrl    = process.env.NEXT_PUBLIC_APP_URL ?? '';
   const returnUrl = `${appUrl}/api/offers/docusign/return?token=${token}&envelopeId={{envelopeId}}`;
 
   const session = await createSigningSession(
     offer.id,
     offer.title,
-    offer.generatedDocument,
+    document,
     offer.recipientName,
     offer.recipientEmail,
     // DocuSign replaces {{envelopeId}} in the returnUrl with the actual envelope ID
