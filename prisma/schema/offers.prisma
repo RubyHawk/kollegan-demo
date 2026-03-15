@@ -59,6 +59,10 @@ model Offer {
   publicToken       String    @unique @default(uuid()) // used in public signing URL
   publicTokenExpiresAt DateTime?  // set to sentAt + 30 days
 
+  // Validity window — user picks from preset options (7/14/30/60/90 days)
+  // validUntil is recomputed as sentAt + validityDays when the offer is sent
+  validityDays      Int       @default(30)
+
   // Cross-domain links
   leadId     String?   // lead_leads.id
   customerId String?   // crm_customers.id

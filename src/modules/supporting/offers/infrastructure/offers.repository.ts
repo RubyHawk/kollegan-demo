@@ -11,6 +11,7 @@ export interface CreateOfferInput {
   recipientCompany?: string;
   notes?:           string;
   validUntil:       Date;
+  validityDays:     number;
   createdBy:        string;
   leadId?:          string;
   customerId?:      string;
@@ -33,6 +34,7 @@ export interface UpdateOfferInput {
   recipientCompany?:     string;
   notes?:                string;
   validUntil?:           Date;
+  validityDays?:         number;
   status?:               string;
   offerNumber?:          number;
   sentAt?:               Date;
@@ -88,6 +90,7 @@ function mapOffer(r: Record<string, unknown>): Offer {
     recipientCompany:     (r.recipientCompany as string | null) ?? undefined,
     notes:                (r.notes as string | null) ?? undefined,
     validUntil:           (r.validUntil as Date).toISOString(),
+    validityDays:         (r.validityDays as number) ?? 30,
     createdBy:            r.createdBy as string,
     createdAt:            (r.createdAt as Date).toISOString(),
     sentAt:               r.sentAt ? (r.sentAt as Date).toISOString() : undefined,
@@ -139,7 +142,7 @@ const OFFER_SELECT = {
   id: true, organizationId: true, title: true, status: true,
   offerNumber: true,
   recipientName: true, recipientEmail: true, recipientCompany: true,
-  notes: true, validUntil: true, createdBy: true,
+  notes: true, validUntil: true, validityDays: true, createdBy: true,
   totalExVat: true, totalIncVat: true,
   sentAt: true, viewedAt: true, acceptedAt: true, declinedAt: true,
   reminderSentAt: true, reminderCount: true,
@@ -166,6 +169,7 @@ export const offersRepository = {
         recipientCompany:  input.recipientCompany ?? null,
         notes:             input.notes ?? null,
         validUntil:        input.validUntil,
+        validityDays:      input.validityDays,
         createdBy:         input.createdBy,
         leadId:            input.leadId ?? null,
         customerId:        input.customerId ?? null,
@@ -252,6 +256,7 @@ export const offersRepository = {
         ...(input.recipientCompany !== undefined ? { recipientCompany: input.recipientCompany } : {}),
         ...(input.notes            !== undefined ? { notes: input.notes }                       : {}),
         ...(input.validUntil       !== undefined ? { validUntil: input.validUntil }             : {}),
+        ...(input.validityDays     !== undefined ? { validityDays: input.validityDays }         : {}),
         ...(input.status           !== undefined ? { status: input.status }                     : {}),
         ...(input.offerNumber          !== undefined ? { offerNumber: input.offerNumber }                   : {}),
         ...(input.sentAt               !== undefined ? { sentAt: input.sentAt }                             : {}),

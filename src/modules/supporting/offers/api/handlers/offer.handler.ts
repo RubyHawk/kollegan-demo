@@ -75,13 +75,17 @@ const LineItemSchema = z.object({
   sortOrder: z.number().int().default(0),
 });
 
+const VALID_VALIDITY_DAYS = [7, 14, 30, 60, 90] as const;
+
 const CreateBodySchema = z.object({
   title: z.string().min(1).max(300),
   recipientName: z.string().min(1).max(200),
   recipientEmail: z.string().email(),
   recipientCompany: z.string().max(200).optional(),
   notes: z.string().max(5000).optional(),
-  validUntil: z.string().datetime(),
+  validityDays: z.number().int().refine((v) => (VALID_VALIDITY_DAYS as readonly number[]).includes(v), {
+    message: `validityDays must be one of: ${VALID_VALIDITY_DAYS.join(', ')}`,
+  }),
   leadId: z.string().optional(),
   customerId: z.string().optional(),
   templateId: z.string().optional(),
@@ -93,12 +97,14 @@ export const handleCreateOffer = createHandler(
   async (ctx) => {
     const { body, req } = ctx as { body: z.infer<typeof CreateBodySchema>; req: NextRequest };
     const payload = await requireStaff(req);
+    // Placeholder validUntil for the draft; recalculated from sentAt at send time
+    const placeholderValidUntil = new Date(Date.now() + body.validityDays * 24 * 60 * 60 * 1000);
     const offer = await createOffer({
       organizationId: payload.orgId!,
       createdBy:      payload.sub,
       title: body.title, recipientName: body.recipientName,
       recipientEmail: body.recipientEmail, recipientCompany: body.recipientCompany,
-      notes: body.notes, validUntil: new Date(body.validUntil),
+      notes: body.notes, validUntil: placeholderValidUntil, validityDays: body.validityDays,
       leadId: body.leadId, customerId: body.customerId,
       templateId: body.templateId,
       lineItems: body.lineItems,
@@ -130,7 +136,9 @@ const PatchBodySchema = z.object({
   recipientEmail: z.string().email().optional(),
   recipientCompany: z.string().max(200).optional(),
   notes: z.string().max(5000).optional(),
-  validUntil: z.string().datetime().optional(),
+  validityDays: z.number().int().refine((v) => (VALID_VALIDITY_DAYS as readonly number[]).includes(v), {
+    message: `validityDays must be one of: ${VALID_VALIDITY_DAYS.join(', ')}`,
+  }).optional(),
   lineItems: z.array(LineItemSchema).min(1).max(100).optional(),
 });
 
@@ -161,10 +169,14 @@ export const handleUpdateOffer = createHandler(
     else if (query.action === 'decline') updated = await declineOffer(id, payload.orgId!);
     else if (query.action === 'remind') updated = await sendOfferReminder(id, payload.orgId!);
     else {
+      // If validityDays changed, recompute the placeholder validUntil for the draft
+      const newValidUntil = body.validityDays !== undefined
+        ? new Date(Date.now() + body.validityDays * 24 * 60 * 60 * 1000)
+        : undefined;
       updated = await updateOffer(id, payload.orgId!, {
         title: body.title, recipientName: body.recipientName,
         recipientEmail: body.recipientEmail, recipientCompany: body.recipientCompany,
-        notes: body.notes, validUntil: body.validUntil ? new Date(body.validUntil) : undefined,
+        notes: body.notes, validUntil: newValidUntil, validityDays: body.validityDays,
         lineItems: body.lineItems,
       });
     }

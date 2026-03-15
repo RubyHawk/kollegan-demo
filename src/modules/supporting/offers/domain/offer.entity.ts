@@ -35,7 +35,8 @@ export interface Offer {
   recipientCompany?: string;
   lineItems: OfferLineItem[];
   notes?: string;
-  validUntil: string;       // ISO date
+  validUntil: string;       // ISO date (recomputed as sentAt + validityDays when sent)
+  validityDays: number;     // preset window: 7 | 14 | 30 | 60 | 90
   createdBy: string;        // StaffUser.id
   createdAt: string;
   sentAt?: string;
