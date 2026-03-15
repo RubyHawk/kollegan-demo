@@ -6,7 +6,7 @@
  * Run via: prisma db seed  (or DATABASE_URL=... npx ts-node prisma/seed/compliance.seed.ts)
  */
 
-import { PrismaClient } from '../src/generated/prisma/client';
+import { PrismaClient } from '../../src/generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { ISO_27001_CONTROLS } from '../../src/modules/supporting/compliance/domain/control-registry';
 
