@@ -97,13 +97,17 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
     offerNumber = await offersRepository.getNextOfferNumber(orgId);
   }
 
-  // Token expires 30 days from now
-  const publicTokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const sentAt = new Date();
+  // Recompute validUntil from sentAt so the period is always measured from send time
+  const validUntil = new Date(sentAt.getTime() + (existing.validityDays ?? 30) * 24 * 60 * 60 * 1000);
+  // Public token expires at the same time as the offer validity
+  const publicTokenExpiresAt = validUntil;
 
   const updated = await offersRepository.update(id, orgId, {
     status: 'sent',
-    sentAt: new Date(),
+    sentAt,
     offerNumber,
+    validUntil,
     ...(generatedDocument ? { generatedDocument } : {}),
     publicTokenExpiresAt,
   });

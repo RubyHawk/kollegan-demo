@@ -108,10 +108,18 @@ const STATUS_LABEL: Record<OfferStatus, string> = {
 
 const EMPTY_LINE: LineItem = { description: '', quantity: 1, unitPrice: 0, vatRate: 0.25, discount: 0 };
 
+const VALIDITY_OPTIONS = [
+  { days: 7,  label: '7 dagar' },
+  { days: 14, label: '14 dagar' },
+  { days: 30, label: '30 dagar' },
+  { days: 60, label: '60 dagar' },
+  { days: 90, label: '90 dagar' },
+] as const;
+
 const EMPTY_FORM = {
   templateId: '', contactId: '',
   title: '', recipientName: '', recipientEmail: '', recipientCompany: '',
-  notes: '', validUntil: '', lineItems: [{ ...EMPTY_LINE }],
+  notes: '', validityDays: 30 as number, lineItems: [{ ...EMPTY_LINE }],
 };
 
 // ─── Utilities ─────────────────────────────────────────────────────────────────
@@ -239,8 +247,8 @@ export default function OffersPage() {
 
   // ── Create offer ──────────────────────────────────────────────────────────────
   const createOffer = useCallback(async () => {
-    if (!form.title || !form.recipientName || !form.recipientEmail || !form.validUntil) {
-      setError('Fyll i alla obligatoriska fält (titel, mottagare, e-post, giltig till).');
+    if (!form.title || !form.recipientName || !form.recipientEmail) {
+      setError('Fyll i alla obligatoriska fält (titel, mottagare, e-post).');
       return;
     }
     const validItems = form.lineItems.filter((i) => i.description.trim() && i.quantity > 0);
@@ -256,7 +264,7 @@ export default function OffersPage() {
         recipientEmail:   form.recipientEmail,
         recipientCompany: form.recipientCompany || undefined,
         notes:            form.notes || undefined,
-        validUntil:       new Date(form.validUntil).toISOString(),
+        validityDays:     form.validityDays,
         lineItems:        validItems,
       };
       if (form.templateId) body.templateId = form.templateId;
@@ -705,9 +713,24 @@ export default function OffersPage() {
                   className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Giltig till *</label>
-                <input type="date" value={form.validUntil} onChange={(e) => setForm((f) => ({ ...f, validUntil: e.target.value }))}
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Giltighetstid *</label>
+                <div className="flex gap-1.5 flex-wrap">
+                  {VALIDITY_OPTIONS.map(({ days, label }) => (
+                    <button
+                      key={days}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, validityDays: days }))}
+                      className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                        form.validityDays === days
+                          ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
+                          : 'border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[11px] text-[var(--text-muted)]">Räknas från skickad-datum</p>
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Anteckningar</label>
