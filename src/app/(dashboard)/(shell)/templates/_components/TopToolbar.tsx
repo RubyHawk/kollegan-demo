@@ -30,9 +30,30 @@ function shadeColor(hex: string, t: number) {
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const FONTS = [
-  'Calibri', 'Arial', 'Arial Black', 'Comic Sans MS',
-  'Courier New', 'Georgia', 'Impact', 'Palatino Linotype',
-  'Times New Roman', 'Trebuchet MS', 'Verdana',
+  // ── Modern sans-serif (enterprise & web favourites) ──
+  'Calibri',
+  'Arial',
+  'Helvetica Neue',
+  'Segoe UI',
+  'Inter',
+  'Open Sans',
+  'Roboto',
+  'Lato',
+  'DM Sans',
+  'Montserrat',
+  'Source Sans 3',
+  'Tahoma',
+  'Verdana',
+  // ── Classic serif ──
+  'Georgia',
+  'Garamond',
+  'Cambria',
+  'Times New Roman',
+  'Lora',
+  // ── Specialty ──
+  'Century Gothic',
+  'Trebuchet MS',
+  'Courier New',
 ];
 const FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72];
 

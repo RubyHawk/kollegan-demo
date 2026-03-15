@@ -196,8 +196,54 @@ export default function DocumentCanvas() {
           .doc-editor .ProseMirror .selectedCell { background: #deecf9; }
           .doc-editor .ProseMirror .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: #0078d4; pointer-events: none; }
 
+          /* Strikethrough */
+          .doc-editor .ProseMirror s { text-decoration: line-through; }
+
+          /* Highlighted text (from extension-highlight) */
+          .doc-editor .ProseMirror mark { border-radius: 2px; padding: 0 1px; }
+
+          /* Blockquote */
+          .doc-editor .ProseMirror blockquote {
+            border-left: 3px solid #4472C4;
+            margin: 12px 0 12px 0;
+            padding: 8px 0 8px 16px;
+            color: #44546a;
+            font-style: italic;
+            background: #f8f9fc;
+          }
+          .doc-editor .ProseMirror blockquote p { margin: 0; }
+
+          /* Code inline */
+          .doc-editor .ProseMirror code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            background: #f1f3f4;
+            border: 1px solid #e1e3e6;
+            border-radius: 3px;
+            padding: 0.1em 0.35em;
+          }
+
+          /* Variable chips */
+          .doc-editor .ProseMirror .variable-chip {
+            display: inline-flex; align-items: center; gap: 3px;
+            background: #ede9fe; color: #5b21b6;
+            border: 1px solid #c4b5fd;
+            border-radius: 4px; padding: 1px 6px;
+            font-size: 12px; font-family: system-ui, sans-serif;
+            font-weight: 500; white-space: nowrap;
+            user-select: none; cursor: default;
+          }
+
           /* Empty paragraph placeholder */
           .doc-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #a19f9d; pointer-events: none; height: 0; display: block; font-style: italic; }
+
+          /* Print / export layout */
+          @media print {
+            .doc-editor .ProseMirror { font-size: 11pt; }
+            .doc-editor .ProseMirror h1 { font-size: 18pt; }
+            .doc-editor .ProseMirror h2 { font-size: 14pt; }
+            .doc-editor .ProseMirror h3 { font-size: 12pt; }
+          }
         `}</style>
       </div>
     </div>

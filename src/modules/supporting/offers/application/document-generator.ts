@@ -226,14 +226,20 @@ export function generateDocument(templateContent: string, offer: Offer): string 
 
   // Build replacements map (used by both nodeToHtml variable nodes and legacy {{}} substitution)
   const replacements: Record<string, string> = {
+    // Document metadata
     '{{offerTitle}}':       escapeHtml(offer.title),
+    '{{quoteNumber}}':      offer.id.slice(0, 8).toUpperCase(),
+    '{{createdDate}}':      fmtDate(offer.createdAt),
+    '{{validUntil}}':       fmtDate(offer.validUntil),
+    // Recipient
     '{{recipientName}}':    escapeHtml(offer.recipientName),
     '{{recipientEmail}}':   escapeHtml(offer.recipientEmail),
     '{{recipientCompany}}': escapeHtml(offer.recipientCompany ?? ''),
+    // Pricing
     '{{totalExVat}}':       fmtSEK(offer.totalExVat),
     '{{totalIncVat}}':      fmtSEK(offer.totalIncVat),
     '{{vatAmount}}':        fmtSEK(vatAmount),
-    '{{validUntil}}':       fmtDate(offer.validUntil),
+    // Content
     '{{notes}}':            escapeHtml(offer.notes ?? ''),
     '{{lineItems}}':        buildLineItemsTable(offer.lineItems),
     '{{signature}}':        SIGNATURE_FIELD_HTML,

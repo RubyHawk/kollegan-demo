@@ -3,15 +3,183 @@
 /**
  * BlocksSidebar — left insert panel.
  *
- * Three sections:
- *   1. Block types (headings, paragraph, image, table, divider)
- *   2. Variables (inserts VariableNode chips)
- *   3. Signature fields (inserts SignatureBlockNode)
+ * Four sections:
+ *   1. Section presets (one-click enterprise content templates)
+ *   2. Block types (headings, paragraph, image, table, divider)
+ *   3. Variables (inserts VariableNode chips)
+ *   4. Signature fields (inserts SignatureBlockNode)
  */
 
 import { useRef } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
+
+// ── Section presets ────────────────────────────────────────────────────────────
+// Each preset is an array of TipTap JSON nodes inserted at the cursor position.
+
+type TipTapNode = Record<string, unknown>;
+
+const SECTION_PRESETS: Array<{
+  key:     string;
+  label:   string;
+  icon:    React.ReactNode;
+  tooltip: string;
+  nodes:   TipTapNode[];
+}> = [
+  {
+    key:     'offerHeader',
+    label:   'Offerthuvud',
+    tooltip: 'Titel, mottagare, offert nr och datum',
+    icon:    <LayoutIcon />,
+    nodes: [
+      {
+        type: 'heading', attrs: { level: 1 },
+        content: [{ type: 'variable', attrs: { key: 'offerTitle', label: 'Offertrubrik' } }],
+      },
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Till: ', marks: [{ type: 'bold' }] },
+          { type: 'variable', attrs: { key: 'recipientName',    label: 'Mottagarens namn' } },
+          { type: 'text', text: ' · ' },
+          { type: 'variable', attrs: { key: 'recipientCompany', label: 'Mottagarens företag' } },
+        ],
+      },
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Offert nr: ', marks: [{ type: 'bold' }] },
+          { type: 'variable', attrs: { key: 'quoteNumber',  label: 'Offertnummer' } },
+          { type: 'text', text: '   |   Datum: ', marks: [{ type: 'bold' }] },
+          { type: 'variable', attrs: { key: 'createdDate',  label: 'Skapad datum' } },
+          { type: 'text', text: '   |   Giltig till: ', marks: [{ type: 'bold' }] },
+          { type: 'variable', attrs: { key: 'validUntil',   label: 'Giltig till' } },
+        ],
+      },
+      { type: 'horizontalRule' },
+    ],
+  },
+  {
+    key:     'pricingSection',
+    label:   'Prissättning',
+    tooltip: 'Radartiklar, moms och totalsumma',
+    icon:    <PriceTagIcon />,
+    nodes: [
+      {
+        type: 'heading', attrs: { level: 2 },
+        content: [{ type: 'text', text: 'Prissättning' }],
+      },
+      {
+        type: 'paragraph',
+        content: [{ type: 'variable', attrs: { key: 'lineItems', label: 'Radartiklar' } }],
+      },
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Summa ex. moms: ', marks: [{ type: 'bold' }] },
+          { type: 'variable', attrs: { key: 'totalExVat', label: 'Summa ex. moms' } },
+        ],
+      },
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Moms: ', marks: [{ type: 'bold' }] },
+          { type: 'variable', attrs: { key: 'vatAmount', label: 'Momsbelopp' } },
+        ],
+      },
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Totalt inkl. moms: ', marks: [{ type: 'bold' }] },
+          { type: 'variable', attrs: { key: 'totalIncVat', label: 'Summa inkl. moms' } },
+        ],
+      },
+      { type: 'horizontalRule' },
+    ],
+  },
+  {
+    key:     'termsSection',
+    label:   'Betalningsvillkor',
+    tooltip: 'Standard betalnings- och leveransvillkor',
+    icon:    <ClipboardIcon />,
+    nodes: [
+      {
+        type: 'heading', attrs: { level: 2 },
+        content: [{ type: 'text', text: 'Betalnings- och leveransvillkor' }],
+      },
+      {
+        type: 'bulletList',
+        content: [
+          {
+            type: 'listItem',
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Betalningsvillkor: 30 dagar netto från fakturadatum.' }] }],
+          },
+          {
+            type: 'listItem',
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Dröjsmålsränta: 8 % per år vid sen betalning.' }] }],
+          },
+          {
+            type: 'listItem',
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Leverans: Enligt separat överenskommelse.' }] }],
+          },
+          {
+            type: 'listItem',
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Priser anges i SEK exklusive moms (25 %).' }] }],
+          },
+        ],
+      },
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Offerten är giltig till och med ' },
+          { type: 'variable', attrs: { key: 'validUntil', label: 'Giltig till' } },
+          { type: 'text', text: '. Godkännande efter detta datum kräver ny offert.' },
+        ],
+      },
+      { type: 'horizontalRule' },
+    ],
+  },
+  {
+    key:     'signatureSection',
+    label:   'Underskrift',
+    tooltip: 'Godkännande och e-signatur',
+    icon:    <SignatureIcon />,
+    nodes: [
+      {
+        type: 'heading', attrs: { level: 2 },
+        content: [{ type: 'text', text: 'Godkännande och underskrift' }],
+      },
+      {
+        type: 'paragraph',
+        content: [{ type: 'text', text: 'Genom att underteckna bekräftar mottagaren att offerten godkänts och att ovanstående villkor accepteras.' }],
+      },
+      { type: 'signatureBlock', attrs: { fieldType: 'signature', label: 'Signatur' } },
+      { type: 'signatureBlock', attrs: { fieldType: 'name',      label: 'Fullständigt namn' } },
+      { type: 'signatureBlock', attrs: { fieldType: 'date',      label: 'Signeringsdatum' } },
+    ],
+  },
+  {
+    key:     'introSection',
+    label:   'Introduktion',
+    tooltip: 'Personligt introduktionsstycke',
+    icon:    <MessageIcon />,
+    nodes: [
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Hej ' },
+          { type: 'variable', attrs: { key: 'recipientName', label: 'Mottagarens namn' } },
+          { type: 'text', text: ',' },
+        ],
+      },
+      {
+        type: 'paragraph',
+        content: [{ type: 'text', text: 'Tack för ditt intresse. Vi är glada att presentera följande offert och ser fram emot ett gott samarbete.' }],
+      },
+      { type: 'paragraph', content: [{ type: 'text', text: '' }] },
+    ],
+  },
+];
 
 // Strip {{ }} to get the key used by VariableNode
 function toKey(placeholder: string) {
@@ -35,6 +203,20 @@ export default function BlocksSidebar() {
 
   return (
     <SidebarShell>
+      {/* ── Section presets ── */}
+      <Section label="SEKTIONER">
+        {SECTION_PRESETS.map((preset) => (
+          <InsertItem
+            key={preset.key}
+            label={preset.label}
+            icon={preset.icon}
+            chipLabel="mall"
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onClick={() => editor.chain().focus().insertContent(preset.nodes as any).run()}
+          />
+        ))}
+      </Section>
+
       {/* ── Blocks ── */}
       <Section label="BLOCK">
         <InsertItem
@@ -196,13 +378,19 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 }
 
 function InsertItem({
-  label, icon, chip, onClick,
+  label, icon, chip, chipLabel, onClick,
 }: {
   label: string;
   icon: React.ReactNode;
   chip?: boolean;
+  chipLabel?: string;
   onClick: () => void;
 }) {
+  const resolvedChipLabel = chipLabel ?? (chip ? 'var' : undefined);
+  const chipColor = chipLabel
+    ? { color: '#065f46', background: '#d1fae5', border: '1px solid #a7f3d0' }   // green for presets
+    : { color: '#7b5ea7', background: '#f4f0fa', border: '1px solid #d6c8f0' };  // purple for variables
+
   return (
     <button
       type="button"
@@ -221,13 +409,13 @@ function InsertItem({
     >
       <span style={{ color: '#605e5c', flexShrink: 0 }}>{icon}</span>
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{label}</span>
-      {chip && (
+      {resolvedChipLabel && (
         <span style={{
-          fontSize: 9, fontFamily: 'monospace', color: '#7b5ea7',
-          background: '#f4f0fa', border: '1px solid #d6c8f0',
+          fontSize: 9, fontFamily: 'monospace',
           padding: '1px 4px', borderRadius: 2, flexShrink: 0,
+          ...chipColor,
         }}>
-          var
+          {resolvedChipLabel}
         </span>
       )}
     </button>
@@ -249,3 +437,9 @@ function VarIcon()       { return <svg width="13" height="13" viewBox="0 0 24 24
 function PenIcon()       { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>; }
 function UserIcon()      { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>; }
 function CalendarIcon()  { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
+// Preset section icons
+function LayoutIcon()    { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>; }
+function PriceTagIcon()  { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>; }
+function ClipboardIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>; }
+function SignatureIcon()  { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M3 17c3.333-5.333 5.333-8 6-8 1 0 1 1 2 1s1-1 2-1 1 1 2 1"/><path d="M17 10c.667 0 1.5.667 2.5 2"/><line x1="3" y1="21" x2="21" y2="21"/></svg>; }
+function MessageIcon()   { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>; }
