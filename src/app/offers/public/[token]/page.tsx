@@ -203,7 +203,7 @@ export default function PublicOfferPage() {
 
   const [signerName, setSignerName] = useState('');
   const [sigMode, setSigMode] = useState<SigMode>('type');
-  const [sigFont, setSigFont] = useState(SIG_FONTS[0].id);
+  const [sigFont, setSigFont] = useState<typeof SIG_FONTS[number]['id']>(SIG_FONTS[0].id);
   const [typedSig, setTypedSig] = useState('');
 
   const sigRef = useRef<SignatureCanvas>(null);
