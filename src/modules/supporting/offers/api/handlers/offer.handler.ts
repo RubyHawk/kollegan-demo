@@ -10,6 +10,7 @@ import { createHandler } from '@platform/api/handler';
 import { ok, created } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
 import { verifyToken } from '@platform/auth/jwt';
+import { constantTimeEqual } from '@platform/security/sanitize';
 import {
   createOffer,
   getOffer,
@@ -232,7 +233,7 @@ export const handleExpireOffers = createHandler(
   async (ctx) => {
     const { req } = ctx as { req: NextRequest };
     const secret = req.headers.get('x-cron-secret');
-    if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+    if (!process.env.CRON_SECRET || !secret || !constantTimeEqual(secret, process.env.CRON_SECRET)) {
       throw Errors.forbidden('Invalid cron secret');
     }
     const expired = await expireStaleOffers();
