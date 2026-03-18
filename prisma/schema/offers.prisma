@@ -10,6 +10,8 @@ model OfferTemplate {
   organizationId String
   name           String
   content        String    // TipTap JSON stored as serialized string
+  emailSubject   String?   // Custom email subject (supports {{placeholder}} variables)
+  emailBody      String?   // Custom email body HTML (supports {{placeholder}} variables)
   createdBy      String    // User.id
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -55,6 +57,8 @@ model Offer {
   // Template & generated document
   templateId        String?
   generatedDocument String?   // immutable HTML snapshot, set at sendOffer time
+  emailSubject      String?   // Custom email subject (snapshot, set at sendOffer time)
+  emailBody         String?   // Custom email body HTML (snapshot, set at sendOffer time)
   signatureImage    String?   // data URL of recipient's e-signature
   signerName        String?   // name typed by the signer at signing time
   publicToken       String    @unique @default(uuid()) // used in public signing URL

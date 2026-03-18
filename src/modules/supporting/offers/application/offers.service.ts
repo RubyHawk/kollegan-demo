@@ -10,7 +10,7 @@ import {
   OFFER_DECLINED,
 } from '../events/offer.events';
 import { enqueueOfferEmail, enqueueCreatorNotification, enqueueReminderEmail } from './offer-email';
-import { generateDocument, generateFallbackDocument } from './document-generator';
+import { generateDocument, generateFallbackDocument, interpolateEmailText } from './document-generator';
 import { templatesRepository } from '../infrastructure/templates.repository';
 
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
@@ -78,11 +78,17 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
 
   // Generate document snapshot (always, if not already set)
   let generatedDocument: string | undefined;
+  let emailSubject: string | undefined = existing.emailSubject;
+  let emailBody: string | undefined = existing.emailBody;
+
   if (!existing.generatedDocument) {
     if (existing.templateId) {
       const template = await templatesRepository.findById(existing.templateId, orgId);
       if (template) {
         generatedDocument = generateDocument(template.content, existing);
+        // Inherit email fields from template if not already set on the offer
+        if (!emailSubject && template.emailSubject) emailSubject = template.emailSubject;
+        if (!emailBody && template.emailBody)       emailBody    = template.emailBody;
       }
     }
     // No template (or template not found) → generate a clean fallback document
@@ -103,12 +109,18 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   // Public token expires at the same time as the offer validity
   const publicTokenExpiresAt = validUntil;
 
+  // Interpolate email fields with offer data (placeholders → actual values)
+  const interpolatedSubject = emailSubject ? interpolateEmailText(emailSubject, existing) : undefined;
+  const interpolatedBody    = emailBody    ? interpolateEmailText(emailBody, existing)    : undefined;
+
   const updated = await offersRepository.update(id, orgId, {
     status: 'sent',
     sentAt,
     offerNumber,
     validUntil,
     ...(generatedDocument ? { generatedDocument } : {}),
+    ...(interpolatedSubject !== undefined ? { emailSubject: interpolatedSubject } : {}),
+    ...(interpolatedBody    !== undefined ? { emailBody: interpolatedBody }       : {}),
     publicTokenExpiresAt,
   });
   if (!updated) return null;
@@ -423,6 +435,8 @@ export async function duplicateOffer(
     leadId:           existing.leadId,
     customerId:       existing.customerId,
     templateId:       existing.templateId,
+    emailSubject:     existing.emailSubject,
+    emailBody:        existing.emailBody,
     lineItems:        existing.lineItems.map((item, idx) => ({
       description: item.description,
       quantity:    item.quantity,

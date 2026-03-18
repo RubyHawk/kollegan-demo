@@ -15,18 +15,21 @@ import type { TemplateEditorHandle } from '../_components/TemplateEditor';
 // Lazy-load the heavy TipTap editor (avoids SSR issues with ProseMirror)
 const TemplateEditor = dynamic(() => import('../_components/TemplateEditor'), { ssr: false });
 
-interface OfferTemplate { id: string; name: string; content: string; }
+interface OfferTemplate { id: string; name: string; content: string; emailSubject?: string; emailBody?: string; }
 
 export default function TemplateEditorPage() {
   const router   = useRouter();
   const params   = useParams<{ id: string }>();
   const isNew    = params.id === 'new';
 
-  const [name,    setName]    = useState('');
-  const [loading, setLoading] = useState(!isNew);
-  const [saving,  setSaving]  = useState(false);
-  const [error,   setError]   = useState<string | null>(null);
-  const [saved,   setSaved]   = useState(false);
+  const [name,         setName]         = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody,    setEmailBody]    = useState('');
+  const [showEmail,    setShowEmail]    = useState(false);
+  const [loading,      setLoading]      = useState(!isNew);
+  const [saving,       setSaving]       = useState(false);
+  const [error,        setError]        = useState<string | null>(null);
+  const [saved,        setSaved]        = useState(false);
 
   const editorRef = useRef<TemplateEditorHandle | null>(null);
   const initialContentRef = useRef<string | undefined>(undefined);
@@ -41,6 +44,9 @@ export default function TemplateEditorPage() {
         if (!res.ok) throw new Error(`Hittade inte mallen (${res.status})`);
         const json = await res.json() as { data: OfferTemplate };
         setName(json.data.name);
+        setEmailSubject(json.data.emailSubject ?? '');
+        setEmailBody(json.data.emailBody ?? '');
+        if (json.data.emailSubject || json.data.emailBody) setShowEmail(true);
         initialContentRef.current = json.data.content;
         // If editor is already mounted, set content directly
         editorRef.current?.setContent(json.data.content);
@@ -62,16 +68,20 @@ export default function TemplateEditorPage() {
 
     setSaving(true); setError(null); setSaved(false);
     try {
+      const payload: Record<string, unknown> = { name: name.trim(), content };
+      if (emailSubject.trim()) payload.emailSubject = emailSubject.trim();
+      if (emailBody.trim())    payload.emailBody    = emailBody.trim();
+
       let res: Response;
       if (isNew) {
         res = await fetch('/api/templates', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name.trim(), content }),
+          body: JSON.stringify(payload),
         });
       } else {
         res = await fetch(`/api/templates/${params.id}`, {
           method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name.trim(), content }),
+          body: JSON.stringify(payload),
         });
       }
       if (!res.ok) {
@@ -90,7 +100,7 @@ export default function TemplateEditorPage() {
     } finally {
       setSaving(false);
     }
-  }, [isNew, name, params.id, router]);
+  }, [isNew, name, emailSubject, emailBody, params.id, router]);
 
   // Ctrl+S shortcut
   useEffect(() => {
@@ -148,6 +158,58 @@ export default function TemplateEditorPage() {
             ) : (isNew ? 'Skapa mall' : 'Spara')}
           </button>
         </div>
+      </div>
+
+      {/* ── Email customization ────────────────────────────────────────────── */}
+      <div className="shrink-0 border-b border-[var(--border)] bg-[var(--surface)]">
+        <button
+          type="button"
+          onClick={() => setShowEmail((v) => !v)}
+          className="w-full flex items-center gap-2 px-6 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            className={`transition-transform ${showEmail ? 'rotate-90' : ''}`}>
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          Anpassa e-postmeddelande
+          {(emailSubject || emailBody) && (
+            <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-normal">Anpassad</span>
+          )}
+        </button>
+        {showEmail && (
+          <div className="px-6 pb-4 space-y-3">
+            <p className="text-[11px] text-[var(--text-muted)]">
+              Anpassa e-postmeddelandet som mottagaren ser. Använd platshållare som{' '}
+              <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{recipientName}}'}</code>,{' '}
+              <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{offerTitle}}'}</code>,{' '}
+              <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{totalIncVat}}'}</code>,{' '}
+              <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{validUntil}}'}</code>{' '}
+              för att infoga data automatiskt.
+            </p>
+            <div>
+              <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Ämnesrad</label>
+              <input
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                placeholder="t.ex. Offert från Företag AB: {{offerTitle}}"
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">E-postinnehåll (HTML)</label>
+              <textarea
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                rows={5}
+                placeholder={'t.ex. <h2>Hej {{recipientName}},</h2>\n<p>Vi har nöjet att presentera en offert för <strong>{{offerTitle}}</strong>.</p>\n<p>Totalt: {{totalIncVat}}</p>'}
+                className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors resize-y"
+              />
+              <p className="mt-1 text-[10px] text-[var(--text-muted)]">
+                Knappen &ldquo;Visa &amp; signera offert&rdquo; läggs till automatiskt under innehållet.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Editor ─────────────────────────────────────────────────────────── */}

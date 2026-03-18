@@ -62,6 +62,24 @@ function fmtDate(iso: string): string {
 // ─── Email templates ────────────────────────────────────────────────────────────
 
 function sendToRecipientHtml(p: SendToRecipientPayload): string {
+  // Use custom email body if provided, wrapped in the standard shell with the signing button
+  if (p.emailBody) {
+    return `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
+      ${p.emailBody}
+      <div style="margin-top:24px;">
+        <a href="${p.publicUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">
+          Visa &amp; signera offert →
+        </a>
+      </div>
+      <p style="margin:24px 0 0 0;font-size:12px;color:#94a3b8;">
+        Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/>
+        <a href="${p.publicUrl}" style="color:#94a3b8;">${p.publicUrl}</a>
+      </p>
+    </div>`;
+  }
+
+  // Default email body
   return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
       <h2 style="margin:0 0 8px 0;font-size:22px;">Du har en ny offert 📄</h2>
@@ -101,6 +119,23 @@ function notifyCreatorHtml(p: NotifyCreatorPayload): string {
 }
 
 function reminderHtml(p: ReminderPayload): string {
+  // Use custom email body if provided
+  if (p.emailBody) {
+    return `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
+      ${p.emailBody}
+      <div style="margin-top:24px;">
+        <a href="${p.publicUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">
+          Visa &amp; signera offert →
+        </a>
+      </div>
+      <p style="margin:24px 0 0 0;font-size:12px;color:#94a3b8;">
+        Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/>
+        <a href="${p.publicUrl}" style="color:#94a3b8;">${p.publicUrl}</a>
+      </p>
+    </div>`;
+  }
+
   return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
       <h2 style="margin:0 0 8px 0;font-size:22px;">Påminnelse om offert 📄</h2>
@@ -133,7 +168,8 @@ export function registerOfferEmailJobs(): void {
     'offer.email.send_to_recipient',
     async (job) => {
       const p      = job.payload;
-      await sendEmail({ from: fromAddress(), to: p.recipientEmail, subject: `Offert: ${p.offerTitle}`, html: sendToRecipientHtml(p) });
+      const subject = p.emailSubject || `Offert: ${p.offerTitle}`;
+      await sendEmail({ from: fromAddress(), to: p.recipientEmail, subject, html: sendToRecipientHtml(p) });
       logger.info(TAG, `Sent offer email to ${p.recipientEmail}`, { offerId: p.offerId });
     },
   );
@@ -167,7 +203,8 @@ export function registerOfferEmailJobs(): void {
     'offer.email.reminder',
     async (job) => {
       const p      = job.payload;
-      await sendEmail({ from: fromAddress(), to: p.recipientEmail, subject: `Påminnelse: ${p.offerTitle}`, html: reminderHtml(p) });
+      const subject = p.emailSubject ? `Påminnelse: ${p.emailSubject}` : `Påminnelse: ${p.offerTitle}`;
+      await sendEmail({ from: fromAddress(), to: p.recipientEmail, subject, html: reminderHtml(p) });
       logger.info(TAG, `Sent reminder email to ${p.recipientEmail}`, { offerId: p.offerId });
     },
   );

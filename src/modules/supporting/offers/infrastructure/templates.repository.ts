@@ -7,12 +7,16 @@ export interface CreateTemplateInput {
   organizationId: string;
   name:           string;
   content:        string; // TipTap JSON string
+  emailSubject?:  string;
+  emailBody?:     string;
   createdBy:      string; // User.id
 }
 
 export interface UpdateTemplateInput {
-  name?:    string;
-  content?: string;
+  name?:         string;
+  content?:      string;
+  emailSubject?: string;
+  emailBody?:    string;
 }
 
 // ─── Mapper ────────────────────────────────────────────────────────────────────
@@ -23,6 +27,8 @@ function mapTemplate(r: Record<string, unknown>): OfferTemplate {
     organizationId: r.organizationId as string,
     name:           r.name as string,
     content:        (r.content as string | null | undefined) ?? '',
+    emailSubject:   (r.emailSubject as string | null | undefined) ?? undefined,
+    emailBody:      (r.emailBody as string | null | undefined) ?? undefined,
     createdBy:      r.createdBy as string,
     createdAt:      (r.createdAt as Date).toISOString(),
     updatedAt:      (r.updatedAt as Date).toISOString(),
@@ -32,6 +38,7 @@ function mapTemplate(r: Record<string, unknown>): OfferTemplate {
 // Full select — used for get-by-id, create, update (includes the potentially large content)
 const TEMPLATE_SELECT_FULL = {
   id: true, organizationId: true, name: true, content: true,
+  emailSubject: true, emailBody: true,
   createdBy: true, createdAt: true, updatedAt: true,
 };
 
@@ -39,6 +46,7 @@ const TEMPLATE_SELECT_FULL = {
 // large base64-embedded images. The offers page dropdown only needs id + name.
 const TEMPLATE_SELECT_LIST = {
   id: true, organizationId: true, name: true,
+  emailSubject: true, emailBody: true,
   createdBy: true, createdAt: true, updatedAt: true,
 };
 
@@ -52,6 +60,8 @@ export const templatesRepository = {
         organizationId: input.organizationId,
         name:           input.name,
         content:        input.content,
+        emailSubject:   input.emailSubject ?? null,
+        emailBody:      input.emailBody ?? null,
         createdBy:      input.createdBy,
       },
       select: TEMPLATE_SELECT_FULL,
@@ -86,8 +96,10 @@ export const templatesRepository = {
     const row = await prisma.offerTemplate.update({
       where: { id },
       data: {
-        ...(input.name    !== undefined ? { name: input.name }       : {}),
-        ...(input.content !== undefined ? { content: input.content } : {}),
+        ...(input.name         !== undefined ? { name: input.name }               : {}),
+        ...(input.content      !== undefined ? { content: input.content }         : {}),
+        ...(input.emailSubject !== undefined ? { emailSubject: input.emailSubject ?? null } : {}),
+        ...(input.emailBody    !== undefined ? { emailBody: input.emailBody ?? null }       : {}),
       },
       select: TEMPLATE_SELECT_FULL,
     });
