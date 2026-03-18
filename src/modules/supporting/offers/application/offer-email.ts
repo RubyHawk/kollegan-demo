@@ -22,6 +22,8 @@ export interface SendToRecipientPayload {
   publicUrl:     string;
   validUntil:    string;
   totalIncVat:   number;
+  emailSubject?: string;  // custom email subject (already interpolated)
+  emailBody?:    string;  // custom email body HTML (already interpolated)
 }
 
 export interface NotifyCreatorPayload {
@@ -42,6 +44,8 @@ export interface ReminderPayload {
   validUntil:     string;
   totalIncVat:    number;
   reminderCount:  number;
+  emailSubject?:  string;  // custom email subject (already interpolated)
+  emailBody?:     string;  // custom email body HTML (already interpolated)
 }
 
 // ─── Enqueue helpers ───────────────────────────────────────────────────────────
@@ -59,6 +63,8 @@ export async function enqueueOfferEmail(offer: Offer, publicUrl: string): Promis
     publicUrl,
     validUntil:     offer.validUntil,
     totalIncVat:    offer.totalIncVat,
+    emailSubject:   offer.emailSubject,
+    emailBody:      offer.emailBody,
   };
   await jobQueue.add('offer.email.send_to_recipient', payload, { retries: 3 });
 }
@@ -77,6 +83,8 @@ export async function enqueueReminderEmail(offer: Offer, publicUrl: string): Pro
     validUntil:     offer.validUntil,
     totalIncVat:    offer.totalIncVat,
     reminderCount:  offer.reminderCount ?? 1,
+    emailSubject:   offer.emailSubject,
+    emailBody:      offer.emailBody,
   };
   await jobQueue.add('offer.email.reminder', payload, { retries: 3 });
 }

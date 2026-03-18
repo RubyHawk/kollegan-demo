@@ -52,6 +52,8 @@ export interface Offer {
   // Template & document fields
   templateId?: string;
   generatedDocument?: string;    // immutable HTML snapshot (set at send time)
+  emailSubject?: string;         // custom email subject (snapshot, set at send time)
+  emailBody?: string;            // custom email body HTML (snapshot, set at send time)
   signatureImage?: string;       // data URL of the recipient's e-signature
   signerName?: string;           // name typed by the signer at signing time
   publicToken: string;           // UUID used as the signing URL token

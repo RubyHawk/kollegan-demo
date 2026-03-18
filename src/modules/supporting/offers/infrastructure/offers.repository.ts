@@ -17,6 +17,8 @@ export interface CreateOfferInput {
   customerId?:      string;
   templateId?:      string;
   generatedDocument?: string;
+  emailSubject?:      string;
+  emailBody?:         string;
   lineItems: Array<{
     description: string;
     quantity:    number;
@@ -44,6 +46,8 @@ export interface UpdateOfferInput {
   reminderSentAt?:       Date;
   reminderCount?:        number;
   generatedDocument?:    string;
+  emailSubject?:         string;
+  emailBody?:            string;
   signatureImage?:       string;
   signerName?:           string;
   publicTokenExpiresAt?: Date;
@@ -106,6 +110,8 @@ function mapOffer(r: Record<string, unknown>): Offer {
     totalIncVat:          r.totalIncVat as number,
     templateId:           (r.templateId as string | null) ?? undefined,
     generatedDocument:    (r.generatedDocument as string | null) ?? undefined,
+    emailSubject:         (r.emailSubject as string | null) ?? undefined,
+    emailBody:            (r.emailBody as string | null) ?? undefined,
     signatureImage:       (r.signatureImage as string | null) ?? undefined,
     signerName:           (r.signerName as string | null) ?? undefined,
     publicToken:          r.publicToken as string,
@@ -149,7 +155,7 @@ const OFFER_SELECT = {
   sentAt: true, viewedAt: true, acceptedAt: true, declinedAt: true,
   reminderSentAt: true, reminderCount: true,
   leadId: true, customerId: true,
-  templateId: true, generatedDocument: true, signatureImage: true, signerName: true,
+  templateId: true, generatedDocument: true, emailSubject: true, emailBody: true, signatureImage: true, signerName: true,
   publicToken: true, publicTokenExpiresAt: true,
   createdAt: true, updatedAt: true,
   lineItems: { select: LINE_ITEM_SELECT, orderBy: { sortOrder: 'asc' as const } },
@@ -177,6 +183,8 @@ export const offersRepository = {
         customerId:        input.customerId ?? null,
         templateId:        input.templateId ?? null,
         generatedDocument: input.generatedDocument ?? null,
+        emailSubject:      input.emailSubject ?? null,
+        emailBody:         input.emailBody ?? null,
         totalExVat,
         totalIncVat,
         lineItems: {
@@ -268,6 +276,8 @@ export const offersRepository = {
         ...(input.reminderSentAt       !== undefined ? { reminderSentAt: input.reminderSentAt }             : {}),
         ...(input.reminderCount        !== undefined ? { reminderCount: input.reminderCount }               : {}),
         ...(input.generatedDocument    !== undefined ? { generatedDocument: input.generatedDocument }       : {}),
+        ...(input.emailSubject         !== undefined ? { emailSubject: input.emailSubject ?? null }         : {}),
+        ...(input.emailBody            !== undefined ? { emailBody: input.emailBody ?? null }               : {}),
         ...(input.signatureImage       !== undefined ? { signatureImage: input.signatureImage }             : {}),
         ...(input.signerName           !== undefined ? { signerName: input.signerName }                     : {}),
         ...(input.publicTokenExpiresAt !== undefined ? { publicTokenExpiresAt: input.publicTokenExpiresAt } : {}),
@@ -353,8 +363,10 @@ export const offersRepository = {
         ...(input.reminderSentAt   !== undefined ? { reminderSentAt: input.reminderSentAt }                 : {}),
         ...(input.reminderCount    !== undefined ? { reminderCount: input.reminderCount }                   : {}),
         ...(input.signatureImage   !== undefined ? { signatureImage: input.signatureImage }                 : {}),
-        ...(input.signerName       !== undefined ? { signerName: input.signerName }                       : {}),
-        ...(input.generatedDocument !== undefined ? { generatedDocument: input.generatedDocument }          : {}),
+        ...(input.signerName           !== undefined ? { signerName: input.signerName }                       : {}),
+        ...(input.generatedDocument    !== undefined ? { generatedDocument: input.generatedDocument }       : {}),
+        ...(input.emailSubject         !== undefined ? { emailSubject: input.emailSubject ?? null }         : {}),
+        ...(input.emailBody            !== undefined ? { emailBody: input.emailBody ?? null }               : {}),
         ...(input.publicTokenExpiresAt !== undefined ? { publicTokenExpiresAt: input.publicTokenExpiresAt } : {}),
         ...(totals ? { totalExVat: totals.totalExVat, totalIncVat: totals.totalIncVat } : {}),
         ...(input.lineItems ? {

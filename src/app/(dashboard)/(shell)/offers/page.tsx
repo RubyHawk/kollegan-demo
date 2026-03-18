@@ -57,8 +57,10 @@ interface Offer {
 }
 
 interface OfferTemplate {
-  id:   string;
-  name: string;
+  id:            string;
+  name:          string;
+  emailSubject?: string;
+  emailBody?:    string;
 }
 
 interface OfferProduct {
@@ -119,7 +121,8 @@ const VALIDITY_OPTIONS = [
 const EMPTY_FORM = {
   templateId: '', contactId: '',
   title: '', recipientName: '', recipientEmail: '', recipientCompany: '',
-  notes: '', validityDays: 30 as number, lineItems: [{ ...EMPTY_LINE }],
+  notes: '', emailSubject: '', emailBody: '',
+  validityDays: 30 as number, lineItems: [{ ...EMPTY_LINE }],
 };
 
 // ─── Utilities ─────────────────────────────────────────────────────────────────
@@ -186,9 +189,10 @@ export default function OffersPage() {
   const [selected,       setSelected]       = useState<Set<string>>(new Set()); // bulk-selected offer ids
   const [bulkSending,    setBulkSending]    = useState(false);
   const [bulkResult,     setBulkResult]     = useState<{ sent: number; failed: number } | null>(null);
-  const [contactSearch,  setContactSearch]  = useState('');
-  const [contactResults, setContactResults] = useState<ContactResult[]>([]);
-  const [contactLoading, setContactLoading] = useState(false);
+  const [contactSearch,    setContactSearch]    = useState('');
+  const [contactResults,   setContactResults]   = useState<ContactResult[]>([]);
+  const [contactLoading,   setContactLoading]   = useState(false);
+  const [showEmailCustom,  setShowEmailCustom]  = useState(false);
   const contactSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Product library state
@@ -267,8 +271,10 @@ export default function OffersPage() {
         validityDays:     form.validityDays,
         lineItems:        validItems,
       };
-      if (form.templateId) body.templateId = form.templateId;
-      if (form.contactId)  body.customerId  = form.contactId;
+      if (form.templateId)    body.templateId   = form.templateId;
+      if (form.emailSubject)  body.emailSubject = form.emailSubject;
+      if (form.emailBody)     body.emailBody    = form.emailBody;
+      if (form.contactId)     body.customerId   = form.contactId;
 
       const res = await fetch('/api/offers', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -587,7 +593,7 @@ export default function OffersPage() {
         <div className="mb-8 rounded-2xl border border-[var(--accent)]/30 bg-[var(--surface)] shadow-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">Ny offert</h2>
-            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); setContactSearch(''); setContactResults([]); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); setContactSearch(''); setContactResults([]); setShowEmailCustom(false); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
@@ -673,7 +679,17 @@ export default function OffersPage() {
               </label>
               <select
                 value={form.templateId}
-                onChange={(e) => setForm((f) => ({ ...f, templateId: e.target.value }))}
+                onChange={(e) => {
+                  const tid = e.target.value;
+                  const tpl = templates.find((t) => t.id === tid);
+                  setForm((f) => ({
+                    ...f,
+                    templateId: tid,
+                    emailSubject: tpl?.emailSubject ?? f.emailSubject,
+                    emailBody:    tpl?.emailBody ?? f.emailBody,
+                  }));
+                  if (tpl?.emailSubject || tpl?.emailBody) setShowEmailCustom(true);
+                }}
                 disabled={templates.length === 0}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors disabled:opacity-50"
               >
@@ -737,6 +753,57 @@ export default function OffersPage() {
                 <textarea value={form.notes} rows={2} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Eventuella villkor eller kommentarer…"
                   className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"/>
               </div>
+            </div>
+
+            {/* Email customization */}
+            <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowEmailCustom((v) => !v)}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors bg-[var(--surface-alt)]"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  className={`transition-transform ${showEmailCustom ? 'rotate-90' : ''}`}>
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+                Anpassa e-postmeddelande
+                {(form.emailSubject || form.emailBody) && (
+                  <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-normal">Anpassad</span>
+                )}
+              </button>
+              {showEmailCustom && (
+                <div className="px-4 py-3 space-y-3 border-t border-[var(--border)]">
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    Anpassa vad mottagaren ser i e-postmeddelandet. Platshållare som{' '}
+                    <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{recipientName}}'}</code>,{' '}
+                    <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{offerTitle}}'}</code>,{' '}
+                    <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{totalIncVat}}'}</code>{' '}
+                    ersätts automatiskt.
+                  </p>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Ämnesrad</label>
+                    <input
+                      value={form.emailSubject}
+                      onChange={(e) => setForm((f) => ({ ...f, emailSubject: e.target.value }))}
+                      placeholder="t.ex. Offert från Företag AB: {{offerTitle}}"
+                      className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">E-postinnehåll (HTML)</label>
+                    <textarea
+                      value={form.emailBody}
+                      onChange={(e) => setForm((f) => ({ ...f, emailBody: e.target.value }))}
+                      rows={4}
+                      placeholder={'t.ex. <h2>Hej {{recipientName}},</h2>\n<p>Vi har skickat en offert för <strong>{{offerTitle}}</strong>.</p>'}
+                      className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors resize-y"
+                    />
+                    <p className="mt-1 text-[10px] text-[var(--text-muted)]">
+                      Knappen &ldquo;Visa &amp; signera offert&rdquo; läggs till automatiskt under innehållet.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Line items */}
@@ -860,7 +927,7 @@ export default function OffersPage() {
                 className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
                 {saving ? 'Sparar…' : 'Spara som utkast'}
               </button>
-              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); setContactSearch(''); setContactResults([]); }}
+              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); setContactSearch(''); setContactResults([]); setShowEmailCustom(false); }}
                 className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors">
                 Avbryt
               </button>

@@ -56,8 +56,10 @@ export const handleListTemplates = createHandler(
 // ── Create Template ───────────────────────────────────────────────────────────
 
 const CreateTemplateSchema = z.object({
-  name:    z.string().min(1).max(200),
-  content: z.string().min(2), // TipTap JSON string — at least '{}'
+  name:         z.string().min(1).max(200),
+  content:      z.string().min(2), // TipTap JSON string — at least '{}'
+  emailSubject: z.string().max(500).optional(),
+  emailBody:    z.string().max(50_000).optional(),
 });
 
 export const handleCreateTemplate = createHandler(
@@ -66,7 +68,7 @@ export const handleCreateTemplate = createHandler(
     const { body, req } = ctx as { body: z.infer<typeof CreateTemplateSchema>; req: NextRequest };
     const payload = await requireStaff(req);
     const template = await createTemplate(
-      { organizationId: payload.orgId!, name: body.name, content: body.content },
+      { organizationId: payload.orgId!, name: body.name, content: body.content, emailSubject: body.emailSubject, emailBody: body.emailBody },
       payload.sub,
     );
     return created(template, `/api/templates/${template.id}`);
@@ -90,8 +92,10 @@ export const handleGetTemplate = createHandler(
 // ── Update Template ───────────────────────────────────────────────────────────
 
 const UpdateTemplateSchema = z.object({
-  name:    z.string().min(1).max(200).optional(),
-  content: z.string().min(2).optional(),
+  name:         z.string().min(1).max(200).optional(),
+  content:      z.string().min(2).optional(),
+  emailSubject: z.string().max(500).optional(),
+  emailBody:    z.string().max(50_000).optional(),
 });
 
 export const handleUpdateTemplate = createHandler(
@@ -100,7 +104,7 @@ export const handleUpdateTemplate = createHandler(
     const { body, req } = ctx as { body: z.infer<typeof UpdateTemplateSchema>; req: NextRequest };
     const id      = extractId(req);
     const payload = await requireStaff(req);
-    const updated = await updateTemplate(id, payload.orgId!, { name: body.name, content: body.content });
+    const updated = await updateTemplate(id, payload.orgId!, { name: body.name, content: body.content, emailSubject: body.emailSubject, emailBody: body.emailBody });
     if (!updated) throw Errors.notFound('Template not found');
     return ok(updated);
   },

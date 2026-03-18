@@ -216,6 +216,47 @@ const SIGNATURE_FIELD_HTML = `
     <p style="color:#cbd5e1;font-size:11px;margin:0;">Underteckna med e-signatur via länken du mottog</p>
   </div>`;
 
+// ─── Shared placeholder builder ─────────────────────────────────────────────────
+
+/**
+ * Builds the {{placeholder}} → value map for a given offer.
+ * Used by both document generation and email interpolation.
+ */
+export function buildReplacements(offer: Offer): Record<string, string> {
+  const vatAmount = offer.totalIncVat - offer.totalExVat;
+  const offerNumberStr = offer.offerNumber
+    ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
+    : offer.id.slice(0, 8).toUpperCase();
+
+  return {
+    '{{offerTitle}}':       offer.title,
+    '{{offerNumber}}':      offerNumberStr,
+    '{{quoteNumber}}':      offerNumberStr,
+    '{{createdDate}}':      fmtDate(offer.createdAt),
+    '{{validUntil}}':       fmtDate(offer.validUntil),
+    '{{recipientName}}':    offer.recipientName,
+    '{{recipientEmail}}':   offer.recipientEmail,
+    '{{recipientCompany}}': offer.recipientCompany ?? '',
+    '{{totalExVat}}':       fmtSEK(offer.totalExVat),
+    '{{totalIncVat}}':      fmtSEK(offer.totalIncVat),
+    '{{vatAmount}}':        fmtSEK(vatAmount),
+    '{{notes}}':            offer.notes ?? '',
+  };
+}
+
+/**
+ * Interpolates {{placeholder}} variables in a plain-text or HTML string.
+ * Used for custom email subject / body.
+ */
+export function interpolateEmailText(text: string, offer: Offer): string {
+  const replacements = buildReplacements(offer);
+  let result = text;
+  for (const [key, value] of Object.entries(replacements)) {
+    result = result.split(key).join(value);
+  }
+  return result;
+}
+
 // ─── Main generator ────────────────────────────────────────────────────────────
 
 /**
