@@ -3,30 +3,28 @@
 /**
  * /offers/public/[token]
  *
- * Public offer signing page. Full-width layout, professional design.
- * Document renders at full width, signing section below with draw/type modes.
+ * Public offer signing page. Uses project's design system:
+ * - framer-motion for transitions & success animation
+ * - Shared icons from @shared/ui/icons
+ * - Tailwind classes + design tokens
+ * - jsPDF + html2canvas for PDF download
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import SignatureCanvas from 'react-signature-canvas';
-
-// ─── SVG Icons (no emojis) ─────────────────────────────────────────────────────
-
-const Icon = {
-  pen: (sz = 18, col = '#64748b') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
-  user: (sz = 18, col = '#64748b') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-  calendar: (sz = 18, col = '#64748b') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-  check: (sz = 18, col = '#16a34a') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>,
-  checkCircle: (sz = 20, col = '#16a34a') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>,
-  x: (sz = 18, col = '#64748b') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-  clock: (sz = 40, col = '#94a3b8') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-  alert: (sz = 40, col = '#ef4444') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
-  shield: (sz = 40, col = '#16a34a') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>,
-  ban: (sz = 40, col = '#94a3b8') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>,
-  eraser: (sz = 14, col = '#64748b') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 20H7L3 16l9.5-9.5a2.83 2.83 0 014 0l3 3a2.83 2.83 0 010 4L11 22"/></svg>,
-  file: (sz = 16, col = '#64748b') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
-};
+import {
+  FileTextIcon,
+  UserIcon,
+  CalendarIcon,
+  EditIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+  ShieldIcon,
+  TrashIcon,
+} from '@shared/ui/icons';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -48,7 +46,7 @@ interface PublicOffer {
   publicTokenExpiresAt?: string;
 }
 
-type PageState = 'loading' | 'ready' | 'declining' | 'accepted' | 'declined' | 'expired' | 'error';
+type PageState = 'loading' | 'ready' | 'declining' | 'signing' | 'accepted' | 'declined' | 'expired' | 'error';
 type SigMode = 'draw' | 'type';
 
 const SIG_FONTS = [
@@ -69,7 +67,6 @@ function fmtDate(iso: string) {
 function todaySv() {
   return new Date().toLocaleDateString('sv-SE');
 }
-
 function textToSignatureImage(text: string, fontFamily: string): string {
   const canvas = document.createElement('canvas');
   canvas.width = 600; canvas.height = 150;
@@ -80,6 +77,115 @@ function textToSignatureImage(text: string, fontFamily: string): string {
   ctx.textBaseline = 'middle';
   ctx.fillText(text, 24, 75);
   return canvas.toDataURL('image/png');
+}
+
+// ─── Animated checkmark (drawn with SVG path animation) ────────────────────────
+
+function SuccessCheckmark() {
+  return (
+    <motion.div
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
+      className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50"
+    >
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <motion.circle
+          cx="20" cy="20" r="18"
+          stroke="#16a34a"
+          strokeWidth="2"
+          fill="none"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        />
+        <motion.path
+          d="M12 20l5 5 11-11"
+          stroke="#16a34a"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.4, delay: 0.5 }}
+        />
+      </svg>
+    </motion.div>
+  );
+}
+
+// ─── PDF Download ──────────────────────────────────────────────────────────────
+
+async function downloadPdf(documentHtml: string, filename: string) {
+  const [html2canvas, { jsPDF }] = await Promise.all([
+    import('html2canvas-pro').then((m) => m.default),
+    import('jspdf'),
+  ]);
+
+  // Render the document HTML offscreen
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;background:#fff;';
+  container.innerHTML = documentHtml;
+
+  // Strip the doc-wrapper card styling for PDF
+  const wrapper = container.querySelector('.doc-wrapper') as HTMLElement | null;
+  if (wrapper) {
+    wrapper.style.margin = '0';
+    wrapper.style.padding = '32px 40px';
+    wrapper.style.border = 'none';
+    wrapper.style.borderRadius = '0';
+    wrapper.style.maxWidth = 'none';
+    wrapper.style.boxShadow = 'none';
+  }
+  // Hide signature fields in PDF
+  container.querySelectorAll('[data-sig-field]').forEach((el) => {
+    (el as HTMLElement).style.display = 'none';
+  });
+
+  document.body.appendChild(container);
+
+  const canvas = await html2canvas(container, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: '#ffffff',
+  });
+
+  document.body.removeChild(container);
+
+  const imgData = canvas.toDataURL('image/png');
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const imgWidth = pageWidth - 20; // 10mm margin each side
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+  let y = 10;
+  if (imgHeight <= pageHeight - 20) {
+    pdf.addImage(imgData, 'PNG', 10, y, imgWidth, imgHeight);
+  } else {
+    // Multi-page: slice the canvas
+    const pageContentHeight = pageHeight - 20;
+    const sliceHeight = Math.floor((pageContentHeight / imgHeight) * canvas.height);
+    let srcY = 0;
+    let page = 0;
+
+    while (srcY < canvas.height) {
+      if (page > 0) pdf.addPage();
+      const slice = document.createElement('canvas');
+      slice.width = canvas.width;
+      slice.height = Math.min(sliceHeight, canvas.height - srcY);
+      const sCtx = slice.getContext('2d')!;
+      sCtx.drawImage(canvas, 0, srcY, canvas.width, slice.height, 0, 0, canvas.width, slice.height);
+      const sliceData = slice.toDataURL('image/png');
+      const sliceImgH = (slice.height * imgWidth) / canvas.width;
+      pdf.addImage(sliceData, 'PNG', 10, 10, imgWidth, sliceImgH);
+      srcY += sliceHeight;
+      page++;
+    }
+  }
+
+  pdf.save(filename);
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
@@ -93,6 +199,7 @@ export default function PublicOfferPage() {
   const [errMsg, setErrMsg] = useState('');
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const [signerName, setSignerName] = useState('');
   const [sigMode, setSigMode] = useState<SigMode>('type');
@@ -103,14 +210,13 @@ export default function PublicOfferPage() {
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // ── Inject styles into iframe on load ────────────────────────────────────────
+  // ── Iframe setup ─────────────────────────────────────────────────────────────
   const handleIframeLoad = useCallback(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
     const doc = iframe.contentDocument;
     if (!doc) return;
 
-    // Strip the internal card styling — parent handles layout
     const wrapper = doc.querySelector('.doc-wrapper') as HTMLElement | null;
     if (wrapper) {
       wrapper.style.margin = '0';
@@ -124,12 +230,11 @@ export default function PublicOfferPage() {
     doc.body.style.padding = '0';
     doc.body.style.overflow = 'hidden';
 
-    // Hide signature blocks inside the document — signing is handled outside
+    // Hide template signature blocks
     doc.querySelectorAll('[data-sig-field]').forEach((el) => {
       (el as HTMLElement).style.display = 'none';
     });
 
-    // Auto-resize iframe to content
     const resize = () => {
       if (doc.body) iframe.style.height = `${doc.body.scrollHeight}px`;
     };
@@ -137,11 +242,10 @@ export default function PublicOfferPage() {
     doc.querySelectorAll('img').forEach((img) => {
       if (!img.complete) img.addEventListener('load', resize);
     });
-    const observer = new MutationObserver(resize);
-    observer.observe(doc.body, { childList: true, subtree: true, attributes: true });
+    new MutationObserver(resize).observe(doc.body, { childList: true, subtree: true, attributes: true });
   }, []);
 
-  // ── Resize draw canvas ───────────────────────────────────────────────────────
+  // ── Draw canvas resize ───────────────────────────────────────────────────────
   useEffect(() => {
     if (sigMode !== 'draw') return;
     const wrapper = canvasWrapperRef.current;
@@ -162,9 +266,9 @@ export default function PublicOfferPage() {
       }
     };
     const raf = requestAnimationFrame(syncSize);
-    const observer = new ResizeObserver(syncSize);
-    observer.observe(wrapper);
-    return () => { cancelAnimationFrame(raf); observer.disconnect(); };
+    const ro = new ResizeObserver(syncSize);
+    ro.observe(wrapper);
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
   }, [sigMode, state]);
 
   // ── Fetch offer ──────────────────────────────────────────────────────────────
@@ -188,14 +292,15 @@ export default function PublicOfferPage() {
     })();
   }, [token]);
 
+  // ── Actions ──────────────────────────────────────────────────────────────────
   const getSignatureImage = useCallback((): string | null => {
     if (sigMode === 'draw') {
       if (!sigRef.current || sigRef.current.isEmpty()) return null;
       return sigRef.current.getTrimmedCanvas().toDataURL('image/png');
     }
     if (!typedSig.trim()) return null;
-    const font = SIG_FONTS.find((f) => f.id === sigFont) ?? SIG_FONTS[0];
-    return textToSignatureImage(typedSig.trim(), font.family);
+    const f = SIG_FONTS.find((x) => x.id === sigFont) ?? SIG_FONTS[0];
+    return textToSignatureImage(typedSig.trim(), f.family);
   }, [sigMode, typedSig, sigFont]);
 
   const handleSign = useCallback(async () => {
@@ -203,14 +308,17 @@ export default function PublicOfferPage() {
     const signatureImage = getSignatureImage();
     if (!signatureImage) { setErrMsg(sigMode === 'draw' ? 'Rita din namnteckning i rutan.' : 'Skriv din namnteckning.'); return; }
     setBusy(true); setErrMsg('');
+    setState('signing');
     try {
       const res = await fetch(`/api/offers/public/${token}/sign`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ signatureImage, signerName: signerName.trim() }),
       });
       if (!res.ok) { const j = await res.json().catch(() => ({})) as { detail?: string }; throw new Error(j.detail ?? `Fel ${res.status}`); }
+      // Brief pause for the animation feel
+      await new Promise((r) => setTimeout(r, 600));
       setState('accepted');
-    } catch (e) { setErrMsg((e as Error).message); } finally { setBusy(false); }
+    } catch (e) { setErrMsg((e as Error).message); setState('ready'); } finally { setBusy(false); }
   }, [token, signerName, getSignatureImage, sigMode]);
 
   const handleDecline = useCallback(async () => {
@@ -225,344 +333,441 @@ export default function PublicOfferPage() {
     } catch (e) { setErrMsg((e as Error).message); } finally { setBusy(false); }
   }, [token, comment]);
 
-  // ─── Shared styles ───────────────────────────────────────────────────────────
-
-  const font = SIG_FONTS.find((f) => f.id === sigFont) ?? SIG_FONTS[0];
-  const ff = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
-
-  const pageStyle: React.CSSProperties = {
-    minHeight: '100vh',
-    background: '#f1f5f9',
-    fontFamily: ff,
-    color: '#0f172a',
+  const handleDownloadPdf = async () => {
+    if (!offer?.generatedDocument) return;
+    setDownloading(true);
+    try {
+      const safeName = offer.title.replace(/[^a-zA-Z0-9\u00C0-\u024F ]/g, '').trim().replace(/\s+/g, '-');
+      await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`);
+    } catch {
+      setErrMsg('Kunde inte ladda ner PDF. Forsok igen.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
-  // ─── Terminal states ─────────────────────────────────────────────────────────
+  // ─── Derived state ───────────────────────────────────────────────────────────
+  const selectedFont = SIG_FONTS.find((f) => f.id === sigFont) ?? SIG_FONTS[0];
 
-  const statusPage = (icon: React.ReactNode, title: string, sub: string) => (
-    <div style={pageStyle}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '40px 24px', textAlign: 'center' }}>
-        <div style={{ marginBottom: '20px' }}>{icon}</div>
-        <h1 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 700, color: '#0f172a' }}>{title}</h1>
-        <p style={{ margin: 0, fontSize: '14px', color: '#64748b', maxWidth: '360px', lineHeight: 1.6 }}>{sub}</p>
-      </div>
-    </div>
-  );
+  // ─── Status pages ────────────────────────────────────────────────────────────
 
-  if (state === 'loading') return (
-    <div style={pageStyle}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <p style={{ color: '#94a3b8', fontSize: '14px' }}>Laddar offert...</p>
+  if (state === 'loading') {
+    return (
+      <div className="flex min-h-[80vh] items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-sm text-slate-400"
+        >
+          Laddar offert...
+        </motion.div>
       </div>
-    </div>
-  );
-  if (state === 'expired') return statusPage(Icon.clock(), 'Lanken har gatt ut', 'Kontakta avsandaren for att fa en ny lank till offerten.');
-  if (state === 'error') return statusPage(Icon.alert(), 'Offerten hittades inte', errMsg || 'Kontrollera lanken och forsok igen.');
-  if (state === 'accepted') return statusPage(Icon.shield(), 'Offert signerad', 'Tack! Avsandaren har meddelats om din signering.');
-  if (state === 'declined') return statusPage(Icon.ban(), 'Offert avvisad', 'Avsandaren har meddelats.');
+    );
+  }
+
+  // Terminal status screens
+  if (state === 'expired' || state === 'error' || state === 'accepted' || state === 'declined') {
+    const configs = {
+      expired:  { icon: <ClockIcon size={40} className="text-slate-400" />, title: 'Lanken har gatt ut', sub: 'Kontakta avsandaren for att fa en ny lank till offerten.' },
+      error:    { icon: <XCircleIcon size={40} className="text-red-400" />, title: 'Offerten hittades inte', sub: errMsg || 'Kontrollera lanken och forsok igen.' },
+      accepted: { icon: null, title: 'Offert signerad', sub: 'Tack! Avsandaren har meddelats om din signering.' },
+      declined: { icon: <XCircleIcon size={40} className="text-slate-400" />, title: 'Offert avvisad', sub: 'Avsandaren har meddelats.' },
+    };
+    const cfg = configs[state];
+
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={state}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="flex min-h-[80vh] items-center justify-center px-6"
+        >
+          <div className="w-full max-w-md rounded-xl bg-white p-10 text-center shadow-sm border border-slate-200/80">
+            {state === 'accepted' ? (
+              <SuccessCheckmark />
+            ) : (
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 15 }}
+                className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50"
+              >
+                {cfg.icon}
+              </motion.div>
+            )}
+            <h1 className="mb-2 text-xl font-bold text-slate-900">{cfg.title}</h1>
+            <p className="text-sm leading-relaxed text-slate-500">{cfg.sub}</p>
+
+            {state === 'accepted' && offer?.generatedDocument && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.9 }}
+              >
+                <button
+                  onClick={() => void handleDownloadPdf()}
+                  disabled={downloading}
+                  className="mt-6 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <FileTextIcon size={15} />
+                  {downloading ? 'Laddar ner...' : 'Ladda ner som PDF'}
+                </button>
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
+  // Signing in-progress overlay
+  if (state === 'signing') {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex min-h-[80vh] flex-col items-center justify-center gap-4"
+      >
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
+          className="h-8 w-8 rounded-full border-2 border-slate-200 border-t-slate-800"
+        />
+        <p className="text-sm text-slate-500">Signerar offert...</p>
+      </motion.div>
+    );
+  }
 
   if (!offer) return null;
   const isDecline = state === 'declining';
 
   return (
-    <div style={pageStyle}>
-      {/* ─── Top bar ─── */}
-      <header style={{
-        background: '#fff',
-        borderBottom: '1px solid #e2e8f0',
-        padding: '0 24px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 10,
-      }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '56px', gap: '16px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-            {Icon.file(18, '#94a3b8')}
-            <div style={{ minWidth: 0 }}>
-              <h1 style={{ margin: 0, fontSize: '15px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{offer.title}</h1>
-              <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen"
+    >
+      {/* ─── Sticky header ─── */}
+      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-6">
+          <div className="flex items-center gap-3 min-w-0">
+            <FileTextIcon size={16} className="shrink-0 text-slate-400" />
+            <div className="min-w-0">
+              <h1 className="truncate text-sm font-semibold text-slate-900">{offer.title}</h1>
+              <p className="truncate text-[11px] text-slate-400">
                 {offer.recipientName}{offer.recipientCompany ? ` / ${offer.recipientCompany}` : ''}
               </p>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>{fmtSEK(offer.totalIncVat)}</p>
-              <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8', letterSpacing: '0.03em' }}>INKL. MOMS</p>
+          <div className="flex items-center gap-5 shrink-0">
+            <div className="text-right hidden sm:block">
+              <p className="text-base font-bold text-slate-900 tabular-nums">{fmtSEK(offer.totalIncVat)}</p>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">inkl. moms</p>
             </div>
-            <div style={{ width: '1px', height: '28px', background: '#e2e8f0' }} />
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Giltig till</p>
-              <p style={{ margin: 0, fontSize: '12px', fontWeight: 600 }}>{fmtDate(offer.validUntil)}</p>
+            <div className="hidden sm:block h-7 w-px bg-slate-200" />
+            <div className="text-right hidden sm:block">
+              <p className="text-[11px] text-slate-400">Giltig till</p>
+              <p className="text-xs font-semibold text-slate-700">{fmtDate(offer.validUntil)}</p>
             </div>
+            {/* PDF download */}
+            <button
+              onClick={() => void handleDownloadPdf()}
+              disabled={downloading || !offer.generatedDocument}
+              className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-40"
+              title="Ladda ner som PDF"
+            >
+              <FileTextIcon size={13} />
+              <span className="hidden sm:inline">{downloading ? 'Laddar...' : 'PDF'}</span>
+            </button>
           </div>
         </div>
       </header>
 
-      {/* ─── Main content ─── */}
-      <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 24px 48px' }}>
+      {/* ─── Content ─── */}
+      <main className="mx-auto max-w-5xl px-6 py-6 pb-12">
 
-        {/* Document section */}
+        {/* Document */}
         {offer.generatedDocument && (
-          <section style={{
-            background: '#fff',
-            borderRadius: '8px',
-            border: '1px solid #e2e8f0',
-            overflow: 'hidden',
-            marginBottom: '24px',
-          }}>
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.05 }}
+            className="mb-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+          >
             <iframe
               ref={iframeRef}
               srcDoc={offer.generatedDocument}
               title="Offertdokument"
               onLoad={handleIframeLoad}
-              style={{ width: '100%', border: 'none', display: 'block', overflow: 'hidden' }}
+              className="block w-full border-none"
+              style={{ overflow: 'hidden' }}
               scrolling="no"
             />
-          </section>
+          </motion.section>
         )}
 
-        {/* ─── Signing section ─── */}
-        {!isDecline ? (
-          <section style={{
-            background: '#fff',
-            borderRadius: '8px',
-            border: '1px solid #e2e8f0',
-            overflow: 'hidden',
-          }}>
-            {/* Section header */}
-            <div style={{ padding: '20px 32px', borderBottom: '1px solid #e2e8f0' }}>
-              <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>Godkannande och underskrift</h2>
-              <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b', lineHeight: 1.5 }}>
-                Genom att underteckna bekraftar du att offerten godkants och att villkoren accepteras.
-              </p>
-            </div>
-
-            {errMsg && (
-              <div style={{ margin: '16px 32px 0', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '10px 14px', color: '#dc2626', fontSize: '13px' }}>
-                {errMsg}
-              </div>
-            )}
-
-            {/* Fields grid */}
-            <div style={{ padding: '20px 32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              {/* Name */}
-              <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
-                  {Icon.user(14, '#64748b')}
-                  Fullstandigt namn
-                </label>
-                <input
-                  type="text"
-                  value={signerName}
-                  onChange={(e) => setSignerName(e.target.value)}
-                  placeholder="Ditt namn"
-                  style={{
-                    width: '100%', padding: '10px 12px', fontSize: '14px',
-                    border: '1px solid #d1d5db', borderRadius: '6px',
-                    outline: 'none', fontFamily: ff, boxSizing: 'border-box',
-                    transition: 'border-color .15s',
-                  }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = '#0f172a'; }}
-                  onBlur={(e) => { e.currentTarget.style.borderColor = '#d1d5db'; }}
-                />
-              </div>
-
-              {/* Date */}
-              <div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
-                  {Icon.calendar(14, '#64748b')}
-                  Datum
-                </label>
-                <input
-                  type="text"
-                  value={todaySv()}
-                  readOnly
-                  style={{
-                    width: '100%', padding: '10px 12px', fontSize: '14px',
-                    border: '1px solid #d1d5db', borderRadius: '6px',
-                    outline: 'none', fontFamily: ff, boxSizing: 'border-box',
-                    background: '#f8fafc', color: '#64748b', cursor: 'default',
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Signature */}
-            <div style={{ padding: '0 32px 24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#374151' }}>
-                  {Icon.pen(14, '#64748b')}
-                  Signatur
-                </label>
-                <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '6px', padding: '2px', gap: '2px' }}>
-                  <button type="button" onClick={() => setSigMode('type')} style={{
-                    padding: '5px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: 600,
-                    cursor: 'pointer', border: 'none', transition: 'all .15s',
-                    background: sigMode === 'type' ? '#fff' : 'transparent',
-                    color: sigMode === 'type' ? '#0f172a' : '#64748b',
-                    boxShadow: sigMode === 'type' ? '0 1px 2px rgba(0,0,0,.08)' : 'none',
-                  }}>Skriv</button>
-                  <button type="button" onClick={() => setSigMode('draw')} style={{
-                    padding: '5px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: 600,
-                    cursor: 'pointer', border: 'none', transition: 'all .15s',
-                    background: sigMode === 'draw' ? '#fff' : 'transparent',
-                    color: sigMode === 'draw' ? '#0f172a' : '#64748b',
-                    boxShadow: sigMode === 'draw' ? '0 1px 2px rgba(0,0,0,.08)' : 'none',
-                  }}>Rita</button>
+        {/* ─── Signing card ─── */}
+        <AnimatePresence mode="wait">
+          {!isDecline ? (
+            <motion.section
+              key="sign"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+            >
+              {/* Header */}
+              <div className="border-b border-slate-100 px-6 py-5 sm:px-8">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900">
+                    <ShieldIcon size={14} className="text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900">Godkannande och underskrift</h2>
+                    <p className="mt-1 text-[13px] leading-relaxed text-slate-500">
+                      Genom att underteckna bekraftar du att offerten godkants och att villkoren accepteras.
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {sigMode === 'type' ? (
-                <div>
-                  {/* Font selector */}
-                  <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
-                    {SIG_FONTS.map((f) => (
-                      <button key={f.id} type="button" onClick={() => setSigFont(f.id)} style={{
-                        padding: '6px 14px', borderRadius: '6px', fontSize: '13px',
-                        border: sigFont === f.id ? '2px solid #0f172a' : '1px solid #e2e8f0',
-                        background: sigFont === f.id ? '#f8fafc' : '#fff',
-                        fontFamily: f.family, cursor: 'pointer', color: '#0f172a',
-                        transition: 'all .15s',
-                      }}>{f.label}</button>
-                    ))}
-                  </div>
-                  {/* Signature preview area */}
-                  <div style={{
-                    border: '1px solid #d1d5db', borderRadius: '8px',
-                    background: '#fff', minHeight: '70px',
-                    display: 'flex', alignItems: 'center', padding: '12px 20px',
-                  }}>
+              {/* Error */}
+              <AnimatePresence>
+                {errMsg && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mx-6 mt-4 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-600 sm:mx-8">
+                      <XCircleIcon size={14} className="shrink-0" />
+                      {errMsg}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Fields */}
+              <div className="px-6 pt-5 sm:px-8">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {/* Name */}
+                  <div>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                      <UserIcon size={13} />
+                      Fullstandigt namn
+                    </label>
                     <input
                       type="text"
-                      value={typedSig}
-                      onChange={(e) => setTypedSig(e.target.value)}
-                      placeholder="Skriv ditt namn har..."
-                      style={{
-                        border: 'none', background: 'transparent', outline: 'none',
-                        width: '100%', fontFamily: font.family, fontSize: '28px',
-                        color: '#0f172a', padding: 0,
-                      }}
+                      value={signerName}
+                      onChange={(e) => setSignerName(e.target.value)}
+                      placeholder="Ditt namn"
+                      className="w-full rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-[border-color,box-shadow] focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+                    />
+                  </div>
+                  {/* Date */}
+                  <div>
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                      <CalendarIcon size={13} />
+                      Datum
+                    </label>
+                    <input
+                      type="text"
+                      value={todaySv()}
+                      readOnly
+                      className="w-full cursor-default rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-500 outline-none"
                     />
                   </div>
                 </div>
-              ) : (
-                <div>
-                  <div
-                    ref={canvasWrapperRef}
-                    style={{
-                      border: '1px solid #d1d5db', borderRadius: '8px',
-                      overflow: 'hidden', background: '#fff',
-                      height: '120px', position: 'relative',
-                    }}
-                  >
-                    <SignatureCanvas ref={sigRef} penColor="#0f172a" canvasProps={{ style: { display: 'block' } }} />
-                    {/* Baseline */}
-                    <div style={{ position: 'absolute', bottom: '28px', left: '20px', right: '20px', borderBottom: '1px dashed #e2e8f0', pointerEvents: 'none' }} />
-                    {/* Placeholder text */}
-                    <div style={{ position: 'absolute', top: '8px', right: '12px', fontSize: '10px', color: '#cbd5e1', pointerEvents: 'none', letterSpacing: '0.02em' }}>
-                      Rita din signatur
-                    </div>
-                  </div>
-                  <div style={{ marginTop: '6px', display: 'flex', justifyContent: 'flex-end' }}>
-                    <button type="button" onClick={() => sigRef.current?.clear()} style={{
-                      display: 'flex', alignItems: 'center', gap: '4px',
-                      padding: '4px 10px', borderRadius: '4px', fontSize: '12px',
-                      border: '1px solid #e2e8f0', background: '#fff', color: '#64748b',
-                      cursor: 'pointer',
-                    }}>
-                      {Icon.eraser(12, '#94a3b8')}
-                      Rensa
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
 
-            {/* Actions */}
-            <div style={{
-              padding: '16px 32px',
-              borderTop: '1px solid #e2e8f0',
-              background: '#f8fafc',
-              display: 'flex',
-              gap: '10px',
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-            }}>
-              <button type="button" onClick={() => setState('declining')} style={{
-                padding: '10px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
-                cursor: 'pointer', background: '#fff', color: '#dc2626',
-                border: '1px solid #fecaca', transition: 'all .15s',
-              }}>
-                Avvisa
-              </button>
-              <button type="button" onClick={() => void handleSign()} disabled={busy} style={{
-                padding: '10px 28px', borderRadius: '6px', fontSize: '14px', fontWeight: 600,
-                cursor: busy ? 'wait' : 'pointer', background: '#0f172a', color: '#fff',
-                border: 'none', opacity: busy ? 0.6 : 1, transition: 'opacity .15s',
-                display: 'flex', alignItems: 'center', gap: '8px',
-              }}>
-                {Icon.check(16, '#fff')}
-                {busy ? 'Signerar...' : 'Signera offert'}
-              </button>
-            </div>
-          </section>
-        ) : (
-          /* ─── Decline mode ─── */
-          <section style={{
-            background: '#fff',
-            borderRadius: '8px',
-            border: '1px solid #e2e8f0',
-            overflow: 'hidden',
-          }}>
-            <div style={{ padding: '20px 32px', borderBottom: '1px solid #e2e8f0' }}>
-              <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#dc2626' }}>Avvisa offert</h2>
-              <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>Avsandaren kommer att meddelas om ditt beslut.</p>
-            </div>
-            <div style={{ padding: '20px 32px' }}>
-              {errMsg && (
-                <div style={{ marginBottom: '12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '10px 14px', color: '#dc2626', fontSize: '13px' }}>
-                  {errMsg}
+              {/* Signature */}
+              <div className="px-6 pt-5 pb-6 sm:px-8">
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                    <EditIcon size={13} />
+                    Signatur
+                  </label>
+                  {/* Segmented control */}
+                  <div className="flex rounded-md bg-slate-100 p-0.5">
+                    {(['type', 'draw'] as const).map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setSigMode(m)}
+                        className={`rounded-[5px] px-3.5 py-1 text-xs font-semibold transition-all ${
+                          sigMode === m
+                            ? 'bg-white text-slate-900 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                      >
+                        {m === 'type' ? 'Skriv' : 'Rita'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              )}
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>Anledning (valfri)</label>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                rows={3}
-                placeholder="Beratta garna varfor..."
-                style={{
-                  width: '100%', border: '1px solid #d1d5db', borderRadius: '6px',
-                  padding: '10px 12px', fontSize: '14px', fontFamily: ff,
-                  outline: 'none', resize: 'vertical', boxSizing: 'border-box',
-                }}
-              />
-            </div>
-            <div style={{
-              padding: '16px 32px',
-              borderTop: '1px solid #e2e8f0',
-              background: '#f8fafc',
-              display: 'flex', gap: '10px', justifyContent: 'flex-end',
-            }}>
-              <button type="button" onClick={() => { setState('ready'); setErrMsg(''); }} style={{
-                padding: '10px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
-                cursor: 'pointer', background: '#fff', color: '#64748b',
-                border: '1px solid #e2e8f0',
-              }}>Avbryt</button>
-              <button type="button" onClick={() => void handleDecline()} disabled={busy} style={{
-                padding: '10px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
-                cursor: busy ? 'wait' : 'pointer', background: '#dc2626', color: '#fff',
-                border: 'none', opacity: busy ? 0.6 : 1,
-              }}>{busy ? 'Avvisar...' : 'Bekrafta avvisning'}</button>
-            </div>
-          </section>
-        )}
+
+                <AnimatePresence mode="wait">
+                  {sigMode === 'type' ? (
+                    <motion.div
+                      key="type"
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {/* Font selector */}
+                      <div className="mb-2.5 flex flex-wrap gap-1.5">
+                        {SIG_FONTS.map((f) => (
+                          <button
+                            key={f.id}
+                            type="button"
+                            onClick={() => setSigFont(f.id)}
+                            className={`rounded-md px-3 py-1.5 text-xs transition-all ${
+                              sigFont === f.id
+                                ? 'border-2 border-slate-900 bg-slate-50 font-semibold text-slate-900'
+                                : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                            }`}
+                            style={{ fontFamily: f.family }}
+                          >
+                            {f.label}
+                          </button>
+                        ))}
+                      </div>
+                      {/* Typed signature */}
+                      <div className="flex min-h-[72px] items-center rounded-lg border border-slate-200 bg-white px-5">
+                        <input
+                          type="text"
+                          value={typedSig}
+                          onChange={(e) => setTypedSig(e.target.value)}
+                          placeholder="Skriv ditt namn har..."
+                          className="w-full border-none bg-transparent p-0 text-3xl text-slate-900 outline-none placeholder:text-slate-300"
+                          style={{ fontFamily: selectedFont.family }}
+                        />
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="draw"
+                      initial={{ opacity: 0, x: 8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <div
+                        ref={canvasWrapperRef}
+                        className="relative h-[120px] overflow-hidden rounded-lg border border-slate-200 bg-white"
+                      >
+                        <SignatureCanvas ref={sigRef} penColor="#0f172a" canvasProps={{ style: { display: 'block' } }} />
+                        {/* Baseline */}
+                        <div className="pointer-events-none absolute bottom-7 left-5 right-5 border-b border-dashed border-slate-200" />
+                        {/* Hint */}
+                        <span className="pointer-events-none absolute right-3 top-2 text-[10px] tracking-wide text-slate-300">
+                          Rita din signatur
+                        </span>
+                      </div>
+                      <div className="mt-1.5 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => sigRef.current?.clear()}
+                          className="flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500 transition-colors hover:bg-slate-50"
+                        >
+                          <TrashIcon size={11} />
+                          Rensa
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Action bar */}
+              <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4 sm:px-8">
+                <button
+                  type="button"
+                  onClick={() => setState('declining')}
+                  className="rounded-md border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-500 transition-colors hover:bg-red-50"
+                >
+                  Avvisa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSign()}
+                  disabled={busy}
+                  className="flex items-center gap-2 rounded-md bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  <CheckCircleIcon size={15} />
+                  {busy ? 'Signerar...' : 'Signera offert'}
+                </button>
+              </div>
+            </motion.section>
+          ) : (
+            /* ─── Decline mode ─── */
+            <motion.section
+              key="decline"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+            >
+              <div className="border-b border-slate-100 px-6 py-5 sm:px-8">
+                <h2 className="text-base font-bold text-red-600">Avvisa offert</h2>
+                <p className="mt-1 text-[13px] text-slate-500">Avsandaren kommer att meddelas om ditt beslut.</p>
+              </div>
+              <div className="px-6 py-5 sm:px-8">
+                <AnimatePresence>
+                  {errMsg && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="mb-3 overflow-hidden rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-600"
+                    >
+                      {errMsg}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Anledning (valfri)</label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  rows={3}
+                  placeholder="Beratta garna varfor..."
+                  className="w-full resize-y rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-[border-color,box-shadow] focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+                />
+              </div>
+              <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4 sm:px-8">
+                <button
+                  type="button"
+                  onClick={() => { setState('ready'); setErrMsg(''); }}
+                  className="rounded-md border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                >
+                  Avbryt
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleDecline()}
+                  disabled={busy}
+                  className="rounded-md bg-red-600 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  {busy ? 'Avvisar...' : 'Bekrafta avvisning'}
+                </button>
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
 
         {/* Footer */}
-        <footer style={{ textAlign: 'center', padding: '24px 0 0', color: '#94a3b8', fontSize: '11px' }}>
-          <p style={{ margin: 0 }}>Elektronisk signering &middot; {offer.recipientEmail}</p>
-        </footer>
+        <p className="mt-8 text-center text-[11px] text-slate-400">
+          Elektronisk signering &middot; {offer?.recipientEmail}
+        </p>
       </main>
-    </div>
+    </motion.div>
   );
 }
