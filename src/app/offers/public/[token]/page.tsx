@@ -9,8 +9,8 @@
  * Flow:
  *  1. Fetch offer by token (auto-marks as 'viewed' if status = 'sent')
  *  2. Render the generated HTML document in an iframe
- *  3. Show signature pad + "Signera" / "Avvisa" buttons
- *  4. On sign: POST signature image → status becomes 'accepted'
+ *  3. Show name, date, and signature pad + "Signera" / "Avvisa" buttons
+ *  4. On sign: POST signature image + signer name → status becomes 'accepted'
  *  5. On decline: POST optional comment → status becomes 'declined'
  *
  * Security:
@@ -22,10 +22,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import SignatureCanvas from 'react-signature-canvas';
-
-// Injected at build time — if NEXT_PUBLIC_DOCUSIGN_ENABLED=true the DocuSign
-// button is shown instead of the canvas pad.
-const DOCUSIGN_ENABLED = process.env.NEXT_PUBLIC_DOCUSIGN_ENABLED === 'true';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -59,26 +55,22 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
+function todayISO() {
+  return new Date().toLocaleDateString('sv-SE');
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function PublicOfferPage() {
   const params = useParams<{ token: string }>();
   const token  = params.token;
 
-  // Handle DocuSign return query params (?signed=1 or ?declined=1)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const sp = new URLSearchParams(window.location.search);
-    if (sp.get('signed')   === '1') setState('accepted');
-    if (sp.get('declined') === '1') setState('declined');
-  }, []);
-
   const [state,        setState]        = useState<PageState>('loading');
   const [offer,        setOffer]        = useState<PublicOffer | null>(null);
   const [errMsg,       setErrMsg]       = useState('');
   const [comment,      setComment]      = useState('');
+  const [signerName,   setSignerName]   = useState('');
   const [busy,         setBusy]         = useState(false);
-  const [dsRedirecting, setDsRedirecting] = useState(false);
 
   const sigRef = useRef<SignatureCanvas>(null);
 
@@ -96,6 +88,7 @@ export default function PublicOfferPage() {
         const json = await res.json() as { data: PublicOffer };
         const o = json.data;
         setOffer(o);
+        setSignerName(o.recipientName ?? '');
         if (o.status === 'accepted') setState('accepted');
         else if (o.status === 'declined') setState('declined');
         else if (o.publicTokenExpiresAt && new Date(o.publicTokenExpiresAt) < new Date()) setState('expired');
@@ -109,6 +102,10 @@ export default function PublicOfferPage() {
 
   // ── Sign ──────────────────────────────────────────────────────────────────────
   const handleSign = useCallback(async () => {
+    if (!signerName.trim()) {
+      setErrMsg('Vänligen ange ditt namn.');
+      return;
+    }
     if (!sigRef.current || sigRef.current.isEmpty()) {
       setErrMsg('Vänligen rita din namnteckning i fältet ovan.');
       return;
@@ -118,7 +115,7 @@ export default function PublicOfferPage() {
       const signatureImage = sigRef.current.getTrimmedCanvas().toDataURL('image/png');
       const res = await fetch(`/api/offers/public/${token}/sign`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body:   JSON.stringify({ signatureImage }),
+        body:   JSON.stringify({ signatureImage, signerName: signerName.trim() }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({})) as { detail?: string };
@@ -130,27 +127,7 @@ export default function PublicOfferPage() {
     } finally {
       setBusy(false);
     }
-  }, [token]);
-
-  // ── DocuSign redirect ─────────────────────────────────────────────────────────
-  const handleDocuSign = useCallback(async () => {
-    setDsRedirecting(true); setErrMsg('');
-    try {
-      const res = await fetch('/api/offers/docusign/session', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body:   JSON.stringify({ token }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({})) as { error?: string };
-        throw new Error(j.error ?? `Fel ${res.status}`);
-      }
-      const j = await res.json() as { signingUrl: string };
-      window.location.href = j.signingUrl;
-    } catch (e) {
-      setErrMsg((e as Error).message);
-      setDsRedirecting(false);
-    }
-  }, [token]);
+  }, [token, signerName]);
 
   // ── Decline ───────────────────────────────────────────────────────────────────
   const handleDecline = useCallback(async () => {
@@ -186,6 +163,8 @@ export default function PublicOfferPage() {
     btnGry:  { background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0' },
     err:     { background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '12px 16px', color: '#dc2626', fontSize: '14px', marginBottom: '16px' },
     success: { textAlign: 'center' as const, padding: '48px 24px' },
+    input:   { width: '100%', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px', fontSize: '14px', boxSizing: 'border-box' as const, fontFamily: 'inherit', outline: 'none' },
+    label:   { display: 'block', fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px' },
   };
 
   // Loading
@@ -294,65 +273,57 @@ export default function PublicOfferPage() {
         {/* Signature / Decline section */}
         {!isDeclineMode ? (
           <div style={s.section}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>Signera offert</h3>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>Signera offert</h3>
 
             {errMsg && <div style={s.err}>{errMsg}</div>}
 
-            {DOCUSIGN_ENABLED ? (
-              /* ── DocuSign embedded signing ── */
-              <>
-                <p style={{ ...s.muted, marginBottom: '20px' }}>
-                  Klicka nedan för att signera offerten med säker e-signatur via DocuSign. Du omdirigeras tillbaka när du är klar.
-                </p>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <button
-                    onClick={() => void handleDocuSign()}
-                    disabled={dsRedirecting}
-                    style={{ ...s.btn, ...s.btnPri, opacity: dsRedirecting ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: '8px' }}
-                  >
-                    {dsRedirecting ? 'Omdirigerar…' : (
-                      <>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        </svg>
-                        Signera med DocuSign
-                      </>
-                    )}
-                  </button>
-                  <button onClick={() => setState('declining')} style={{ ...s.btn, ...s.btnDng }}>
-                    Avvisa offerten
-                  </button>
-                </div>
-                <p style={{ marginTop: '16px', fontSize: '11px', color: '#94a3b8' }}>
-                  Din signatur är rättsligt bindande enligt EU eIDAS-förordningen.
-                </p>
-              </>
-            ) : (
-              /* ── Canvas signature (default) ── */
-              <>
-                <p style={{ ...s.muted, marginBottom: '16px' }}>Rita din namnteckning i fältet nedan och klicka på &ldquo;Signera&rdquo;.</p>
-                <div style={{ border: '2px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', marginBottom: '12px', background: '#fff' }}>
-                  <SignatureCanvas
-                    ref={sigRef}
-                    penColor="#0f172a"
-                    canvasProps={{ style: { width: '100%', height: '160px', display: 'block' } }}
-                  />
-                </div>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-                  <button onClick={() => sigRef.current?.clear()} style={{ ...s.btn, ...s.btnGry, padding: '8px 16px', fontSize: '13px' }}>
-                    Rensa
-                  </button>
-                </div>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  <button onClick={() => void handleSign()} disabled={busy} style={{ ...s.btn, ...s.btnPri, opacity: busy ? 0.6 : 1 }}>
-                    {busy ? 'Signerar…' : '✍️  Signera offert'}
-                  </button>
-                  <button onClick={() => setState('declining')} style={{ ...s.btn, ...s.btnDng }}>
-                    Avvisa offerten
-                  </button>
-                </div>
-              </>
-            )}
+            {/* Name field */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={s.label}>Namn</label>
+              <input
+                type="text"
+                value={signerName}
+                onChange={(e) => setSignerName(e.target.value)}
+                placeholder="Ditt fullständiga namn"
+                style={s.input}
+              />
+            </div>
+
+            {/* Date field (read-only) */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={s.label}>Datum</label>
+              <input
+                type="text"
+                value={todayISO()}
+                readOnly
+                style={{ ...s.input, background: '#f8fafc', color: '#64748b' }}
+              />
+            </div>
+
+            {/* Signature pad */}
+            <div style={{ marginBottom: '12px' }}>
+              <label style={s.label}>Namnteckning</label>
+              <div style={{ border: '2px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', background: '#fff' }}>
+                <SignatureCanvas
+                  ref={sigRef}
+                  penColor="#0f172a"
+                  canvasProps={{ style: { width: '100%', height: '160px', display: 'block' } }}
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+              <button onClick={() => sigRef.current?.clear()} style={{ ...s.btn, ...s.btnGry, padding: '8px 16px', fontSize: '13px' }}>
+                Rensa
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <button onClick={() => void handleSign()} disabled={busy} style={{ ...s.btn, ...s.btnPri, opacity: busy ? 0.6 : 1 }}>
+                {busy ? 'Signerar…' : 'Signera offert'}
+              </button>
+              <button onClick={() => setState('declining')} style={{ ...s.btn, ...s.btnDng }}>
+                Avvisa offerten
+              </button>
+            </div>
           </div>
         ) : (
           <div style={s.section}>
@@ -388,7 +359,7 @@ export default function PublicOfferPage() {
         {/* Footer */}
         <div style={{ padding: '16px 28px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
           <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>
-            Säker e-signatur · Giltig till {fmtDate(offer.validUntil)} · {offer.recipientEmail}
+            E-signatur · Giltig till {fmtDate(offer.validUntil)} · {offer.recipientEmail}
           </p>
         </div>
       </div>

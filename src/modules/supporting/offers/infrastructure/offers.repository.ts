@@ -45,6 +45,7 @@ export interface UpdateOfferInput {
   reminderCount?:        number;
   generatedDocument?:    string;
   signatureImage?:       string;
+  signerName?:           string;
   publicTokenExpiresAt?: Date;
   lineItems?: Array<{
     id?:         string; // present = update; absent = insert
@@ -106,6 +107,7 @@ function mapOffer(r: Record<string, unknown>): Offer {
     templateId:           (r.templateId as string | null) ?? undefined,
     generatedDocument:    (r.generatedDocument as string | null) ?? undefined,
     signatureImage:       (r.signatureImage as string | null) ?? undefined,
+    signerName:           (r.signerName as string | null) ?? undefined,
     publicToken:          r.publicToken as string,
     publicTokenExpiresAt: r.publicTokenExpiresAt ? (r.publicTokenExpiresAt as Date).toISOString() : undefined,
     lineItems:            items.map(mapLineItem),
@@ -147,7 +149,7 @@ const OFFER_SELECT = {
   sentAt: true, viewedAt: true, acceptedAt: true, declinedAt: true,
   reminderSentAt: true, reminderCount: true,
   leadId: true, customerId: true,
-  templateId: true, generatedDocument: true, signatureImage: true,
+  templateId: true, generatedDocument: true, signatureImage: true, signerName: true,
   publicToken: true, publicTokenExpiresAt: true,
   createdAt: true, updatedAt: true,
   lineItems: { select: LINE_ITEM_SELECT, orderBy: { sortOrder: 'asc' as const } },
@@ -267,6 +269,7 @@ export const offersRepository = {
         ...(input.reminderCount        !== undefined ? { reminderCount: input.reminderCount }               : {}),
         ...(input.generatedDocument    !== undefined ? { generatedDocument: input.generatedDocument }       : {}),
         ...(input.signatureImage       !== undefined ? { signatureImage: input.signatureImage }             : {}),
+        ...(input.signerName           !== undefined ? { signerName: input.signerName }                     : {}),
         ...(input.publicTokenExpiresAt !== undefined ? { publicTokenExpiresAt: input.publicTokenExpiresAt } : {}),
         ...(totals ? { totalExVat: totals.totalExVat, totalIncVat: totals.totalIncVat } : {}),
         ...(input.lineItems ? {
@@ -350,6 +353,7 @@ export const offersRepository = {
         ...(input.reminderSentAt   !== undefined ? { reminderSentAt: input.reminderSentAt }                 : {}),
         ...(input.reminderCount    !== undefined ? { reminderCount: input.reminderCount }                   : {}),
         ...(input.signatureImage   !== undefined ? { signatureImage: input.signatureImage }                 : {}),
+        ...(input.signerName       !== undefined ? { signerName: input.signerName }                       : {}),
         ...(input.generatedDocument !== undefined ? { generatedDocument: input.generatedDocument }          : {}),
         ...(input.publicTokenExpiresAt !== undefined ? { publicTokenExpiresAt: input.publicTokenExpiresAt } : {}),
         ...(totals ? { totalExVat: totals.totalExVat, totalIncVat: totals.totalIncVat } : {}),
