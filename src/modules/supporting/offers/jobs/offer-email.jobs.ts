@@ -12,6 +12,7 @@ import { Resend }     from 'resend';
 import { jobQueue }   from '@platform/queue/job-queue';
 import { prisma }     from '@platform/database/prisma';
 import { logger }     from '@platform/logging/logger';
+import { sanitizeEmailHtml, escapeHtml } from '@platform/security/sanitize';
 import type {
   SendToRecipientPayload,
   NotifyCreatorPayload,
@@ -66,7 +67,7 @@ function sendToRecipientHtml(p: SendToRecipientPayload): string {
   if (p.emailBody) {
     return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
-      ${p.emailBody}
+      ${sanitizeEmailHtml(p.emailBody)}
       <div style="margin-top:24px;">
         <a href="${p.publicUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">
           Visa &amp; signera offert →
@@ -114,7 +115,7 @@ function notifyCreatorHtml(p: NotifyCreatorPayload): string {
       <h2 style="margin:0 0 8px 0;font-size:22px;">Offert avvisad ❌</h2>
       <p style="color:#64748b;margin:0 0 24px 0;">Din offert har avvisats.</p>
       <p style="margin:0 0 8px 0;"><strong>${p.offerTitle}</strong> avvisades av <strong>${p.recipientName}</strong>.</p>
-      ${p.comment ? `<p style="margin:8px 0;padding:12px 16px;background:#fef2f2;border-radius:8px;color:#991b1b;font-size:14px;"><strong>Anledning:</strong> ${p.comment}</p>` : ''}
+      ${p.comment ? `<p style="margin:8px 0;padding:12px 16px;background:#fef2f2;border-radius:8px;color:#991b1b;font-size:14px;"><strong>Anledning:</strong> ${escapeHtml(p.comment)}</p>` : ''}
     </div>`;
 }
 
@@ -123,7 +124,7 @@ function reminderHtml(p: ReminderPayload): string {
   if (p.emailBody) {
     return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
-      ${p.emailBody}
+      ${sanitizeEmailHtml(p.emailBody)}
       <div style="margin-top:24px;">
         <a href="${p.publicUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">
           Visa &amp; signera offert →

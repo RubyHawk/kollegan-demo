@@ -56,6 +56,7 @@ export interface Offer {
   emailBody?: string;            // custom email body HTML (snapshot, set at send time)
   signatureImage?: string;       // data URL of the recipient's e-signature
   signerName?: string;           // name typed by the signer at signing time
+  signatureMethod: string;       // "canvas" (SES) | "bankid" (AdES) — future
   publicToken: string;           // UUID used as the signing URL token
   publicTokenExpiresAt?: string; // ISO — 30 days after sentAt
 }

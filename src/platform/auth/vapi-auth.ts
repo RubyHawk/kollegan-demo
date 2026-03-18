@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { logger } from '@platform/logging/logger';
+import { constantTimeEqual } from '@platform/security/sanitize';
 
 const SECRET = process.env.VAPI_WEBHOOK_SECRET;
 
@@ -26,7 +27,7 @@ export function validateVapiAuth(req: NextRequest): { error: string; status: num
   }
 
   const header = req.headers.get('x-vapi-secret');
-  if (!header || header !== SECRET) {
+  if (!header || !constantTimeEqual(header, SECRET)) {
     return { error: 'Unauthorized', status: 401 };
   }
 

@@ -500,6 +500,7 @@ export default function PublicOfferPage() {
             <iframe
               ref={iframeRef}
               srcDoc={offer.generatedDocument}
+              sandbox="allow-same-origin"
               title="Offertdokument"
               onLoad={handleIframeLoad}
               className="block w-full border-none"
