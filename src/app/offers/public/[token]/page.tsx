@@ -73,6 +73,50 @@ export default function PublicOfferPage() {
   const [busy,         setBusy]         = useState(false);
 
   const sigRef = useRef<SignatureCanvas>(null);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
+
+  // ── Resize canvas to match container width (fixes blurry / misaligned drawing) ─
+  useEffect(() => {
+    const wrapper = canvasWrapperRef.current;
+    if (!wrapper) return;
+
+    const syncSize = () => {
+      const canvas = wrapper.querySelector('canvas');
+      if (!canvas) return;
+      const rect = wrapper.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const w = Math.floor(rect.width);
+      const h = 160;
+      // Only resize if dimensions actually changed to avoid clearing the drawing
+      if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+        // Save the current drawing before resize
+        const dataUrl = sigRef.current && !sigRef.current.isEmpty()
+          ? sigRef.current.getTrimmedCanvas().toDataURL('image/png')
+          : null;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = `${w}px`;
+        canvas.style.height = `${h}px`;
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.scale(dpr, dpr);
+        // Restore drawing after resize
+        if (dataUrl && sigRef.current) {
+          sigRef.current.fromDataURL(dataUrl, { width: w, height: h });
+        }
+      }
+    };
+
+    // Initial sync after mount
+    const raf = requestAnimationFrame(syncSize);
+
+    const observer = new ResizeObserver(syncSize);
+    observer.observe(wrapper);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
+  }, [state]); // re-run when state changes so canvas is available in DOM
 
   // ── Fetch offer ───────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -107,7 +151,7 @@ export default function PublicOfferPage() {
       return;
     }
     if (!sigRef.current || sigRef.current.isEmpty()) {
-      setErrMsg('Vänligen rita din namnteckning i fältet ovan.');
+      setErrMsg('Vänligen rita din namnteckning i fältet nedan.');
       return;
     }
     setBusy(true); setErrMsg('');
@@ -277,37 +321,40 @@ export default function PublicOfferPage() {
 
             {errMsg && <div style={s.err}>{errMsg}</div>}
 
-            {/* Name field */}
-            <div style={{ marginBottom: '16px' }}>
-              <label style={s.label}>Namn</label>
-              <input
-                type="text"
-                value={signerName}
-                onChange={(e) => setSignerName(e.target.value)}
-                placeholder="Ditt fullständiga namn"
-                style={s.input}
-              />
-            </div>
-
-            {/* Date field (read-only) */}
-            <div style={{ marginBottom: '16px' }}>
-              <label style={s.label}>Datum</label>
-              <input
-                type="text"
-                value={todayISO()}
-                readOnly
-                style={{ ...s.input, background: '#f8fafc', color: '#64748b' }}
-              />
+            {/* Name + Date on one row */}
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 200px' }}>
+                <label style={s.label}>Namn</label>
+                <input
+                  type="text"
+                  value={signerName}
+                  onChange={(e) => setSignerName(e.target.value)}
+                  placeholder="Ditt fullständiga namn"
+                  style={s.input}
+                />
+              </div>
+              <div style={{ flex: '0 0 160px' }}>
+                <label style={s.label}>Datum</label>
+                <input
+                  type="text"
+                  value={todayISO()}
+                  readOnly
+                  style={{ ...s.input, background: '#f8fafc', color: '#64748b' }}
+                />
+              </div>
             </div>
 
             {/* Signature pad */}
             <div style={{ marginBottom: '12px' }}>
               <label style={s.label}>Namnteckning</label>
-              <div style={{ border: '2px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', background: '#fff' }}>
+              <div
+                ref={canvasWrapperRef}
+                style={{ border: '2px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', background: '#fff', height: '160px' }}
+              >
                 <SignatureCanvas
                   ref={sigRef}
                   penColor="#0f172a"
-                  canvasProps={{ style: { width: '100%', height: '160px', display: 'block' } }}
+                  canvasProps={{ style: { display: 'block' } }}
                 />
               </div>
             </div>

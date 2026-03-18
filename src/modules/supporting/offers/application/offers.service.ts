@@ -419,6 +419,7 @@ export async function duplicateOffer(
     recipientCompany: existing.recipientCompany,
     notes:            existing.notes,
     validUntil:       new Date(existing.validUntil),
+    validityDays:     existing.validityDays,
     leadId:           existing.leadId,
     customerId:       existing.customerId,
     templateId:       existing.templateId,
