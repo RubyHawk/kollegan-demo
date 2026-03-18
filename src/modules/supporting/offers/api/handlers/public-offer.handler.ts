@@ -52,7 +52,7 @@ function getUserAgent(req: NextRequest): string {
 const PUBLIC_OFFER_FIELDS = [
   'id', 'title', 'status', 'recipientName', 'recipientEmail', 'recipientCompany',
   'totalExVat', 'totalIncVat', 'validUntil', 'notes', 'generatedDocument',
-  'publicToken', 'publicTokenExpiresAt', 'lineItems', 'sentAt', 'acceptedAt', 'declinedAt',
+  'publicToken', 'publicTokenExpiresAt', 'lineItems', 'sentAt', 'acceptedAt', 'declinedAt', 'signerName',
 ] as const;
 
 type PublicOffer = Record<(typeof PUBLIC_OFFER_FIELDS)[number], unknown>;
@@ -101,6 +101,7 @@ const SignBodySchema = z.object({
     .min(10)
     .max(MAX_SIGNATURE_BYTES * 1.4) // base64 overhead ~1.37x
     .refine((v) => v.startsWith('data:image/'), 'signatureImage must be a data URL'),
+  signerName: z.string().min(1).max(200).optional(),
 });
 
 export const handleSignPublicOffer = createHandler(
@@ -113,7 +114,7 @@ export const handleSignPublicOffer = createHandler(
     const ip        = getClientIp(req);
     const userAgent = getUserAgent(req);
 
-    const offer = await signOffer(token, body.signatureImage, ip, userAgent);
+    const offer = await signOffer(token, body.signatureImage, ip, userAgent, body.signerName);
 
     if (!offer) {
       throw Errors.badRequest('Offer cannot be signed — it may not exist, have expired, or already been processed');

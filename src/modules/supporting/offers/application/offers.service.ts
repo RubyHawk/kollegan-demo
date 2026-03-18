@@ -182,6 +182,7 @@ export async function signOffer(
   signatureImage: string,
   ip: string,
   userAgent: string,
+  signerName?: string,
 ): Promise<Offer | null> {
   const existing = await offersRepository.findByPublicToken(publicToken);
   if (!existing) return null;
@@ -200,6 +201,7 @@ export async function signOffer(
     status:         'accepted',
     acceptedAt:     new Date(),
     signatureImage,
+    ...(signerName ? { signerName } : {}),
   });
   if (!final) return null;
 
