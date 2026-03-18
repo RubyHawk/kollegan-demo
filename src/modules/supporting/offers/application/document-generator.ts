@@ -129,9 +129,9 @@ function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): st
         date:      'Signeringsdatum fylls i automatiskt',
       };
       return `
-        <div style="display:flex;align-items:center;gap:12px;border:2px dashed #cbd5e1;border-radius:10px;padding:20px 24px;margin:16px 0;background:#f8fafc;">
+        <div data-sig-field="${fieldType}" style="display:flex;align-items:center;gap:12px;border:2px dashed #cbd5e1;border-radius:10px;padding:20px 24px;margin:16px 0;background:#f8fafc;">
           <span style="font-size:20px;">${icons[fieldType] ?? '✍'}</span>
-          <div>
+          <div style="flex:1;">
             <p style="font-weight:600;color:#334155;margin:0 0 2px;">${label}</p>
             <p style="font-size:11px;color:#94a3b8;margin:0;">${escapeHtml(subtext[fieldType] ?? '')}</p>
           </div>
@@ -211,7 +211,7 @@ function buildLineItemsTable(items: OfferLineItem[]): string {
 // ─── Signature placeholder HTML ────────────────────────────────────────────────
 
 const SIGNATURE_FIELD_HTML = `
-  <div style="border:2px dashed #cbd5e1;border-radius:8px;padding:24px 20px;margin:24px 0;text-align:center;min-height:80px;background:#f8fafc;">
+  <div data-sig-field="signature" style="border:2px dashed #cbd5e1;border-radius:8px;padding:24px 20px;margin:24px 0;text-align:center;min-height:80px;background:#f8fafc;">
     <p style="color:#94a3b8;font-size:12px;margin:0 0 4px 0;text-transform:uppercase;letter-spacing:0.1em;font-weight:600;">Signatur</p>
     <p style="color:#cbd5e1;font-size:11px;margin:0;">Underteckna med e-signatur via länken du mottog</p>
   </div>`;
