@@ -3,17 +3,30 @@
 /**
  * /offers/public/[token]
  *
- * Public offer signing page.
- *
- * The document contains signature block placeholders (data-sig-field).
- * Clicking a placeholder opens a signing panel inline. Once all fields
- * are completed, the user can submit. The signing experience is clean
- * and professional — no duplicated sections.
+ * Public offer signing page. Full-width layout, professional design.
+ * Document renders at full width, signing section below with draw/type modes.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import SignatureCanvas from 'react-signature-canvas';
+
+// ─── SVG Icons (no emojis) ─────────────────────────────────────────────────────
+
+const Icon = {
+  pen: (sz = 18, col = '#64748b') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+  user: (sz = 18, col = '#64748b') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  calendar: (sz = 18, col = '#64748b') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  check: (sz = 18, col = '#16a34a') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>,
+  checkCircle: (sz = 20, col = '#16a34a') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>,
+  x: (sz = 18, col = '#64748b') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  clock: (sz = 40, col = '#94a3b8') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  alert: (sz = 40, col = '#ef4444') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+  shield: (sz = 40, col = '#16a34a') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>,
+  ban: (sz = 40, col = '#94a3b8') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>,
+  eraser: (sz = 14, col = '#64748b') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 20H7L3 16l9.5-9.5a2.83 2.83 0 014 0l3 3a2.83 2.83 0 010 4L11 22"/></svg>,
+  file: (sz = 16, col = '#64748b') => <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+};
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -37,7 +50,6 @@ interface PublicOffer {
 
 type PageState = 'loading' | 'ready' | 'declining' | 'accepted' | 'declined' | 'expired' | 'error';
 type SigMode = 'draw' | 'type';
-type ActiveField = 'signature' | 'name' | 'date' | null;
 
 const SIG_FONTS = [
   { id: 'cursive1', family: "'Segoe Script', 'Bradley Hand', cursive", label: 'Handskrift' },
@@ -82,135 +94,27 @@ export default function PublicOfferPage() {
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
 
-  // Signing fields
   const [signerName, setSignerName] = useState('');
   const [sigMode, setSigMode] = useState<SigMode>('type');
   const [sigFont, setSigFont] = useState(SIG_FONTS[0].id);
   const [typedSig, setTypedSig] = useState('');
-  const [signatureCompleted, setSignatureCompleted] = useState(false);
-  const [nameCompleted, setNameCompleted] = useState(false);
-
-  // Which field is currently open for editing
-  const [activeField, setActiveField] = useState<ActiveField>(null);
 
   const sigRef = useRef<SignatureCanvas>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
 
-  // ── Update iframe placeholders when fields are completed ─────────────────────
-  const updateIframePlaceholders = useCallback(() => {
-    const doc = iframeRef.current?.contentDocument;
-    if (!doc) return;
-
-    const nameBlock = doc.querySelector('[data-sig-field="name"]') as HTMLElement | null;
-    if (nameBlock) {
-      if (nameCompleted && signerName.trim()) {
-        nameBlock.style.borderColor = '#22c55e';
-        nameBlock.style.background = '#f0fdf4';
-        nameBlock.innerHTML = `
-          <span style="font-size:16px;">✅</span>
-          <div style="flex:1;">
-            <p style="font-size:11px;color:#16a34a;margin:0 0 2px;font-weight:600;">Fullständigt namn</p>
-            <p style="font-size:15px;color:#0f172a;margin:0;font-weight:600;">${signerName.trim().replace(/</g, '&lt;')}</p>
-          </div>
-          <span style="font-size:10px;color:#64748b;cursor:pointer;text-decoration:underline;" data-sig-edit="name">Ändra</span>`;
-        nameBlock.querySelector('[data-sig-edit="name"]')?.addEventListener('click', (e) => {
-          e.stopPropagation();
-          setActiveField('name');
-          setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
-        });
-      } else {
-        nameBlock.style.borderColor = '#cbd5e1';
-        nameBlock.style.background = '#f8fafc';
-        nameBlock.style.cursor = 'pointer';
-        nameBlock.innerHTML = `
-          <span style="font-size:16px;">👤</span>
-          <div style="flex:1;">
-            <p style="font-weight:600;color:#334155;margin:0 0 2px;font-size:13px;">Fullständigt namn</p>
-            <p style="font-size:11px;color:#94a3b8;margin:0;">Klicka för att fylla i</p>
-          </div>
-          <span style="font-size:10px;color:#fff;background:#0f172a;padding:4px 12px;border-radius:16px;font-weight:600;">Fyll i</span>`;
-      }
-      nameBlock.onclick = () => {
-        setActiveField('name');
-        setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
-      };
-    }
-
-    const dateBlock = doc.querySelector('[data-sig-field="date"]') as HTMLElement | null;
-    if (dateBlock) {
-      // Date is always auto-filled
-      dateBlock.style.borderColor = '#22c55e';
-      dateBlock.style.background = '#f0fdf4';
-      dateBlock.style.cursor = 'default';
-      dateBlock.innerHTML = `
-        <span style="font-size:16px;">✅</span>
-        <div style="flex:1;">
-          <p style="font-size:11px;color:#16a34a;margin:0 0 2px;font-weight:600;">Signeringsdatum</p>
-          <p style="font-size:15px;color:#0f172a;margin:0;font-weight:600;">${todaySv()}</p>
-        </div>`;
-    }
-
-    const sigBlock = doc.querySelector('[data-sig-field="signature"]') as HTMLElement | null;
-    if (sigBlock) {
-      if (signatureCompleted) {
-        sigBlock.style.borderColor = '#22c55e';
-        sigBlock.style.background = '#f0fdf4';
-        const font = SIG_FONTS.find((f) => f.id === sigFont) ?? SIG_FONTS[0];
-        const preview = sigMode === 'type' && typedSig.trim()
-          ? `<p style="font-family:${font.family};font-size:24px;color:#0f172a;margin:0;">${typedSig.trim().replace(/</g, '&lt;')}</p>`
-          : `<p style="font-size:13px;color:#0f172a;margin:0;font-weight:600;">Signatur ritad ✓</p>`;
-        sigBlock.innerHTML = `
-          <span style="font-size:16px;">✅</span>
-          <div style="flex:1;">
-            <p style="font-size:11px;color:#16a34a;margin:0 0 2px;font-weight:600;">Signatur</p>
-            ${preview}
-          </div>
-          <span style="font-size:10px;color:#64748b;cursor:pointer;text-decoration:underline;" data-sig-edit="sig">Ändra</span>`;
-        sigBlock.querySelector('[data-sig-edit="sig"]')?.addEventListener('click', (e) => {
-          e.stopPropagation();
-          setSignatureCompleted(false);
-          setActiveField('signature');
-          setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
-        });
-      } else {
-        sigBlock.style.borderColor = '#cbd5e1';
-        sigBlock.style.background = '#f8fafc';
-        sigBlock.style.cursor = 'pointer';
-        sigBlock.innerHTML = `
-          <span style="font-size:16px;">✍</span>
-          <div style="flex:1;">
-            <p style="font-weight:600;color:#334155;margin:0 0 2px;font-size:13px;">Signatur</p>
-            <p style="font-size:11px;color:#94a3b8;margin:0;">Klicka för att signera</p>
-          </div>
-          <span style="font-size:10px;color:#fff;background:#0f172a;padding:4px 12px;border-radius:16px;font-weight:600;">Signera</span>`;
-      }
-      sigBlock.onclick = () => {
-        if (!signatureCompleted) {
-          setActiveField('signature');
-          setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
-        }
-      };
-    }
-
-    // Resize iframe
-    const iframe = iframeRef.current!;
-    if (doc.body) iframe.style.height = `${doc.body.scrollHeight}px`;
-  }, [signerName, nameCompleted, signatureCompleted, sigMode, typedSig, sigFont]);
-
-  // ── Inject into iframe on load ───────────────────────────────────────────────
+  // ── Inject styles into iframe on load ────────────────────────────────────────
   const handleIframeLoad = useCallback(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
     const doc = iframe.contentDocument;
     if (!doc) return;
 
-    // Strip internal card styling
+    // Strip the internal card styling — parent handles layout
     const wrapper = doc.querySelector('.doc-wrapper') as HTMLElement | null;
     if (wrapper) {
       wrapper.style.margin = '0';
-      wrapper.style.padding = '20px 24px';
+      wrapper.style.padding = '32px 40px';
       wrapper.style.border = 'none';
       wrapper.style.borderRadius = '0';
       wrapper.style.maxWidth = 'none';
@@ -218,26 +122,28 @@ export default function PublicOfferPage() {
     }
     doc.body.style.margin = '0';
     doc.body.style.padding = '0';
+    doc.body.style.overflow = 'hidden';
 
-    updateIframePlaceholders();
-
-    // Resize after images load
-    const images = doc.querySelectorAll('img');
-    images.forEach((img) => {
-      if (!img.complete) img.addEventListener('load', () => {
-        if (doc.body) iframe.style.height = `${doc.body.scrollHeight}px`;
-      });
+    // Hide signature blocks inside the document — signing is handled outside
+    doc.querySelectorAll('[data-sig-field]').forEach((el) => {
+      (el as HTMLElement).style.display = 'none';
     });
-  }, [updateIframePlaceholders]);
 
-  // Re-update placeholders when completion state changes
-  useEffect(() => {
-    updateIframePlaceholders();
-  }, [updateIframePlaceholders]);
+    // Auto-resize iframe to content
+    const resize = () => {
+      if (doc.body) iframe.style.height = `${doc.body.scrollHeight}px`;
+    };
+    resize();
+    doc.querySelectorAll('img').forEach((img) => {
+      if (!img.complete) img.addEventListener('load', resize);
+    });
+    const observer = new MutationObserver(resize);
+    observer.observe(doc.body, { childList: true, subtree: true, attributes: true });
+  }, []);
 
   // ── Resize draw canvas ───────────────────────────────────────────────────────
   useEffect(() => {
-    if (sigMode !== 'draw' || activeField !== 'signature') return;
+    if (sigMode !== 'draw') return;
     const wrapper = canvasWrapperRef.current;
     if (!wrapper) return;
     const syncSize = () => {
@@ -245,7 +151,7 @@ export default function PublicOfferPage() {
       if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
       const w = Math.floor(wrapper.getBoundingClientRect().width);
-      const h = 90;
+      const h = 120;
       if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
         const prev = sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getTrimmedCanvas().toDataURL('image/png') : null;
         canvas.width = w * dpr; canvas.height = h * dpr;
@@ -259,7 +165,7 @@ export default function PublicOfferPage() {
     const observer = new ResizeObserver(syncSize);
     observer.observe(wrapper);
     return () => { cancelAnimationFrame(raf); observer.disconnect(); };
-  }, [sigMode, activeField]);
+  }, [sigMode, state]);
 
   // ── Fetch offer ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -282,28 +188,6 @@ export default function PublicOfferPage() {
     })();
   }, [token]);
 
-  // ── Confirm name field ───────────────────────────────────────────────────────
-  const confirmName = () => {
-    if (!signerName.trim()) { setErrMsg('Vänligen ange ditt namn.'); return; }
-    setNameCompleted(true);
-    setErrMsg('');
-    setActiveField(null);
-  };
-
-  // ── Confirm signature field ──────────────────────────────────────────────────
-  const confirmSignature = () => {
-    if (sigMode === 'draw' && (!sigRef.current || sigRef.current.isEmpty())) {
-      setErrMsg('Vänligen rita din namnteckning.'); return;
-    }
-    if (sigMode === 'type' && !typedSig.trim()) {
-      setErrMsg('Vänligen skriv din namnteckning.'); return;
-    }
-    setSignatureCompleted(true);
-    setErrMsg('');
-    setActiveField(null);
-  };
-
-  // ── Submit ───────────────────────────────────────────────────────────────────
   const getSignatureImage = useCallback((): string | null => {
     if (sigMode === 'draw') {
       if (!sigRef.current || sigRef.current.isEmpty()) return null;
@@ -315,10 +199,9 @@ export default function PublicOfferPage() {
   }, [sigMode, typedSig, sigFont]);
 
   const handleSign = useCallback(async () => {
-    if (!nameCompleted || !signerName.trim()) { setErrMsg('Vänligen fyll i ditt namn i dokumentet.'); return; }
-    if (!signatureCompleted) { setErrMsg('Vänligen signera i dokumentet.'); return; }
+    if (!signerName.trim()) { setErrMsg('Ange ditt fullstandiga namn.'); return; }
     const signatureImage = getSignatureImage();
-    if (!signatureImage) { setErrMsg('Signatur saknas.'); return; }
+    if (!signatureImage) { setErrMsg(sigMode === 'draw' ? 'Rita din namnteckning i rutan.' : 'Skriv din namnteckning.'); return; }
     setBusy(true); setErrMsg('');
     try {
       const res = await fetch(`/api/offers/public/${token}/sign`, {
@@ -328,7 +211,7 @@ export default function PublicOfferPage() {
       if (!res.ok) { const j = await res.json().catch(() => ({})) as { detail?: string }; throw new Error(j.detail ?? `Fel ${res.status}`); }
       setState('accepted');
     } catch (e) { setErrMsg((e as Error).message); } finally { setBusy(false); }
-  }, [token, signerName, nameCompleted, signatureCompleted, getSignatureImage]);
+  }, [token, signerName, getSignatureImage, sigMode]);
 
   const handleDecline = useCallback(async () => {
     setBusy(true); setErrMsg('');
@@ -342,183 +225,344 @@ export default function PublicOfferPage() {
     } catch (e) { setErrMsg((e as Error).message); } finally { setBusy(false); }
   }, [token, comment]);
 
-  // ─── Styles ──────────────────────────────────────────────────────────────────
+  // ─── Shared styles ───────────────────────────────────────────────────────────
 
-  const S: Record<string, React.CSSProperties> = {
-    wrap:   { maxWidth: '680px', margin: '0 auto', padding: '16px 12px', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' },
-    card:   { background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,.06)' },
-    muted:  { color: '#64748b', fontSize: '12px', margin: 0 },
-    err:    { background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '8px 12px', color: '#dc2626', fontSize: '13px', marginBottom: '10px' },
-    btn:    { padding: '9px 20px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', border: 'none', transition: 'opacity .15s' },
-    btnPri: { background: '#0f172a', color: '#fff' },
-    btnDng: { background: '#fff', color: '#dc2626', border: '1px solid #fecaca' },
-    btnGry: { background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0' },
-    label:  { display: 'block', fontSize: '11px', fontWeight: 600, color: '#374151', marginBottom: '3px' },
-    input:  { width: '100%', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '7px 10px', fontSize: '14px', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' },
-    center: { textAlign: 'center', padding: '40px 20px' },
-    panel:  { padding: '14px 20px', borderTop: '1px solid #e2e8f0', background: '#f8fafc' },
+  const font = SIG_FONTS.find((f) => f.id === sigFont) ?? SIG_FONTS[0];
+  const ff = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+
+  const pageStyle: React.CSSProperties = {
+    minHeight: '100vh',
+    background: '#f1f5f9',
+    fontFamily: ff,
+    color: '#0f172a',
   };
-
-  const pill = (on: boolean): React.CSSProperties => ({
-    padding: '4px 12px', borderRadius: '16px', fontSize: '11px', fontWeight: 600,
-    cursor: 'pointer', border: 'none', background: on ? '#0f172a' : '#f1f5f9', color: on ? '#fff' : '#64748b',
-  });
 
   // ─── Terminal states ─────────────────────────────────────────────────────────
 
-  if (state === 'loading') return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}><p style={S.muted}>Laddar offert…</p></div>;
-  if (state === 'expired') return <div style={S.wrap}><div style={{ ...S.card, ...S.center }}><div style={{ fontSize: '40px', marginBottom: '12px' }}>⏰</div><h2 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 700 }}>Länken har utgått</h2><p style={S.muted}>Kontakta avsändaren för en ny länk.</p></div></div>;
-  if (state === 'error') return <div style={S.wrap}><div style={{ ...S.card, ...S.center }}><div style={{ fontSize: '40px', marginBottom: '12px' }}>❌</div><h2 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 700 }}>Offerten hittades inte</h2><p style={S.muted}>{errMsg || 'Kontrollera länken.'}</p></div></div>;
-  if (state === 'accepted') return <div style={S.wrap}><div style={{ ...S.card, ...S.center }}><div style={{ fontSize: '40px', marginBottom: '12px' }}>✅</div><h2 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 700 }}>Offert signerad!</h2><p style={S.muted}>Tack! Avsändaren har meddelats.</p></div></div>;
-  if (state === 'declined') return <div style={S.wrap}><div style={{ ...S.card, ...S.center }}><div style={{ fontSize: '40px', marginBottom: '12px' }}>🚫</div><h2 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 700 }}>Offert avvisad</h2><p style={S.muted}>Avsändaren har meddelats.</p></div></div>;
+  const statusPage = (icon: React.ReactNode, title: string, sub: string) => (
+    <div style={pageStyle}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '40px 24px', textAlign: 'center' }}>
+        <div style={{ marginBottom: '20px' }}>{icon}</div>
+        <h1 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 700, color: '#0f172a' }}>{title}</h1>
+        <p style={{ margin: 0, fontSize: '14px', color: '#64748b', maxWidth: '360px', lineHeight: 1.6 }}>{sub}</p>
+      </div>
+    </div>
+  );
+
+  if (state === 'loading') return (
+    <div style={pageStyle}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <p style={{ color: '#94a3b8', fontSize: '14px' }}>Laddar offert...</p>
+      </div>
+    </div>
+  );
+  if (state === 'expired') return statusPage(Icon.clock(), 'Lanken har gatt ut', 'Kontakta avsandaren for att fa en ny lank till offerten.');
+  if (state === 'error') return statusPage(Icon.alert(), 'Offerten hittades inte', errMsg || 'Kontrollera lanken och forsok igen.');
+  if (state === 'accepted') return statusPage(Icon.shield(), 'Offert signerad', 'Tack! Avsandaren har meddelats om din signering.');
+  if (state === 'declined') return statusPage(Icon.ban(), 'Offert avvisad', 'Avsandaren har meddelats.');
 
   if (!offer) return null;
   const isDecline = state === 'declining';
-  const font = SIG_FONTS.find((f) => f.id === sigFont) ?? SIG_FONTS[0];
-  const allDone = nameCompleted && signatureCompleted;
 
   return (
-    <div style={S.wrap}>
-      <div style={S.card}>
-        {/* ── Header ── */}
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{offer.title}</h1>
-            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>
-              Till {offer.recipientName}{offer.recipientCompany ? ` · ${offer.recipientCompany}` : ''} · Giltig till {fmtDate(offer.validUntil)}
-            </p>
+    <div style={pageStyle}>
+      {/* ─── Top bar ─── */}
+      <header style={{
+        background: '#fff',
+        borderBottom: '1px solid #e2e8f0',
+        padding: '0 24px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+      }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '56px', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+            {Icon.file(18, '#94a3b8')}
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{ margin: 0, fontSize: '15px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{offer.title}</h1>
+              <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>
+                {offer.recipientName}{offer.recipientCompany ? ` / ${offer.recipientCompany}` : ''}
+              </p>
+            </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>{fmtSEK(offer.totalIncVat)}</p>
-            <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8' }}>inkl. moms</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>{fmtSEK(offer.totalIncVat)}</p>
+              <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8', letterSpacing: '0.03em' }}>INKL. MOMS</p>
+            </div>
+            <div style={{ width: '1px', height: '28px', background: '#e2e8f0' }} />
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Giltig till</p>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: 600 }}>{fmtDate(offer.validUntil)}</p>
+            </div>
           </div>
         </div>
+      </header>
 
-        {/* ── Document ── */}
+      {/* ─── Main content ─── */}
+      <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 24px 48px' }}>
+
+        {/* Document section */}
         {offer.generatedDocument && (
-          <iframe
-            ref={iframeRef}
-            srcDoc={offer.generatedDocument}
-            title="Offertdokument"
-            onLoad={handleIframeLoad}
-            style={{ width: '100%', border: 'none', display: 'block', overflow: 'hidden' }}
-            scrolling="no"
-          />
+          <section style={{
+            background: '#fff',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden',
+            marginBottom: '24px',
+          }}>
+            <iframe
+              ref={iframeRef}
+              srcDoc={offer.generatedDocument}
+              title="Offertdokument"
+              onLoad={handleIframeLoad}
+              style={{ width: '100%', border: 'none', display: 'block', overflow: 'hidden' }}
+              scrolling="no"
+            />
+          </section>
         )}
 
-        {/* ── Inline editing panel (appears when a field is clicked) ── */}
-        {activeField && (
-          <div ref={panelRef} style={S.panel}>
-            {errMsg && <div style={S.err}>{errMsg}</div>}
+        {/* ─── Signing section ─── */}
+        {!isDecline ? (
+          <section style={{
+            background: '#fff',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden',
+          }}>
+            {/* Section header */}
+            <div style={{ padding: '20px 32px', borderBottom: '1px solid #e2e8f0' }}>
+              <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>Godkannande och underskrift</h2>
+              <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b', lineHeight: 1.5 }}>
+                Genom att underteckna bekraftar du att offerten godkants och att villkoren accepteras.
+              </p>
+            </div>
 
-            {activeField === 'name' && (
-              <>
-                <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>👤 Fullständigt namn</p>
+            {errMsg && (
+              <div style={{ margin: '16px 32px 0', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '10px 14px', color: '#dc2626', fontSize: '13px' }}>
+                {errMsg}
+              </div>
+            )}
+
+            {/* Fields grid */}
+            <div style={{ padding: '20px 32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* Name */}
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                  {Icon.user(14, '#64748b')}
+                  Fullstandigt namn
+                </label>
                 <input
                   type="text"
                   value={signerName}
                   onChange={(e) => setSignerName(e.target.value)}
-                  placeholder="Skriv ditt fullständiga namn"
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === 'Enter') confirmName(); }}
-                  style={S.input as React.CSSProperties}
+                  placeholder="Ditt namn"
+                  style={{
+                    width: '100%', padding: '10px 12px', fontSize: '14px',
+                    border: '1px solid #d1d5db', borderRadius: '6px',
+                    outline: 'none', fontFamily: ff, boxSizing: 'border-box',
+                    transition: 'border-color .15s',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = '#0f172a'; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#d1d5db'; }}
                 />
-                <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                  <button type="button" onClick={confirmName} style={{ ...S.btn, ...S.btnPri }}>Bekräfta</button>
-                  <button type="button" onClick={() => { setActiveField(null); setErrMsg(''); }} style={{ ...S.btn, ...S.btnGry }}>Avbryt</button>
-                </div>
-              </>
-            )}
+              </div>
 
-            {activeField === 'signature' && (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>✍ Signatur</p>
-                  <div style={{ display: 'flex', gap: '3px' }}>
-                    <button type="button" onClick={() => setSigMode('type')} style={pill(sigMode === 'type')}>Skriv</button>
-                    <button type="button" onClick={() => setSigMode('draw')} style={pill(sigMode === 'draw')}>Rita</button>
+              {/* Date */}
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#374151', marginBottom: '6px' }}>
+                  {Icon.calendar(14, '#64748b')}
+                  Datum
+                </label>
+                <input
+                  type="text"
+                  value={todaySv()}
+                  readOnly
+                  style={{
+                    width: '100%', padding: '10px 12px', fontSize: '14px',
+                    border: '1px solid #d1d5db', borderRadius: '6px',
+                    outline: 'none', fontFamily: ff, boxSizing: 'border-box',
+                    background: '#f8fafc', color: '#64748b', cursor: 'default',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Signature */}
+            <div style={{ padding: '0 32px 24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: '#374151' }}>
+                  {Icon.pen(14, '#64748b')}
+                  Signatur
+                </label>
+                <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '6px', padding: '2px', gap: '2px' }}>
+                  <button type="button" onClick={() => setSigMode('type')} style={{
+                    padding: '5px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: 600,
+                    cursor: 'pointer', border: 'none', transition: 'all .15s',
+                    background: sigMode === 'type' ? '#fff' : 'transparent',
+                    color: sigMode === 'type' ? '#0f172a' : '#64748b',
+                    boxShadow: sigMode === 'type' ? '0 1px 2px rgba(0,0,0,.08)' : 'none',
+                  }}>Skriv</button>
+                  <button type="button" onClick={() => setSigMode('draw')} style={{
+                    padding: '5px 14px', borderRadius: '4px', fontSize: '12px', fontWeight: 600,
+                    cursor: 'pointer', border: 'none', transition: 'all .15s',
+                    background: sigMode === 'draw' ? '#fff' : 'transparent',
+                    color: sigMode === 'draw' ? '#0f172a' : '#64748b',
+                    boxShadow: sigMode === 'draw' ? '0 1px 2px rgba(0,0,0,.08)' : 'none',
+                  }}>Rita</button>
+                </div>
+              </div>
+
+              {sigMode === 'type' ? (
+                <div>
+                  {/* Font selector */}
+                  <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                    {SIG_FONTS.map((f) => (
+                      <button key={f.id} type="button" onClick={() => setSigFont(f.id)} style={{
+                        padding: '6px 14px', borderRadius: '6px', fontSize: '13px',
+                        border: sigFont === f.id ? '2px solid #0f172a' : '1px solid #e2e8f0',
+                        background: sigFont === f.id ? '#f8fafc' : '#fff',
+                        fontFamily: f.family, cursor: 'pointer', color: '#0f172a',
+                        transition: 'all .15s',
+                      }}>{f.label}</button>
+                    ))}
+                  </div>
+                  {/* Signature preview area */}
+                  <div style={{
+                    border: '1px solid #d1d5db', borderRadius: '8px',
+                    background: '#fff', minHeight: '70px',
+                    display: 'flex', alignItems: 'center', padding: '12px 20px',
+                  }}>
+                    <input
+                      type="text"
+                      value={typedSig}
+                      onChange={(e) => setTypedSig(e.target.value)}
+                      placeholder="Skriv ditt namn har..."
+                      style={{
+                        border: 'none', background: 'transparent', outline: 'none',
+                        width: '100%', fontFamily: font.family, fontSize: '28px',
+                        color: '#0f172a', padding: 0,
+                      }}
+                    />
                   </div>
                 </div>
-
-                {sigMode === 'type' ? (
-                  <>
-                    <div style={{ display: 'flex', gap: '5px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                      {SIG_FONTS.map((f) => (
-                        <button key={f.id} type="button" onClick={() => setSigFont(f.id)} style={{
-                          padding: '3px 10px', borderRadius: '5px', fontSize: '11px',
-                          border: sigFont === f.id ? '2px solid #0f172a' : '1px solid #e2e8f0',
-                          background: sigFont === f.id ? '#f0f4ff' : '#fff',
-                          fontFamily: f.family, cursor: 'pointer', color: '#0f172a',
-                        }}>{f.label}</button>
-                      ))}
+              ) : (
+                <div>
+                  <div
+                    ref={canvasWrapperRef}
+                    style={{
+                      border: '1px solid #d1d5db', borderRadius: '8px',
+                      overflow: 'hidden', background: '#fff',
+                      height: '120px', position: 'relative',
+                    }}
+                  >
+                    <SignatureCanvas ref={sigRef} penColor="#0f172a" canvasProps={{ style: { display: 'block' } }} />
+                    {/* Baseline */}
+                    <div style={{ position: 'absolute', bottom: '28px', left: '20px', right: '20px', borderBottom: '1px dashed #e2e8f0', pointerEvents: 'none' }} />
+                    {/* Placeholder text */}
+                    <div style={{ position: 'absolute', top: '8px', right: '12px', fontSize: '10px', color: '#cbd5e1', pointerEvents: 'none', letterSpacing: '0.02em' }}>
+                      Rita din signatur
                     </div>
-                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 14px', background: '#fff', minHeight: '48px', display: 'flex', alignItems: 'center' }}>
-                      <input
-                        type="text"
-                        value={typedSig}
-                        onChange={(e) => setTypedSig(e.target.value)}
-                        placeholder="Skriv ditt namn…"
-                        autoFocus
-                        style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontFamily: font.family, fontSize: '26px', color: '#0f172a', padding: 0 }}
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div ref={canvasWrapperRef} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#fff', height: '90px', position: 'relative' }}>
-                      <SignatureCanvas ref={sigRef} penColor="#0f172a" canvasProps={{ style: { display: 'block' } }} />
-                      <div style={{ position: 'absolute', bottom: '20px', left: '12px', right: '12px', borderBottom: '1px dashed #e2e8f0', pointerEvents: 'none' }} />
-                    </div>
-                    <div style={{ marginTop: '4px' }}>
-                      <button type="button" onClick={() => sigRef.current?.clear()} style={{ ...S.btn, ...S.btnGry, padding: '2px 10px', fontSize: '11px' }}>Rensa</button>
-                    </div>
-                  </>
-                )}
-
-                <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                  <button type="button" onClick={confirmSignature} style={{ ...S.btn, ...S.btnPri }}>Bekräfta signatur</button>
-                  <button type="button" onClick={() => { setActiveField(null); setErrMsg(''); }} style={{ ...S.btn, ...S.btnGry }}>Avbryt</button>
+                  </div>
+                  <div style={{ marginTop: '6px', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button type="button" onClick={() => sigRef.current?.clear()} style={{
+                      display: 'flex', alignItems: 'center', gap: '4px',
+                      padding: '4px 10px', borderRadius: '4px', fontSize: '12px',
+                      border: '1px solid #e2e8f0', background: '#fff', color: '#64748b',
+                      cursor: 'pointer',
+                    }}>
+                      {Icon.eraser(12, '#94a3b8')}
+                      Rensa
+                    </button>
+                  </div>
                 </div>
-              </>
-            )}
-          </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div style={{
+              padding: '16px 32px',
+              borderTop: '1px solid #e2e8f0',
+              background: '#f8fafc',
+              display: 'flex',
+              gap: '10px',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+            }}>
+              <button type="button" onClick={() => setState('declining')} style={{
+                padding: '10px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+                cursor: 'pointer', background: '#fff', color: '#dc2626',
+                border: '1px solid #fecaca', transition: 'all .15s',
+              }}>
+                Avvisa
+              </button>
+              <button type="button" onClick={() => void handleSign()} disabled={busy} style={{
+                padding: '10px 28px', borderRadius: '6px', fontSize: '14px', fontWeight: 600,
+                cursor: busy ? 'wait' : 'pointer', background: '#0f172a', color: '#fff',
+                border: 'none', opacity: busy ? 0.6 : 1, transition: 'opacity .15s',
+                display: 'flex', alignItems: 'center', gap: '8px',
+              }}>
+                {Icon.check(16, '#fff')}
+                {busy ? 'Signerar...' : 'Signera offert'}
+              </button>
+            </div>
+          </section>
+        ) : (
+          /* ─── Decline mode ─── */
+          <section style={{
+            background: '#fff',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden',
+          }}>
+            <div style={{ padding: '20px 32px', borderBottom: '1px solid #e2e8f0' }}>
+              <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#dc2626' }}>Avvisa offert</h2>
+              <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>Avsandaren kommer att meddelas om ditt beslut.</p>
+            </div>
+            <div style={{ padding: '20px 32px' }}>
+              {errMsg && (
+                <div style={{ marginBottom: '12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '10px 14px', color: '#dc2626', fontSize: '13px' }}>
+                  {errMsg}
+                </div>
+              )}
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>Anledning (valfri)</label>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={3}
+                placeholder="Beratta garna varfor..."
+                style={{
+                  width: '100%', border: '1px solid #d1d5db', borderRadius: '6px',
+                  padding: '10px 12px', fontSize: '14px', fontFamily: ff,
+                  outline: 'none', resize: 'vertical', boxSizing: 'border-box',
+                }}
+              />
+            </div>
+            <div style={{
+              padding: '16px 32px',
+              borderTop: '1px solid #e2e8f0',
+              background: '#f8fafc',
+              display: 'flex', gap: '10px', justifyContent: 'flex-end',
+            }}>
+              <button type="button" onClick={() => { setState('ready'); setErrMsg(''); }} style={{
+                padding: '10px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+                cursor: 'pointer', background: '#fff', color: '#64748b',
+                border: '1px solid #e2e8f0',
+              }}>Avbryt</button>
+              <button type="button" onClick={() => void handleDecline()} disabled={busy} style={{
+                padding: '10px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+                cursor: busy ? 'wait' : 'pointer', background: '#dc2626', color: '#fff',
+                border: 'none', opacity: busy ? 0.6 : 1,
+              }}>{busy ? 'Avvisar...' : 'Bekrafta avvisning'}</button>
+            </div>
+          </section>
         )}
 
-        {/* ── Bottom action bar ── */}
-        {!isDecline ? (
-          <div style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            {errMsg && !activeField && <div style={{ ...S.err, width: '100%' }}>{errMsg}</div>}
-            {!allDone && (
-              <p style={{ ...S.muted, flex: '1 1 auto', fontSize: '12px' }}>
-                Fyll i alla fält i dokumentet ovan för att signera.
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={() => void handleSign()}
-              disabled={busy || !allDone}
-              style={{ ...S.btn, ...S.btnPri, opacity: busy || !allDone ? 0.4 : 1, flex: allDone ? '1 1 auto' : undefined }}
-            >
-              {busy ? 'Signerar…' : 'Signera offert'}
-            </button>
-            <button type="button" onClick={() => setState('declining')} style={{ ...S.btn, ...S.btnDng }}>Avvisa</button>
-          </div>
-        ) : (
-          <div style={{ padding: '14px 20px', borderTop: '1px solid #e2e8f0' }}>
-            <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 700, color: '#dc2626' }}>Avvisa offert</p>
-            <p style={{ ...S.muted, marginBottom: '10px' }}>Avsändaren kommer att meddelas.</p>
-            {errMsg && <div style={S.err}>{errMsg}</div>}
-            <div style={{ marginBottom: '10px' }}>
-              <label style={S.label}>Anledning (valfri)</label>
-              <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={2} placeholder="Berätta gärna varför…" style={{ ...S.input, resize: 'vertical' } as React.CSSProperties} />
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button type="button" onClick={() => void handleDecline()} disabled={busy} style={{ ...S.btn, background: '#dc2626', color: '#fff', opacity: busy ? 0.6 : 1 }}>{busy ? 'Avvisar…' : 'Bekräfta'}</button>
-              <button type="button" onClick={() => { setState('ready'); setErrMsg(''); }} style={{ ...S.btn, ...S.btnGry }}>Avbryt</button>
-            </div>
-          </div>
-        )}
-      </div>
+        {/* Footer */}
+        <footer style={{ textAlign: 'center', padding: '24px 0 0', color: '#94a3b8', fontSize: '11px' }}>
+          <p style={{ margin: 0 }}>Elektronisk signering &middot; {offer.recipientEmail}</p>
+        </footer>
+      </main>
     </div>
   );
 }
