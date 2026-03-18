@@ -17,6 +17,7 @@
  */
 
 import type { Offer, OfferLineItem } from '../domain/offer.entity';
+import { sanitizeUrl, escapeHtml as secureEscapeHtml } from '@platform/security/sanitize';
 
 // ─── SEK formatter ─────────────────────────────────────────────────────────────
 
@@ -70,7 +71,7 @@ function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): st
 
     case 'image': {
       const a     = node.attrs ?? {};
-      const src   = String(a.src ?? '');
+      const src   = sanitizeUrl(String(a.src ?? ''));
       const alt   = escapeHtml(String(a.alt ?? ''));
       const title = escapeHtml(String(a.title ?? ''));
       const width = a.width ? `width:${a.width}px;` : 'max-width:100%;';
@@ -245,11 +246,25 @@ export function buildReplacements(offer: Offer): Record<string, string> {
 }
 
 /**
+ * Builds HTML-safe replacements for email interpolation.
+ * All values are HTML-escaped to prevent XSS when inserted into email HTML.
+ */
+function buildEmailReplacements(offer: Offer): Record<string, string> {
+  const raw = buildReplacements(offer);
+  const safe: Record<string, string> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    safe[key] = secureEscapeHtml(value);
+  }
+  return safe;
+}
+
+/**
  * Interpolates {{placeholder}} variables in a plain-text or HTML string.
  * Used for custom email subject / body.
+ * Values are HTML-escaped to prevent XSS injection via offer data.
  */
 export function interpolateEmailText(text: string, offer: Offer): string {
-  const replacements = buildReplacements(offer);
+  const replacements = buildEmailReplacements(offer);
   let result = text;
   for (const [key, value] of Object.entries(replacements)) {
     result = result.split(key).join(value);

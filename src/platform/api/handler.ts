@@ -37,6 +37,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { validateVapiAuth } from '@platform/auth/vapi-auth';
+import { constantTimeEqual } from '@platform/security/sanitize';
 import { verifyToken, isTokenBlacklisted, isUserBlacklisted, type JWTPayload } from '@platform/auth/jwt';
 import { checkRateLimit } from '@platform/cache/rate-limiter';
 import { logger } from '@platform/logging/logger';
@@ -359,8 +360,8 @@ export function createHandler<
       }
 
       if (authStrategy === 'internal') {
-        const internalKey = req.headers.get('x-internal-key');
-        if (internalKey !== process.env.INTERNAL_API_KEY) {
+        const internalKey = req.headers.get('x-internal-key') ?? '';
+        if (!constantTimeEqual(internalKey, process.env.INTERNAL_API_KEY ?? '')) {
           return problem(Errors.unauthorized('Invalid internal API key'));
         }
       }

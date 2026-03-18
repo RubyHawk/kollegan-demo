@@ -58,7 +58,7 @@ export const handleListTemplates = createHandler(
 const CreateTemplateSchema = z.object({
   name:         z.string().min(1).max(200),
   content:      z.string().min(2), // TipTap JSON string — at least '{}'
-  emailSubject: z.string().max(500).optional(),
+  emailSubject: z.string().max(500).regex(/^[^\r\n]*$/, 'Subject must not contain newlines').optional(),
   emailBody:    z.string().max(50_000).optional(),
 });
 
@@ -94,7 +94,7 @@ export const handleGetTemplate = createHandler(
 const UpdateTemplateSchema = z.object({
   name:         z.string().min(1).max(200).optional(),
   content:      z.string().min(2).optional(),
-  emailSubject: z.string().max(500).optional(),
+  emailSubject: z.string().max(500).regex(/^[^\r\n]*$/, 'Subject must not contain newlines').optional(),
   emailBody:    z.string().max(50_000).optional(),
 });
 

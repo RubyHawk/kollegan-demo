@@ -61,6 +61,7 @@ model Offer {
   emailBody         String?   // Custom email body HTML (snapshot, set at sendOffer time)
   signatureImage    String?   // data URL of recipient's e-signature
   signerName        String?   // name typed by the signer at signing time
+  signatureMethod   String    @default("canvas")  // "canvas" (SES) | "bankid" (AdES) — future
   publicToken       String    @unique @default(uuid()) // used in public signing URL
   publicTokenExpiresAt DateTime?  // set to sentAt + 30 days
 

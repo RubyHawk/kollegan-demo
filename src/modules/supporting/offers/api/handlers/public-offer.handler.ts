@@ -100,7 +100,10 @@ const SignBodySchema = z.object({
   signatureImage: z.string()
     .min(10)
     .max(MAX_SIGNATURE_BYTES * 1.4) // base64 overhead ~1.37x
-    .refine((v) => v.startsWith('data:image/'), 'signatureImage must be a data URL'),
+    .refine(
+      (v) => v.startsWith('data:image/png;base64,') || v.startsWith('data:image/jpeg;base64,'),
+      'Only PNG and JPEG signatures are accepted',
+    ),
   signerName: z.string().min(1).max(200).optional(),
 });
 

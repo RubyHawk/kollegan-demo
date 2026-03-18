@@ -189,6 +189,16 @@ export async function viewOffer(
 
 // ─── signOffer (public — recipient submits signature) ─────────────────────────
 
+/**
+ * e-Signature legal status:
+ * - Under eIDAS Article 25, canvas-drawn signatures are "simple electronic
+ *   signatures" (SES). They are legally admissible in Swedish courts and
+ *   sufficient for most B2B contracts under avtalslagen (1915:218).
+ * - SES is NOT sufficient for: real estate, certain financial instruments,
+ *   or contracts requiring "qualified electronic signatures" (QES).
+ * - For higher assurance, integrate BankID (Swedish e-ID) for advanced
+ *   electronic signatures (AdES) — see signatureMethod field.
+ */
 export async function signOffer(
   publicToken: string,
   signatureImage: string,
