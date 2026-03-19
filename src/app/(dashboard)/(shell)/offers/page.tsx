@@ -118,28 +118,161 @@ const VALIDITY_OPTIONS = [
   { days: 90, label: '90 dagar' },
 ] as const;
 
-interface EmailHeaderConfig {
-  logoUrl?: string;
-  companyName?: string;
-  tagline?: string;
-  bgColor: string;
-  textColor: string;
-  accentColor: string;
-  alignment: 'left' | 'center';
-  showDivider: boolean;
+// ─── Email Design System ────────────────────────────────────────────────────────
+// Full email template config based on 2026 EU enterprise B2B patterns.
+// Covers: branded header, body theming, CTA button, and footer with trust signals.
+
+interface EmailDesignConfig {
+  header: {
+    logoUrl?: string;
+    companyName?: string;
+    tagline?: string;
+    bgColor: string;
+    textColor: string;
+    accentColor: string;
+    alignment: 'left' | 'center';
+    showDivider: boolean;
+  };
+  body: {
+    bgColor: string;          // outer/page background
+    contentBgColor: string;   // card/content area
+    textColor: string;        // primary body text
+    mutedColor: string;       // secondary/muted text
+    linkColor: string;        // links and highlights
+  };
+  cta: {
+    bgColor: string;
+    textColor: string;
+    borderRadius: number;     // px
+    label: string;            // button text
+  };
+  footer: {
+    companyInfo?: string;     // e.g. "Acme AB · Storgatan 1, 111 22 Stockholm"
+    showSocial: boolean;
+    socialLinks?: {
+      website?: string;
+      linkedin?: string;
+      twitter?: string;
+      instagram?: string;
+    };
+    legalText?: string;       // GDPR/privacy text
+    bgColor: string;
+    textColor: string;
+  };
 }
 
-const DEFAULT_HEADER: EmailHeaderConfig = {
-  logoUrl: '', companyName: '', tagline: '',
-  bgColor: '#0f172a', textColor: '#ffffff', accentColor: '#94a3b8',
-  alignment: 'center', showDivider: true,
+// Backwards compat: old configs only had header fields
+type EmailHeaderConfig = EmailDesignConfig['header'];
+
+const DEFAULT_DESIGN: EmailDesignConfig = {
+  header: {
+    logoUrl: '', companyName: '', tagline: '',
+    bgColor: '#0f172a', textColor: '#ffffff', accentColor: '#94a3b8',
+    alignment: 'center', showDivider: true,
+  },
+  body: {
+    bgColor: '#f1f5f9',
+    contentBgColor: '#ffffff',
+    textColor: '#1e293b',
+    mutedColor: '#64748b',
+    linkColor: '#2563eb',
+  },
+  cta: {
+    bgColor: '#0f172a',
+    textColor: '#ffffff',
+    borderRadius: 8,
+    label: 'Visa & signera offert',
+  },
+  footer: {
+    companyInfo: '',
+    showSocial: false,
+    socialLinks: { website: '', linkedin: '', twitter: '', instagram: '' },
+    legalText: '',
+    bgColor: '#0f172a',
+    textColor: '#94a3b8',
+  },
 };
+
+// Theme presets based on 2026 EU enterprise B2B email patterns
+const DESIGN_PRESETS: { id: string; label: string; config: EmailDesignConfig }[] = [
+  {
+    id: 'nordic-dark',
+    label: 'Nordisk Mörk',
+    config: {
+      header: { bgColor: '#0f172a', textColor: '#f8fafc', accentColor: '#94a3b8', alignment: 'center', showDivider: true, logoUrl: '', companyName: '', tagline: '' },
+      body:   { bgColor: '#f1f5f9', contentBgColor: '#ffffff', textColor: '#1e293b', mutedColor: '#64748b', linkColor: '#2563eb' },
+      cta:    { bgColor: '#0f172a', textColor: '#ffffff', borderRadius: 8, label: 'Visa & signera offert' },
+      footer: { bgColor: '#0f172a', textColor: '#94a3b8', showSocial: false, legalText: '' },
+    },
+  },
+  {
+    id: 'clean-light',
+    label: 'Ren Ljus',
+    config: {
+      header: { bgColor: '#ffffff', textColor: '#0f172a', accentColor: '#64748b', alignment: 'left', showDivider: true, logoUrl: '', companyName: '', tagline: '' },
+      body:   { bgColor: '#f8fafc', contentBgColor: '#ffffff', textColor: '#1e293b', mutedColor: '#64748b', linkColor: '#0f172a' },
+      cta:    { bgColor: '#0f172a', textColor: '#ffffff', borderRadius: 8, label: 'Visa & signera offert' },
+      footer: { bgColor: '#f1f5f9', textColor: '#64748b', showSocial: false, legalText: '' },
+    },
+  },
+  {
+    id: 'corporate-blue',
+    label: 'Företagsblå',
+    config: {
+      header: { bgColor: '#1e3a5f', textColor: '#ffffff', accentColor: '#93c5fd', alignment: 'center', showDivider: true, logoUrl: '', companyName: '', tagline: '' },
+      body:   { bgColor: '#eff6ff', contentBgColor: '#ffffff', textColor: '#1e293b', mutedColor: '#64748b', linkColor: '#1d4ed8' },
+      cta:    { bgColor: '#1d4ed8', textColor: '#ffffff', borderRadius: 8, label: 'Visa & signera offert' },
+      footer: { bgColor: '#1e3a5f', textColor: '#93c5fd', showSocial: false, legalText: '' },
+    },
+  },
+  {
+    id: 'warm-professional',
+    label: 'Varm Professionell',
+    config: {
+      header: { bgColor: '#1c1917', textColor: '#fafaf9', accentColor: '#a8a29e', alignment: 'center', showDivider: true, logoUrl: '', companyName: '', tagline: '' },
+      body:   { bgColor: '#fafaf9', contentBgColor: '#ffffff', textColor: '#1c1917', mutedColor: '#78716c', linkColor: '#b45309' },
+      cta:    { bgColor: '#b45309', textColor: '#ffffff', borderRadius: 24, label: 'Visa & signera offert' },
+      footer: { bgColor: '#1c1917', textColor: '#a8a29e', showSocial: false, legalText: '' },
+    },
+  },
+  {
+    id: 'modern-green',
+    label: 'Modern Grön',
+    config: {
+      header: { bgColor: '#064e3b', textColor: '#ecfdf5', accentColor: '#6ee7b7', alignment: 'center', showDivider: true, logoUrl: '', companyName: '', tagline: '' },
+      body:   { bgColor: '#f0fdf4', contentBgColor: '#ffffff', textColor: '#1e293b', mutedColor: '#64748b', linkColor: '#059669' },
+      cta:    { bgColor: '#059669', textColor: '#ffffff', borderRadius: 8, label: 'Visa & signera offert' },
+      footer: { bgColor: '#064e3b', textColor: '#6ee7b7', showSocial: false, legalText: '' },
+    },
+  },
+];
+
+/** Normalize old EmailHeaderConfig or new EmailDesignConfig from JSON */
+function normalizeDesignConfig(raw: unknown): EmailDesignConfig {
+  if (!raw || typeof raw !== 'object') return { ...DEFAULT_DESIGN };
+  const obj = raw as Record<string, unknown>;
+  // Old format: flat header-only config (has bgColor at root level)
+  if ('bgColor' in obj && !('header' in obj)) {
+    return {
+      ...DEFAULT_DESIGN,
+      header: { ...DEFAULT_DESIGN.header, ...(obj as Partial<EmailHeaderConfig>) },
+    };
+  }
+  // New format
+  const d = obj as Partial<EmailDesignConfig>;
+  return {
+    header: { ...DEFAULT_DESIGN.header, ...d.header },
+    body:   { ...DEFAULT_DESIGN.body, ...d.body },
+    cta:    { ...DEFAULT_DESIGN.cta, ...d.cta },
+    footer: { ...DEFAULT_DESIGN.footer, ...d.footer },
+  };
+}
 
 const EMPTY_FORM = {
   templateId: '', contactId: '',
   title: '', recipientName: '', recipientEmail: '', recipientCompany: '',
   notes: '', emailSubject: '', emailBody: '',
-  emailHeaderConfig: null as EmailHeaderConfig | null,
+  emailHeaderConfig: null as EmailDesignConfig | null,
   validityDays: 30 as number, lineItems: [{ ...EMPTY_LINE }],
 };
 
@@ -212,7 +345,7 @@ export default function OffersPage() {
   const [contactLoading,   setContactLoading]   = useState(false);
   const [showEmailCustom,  setShowEmailCustom]  = useState(false);
   const [showHeaderBuilder, setShowHeaderBuilder] = useState(false);
-  const [orgDefaultHeader, setOrgDefaultHeader] = useState<EmailHeaderConfig | null>(null);
+  const [orgDefaultHeader, setOrgDefaultHeader] = useState<EmailDesignConfig | null>(null);
   const contactSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Product library state
@@ -226,7 +359,7 @@ export default function OffersPage() {
   // ── Load org default email header ───────────────────────────────────────────
   useEffect(() => {
     void fetch('/api/org/email-settings')
-      .then(async (r) => { if (r.ok) { const j = await r.json(); const d = j.data ?? j; if (d.emailHeaderConfig) { try { setOrgDefaultHeader(JSON.parse(d.emailHeaderConfig)); } catch {} } } })
+      .then(async (r) => { if (r.ok) { const j = await r.json(); const d = j.data ?? j; if (d.emailHeaderConfig) { try { setOrgDefaultHeader(normalizeDesignConfig(JSON.parse(d.emailHeaderConfig))); } catch {} } } })
       .catch(() => {});
   }, []);
 
@@ -301,9 +434,9 @@ export default function OffersPage() {
       if (form.templateId)    body.templateId   = form.templateId;
       if (form.emailSubject)  body.emailSubject = form.emailSubject;
       if (form.emailBody)     body.emailBody    = form.emailBody;
-      const headerCfg = form.emailHeaderConfig ?? orgDefaultHeader;
-      if (headerCfg && (headerCfg.companyName || headerCfg.logoUrl)) {
-        body.emailHeaderConfig = JSON.stringify(headerCfg);
+      const designCfg = form.emailHeaderConfig ?? orgDefaultHeader;
+      if (designCfg && (designCfg.header.companyName || designCfg.header.logoUrl || designCfg.footer.companyInfo)) {
+        body.emailHeaderConfig = JSON.stringify(designCfg);
       }
       if (form.contactId)     body.customerId   = form.contactId;
 
@@ -786,7 +919,7 @@ export default function OffersPage() {
               </div>
             </div>
 
-            {/* ── Email header builder ── */}
+            {/* ── Email Design Builder ── */}
             <div className="rounded-xl border border-[var(--border)] overflow-hidden">
               <button
                 type="button"
@@ -797,232 +930,297 @@ export default function OffersPage() {
                   className={`transition-transform ${showHeaderBuilder ? 'rotate-90' : ''}`}>
                   <polyline points="9 18 15 12 9 6"/>
                 </svg>
-                Designa e-posthuvud
-                {(form.emailHeaderConfig?.companyName || form.emailHeaderConfig?.logoUrl || orgDefaultHeader?.companyName) && (
+                Designa e-postmall
+                {(form.emailHeaderConfig?.header.companyName || form.emailHeaderConfig?.footer.companyInfo) && (
                   <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-normal">Aktiv</span>
                 )}
               </button>
               {showHeaderBuilder && (() => {
-                const hdr = form.emailHeaderConfig ?? orgDefaultHeader ?? { ...DEFAULT_HEADER };
-                const setHdr = (patch: Partial<EmailHeaderConfig>) => setForm((f) => ({
-                  ...f,
-                  emailHeaderConfig: { ...(f.emailHeaderConfig ?? orgDefaultHeader ?? { ...DEFAULT_HEADER }), ...patch },
-                }));
-                const hasContent = !!(hdr.companyName || hdr.logoUrl);
+                const cfg = form.emailHeaderConfig ?? orgDefaultHeader ?? { ...DEFAULT_DESIGN, header: { ...DEFAULT_DESIGN.header }, body: { ...DEFAULT_DESIGN.body }, cta: { ...DEFAULT_DESIGN.cta }, footer: { ...DEFAULT_DESIGN.footer } };
+                const setDesign = (patch: Partial<EmailDesignConfig>) => setForm((f) => {
+                  const prev = f.emailHeaderConfig ?? orgDefaultHeader ?? { ...DEFAULT_DESIGN, header: { ...DEFAULT_DESIGN.header }, body: { ...DEFAULT_DESIGN.body }, cta: { ...DEFAULT_DESIGN.cta }, footer: { ...DEFAULT_DESIGN.footer } };
+                  return { ...f, emailHeaderConfig: { ...prev, ...patch } };
+                });
+                const setH = (p: Partial<EmailDesignConfig['header']>) => setDesign({ header: { ...cfg.header, ...p } });
+                const setB = (p: Partial<EmailDesignConfig['body']>) => setDesign({ body: { ...cfg.body, ...p } });
+                const setC = (p: Partial<EmailDesignConfig['cta']>) => setDesign({ cta: { ...cfg.cta, ...p } });
+                const setF = (p: Partial<EmailDesignConfig['footer']>) => setDesign({ footer: { ...cfg.footer, ...p } });
+                const setSocial = (p: Partial<NonNullable<EmailDesignConfig['footer']['socialLinks']>>) =>
+                  setF({ socialLinks: { ...cfg.footer.socialLinks, ...p } });
 
-                return (
-                  <div className="border-t border-[var(--border)]">
-                    {/* ── Live preview ── */}
-                    <div className="border-b border-[var(--border-light)] bg-[var(--surface-alt)]">
-                      <p className="px-4 pt-3 pb-1 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Förhandsvisning</p>
-                      <div className="px-4 pb-3">
-                        <div className="rounded-lg overflow-hidden border border-[var(--border)] shadow-sm">
-                          {hasContent ? (
-                            <div
-                              style={{
-                                background: hdr.bgColor,
-                                padding: '24px 20px 16px',
-                                textAlign: hdr.alignment,
-                                fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
-                              }}
-                            >
-                              {hdr.logoUrl && (
-                                <img
-                                  src={hdr.logoUrl}
-                                  alt=""
-                                  style={{ maxHeight: 48, maxWidth: 200, marginBottom: 10, display: hdr.alignment === 'center' ? 'inline-block' : 'block' }}
-                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                                />
-                              )}
-                              {hdr.companyName && (
-                                <div style={{ fontSize: 20, fontWeight: 700, color: hdr.textColor, margin: 0 }}>
-                                  {hdr.companyName}
-                                </div>
-                              )}
-                              {hdr.tagline && (
-                                <div style={{ fontSize: 13, color: hdr.accentColor, marginTop: 3, fontWeight: 400 }}>
-                                  {hdr.tagline}
-                                </div>
-                              )}
-                              {hdr.showDivider && (
-                                <div style={{ height: 3, background: hdr.accentColor, opacity: 0.3, marginTop: 14, borderRadius: 2 }} />
-                              )}
-                            </div>
-                          ) : (
-                            <div className="px-4 py-6 text-center text-xs text-[var(--text-muted)]">
-                              Fyll i företagsnamn eller logotyp-URL för att se förhandsvisningen
-                            </div>
-                          )}
-                          <div className="px-4 py-3 text-xs text-[var(--text-muted)] border-t border-dashed border-[var(--border-light)]">
-                            Hej mottagare, du har en offert...
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                type DesignTab = 'preview' | 'header' | 'style' | 'footer';
+                // Use a data attribute on the container to track active tab without extra state
+                const tabAttr = 'data-design-tab';
 
-                    {/* ── Controls ── */}
-                    <div className="px-4 py-3 space-y-3">
-                      {/* Row 1: Company name + tagline */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Företagsnamn</label>
-                          <input
-                            value={hdr.companyName ?? ''}
-                            onChange={(e) => setHdr({ companyName: e.target.value })}
-                            placeholder="Mitt Företag AB"
-                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Tagline</label>
-                          <input
-                            value={hdr.tagline ?? ''}
-                            onChange={(e) => setHdr({ tagline: e.target.value })}
-                            placeholder="Professionella lösningar"
-                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Row 2: Logo URL */}
-                      <div>
-                        <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Logotyp-URL</label>
-                        <input
-                          value={hdr.logoUrl ?? ''}
-                          onChange={(e) => setHdr({ logoUrl: e.target.value })}
-                          placeholder="https://example.com/logo.png"
-                          type="url"
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                        />
-                        <p className="mt-1 text-[10px] text-[var(--text-muted)]">Rekommenderad maxhöjd: 48px. Använd en URL till din logotyp.</p>
-                      </div>
-
-                      {/* Row 3: Colors */}
-                      <div className="grid grid-cols-3 gap-3">
-                        <div>
-                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Bakgrund</label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={hdr.bgColor}
-                              onChange={(e) => setHdr({ bgColor: e.target.value })}
-                              className="w-8 h-8 rounded-lg border border-[var(--border)] cursor-pointer p-0.5"
-                            />
-                            <input
-                              value={hdr.bgColor}
-                              onChange={(e) => setHdr({ bgColor: e.target.value })}
-                              className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Textfärg</label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={hdr.textColor}
-                              onChange={(e) => setHdr({ textColor: e.target.value })}
-                              className="w-8 h-8 rounded-lg border border-[var(--border)] cursor-pointer p-0.5"
-                            />
-                            <input
-                              value={hdr.textColor}
-                              onChange={(e) => setHdr({ textColor: e.target.value })}
-                              className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Accent</label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={hdr.accentColor}
-                              onChange={(e) => setHdr({ accentColor: e.target.value })}
-                              className="w-8 h-8 rounded-lg border border-[var(--border)] cursor-pointer p-0.5"
-                            />
-                            <input
-                              value={hdr.accentColor}
-                              onChange={(e) => setHdr({ accentColor: e.target.value })}
-                              className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Row 4: Alignment + Divider + Presets */}
-                      <div className="flex items-center gap-4 flex-wrap">
-                        <div className="flex items-center gap-2">
-                          <label className="text-[11px] font-semibold text-[var(--text-secondary)]">Layout:</label>
-                          <button
-                            type="button"
-                            onClick={() => setHdr({ alignment: 'left' })}
-                            className={cn(
-                              'px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors',
-                              hdr.alignment === 'left'
-                                ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
-                                : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]',
-                            )}
-                          >
-                            Vänster
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setHdr({ alignment: 'center' })}
-                            className={cn(
-                              'px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors',
-                              hdr.alignment === 'center'
-                                ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
-                                : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]',
-                            )}
-                          >
-                            Centrerad
-                          </button>
-                        </div>
-
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={hdr.showDivider}
-                            onChange={(e) => setHdr({ showDivider: e.target.checked })}
-                            className="w-3.5 h-3.5 rounded border-[var(--border)] accent-[var(--accent)]"
-                          />
-                          <span className="text-[11px] text-[var(--text-secondary)]">Visa avdelare</span>
-                        </label>
-
-                        {/* Quick presets */}
-                        <div className="flex items-center gap-1.5 ml-auto">
-                          <span className="text-[10px] text-[var(--text-muted)]">Snabbval:</span>
-                          {[
-                            { label: 'Mörk', bg: '#0f172a', text: '#ffffff', accent: '#94a3b8' },
-                            { label: 'Ljus', bg: '#f8fafc', text: '#0f172a', accent: '#64748b' },
-                            { label: 'Blå',  bg: '#1e40af', text: '#ffffff', accent: '#93c5fd' },
-                            { label: 'Grön', bg: '#065f46', text: '#ffffff', accent: '#6ee7b7' },
-                          ].map((preset) => (
-                            <button
-                              key={preset.label}
-                              type="button"
-                              onClick={() => setHdr({ bgColor: preset.bg, textColor: preset.text, accentColor: preset.accent })}
-                              className="px-2 py-0.5 rounded text-[10px] border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-                            >
-                              {preset.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Clear button */}
-                      {hasContent && (
-                        <button
-                          type="button"
-                          onClick={() => setForm((f) => ({ ...f, emailHeaderConfig: null }))}
-                          className="text-[11px] text-red-500 hover:text-red-600 transition-colors"
-                        >
-                          Rensa e-posthuvud
-                        </button>
-                      )}
+                const ColorField = ({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) => (
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">{label}</label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={value} onChange={(e) => onChange(e.target.value)}
+                        className="w-7 h-7 rounded-md border border-[var(--border)] cursor-pointer p-0.5 shrink-0" />
+                      <input value={value} onChange={(e) => onChange(e.target.value)}
+                        className="flex-1 rounded-md border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1 text-[11px] font-mono text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
                     </div>
                   </div>
                 );
+
+                const SmallInput = ({ label, value, onChange, placeholder, type }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) => (
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">{label}</label>
+                    <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} type={type ?? 'text'}
+                      className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
+                  </div>
+                );
+
+                // Use internal state for tabs via a wrapper component
+                const BuilderContent = () => {
+                  const [activeTab, setActiveTab] = useState<DesignTab>('preview');
+
+                  return (
+                    <div className="border-t border-[var(--border)]">
+                      {/* Tab bar */}
+                      <div className="flex border-b border-[var(--border-light)] bg-[var(--surface-alt)]">
+                        {([
+                          { id: 'preview' as DesignTab, label: 'Förhandsvisning', icon: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8zm0 0' },
+                          { id: 'header' as DesignTab, label: 'Huvud', icon: 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z' },
+                          { id: 'style' as DesignTab, label: 'Stil & Knapp', icon: 'M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z' },
+                          { id: 'footer' as DesignTab, label: 'Sidfot', icon: 'M21 15a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
+                        ]).map(({ id, label }) => (
+                          <button key={id} type="button" onClick={() => setActiveTab(id)}
+                            className={cn(
+                              'flex-1 px-3 py-2 text-[11px] font-medium transition-colors border-b-2',
+                              activeTab === id
+                                ? 'border-[var(--accent)] text-[var(--accent)]'
+                                : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
+                            )}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* ── Preview Tab ── */}
+                      {activeTab === 'preview' && (
+                        <div className="p-4">
+                          {/* Theme presets */}
+                          <div className="flex items-center gap-2 mb-3 flex-wrap">
+                            <span className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Tema:</span>
+                            {DESIGN_PRESETS.map((preset) => (
+                              <button key={preset.id} type="button"
+                                onClick={() => {
+                                  const p = preset.config;
+                                  setDesign({
+                                    header: { ...cfg.header, bgColor: p.header.bgColor, textColor: p.header.textColor, accentColor: p.header.accentColor, alignment: p.header.alignment, showDivider: p.header.showDivider },
+                                    body: { ...p.body },
+                                    cta: { ...cfg.cta, bgColor: p.cta.bgColor, textColor: p.cta.textColor, borderRadius: p.cta.borderRadius },
+                                    footer: { ...cfg.footer, bgColor: p.footer.bgColor, textColor: p.footer.textColor },
+                                  });
+                                }}
+                                className="px-2.5 py-1 rounded-md text-[10px] font-medium border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
+                                <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ background: preset.config.header.bgColor, border: '1px solid rgba(0,0,0,0.1)' }} />
+                                {preset.label}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Full email preview */}
+                          <div className="rounded-lg overflow-hidden border border-[var(--border)] shadow-sm" style={{ background: cfg.body.bgColor }}>
+                            {/* Header */}
+                            {(cfg.header.companyName || cfg.header.logoUrl) ? (
+                              <div style={{
+                                background: cfg.header.bgColor, padding: '24px 20px 16px',
+                                textAlign: cfg.header.alignment, fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
+                              }}>
+                                {cfg.header.logoUrl && (
+                                  <img src={cfg.header.logoUrl} alt="" style={{ maxHeight: 48, maxWidth: 200, marginBottom: 10, display: cfg.header.alignment === 'center' ? 'inline-block' : 'block' }}
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                )}
+                                {cfg.header.companyName && <div style={{ fontSize: 18, fontWeight: 700, color: cfg.header.textColor }}>{cfg.header.companyName}</div>}
+                                {cfg.header.tagline && <div style={{ fontSize: 12, color: cfg.header.accentColor, marginTop: 2 }}>{cfg.header.tagline}</div>}
+                                {cfg.header.showDivider && <div style={{ height: 2, background: cfg.header.accentColor, opacity: 0.3, marginTop: 12, borderRadius: 2 }} />}
+                              </div>
+                            ) : (
+                              <div style={{ background: cfg.header.bgColor, padding: '16px 20px', textAlign: 'center' }}>
+                                <span style={{ fontSize: 11, color: cfg.header.accentColor, opacity: 0.6 }}>Huvud visas här</span>
+                              </div>
+                            )}
+
+                            {/* Body */}
+                            <div style={{ padding: '20px', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' }}>
+                              <div style={{ background: cfg.body.contentBgColor, borderRadius: 8, padding: '20px', maxWidth: 480, margin: '0 auto' }}>
+                                <p style={{ color: cfg.body.mutedColor, fontSize: 12, margin: '0 0 12px' }}>Hej {form.recipientName || 'mottagare'},</p>
+                                <p style={{ color: cfg.body.textColor, fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>
+                                  Du har en ny offert: <strong>{form.title || 'Offertnamn'}</strong>
+                                </p>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
+                                  <tbody>
+                                    <tr><td style={{ padding: '6px 0', color: cfg.body.mutedColor, fontSize: 12 }}>Totalt inkl. moms</td><td style={{ padding: '6px 0', fontWeight: 700, textAlign: 'right', color: cfg.body.textColor, fontSize: 12 }}>1 250 kr</td></tr>
+                                    <tr><td style={{ padding: '6px 0', color: cfg.body.mutedColor, fontSize: 12 }}>Giltig till</td><td style={{ padding: '6px 0', textAlign: 'right', color: cfg.body.textColor, fontSize: 12 }}>30 apr 2026</td></tr>
+                                  </tbody>
+                                </table>
+                                <div style={{ textAlign: 'center' }}>
+                                  <span style={{
+                                    display: 'inline-block', background: cfg.cta.bgColor, color: cfg.cta.textColor,
+                                    padding: '10px 24px', borderRadius: cfg.cta.borderRadius, fontWeight: 600, fontSize: 13,
+                                  }}>
+                                    {cfg.cta.label || 'Visa & signera offert'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div style={{ background: cfg.footer.bgColor, padding: '16px 20px', textAlign: 'center', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' }}>
+                              {cfg.footer.companyInfo && <p style={{ color: cfg.footer.textColor, fontSize: 11, margin: '0 0 6px' }}>{cfg.footer.companyInfo}</p>}
+                              {cfg.footer.showSocial && cfg.footer.socialLinks && (
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: 12, margin: '6px 0' }}>
+                                  {cfg.footer.socialLinks.website && <span style={{ color: cfg.footer.textColor, fontSize: 10 }}>Webb</span>}
+                                  {cfg.footer.socialLinks.linkedin && <span style={{ color: cfg.footer.textColor, fontSize: 10 }}>LinkedIn</span>}
+                                  {cfg.footer.socialLinks.twitter && <span style={{ color: cfg.footer.textColor, fontSize: 10 }}>X</span>}
+                                  {cfg.footer.socialLinks.instagram && <span style={{ color: cfg.footer.textColor, fontSize: 10 }}>Instagram</span>}
+                                </div>
+                              )}
+                              {cfg.footer.legalText && <p style={{ color: cfg.footer.textColor, fontSize: 9, margin: '6px 0 0', opacity: 0.7 }}>{cfg.footer.legalText}</p>}
+                              {!cfg.footer.companyInfo && !cfg.footer.legalText && (
+                                <span style={{ color: cfg.footer.textColor, fontSize: 10, opacity: 0.5 }}>Sidfot visas här</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Reset */}
+                          <div className="flex justify-end mt-2">
+                            <button type="button" onClick={() => setForm((f) => ({ ...f, emailHeaderConfig: null }))}
+                              className="text-[11px] text-red-500 hover:text-red-600 transition-colors">
+                              Nollställ design
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── Header Tab ── */}
+                      {activeTab === 'header' && (
+                        <div className="px-4 py-3 space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <SmallInput label="Företagsnamn" value={cfg.header.companyName ?? ''} onChange={(v) => setH({ companyName: v })} placeholder="Mitt Företag AB" />
+                            <SmallInput label="Tagline" value={cfg.header.tagline ?? ''} onChange={(v) => setH({ tagline: v })} placeholder="Professionella lösningar" />
+                          </div>
+                          <SmallInput label="Logotyp-URL" value={cfg.header.logoUrl ?? ''} onChange={(v) => setH({ logoUrl: v })} placeholder="https://example.com/logo.png" type="url" />
+                          <div className="grid grid-cols-3 gap-3">
+                            <ColorField label="Bakgrund" value={cfg.header.bgColor} onChange={(v) => setH({ bgColor: v })} />
+                            <ColorField label="Textfärg" value={cfg.header.textColor} onChange={(v) => setH({ textColor: v })} />
+                            <ColorField label="Accent" value={cfg.header.accentColor} onChange={(v) => setH({ accentColor: v })} />
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <label className="text-[11px] font-semibold text-[var(--text-secondary)]">Layout:</label>
+                              {(['left', 'center'] as const).map((a) => (
+                                <button key={a} type="button" onClick={() => setH({ alignment: a })}
+                                  className={cn('px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors',
+                                    cfg.header.alignment === a ? 'border-[var(--accent)] bg-[var(--accent)] text-white' : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]')}>
+                                  {a === 'left' ? 'Vänster' : 'Centrerad'}
+                                </button>
+                              ))}
+                            </div>
+                            <label className="flex items-center gap-1.5 cursor-pointer">
+                              <input type="checkbox" checked={cfg.header.showDivider} onChange={(e) => setH({ showDivider: e.target.checked })}
+                                className="w-3.5 h-3.5 rounded accent-[var(--accent)]" />
+                              <span className="text-[11px] text-[var(--text-secondary)]">Avdelare</span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── Style & Button Tab ── */}
+                      {activeTab === 'style' && (
+                        <div className="px-4 py-3 space-y-4">
+                          <div>
+                            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Bakgrund & Innehåll</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              <ColorField label="Yttre bakgrund" value={cfg.body.bgColor} onChange={(v) => setB({ bgColor: v })} />
+                              <ColorField label="Innehållsyta" value={cfg.body.contentBgColor} onChange={(v) => setB({ contentBgColor: v })} />
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Textfärger</p>
+                            <div className="grid grid-cols-3 gap-3">
+                              <ColorField label="Primär text" value={cfg.body.textColor} onChange={(v) => setB({ textColor: v })} />
+                              <ColorField label="Sekundär text" value={cfg.body.mutedColor} onChange={(v) => setB({ mutedColor: v })} />
+                              <ColorField label="Länkar" value={cfg.body.linkColor} onChange={(v) => setB({ linkColor: v })} />
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">CTA-knapp</p>
+                            <div className="grid grid-cols-2 gap-3 mb-2">
+                              <ColorField label="Knappfärg" value={cfg.cta.bgColor} onChange={(v) => setC({ bgColor: v })} />
+                              <ColorField label="Knapptext" value={cfg.cta.textColor} onChange={(v) => setC({ textColor: v })} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <SmallInput label="Knapptext" value={cfg.cta.label} onChange={(v) => setC({ label: v })} placeholder="Visa & signera offert" />
+                              <div>
+                                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Rundning</label>
+                                <div className="flex items-center gap-2">
+                                  <input type="range" min={0} max={24} value={cfg.cta.borderRadius}
+                                    onChange={(e) => setC({ borderRadius: Number(e.target.value) })}
+                                    className="flex-1 accent-[var(--accent)]" />
+                                  <span className="text-[11px] text-[var(--text-muted)] font-mono w-8 text-right">{cfg.cta.borderRadius}px</span>
+                                </div>
+                              </div>
+                            </div>
+                            {/* Button preview */}
+                            <div className="mt-2 flex justify-center">
+                              <span style={{
+                                display: 'inline-block', background: cfg.cta.bgColor, color: cfg.cta.textColor,
+                                padding: '10px 24px', borderRadius: cfg.cta.borderRadius, fontWeight: 600, fontSize: 13,
+                                fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
+                              }}>
+                                {cfg.cta.label || 'Visa & signera offert'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── Footer Tab ── */}
+                      {activeTab === 'footer' && (
+                        <div className="px-4 py-3 space-y-3">
+                          <SmallInput label="Företagsinfo" value={cfg.footer.companyInfo ?? ''} onChange={(v) => setF({ companyInfo: v })}
+                            placeholder="Acme AB · Storgatan 1, 111 22 Stockholm · org.nr 556123-4567" />
+                          <div className="grid grid-cols-2 gap-3">
+                            <ColorField label="Bakgrund" value={cfg.footer.bgColor} onChange={(v) => setF({ bgColor: v })} />
+                            <ColorField label="Textfärg" value={cfg.footer.textColor} onChange={(v) => setF({ textColor: v })} />
+                          </div>
+
+                          {/* Social links */}
+                          <div>
+                            <label className="flex items-center gap-1.5 cursor-pointer mb-2">
+                              <input type="checkbox" checked={cfg.footer.showSocial} onChange={(e) => setF({ showSocial: e.target.checked })}
+                                className="w-3.5 h-3.5 rounded accent-[var(--accent)]" />
+                              <span className="text-[11px] font-semibold text-[var(--text-secondary)]">Visa sociala länkar</span>
+                            </label>
+                            {cfg.footer.showSocial && (
+                              <div className="grid grid-cols-2 gap-2">
+                                <SmallInput label="Webbplats" value={cfg.footer.socialLinks?.website ?? ''} onChange={(v) => setSocial({ website: v })} placeholder="https://acme.se" />
+                                <SmallInput label="LinkedIn" value={cfg.footer.socialLinks?.linkedin ?? ''} onChange={(v) => setSocial({ linkedin: v })} placeholder="https://linkedin.com/company/acme" />
+                                <SmallInput label="X (Twitter)" value={cfg.footer.socialLinks?.twitter ?? ''} onChange={(v) => setSocial({ twitter: v })} placeholder="https://x.com/acme" />
+                                <SmallInput label="Instagram" value={cfg.footer.socialLinks?.instagram ?? ''} onChange={(v) => setSocial({ instagram: v })} placeholder="https://instagram.com/acme" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Legal/GDPR text */}
+                          <div>
+                            <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Juridisk text / GDPR</label>
+                            <textarea value={cfg.footer.legalText ?? ''} onChange={(e) => setF({ legalText: e.target.value })} rows={2}
+                              placeholder="Detta e-postmeddelande har skickats som en del av en offertförfrågan. Kontakta oss för att hantera dina inställningar."
+                              className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-y" />
+                            <p className="mt-1 text-[10px] text-[var(--text-muted)]">Enligt EU:s tillgänglighetsdirektiv (EAA) och GDPR bör du inkludera information om varför mottagaren får detta meddelande.</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                };
+
+                return <BuilderContent />;
               })()}
             </div>
 
