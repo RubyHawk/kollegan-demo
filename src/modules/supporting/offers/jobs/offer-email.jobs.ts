@@ -42,8 +42,10 @@ async function sendEmail(opts: { from: string; to: string; subject: string; html
   if (error) throw new Error(`Resend error: ${JSON.stringify(error)}`);
 }
 
-function fromAddress(): string {
-  return process.env.EMAIL_FROM ?? 'no-reply@kollegan.ai';
+function fromAddress(senderEmail?: string, senderName?: string): string {
+  const email = senderEmail || process.env.EMAIL_FROM || 'no-reply@kollegan.ai';
+  if (senderName) return `${senderName} <${email}>`;
+  return email;
 }
 
 // ─── Format helpers ─────────────────────────────────────────────────────────────
@@ -170,7 +172,7 @@ export function registerOfferEmailJobs(): void {
     async (job) => {
       const p      = job.payload;
       const subject = p.emailSubject || `Offert: ${p.offerTitle}`;
-      await sendEmail({ from: fromAddress(), to: p.recipientEmail, subject, html: sendToRecipientHtml(p) });
+      await sendEmail({ from: fromAddress(p.senderEmail, p.senderName), to: p.recipientEmail, subject, html: sendToRecipientHtml(p) });
       logger.info(TAG, `Sent offer email to ${p.recipientEmail}`, { offerId: p.offerId });
     },
   );
@@ -194,7 +196,7 @@ export function registerOfferEmailJobs(): void {
       const subject = p.event === 'signed'
         ? `Offert signerad: ${p.offerTitle}`
         : `Offert avvisad: ${p.offerTitle}`;
-      await sendEmail({ from: fromAddress(), to: user.email, subject, html: notifyCreatorHtml(p) });
+      await sendEmail({ from: fromAddress(p.senderEmail, p.senderName), to: user.email, subject, html: notifyCreatorHtml(p) });
       logger.info(TAG, `Sent creator notification (${p.event}) to ${user.email}`, { offerId: p.offerId });
     },
   );
@@ -205,7 +207,7 @@ export function registerOfferEmailJobs(): void {
     async (job) => {
       const p      = job.payload;
       const subject = p.emailSubject ? `Påminnelse: ${p.emailSubject}` : `Påminnelse: ${p.offerTitle}`;
-      await sendEmail({ from: fromAddress(), to: p.recipientEmail, subject, html: reminderHtml(p) });
+      await sendEmail({ from: fromAddress(p.senderEmail, p.senderName), to: p.recipientEmail, subject, html: reminderHtml(p) });
       logger.info(TAG, `Sent reminder email to ${p.recipientEmail}`, { offerId: p.offerId });
     },
   );

@@ -16,6 +16,10 @@ export interface Organization {
   plan: OrgPlan;
   createdAt: string;
   updatedAt: string;
+  /** Custom sender email for outgoing offers (must be verified in Resend) */
+  senderEmail?: string;
+  /** Display name in the From header, e.g. "Acme AB" */
+  senderName?: string;
 }
 
 export type MemberRole = 'owner' | 'admin' | 'member' | 'viewer';
