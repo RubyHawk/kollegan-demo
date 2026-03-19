@@ -92,6 +92,7 @@ const CreateBodySchema = z.object({
   templateId: z.string().optional(),
   emailSubject: z.string().max(500).regex(/^[^\r\n]*$/, 'Subject must not contain newlines').optional(),
   emailBody: z.string().max(50_000).optional(),
+  emailHeaderConfig: z.string().max(5_000).optional(),
   lineItems: z.array(LineItemSchema).min(1).max(100),
 });
 
@@ -110,7 +111,7 @@ export const handleCreateOffer = createHandler(
       notes: body.notes, validUntil: placeholderValidUntil, validityDays: body.validityDays,
       leadId: body.leadId, customerId: body.customerId,
       templateId: body.templateId,
-      emailSubject: body.emailSubject, emailBody: body.emailBody,
+      emailSubject: body.emailSubject, emailBody: body.emailBody, emailHeaderConfig: body.emailHeaderConfig,
       lineItems: body.lineItems,
     }, payload.sub);
     return created(offer, `/api/offers/${offer.id}`);
@@ -145,6 +146,7 @@ const PatchBodySchema = z.object({
   }).optional(),
   emailSubject: z.string().max(500).regex(/^[^\r\n]*$/, 'Subject must not contain newlines').optional(),
   emailBody: z.string().max(50_000).optional(),
+  emailHeaderConfig: z.string().max(5_000).optional(),
   lineItems: z.array(LineItemSchema).min(1).max(100).optional(),
 });
 
@@ -183,7 +185,7 @@ export const handleUpdateOffer = createHandler(
         title: body.title, recipientName: body.recipientName,
         recipientEmail: body.recipientEmail, recipientCompany: body.recipientCompany,
         notes: body.notes, validUntil: newValidUntil, validityDays: body.validityDays,
-        emailSubject: body.emailSubject, emailBody: body.emailBody,
+        emailSubject: body.emailSubject, emailBody: body.emailBody, emailHeaderConfig: body.emailHeaderConfig,
         lineItems: body.lineItems,
       });
     }

@@ -20,6 +20,8 @@ export interface Organization {
   senderEmail?: string;
   /** Display name in the From header, e.g. "Acme AB" */
   senderName?: string;
+  /** JSON config for default visual email header */
+  emailHeaderConfig?: string;
 }
 
 export type MemberRole = 'owner' | 'admin' | 'member' | 'viewer';

@@ -54,6 +54,7 @@ export interface Offer {
   generatedDocument?: string;    // immutable HTML snapshot (set at send time)
   emailSubject?: string;         // custom email subject (snapshot, set at send time)
   emailBody?: string;            // custom email body HTML (snapshot, set at send time)
+  emailHeaderConfig?: string;    // JSON config for visual email header
   signatureImage?: string;       // data URL of the recipient's e-signature
   signerName?: string;           // name typed by the signer at signing time
   signatureMethod: string;       // "canvas" (SES) | "bankid" (AdES) — future

@@ -62,43 +62,117 @@ function fmtDate(iso: string): string {
   });
 }
 
+// ─── Email Design System ───────────────────────────────────────────────────────
+// Full email design config — header, body theme, CTA button, footer with trust signals.
+// Backwards-compatible: old flat header configs (bgColor at root) still work.
+
+interface EmailDesignConfig {
+  header: { logoUrl?: string; companyName?: string; tagline?: string; bgColor: string; textColor: string; accentColor: string; alignment: 'left' | 'center'; showDivider: boolean };
+  body:   { bgColor: string; contentBgColor: string; textColor: string; mutedColor: string; linkColor: string };
+  cta:    { bgColor: string; textColor: string; borderRadius: number; label: string };
+  footer: { companyInfo?: string; showSocial: boolean; socialLinks?: { website?: string; linkedin?: string; twitter?: string; instagram?: string }; legalText?: string; bgColor: string; textColor: string };
+}
+
+const DESIGN_DEFAULTS: EmailDesignConfig = {
+  header: { bgColor: '#0f172a', textColor: '#ffffff', accentColor: '#94a3b8', alignment: 'center', showDivider: true },
+  body:   { bgColor: '#f1f5f9', contentBgColor: '#ffffff', textColor: '#1e293b', mutedColor: '#64748b', linkColor: '#2563eb' },
+  cta:    { bgColor: '#0f172a', textColor: '#ffffff', borderRadius: 8, label: 'Visa & signera offert' },
+  footer: { bgColor: '#0f172a', textColor: '#94a3b8', showSocial: false },
+};
+
+function parseDesignConfig(configJson?: string): EmailDesignConfig | null {
+  if (!configJson) return null;
+  let raw: Record<string, unknown>;
+  try { raw = JSON.parse(configJson); } catch { return null; }
+
+  // Backwards compat: old flat header-only config
+  if ('bgColor' in raw && !('header' in raw)) {
+    return { ...DESIGN_DEFAULTS, header: { ...DESIGN_DEFAULTS.header, ...(raw as Partial<EmailDesignConfig['header']>) } };
+  }
+  const d = raw as Partial<EmailDesignConfig>;
+  return {
+    header: { ...DESIGN_DEFAULTS.header, ...d.header },
+    body:   { ...DESIGN_DEFAULTS.body, ...d.body },
+    cta:    { ...DESIGN_DEFAULTS.cta, ...d.cta },
+    footer: { ...DESIGN_DEFAULTS.footer, ...d.footer },
+  };
+}
+
+function renderHeader(h: EmailDesignConfig['header']): string {
+  if (!h.companyName && !h.logoUrl) return '';
+  const logo = h.logoUrl ? `<img src="${escapeHtml(h.logoUrl)}" alt="" style="max-height:48px;max-width:200px;margin-bottom:12px;" />` : '';
+  const name = h.companyName ? `<h1 style="margin:0;font-size:20px;font-weight:700;color:${h.textColor};">${escapeHtml(h.companyName)}</h1>` : '';
+  const tag = h.tagline ? `<p style="margin:4px 0 0 0;font-size:13px;color:${h.accentColor};">${escapeHtml(h.tagline)}</p>` : '';
+  const div = h.showDivider ? `<div style="height:3px;background:${h.accentColor};opacity:0.3;margin-top:16px;border-radius:2px;"></div>` : '';
+  return `<div style="background:${h.bgColor};padding:28px 24px 20px;text-align:${h.alignment};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">${logo}${name}${tag}${div}</div>`;
+}
+
+function renderCta(cta: EmailDesignConfig['cta'], url: string): string {
+  return `<a href="${url}" style="display:inline-block;background:${cta.bgColor};color:${cta.textColor};text-decoration:none;padding:12px 28px;border-radius:${cta.borderRadius}px;font-weight:600;font-size:15px;">${escapeHtml(cta.label || 'Visa & signera offert')} &rarr;</a>`;
+}
+
+function renderFooter(f: EmailDesignConfig['footer']): string {
+  const parts: string[] = [];
+  if (f.companyInfo) parts.push(`<p style="margin:0 0 6px;font-size:12px;color:${f.textColor};">${escapeHtml(f.companyInfo)}</p>`);
+  if (f.showSocial && f.socialLinks) {
+    const links: string[] = [];
+    if (f.socialLinks.website) links.push(`<a href="${escapeHtml(f.socialLinks.website)}" style="color:${f.textColor};text-decoration:underline;font-size:11px;">Webb</a>`);
+    if (f.socialLinks.linkedin) links.push(`<a href="${escapeHtml(f.socialLinks.linkedin)}" style="color:${f.textColor};text-decoration:underline;font-size:11px;">LinkedIn</a>`);
+    if (f.socialLinks.twitter) links.push(`<a href="${escapeHtml(f.socialLinks.twitter)}" style="color:${f.textColor};text-decoration:underline;font-size:11px;">X</a>`);
+    if (f.socialLinks.instagram) links.push(`<a href="${escapeHtml(f.socialLinks.instagram)}" style="color:${f.textColor};text-decoration:underline;font-size:11px;">Instagram</a>`);
+    if (links.length) parts.push(`<p style="margin:0 0 6px;">${links.join(' &nbsp;&middot;&nbsp; ')}</p>`);
+  }
+  if (f.legalText) parts.push(`<p style="margin:0;font-size:10px;color:${f.textColor};opacity:0.7;">${escapeHtml(f.legalText)}</p>`);
+  if (!parts.length) return '';
+  return `<div style="background:${f.bgColor};padding:20px 24px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">${parts.join('')}</div>`;
+}
+
 // ─── Email templates ────────────────────────────────────────────────────────────
 
 function sendToRecipientHtml(p: SendToRecipientPayload): string {
-  // Use custom email body if provided, wrapped in the standard shell with the signing button
+  const d = parseDesignConfig(p.emailHeaderConfig);
+  const b = d?.body ?? DESIGN_DEFAULTS.body;
+  const c = d?.cta ?? DESIGN_DEFAULTS.cta;
+
+  const headerHtml = d ? renderHeader(d.header) : '';
+  const footerHtml = d ? renderFooter(d.footer) : '';
+  const ctaHtml = renderCta(c, p.publicUrl);
+  const fallbackLink = `<p style="margin:24px 0 0 0;font-size:12px;color:${b.mutedColor};">Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/><a href="${p.publicUrl}" style="color:${b.mutedColor};">${p.publicUrl}</a></p>`;
+
+  // Custom body
   if (p.emailBody) {
     return `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
-      ${sanitizeEmailHtml(p.emailBody)}
-      <div style="margin-top:24px;">
-        <a href="${p.publicUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">
-          Visa &amp; signera offert →
-        </a>
+    <div style="max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:${b.bgColor};">
+      ${headerHtml}
+      <div style="padding:32px 24px;">
+        <div style="background:${b.contentBgColor};border-radius:8px;padding:28px 24px;color:${b.textColor};">
+          ${sanitizeEmailHtml(p.emailBody)}
+          <div style="margin-top:24px;text-align:center;">${ctaHtml}</div>
+          ${fallbackLink}
+        </div>
       </div>
-      <p style="margin:24px 0 0 0;font-size:12px;color:#94a3b8;">
-        Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/>
-        <a href="${p.publicUrl}" style="color:#94a3b8;">${p.publicUrl}</a>
-      </p>
+      ${footerHtml}
     </div>`;
   }
 
-  // Default email body
+  // Default body
   return `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
-      <h2 style="margin:0 0 8px 0;font-size:22px;">Du har en ny offert 📄</h2>
-      <p style="color:#64748b;margin:0 0 24px 0;">Hej ${p.recipientName},</p>
-      <p style="margin:0 0 16px 0;">Du har tagit emot en offert: <strong>${p.offerTitle}</strong></p>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-        <tr><td style="padding:8px 0;color:#64748b;font-size:14px;">Totalt inkl. moms</td><td style="padding:8px 0;font-weight:700;text-align:right;">${fmtSEK(p.totalIncVat)}</td></tr>
-        <tr><td style="padding:8px 0;color:#64748b;font-size:14px;">Giltig till</td><td style="padding:8px 0;text-align:right;">${fmtDate(p.validUntil)}</td></tr>
-      </table>
-      <a href="${p.publicUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">
-        Visa &amp; signera offert →
-      </a>
-      <p style="margin:24px 0 0 0;font-size:12px;color:#94a3b8;">
-        Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/>
-        <a href="${p.publicUrl}" style="color:#94a3b8;">${p.publicUrl}</a>
-      </p>
+    <div style="max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:${b.bgColor};">
+      ${headerHtml}
+      <div style="padding:32px 24px;">
+        <div style="background:${b.contentBgColor};border-radius:8px;padding:28px 24px;">
+          <h2 style="margin:0 0 8px 0;font-size:22px;color:${b.textColor};">Du har en ny offert</h2>
+          <p style="color:${b.mutedColor};margin:0 0 24px 0;">Hej ${p.recipientName},</p>
+          <p style="margin:0 0 16px 0;color:${b.textColor};">Du har tagit emot en offert: <strong>${p.offerTitle}</strong></p>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+            <tr><td style="padding:8px 0;color:${b.mutedColor};font-size:14px;">Totalt inkl. moms</td><td style="padding:8px 0;font-weight:700;text-align:right;color:${b.textColor};">${fmtSEK(p.totalIncVat)}</td></tr>
+            <tr><td style="padding:8px 0;color:${b.mutedColor};font-size:14px;">Giltig till</td><td style="padding:8px 0;text-align:right;color:${b.textColor};">${fmtDate(p.validUntil)}</td></tr>
+          </table>
+          <div style="text-align:center;">${ctaHtml}</div>
+          ${fallbackLink}
+        </div>
+      </div>
+      ${footerHtml}
     </div>`;
 }
 
@@ -122,39 +196,47 @@ function notifyCreatorHtml(p: NotifyCreatorPayload): string {
 }
 
 function reminderHtml(p: ReminderPayload): string {
-  // Use custom email body if provided
+  const d = parseDesignConfig(p.emailHeaderConfig);
+  const b = d?.body ?? DESIGN_DEFAULTS.body;
+  const c = d?.cta ?? DESIGN_DEFAULTS.cta;
+
+  const headerHtml = d ? renderHeader(d.header) : '';
+  const footerHtml = d ? renderFooter(d.footer) : '';
+  const ctaHtml = renderCta(c, p.publicUrl);
+  const fallbackLink = `<p style="margin:24px 0 0 0;font-size:12px;color:${b.mutedColor};">Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/><a href="${p.publicUrl}" style="color:${b.mutedColor};">${p.publicUrl}</a></p>`;
+
   if (p.emailBody) {
     return `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
-      ${sanitizeEmailHtml(p.emailBody)}
-      <div style="margin-top:24px;">
-        <a href="${p.publicUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">
-          Visa &amp; signera offert →
-        </a>
+    <div style="max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:${b.bgColor};">
+      ${headerHtml}
+      <div style="padding:32px 24px;">
+        <div style="background:${b.contentBgColor};border-radius:8px;padding:28px 24px;color:${b.textColor};">
+          ${sanitizeEmailHtml(p.emailBody)}
+          <div style="margin-top:24px;text-align:center;">${ctaHtml}</div>
+          ${fallbackLink}
+        </div>
       </div>
-      <p style="margin:24px 0 0 0;font-size:12px;color:#94a3b8;">
-        Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/>
-        <a href="${p.publicUrl}" style="color:#94a3b8;">${p.publicUrl}</a>
-      </p>
+      ${footerHtml}
     </div>`;
   }
 
   return `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
-      <h2 style="margin:0 0 8px 0;font-size:22px;">Påminnelse om offert 📄</h2>
-      <p style="color:#64748b;margin:0 0 24px 0;">Hej ${p.recipientName},</p>
-      <p style="margin:0 0 16px 0;">Vi vill påminna om en offert som väntar på ditt svar: <strong>${p.offerTitle}</strong></p>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-        <tr><td style="padding:8px 0;color:#64748b;font-size:14px;">Totalt inkl. moms</td><td style="padding:8px 0;font-weight:700;text-align:right;">${fmtSEK(p.totalIncVat)}</td></tr>
-        <tr><td style="padding:8px 0;color:#64748b;font-size:14px;">Giltig till</td><td style="padding:8px 0;text-align:right;">${fmtDate(p.validUntil)}</td></tr>
-      </table>
-      <a href="${p.publicUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">
-        Visa &amp; signera offert →
-      </a>
-      <p style="margin:24px 0 0 0;font-size:12px;color:#94a3b8;">
-        Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/>
-        <a href="${p.publicUrl}" style="color:#94a3b8;">${p.publicUrl}</a>
-      </p>
+    <div style="max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:${b.bgColor};">
+      ${headerHtml}
+      <div style="padding:32px 24px;">
+        <div style="background:${b.contentBgColor};border-radius:8px;padding:28px 24px;">
+          <h2 style="margin:0 0 8px 0;font-size:22px;color:${b.textColor};">Påminnelse om offert</h2>
+          <p style="color:${b.mutedColor};margin:0 0 24px 0;">Hej ${p.recipientName},</p>
+          <p style="margin:0 0 16px 0;color:${b.textColor};">Vi vill påminna om en offert som väntar på ditt svar: <strong>${p.offerTitle}</strong></p>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+            <tr><td style="padding:8px 0;color:${b.mutedColor};font-size:14px;">Totalt inkl. moms</td><td style="padding:8px 0;font-weight:700;text-align:right;color:${b.textColor};">${fmtSEK(p.totalIncVat)}</td></tr>
+            <tr><td style="padding:8px 0;color:${b.mutedColor};font-size:14px;">Giltig till</td><td style="padding:8px 0;text-align:right;color:${b.textColor};">${fmtDate(p.validUntil)}</td></tr>
+          </table>
+          <div style="text-align:center;">${ctaHtml}</div>
+          ${fallbackLink}
+        </div>
+      </div>
+      ${footerHtml}
     </div>`;
 }
 

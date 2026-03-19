@@ -19,6 +19,7 @@ export interface CreateOfferInput {
   generatedDocument?: string;
   emailSubject?:      string;
   emailBody?:         string;
+  emailHeaderConfig?: string;
   lineItems: Array<{
     description: string;
     quantity:    number;
@@ -48,6 +49,7 @@ export interface UpdateOfferInput {
   generatedDocument?:    string;
   emailSubject?:         string;
   emailBody?:            string;
+  emailHeaderConfig?:    string;
   signatureImage?:       string;
   signerName?:           string;
   publicTokenExpiresAt?: Date;
@@ -112,6 +114,7 @@ function mapOffer(r: Record<string, unknown>): Offer {
     generatedDocument:    (r.generatedDocument as string | null) ?? undefined,
     emailSubject:         (r.emailSubject as string | null) ?? undefined,
     emailBody:            (r.emailBody as string | null) ?? undefined,
+    emailHeaderConfig:    (r.emailHeaderConfig as string | null) ?? undefined,
     signatureImage:       (r.signatureImage as string | null) ?? undefined,
     signerName:           (r.signerName as string | null) ?? undefined,
     signatureMethod:      (r.signatureMethod as string) ?? 'canvas',
@@ -156,7 +159,7 @@ const OFFER_SELECT = {
   sentAt: true, viewedAt: true, acceptedAt: true, declinedAt: true,
   reminderSentAt: true, reminderCount: true,
   leadId: true, customerId: true,
-  templateId: true, generatedDocument: true, emailSubject: true, emailBody: true, signatureImage: true, signerName: true, signatureMethod: true,
+  templateId: true, generatedDocument: true, emailSubject: true, emailBody: true, emailHeaderConfig: true, signatureImage: true, signerName: true, signatureMethod: true,
   publicToken: true, publicTokenExpiresAt: true,
   createdAt: true, updatedAt: true,
   lineItems: { select: LINE_ITEM_SELECT, orderBy: { sortOrder: 'asc' as const } },
@@ -169,8 +172,7 @@ export const offersRepository = {
   async create(input: CreateOfferInput): Promise<Offer> {
     const { totalExVat, totalIncVat } = computeTotals(input.lineItems);
 
-    const row = await prisma.offer.create({
-      data: {
+    const data = {
         organizationId:    input.organizationId,
         title:             input.title,
         recipientName:     input.recipientName,
@@ -186,6 +188,7 @@ export const offersRepository = {
         generatedDocument: input.generatedDocument ?? null,
         emailSubject:      input.emailSubject ?? null,
         emailBody:         input.emailBody ?? null,
+        emailHeaderConfig: input.emailHeaderConfig ?? null,
         totalExVat,
         totalIncVat,
         lineItems: {
@@ -198,7 +201,9 @@ export const offersRepository = {
             sortOrder:   item.sortOrder ?? idx,
           })),
         },
-      },
+    } as Prisma.OfferUncheckedCreateInput;
+    const row = await prisma.offer.create({
+      data,
       select: OFFER_SELECT,
     });
     return mapOffer(row as unknown as Record<string, unknown>);
@@ -258,9 +263,7 @@ export const offersRepository = {
       await prisma.offerLineItem.deleteMany({ where: { offerId: id } });
     }
 
-    const row = await prisma.offer.update({
-      where: { id },
-      data: {
+    const updateData = {
         ...(input.title            !== undefined ? { title: input.title }                       : {}),
         ...(input.recipientName    !== undefined ? { recipientName: input.recipientName }       : {}),
         ...(input.recipientEmail   !== undefined ? { recipientEmail: input.recipientEmail }     : {}),
@@ -279,6 +282,7 @@ export const offersRepository = {
         ...(input.generatedDocument    !== undefined ? { generatedDocument: input.generatedDocument }       : {}),
         ...(input.emailSubject         !== undefined ? { emailSubject: input.emailSubject ?? null }         : {}),
         ...(input.emailBody            !== undefined ? { emailBody: input.emailBody ?? null }               : {}),
+        ...(input.emailHeaderConfig    !== undefined ? { emailHeaderConfig: input.emailHeaderConfig ?? null } : {}),
         ...(input.signatureImage       !== undefined ? { signatureImage: input.signatureImage }             : {}),
         ...(input.signerName           !== undefined ? { signerName: input.signerName }                     : {}),
         ...(input.publicTokenExpiresAt !== undefined ? { publicTokenExpiresAt: input.publicTokenExpiresAt } : {}),
@@ -295,7 +299,10 @@ export const offersRepository = {
             })),
           },
         } : {}),
-      },
+    } as Prisma.OfferUncheckedUpdateInput;
+    const row = await prisma.offer.update({
+      where: { id },
+      data: updateData,
       select: OFFER_SELECT,
     });
     return mapOffer(row as unknown as Record<string, unknown>);
