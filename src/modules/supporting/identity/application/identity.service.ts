@@ -34,6 +34,15 @@ export const identityService = {
     return identityRepository.listOrgs();
   },
 
+  async updateOrgEmailSettings(
+    orgId: string,
+    settings: { senderEmail?: string | null; senderName?: string | null },
+  ): Promise<Organization> {
+    const org = await identityRepository.updateOrg(orgId, settings);
+    logger.info(TAG, `Org email settings updated`, { orgId });
+    return org;
+  },
+
   /**
    * Returns the demo organization, creating it if it doesn't exist.
    * Used by the demo seed endpoint and development tooling.

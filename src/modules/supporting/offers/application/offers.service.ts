@@ -10,6 +10,7 @@ import {
   OFFER_DECLINED,
 } from '../events/offer.events';
 import { enqueueOfferEmail, enqueueCreatorNotification, enqueueReminderEmail } from './offer-email';
+import { identityService } from '@modules/supporting/identity/application/identity.service';
 import { generateDocument, generateFallbackDocument, interpolateEmailText } from './document-generator';
 import { templatesRepository } from '../infrastructure/templates.repository';
 
@@ -136,10 +137,14 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
     },
   });
 
+  // Resolve org-level sender email settings
+  const org = await identityService.getOrg(orgId);
+  const sender = org ? { senderEmail: org.senderEmail, senderName: org.senderName } : undefined;
+
   // Enqueue email (non-blocking)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
   const publicUrl = `${appUrl}/offers/public/${updated.publicToken}`;
-  await enqueueOfferEmail(updated, publicUrl).catch((err: unknown) =>
+  await enqueueOfferEmail(updated, publicUrl, sender).catch((err: unknown) =>
     logger.warn(TAG, 'Failed to enqueue offer email', { err })
   );
 
@@ -484,9 +489,13 @@ export async function sendOfferReminder(id: string, orgId: string): Promise<Offe
   });
   if (!updated) return null;
 
+  // Resolve org-level sender email settings
+  const org = await identityService.getOrg(orgId);
+  const senderInfo = org ? { senderEmail: org.senderEmail, senderName: org.senderName } : undefined;
+
   const appUrl   = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
   const publicUrl = `${appUrl}/offers/public/${updated.publicToken}`;
-  await enqueueReminderEmail(updated, publicUrl).catch((err: unknown) =>
+  await enqueueReminderEmail(updated, publicUrl, senderInfo).catch((err: unknown) =>
     logger.warn(TAG, 'Failed to enqueue reminder email', { err })
   );
 

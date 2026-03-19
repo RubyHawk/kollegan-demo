@@ -13,6 +13,10 @@ model Organization {
   orgType     String  @default("internal") // internal | customer
   parentOrgId String? // null for internal; customer → internal org id
 
+  // Custom sender email for outgoing offers / notifications
+  senderEmail String? // e.g. "sales@mycompany.se" — must be verified in Resend
+  senderName  String? // e.g. "Acme AB" — display name in the From header
+
   // Back-relations — defined in their respective schema files
   customers   Customer[]
   bookings    HotelBooking[]

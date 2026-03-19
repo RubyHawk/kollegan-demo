@@ -15,6 +15,8 @@ function toOrg(raw: {
   plan: string;
   createdAt: Date;
   updatedAt: Date;
+  senderEmail?: string | null;
+  senderName?: string | null;
 }): Organization {
   return {
     id: raw.id,
@@ -23,6 +25,8 @@ function toOrg(raw: {
     plan: raw.plan as Organization['plan'],
     createdAt: raw.createdAt.toISOString(),
     updatedAt: raw.updatedAt.toISOString(),
+    ...(raw.senderEmail ? { senderEmail: raw.senderEmail } : {}),
+    ...(raw.senderName  ? { senderName: raw.senderName }   : {}),
   };
 }
 
@@ -53,6 +57,11 @@ export const identityRepository = {
       orderBy: { createdAt: 'asc' },
     });
     return orgs.map(toOrg);
+  },
+
+  async updateOrg(id: string, data: { senderEmail?: string | null; senderName?: string | null }): Promise<Organization> {
+    const org = await prisma.organization.update({ where: { id }, data });
+    return toOrg(org);
   },
 
   async upsertOrg(input: CreateOrgInput): Promise<Organization> {

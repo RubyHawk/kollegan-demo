@@ -24,6 +24,8 @@ export interface SendToRecipientPayload {
   totalIncVat:   number;
   emailSubject?: string;  // custom email subject (already interpolated)
   emailBody?:    string;  // custom email body HTML (already interpolated)
+  senderEmail?:  string;  // org-level custom sender email
+  senderName?:   string;  // org-level custom sender display name
 }
 
 export interface NotifyCreatorPayload {
@@ -33,6 +35,8 @@ export interface NotifyCreatorPayload {
   event:        'signed' | 'declined';
   recipientName:string;
   comment?:     string;
+  senderEmail?: string;
+  senderName?:  string;
 }
 
 export interface ReminderPayload {
@@ -46,6 +50,8 @@ export interface ReminderPayload {
   reminderCount:  number;
   emailSubject?:  string;  // custom email subject (already interpolated)
   emailBody?:     string;  // custom email body HTML (already interpolated)
+  senderEmail?:   string;
+  senderName?:    string;
 }
 
 // ─── Enqueue helpers ───────────────────────────────────────────────────────────
@@ -54,7 +60,11 @@ export interface ReminderPayload {
  * Enqueue email to offer recipient with the public signing link.
  * Called from sendOffer() after status is updated.
  */
-export async function enqueueOfferEmail(offer: Offer, publicUrl: string): Promise<void> {
+export async function enqueueOfferEmail(
+  offer: Offer,
+  publicUrl: string,
+  sender?: { senderEmail?: string; senderName?: string },
+): Promise<void> {
   const payload: SendToRecipientPayload = {
     offerId:        offer.id,
     offerTitle:     offer.title,
@@ -65,6 +75,8 @@ export async function enqueueOfferEmail(offer: Offer, publicUrl: string): Promis
     totalIncVat:    offer.totalIncVat,
     emailSubject:   offer.emailSubject,
     emailBody:      offer.emailBody,
+    senderEmail:    sender?.senderEmail,
+    senderName:     sender?.senderName,
   };
   await jobQueue.add('offer.email.send_to_recipient', payload, { retries: 3 });
 }
@@ -73,7 +85,11 @@ export async function enqueueOfferEmail(offer: Offer, publicUrl: string): Promis
  * Enqueue reminder email to the offer recipient.
  * Called from sendOfferReminder() after cooldown validation.
  */
-export async function enqueueReminderEmail(offer: Offer, publicUrl: string): Promise<void> {
+export async function enqueueReminderEmail(
+  offer: Offer,
+  publicUrl: string,
+  sender?: { senderEmail?: string; senderName?: string },
+): Promise<void> {
   const payload: ReminderPayload = {
     offerId:        offer.id,
     offerTitle:     offer.title,
@@ -85,6 +101,8 @@ export async function enqueueReminderEmail(offer: Offer, publicUrl: string): Pro
     reminderCount:  offer.reminderCount ?? 1,
     emailSubject:   offer.emailSubject,
     emailBody:      offer.emailBody,
+    senderEmail:    sender?.senderEmail,
+    senderName:     sender?.senderName,
   };
   await jobQueue.add('offer.email.reminder', payload, { retries: 3 });
 }
@@ -96,7 +114,7 @@ export async function enqueueReminderEmail(offer: Offer, publicUrl: string): Pro
 export async function enqueueCreatorNotification(
   offer: Offer,
   event: 'signed' | 'declined',
-  extra?: { comment?: string },
+  extra?: { comment?: string; senderEmail?: string; senderName?: string },
 ): Promise<void> {
   const payload: NotifyCreatorPayload = {
     offerId:       offer.id,
@@ -105,6 +123,8 @@ export async function enqueueCreatorNotification(
     event,
     recipientName: offer.recipientName,
     comment:       extra?.comment,
+    senderEmail:   extra?.senderEmail,
+    senderName:    extra?.senderName,
   };
   await jobQueue.add('offer.email.notify_creator', payload, { retries: 3 });
 }
