@@ -24,6 +24,7 @@ export interface SendToRecipientPayload {
   totalIncVat:   number;
   emailSubject?: string;  // custom email subject (already interpolated)
   emailBody?:    string;  // custom email body HTML (already interpolated)
+  emailHeaderConfig?: string; // JSON config for visual email header
   senderEmail?:  string;  // org-level custom sender email
   senderName?:   string;  // org-level custom sender display name
 }
@@ -50,6 +51,7 @@ export interface ReminderPayload {
   reminderCount:  number;
   emailSubject?:  string;  // custom email subject (already interpolated)
   emailBody?:     string;  // custom email body HTML (already interpolated)
+  emailHeaderConfig?: string;
   senderEmail?:   string;
   senderName?:    string;
 }
@@ -73,10 +75,11 @@ export async function enqueueOfferEmail(
     publicUrl,
     validUntil:     offer.validUntil,
     totalIncVat:    offer.totalIncVat,
-    emailSubject:   offer.emailSubject,
-    emailBody:      offer.emailBody,
-    senderEmail:    sender?.senderEmail,
-    senderName:     sender?.senderName,
+    emailSubject:      offer.emailSubject,
+    emailBody:         offer.emailBody,
+    emailHeaderConfig: offer.emailHeaderConfig,
+    senderEmail:       sender?.senderEmail,
+    senderName:        sender?.senderName,
   };
   await jobQueue.add('offer.email.send_to_recipient', payload, { retries: 3 });
 }
@@ -99,10 +102,11 @@ export async function enqueueReminderEmail(
     validUntil:     offer.validUntil,
     totalIncVat:    offer.totalIncVat,
     reminderCount:  offer.reminderCount ?? 1,
-    emailSubject:   offer.emailSubject,
-    emailBody:      offer.emailBody,
-    senderEmail:    sender?.senderEmail,
-    senderName:     sender?.senderName,
+    emailSubject:      offer.emailSubject,
+    emailBody:         offer.emailBody,
+    emailHeaderConfig: offer.emailHeaderConfig,
+    senderEmail:       sender?.senderEmail,
+    senderName:        sender?.senderName,
   };
   await jobQueue.add('offer.email.reminder', payload, { retries: 3 });
 }

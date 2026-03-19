@@ -62,13 +62,59 @@ function fmtDate(iso: string): string {
   });
 }
 
+// ─── Email header renderer ─────────────────────────────────────────────────────
+
+interface EmailHeaderConfig {
+  logoUrl?: string;
+  companyName?: string;
+  tagline?: string;
+  bgColor?: string;
+  textColor?: string;
+  accentColor?: string;
+  alignment?: 'left' | 'center';
+  showDivider?: boolean;
+}
+
+function renderEmailHeader(configJson?: string): string {
+  if (!configJson) return '';
+  let cfg: EmailHeaderConfig;
+  try { cfg = JSON.parse(configJson); } catch { return ''; }
+
+  const bg    = cfg.bgColor    || '#0f172a';
+  const text  = cfg.textColor  || '#ffffff';
+  const accent = cfg.accentColor || '#94a3b8';
+  const align = cfg.alignment  || 'center';
+
+  const logo = cfg.logoUrl
+    ? `<img src="${escapeHtml(cfg.logoUrl)}" alt="" style="max-height:48px;max-width:200px;margin-bottom:12px;" />`
+    : '';
+  const name = cfg.companyName
+    ? `<${align === 'center' ? 'h1' : 'p'} style="margin:0;font-size:20px;font-weight:700;color:${text};">${escapeHtml(cfg.companyName)}</${align === 'center' ? 'h1' : 'p'}>`
+    : '';
+  const tagline = cfg.tagline
+    ? `<p style="margin:4px 0 0 0;font-size:13px;color:${accent};font-weight:400;">${escapeHtml(cfg.tagline)}</p>`
+    : '';
+  const divider = cfg.showDivider !== false
+    ? `<div style="height:3px;background:${accent};opacity:0.3;margin-top:16px;border-radius:2px;"></div>`
+    : '';
+
+  return `
+    <div style="background:${bg};padding:28px 24px 20px 24px;text-align:${align};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+      ${logo}${name}${tagline}${divider}
+    </div>`;
+}
+
 // ─── Email templates ────────────────────────────────────────────────────────────
 
 function sendToRecipientHtml(p: SendToRecipientPayload): string {
+  const header = renderEmailHeader(p.emailHeaderConfig);
+
   // Use custom email body if provided, wrapped in the standard shell with the signing button
   if (p.emailBody) {
     return `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
+    <div style="max-width:560px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+      ${header}
+    <div style="padding:32px 24px;color:#1e293b;">
       ${sanitizeEmailHtml(p.emailBody)}
       <div style="margin-top:24px;">
         <a href="${p.publicUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">
@@ -79,13 +125,16 @@ function sendToRecipientHtml(p: SendToRecipientPayload): string {
         Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/>
         <a href="${p.publicUrl}" style="color:#94a3b8;">${p.publicUrl}</a>
       </p>
+    </div>
     </div>`;
   }
 
   // Default email body
   return `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
-      <h2 style="margin:0 0 8px 0;font-size:22px;">Du har en ny offert 📄</h2>
+    <div style="max-width:560px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+      ${header}
+    <div style="padding:32px 24px;color:#1e293b;">
+      <h2 style="margin:0 0 8px 0;font-size:22px;">Du har en ny offert</h2>
       <p style="color:#64748b;margin:0 0 24px 0;">Hej ${p.recipientName},</p>
       <p style="margin:0 0 16px 0;">Du har tagit emot en offert: <strong>${p.offerTitle}</strong></p>
       <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
@@ -99,6 +148,7 @@ function sendToRecipientHtml(p: SendToRecipientPayload): string {
         Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/>
         <a href="${p.publicUrl}" style="color:#94a3b8;">${p.publicUrl}</a>
       </p>
+    </div>
     </div>`;
 }
 
@@ -122,10 +172,14 @@ function notifyCreatorHtml(p: NotifyCreatorPayload): string {
 }
 
 function reminderHtml(p: ReminderPayload): string {
+  const header = renderEmailHeader(p.emailHeaderConfig);
+
   // Use custom email body if provided
   if (p.emailBody) {
     return `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
+    <div style="max-width:560px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+      ${header}
+    <div style="padding:32px 24px;color:#1e293b;">
       ${sanitizeEmailHtml(p.emailBody)}
       <div style="margin-top:24px;">
         <a href="${p.publicUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">
@@ -136,12 +190,15 @@ function reminderHtml(p: ReminderPayload): string {
         Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/>
         <a href="${p.publicUrl}" style="color:#94a3b8;">${p.publicUrl}</a>
       </p>
+    </div>
     </div>`;
   }
 
   return `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
-      <h2 style="margin:0 0 8px 0;font-size:22px;">Påminnelse om offert 📄</h2>
+    <div style="max-width:560px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+      ${header}
+    <div style="padding:32px 24px;color:#1e293b;">
+      <h2 style="margin:0 0 8px 0;font-size:22px;">Påminnelse om offert</h2>
       <p style="color:#64748b;margin:0 0 24px 0;">Hej ${p.recipientName},</p>
       <p style="margin:0 0 16px 0;">Vi vill påminna om en offert som väntar på ditt svar: <strong>${p.offerTitle}</strong></p>
       <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
@@ -155,6 +212,7 @@ function reminderHtml(p: ReminderPayload): string {
         Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/>
         <a href="${p.publicUrl}" style="color:#94a3b8;">${p.publicUrl}</a>
       </p>
+    </div>
     </div>`;
 }
 

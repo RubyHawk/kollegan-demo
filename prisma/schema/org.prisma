@@ -16,6 +16,7 @@ model Organization {
   // Custom sender email for outgoing offers / notifications
   senderEmail String? // e.g. "sales@mycompany.se" — must be verified in Resend
   senderName  String? // e.g. "Acme AB" — display name in the From header
+  emailHeaderConfig String? // JSON config for default visual email header
 
   // Back-relations — defined in their respective schema files
   customers   Customer[]

@@ -59,6 +59,7 @@ model Offer {
   generatedDocument String?   // immutable HTML snapshot, set at sendOffer time
   emailSubject      String?   // Custom email subject (snapshot, set at sendOffer time)
   emailBody         String?   // Custom email body HTML (snapshot, set at sendOffer time)
+  emailHeaderConfig String?   // JSON config for visual email header (logo, colors, text)
   signatureImage    String?   // data URL of recipient's e-signature
   signerName        String?   // name typed by the signer at signing time
   signatureMethod   String    @default("canvas")  // "canvas" (SES) | "bankid" (AdES) — future

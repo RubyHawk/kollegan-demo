@@ -17,6 +17,7 @@ function toOrg(raw: {
   updatedAt: Date;
   senderEmail?: string | null;
   senderName?: string | null;
+  emailHeaderConfig?: string | null;
 }): Organization {
   return {
     id: raw.id,
@@ -27,6 +28,7 @@ function toOrg(raw: {
     updatedAt: raw.updatedAt.toISOString(),
     ...(raw.senderEmail ? { senderEmail: raw.senderEmail } : {}),
     ...(raw.senderName  ? { senderName: raw.senderName }   : {}),
+    ...(raw.emailHeaderConfig ? { emailHeaderConfig: raw.emailHeaderConfig } : {}),
   };
 }
 
@@ -59,7 +61,7 @@ export const identityRepository = {
     return orgs.map(toOrg);
   },
 
-  async updateOrg(id: string, data: { senderEmail?: string | null; senderName?: string | null }): Promise<Organization> {
+  async updateOrg(id: string, data: { senderEmail?: string | null; senderName?: string | null; emailHeaderConfig?: string | null }): Promise<Organization> {
     const org = await prisma.organization.update({ where: { id }, data });
     return toOrg(org);
   },

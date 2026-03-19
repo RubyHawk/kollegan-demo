@@ -1,6 +1,6 @@
 /**
- * GET  /api/org/email-settings — get org sender email settings
- * PUT  /api/org/email-settings — update org sender email settings
+ * GET  /api/org/email-settings — get org sender email settings + default header
+ * PUT  /api/org/email-settings — update org sender email settings + default header
  */
 
 import { z } from 'zod';
@@ -30,6 +30,7 @@ export const GET = createHandler(
     return ok({
       senderEmail: org.senderEmail ?? null,
       senderName: org.senderName ?? null,
+      emailHeaderConfig: org.emailHeaderConfig ?? null,
     });
   },
 );
@@ -39,6 +40,7 @@ export const GET = createHandler(
 const UpdateBodySchema = z.object({
   senderEmail: z.string().email().max(254).nullable().optional(),
   senderName: z.string().max(100).nullable().optional(),
+  emailHeaderConfig: z.string().max(5_000).nullable().optional(),
 });
 
 export const PUT = createHandler(
@@ -51,11 +53,13 @@ export const PUT = createHandler(
     const org = await identityService.updateOrgEmailSettings(payload.orgId, {
       senderEmail: body.senderEmail,
       senderName: body.senderName,
+      emailHeaderConfig: body.emailHeaderConfig,
     });
 
     return ok({
       senderEmail: org.senderEmail ?? null,
       senderName: org.senderName ?? null,
+      emailHeaderConfig: org.emailHeaderConfig ?? null,
     });
   },
 );

@@ -36,7 +36,7 @@ export const identityService = {
 
   async updateOrgEmailSettings(
     orgId: string,
-    settings: { senderEmail?: string | null; senderName?: string | null },
+    settings: { senderEmail?: string | null; senderName?: string | null; emailHeaderConfig?: string | null },
   ): Promise<Organization> {
     const org = await identityRepository.updateOrg(orgId, settings);
     logger.info(TAG, `Org email settings updated`, { orgId });
