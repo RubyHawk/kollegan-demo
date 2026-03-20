@@ -83,8 +83,8 @@ export default function DocumentCanvas() {
       )}
 
       {/* ── Scrollable document area ─────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto" style={{ background: '#e8e8e8' }}>
-        <div className="px-8 py-10">
+      <div className="flex-1 overflow-auto" style={{ background: '#e8e8e8' }}>
+        <div className="px-8 py-10" style={{ minWidth: 'fit-content' }}>
           <div
             className="mx-auto bg-white"
             data-a4-page="true"
