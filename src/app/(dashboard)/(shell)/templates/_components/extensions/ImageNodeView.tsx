@@ -226,19 +226,10 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
         latestX: posX, latestY: posY,
       };
 
-      let pageEl: HTMLElement | null = wrapper;
-      while (pageEl && !pageEl.dataset.a4Page) pageEl = pageEl.parentElement;
-      const pageW = pageEl?.offsetWidth  ?? 816;
-      const pageH = pageEl?.offsetHeight ?? 1056;
-
       const onMove = (ev: MouseEvent) => {
         if (!moveRef.current) return;
-        const imgW = wrapper.offsetWidth;
-        const imgH = wrapper.offsetHeight;
-        const newX = Math.max(0, Math.min(pageW - imgW,
-          moveRef.current.origX + (ev.clientX - moveRef.current.startX)));
-        const newY = Math.max(0, Math.min(pageH - imgH,
-          moveRef.current.origY + (ev.clientY - moveRef.current.startY)));
+        const newX = moveRef.current.origX + (ev.clientX - moveRef.current.startX);
+        const newY = moveRef.current.origY + (ev.clientY - moveRef.current.startY);
         moveRef.current.latestX = newX;
         moveRef.current.latestY = newY;
         wrapper.style.left = `${newX}px`;
