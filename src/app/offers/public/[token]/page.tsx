@@ -219,8 +219,9 @@ export default function PublicOfferPage() {
 
     const wrapper = doc.querySelector('.doc-wrapper') as HTMLElement | null;
     if (wrapper) {
+      const isMobile = window.innerWidth < 640;
       wrapper.style.margin = '0';
-      wrapper.style.padding = '32px 40px';
+      wrapper.style.padding = isMobile ? '16px 0' : '32px 40px';
       wrapper.style.border = 'none';
       wrapper.style.borderRadius = '0';
       wrapper.style.maxWidth = 'none';
