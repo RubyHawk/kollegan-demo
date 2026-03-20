@@ -392,7 +392,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
             contentEditable={false}
             style={{
               position:   'absolute',
-              top:        -52,
+              top:        posY < 60 ? 8 : -52,
               left:       '50%',
               transform:  'translateX(-50%)',
               zIndex:     200,
