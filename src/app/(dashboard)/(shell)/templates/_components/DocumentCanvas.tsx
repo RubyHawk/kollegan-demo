@@ -89,7 +89,8 @@ export default function DocumentCanvas() {
             className="mx-auto bg-white"
             data-a4-page="true"
             style={{
-              maxWidth:  816,
+              width:     816,
+              minWidth:  816,
               minHeight: 1056,
               boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
               // Free-positioned images are absolutely placed relative to this div.

@@ -74,7 +74,7 @@ function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): st
       const src   = sanitizeUrl(String(a.src ?? ''));
       const alt   = escapeHtml(String(a.alt ?? ''));
       const title = escapeHtml(String(a.title ?? ''));
-      const width = a.width ? `width:${a.width}px;` : 'max-width:100%;';
+      const width = a.width ? `width:${a.width}px;max-width:100%;height:auto;` : 'max-width:100%;height:auto;';
       const align = String(a.align ?? 'left');
       const justifyMap: Record<string, string> = { center: 'center', right: 'flex-end', left: 'flex-start' };
       const justify = justifyMap[align] ?? 'flex-start';
@@ -293,9 +293,10 @@ export function generateFallbackDocument(offer: Offer): string {
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; background: #fff; margin: 0; padding: 0; }
+    img { max-width: 100%; height: auto; }
     .doc-wrapper { max-width: 700px; margin: 40px auto; padding: 40px 48px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
     @media (max-width: 640px) {
-      .doc-wrapper { margin: 0; padding: 24px 16px; border: none; border-radius: 0; }
+      .doc-wrapper { margin: 0; padding: 24px 0; border: none; border-radius: 0; }
       table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     }
     @media print { .doc-wrapper { margin: 0; padding: 0; border: none; } }
@@ -444,12 +445,13 @@ export function generateDocument(templateContent: string, offer: Offer): string 
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; background: #fff; margin: 0; padding: 0; }
+    img { max-width: 100%; height: auto; }
     .doc-wrapper { max-width: 700px; margin: 40px auto; padding: 40px 48px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
     .doc-header { font-size: 12px; color: #64748b; margin-bottom: 0; }
     .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
     .doc-divider { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
     @media (max-width: 640px) {
-      .doc-wrapper { margin: 0; padding: 24px 16px; border: none; border-radius: 0; }
+      .doc-wrapper { margin: 0; padding: 24px 0; border: none; border-radius: 0; }
       table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     }
     @media print {
