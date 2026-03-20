@@ -574,28 +574,33 @@ export default function TopToolbar() {
               <BigBtn
                 icon={<HeaderIcon />}
                 label="Sidhuvud"
-                active={hf?.settings.headerEnabled}
-                onClick={() => hf?.patchSettings({ headerEnabled: !hf.settings.headerEnabled })}
-                title={hf?.settings.headerEnabled ? 'Stäng av sidhuvud' : 'Aktivera sidhuvud'}
+                active={hf?.activeHeader.enabled}
+                onClick={() => hf?.patchActiveHeader({ enabled: !hf.activeHeader.enabled })}
+                title={hf?.activeHeader.enabled ? 'Stäng av sidhuvud för denna sida' : 'Aktivera sidhuvud för denna sida'}
               />
               <BigBtn
                 icon={<FooterIcon />}
                 label="Sidfot"
-                active={hf?.settings.footerEnabled}
-                onClick={() => hf?.patchSettings({ footerEnabled: !hf.settings.footerEnabled })}
-                title={hf?.settings.footerEnabled ? 'Stäng av sidfot' : 'Aktivera sidfot'}
+                active={hf?.activeFooter.enabled}
+                onClick={() => hf?.patchActiveFooter({ enabled: !hf.activeFooter.enabled })}
+                title={hf?.activeFooter.enabled ? 'Stäng av sidfot för denna sida' : 'Aktivera sidfot för denna sida'}
               />
               <InlineSep />
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
                 <RBtn
-                  active={hf?.settings.differentFirstPage}
-                  disabled={!hf?.settings.headerEnabled && !hf?.settings.footerEnabled}
-                  onClick={() => hf?.patchSettings({ differentFirstPage: !hf.settings.differentFirstPage })}
-                  title="Unik sidhuvud/sidfot för första sidan"
+                  active={hf?.activeHeader.enabled && !hf.activeHeader.useDefault}
+                  disabled={!hf?.activeHeader.enabled && !hf?.activeFooter.enabled}
+                  onClick={() => {
+                    if (!hf) return;
+                    const newVal = !(!hf.activeHeader.useDefault);
+                    hf.patchActiveHeader({ useDefault: newVal });
+                    hf.patchActiveFooter({ useDefault: newVal });
+                  }}
+                  title="Unik sidhuvud/sidfot för denna sida (ej standard)"
                   style={{ whiteSpace: 'nowrap', padding: '0 6px', fontSize: 11 }}
                 >
                   <FirstPageIcon />
-                  <span style={{ marginLeft: 4 }}>Unik 1:a</span>
+                  <span style={{ marginLeft: 4 }}>Unik sida</span>
                 </RBtn>
               </div>
             </RibbonGroup>
