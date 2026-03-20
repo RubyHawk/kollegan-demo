@@ -74,7 +74,7 @@ function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): st
       const src   = sanitizeUrl(String(a.src ?? ''));
       const alt   = escapeHtml(String(a.alt ?? ''));
       const title = escapeHtml(String(a.title ?? ''));
-      const width = a.width ? `width:${a.width}px;` : 'max-width:100%;';
+      const width = a.width ? `width:${a.width}px;max-width:100%;height:auto;` : 'max-width:100%;height:auto;';
       const align = String(a.align ?? 'left');
       const justifyMap: Record<string, string> = { center: 'center', right: 'flex-end', left: 'flex-start' };
       const justify = justifyMap[align] ?? 'flex-start';
