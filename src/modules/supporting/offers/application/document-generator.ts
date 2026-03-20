@@ -294,7 +294,10 @@ export function generateFallbackDocument(offer: Offer): string {
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; background: #fff; margin: 0; padding: 0; }
     .doc-wrapper { max-width: 700px; margin: 40px auto; padding: 40px 48px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
-    @media (max-width: 640px) { .doc-wrapper { margin: 0; padding: 24px 20px; border: none; border-radius: 0; } }
+    @media (max-width: 640px) {
+      .doc-wrapper { margin: 0; padding: 24px 16px; border: none; border-radius: 0; }
+      table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    }
     @media print { .doc-wrapper { margin: 0; padding: 0; border: none; } }
   </style>
 </head>
@@ -445,7 +448,10 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     .doc-header { font-size: 12px; color: #64748b; margin-bottom: 0; }
     .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
     .doc-divider { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
-    @media (max-width: 640px) { .doc-wrapper { margin: 0; padding: 24px 20px; border: none; border-radius: 0; } }
+    @media (max-width: 640px) {
+      .doc-wrapper { margin: 0; padding: 24px 16px; border: none; border-radius: 0; }
+      table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    }
     @media print {
       .doc-wrapper { margin: 0; padding: 0; border: none; }
       .doc-header { position: running(header); }
