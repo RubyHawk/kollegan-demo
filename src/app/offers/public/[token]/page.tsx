@@ -516,10 +516,10 @@ export default function PublicOfferPage() {
           {!isDecline ? (
             <motion.section
               key="sign"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
               className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
             >
               {/* Header */}
@@ -712,9 +712,9 @@ export default function PublicOfferPage() {
             /* ─── Decline mode ─── */
             <motion.section
               key="decline"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
             >
