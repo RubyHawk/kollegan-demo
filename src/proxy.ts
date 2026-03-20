@@ -15,6 +15,9 @@ const PUBLIC_PREFIXES = [
   // Vapi & n8n webhooks have their own auth
   '/api/ai/',
   '/api/n8n/',
+  // Public offer signing (no account required)
+  '/offers/public/',
+  '/api/offers/public/',
   // Next.js internals
   '/_next/',
   '/favicon',
