@@ -13,12 +13,14 @@
 
 import { useEffect, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
+import { useHeaderFooter } from './header-footer-context';
 import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
 
 type ActiveBlock = 'image' | 'table' | 'signatureBlock' | 'variable' | null;
 
 export default function BlockSettingsSidebar() {
   const editor = useTemplateEditor();
+  const hf     = useHeaderFooter();
   const [active, setActive] = useState<ActiveBlock>(null);
 
   useEffect(() => {
@@ -45,6 +47,8 @@ export default function BlockSettingsSidebar() {
       {active === 'signatureBlock' && editor && <SignatureSettings editor={editor} />}
       {active === 'variable'       && editor && <VariableInfo editor={editor} />}
       {active === null             &&           <PlaceholderReference />}
+      {/* Page settings panel — always visible at the bottom */}
+      {hf && <PageSettings hf={hf} />}
     </div>
   );
 }
