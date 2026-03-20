@@ -463,15 +463,11 @@ export default function PublicOfferPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-5 shrink-0">
-            <div className="text-right hidden sm:block">
-              <p className="text-base font-bold text-slate-900 tabular-nums">{fmtSEK(offer.totalIncVat)}</p>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">inkl. moms</p>
-            </div>
-            <div className="hidden sm:block h-7 w-px bg-slate-200" />
-            <div className="text-right hidden sm:block">
-              <p className="text-[11px] text-slate-400">Giltig till</p>
-              <p className="text-xs font-semibold text-slate-700">{fmtDate(offer.validUntil)}</p>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
+              <span className="text-sm font-bold tabular-nums text-slate-900">{fmtSEK(offer.totalIncVat)}</span>
+              <span className="hidden sm:block h-3.5 w-px bg-slate-300" />
+              <span className="hidden sm:block text-[11px] text-slate-400">Giltig till {fmtDate(offer.validUntil)}</span>
             </div>
             {/* PDF download */}
             <button
@@ -525,15 +521,19 @@ export default function PublicOfferPage() {
             >
               {/* Header */}
               <div className="border-b border-slate-100 px-6 py-5 sm:px-8">
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900">
-                    <ShieldIcon size={14} className="text-white" />
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900">
+                      <ShieldIcon size={14} className="text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-900">Godkannande och underskrift</h2>
+                      <p className="text-[12px] text-slate-400">Underteckna for att bekrafta offerten</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-base font-bold text-slate-900">Godkannande och underskrift</h2>
-                    <p className="mt-1 text-[13px] leading-relaxed text-slate-500">
-                      Genom att underteckna bekraftar du att offerten godkants och att villkoren accepteras.
-                    </p>
+                  <div className="shrink-0 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2 text-right">
+                    <p className="text-base font-bold tabular-nums text-emerald-700">{fmtSEK(offer.totalIncVat)}</p>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-500">inkl. moms</p>
                   </div>
                 </div>
               </div>
@@ -665,8 +665,9 @@ export default function PublicOfferPage() {
                       <div
                         ref={canvasWrapperRef}
                         className="relative h-[120px] overflow-hidden rounded-lg border border-slate-200 bg-white"
+                        style={{ touchAction: 'none' }}
                       >
-                        <SignatureCanvas ref={sigRef} penColor="#0f172a" canvasProps={{ style: { display: 'block' } }} />
+                        <SignatureCanvas ref={sigRef} penColor="#0f172a" canvasProps={{ style: { display: 'block', touchAction: 'none' } }} />
                         {/* Baseline */}
                         <div className="pointer-events-none absolute bottom-7 left-5 right-5 border-b border-dashed border-slate-200" />
                         {/* Hint */}

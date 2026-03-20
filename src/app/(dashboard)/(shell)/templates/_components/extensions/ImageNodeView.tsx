@@ -464,6 +464,16 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
               </>
             )}
 
+            {/* Fill page — free mode only */}
+            {isFree && (
+              <>
+                <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
+                <ImgBtn active={false} tooltip="Fyll hela sidan (816×1056 px)" onClick={() => updateAttributes({ posX: 0, posY: 0, width: 816, height: 1056 })}>
+                  <FillPageIcon />
+                </ImgBtn>
+              </>
+            )}
+
             {/* Layer controls — free mode only */}
             {isFree && layerTotal > 1 && (
               <>
@@ -703,6 +713,15 @@ function TrashIcon() {
       <path d="M19 6l-1 14H6L5 6"/>
       <path d="M10 11v6"/><path d="M14 11v6"/>
       <path d="M9 6V4h6v2"/>
+    </svg>
+  );
+}
+
+function FillPageIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
+      <rect x="3" y="2" width="14" height="16" rx="1" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+      <rect x="5" y="4" width="10" height="12" rx=".5"/>
     </svg>
   );
 }
