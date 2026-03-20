@@ -452,7 +452,7 @@ export default function PublicOfferPage() {
     >
       {/* ─── Sticky header ─── */}
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-6">
+        <div className="flex h-14 items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex items-center gap-3 min-w-0">
             <FileTextIcon size={16} className="shrink-0 text-slate-400" />
             <div className="min-w-0">
@@ -487,7 +487,7 @@ export default function PublicOfferPage() {
       </header>
 
       {/* ─── Content ─── */}
-      <main className="mx-auto max-w-5xl px-6 py-6 pb-12">
+      <main className="pb-12">
 
         {/* Document */}
         {offer.generatedDocument && (
@@ -495,7 +495,7 @@ export default function PublicOfferPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.05 }}
-            className="mb-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+            className="mb-6 border-b border-slate-200"
           >
             <iframe
               ref={iframeRef}
@@ -511,6 +511,7 @@ export default function PublicOfferPage() {
         )}
 
         {/* ─── Signing card ─── */}
+        <div className="px-4 sm:px-6">
         <AnimatePresence mode="wait">
           {!isDecline ? (
             <motion.section
@@ -763,9 +764,10 @@ export default function PublicOfferPage() {
             </motion.section>
           )}
         </AnimatePresence>
+        </div>
 
         {/* Footer */}
-        <p className="mt-8 text-center text-[11px] text-slate-400">
+        <p className="mt-8 px-4 text-center text-[11px] text-slate-400">
           Elektronisk signering &middot; {offer?.recipientEmail}
         </p>
       </main>
