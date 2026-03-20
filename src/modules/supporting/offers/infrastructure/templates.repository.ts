@@ -4,19 +4,21 @@ import type { OfferTemplate } from '../domain/template.entity';
 // ─── I/O types ─────────────────────────────────────────────────────────────────
 
 export interface CreateTemplateInput {
-  organizationId: string;
-  name:           string;
-  content:        string; // TipTap JSON string
-  emailSubject?:  string;
-  emailBody?:     string;
-  createdBy:      string; // User.id
+  organizationId:     string;
+  name:               string;
+  content:            string; // TipTap JSON string
+  emailSubject?:      string;
+  emailBody?:         string;
+  emailHeaderConfig?: string;
+  createdBy:          string; // User.id
 }
 
 export interface UpdateTemplateInput {
-  name?:         string;
-  content?:      string;
-  emailSubject?: string;
-  emailBody?:    string;
+  name?:              string;
+  content?:           string;
+  emailSubject?:      string;
+  emailBody?:         string;
+  emailHeaderConfig?: string;
 }
 
 // ─── Mapper ────────────────────────────────────────────────────────────────────
@@ -27,9 +29,10 @@ function mapTemplate(r: Record<string, unknown>): OfferTemplate {
     organizationId: r.organizationId as string,
     name:           r.name as string,
     content:        (r.content as string | null | undefined) ?? '',
-    emailSubject:   (r.emailSubject as string | null | undefined) ?? undefined,
-    emailBody:      (r.emailBody as string | null | undefined) ?? undefined,
-    createdBy:      r.createdBy as string,
+    emailSubject:      (r.emailSubject as string | null | undefined) ?? undefined,
+    emailBody:         (r.emailBody as string | null | undefined) ?? undefined,
+    emailHeaderConfig: (r.emailHeaderConfig as string | null | undefined) ?? undefined,
+    createdBy:         r.createdBy as string,
     createdAt:      (r.createdAt as Date).toISOString(),
     updatedAt:      (r.updatedAt as Date).toISOString(),
   };
@@ -38,7 +41,7 @@ function mapTemplate(r: Record<string, unknown>): OfferTemplate {
 // Full select — used for get-by-id, create, update (includes the potentially large content)
 const TEMPLATE_SELECT_FULL = {
   id: true, organizationId: true, name: true, content: true,
-  emailSubject: true, emailBody: true,
+  emailSubject: true, emailBody: true, emailHeaderConfig: true,
   createdBy: true, createdAt: true, updatedAt: true,
 };
 
@@ -46,7 +49,7 @@ const TEMPLATE_SELECT_FULL = {
 // large base64-embedded images. The offers page dropdown only needs id + name.
 const TEMPLATE_SELECT_LIST = {
   id: true, organizationId: true, name: true,
-  emailSubject: true, emailBody: true,
+  emailSubject: true, emailBody: true, emailHeaderConfig: true,
   createdBy: true, createdAt: true, updatedAt: true,
 };
 
@@ -60,9 +63,10 @@ export const templatesRepository = {
         organizationId: input.organizationId,
         name:           input.name,
         content:        input.content,
-        emailSubject:   input.emailSubject ?? null,
-        emailBody:      input.emailBody ?? null,
-        createdBy:      input.createdBy,
+        emailSubject:      input.emailSubject ?? null,
+        emailBody:         input.emailBody ?? null,
+        emailHeaderConfig: input.emailHeaderConfig ?? null,
+        createdBy:         input.createdBy,
       },
       select: TEMPLATE_SELECT_FULL,
     });
@@ -98,8 +102,9 @@ export const templatesRepository = {
       data: {
         ...(input.name         !== undefined ? { name: input.name }               : {}),
         ...(input.content      !== undefined ? { content: input.content }         : {}),
-        ...(input.emailSubject !== undefined ? { emailSubject: input.emailSubject ?? null } : {}),
-        ...(input.emailBody    !== undefined ? { emailBody: input.emailBody ?? null }       : {}),
+        ...(input.emailSubject      !== undefined ? { emailSubject:      input.emailSubject      ?? null } : {}),
+        ...(input.emailBody         !== undefined ? { emailBody:         input.emailBody         ?? null } : {}),
+        ...(input.emailHeaderConfig !== undefined ? { emailHeaderConfig: input.emailHeaderConfig ?? null } : {}),
       },
       select: TEMPLATE_SELECT_FULL,
     });

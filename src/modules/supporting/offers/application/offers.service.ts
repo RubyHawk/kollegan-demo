@@ -79,8 +79,9 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
 
   // Generate document snapshot (always, if not already set)
   let generatedDocument: string | undefined;
-  let emailSubject: string | undefined = existing.emailSubject;
-  let emailBody: string | undefined = existing.emailBody;
+  let emailSubject:      string | undefined = existing.emailSubject;
+  let emailBody:         string | undefined = existing.emailBody;
+  let emailHeaderConfig: string | undefined = existing.emailHeaderConfig;
 
   if (!existing.generatedDocument) {
     if (existing.templateId) {
@@ -88,8 +89,9 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
       if (template) {
         generatedDocument = generateDocument(template.content, existing);
         // Inherit email fields from template if not already set on the offer
-        if (!emailSubject && template.emailSubject) emailSubject = template.emailSubject;
-        if (!emailBody && template.emailBody)       emailBody    = template.emailBody;
+        if (!emailSubject      && template.emailSubject)      emailSubject      = template.emailSubject;
+        if (!emailBody         && template.emailBody)         emailBody         = template.emailBody;
+        if (!emailHeaderConfig && template.emailHeaderConfig) emailHeaderConfig = template.emailHeaderConfig;
       }
     }
     // No template (or template not found) → generate a clean fallback document
@@ -120,8 +122,9 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
     offerNumber,
     validUntil,
     ...(generatedDocument ? { generatedDocument } : {}),
-    ...(interpolatedSubject !== undefined ? { emailSubject: interpolatedSubject } : {}),
-    ...(interpolatedBody    !== undefined ? { emailBody: interpolatedBody }       : {}),
+    ...(interpolatedSubject !== undefined ? { emailSubject:      interpolatedSubject } : {}),
+    ...(interpolatedBody    !== undefined ? { emailBody:         interpolatedBody }    : {}),
+    ...(emailHeaderConfig   !== undefined ? { emailHeaderConfig }                      : {}),
     publicTokenExpiresAt,
   });
   if (!updated) return null;
@@ -450,9 +453,10 @@ export async function duplicateOffer(
     leadId:           existing.leadId,
     customerId:       existing.customerId,
     templateId:       existing.templateId,
-    emailSubject:     existing.emailSubject,
-    emailBody:        existing.emailBody,
-    lineItems:        existing.lineItems.map((item, idx) => ({
+    emailSubject:      existing.emailSubject,
+    emailBody:         existing.emailBody,
+    emailHeaderConfig: existing.emailHeaderConfig,
+    lineItems:         existing.lineItems.map((item, idx) => ({
       description: item.description,
       quantity:    item.quantity,
       unitPrice:   item.unitPrice,
