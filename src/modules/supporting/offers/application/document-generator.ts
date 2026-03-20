@@ -70,15 +70,44 @@ function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): st
     }
 
     case 'image': {
-      const a     = node.attrs ?? {};
-      const src   = sanitizeUrl(String(a.src ?? ''));
-      const alt   = escapeHtml(String(a.alt ?? ''));
-      const title = escapeHtml(String(a.title ?? ''));
-      const width = a.width ? `width:${a.width}px;max-width:100%;height:auto;` : 'max-width:100%;height:auto;';
+      const a        = node.attrs ?? {};
+      const src      = sanitizeUrl(String(a.src ?? ''));
+      const alt      = escapeHtml(String(a.alt ?? ''));
+      const title    = escapeHtml(String(a.title ?? ''));
+      const imgPos   = String(a.position ?? 'inline');
+      const wrapText = String(a.wrapText ?? 'none');
+      const posX     = Number(a.posX ?? 0);
+      const posY     = Number(a.posY ?? 0);
+      const zIdx     = Number(a.zIndex ?? 0);
+      const imgW     = a.width  ? Number(a.width)  : null;
+      const imgH     = a.height ? Number(a.height) : null;
+      const widthStyle  = imgW ? `width:${imgW}px;max-width:100%;` : 'max-width:100%;';
+      const heightStyle = imgH ? `height:${imgH}px;object-fit:cover;` : 'height:auto;';
+      const imgStyle = `display:block;${widthStyle}${heightStyle}border-radius:4px;`;
+
+      if (imgPos === 'free') {
+        if (wrapText === 'left' || wrapText === 'right') {
+          // Float-based: participates in text flow
+          const ml = wrapText === 'left'  ? `margin-left:${posX}px;`                                              : '';
+          const mr = wrapText === 'right' ? `margin-right:${Math.max(0, 816 - posX - (imgW ?? 200))}px;`          : '';
+          const mt = posY > 0 ? `margin-top:${posY}px;` : '';
+          return `<div style="float:${wrapText};${ml}${mr}${mt}margin-bottom:8px;line-height:0;"><img src="${src}" alt="${alt}" title="${title}" style="${imgStyle}" /></div>`;
+        }
+        // Pure overlay (absolute)
+        const w = imgW ? `${imgW}px` : '200px';
+        return `<div style="position:absolute;left:${posX}px;top:${posY}px;width:${w};z-index:${zIdx};line-height:0;"><img src="${src}" alt="${alt}" title="${title}" style="${imgStyle}" /></div>`;
+      }
+
+      // Inline/float modes
+      if (a.float === 'left' || a.float === 'right') {
+        const margin = a.float === 'left' ? '4px 20px 8px 0' : '4px 0 8px 20px';
+        return `<div style="float:${a.float};margin:${margin};line-height:0;"><img src="${src}" alt="${alt}" title="${title}" style="${imgStyle}" /></div>`;
+      }
+
       const align = String(a.align ?? 'left');
       const justifyMap: Record<string, string> = { center: 'center', right: 'flex-end', left: 'flex-start' };
       const justify = justifyMap[align] ?? 'flex-start';
-      return `<div style="display:flex;justify-content:${justify};margin:12px 0;"><img src="${src}" alt="${alt}" title="${title}" style="${width}display:block;border-radius:4px;" /></div>`;
+      return `<div style="display:flex;justify-content:${justify};margin:12px 0;"><img src="${src}" alt="${alt}" title="${title}" style="${imgStyle}" /></div>`;
     }
 
     case 'bulletList':
@@ -184,17 +213,17 @@ function buildLineItemsTable(items: OfferLineItem[]): string {
     const lineExVat = item.quantity * item.unitPrice * disc;
     return `
       <tr>
-        <td style="${cellStyle}">${escapeHtml(item.description)}</td>
-        <td style="${numStyle}">${item.quantity}</td>
-        <td style="${numStyle}">${fmtSEK(item.unitPrice)}</td>
-        <td style="${numStyle}">${vatLabel(item.vatRate)}</td>
-        <td style="${numStyle}">${discountLabel(item.discount)}</td>
-        <td style="${numStyle};font-weight:600;">${fmtSEK(lineExVat)}</td>
+        <td data-label="Beskrivning" style="${cellStyle}">${escapeHtml(item.description)}</td>
+        <td data-label="Antal"       style="${numStyle}">${item.quantity}</td>
+        <td data-label="Á-pris"      style="${numStyle}">${fmtSEK(item.unitPrice)}</td>
+        <td data-label="Moms"        style="${numStyle}">${vatLabel(item.vatRate)}</td>
+        <td data-label="Rabatt"      style="${numStyle}">${discountLabel(item.discount)}</td>
+        <td data-label="Summa"       style="${numStyle};font-weight:600;">${fmtSEK(lineExVat)}</td>
       </tr>`;
   }).join('');
 
   return `
-    <table style="width:100%;border-collapse:collapse;margin-bottom:1em;">
+    <table class="line-items" style="width:100%;border-collapse:collapse;margin-bottom:1em;">
       <thead>
         <tr>
           <th style="${headerStyle}">Beskrivning</th>
@@ -272,6 +301,21 @@ export function interpolateEmailText(text: string, offer: Offer): string {
   return result;
 }
 
+// ─── Shared mobile CSS for table card layout ───────────────────────────────────
+
+const MOBILE_TABLE_CSS = `
+      .line-items { display: block; width: 100%; }
+      .line-items thead { display: none; }
+      .line-items tbody { display: block; }
+      .line-items tr { display: block; background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 0 0 1px #e2e8f0; margin-bottom: 8px; overflow: hidden; }
+      .line-items td { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px; text-align: left !important; }
+      .line-items td:last-child { border-bottom: none; }
+      .line-items td::before { content: attr(data-label); color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; margin-right: 12px; padding-top: 1px; }
+      .totals { display: block; width: 100%; }
+      .totals tr { display: flex; justify-content: space-between; }
+      .totals td { border: none !important; flex: 1; }
+      table:not(.line-items):not(.totals) { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }`;
+
 // ─── Main generator ────────────────────────────────────────────────────────────
 
 /**
@@ -296,8 +340,7 @@ export function generateFallbackDocument(offer: Offer): string {
     img { max-width: 100%; height: auto; }
     .doc-wrapper { max-width: 700px; margin: 40px auto; padding: 40px 48px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
     @media (max-width: 640px) {
-      .doc-wrapper { margin: 0; padding: 24px 0; border: none; border-radius: 0; }
-      table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .doc-wrapper { margin: 0; padding: 24px 0; border: none; border-radius: 0; }${MOBILE_TABLE_CSS}
     }
     @media print { .doc-wrapper { margin: 0; padding: 0; border: none; } }
   </style>
@@ -316,7 +359,7 @@ export function generateFallbackDocument(offer: Offer): string {
 
     ${buildLineItemsTable(offer.lineItems)}
 
-    <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+    <table class="totals" style="width:100%;border-collapse:collapse;margin-top:8px;">
       <tr>
         <td style="text-align:right;padding:4px 12px;font-size:13px;color:#64748b;">Totalt exkl. moms</td>
         <td style="text-align:right;padding:4px 12px;font-size:13px;font-weight:600;white-space:nowrap;">${fmtSEK(offer.totalExVat)}</td>
@@ -451,8 +494,7 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
     .doc-divider { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
     @media (max-width: 640px) {
-      .doc-wrapper { margin: 0; padding: 24px 0; border: none; border-radius: 0; }
-      table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .doc-wrapper { margin: 0; padding: 24px 0; border: none; border-radius: 0; }${MOBILE_TABLE_CSS}
     }
     @media print {
       .doc-wrapper { margin: 0; padding: 0; border: none; }

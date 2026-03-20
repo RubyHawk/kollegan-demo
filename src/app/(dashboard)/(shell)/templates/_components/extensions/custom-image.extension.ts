@@ -3,12 +3,15 @@
  *
  *   align    — block-mode text alignment (left / center / right)
  *   width    — explicit pixel width (null = auto)
+ *   height   — explicit pixel height (null = auto); used with object-fit:cover
  *   float    — text-wrap mode (null = block, 'left', 'right')
  *   position — layout mode: 'inline' (normal flow) | 'free' (absolute)
  *   zIndex   — CSS z-index for layering (meaningful in free mode; works in
  *              inline mode too for floated images overlapping other elements)
  *   posX     — left offset in px relative to the A4 page div (free mode)
  *   posY     — top  offset in px relative to the A4 page div (free mode)
+ *   wrapText — text wrapping in free mode: 'none' | 'left' | 'right'
+ *              When left/right the image uses float+margin instead of absolute
  *
  * All attributes are round-tripped through data-* HTML attributes so they
  * survive save/load and document-generator rendering.
@@ -42,6 +45,16 @@ export const CustomImage = Image.extend({
           attrs.width
             ? { 'data-width': String(attrs.width), style: `width:${attrs.width}px;max-width:100%;height:auto;` }
             : { style: 'max-width:100%;height:auto;' },
+      },
+
+      // ── Explicit pixel height (null = auto) ───────────────────────────────
+      height: {
+        default: null,
+        parseHTML: (el) => {
+          const v = (el as HTMLElement).getAttribute('data-height');
+          return v ? Number(v) : null;
+        },
+        renderHTML: (attrs) => attrs.height != null ? { 'data-height': String(attrs.height) } : {},
       },
 
       // ── Text-wrap mode ────────────────────────────────────────────────────
@@ -92,6 +105,16 @@ export const CustomImage = Image.extend({
           return v !== null && v !== '' ? Number(v) : 100;
         },
         renderHTML: (attrs) => ({ 'data-posy': String(attrs.posY ?? 100) }),
+      },
+
+      // ── Text wrapping in free mode ────────────────────────────────────────
+      // 'none'  — pure overlay (position:absolute, ignores text flow)
+      // 'left'  — float left with margin offsets so text wraps on right
+      // 'right' — float right with margin offsets so text wraps on left
+      wrapText: {
+        default: 'none',
+        parseHTML:  (el) => (el as HTMLElement).getAttribute('data-wraptext') ?? 'none',
+        renderHTML: (attrs) => ({ 'data-wraptext': attrs.wrapText ?? 'none' }),
       },
     };
   },
