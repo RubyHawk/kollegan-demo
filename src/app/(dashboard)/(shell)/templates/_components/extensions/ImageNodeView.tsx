@@ -45,13 +45,14 @@ import { useRef, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 
 const MIN_W = 80;
-const MAX_W = 700;
+const MAX_W = 816;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type ImgPosition = 'inline' | 'free';
 type ImgFloat    = 'left' | 'right' | null;
 type ImgAlign    = 'left' | 'center' | 'right' | null;
+type ImgWrapText = 'none' | 'left' | 'right';
 
 interface StackItem { pos: number; zIndex: number }
 
@@ -62,25 +63,30 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     src, alt,
     align,
     width,
+    height:   imgHeight,
     float:    imgFloat,
     position: imgPosition,
     zIndex,
     posX,
     posY,
+    wrapText,
   } = node.attrs as {
     src:      string;
     alt:      string | null;
     align:    ImgAlign;
     width:    number | null;
+    height:   number | null;
     float:    ImgFloat;
     position: ImgPosition;
     zIndex:   number;
     posX:     number;
     posY:     number;
+    wrapText: ImgWrapText;
   };
 
-  const isFree     = imgPosition === 'free';
-  const isFloating = !isFree && (imgFloat === 'left' || imgFloat === 'right');
+  const isFree        = imgPosition === 'free';
+  const isFreeWrapped = isFree && (wrapText === 'left' || wrapText === 'right');
+  const isFloating    = !isFree && (imgFloat === 'left' || imgFloat === 'right');
 
   // Refs for direct DOM writes during drags (no React state → no re-renders)
   const containerRef = useRef<HTMLDivElement>(null);
@@ -210,37 +216,48 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
   );
 
   // ── Free-mode drag to reposition ─────────────────────────────────────────────
+  //
+  // Threshold-based: we do NOT call stopPropagation so ProseMirror can create
+  // a NodeSelection on simple clicks.  The drag only activates after the pointer
+  // has moved >4px, at which point we take over movement.
 
   const onMoveStart = useCallback(
     (e: React.MouseEvent) => {
       if (!isFree) return;
+      // Allow the event to propagate so ProseMirror handles selection on click.
+      // Only preventDefault to suppress text-cursor behaviour.
       e.preventDefault();
-      e.stopPropagation();
 
       const wrapper = containerRef.current?.parentElement as HTMLElement | null;
       if (!wrapper) return;
 
-      moveRef.current = {
-        startX: e.clientX, startY: e.clientY,
-        origX: posX, origY: posY,
-        latestX: posX, latestY: posY,
-      };
+      const startX = e.clientX, startY = e.clientY;
+      const origX  = posX,      origY  = posY;
+      let latestX  = posX,      latestY = posY;
+      let dragging = false;
 
       const onMove = (ev: MouseEvent) => {
-        if (!moveRef.current) return;
-        const newX = moveRef.current.origX + (ev.clientX - moveRef.current.startX);
-        const newY = moveRef.current.origY + (ev.clientY - moveRef.current.startY);
-        moveRef.current.latestX = newX;
-        moveRef.current.latestY = newY;
-        wrapper.style.left = `${newX}px`;
-        wrapper.style.top  = `${newY}px`;
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        if (!dragging && Math.hypot(dx, dy) > 4) dragging = true;
+        if (!dragging) return;
+        latestX = origX + dx;
+        latestY = origY + dy;
+        if (isFreeWrapped) {
+          // Float-based: update margins on the wrapper
+          if (wrapText === 'left')  wrapper.style.marginLeft = `${latestX}px`;
+          if (wrapText === 'right') wrapper.style.marginRight = `${Math.max(0, 816 - latestX - (width ?? 200))}px`;
+          wrapper.style.marginTop = `${latestY}px`;
+        } else {
+          wrapper.style.left = `${latestX}px`;
+          wrapper.style.top  = `${latestY}px`;
+        }
       };
 
       const onUp = () => {
-        if (moveRef.current) {
-          updateAttributes({ posX: moveRef.current.latestX, posY: moveRef.current.latestY });
+        if (dragging) {
+          updateAttributes({ posX: latestX, posY: latestY });
         }
-        moveRef.current = null;
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
       };
@@ -248,7 +265,8 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     },
-    [isFree, posX, posY, updateAttributes],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isFree, isFreeWrapped, wrapText, posX, posY, width, updateAttributes],
   );
 
   // ── Command helpers ───────────────────────────────────────────────────────────
@@ -292,8 +310,18 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
 
   const toInline = () =>
     editor?.chain().focus().updateAttributes('image', {
-      position: 'inline', float: null, align: 'left',
+      position: 'inline', float: null, align: 'left', wrapText: 'none',
     }).run();
+
+  const setWrapText = (w: ImgWrapText) =>
+    editor?.chain().focus().updateAttributes('image', { wrapText: w }).run();
+
+  /** Explicit selection — safety net for free-mode images after drag or deselect. */
+  const selectSelf = () => {
+    if (!isFree) return;
+    const p = typeof getPos === 'function' ? getPos() : null;
+    if (typeof p === 'number') editor?.commands.setNodeSelection(p);
+  };
 
   const deleteImage = () => editor?.chain().focus().deleteSelection().run();
 
@@ -301,31 +329,44 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
 
   const imgW = width ?? (isFree ? 200 : undefined);
 
-  const wrapperStyle: CSSProperties = isFree
+  const wrapperStyle: CSSProperties = isFreeWrapped
     ? {
-        position:   'absolute',
-        left:       posX,
-        top:        posY,
-        zIndex:     Math.max(0, zIndex ?? 0),
-        width:      imgW ? `${imgW}px` : '200px',
-        display:    'block',
-        lineHeight: 0,
+        // Float-based free mode: participates in text flow, positioned via margins
+        float:       wrapText as 'left' | 'right',
+        marginLeft:  wrapText === 'left'  ? posX                                          : undefined,
+        marginRight: wrapText === 'right' ? Math.max(0, 816 - posX - (imgW ?? 200))      : undefined,
+        marginTop:   posY,
+        marginBottom: 8,
+        display:     'block',
+        lineHeight:  0,
+        width:       imgW ? `${imgW}px` : '200px',
+        zIndex:      Math.max(0, zIndex ?? 0),
       }
-    : isFloating
+    : isFree
       ? {
-          float:      imgFloat as 'left' | 'right',
-          margin:     imgFloat === 'left' ? '4px 20px 8px 0' : '4px 0 8px 20px',
+          position:   'absolute',
+          left:       posX,
+          top:        posY,
+          zIndex:     Math.max(0, zIndex ?? 0),
+          width:      imgW ? `${imgW}px` : '200px',
           display:    'block',
           lineHeight: 0,
         }
-      : {
-          display:        'flex',
-          justifyContent: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
-          lineHeight:     0,
-          margin:         '4px 0',
-        };
+      : isFloating
+        ? {
+            float:      imgFloat as 'left' | 'right',
+            margin:     imgFloat === 'left' ? '4px 20px 8px 0' : '4px 0 8px 20px',
+            display:    'block',
+            lineHeight: 0,
+          }
+        : {
+            display:        'flex',
+            justifyContent: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
+            lineHeight:     0,
+            margin:         '4px 0',
+          };
 
-  const containerWidth = imgW ? `${imgW}px` : isFloating ? '200px' : undefined;
+  const containerWidth = imgW ? `${imgW}px` : (isFloating || isFreeWrapped) ? '200px' : undefined;
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
@@ -339,9 +380,10 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
           width:      containerWidth,
           maxWidth:   isFree ? undefined : '100%',
           userSelect: 'none',
-          cursor:     isFree && !selected ? 'move' : 'default',
+          cursor:     isFree ? 'move' : 'default',
         }}
         onMouseDown={isFree ? onMoveStart : undefined}
+        onClick={isFree ? selectSelf : undefined}
       >
 
         {/* ── Floating toolbar — shown when selected ──────────────────────── */}
@@ -398,6 +440,26 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
                 </ImgBtn>
                 <ImgBtn active={align === 'right'} tooltip="Högerjustera" onClick={() => setAlign('right')}>
                   <AlignRightIcon />
+                </ImgBtn>
+              </>
+            )}
+
+            {/* Wrap-text controls — free mode only */}
+            {isFree && (
+              <>
+                <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
+                <span style={{ fontSize: 10, color: '#94a3b8', paddingRight: 1,
+                  fontFamily: 'system-ui,sans-serif', userSelect: 'none' }}>
+                  Flöde
+                </span>
+                <ImgBtn active={wrapText === 'none' || !wrapText} tooltip="Ingen textomflödning — lägger sig ovanpå text" onClick={() => setWrapText('none')}>
+                  <WrapNoneIcon />
+                </ImgBtn>
+                <ImgBtn active={wrapText === 'left'} tooltip="Text flödar till höger om bilden" onClick={() => setWrapText('left')}>
+                  <FloatLeftIcon />
+                </ImgBtn>
+                <ImgBtn active={wrapText === 'right'} tooltip="Text flödar till vänster om bilden" onClick={() => setWrapText('right')}>
+                  <FloatRightIcon />
                 </ImgBtn>
               </>
             )}
@@ -473,7 +535,13 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
           src={src}
           alt={alt ?? ''}
           draggable={false}
-          style={{ display: 'block', width: '100%', height: 'auto', borderRadius: 2 }}
+          style={{
+            display:    'block',
+            width:      '100%',
+            height:     imgHeight ? `${imgHeight}px` : 'auto',
+            objectFit:  imgHeight ? 'cover' : undefined,
+            borderRadius: 2,
+          }}
         />
 
         {/* Bottom-right corner resize handle */}
@@ -635,6 +703,18 @@ function TrashIcon() {
       <path d="M19 6l-1 14H6L5 6"/>
       <path d="M10 11v6"/><path d="M14 11v6"/>
       <path d="M9 6V4h6v2"/>
+    </svg>
+  );
+}
+
+function WrapNoneIcon() {
+  // A square with an X inside — "no wrap"
+  return (
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+      <rect x="2" y="2" width="16" height="16" rx="1.5" fill="none"
+        stroke="currentColor" strokeWidth="1.5"/>
+      <line x1="6" y1="6" x2="14" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="14" y1="6" x2="6" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   );
 }

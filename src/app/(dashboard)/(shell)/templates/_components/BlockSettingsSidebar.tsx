@@ -86,12 +86,14 @@ function dispatchLayerSwap(editor: Editor, posA: number, posB: number): void {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ImageSettings({ editor }: { editor: Editor }) {
-  const attrs  = editor.getAttributes('image');
-  const width  = (attrs.width    as number | undefined) ?? 0;
-  const align  = (attrs.align    as string | undefined) ?? 'left';
-  const isFree = (attrs.position as string | undefined) === 'free';
-  const posX   = Math.round((attrs.posX as number | undefined) ?? 100);
-  const posY   = Math.round((attrs.posY as number | undefined) ?? 100);
+  const attrs    = editor.getAttributes('image');
+  const width    = (attrs.width    as number | undefined) ?? 0;
+  const height   = (attrs.height   as number | null | undefined) ?? null;
+  const align    = (attrs.align    as string | undefined) ?? 'left';
+  const isFree   = (attrs.position as string | undefined) === 'free';
+  const wrapText = (attrs.wrapText as string | undefined) ?? 'none';
+  const posX     = Math.round((attrs.posX as number | undefined) ?? 100);
+  const posY     = Math.round((attrs.posY as number | undefined) ?? 100);
 
   // Layer rank info — computed from the live document state
   let layerRank  = 1;
@@ -172,7 +174,7 @@ function ImageSettings({ editor }: { editor: Editor }) {
       {/* ── Width ────────────────────────────────────────────────────────── */}
       <Label>Bredd (px)</Label>
       <input
-        type="range" min={80} max={700} step={10}
+        type="range" min={80} max={816} step={10}
         value={width || 400}
         onChange={(e) => set({ width: Number(e.target.value) })}
         style={{ width: '100%', accentColor: '#0078d4', marginBottom: 4 }}
@@ -222,6 +224,21 @@ function ImageSettings({ editor }: { editor: Editor }) {
         </>
       )}
 
+      {/* ── Text wrap (free mode only) ───────────────────────────────────── */}
+      {isFree && (
+        <>
+          <Label>Textflöde</Label>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+            {(['none', 'left', 'right'] as const).map((w) => (
+              <button key={w} type="button" style={btnStyle(wrapText === w)}
+                onClick={() => set({ wrapText: w })}>
+                {w === 'none' ? 'Inget' : w === 'left' ? 'Vänster' : 'Höger'}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
       {/* ── Free position coordinates ─────────────────────────────────────── */}
       {isFree && (
         <>
@@ -240,15 +257,40 @@ function ImageSettings({ editor }: { editor: Editor }) {
                 style={coordInputStyle} />
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
             <button type="button" style={{ ...quickBtnStyle }}
               onClick={() => set({ posX: 0, posY: 0 })} title="Placera i sidans övre vänstra hörn">
-              Hela sidan (0, 0)
+              Övre vänster
             </button>
             <button type="button" style={{ ...quickBtnStyle }}
               onClick={() => set({ posX: 96, posY: 96 })} title="Placera i textområdets övre vänstra hörn (96px marginal)">
               Textyta
             </button>
+            <button type="button" style={{ ...quickBtnStyle, color: '#0078d4', borderColor: '#c0d8f0' }}
+              onClick={() => set({ posX: 0, posY: 0, width: 816, height: 1056 })}
+              title="Sträck bilden till hela sidan (816×1056 px)">
+              Fyll sida
+            </button>
+          </div>
+
+          {/* ── Height ────────────────────────────────────────────────────── */}
+          <Label>Höjd (px, tomt = auto)</Label>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+            <input
+              type="number"
+              min={0}
+              step={10}
+              value={height ?? ''}
+              placeholder="auto"
+              onChange={(e) => set({ height: e.target.value ? Number(e.target.value) : null })}
+              style={{ ...coordInputStyle, flex: 1 }}
+            />
+            {height !== null && (
+              <button type="button" style={{ ...quickBtnStyle, flexShrink: 0, padding: '3px 8px' }}
+                onClick={() => set({ height: null })} title="Återställ till automatisk höjd">
+                ×
+              </button>
+            )}
           </div>
         </>
       )}
