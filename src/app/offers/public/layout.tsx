@@ -8,7 +8,7 @@
 
 export default function PublicOfferLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ minHeight: '100dvh', background: '#f8fafc', overflowY: 'auto' }}>
+    <div style={{ height: '100dvh', background: '#f8fafc', overflowY: 'auto' }}>
       {children}
     </div>
   );
