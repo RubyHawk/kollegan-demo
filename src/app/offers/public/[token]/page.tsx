@@ -221,7 +221,7 @@ export default function PublicOfferPage() {
     if (wrapper) {
       const isMobile = window.innerWidth < 640;
       wrapper.style.margin = '0';
-      wrapper.style.padding = isMobile ? '16px 0' : '32px 40px';
+      wrapper.style.padding = isMobile ? '20px 16px' : '40px 48px';
       wrapper.style.border = 'none';
       wrapper.style.borderRadius = '0';
       wrapper.style.maxWidth = 'none';
@@ -484,7 +484,8 @@ export default function PublicOfferPage() {
       </header>
 
       {/* ─── Content ─── */}
-      <main className="pb-12">
+      <main className="pb-16 bg-slate-50 min-h-screen">
+        <div className="mx-auto max-w-3xl px-0 sm:px-6 sm:pt-8">
 
         {/* Document */}
         {offer.generatedDocument && (
@@ -492,7 +493,7 @@ export default function PublicOfferPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.05 }}
-            className="mb-6 border-b border-slate-200"
+            className="mb-6 overflow-hidden bg-white border border-slate-200 sm:rounded-xl sm:shadow-sm"
           >
             <iframe
               ref={iframeRef}
@@ -508,7 +509,7 @@ export default function PublicOfferPage() {
         )}
 
         {/* ─── Signing card ─── */}
-        <div className="px-4 sm:px-6">
+        <div className="px-4 sm:px-0">
         <AnimatePresence mode="wait">
           {!isDecline ? (
             <motion.section
@@ -772,6 +773,7 @@ export default function PublicOfferPage() {
         <p className="mt-8 px-4 text-center text-[11px] text-slate-400">
           Elektronisk signering &middot; {offer?.recipientEmail}
         </p>
+        </div>
       </main>
     </motion.div>
   );
