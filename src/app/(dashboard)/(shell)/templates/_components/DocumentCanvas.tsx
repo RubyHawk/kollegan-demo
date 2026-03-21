@@ -15,7 +15,7 @@
  * Only the text-formatting BubbleMenu lives here.
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Editor } from '@tiptap/core';
 import { EditorContent } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
@@ -24,18 +24,33 @@ import { Link as PhLink } from '@phosphor-icons/react';
 import { cn } from '@shared/lib/utils';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
+import { SECTION_PRESETS } from './section-presets';
 import type { PageDoc } from './template-doc';
 
-// ── Horizontal margin shared by body, header, and footer (px) ─────────────────
-const H_PAD = 96;
+// ── Horizontal margin presets ──────────────────────────────────────────────────
+const MARGIN_PRESETS = { tight: 64, normal: 96, wide: 128 } as const;
 
 export default function DocumentCanvas() {
   const editor = useTemplateEditor();
   const hf     = useHeaderFooter();
 
+  // Track whether the editor body is empty to show the onboarding overlay
+  const [isEmpty, setIsEmpty] = useState(() => editor?.isEmpty ?? true);
+  useEffect(() => {
+    if (!editor) return;
+    setIsEmpty(editor.isEmpty);
+    const handler = () => setIsEmpty(editor.isEmpty);
+    editor.on('update', handler);
+    return () => { editor.off('update', handler); };
+  }, [editor]);
+
   // Active page H/F display state from context
   const activeHeader = hf?.activeHeader ?? { enabled: false, useDefault: true };
   const activeFooter = hf?.activeFooter ?? { enabled: false, useDefault: true };
+
+  // Document settings
+  const H_PAD = MARGIN_PRESETS[hf?.docSettings?.pageMargin ?? 'normal'];
+  const docFont = hf?.docSettings?.defaultFont ?? 'Calibri';
 
   // Derive which editor to show for header/footer
   const headerEditor = activeHeader.enabled
@@ -132,11 +147,45 @@ export default function DocumentCanvas() {
             {/* ── Body ──────────────────────────────────────────────────────── */}
             {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
             <div
-              className="cursor-text"
+              className="cursor-text relative"
               style={{ padding: `${H_PAD}px ${H_PAD}px` }}
               onClick={() => editor?.commands.focus()}
             >
               <EditorContent editor={editor} className="doc-editor" />
+
+              {/* ── Onboarding overlay (shown when body is empty) ───────────── */}
+              {isEmpty && editor && (
+                <div
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  style={{ padding: `${H_PAD}px ${H_PAD}px` }}
+                >
+                  <div className="pointer-events-auto w-full max-w-sm">
+                    <p className="text-center text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-4">
+                      Börja med en sektion
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {SECTION_PRESETS.slice(0, 4).map((preset) => (
+                        <button
+                          key={preset.key}
+                          type="button"
+                          title={preset.tooltip}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            editor.chain().focus().insertContentAt(0, preset.nodes).run();
+                          }}
+                          className="flex flex-col items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-4 text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition-all duration-150 shadow-sm"
+                        >
+                          <span className="text-[var(--text-muted)] group-hover:text-[var(--accent)]">{preset.icon}</span>
+                          <span className="text-xs font-medium text-center leading-tight">{preset.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-center text-[10px] text-[var(--text-muted)] mt-3">
+                      eller börja skriva direkt på sidan
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* ── Footer zone ───────────────────────────────────────────────── */}
@@ -160,7 +209,7 @@ export default function DocumentCanvas() {
             border: none !important;
             min-height: 720px;
             cursor: text;
-            font-family: Calibri, Carlito, Arial, sans-serif;
+            font-family: ${docFont}, Carlito, Arial, sans-serif;
             font-size: 13px;
             line-height: 1.6;
             color: #1e1e1e;

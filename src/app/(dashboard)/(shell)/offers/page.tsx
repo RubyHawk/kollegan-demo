@@ -344,8 +344,10 @@ export default function OffersPage() {
   const [contactSearch,    setContactSearch]    = useState('');
   const [contactResults,   setContactResults]   = useState<ContactResult[]>([]);
   const [contactLoading,   setContactLoading]   = useState(false);
-  const [showEmailCustom,  setShowEmailCustom]  = useState(false);
   const [showHeaderBuilder, setShowHeaderBuilder] = useState(false);
+  const [draftSaved,       setDraftSaved]       = useState(false);
+  const [fieldErrors,      setFieldErrors]      = useState<Record<string, string>>({});
+  const saveAndSendRef = useRef(false);
   const [orgDefaultHeader, setOrgDefaultHeader] = useState<EmailDesignConfig | null>(null);
   const contactSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -420,16 +422,15 @@ export default function OffersPage() {
 
   // ── Create offer ──────────────────────────────────────────────────────────────
   const createOffer = useCallback(async () => {
-    if (!form.title || !form.recipientName || !form.recipientEmail) {
-      setError('Fyll i alla obligatoriska fält (titel, mottagare, e-post).');
-      return;
-    }
+    const errs: Record<string, string> = {};
+    if (!form.title.trim())         errs.title         = 'Obligatoriskt fält';
+    if (!form.recipientName.trim()) errs.recipientName = 'Obligatoriskt fält';
+    if (!form.recipientEmail.trim()) errs.recipientEmail = 'Obligatoriskt fält';
     const validItems = form.lineItems.filter((i) => i.description.trim() && i.quantity > 0);
-    if (validItems.length === 0) {
-      setError('Minst en rad måste ha beskrivning och kvantitet.');
-      return;
-    }
-    setSaving(true); setError(null);
+    if (validItems.length === 0)    errs.lineItems     = 'Minst en rad måste ha beskrivning och kvantitet.';
+    if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
+
+    setSaving(true); setError(null); setFieldErrors({});
     try {
       const body: Record<string, unknown> = {
         title:            form.title,
@@ -457,8 +458,16 @@ export default function OffersPage() {
         const j = await res.json().catch(() => ({})) as { detail?: string };
         throw new Error(j.detail ?? `Fel ${res.status}`);
       }
+      const j = await res.json() as { data: Offer };
       setShowForm(false); setForm(EMPTY_FORM);
       await load(true);
+      if (saveAndSendRef.current) {
+        saveAndSendRef.current = false;
+        setConfirmSend(j.data);
+      } else {
+        setDraftSaved(true);
+        setTimeout(() => setDraftSaved(false), 3000);
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -883,18 +892,21 @@ export default function OffersPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Rubrik *</label>
-                <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="t.ex. Hotellprojekt Q2 2026"
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                <input value={form.title} onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); setFieldErrors((fe) => ({ ...fe, title: '' })); }} placeholder="t.ex. Hotellprojekt Q2 2026"
+                  className={`w-full rounded-xl border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.title ? 'border-red-400 focus:border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                {fieldErrors.title && <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Mottagarens namn *</label>
-                <input value={form.recipientName} onChange={(e) => setForm((f) => ({ ...f, recipientName: e.target.value }))} placeholder="Anna Lindström"
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                <input value={form.recipientName} onChange={(e) => { setForm((f) => ({ ...f, recipientName: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientName: '' })); }} placeholder="Anna Lindström"
+                  className={`w-full rounded-xl border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.recipientName ? 'border-red-400 focus:border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                {fieldErrors.recipientName && <p className="text-xs text-red-500 mt-1">{fieldErrors.recipientName}</p>}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">E-postadress *</label>
-                <input type="email" value={form.recipientEmail} onChange={(e) => setForm((f) => ({ ...f, recipientEmail: e.target.value }))} placeholder="anna@example.com"
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                <input type="email" value={form.recipientEmail} onChange={(e) => { setForm((f) => ({ ...f, recipientEmail: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientEmail: '' })); }} placeholder="anna@example.com"
+                  className={`w-full rounded-xl border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.recipientEmail ? 'border-red-400 focus:border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                {fieldErrors.recipientEmail && <p className="text-xs text-red-500 mt-1">{fieldErrors.recipientEmail}</p>}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Företag</label>
@@ -928,7 +940,40 @@ export default function OffersPage() {
               </div>
             </div>
 
-            {/* ── Email Design Builder ── */}
+            {/* ── Email subject/body — always visible ── */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">E-postmeddelande</p>
+              <p className="text-[11px] text-[var(--text-muted)] -mt-1">
+                Platshållare som{' '}
+                <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{recipientName}}'}</code>,{' '}
+                <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{offerTitle}}'}</code>{' '}
+                ersätts automatiskt.
+              </p>
+              <div>
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Ämnesrad</label>
+                <input
+                  value={form.emailSubject}
+                  onChange={(e) => setForm((f) => ({ ...f, emailSubject: e.target.value }))}
+                  placeholder="t.ex. Offert från Företag AB: {{offerTitle}}"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">E-postinnehåll (HTML)</label>
+                <textarea
+                  value={form.emailBody}
+                  onChange={(e) => setForm((f) => ({ ...f, emailBody: e.target.value }))}
+                  rows={3}
+                  placeholder={'<h2>Hej {{recipientName}},</h2>\n<p>Vi har skickat en offert för <strong>{{offerTitle}}</strong>.</p>'}
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors resize-y"
+                />
+                <p className="mt-1 text-[10px] text-[var(--text-muted)]">
+                  Knappen &ldquo;Visa &amp; signera offert&rdquo; läggs till automatiskt under innehållet.
+                </p>
+              </div>
+            </div>
+
+            {/* ── Email Design Builder (advanced) ── */}
             <div className="rounded-xl border border-[var(--border)] overflow-hidden">
               <button
                 type="button"
@@ -939,7 +984,7 @@ export default function OffersPage() {
                   className={`transition-transform ${showHeaderBuilder ? 'rotate-90' : ''}`}>
                   <polyline points="9 18 15 12 9 6"/>
                 </svg>
-                Designa e-postmall
+                Avancerat — e-posthuvud &amp; sidfot
                 {(form.emailHeaderConfig?.header.companyName || form.emailHeaderConfig?.footer.companyInfo) && (
                   <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-normal">Aktiv</span>
                 )}
@@ -1233,61 +1278,13 @@ export default function OffersPage() {
               })()}
             </div>
 
-            {/* Email customization */}
-            <div className="rounded-xl border border-[var(--border)] overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setShowEmailCustom((v) => !v)}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors bg-[var(--surface-alt)]"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  className={`transition-transform ${showEmailCustom ? 'rotate-90' : ''}`}>
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-                Anpassa e-postmeddelande
-                {(form.emailSubject || form.emailBody) && (
-                  <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-normal">Anpassad</span>
-                )}
-              </button>
-              {showEmailCustom && (
-                <div className="px-4 py-3 space-y-3 border-t border-[var(--border)]">
-                  <p className="text-[11px] text-[var(--text-muted)]">
-                    Anpassa vad mottagaren ser i e-postmeddelandet. Platshållare som{' '}
-                    <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{recipientName}}'}</code>,{' '}
-                    <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{offerTitle}}'}</code>,{' '}
-                    <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{totalIncVat}}'}</code>{' '}
-                    ersätts automatiskt.
-                  </p>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Ämnesrad</label>
-                    <input
-                      value={form.emailSubject}
-                      onChange={(e) => setForm((f) => ({ ...f, emailSubject: e.target.value }))}
-                      placeholder="t.ex. Offert från Företag AB: {{offerTitle}}"
-                      className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">E-postinnehåll (HTML)</label>
-                    <textarea
-                      value={form.emailBody}
-                      onChange={(e) => setForm((f) => ({ ...f, emailBody: e.target.value }))}
-                      rows={4}
-                      placeholder={'t.ex. <h2>Hej {{recipientName}},</h2>\n<p>Vi har skickat en offert för <strong>{{offerTitle}}</strong>.</p>'}
-                      className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors resize-y"
-                    />
-                    <p className="mt-1 text-[10px] text-[var(--text-muted)]">
-                      Knappen &ldquo;Visa &amp; signera offert&rdquo; läggs till automatiskt under innehållet.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Line items */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Rader</p>
+                <div>
+                  <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Rader</p>
+                  {fieldErrors.lineItems && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.lineItems}</p>}
+                </div>
                 <button onClick={addLine} className="text-xs text-[var(--accent)] font-medium hover:opacity-80 transition-opacity flex items-center gap-1">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -1323,8 +1320,10 @@ export default function OffersPage() {
                           {products.length > 0 && (
                             <button type="button" onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }}
                               title="Välj från produktbibliotek"
-                              className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-1.5 py-1.5 text-[10px] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
-                              «
+                              className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1.5 text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                              </svg>
                             </button>
                           )}
                         </div>
@@ -1401,11 +1400,19 @@ export default function OffersPage() {
 
             {/* Actions */}
             <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-light)]">
-              <button onClick={() => void createOffer()} disabled={saving}
-                className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {saving ? 'Sparar…' : 'Spara som utkast'}
+              <button onClick={() => { saveAndSendRef.current = true; void createOffer(); }} disabled={saving}
+                className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2">
+                {saving && saveAndSendRef.current ? (
+                  <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Sparar…</>
+                ) : (
+                  <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Spara &amp; skicka</>
+                )}
               </button>
-              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); setContactSearch(''); setContactResults([]); setShowEmailCustom(false); }}
+              <button onClick={() => void createOffer()} disabled={saving}
+                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] disabled:opacity-50 transition-colors">
+                {saving && !saveAndSendRef.current ? 'Sparar…' : 'Spara som utkast'}
+              </button>
+              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); setFieldErrors({}); setContactSearch(''); setContactResults([]); }}
                 className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors">
                 Avbryt
               </button>
@@ -1680,6 +1687,16 @@ export default function OffersPage() {
               Visar {offers.length} av {total}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Draft saved toast */}
+      {draftSaved && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-xl bg-[var(--surface-0)] border border-[var(--border)] shadow-lg px-4 py-3 text-sm text-[var(--text-primary)] animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500 shrink-0">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          Offert sparad som utkast — hittas under fliken <strong>Utkast</strong>
         </div>
       )}
 
