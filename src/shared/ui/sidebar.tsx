@@ -27,7 +27,6 @@ import {
   AnimatePresence,
   useReducedMotion,
 } from 'framer-motion';
-import ThemeToggle from '@shared/ui/theme-toggle';
 import {
   Tooltip,
   TooltipTrigger,
@@ -674,8 +673,6 @@ function SidebarFooter({
           <TooltipContent side="right">{displayName}</TooltipContent>
         </Tooltip>
 
-        <ThemeToggle className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-all" />
-
         <Tooltip>
           <TooltipTrigger asChild>
             <button
@@ -717,7 +714,6 @@ function SidebarFooter({
 
       {/* Quick actions */}
       <div className="flex items-center gap-1">
-        <ThemeToggle className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-all" />
         <button
           onClick={onLogout}
           aria-label="Log out"

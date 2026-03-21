@@ -81,6 +81,8 @@ interface ContactResult {
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
+const PAGE_SIZE = 25;
+
 const STATUS_TABS: { id: OfferStatus | 'all'; label: string }[] = [
   { id: 'all',      label: 'Alla' },
   { id: 'draft',    label: 'Utkast' },
@@ -330,6 +332,9 @@ export default function OffersPage() {
   const [tab,        setTab]        = useState<OfferStatus | 'all'>('all');
   const [sortAsc,    setSortAsc]    = useState(false); // desc by default (newest first)
   const [search,     setSearch]     = useState('');
+  const [dateFrom,   setDateFrom]   = useState('');
+  const [dateTo,     setDateTo]     = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
   const [showForm,         setShowForm]         = useState(false);
   const [editingOfferId,   setEditingOfferId]   = useState<string | null>(null);
   const [form,             setForm]             = useState(EMPTY_FORM);
@@ -413,17 +418,26 @@ export default function OffersPage() {
   }, [search]);
 
   useEffect(() => { void load(); setSelected(new Set()); setBulkResult(null); }, [load]);
+  useEffect(() => { setCurrentPage(0); }, [tab, dateFrom, dateTo, search]);
 
   // ── Derived: filtered + sorted list for current tab ───────────────────────────
-  const offers = useMemo(() => {
-    const base = tab === 'all' ? allOffers : allOffers.filter((o) => o.status === tab);
+  const filteredOffers = useMemo(() => {
+    let base = tab === 'all' ? allOffers : allOffers.filter((o) => o.status === tab);
+    if (dateFrom) base = base.filter((o) => new Date(o.createdAt) >= new Date(dateFrom));
+    if (dateTo)   base = base.filter((o) => new Date(o.createdAt) <= new Date(dateTo + 'T23:59:59'));
     return base.slice().sort((a, b) => {
       const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       return sortAsc ? diff : -diff;
     });
-  }, [allOffers, tab, sortAsc]);
+  }, [allOffers, tab, sortAsc, dateFrom, dateTo]);
 
-  const total = allOffers.length;
+  const offers       = useMemo(
+    () => filteredOffers.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE),
+    [filteredOffers, currentPage]);
+
+  const total          = allOffers.length;
+  const totalFiltered  = filteredOffers.length;
+  const totalPages     = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
 
   // ── Open edit form for an existing draft offer ────────────────────────────────
   const openEdit = useCallback((offer: Offer) => {
@@ -1532,24 +1546,25 @@ export default function OffersPage() {
         </div>
       )}
 
-      {/* Status tabs + search */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
-        <div className="flex gap-1 overflow-x-auto scrollbar-none flex-1 flex-wrap">
+      {/* Status tabs + filters */}
+      <div className="flex flex-col gap-3 mb-4">
+        {/* Row 1: tabs */}
+        <div className="flex gap-1 overflow-x-auto scrollbar-none flex-wrap">
           {STATUS_TABS.map((t) => {
             const count = t.id === 'all' ? allOffers.length : allOffers.filter((o) => o.status === t.id).length;
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 transition-all duration-150',
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap shrink-0 transition-all duration-150',
                   tab === t.id
                     ? 'bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--accent-border)]'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-active)] border border-transparent',
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] border border-[var(--border)]',
                 )}>
                 {t.label}
                 {count > 0 && (
                   <span className={cn(
-                    'text-[10px] font-mono px-1 py-0.5 rounded-full leading-none',
-                    tab === t.id ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface-active)] text-[var(--text-muted)]',
+                    'text-[10px] font-mono px-1.5 py-0.5 rounded leading-none',
+                    tab === t.id ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface-3)] text-[var(--text-muted)]',
                   )}>
                     {count}
                   </span>
@@ -1558,28 +1573,28 @@ export default function OffersPage() {
             );
           })}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Date sort toggle */}
-          <button
-            onClick={() => setSortAsc((v) => !v)}
-            title={sortAsc ? 'Äldst först — klicka för nyast' : 'Nyast först — klicka för äldst'}
-            className="flex items-center gap-1 px-2.5 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-active)] transition-colors"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              {sortAsc
-                ? <><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></>
-                : <><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></>
-              }
-            </svg>
-            Datum
-          </button>
-          {/* Search */}
+        {/* Row 2: search + date range */}
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="relative">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Sök offert…"
-              className="pl-9 pr-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors w-44"/>
+              className="pl-8 pr-4 py-1.5 rounded border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors w-44"/>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-[var(--text-muted)] shrink-0">Från</span>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+              className="py-1.5 px-2 rounded border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+            <span className="text-[11px] text-[var(--text-muted)] shrink-0">Till</span>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+              className="py-1.5 px-2 rounded border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+            {(dateFrom || dateTo) && (
+              <button onClick={() => { setDateFrom(''); setDateTo(''); }}
+                className="text-[11px] text-[var(--text-muted)] hover:text-red-500 transition-colors px-1">
+                ✕
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1593,34 +1608,41 @@ export default function OffersPage() {
           <p className="text-sm text-[var(--text-muted)]">Laddar offerter…</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+        <div className="rounded border border-[var(--border)] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-[var(--border)] bg-[var(--surface-alt)]">
-                  <th className="px-3 py-2 w-8">
+                <tr className="border-b-2 border-[var(--border)] bg-[var(--surface-alt)]">
+                  <th className="px-3 py-2.5 w-8">
                     {draftOffers.length > 0 && (
                       <input type="checkbox" checked={allDraftsSelected} onChange={toggleSelectAllDrafts}
                         title="Välj alla utkast" className="rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"/>
                     )}
                   </th>
-                  {[
-                    { label: 'Rubrik', cls: '' },
-                    { label: 'Mottagare', cls: '' },
-                    { label: 'Status', cls: '' },
-                    { label: 'Belopp', cls: 'text-right' },
-                    { label: 'Giltig / Skapad', cls: '' },
-                    { label: '', cls: '' },
-                  ].map((h) => (
-                    <th key={h.label} className={`px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--text-muted)] ${h.cls}`}>{h.label}</th>
-                  ))}
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Rubrik</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Mottagare</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Status</th>
+                  <th className="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Belopp</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Giltigt t.o.m.</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                    <button onClick={() => setSortAsc((v) => !v)} className="flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors">
+                      Skapad
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        {sortAsc
+                          ? <><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></>
+                          : <><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></>
+                        }
+                      </svg>
+                    </button>
+                  </th>
+                  <th className="px-3 py-2.5 w-24"></th>
                 </tr>
               </thead>
               <tbody>
                 {offers.map((offer, i) => (
-                  <tr key={offer.id} className={cn('group hover:bg-[var(--surface-active)] transition-colors', i > 0 && 'border-t border-[var(--border)]', (offer.status === 'sent' || offer.status === 'viewed') && offer.validUntil && new Date(offer.validUntil) < new Date() && 'bg-amber-50/40 dark:bg-amber-900/10')}>
+                  <tr key={offer.id} className={cn('group hover:bg-[var(--surface-alt)] transition-colors', i > 0 && 'border-t border-[var(--border)]', (offer.status === 'sent' || offer.status === 'viewed') && offer.validUntil && new Date(offer.validUntil) < new Date() && 'bg-amber-50/30 dark:bg-amber-900/10')}>
                     {/* Checkbox */}
-                    <td className="px-3 py-2 w-8">
+                    <td className="px-3 py-3 w-8">
                       {offer.status === 'draft' && (
                         <input type="checkbox" checked={selected.has(offer.id)} onChange={() => toggleSelect(offer.id)}
                           className="rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"/>
@@ -1628,38 +1650,26 @@ export default function OffersPage() {
                     </td>
 
                     {/* Title */}
-                    <td className="px-3 py-2 max-w-[220px]">
-                      <div className="flex items-center gap-2">
-                        <div>
-                          <p className="font-medium text-[var(--text-primary)] truncate leading-tight">{offer.title}</p>
-                          <p className="text-[10px] text-[var(--text-muted)] font-mono leading-tight mt-0.5">{fmtOfferNumber(offer)}</p>
-                        </div>
-                      </div>
+                    <td className="px-3 py-3 max-w-[220px]">
+                      <p className="text-xs font-semibold text-[var(--text-primary)] truncate leading-tight">{offer.title}</p>
+                      <p className="text-[10px] text-[var(--text-muted)] font-mono leading-tight mt-0.5">{fmtOfferNumber(offer)}</p>
                     </td>
 
                     {/* Recipient */}
-                    <td className="px-3 py-2 max-w-[180px]">
+                    <td className="px-3 py-3 max-w-[180px]">
                       <p className="text-xs font-medium text-[var(--text-primary)] truncate leading-tight">{offer.recipientName}</p>
                       <p className="text-[10px] text-[var(--text-muted)] truncate leading-tight">{offer.recipientCompany ?? offer.recipientEmail}</p>
                     </td>
 
-                    {/* Status — dot + label + quick-send for drafts */}
-                    <td className="px-3 py-2">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', {
-                            'bg-[var(--text-muted)]':  offer.status === 'draft',
-                            'bg-blue-500':             offer.status === 'sent',
-                            'bg-violet-500':           offer.status === 'viewed',
-                            'bg-emerald-500':          offer.status === 'accepted',
-                            'bg-red-500':              offer.status === 'declined',
-                            'bg-amber-500':            offer.status === 'expired',
-                          })} />
-                          <span className="text-xs text-[var(--text-secondary)] whitespace-nowrap">{STATUS_LABEL[offer.status]}</span>
-                        </div>
+                    {/* Status pill + quick-send for drafts */}
+                    <td className="px-3 py-3">
+                      <div className="flex flex-col gap-1.5">
+                        <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold w-fit', STATUS_STYLES[offer.status])}>
+                          {STATUS_LABEL[offer.status]}
+                        </span>
                         {offer.status === 'draft' && (
                           <button type="button" onClick={() => setConfirmSend(offer)} disabled={acting === offer.id}
-                            className="text-[10px] font-medium text-blue-500 hover:text-blue-600 transition-colors text-left disabled:opacity-40 flex items-center gap-0.5">
+                            className="text-[10px] font-medium text-[var(--accent)] hover:underline transition-colors text-left disabled:opacity-40 flex items-center gap-0.5">
                             Skicka
                             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                               <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -1670,15 +1680,21 @@ export default function OffersPage() {
                     </td>
 
                     {/* Amount */}
-                    <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
+                    <td className="px-3 py-3 text-right tabular-nums whitespace-nowrap">
                       <p className="text-xs font-semibold text-[var(--text-primary)]">{fmtSEK(offer.totalIncVat)}</p>
                       <p className="text-[10px] text-[var(--text-muted)]">ex. {fmtSEK(offer.totalExVat)}</p>
                     </td>
 
-                    {/* Dates */}
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <p className="text-[10px] text-[var(--text-muted)] leading-tight">Giltig {fmtDate(offer.validUntil)}</p>
-                      <p className="text-[10px] text-[var(--text-muted)] leading-tight">Skapad {fmtDate(offer.createdAt)}</p>
+                    {/* Valid until */}
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <p className={cn('text-xs leading-tight', offer.validUntil && new Date(offer.validUntil) < new Date() && (offer.status === 'sent' || offer.status === 'viewed') ? 'text-amber-600 font-medium' : 'text-[var(--text-secondary)]')}>
+                        {fmtDate(offer.validUntil) ?? '—'}
+                      </p>
+                    </td>
+
+                    {/* Created */}
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <p className="text-xs text-[var(--text-secondary)] leading-tight">{fmtDate(offer.createdAt)}</p>
                     </td>
 
                     {/* Actions — appear on hover */}
@@ -1777,7 +1793,7 @@ export default function OffersPage() {
                 ))}
                 {offers.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-16 text-center">
+                    <td colSpan={8} className="px-4 py-16 text-center">
                       <p className="text-sm font-medium text-[var(--text-primary)] mb-1">Inga offerter</p>
                       <p className="text-xs text-[var(--text-muted)]">Klicka på &ldquo;Ny offert&rdquo; för att komma igång.</p>
                     </td>
@@ -1786,11 +1802,34 @@ export default function OffersPage() {
               </tbody>
             </table>
           </div>
-          {total > offers.length && (
-            <div className="px-4 py-2 border-t border-[var(--border)] bg-[var(--surface-alt)] text-[11px] text-[var(--text-muted)] text-center">
-              Visar {offers.length} av {total}
-            </div>
-          )}
+          {/* Pagination footer */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--border)] bg-[var(--surface-alt)]">
+            <span className="text-[11px] text-[var(--text-muted)]">
+              {totalFiltered === 0 ? 'Inga resultat' : `Visar ${currentPage * PAGE_SIZE + 1}–${Math.min((currentPage + 1) * PAGE_SIZE, totalFiltered)} av ${totalFiltered}`}
+              {total !== totalFiltered && ` (filtrerat från ${total})`}
+            </span>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button onClick={() => setCurrentPage((p) => Math.max(0, p - 1))} disabled={currentPage === 0}
+                  className="px-2 py-1 rounded border border-[var(--border)] bg-[var(--surface)] text-[11px] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                  ‹
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i).filter((i) => Math.abs(i - currentPage) <= 2 || i === 0 || i === totalPages - 1).map((i, idx, arr) => (
+                  <span key={i}>
+                    {idx > 0 && arr[idx - 1] !== i - 1 && <span className="text-[11px] text-[var(--text-muted)] px-0.5">…</span>}
+                    <button onClick={() => setCurrentPage(i)}
+                      className={cn('w-6 h-6 rounded text-[11px] font-medium transition-colors', i === currentPage ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] border border-[var(--border)]')}>
+                      {i + 1}
+                    </button>
+                  </span>
+                ))}
+                <button onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))} disabled={currentPage >= totalPages - 1}
+                  className="px-2 py-1 rounded border border-[var(--border)] bg-[var(--surface)] text-[11px] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                  ›
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
