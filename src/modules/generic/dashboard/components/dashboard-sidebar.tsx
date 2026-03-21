@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import type { ActivityEvent } from '@demos/hotel/activity/types';
-import ThemeToggle from '@shared/ui/theme-toggle';
 import { SPRING_SNAPPY } from '@shared/lib/motion';
 
 type Tab = 'available' | 'activity' | 'hotel-info' | 'crm' | 'calendar' | 'setup';
@@ -425,13 +424,6 @@ export default function DashboardSidebar({
             </svg>
             Återställ
           </button>
-          <ThemeToggle className={[
-            'w-8 h-8 flex items-center justify-center rounded-lg transition-colors duration-150',
-            'bg-[var(--surface-alt)] border border-[var(--border)]',
-            'hover:border-[var(--accent)]/50 dark:hover:border-amber-400/50',
-            'text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
-            'dark:bg-white/5 dark:border-white/10 dark:text-white/50 dark:hover:text-white/85',
-          ].join(' ')} />
         </div>
       </div>
     </aside>
