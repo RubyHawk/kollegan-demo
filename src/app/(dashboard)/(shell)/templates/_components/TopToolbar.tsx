@@ -9,6 +9,24 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
+import { cn } from '@shared/lib/utils';
+import {
+  ArrowUUpLeft, ArrowUUpRight,
+  TextAlignLeft, TextAlignCenter, TextAlignRight, TextAlignJustify,
+  ListBullets, ListNumbers,
+  TextBolder, TextItalic, TextUnderline, TextStrikethrough,
+  TextSubscript, TextSuperscript,
+  TextIndent, TextOutdent,
+  HighlighterCircle, Palette,
+  Eraser, LineHeight,
+  Table, Image as PhImage, Link, Minus as PhMinus,
+  ArrowFatLinesUp, ArrowFatLinesDown,
+  CaretDown,
+  ArrowsIn, ArrowsOut,
+  Rows, Columns,
+  Layout, FrameCorners,
+  ArrowUp, ArrowDown,
+} from '@phosphor-icons/react';
 
 // ── Color utilities ──────────────────────────────────────────────────────────
 
@@ -194,14 +212,15 @@ export default function TopToolbar() {
   return (
     <div
       ref={barRef}
-      style={{ background: '#f3f2f1', borderBottom: '1px solid #d2d0ce', userSelect: 'none' }}
+      className="border-b border-[var(--border)] bg-[var(--surface-1)]"
+      style={{ userSelect: 'none' }}
       onMouseDown={(e) => {
         const tag = (e.target as HTMLElement).tagName;
         if (tag !== 'INPUT') e.preventDefault();
       }}
     >
       {/* ── Tab strip ──────────────────────────────────────────── */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #d2d0ce', padding: '0 4px', background: '#f3f2f1' }}>
+      <div className="flex items-center px-2 border-b border-[var(--border)] gap-0.5">
         {(['hem', 'infoga', 'layout'] as const).map((t) => {
           const labels: Record<string, string> = { hem: 'Hem', infoga: 'Infoga', layout: 'Layout' };
           const on = tab === t;
@@ -210,13 +229,12 @@ export default function TopToolbar() {
               key={t}
               type="button"
               onMouseDown={(e) => { e.preventDefault(); setTab(t); close(); }}
-              style={{
-                padding: '5px 14px', fontSize: 12,
-                fontFamily: 'Calibri, Arial, sans-serif',
-                background: on ? '#f3f2f1' : 'transparent', border: 'none',
-                borderBottom: on ? '2px solid #0078d4' : '2px solid transparent',
-                color: on ? '#0078d4' : '#323130', fontWeight: on ? 600 : 400, cursor: 'pointer',
-              }}
+              className={cn(
+                'px-3 py-1.5 text-xs font-medium rounded-md my-1 transition-colors',
+                on
+                  ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
+                  : 'text-[var(--text-secondary)] hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]'
+              )}
             >
               {labels[t]}
             </button>
@@ -225,388 +243,346 @@ export default function TopToolbar() {
       </div>
 
       {/* ── Ribbon content ─────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'stretch', padding: '4px 6px', gap: 6, flexWrap: 'wrap', minHeight: 58 }}>
+      <div className="flex items-center px-2 py-1 gap-1 overflow-x-auto min-h-[40px]">
 
         {/* ══ HEM ══════════════════════════════════════════════ */}
         {tab === 'hem' && (
           <>
             {/* Urklipp */}
-            <RibbonGroup label="Urklipp">
-              <RBtn onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Ångra (Ctrl+Z)"><UndoIcon /></RBtn>
-              <RBtn onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} title="Gör om (Ctrl+Y)"><RedoIcon /></RBtn>
-            </RibbonGroup>
+            <RBtn onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Ångra (Ctrl+Z)"><ArrowUUpLeft size={14} /></RBtn>
+            <RBtn onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} title="Gör om (Ctrl+Y)"><ArrowUUpRight size={14} /></RBtn>
 
             <GroupSep />
 
             {/* Styckeformat */}
-            <RibbonGroup label="Format">
-              <Dropdown
-                open={openMenu === 'style'}
-                onToggle={() => toggle('style')}
-                trigger={
-                  <span style={{ fontSize: 12, fontFamily: 'Calibri, Arial, sans-serif', minWidth: 96, textAlign: 'left', color: '#1e1e1e' }}>
-                    {activeStyle}
-                  </span>
-                }
-                triggerTitle="Styckeformat"
-                minWidth={200}
-              >
-                {styleEntries.map(({ label, ps, action }) => (
-                  <DropdownItem key={label} active={activeStyle === label} onSelect={() => { action(); close(); }} style={{ ...ps, fontFamily: 'Calibri, Arial, sans-serif', lineHeight: 1.4 }}>
-                    {label}
-                  </DropdownItem>
-                ))}
-              </Dropdown>
-            </RibbonGroup>
+            <Dropdown
+              open={openMenu === 'style'}
+              onToggle={() => toggle('style')}
+              trigger={
+                <span className="text-[var(--text-2xs)] min-w-[88px] text-left text-[var(--text-primary)]">
+                  {activeStyle}
+                </span>
+              }
+              triggerTitle="Styckeformat"
+              minWidth={200}
+            >
+              {styleEntries.map(({ label, ps, action }) => (
+                <DropdownItem key={label} active={activeStyle === label} onSelect={() => { action(); close(); }} style={{ fontSize: ps.fontSize, color: ps.color, fontWeight: ps.fontWeight, lineHeight: 1.4 }}>
+                  {label}
+                </DropdownItem>
+              ))}
+            </Dropdown>
 
             <GroupSep />
 
-            {/* Teckensnitt */}
-            <RibbonGroup label="Teckensnitt">
-              {/* Font family */}
-              <Dropdown
-                open={openMenu === 'font'}
-                onToggle={() => toggle('font')}
-                trigger={
-                  <span style={{ fontSize: 12, fontFamily: activeFontFamily + ', sans-serif', minWidth: 110, maxWidth: 130, textAlign: 'left', color: '#1e1e1e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-                    {activeFontFamily}
-                  </span>
-                }
-                triggerTitle="Välj teckensnitt"
-                minWidth={180}
-              >
-                {FONTS.map((f) => (
-                  <DropdownItem key={f} active={activeFontFamily === f} onSelect={() => { editor.chain().focus().setFontFamily(f).run(); close(); }} style={{ fontFamily: f + ', sans-serif', fontSize: 13 }}>
-                    {f}
-                  </DropdownItem>
-                ))}
-              </Dropdown>
+            {/* Font family */}
+            <Dropdown
+              open={openMenu === 'font'}
+              onToggle={() => toggle('font')}
+              trigger={
+                <span className="text-[var(--text-2xs)] min-w-[100px] max-w-[120px] text-left text-[var(--text-primary)] overflow-hidden text-ellipsis whitespace-nowrap block" style={{ fontFamily: activeFontFamily + ', sans-serif' }}>
+                  {activeFontFamily}
+                </span>
+              }
+              triggerTitle="Välj teckensnitt"
+              minWidth={180}
+            >
+              {FONTS.map((f) => (
+                <DropdownItem key={f} active={activeFontFamily === f} onSelect={() => { editor.chain().focus().setFontFamily(f).run(); close(); }} style={{ fontFamily: f + ', sans-serif', fontSize: 13 }}>
+                  {f}
+                </DropdownItem>
+              ))}
+            </Dropdown>
 
-              {/* Font size */}
-              <FontSizeControl
-                value={activeFontSize}
-                open={openMenu === 'size'}
-                onToggle={() => toggle('size')}
-                onSelect={(s) => { editor.chain().focus().setFontSize(String(s)).run(); close(); }}
-                onApply={(v) => { editor.chain().setFontSize(v).run(); }}
-                onFocusEditor={() => setTimeout(() => editor.commands.focus(), 0)}
-              />
+            {/* Font size */}
+            <FontSizeControl
+              value={activeFontSize}
+              open={openMenu === 'size'}
+              onToggle={() => toggle('size')}
+              onSelect={(s) => { editor.chain().focus().setFontSize(String(s)).run(); close(); }}
+              onApply={(v) => { editor.chain().setFontSize(v).run(); }}
+              onFocusEditor={() => setTimeout(() => editor.commands.focus(), 0)}
+            />
 
-              <RBtn onClick={growFont}   title="Öka teckenstorlek"><GrowIcon /></RBtn>
-              <RBtn onClick={shrinkFont} title="Minska teckenstorlek"><ShrinkIcon /></RBtn>
+            <RBtn onClick={growFont}   title="Öka teckenstorlek"><ArrowUp size={12} /></RBtn>
+            <RBtn onClick={shrinkFont} title="Minska teckenstorlek"><ArrowDown size={12} /></RBtn>
 
-              <InlineSep />
+            <GroupSep />
 
-              <RBtn onClick={() => editor.chain().focus().toggleBold().run()}      active={editor.isActive('bold')}      title="Fet (Ctrl+B)">
-                <span style={{ fontWeight: 700, fontFamily: 'Georgia, serif', fontSize: 13, lineHeight: 1 }}>B</span>
-              </RBtn>
-              <RBtn onClick={() => editor.chain().focus().toggleItalic().run()}    active={editor.isActive('italic')}    title="Kursiv (Ctrl+I)">
-                <span style={{ fontStyle: 'italic', fontFamily: 'Georgia, serif', fontSize: 13, lineHeight: 1 }}>I</span>
-              </RBtn>
-              <RBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Understruken (Ctrl+U)">
-                <span style={{ textDecoration: 'underline', fontSize: 13, lineHeight: 1 }}>U</span>
-              </RBtn>
-              <RBtn onClick={() => editor.chain().focus().toggleStrike().run()}    active={editor.isActive('strike')}    title="Genomstruken">
-                <span style={{ textDecoration: 'line-through', fontSize: 13, lineHeight: 1 }}>S</span>
-              </RBtn>
+            <RBtn onClick={() => editor.chain().focus().toggleBold().run()}      active={editor.isActive('bold')}      title="Fet (Ctrl+B)">
+              <TextBolder size={14} />
+            </RBtn>
+            <RBtn onClick={() => editor.chain().focus().toggleItalic().run()}    active={editor.isActive('italic')}    title="Kursiv (Ctrl+I)">
+              <TextItalic size={14} />
+            </RBtn>
+            <RBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Understruken (Ctrl+U)">
+              <TextUnderline size={14} />
+            </RBtn>
+            <RBtn onClick={() => editor.chain().focus().toggleStrike().run()}    active={editor.isActive('strike')}    title="Genomstruken">
+              <TextStrikethrough size={14} />
+            </RBtn>
 
-              <InlineSep />
+            <InlineSep />
 
-              <RBtn onClick={() => editor.chain().focus().toggleSubscript().run()}   active={editor.isActive('subscript')}   title="Nedsänkt">
-                <span style={{ fontSize: 11, lineHeight: 1 }}>x<sub style={{ fontSize: 8 }}>2</sub></span>
-              </RBtn>
-              <RBtn onClick={() => editor.chain().focus().toggleSuperscript().run()} active={editor.isActive('superscript')} title="Upphöjd">
-                <span style={{ fontSize: 11, lineHeight: 1 }}>x<sup style={{ fontSize: 8 }}>2</sup></span>
-              </RBtn>
+            <RBtn onClick={() => editor.chain().focus().toggleSubscript().run()}   active={editor.isActive('subscript')}   title="Nedsänkt">
+              <TextSubscript size={14} />
+            </RBtn>
+            <RBtn onClick={() => editor.chain().focus().toggleSuperscript().run()} active={editor.isActive('superscript')} title="Upphöjd">
+              <TextSuperscript size={14} />
+            </RBtn>
 
-              <InlineSep />
+            <InlineSep />
 
-              {/* Highlight */}
-              <div style={{ position: 'relative' }}>
-                <button type="button" onMouseDown={(e) => { e.preventDefault(); toggle('highlight'); }} title="Textmarkering" style={swatchBtnStyle(openMenu === 'highlight')}>
-                  <HighlightIcon />
-                  <ColorBar color={activeHighlight ?? '#ffff00'} />
-                </button>
-                {openMenu === 'highlight' && (
-                  <WordColorPalette
-                    active={activeHighlight}
-                    onSelect={(c) => { editor.chain().focus().toggleHighlight({ color: c }).run(); close(); }}
-                    onClear={() => { editor.chain().focus().unsetHighlight().run(); close(); }}
-                    clearLabel="Ingen markering"
-                  />
-                )}
-              </div>
+            {/* Highlight */}
+            <div style={{ position: 'relative' }}>
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); toggle('highlight'); }} title="Textmarkering" style={swatchBtnStyle(openMenu === 'highlight')}>
+                <HighlighterCircle size={14} />
+                <ColorBar color={activeHighlight ?? '#ffff00'} />
+              </button>
+              {openMenu === 'highlight' && (
+                <WordColorPalette
+                  active={activeHighlight}
+                  onSelect={(c) => { editor.chain().focus().toggleHighlight({ color: c }).run(); close(); }}
+                  onClear={() => { editor.chain().focus().unsetHighlight().run(); close(); }}
+                  clearLabel="Ingen markering"
+                />
+              )}
+            </div>
 
-              {/* Text color */}
-              <div style={{ position: 'relative' }}>
-                <button type="button" onMouseDown={(e) => { e.preventDefault(); toggle('color'); }} title="Teckenfärg" style={swatchBtnStyle(openMenu === 'color')}>
-                  <span style={{ fontWeight: 700, fontFamily: 'Georgia, serif', fontSize: 13, lineHeight: 1, color: '#1e1e1e' }}>A</span>
-                  <ColorBar color={activeColor} />
-                </button>
-                {openMenu === 'color' && (
-                  <WordColorPalette
-                    active={activeColor}
-                    onSelect={(c) => { editor.chain().focus().setColor(c).run(); close(); }}
-                    onClear={() => { editor.chain().focus().unsetColor().run(); close(); }}
-                    clearLabel="Automatisk färg"
-                  />
-                )}
-              </div>
+            {/* Text color */}
+            <div style={{ position: 'relative' }}>
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); toggle('color'); }} title="Teckenfärg" style={swatchBtnStyle(openMenu === 'color')}>
+                <Palette size={14} />
+                <ColorBar color={activeColor} />
+              </button>
+              {openMenu === 'color' && (
+                <WordColorPalette
+                  active={activeColor}
+                  onSelect={(c) => { editor.chain().focus().setColor(c).run(); close(); }}
+                  onClear={() => { editor.chain().focus().unsetColor().run(); close(); }}
+                  clearLabel="Automatisk färg"
+                />
+              )}
+            </div>
 
-              {/* Clear formatting */}
-              <RBtn onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()} title="Rensa all formatering">
-                <ClearIcon />
-              </RBtn>
-            </RibbonGroup>
+            {/* Clear formatting */}
+            <RBtn onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()} title="Rensa all formatering">
+              <Eraser size={14} />
+            </RBtn>
 
             <GroupSep />
 
             {/* Stycke */}
-            <RibbonGroup label="Stycke">
-              <RBtn onClick={() => editor.chain().focus().decreaseIndent().run()} disabled={activeIndent === 0} title="Minska indrag"><IndentDecIcon /></RBtn>
-              <RBtn onClick={() => editor.chain().focus().increaseIndent().run()} active={activeIndent > 0} title={`Öka indrag — nivå ${activeIndent}`}><IndentIncIcon /></RBtn>
-              <InlineSep />
-              <RBtn onClick={() => editor.chain().focus().setTextAlign('left').run()}    active={editor.isActive({ textAlign: 'left' })}    title="Vänster (Ctrl+L)"><AlignLeftIcon /></RBtn>
-              <RBtn onClick={() => editor.chain().focus().setTextAlign('center').run()}  active={editor.isActive({ textAlign: 'center' })}  title="Centrera (Ctrl+E)"><AlignCenterIcon /></RBtn>
-              <RBtn onClick={() => editor.chain().focus().setTextAlign('right').run()}   active={editor.isActive({ textAlign: 'right' })}   title="Höger (Ctrl+R)"><AlignRightIcon /></RBtn>
-              <RBtn onClick={() => editor.chain().focus().setTextAlign('justify').run()} active={editor.isActive({ textAlign: 'justify' })} title="Justera (Ctrl+J)"><AlignJustifyIcon /></RBtn>
-              <InlineSep />
-              <RBtn onClick={() => editor.chain().focus().toggleBulletList().run()}  active={editor.isActive('bulletList')}  title="Punktlista"><BulletListIcon /></RBtn>
-              <RBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Numrerad lista"><OrderedListIcon /></RBtn>
-              <InlineSep />
-              {/* Line spacing dropdown */}
-              <div style={{ position: 'relative' }}>
-                <RBtn onClick={() => toggle('linespacing')} active={openMenu === 'linespacing' || !!activeLineH} title={`Radavstånd${activeLineH ? `: ${activeLineH}` : ''}`}>
-                  <LineSpacingIcon />
-                </RBtn>
-                {openMenu === 'linespacing' && (
-                  <DropdownPanel minWidth={175}>
-                    {LINE_SPACINGS.map(({ label, value }) => (
-                      <DropdownItem key={value} active={activeLineH === value} onSelect={() => { editor.chain().focus().setLineHeight(value).run(); close(); }} style={{ fontSize: 13, fontFamily: 'Calibri, Arial, sans-serif' }}>
-                        {label}
-                      </DropdownItem>
-                    ))}
-                    <div style={{ height: 1, background: '#d2d0ce', margin: '4px 0' }} />
-                    <DropdownItem active={!activeLineH} onSelect={() => { editor.chain().focus().unsetLineHeight().run(); close(); }} style={{ fontSize: 13, color: '#0078d4' }}>
-                      Återställ standard
+            <RBtn onClick={() => editor.chain().focus().decreaseIndent().run()} disabled={activeIndent === 0} title="Minska indrag"><TextOutdent size={14} /></RBtn>
+            <RBtn onClick={() => editor.chain().focus().increaseIndent().run()} active={activeIndent > 0} title={`Öka indrag — nivå ${activeIndent}`}><TextIndent size={14} /></RBtn>
+            <InlineSep />
+            <RBtn onClick={() => editor.chain().focus().setTextAlign('left').run()}    active={editor.isActive({ textAlign: 'left' })}    title="Vänster (Ctrl+L)"><TextAlignLeft size={14} /></RBtn>
+            <RBtn onClick={() => editor.chain().focus().setTextAlign('center').run()}  active={editor.isActive({ textAlign: 'center' })}  title="Centrera (Ctrl+E)"><TextAlignCenter size={14} /></RBtn>
+            <RBtn onClick={() => editor.chain().focus().setTextAlign('right').run()}   active={editor.isActive({ textAlign: 'right' })}   title="Höger (Ctrl+R)"><TextAlignRight size={14} /></RBtn>
+            <RBtn onClick={() => editor.chain().focus().setTextAlign('justify').run()} active={editor.isActive({ textAlign: 'justify' })} title="Justera (Ctrl+J)"><TextAlignJustify size={14} /></RBtn>
+            <InlineSep />
+            <RBtn onClick={() => editor.chain().focus().toggleBulletList().run()}  active={editor.isActive('bulletList')}  title="Punktlista"><ListBullets size={14} /></RBtn>
+            <RBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Numrerad lista"><ListNumbers size={14} /></RBtn>
+            <InlineSep />
+            {/* Line spacing dropdown */}
+            <div style={{ position: 'relative' }}>
+              <RBtn onClick={() => toggle('linespacing')} active={openMenu === 'linespacing' || !!activeLineH} title={`Radavstånd${activeLineH ? `: ${activeLineH}` : ''}`}>
+                <LineHeight size={14} />
+              </RBtn>
+              {openMenu === 'linespacing' && (
+                <DropdownPanel minWidth={175}>
+                  {LINE_SPACINGS.map(({ label, value }) => (
+                    <DropdownItem key={value} active={activeLineH === value} onSelect={() => { editor.chain().focus().setLineHeight(value).run(); close(); }} style={{ fontSize: 13 }}>
+                      {label}
                     </DropdownItem>
-                  </DropdownPanel>
-                )}
-              </div>
-            </RibbonGroup>
+                  ))}
+                  <div className="h-px bg-[var(--border)] my-1" />
+                  <DropdownItem active={!activeLineH} onSelect={() => { editor.chain().focus().unsetLineHeight().run(); close(); }} style={{ fontSize: 13, color: 'var(--accent)' }}>
+                    Återställ standard
+                  </DropdownItem>
+                </DropdownPanel>
+              )}
+            </div>
           </>
         )}
 
         {/* ══ INFOGA ══════════════════════════════════════════ */}
         {tab === 'infoga' && (
           <>
-            <RibbonGroup label="Tabeller">
-              <div style={{ position: 'relative' }}>
-                <BigBtn icon={<TableIcon big />} label="Tabell" title="Infoga tabell" active={openMenu === 'table'} onClick={() => toggle('table')} />
-                {openMenu === 'table' && (
-                  <TablePicker onInsert={(rows, cols) => { editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run(); close(); }} />
-                )}
-              </div>
-            </RibbonGroup>
+            <div style={{ position: 'relative' }}>
+              <RBtn onClick={() => toggle('table')} active={openMenu === 'table'} title="Infoga tabell">
+                <Table size={14} />
+                <span className="ml-1 text-[var(--text-2xs)]">Tabell</span>
+              </RBtn>
+              {openMenu === 'table' && (
+                <TablePicker onInsert={(rows, cols) => { editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run(); close(); }} />
+              )}
+            </div>
             <GroupSep />
-            <RibbonGroup label="Bild">
-              <BigBtn icon={<ImageIcon big />} label="Bild" title="Infoga bild från din dator" onClick={() => fileRef.current?.click()} />
-              <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = ''; }}
-              />
-            </RibbonGroup>
+            <RBtn onClick={() => fileRef.current?.click()} title="Infoga bild från din dator">
+              <PhImage size={14} />
+              <span className="ml-1 text-[var(--text-2xs)]">Bild</span>
+            </RBtn>
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = ''; }}
+            />
             <GroupSep />
-            <RibbonGroup label="Länkar">
-              <BigBtn icon={<LinkIcon big />} label="Länk" title="Infoga eller redigera hyperlänk" active={editor.isActive('link')}
-                onClick={() => {
-                  const prev = editor.getAttributes('link').href as string | undefined;
-                  const url  = window.prompt('Ange URL:', prev ?? 'https://');
-                  if (url === null) return;
-                  if (url.trim() === '') editor.chain().focus().unsetLink().run();
-                  else editor.chain().focus().setLink({ href: url.trim() }).run();
-                }}
-              />
-            </RibbonGroup>
+            <RBtn active={editor.isActive('link')} title="Infoga eller redigera hyperlänk"
+              onClick={() => {
+                const prev = editor.getAttributes('link').href as string | undefined;
+                const url  = window.prompt('Ange URL:', prev ?? 'https://');
+                if (url === null) return;
+                if (url.trim() === '') editor.chain().focus().unsetLink().run();
+                else editor.chain().focus().setLink({ href: url.trim() }).run();
+              }}
+            >
+              <Link size={14} />
+              <span className="ml-1 text-[var(--text-2xs)]">Länk</span>
+            </RBtn>
             <GroupSep />
-            <RibbonGroup label="Text">
-              <BigBtn icon={<HrIcon big />} label="Avdelare" title="Infoga horisontell avdelare" onClick={() => editor.chain().focus().setHorizontalRule().run()} />
-            </RibbonGroup>
+            <RBtn onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Infoga horisontell avdelare">
+              <PhMinus size={14} />
+              <span className="ml-1 text-[var(--text-2xs)]">Avdelare</span>
+            </RBtn>
           </>
         )}
 
         {/* ══ LAYOUT ══════════════════════════════════════════ */}
         {tab === 'layout' && (
           <>
-            {/* Tabell ─────────────────────────────────────── */}
-            <RibbonGroup label="Tabell">
-              {/* Cell background colour */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                <div style={{ fontSize: 9, color: isInTable ? '#323130' : '#a19f9d', fontFamily: 'Calibri, sans-serif', marginBottom: 2 }}>Cellbakgrund</div>
-                <div style={{ position: 'relative' }}>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => { e.preventDefault(); if (isInTable) toggle('cellbg'); }}
-                    title={isInTable ? 'Cellbakgrundsfärg' : 'Placera markören i en tabell'}
-                    disabled={!isInTable}
-                    style={swatchBtnStyle(openMenu === 'cellbg', !isInTable)}
-                  >
-                    <FillIcon />
-                    <ColorBar color={activeCellBg ?? '#ffffff'} bordered />
-                  </button>
-                  {openMenu === 'cellbg' && (
-                    <WordColorPalette
-                      active={activeCellBg}
-                      onSelect={(c) => { editor.chain().focus().setCellAttribute('backgroundColor', c).run(); close(); }}
-                      onClear={() => { editor.chain().focus().setCellAttribute('backgroundColor', null).run(); close(); }}
-                      clearLabel="Ingen bakgrundsfärg"
-                    />
-                  )}
-                </div>
-              </div>
+            {/* Tabell */}
+            {/* Cell background colour */}
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); if (isInTable) toggle('cellbg'); }}
+                title={isInTable ? 'Cellbakgrundsfärg' : 'Placera markören i en tabell'}
+                disabled={!isInTable}
+                style={swatchBtnStyle(openMenu === 'cellbg', !isInTable)}
+              >
+                <Palette size={14} />
+                <ColorBar color={activeCellBg ?? '#ffffff'} bordered />
+              </button>
+              {openMenu === 'cellbg' && (
+                <WordColorPalette
+                  active={activeCellBg}
+                  onSelect={(c) => { editor.chain().focus().setCellAttribute('backgroundColor', c).run(); close(); }}
+                  onClear={() => { editor.chain().focus().setCellAttribute('backgroundColor', null).run(); close(); }}
+                  clearLabel="Ingen bakgrundsfärg"
+                />
+              )}
+            </div>
 
-              <InlineSep />
+            <InlineSep />
 
-              {/* Merge / Split */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <RBtn disabled={!isInTable || !editor.can().mergeCells()} onClick={() => editor.chain().focus().mergeCells().run()} title="Sammanfoga markerade celler">
-                  <MergeIcon /> <span style={{ fontSize: 10, marginLeft: 2 }}>Samm.</span>
-                </RBtn>
-                <RBtn disabled={!isInTable || !editor.can().splitCell()} onClick={() => editor.chain().focus().splitCell().run()} title="Dela sammanfogad cell">
-                  <SplitIcon /> <span style={{ fontSize: 10, marginLeft: 2 }}>Dela</span>
-                </RBtn>
-              </div>
+            {/* Merge / Split */}
+            <RBtn disabled={!isInTable || !editor.can().mergeCells()} onClick={() => editor.chain().focus().mergeCells().run()} title="Sammanfoga markerade celler">
+              <ArrowsIn size={14} /> <span className="ml-1 text-[var(--text-2xs)]">Samm.</span>
+            </RBtn>
+            <RBtn disabled={!isInTable || !editor.can().splitCell()} onClick={() => editor.chain().focus().splitCell().run()} title="Dela sammanfogad cell">
+              <ArrowsOut size={14} /> <span className="ml-1 text-[var(--text-2xs)]">Dela</span>
+            </RBtn>
 
-              <InlineSep />
+            <InlineSep />
 
-              {/* Header row toggle */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <RBtn disabled={!isInTable} active={editor.isActive('tableHeader')} onClick={() => editor.chain().focus().toggleHeaderRow().run()} title="Växla rubrikrad">
-                  <HeaderRowIcon /> <span style={{ fontSize: 10, marginLeft: 2 }}>Rubrik</span>
-                </RBtn>
-              </div>
+            {/* Header row toggle */}
+            <RBtn disabled={!isInTable} active={editor.isActive('tableHeader')} onClick={() => editor.chain().focus().toggleHeaderRow().run()} title="Växla rubrikrad">
+              <Rows size={14} /> <span className="ml-1 text-[var(--text-2xs)]">Rubrik</span>
+            </RBtn>
 
-              <InlineSep />
+            <InlineSep />
 
-              {/* Row operations */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().addRowBefore().run()} title="Lägg till rad ovanför">
-                  <AddRowAboveIcon /> <span style={{ fontSize: 10, marginLeft: 2 }}>+rad ↑</span>
-                </RBtn>
-                <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().addRowAfter().run()} title="Lägg till rad nedanför">
-                  <AddRowBelowIcon /> <span style={{ fontSize: 10, marginLeft: 2 }}>+rad ↓</span>
-                </RBtn>
-              </div>
-              <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().deleteRow().run()} title="Ta bort rad" style={{ color: !isInTable ? undefined : '#c00000' }}>
-                <DeleteRowIcon />
+            {/* Row operations */}
+            <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().addRowBefore().run()} title="Lägg till rad ovanför">
+              <ArrowFatLinesUp size={14} /> <span className="ml-1 text-[var(--text-2xs)]">+rad ↑</span>
+            </RBtn>
+            <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().addRowAfter().run()} title="Lägg till rad nedanför">
+              <ArrowFatLinesDown size={14} /> <span className="ml-1 text-[var(--text-2xs)]">+rad ↓</span>
+            </RBtn>
+            <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().deleteRow().run()} title="Ta bort rad" style={{ color: !isInTable ? undefined : 'var(--color-red-600)' }}>
+              <Rows size={14} style={{ opacity: 0.6 }} />
+            </RBtn>
+
+            <InlineSep />
+
+            {/* Column operations */}
+            <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().addColumnBefore().run()} title="Lägg till kolumn till vänster">
+              <Columns size={14} /> <span className="ml-1 text-[var(--text-2xs)]">+kol ←</span>
+            </RBtn>
+            <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().addColumnAfter().run()} title="Lägg till kolumn till höger">
+              <Columns size={14} /> <span className="ml-1 text-[var(--text-2xs)]">+kol →</span>
+            </RBtn>
+            <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().deleteColumn().run()} title="Ta bort kolumn" style={{ color: !isInTable ? undefined : 'var(--color-red-600)' }}>
+              <Columns size={14} style={{ opacity: 0.6 }} />
+            </RBtn>
+
+            <InlineSep />
+
+            {/* Delete table */}
+            <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().deleteTable().run()} title="Radera hela tabellen" style={{ color: !isInTable ? undefined : 'var(--color-red-600)' }}>
+              <Table size={14} style={{ opacity: 0.6 }} />
+            </RBtn>
+
+            <GroupSep />
+
+            {/* Radavstånd */}
+            {LINE_SPACINGS.slice(0, 3).map(({ label, value }) => (
+              <RBtn key={value} onClick={() => editor.chain().focus().setLineHeight(value).run()} active={activeLineH === value} title={`Radavstånd: ${label}`}>
+                <span className="text-[var(--text-2xs)] font-medium">{value}×</span>
               </RBtn>
-
-              <InlineSep />
-
-              {/* Column operations */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().addColumnBefore().run()} title="Lägg till kolumn till vänster">
-                  <AddColLeftIcon /> <span style={{ fontSize: 10, marginLeft: 2 }}>+kol ←</span>
-                </RBtn>
-                <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().addColumnAfter().run()} title="Lägg till kolumn till höger">
-                  <AddColRightIcon /> <span style={{ fontSize: 10, marginLeft: 2 }}>+kol →</span>
-                </RBtn>
-              </div>
-              <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().deleteColumn().run()} title="Ta bort kolumn" style={{ color: !isInTable ? undefined : '#c00000' }}>
-                <DeleteColIcon />
+            ))}
+            {LINE_SPACINGS.slice(3).map(({ label, value }) => (
+              <RBtn key={value} onClick={() => editor.chain().focus().setLineHeight(value).run()} active={activeLineH === value} title={`Radavstånd: ${label}`}>
+                <span className="text-[var(--text-2xs)] font-medium">{value}×</span>
               </RBtn>
-
-              <InlineSep />
-
-              {/* Delete table */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                <div style={{ fontSize: 9, color: isInTable ? '#c00000' : '#a19f9d', fontFamily: 'Calibri, sans-serif', marginBottom: 2 }}>Radera</div>
-                <RBtn disabled={!isInTable} onClick={() => editor.chain().focus().deleteTable().run()} title="Radera hela tabellen" style={{ color: !isInTable ? undefined : '#c00000' }}>
-                  <DeleteTableIcon />
-                </RBtn>
-              </div>
-
-            </RibbonGroup>
+            ))}
+            <RBtn onClick={() => editor.chain().focus().unsetLineHeight().run()} active={!activeLineH} title="Återställ standardradavstånd">
+              <LineHeight size={14} />
+            </RBtn>
 
             <GroupSep />
 
-            {/* Radavstånd ─────────────────────────────────── */}
-            <RibbonGroup label="Radavstånd">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <div style={{ display: 'flex', gap: 2 }}>
-                  {LINE_SPACINGS.slice(0, 3).map(({ label, value }) => (
-                    <RBtn key={value} onClick={() => editor.chain().focus().setLineHeight(value).run()} active={activeLineH === value} title={`Radavstånd: ${label}`} style={{ fontSize: 11, minWidth: 34, padding: '0 4px' }}>
-                      {value}×
-                    </RBtn>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', gap: 2 }}>
-                  {LINE_SPACINGS.slice(3).map(({ label, value }) => (
-                    <RBtn key={value} onClick={() => editor.chain().focus().setLineHeight(value).run()} active={activeLineH === value} title={`Radavstånd: ${label}`} style={{ fontSize: 11, minWidth: 34, padding: '0 4px' }}>
-                      {value}×
-                    </RBtn>
-                  ))}
-                  <RBtn onClick={() => editor.chain().focus().unsetLineHeight().run()} active={!activeLineH} title="Återställ standardradavstånd">
-                    <ResetIcon />
-                  </RBtn>
-                </div>
-              </div>
-            </RibbonGroup>
+            {/* Indrag */}
+            <RBtn onClick={() => editor.chain().focus().decreaseIndent().run()} disabled={activeIndent === 0} title="Minska indrag"><TextOutdent size={14} /></RBtn>
+            <RBtn onClick={() => editor.chain().focus().increaseIndent().run()} active={activeIndent > 0} title="Öka indrag"><TextIndent size={14} /></RBtn>
 
             <GroupSep />
 
-            {/* Indrag ─────────────────────────────────────── */}
-            <RibbonGroup label="Indrag">
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                <div style={{ display: 'flex', gap: 2 }}>
-                  <RBtn onClick={() => editor.chain().focus().decreaseIndent().run()} disabled={activeIndent === 0} title="Minska indrag"><IndentDecIcon /></RBtn>
-                  <RBtn onClick={() => editor.chain().focus().increaseIndent().run()} active={activeIndent > 0} title="Öka indrag"><IndentIncIcon /></RBtn>
-                </div>
-                <span style={{ fontSize: 10, color: activeIndent > 0 ? '#0078d4' : '#a19f9d', fontFamily: 'Calibri, sans-serif' }}>
-                  {activeIndent > 0 ? `Nivå ${activeIndent}` : 'Ingen'}
-                </span>
-              </div>
-            </RibbonGroup>
-
-            <GroupSep />
-
-            {/* Sidhuvud & Sidfot ──────────────────────────── */}
-            <RibbonGroup label="Sidhuvud & Sidfot">
-              <BigBtn
-                icon={<HeaderIcon />}
-                label="Sidhuvud"
-                active={hf?.activeHeader.enabled}
-                onClick={() => hf?.patchActiveHeader({ enabled: !hf.activeHeader.enabled })}
-                title={hf?.activeHeader.enabled ? 'Stäng av sidhuvud för denna sida' : 'Aktivera sidhuvud för denna sida'}
-              />
-              <BigBtn
-                icon={<FooterIcon />}
-                label="Sidfot"
-                active={hf?.activeFooter.enabled}
-                onClick={() => hf?.patchActiveFooter({ enabled: !hf.activeFooter.enabled })}
-                title={hf?.activeFooter.enabled ? 'Stäng av sidfot för denna sida' : 'Aktivera sidfot för denna sida'}
-              />
-              <InlineSep />
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
-                <RBtn
-                  active={
-                    (hf?.activeHeader.enabled && !hf.activeHeader.useDefault) ||
-                    (hf?.activeFooter.enabled && !hf.activeFooter.useDefault)
-                  }
-                  disabled={!hf?.activeHeader.enabled && !hf?.activeFooter.enabled}
-                  onClick={() => {
-                    if (!hf) return;
-                    const newVal = !hf.activeHeader.useDefault;
-                    hf.patchActiveHeader({ useDefault: newVal });
-                    hf.patchActiveFooter({ useDefault: newVal });
-                  }}
-                  title="Unik sidhuvud/sidfot för denna sida (ej standard)"
-                  style={{ whiteSpace: 'nowrap', padding: '0 6px', fontSize: 11 }}
-                >
-                  <FirstPageIcon />
-                  <span style={{ marginLeft: 4 }}>Unik sida</span>
-                </RBtn>
-              </div>
-            </RibbonGroup>
+            {/* Sidhuvud & Sidfot */}
+            <RBtn
+              active={hf?.activeHeader.enabled}
+              onClick={() => hf?.patchActiveHeader({ enabled: !hf.activeHeader.enabled })}
+              title={hf?.activeHeader.enabled ? 'Stäng av sidhuvud för denna sida' : 'Aktivera sidhuvud för denna sida'}
+            >
+              <Layout size={14} />
+              <span className="ml-1 text-[var(--text-2xs)]">Sidhuvud</span>
+            </RBtn>
+            <RBtn
+              active={hf?.activeFooter.enabled}
+              onClick={() => hf?.patchActiveFooter({ enabled: !hf.activeFooter.enabled })}
+              title={hf?.activeFooter.enabled ? 'Stäng av sidfot för denna sida' : 'Aktivera sidfot för denna sida'}
+            >
+              <Layout size={14} style={{ transform: 'rotate(180deg)' }} />
+              <span className="ml-1 text-[var(--text-2xs)]">Sidfot</span>
+            </RBtn>
+            <InlineSep />
+            <RBtn
+              active={
+                (hf?.activeHeader.enabled && !hf.activeHeader.useDefault) ||
+                (hf?.activeFooter.enabled && !hf.activeFooter.useDefault)
+              }
+              disabled={!hf?.activeHeader.enabled && !hf?.activeFooter.enabled}
+              onClick={() => {
+                if (!hf) return;
+                const newVal = !hf.activeHeader.useDefault;
+                hf.patchActiveHeader({ useDefault: newVal });
+                hf.patchActiveFooter({ useDefault: newVal });
+              }}
+              title="Unik sidhuvud/sidfot för denna sida (ej standard)"
+            >
+              <FrameCorners size={14} />
+              <span className="ml-1 text-[var(--text-2xs)]">Unik sida</span>
+            </RBtn>
           </>
         )}
       </div>
@@ -653,29 +629,24 @@ function WordColorPalette({ active, onSelect, onClear, clearLabel }: {
   };
 
   return (
-    <div style={{
-      position: 'absolute', top: '100%', left: 0, marginTop: 2,
-      background: '#fff', border: '1px solid #d2d0ce',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.18)', zIndex: 400,
-      padding: '10px 12px', borderRadius: 3, minWidth: 230,
-    }}>
+    <div className="absolute top-full left-0 mt-1 bg-[var(--surface-0)] border border-[var(--border)] shadow-elevated rounded-lg p-3 z-[400] min-w-[230px]">
       {/* Theme colours */}
-      <p style={{ fontSize: 10, color: '#605e5c', margin: '0 0 5px 0', fontFamily: 'Calibri, sans-serif', fontWeight: 600 }}>Temafärger</p>
+      <p className="text-[10px] text-[var(--text-muted)] font-semibold mb-1.5">Temafärger</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 18px)', gap: 2, marginBottom: 10 }}>
         {THEME_GRID.map((c, i) => swatch(c, i))}
       </div>
 
       {/* Standard colours */}
-      <p style={{ fontSize: 10, color: '#605e5c', margin: '0 0 5px 0', fontFamily: 'Calibri, sans-serif', fontWeight: 600 }}>Standardfärger</p>
+      <p className="text-[10px] text-[var(--text-muted)] font-semibold mb-1.5">Standardfärger</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 18px)', gap: 2, marginBottom: 10 }}>
         {STANDARD_COLORS.map((c) => swatch(c, c))}
       </div>
 
-      <div style={{ height: 1, background: '#e8e6e3', margin: '4px 0 8px' }} />
+      <div className="h-px bg-[var(--border)] my-2" />
 
       {/* Hex input */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
-        <span style={{ fontSize: 12, color: '#605e5c', fontFamily: 'monospace' }}>#</span>
+      <div className="flex items-center gap-1.5 mb-2">
+        <span className="text-[11px] text-[var(--text-muted)] font-mono">#</span>
         <input
           type="text"
           maxLength={6}
@@ -684,26 +655,18 @@ function WordColorPalette({ active, onSelect, onClear, clearLabel }: {
           onMouseDown={(e) => e.stopPropagation()}
           onChange={(e) => setHexVal(e.target.value.replace(/[^0-9A-Fa-f]/g, '').toUpperCase())}
           onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') applyHex(); }}
-          style={{
-            flex: 1, height: 24, padding: '0 6px', fontSize: 12,
-            border: '1px solid #d2d0ce', borderRadius: 2,
-            fontFamily: 'monospace', background: '#fff', color: '#1e1e1e',
-            outline: 'none', letterSpacing: '0.05em',
-          }}
-          onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#0078d4'; }}
-          onBlur={(e)  => { (e.currentTarget as HTMLElement).style.borderColor = '#d2d0ce'; }}
+          className="flex-1 h-6 px-2 text-[11px] font-mono bg-[var(--surface-0)] border border-[var(--border)] rounded text-[var(--text-primary)] outline-none focus:border-[var(--accent)] tracking-wider"
         />
         <button
           type="button"
           onMouseDown={(e) => { e.preventDefault(); applyHex(); }}
           title="Använd hex-färg"
-          style={{
-            height: 24, padding: '0 10px', fontSize: 11,
-            background: hexVal.length === 6 ? '#0078d4' : '#e8e6e3',
-            color: hexVal.length === 6 ? '#fff' : '#a19f9d',
-            border: 'none', borderRadius: 2, cursor: hexVal.length === 6 ? 'pointer' : 'default',
-            fontFamily: 'Calibri, sans-serif', transition: 'background 0.1s',
-          }}
+          className={cn(
+            'h-6 px-2 text-[11px] rounded transition-colors border-none cursor-pointer',
+            hexVal.length === 6
+              ? 'bg-[var(--accent)] text-white'
+              : 'bg-[var(--surface-3)] text-[var(--text-muted)] cursor-default'
+          )}
         >
           OK
         </button>
@@ -711,8 +674,8 @@ function WordColorPalette({ active, onSelect, onClear, clearLabel }: {
 
       {/* Active hex display */}
       {active && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 10, color: '#605e5c', fontFamily: 'monospace' }}>
-          <div style={{ width: 14, height: 14, background: active, border: '1px solid #d2d0ce', borderRadius: 1 }} />
+        <div className="flex items-center gap-1.5 mb-2 text-[10px] text-[var(--text-muted)] font-mono">
+          <div style={{ width: 14, height: 14, background: active, borderRadius: 2, border: '1px solid rgba(0,0,0,0.15)' }} />
           {active.toUpperCase()}
         </div>
       )}
@@ -721,12 +684,7 @@ function WordColorPalette({ active, onSelect, onClear, clearLabel }: {
       <button
         type="button"
         onMouseDown={(e) => { e.preventDefault(); onClear(); }}
-        style={{
-          display: 'block', width: '100%', textAlign: 'center', padding: '5px 0',
-          fontSize: 11, color: '#0078d4', background: 'none', border: 'none',
-          cursor: 'pointer', fontFamily: 'Calibri, sans-serif',
-          borderTop: '1px solid #e8e6e3',
-        }}
+        className="block w-full text-center py-1.5 text-[11px] text-[var(--accent)] bg-none border-none cursor-pointer border-t border-[var(--border)] hover:bg-[var(--accent-subtle)] rounded transition-colors"
       >
         {clearLabel}
       </button>
@@ -741,7 +699,7 @@ function FontSizeControl({ value, open, onToggle, onSelect, onApply, onFocusEdit
   onSelect: (s: number) => void; onApply: (v: string) => void; onFocusEditor: () => void;
 }) {
   return (
-    <div style={{ position: 'relative', display: 'flex' }}>
+    <div className="relative flex">
       <input
         key={value}
         type="text"
@@ -755,17 +713,22 @@ function FontSizeControl({ value, open, onToggle, onSelect, onApply, onFocusEdit
           else if (e.key === 'Escape') onFocusEditor();
         }}
         onBlur={(e) => { const v = e.currentTarget.value; if (v && Number(v) >= 1) onApply(v); }}
-        onFocus={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#0078d4'; }}
-        style={{ width: 38, height: 26, padding: '0 4px', fontSize: 12, borderTop: open ? '1px solid #0078d4' : '1px solid #d2d0ce', borderBottom: open ? '1px solid #0078d4' : '1px solid #d2d0ce', borderLeft: open ? '1px solid #0078d4' : '1px solid #d2d0ce', borderRight: 'none', borderRadius: '2px 0 0 2px', fontFamily: 'Calibri, Arial, sans-serif', background: '#fff', color: '#1e1e1e', outline: 'none', textAlign: 'center' }}
+        className="w-9 h-7 px-1 text-xs text-center bg-[var(--surface-0)] border border-r-0 border-[var(--border)] rounded-l text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+        style={{ borderRight: 'none' }}
       />
       <button type="button" onMouseDown={(e) => { e.preventDefault(); onToggle(); }} title="Vanliga storlekar"
-        style={{ width: 18, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', background: open ? '#ddeeff' : '#f3f2f1', border: open ? '1px solid #0078d4' : '1px solid #d2d0ce', borderRadius: '0 2px 2px 0', cursor: 'pointer', padding: 0, flexShrink: 0 }}>
-        <ChevronIcon />
+        className={cn(
+          'w-4 h-7 flex items-center justify-center border rounded-r cursor-pointer p-0 shrink-0',
+          open
+            ? 'bg-[var(--accent-subtle)] border-[var(--accent)]'
+            : 'bg-[var(--surface-3)] border-[var(--border)]'
+        )}>
+        <CaretDown size={8} />
       </button>
       {open && (
         <DropdownPanel minWidth={70}>
           {FONT_SIZES.map((s) => (
-            <DropdownItem key={s} active={value === String(s)} onSelect={() => onSelect(s)} style={{ fontSize: 13, fontFamily: 'Calibri, Arial, sans-serif', textAlign: 'center' }}>
+            <DropdownItem key={s} active={value === String(s)} onSelect={() => onSelect(s)} style={{ fontSize: 13, textAlign: 'center' }}>
               {s}
             </DropdownItem>
           ))}
@@ -781,8 +744,8 @@ function TablePicker({ onInsert }: { onInsert: (rows: number, cols: number) => v
   const [hovered, setHovered] = useState({ r: 0, c: 0 });
   const MAX = 8;
   return (
-    <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 2, background: '#fff', border: '1px solid #d2d0ce', boxShadow: '0 4px 16px rgba(0,0,0,0.15)', zIndex: 300, padding: '10px', borderRadius: 2 }}>
-      <p style={{ textAlign: 'center', marginBottom: 8, fontSize: 12, fontFamily: 'Calibri, Arial, sans-serif', color: '#323130' }}>
+    <div className="absolute top-full left-0 mt-1 bg-[var(--surface-0)] border border-[var(--border)] shadow-elevated rounded-lg p-3 z-[300]">
+      <p className="text-center mb-2 text-xs text-[var(--text-primary)]">
         {hovered.r > 0 ? `${hovered.c} × ${hovered.r}` : 'Markera tabellstorlek'}
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${MAX}, 18px)`, gap: 2 }} onMouseLeave={() => setHovered({ r: 0, c: 0 })}>
@@ -792,12 +755,12 @@ function TablePicker({ onInsert }: { onInsert: (rows: number, cols: number) => v
           const on  = row <= hovered.r && col <= hovered.c;
           return (
             <div key={i} onMouseEnter={() => setHovered({ r: row, c: col })} onMouseDown={(e) => { e.preventDefault(); onInsert(row, col); }} title={`${col}×${row}`}
-              style={{ width: 18, height: 18, cursor: 'pointer', background: on ? '#ddeeff' : '#fff', border: `1px solid ${on ? '#c0d8f0' : '#d2d0ce'}`, borderRadius: 1 }}
+              style={{ width: 18, height: 18, cursor: 'pointer', background: on ? 'var(--accent-subtle)' : 'var(--surface-0)', border: `1px solid ${on ? 'var(--accent-border)' : 'var(--border)'}`, borderRadius: 2 }}
             />
           );
         })}
       </div>
-      <p style={{ textAlign: 'center', marginTop: 6, fontSize: 10, color: '#a19f9d', fontFamily: 'Calibri, Arial, sans-serif' }}>Klicka för att infoga</p>
+      <p className="text-center mt-1.5 text-[10px] text-[var(--text-muted)]">Klicka för att infoga</p>
     </div>
   );
 }
@@ -805,37 +768,24 @@ function TablePicker({ onInsert }: { onInsert: (rows: number, cols: number) => v
 // ── Building blocks ───────────────────────────────────────────────────────────
 
 function ColorBar({ color, bordered }: { color: string; bordered?: boolean }) {
-  return <div style={{ width: 14, height: 3, background: color, borderRadius: 1, border: bordered ? '1px solid #d2d0ce' : 'none' }} />;
+  return <div style={{ width: 14, height: 3, background: color, borderRadius: 1, border: bordered ? '1px solid rgba(0,0,0,0.15)' : 'none' }} />;
 }
 
 function swatchBtnStyle(active: boolean, disabled = false): React.CSSProperties {
   return {
     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-    width: 28, height: 26, padding: '2px 4px', gap: 1,
-    background: active ? '#ddeeff' : 'transparent',
-    border: active ? '1px solid #c0d8f0' : '1px solid transparent',
-    borderRadius: 2, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.4 : 1,
+    width: 28, height: 28, padding: '2px 4px', gap: 1,
+    background: active ? 'var(--accent-subtle)' : 'transparent',
+    border: active ? '1px solid var(--accent-border)' : '1px solid transparent',
+    borderRadius: 4, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.4 : 1,
   };
 }
 
-function RibbonGroup({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2, flex: 1, paddingBottom: 2 }}>
-        {children}
-      </div>
-      <p style={{ fontSize: 9, textAlign: 'center', color: '#a19f9d', fontFamily: 'Calibri, Arial, sans-serif', borderTop: '1px solid #e8e6e3', paddingTop: 2, margin: 0 }}>
-        {label}
-      </p>
-    </div>
-  );
-}
-
 function GroupSep() {
-  return <div style={{ width: 1, alignSelf: 'stretch', background: '#d2d0ce', margin: '0 2px', flexShrink: 0 }} />;
+  return <div className="w-px h-5 bg-[var(--border)] mx-1 self-center shrink-0" />;
 }
 function InlineSep() {
-  return <div style={{ width: 1, height: 20, background: '#d2d0ce', margin: '0 1px', alignSelf: 'center', flexShrink: 0 }} />;
+  return <div className="w-px h-4 bg-[var(--border)] mx-0.5 self-center shrink-0" />;
 }
 
 function RBtn({ onClick, active, disabled, title, children, style }: {
@@ -848,39 +798,16 @@ function RBtn({ onClick, active, disabled, title, children, style }: {
       onMouseDown={(e) => { e.preventDefault(); onClick(); }}
       disabled={disabled}
       title={title}
-      style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        minWidth: 28, height: 26,
-        background: active ? '#ddeeff' : 'transparent',
-        border: active ? '1px solid #c0d8f0' : '1px solid transparent',
-        color: active ? '#004e8c' : '#1e1e1e',
-        borderRadius: 2, cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.4 : 1, flexShrink: 0, padding: '0 4px',
-        transition: 'background 0.08s, border-color 0.08s',
-        ...style,
-      }}
-      onMouseEnter={(e) => { if (!active && !disabled) (e.currentTarget as HTMLElement).style.background = '#e8e6e3'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = active ? '#ddeeff' : 'transparent'; }}
+      className={cn(
+        'flex items-center justify-center h-7 px-2 rounded text-[var(--text-2xs)] font-medium border transition-colors shrink-0',
+        active
+          ? 'bg-[var(--accent-subtle)] text-[var(--accent)] border-[var(--accent-border)]'
+          : 'text-[var(--text-primary)] hover:bg-[var(--surface-active)] border-transparent',
+        disabled && 'opacity-40 cursor-not-allowed'
+      )}
+      style={style}
     >
       {children}
-    </button>
-  );
-}
-
-function BigBtn({ icon, label, onClick, active, title }: {
-  icon: React.ReactNode; label: string; onClick: () => void; active?: boolean; title?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
-      title={title ?? label}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, padding: '4px 10px', minWidth: 50, height: 50, background: active ? '#ddeeff' : 'transparent', border: active ? '1px solid #c0d8f0' : '1px solid transparent', color: active ? '#004e8c' : '#1e1e1e', borderRadius: 2, cursor: 'pointer', transition: 'background 0.08s' }}
-      onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = '#e8e6e3'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = active ? '#ddeeff' : 'transparent'; }}
-    >
-      {icon}
-      <span style={{ fontSize: 10, fontFamily: 'Calibri, Arial, sans-serif', color: 'inherit', marginTop: 1 }}>{label}</span>
     </button>
   );
 }
@@ -890,14 +817,17 @@ function Dropdown({ open, onToggle, trigger, triggerTitle, children, minWidth }:
   triggerTitle?: string; children: React.ReactNode; minWidth?: number;
 }) {
   return (
-    <div style={{ position: 'relative' }}>
+    <div className="relative">
       <button type="button" onMouseDown={(e) => { e.preventDefault(); onToggle(); }} title={triggerTitle}
-        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 6px', height: 26, background: open ? '#ddeeff' : '#ffffff', border: open ? '1px solid #c0d8f0' : '1px solid #d2d0ce', borderRadius: 2, cursor: 'pointer', transition: 'background 0.08s' }}
-        onMouseEnter={(e) => { if (!open) (e.currentTarget as HTMLElement).style.background = '#f3f2f1'; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = open ? '#ddeeff' : '#ffffff'; }}
+        className={cn(
+          'flex items-center gap-1 px-2 h-7 border rounded text-[var(--text-2xs)] cursor-pointer transition-colors',
+          open
+            ? 'bg-[var(--accent-subtle)] border-[var(--accent-border)] text-[var(--accent)]'
+            : 'bg-[var(--surface-0)] border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--surface-active)]'
+        )}
       >
         {trigger}
-        <ChevronIcon />
+        <CaretDown size={9} />
       </button>
       {open && <DropdownPanel minWidth={minWidth}>{children}</DropdownPanel>}
     </div>
@@ -906,7 +836,7 @@ function Dropdown({ open, onToggle, trigger, triggerTitle, children, minWidth }:
 
 function DropdownPanel({ children, minWidth }: { children: React.ReactNode; minWidth?: number }) {
   return (
-    <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 2, background: '#fff', border: '1px solid #d2d0ce', boxShadow: '0 4px 16px rgba(0,0,0,0.15)', zIndex: 300, minWidth: minWidth ?? 160, borderRadius: 2, maxHeight: 280, overflowY: 'auto' }}>
+    <div className="absolute top-full left-0 mt-1 bg-[var(--surface-0)] border border-[var(--border)] shadow-elevated rounded-lg z-[300] max-h-72 overflow-y-auto" style={{ minWidth: minWidth ?? 160 }}>
       {children}
     </div>
   );
@@ -917,54 +847,19 @@ function DropdownItem({ children, active, onSelect, style }: {
 }) {
   return (
     <button type="button" onMouseDown={(e) => { e.preventDefault(); onSelect(); }}
-      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 14px', background: active ? '#ddeeff' : 'transparent', border: 'none', cursor: 'pointer', ...style }}
-      onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = '#f3f2f1'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = active ? '#ddeeff' : 'transparent'; }}
+      className={cn(
+        'block w-full text-left px-3 py-1.5 text-xs border-none cursor-pointer transition-colors',
+        active ? 'bg-[var(--accent-subtle)] text-[var(--accent)]' : 'text-[var(--text-primary)] hover:bg-[var(--surface-active)]'
+      )}
+      style={style}
     >
       {children}
     </button>
   );
 }
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
+// ── Icons (legacy SVGs removed — using @phosphor-icons/react) ─────────────────
 
-const sv  = { fill: 'none', stroke: 'currentColor', strokeWidth: 2,   strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-const sv3 = { ...sv, strokeWidth: 2.5 };
+const _unusedSv  = {}; // kept to avoid refactoring references
 
-function AlignLeftIcon()    { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><line x1="21" y1="6" x2="3" y2="6"/><line x1="15" y1="12" x2="3" y2="12"/><line x1="17" y1="18" x2="3" y2="18"/></svg>; }
-function AlignCenterIcon()  { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="12" x2="7" y2="12"/><line x1="19" y1="18" x2="5" y2="18"/></svg>; }
-function AlignRightIcon()   { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="9" y2="12"/><line x1="21" y1="18" x2="7" y2="18"/></svg>; }
-function AlignJustifyIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="3" y2="12"/><line x1="21" y1="18" x2="3" y2="18"/></svg>; }
-function BulletListIcon()   { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1" fill="currentColor" stroke="none"/></svg>; }
-function OrderedListIcon()  { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10H6"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>; }
-function TableIcon({ big }: { big?: boolean }) { const s = big ? 22 : 13; return <svg width={s} height={s} viewBox="0 0 24 24" {...sv}><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg>; }
-function HrIcon({ big }: { big?: boolean })    { const s = big ? 22 : 13; return <svg width={s} height={s} viewBox="0 0 24 24" {...sv}><line x1="3" y1="12" x2="21" y2="12"/><polyline points="7 8 3 12 7 16"/><polyline points="17 8 21 12 17 16"/></svg>; }
-function ImageIcon({ big }: { big?: boolean }) { const s = big ? 22 : 13; return <svg width={s} height={s} viewBox="0 0 24 24" {...sv}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>; }
-function LinkIcon({ big }: { big?: boolean })  { const s = big ? 22 : 13; return <svg width={s} height={s} viewBox="0 0 24 24" {...sv}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>; }
-function UndoIcon()         { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>; }
-function RedoIcon()         { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-3.51"/></svg>; }
-function ChevronIcon()      { return <svg width="9" height="9" viewBox="0 0 24 24" {...sv3}><polyline points="6 9 12 15 18 9"/></svg>; }
-function GrowIcon()         { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><polyline points="5 3 19 3"/><path d="M12 3v18"/><polyline points="5 21 12 14 19 21"/></svg>; }
-function ShrinkIcon()       { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><polyline points="5 21 19 21"/><path d="M12 21V3"/><polyline points="5 3 12 10 19 3"/></svg>; }
-function ClearIcon()        { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/><line x1="19" y1="5" x2="21" y2="7" stroke="#c00000"/></svg>; }
-function HighlightIcon()    { return <svg width="13" height="12" viewBox="0 0 24 23" {...sv}><path d="M9 11l6 6"/><path d="M19 5l-1 1-8.5 8.5-3 3 2.5 2.5 3-3 8.5-8.5 1-1z"/><path d="M2 22h7"/></svg>; }
-function IndentDecIcon()    { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="11" y2="12"/><line x1="21" y1="18" x2="11" y2="18"/><polyline points="7 9 3 12 7 15"/></svg>; }
-function IndentIncIcon()    { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="11" y2="12"/><line x1="21" y1="18" x2="11" y2="18"/><polyline points="3 9 7 12 3 15"/></svg>; }
-function LineSpacingIcon()  { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><polyline points="4 3 2 6 4 9"/><polyline points="4 15 2 18 4 21"/></svg>; }
-function ResetIcon()        { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>; }
-// Header/footer icons
-function HeaderIcon()       { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><rect x="3" y="3" width="18" height="6" rx="2" fill="currentColor" fillOpacity="0.15" stroke="none"/></svg>; }
-function FooterIcon()       { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="15" x2="21" y2="15"/><rect x="3" y="15" width="18" height="6" rx="2" fill="currentColor" fillOpacity="0.15" stroke="none"/></svg>; }
-function FirstPageIcon()    { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><path d="M9 6h1"/></svg>; }
-// Table operation icons
-function FillIcon()         { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><path d="M16.5 10.5c0 0-5 5.5-5 8a5 5 0 0 0 10 0c0-2.5-5-8-5-8z"/><path d="M4 4l7.07 7.07"/><path d="M2 6l4-4 3 3-2 2z"/></svg>; }
-function MergeIcon()        { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><rect x="2" y="4" width="9" height="16" rx="1"/><rect x="13" y="4" width="9" height="16" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><polyline points="12 9 15 12 12 15"/></svg>; }
-function SplitIcon()        { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><rect x="2" y="4" width="20" height="16" rx="1"/><line x1="12" y1="4" x2="12" y2="20"/><polyline points="9 9 6 12 9 15"/><polyline points="15 9 18 12 15 15"/></svg>; }
-function HeaderRowIcon()    { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><rect x="2" y="4" width="20" height="16" rx="1"/><line x1="2" y1="10" x2="22" y2="10"/><path d="M2 10V5a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1v5" fill="currentColor" fillOpacity="0.2" stroke="none"/></svg>; }
-function AddRowAboveIcon()  { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><rect x="2" y="11" width="20" height="11" rx="1"/><line x1="12" y1="11" x2="12" y2="22"/><line x1="12" y1="2" x2="12" y2="8"/><line x1="9" y1="5" x2="15" y2="5"/></svg>; }
-function AddRowBelowIcon()  { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><rect x="2" y="2" width="20" height="11" rx="1"/><line x1="12" y1="2" x2="12" y2="13"/><line x1="12" y1="16" x2="12" y2="22"/><line x1="9" y1="19" x2="15" y2="19"/></svg>; }
-function DeleteRowIcon()    { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><rect x="2" y="2" width="20" height="11" rx="1"/><rect x="2" y="13" width="20" height="9" rx="1"/><line x1="9" y1="17" x2="15" y2="17"/></svg>; }
-function AddColLeftIcon()   { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><rect x="11" y="2" width="11" height="20" rx="1"/><line x1="11" y1="12" x2="22" y2="12"/><line x1="2" y1="12" x2="8" y2="12"/><line x1="5" y1="9" x2="5" y2="15"/></svg>; }
-function AddColRightIcon()  { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><rect x="2" y="2" width="11" height="20" rx="1"/><line x1="2" y1="12" x2="13" y2="12"/><line x1="16" y1="12" x2="22" y2="12"/><line x1="19" y1="9" x2="19" y2="15"/></svg>; }
-function DeleteColIcon()    { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><rect x="2" y="2" width="9" height="20" rx="1"/><rect x="13" y="2" width="9" height="20" rx="1"/><line x1="16" y1="11" x2="19" y2="14"/><line x1="19" y1="11" x2="16" y2="14"/></svg>; }
-function DeleteTableIcon()  { return <svg width="13" height="13" viewBox="0 0 24 24" {...sv}><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="2" y1="8" x2="22" y2="8"/><line x1="2" y1="14" x2="22" y2="14"/><line x1="8" y1="2" x2="8" y2="22"/><line x1="14" y1="2" x2="14" y2="22"/><line x1="9" y1="9" x2="15" y2="15" stroke="#c00000" strokeWidth="2.5"/><line x1="15" y1="9" x2="9" y2="15" stroke="#c00000" strokeWidth="2.5"/></svg>; }
+
