@@ -335,10 +335,12 @@ export default function OffersPage() {
   const [form,             setForm]             = useState(EMPTY_FORM);
   const [saving,     setSaving]     = useState(false);
   const [acting,     setActing]     = useState<string | null>(null);
-  const [templates,   setTemplates]   = useState<OfferTemplate[]>([]);
-  const [previewDoc,  setPreviewDoc]  = useState<string | null>(null); // HTML to preview
-  const [copied,      setCopied]      = useState<string | null>(null); // offerId copied
-  const [confirmSend, setConfirmSend] = useState<Offer | null>(null);  // offer pending send confirmation
+  const [templates,         setTemplates]         = useState<OfferTemplate[]>([]);
+  const [previewDoc,        setPreviewDoc]        = useState<string | null>(null); // generated-doc HTML
+  const [tplPreview,        setTplPreview]        = useState<{ loading: boolean; html: string | null } | null>(null);
+  const [confirmDeleteOffer, setConfirmDeleteOffer] = useState<string | null>(null);
+  const [copied,            setCopied]            = useState<string | null>(null); // offerId copied
+  const [confirmSend,       setConfirmSend]       = useState<Offer | null>(null);  // offer pending send confirmation
   const [selected,       setSelected]       = useState<Set<string>>(new Set()); // bulk-selected offer ids
   const [bulkSending,    setBulkSending]    = useState(false);
   const [bulkResult,     setBulkResult]     = useState<{ sent: number; failed: number } | null>(null);
@@ -451,6 +453,7 @@ export default function OffersPage() {
     if (!form.title.trim())         errs.title         = 'Obligatoriskt fält';
     if (!form.recipientName.trim()) errs.recipientName = 'Obligatoriskt fält';
     if (!form.recipientEmail.trim()) errs.recipientEmail = 'Obligatoriskt fält';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.recipientEmail.trim())) errs.recipientEmail = 'Ogiltig e-postadress';
     const validItems = form.lineItems.filter((i) => i.description.trim() && i.quantity > 0);
     if (validItems.length === 0)    errs.lineItems     = 'Minst en rad måste ha beskrivning och kvantitet.';
     if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
@@ -524,7 +527,7 @@ export default function OffersPage() {
 
   // ── Delete ────────────────────────────────────────────────────────────────────
   const deleteOffer = useCallback(async (id: string) => {
-    if (!confirm('Ta bort detta offert?')) return;
+    setConfirmDeleteOffer(null);
     try {
       await fetch(`/api/offers/${id}`, { method: 'DELETE' });
       await load(true);
@@ -532,6 +535,24 @@ export default function OffersPage() {
       setError((e as Error).message);
     }
   }, [load]);
+
+  // ── Template preview (from offer form) ────────────────────────────────────────
+  const openTemplatePreview = useCallback(async () => {
+    const tpl = templates.find((t) => t.id === form.templateId);
+    if (!tpl) return;
+    setTplPreview({ loading: true, html: null });
+    try {
+      const res = await fetch('/api/templates/preview', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: tpl.content }),
+      });
+      const j = await res.json() as { html?: string; detail?: string };
+      if (!res.ok) throw new Error(j.detail ?? `Fel ${res.status}`);
+      setTplPreview({ loading: false, html: j.html ?? '' });
+    } catch {
+      setTplPreview(null);
+    }
+  }, [templates, form.templateId]);
 
   // ── Copy public link ───────────────────────────────────────────────────────────
   const copyLink = useCallback(async (offer: Offer) => {
@@ -913,7 +934,11 @@ export default function OffersPage() {
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
-                  Dokumentet genereras med vald mall när offerten skickas.
+                  Dokumentet genereras med vald mall när offerten skickas.{' '}
+                  <button type="button" onClick={() => void openTemplatePreview()}
+                    className="underline hover:no-underline text-emerald-600 dark:text-emerald-400">
+                    Förhandsgranska →
+                  </button>
                 </p>
               )}
             </div>
@@ -1109,7 +1134,7 @@ export default function OffersPage() {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">E-postinnehåll (HTML)</label>
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">E-postinnehåll</label>
                 <textarea
                   value={form.emailBody}
                   onChange={(e) => setForm((f) => ({ ...f, emailBody: e.target.value }))}
@@ -1118,7 +1143,7 @@ export default function OffersPage() {
                   className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors resize-y"
                 />
                 <p className="mt-1 text-[10px] text-[var(--text-muted)]">
-                  Knappen &ldquo;Visa &amp; signera offert&rdquo; läggs till automatiskt under innehållet.
+                  Vanlig text eller HTML fungerar. Knappen &ldquo;Visa &amp; signera offert&rdquo; läggs till automatiskt.
                 </p>
               </div>
             </div>
@@ -1572,7 +1597,7 @@ export default function OffersPage() {
               </thead>
               <tbody>
                 {offers.map((offer, i) => (
-                  <tr key={offer.id} className={cn('group hover:bg-[var(--surface-active)] transition-colors', i > 0 && 'border-t border-[var(--border)]')}>
+                  <tr key={offer.id} className={cn('group hover:bg-[var(--surface-active)] transition-colors', i > 0 && 'border-t border-[var(--border)]', (offer.status === 'sent' || offer.status === 'viewed') && offer.validUntil && new Date(offer.validUntil) < new Date() && 'bg-amber-50/40 dark:bg-amber-900/10')}>
                     {/* Checkbox */}
                     <td className="px-3 py-2 w-8">
                       {offer.status === 'draft' && (
@@ -1711,7 +1736,7 @@ export default function OffersPage() {
                           </svg>
                         </button>
                         {/* Delete */}
-                        <button type="button" onClick={() => void deleteOffer(offer.id)}
+                        <button type="button" onClick={() => setConfirmDeleteOffer(offer.id)}
                           title="Ta bort" className="text-[var(--text-muted)] hover:text-red-500 transition-colors">
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
@@ -1746,7 +1771,11 @@ export default function OffersPage() {
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500 shrink-0">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
-          Offert sparad som utkast — hittas under fliken <strong>Utkast</strong>
+          Offert sparad som utkast — hittas under fliken{' '}
+          <button type="button" onClick={() => { setTab('draft'); setDraftSaved(false); }}
+            className="font-semibold underline hover:no-underline text-[var(--accent)]">
+            Utkast
+          </button>
         </div>
       )}
 
@@ -1796,6 +1825,60 @@ export default function OffersPage() {
                 className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors"
               >
                 Avbryt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Template preview modal */}
+      {tplPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setTplPreview(null)}>
+          <div className="relative w-full max-w-4xl max-h-[90vh] bg-[var(--surface-0)] rounded-xl shadow-2xl overflow-hidden flex flex-col border border-[var(--border)]"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)] bg-[var(--surface-alt)] shrink-0">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">Förhandsvisning av mall</span>
+              <button onClick={() => setTplPreview(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto relative">
+              {tplPreview.loading ? (
+                <div className="flex items-center justify-center h-64 text-[var(--text-muted)] text-sm">Laddar förhandsvisning…</div>
+              ) : (
+                <iframe srcDoc={tplPreview.html ?? ''} title="Mallförhandsvisning" className="w-full h-full min-h-[70vh] border-0"/>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete offer confirmation modal */}
+      {confirmDeleteOffer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmDeleteOffer(null)}>
+          <div className="relative w-full max-w-sm bg-[var(--surface-0)] rounded-xl shadow-2xl border border-[var(--border)] p-6 flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600 dark:text-red-400">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1">Ta bort offert?</h3>
+                <p className="text-xs text-[var(--text-secondary)]">Offerten tas bort permanent och kan inte återställas.</p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button type="button" onClick={() => setConfirmDeleteOffer(null)}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors">
+                Avbryt
+              </button>
+              <button type="button" onClick={() => void deleteOffer(confirmDeleteOffer)}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors">
+                Ta bort
               </button>
             </div>
           </div>
