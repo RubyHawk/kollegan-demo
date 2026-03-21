@@ -330,8 +330,9 @@ export default function OffersPage() {
   const [tab,        setTab]        = useState<OfferStatus | 'all'>('all');
   const [sortAsc,    setSortAsc]    = useState(false); // desc by default (newest first)
   const [search,     setSearch]     = useState('');
-  const [showForm,   setShowForm]   = useState(false);
-  const [form,       setForm]       = useState(EMPTY_FORM);
+  const [showForm,         setShowForm]         = useState(false);
+  const [editingOfferId,   setEditingOfferId]   = useState<string | null>(null);
+  const [form,             setForm]             = useState(EMPTY_FORM);
   const [saving,     setSaving]     = useState(false);
   const [acting,     setActing]     = useState<string | null>(null);
   const [templates,   setTemplates]   = useState<OfferTemplate[]>([]);
@@ -420,7 +421,31 @@ export default function OffersPage() {
 
   const total = allOffers.length;
 
-  // ── Create offer ──────────────────────────────────────────────────────────────
+  // ── Open edit form for an existing draft offer ────────────────────────────────
+  const openEdit = useCallback((offer: Offer) => {
+    setEditingOfferId(offer.id);
+    setForm({
+      templateId:       offer.templateId ?? '',
+      contactId:        '',
+      title:            offer.title,
+      recipientName:    offer.recipientName,
+      recipientEmail:   offer.recipientEmail,
+      recipientCompany: offer.recipientCompany ?? '',
+      notes:            offer.notes ?? '',
+      emailSubject:     '',
+      emailBody:        '',
+      emailHeaderConfig: null,
+      validityDays:     30,
+      lineItems:        offer.lineItems.length > 0 ? offer.lineItems : [{ ...EMPTY_LINE }],
+    });
+    setFieldErrors({});
+    setContactSearch('');
+    setContactResults([]);
+    setError(null);
+    setShowForm(true);
+  }, []);
+
+  // ── Create / update offer ──────────────────────────────────────────────────────
   const createOffer = useCallback(async () => {
     const errs: Record<string, string> = {};
     if (!form.title.trim())         errs.title         = 'Obligatoriskt fält';
@@ -450,16 +475,22 @@ export default function OffersPage() {
       }
       if (form.contactId)     body.customerId   = form.contactId;
 
-      const res = await fetch('/api/offers', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body:   JSON.stringify(body),
-      });
+      const isEdit = Boolean(editingOfferId);
+      const res = isEdit
+        ? await fetch(`/api/offers/${editingOfferId}`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          })
+        : await fetch('/api/offers', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body:   JSON.stringify(body),
+          });
       if (!res.ok) {
         const j = await res.json().catch(() => ({})) as { detail?: string };
         throw new Error(j.detail ?? `Fel ${res.status}`);
       }
       const j = await res.json() as { data: Offer };
-      setShowForm(false); setForm(EMPTY_FORM);
+      setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null);
       await load(true);
       if (saveAndSendRef.current) {
         saveAndSendRef.current = false;
@@ -473,7 +504,7 @@ export default function OffersPage() {
     } finally {
       setSaving(false);
     }
-  }, [form, load]);
+  }, [form, load, editingOfferId]);
 
   // ── Status actions (send / accept / decline / duplicate / remind) ────────────
   const doAction = useCallback(async (id: string, action: 'send' | 'accept' | 'decline' | 'duplicate' | 'remind') => {
@@ -658,7 +689,7 @@ export default function OffersPage() {
             Produktbibliotek
           </button>
           <button
-            onClick={() => { setShowForm(true); setError(null); }}
+            onClick={() => { setShowForm(true); setEditingOfferId(null); setForm(EMPTY_FORM); setError(null); }}
             className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -774,8 +805,8 @@ export default function OffersPage() {
       {showForm && (
         <div className="mb-8 rounded-xl border border-[var(--accent-border)] bg-[var(--surface-0)] shadow-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Ny offert</h2>
-            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); setContactSearch(''); setContactResults([]); setShowEmailCustom(false); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">{editingOfferId ? 'Redigera offert' : 'Ny offert'}</h2>
+            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null); setError(null); setContactSearch(''); setContactResults([]); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
@@ -870,7 +901,6 @@ export default function OffersPage() {
                     emailSubject: tpl?.emailSubject ?? f.emailSubject,
                     emailBody:    tpl?.emailBody ?? f.emailBody,
                   }));
-                  if (tpl?.emailSubject || tpl?.emailBody) setShowEmailCustom(true);
                 }}
                 disabled={templates.length === 0}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors disabled:opacity-50"
@@ -937,6 +967,126 @@ export default function OffersPage() {
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Anteckningar</label>
                 <textarea value={form.notes} rows={2} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Eventuella villkor eller kommentarer…"
                   className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"/>
+              </div>
+            </div>
+
+            {/* Line items */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Rader</p>
+                  {fieldErrors.lineItems && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.lineItems}</p>}
+                </div>
+                <button onClick={addLine} className="text-xs text-[var(--accent)] font-medium hover:opacity-80 transition-opacity flex items-center gap-1">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Lägg till rad
+                </button>
+              </div>
+              {products.length > 0 && (
+                <p className="text-[10px] text-[var(--text-muted)] mb-2">
+                  Tips: Klicka på väskikonen i beskrivningsfältet för att välja från produktbiblioteket.
+                </p>
+              )}
+
+              <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+                <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-[var(--surface-alt)] text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                  <span className="col-span-4">Beskrivning</span>
+                  <span className="col-span-2 text-right">Antal</span>
+                  <span className="col-span-2 text-right">Á-pris (SEK)</span>
+                  <span className="col-span-1 text-right">Moms %</span>
+                  <span className="col-span-1 text-right">Rabatt %</span>
+                  <span className="col-span-1 text-right">Summa</span>
+                  <span className="col-span-1"/>
+                </div>
+                {form.lineItems.map((item, idx) => {
+                  const disc = 1 - (item.discount / 100);
+                  const lineExVat = item.quantity * item.unitPrice * disc;
+                  return (
+                    <div key={idx} className="grid grid-cols-12 gap-2 px-3 py-2 border-t border-[var(--border)] items-center">
+                      <div className="col-span-4 relative">
+                        <div className="flex gap-1">
+                          <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} placeholder="Tjänst eller produkt"
+                            className="flex-1 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                          {products.length > 0 && (
+                            <button type="button" onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }}
+                              title="Välj från produktbibliotek"
+                              className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1.5 text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                        {productPickerRow === idx && (
+                          <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
+                            <div className="p-2 border-b border-[var(--border)]">
+                              <input autoFocus value={productSearch} onChange={(e) => setProductSearch(e.target.value)}
+                                placeholder="Sök produkt…"
+                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                            </div>
+                            <div className="max-h-40 overflow-y-auto">
+                              {filteredProducts.length === 0 ? (
+                                <div className="px-3 py-2 text-xs text-[var(--text-muted)]">Inga produkter hittades</div>
+                              ) : filteredProducts.map((p) => (
+                                <button key={p.id} type="button" onClick={() => pickProduct(idx, p)}
+                                  className="w-full text-left px-3 py-2 hover:bg-[var(--surface-active)] transition-colors border-b border-[var(--border)] last:border-0 text-xs">
+                                  <p className="font-medium text-[var(--text-primary)]">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
+                                  <p className="text-[var(--text-muted)]">{fmtSEK(p.unitPrice)} · moms {Math.round(p.vatRate * 100)}%</p>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="col-span-2">
+                        <input type="number" min={0} step={0.1} value={item.quantity} onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                      </div>
+                      <div className="col-span-2">
+                        <input type="number" min={0} value={item.unitPrice} onChange={(e) => updateLine(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                      </div>
+                      <div className="col-span-1">
+                        <select value={item.vatRate} onChange={(e) => updateLine(idx, 'vatRate', parseFloat(e.target.value))}
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-1.5 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
+                          <option value={0}>0%</option><option value={0.06}>6%</option>
+                          <option value={0.12}>12%</option><option value={0.25}>25%</option>
+                        </select>
+                      </div>
+                      <div className="col-span-1">
+                        <input type="number" min={0} max={100} value={item.discount} onChange={(e) => updateLine(idx, 'discount', parseFloat(e.target.value) || 0)}
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                      </div>
+                      <div className="col-span-1 text-right text-xs font-medium text-[var(--text-primary)]">{fmtSEK(lineExVat)}</div>
+                      <div className="col-span-1 flex justify-end">
+                        {form.lineItems.length > 1 && (
+                          <button onClick={() => removeLine(idx)} className="text-[var(--text-muted)] hover:text-red-500 transition-colors">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Totals */}
+              <div className="mt-4 flex justify-end">
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-5 py-4 space-y-2 text-sm min-w-[240px]">
+                  <div className="flex justify-between gap-8 text-[var(--text-secondary)]">
+                    <span>Summa ex. moms</span><span className="font-medium tabular-nums">{fmtSEK(tots.exVat)}</span>
+                  </div>
+                  <div className="flex justify-between gap-8 text-[var(--text-muted)] text-xs">
+                    <span>Moms</span><span className="tabular-nums">{fmtSEK(tots.vat)}</span>
+                  </div>
+                  <div className="flex justify-between gap-8 text-[var(--text-primary)] font-semibold border-t border-[var(--border)] pt-2.5 mt-1">
+                    <span>Totalt inkl. moms</span><span className="tabular-nums">{fmtSEK(tots.incVat)}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1278,126 +1428,6 @@ export default function OffersPage() {
               })()}
             </div>
 
-            {/* Line items */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Rader</p>
-                  {fieldErrors.lineItems && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.lineItems}</p>}
-                </div>
-                <button onClick={addLine} className="text-xs text-[var(--accent)] font-medium hover:opacity-80 transition-opacity flex items-center gap-1">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                  Lägg till rad
-                </button>
-              </div>
-              {products.length > 0 && (
-                <p className="text-[10px] text-[var(--text-muted)] mb-2">
-                  Tips: Klicka på <span className="font-semibold">«</span> i beskrivningsfältet för att välja från produktbiblioteket.
-                </p>
-              )}
-
-              <div className="rounded-xl border border-[var(--border)] overflow-hidden">
-                <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-[var(--surface-alt)] text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                  <span className="col-span-4">Beskrivning</span>
-                  <span className="col-span-2 text-right">Antal</span>
-                  <span className="col-span-2 text-right">Á-pris (SEK)</span>
-                  <span className="col-span-1 text-right">Moms %</span>
-                  <span className="col-span-1 text-right">Rabatt %</span>
-                  <span className="col-span-1 text-right">Summa</span>
-                  <span className="col-span-1"/>
-                </div>
-                {form.lineItems.map((item, idx) => {
-                  const disc = 1 - (item.discount / 100);
-                  const lineExVat = item.quantity * item.unitPrice * disc;
-                  return (
-                    <div key={idx} className="grid grid-cols-12 gap-2 px-3 py-2 border-t border-[var(--border)] items-center">
-                      <div className="col-span-4 relative">
-                        <div className="flex gap-1">
-                          <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} placeholder="Tjänst eller produkt"
-                            className="flex-1 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                          {products.length > 0 && (
-                            <button type="button" onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }}
-                              title="Välj från produktbibliotek"
-                              className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1.5 text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
-                              </svg>
-                            </button>
-                          )}
-                        </div>
-                        {productPickerRow === idx && (
-                          <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
-                            <div className="p-2 border-b border-[var(--border)]">
-                              <input autoFocus value={productSearch} onChange={(e) => setProductSearch(e.target.value)}
-                                placeholder="Sök produkt…"
-                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                            </div>
-                            <div className="max-h-40 overflow-y-auto">
-                              {filteredProducts.length === 0 ? (
-                                <div className="px-3 py-2 text-xs text-[var(--text-muted)]">Inga produkter hittades</div>
-                              ) : filteredProducts.map((p) => (
-                                <button key={p.id} type="button" onClick={() => pickProduct(idx, p)}
-                                  className="w-full text-left px-3 py-2 hover:bg-[var(--surface-active)] transition-colors border-b border-[var(--border)] last:border-0 text-xs">
-                                  <p className="font-medium text-[var(--text-primary)]">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
-                                  <p className="text-[var(--text-muted)]">{fmtSEK(p.unitPrice)} · moms {Math.round(p.vatRate * 100)}%</p>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="col-span-2">
-                        <input type="number" min={0} step={0.1} value={item.quantity} onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                      </div>
-                      <div className="col-span-2">
-                        <input type="number" min={0} value={item.unitPrice} onChange={(e) => updateLine(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                      </div>
-                      <div className="col-span-1">
-                        <select value={item.vatRate} onChange={(e) => updateLine(idx, 'vatRate', parseFloat(e.target.value))}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-1.5 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
-                          <option value={0}>0%</option><option value={0.06}>6%</option>
-                          <option value={0.12}>12%</option><option value={0.25}>25%</option>
-                        </select>
-                      </div>
-                      <div className="col-span-1">
-                        <input type="number" min={0} max={100} value={item.discount} onChange={(e) => updateLine(idx, 'discount', parseFloat(e.target.value) || 0)}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                      </div>
-                      <div className="col-span-1 text-right text-xs font-medium text-[var(--text-primary)]">{fmtSEK(lineExVat)}</div>
-                      <div className="col-span-1 flex justify-end">
-                        {form.lineItems.length > 1 && (
-                          <button onClick={() => removeLine(idx)} className="text-[var(--text-muted)] hover:text-red-500 transition-colors">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Totals */}
-              <div className="mt-4 flex justify-end">
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-5 py-4 space-y-2 text-sm min-w-[240px]">
-                  <div className="flex justify-between gap-8 text-[var(--text-secondary)]">
-                    <span>Summa ex. moms</span><span className="font-medium tabular-nums">{fmtSEK(tots.exVat)}</span>
-                  </div>
-                  <div className="flex justify-between gap-8 text-[var(--text-muted)] text-xs">
-                    <span>Moms</span><span className="tabular-nums">{fmtSEK(tots.vat)}</span>
-                  </div>
-                  <div className="flex justify-between gap-8 text-[var(--text-primary)] font-semibold border-t border-[var(--border)] pt-2.5 mt-1">
-                    <span>Totalt inkl. moms</span><span className="tabular-nums">{fmtSEK(tots.incVat)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Actions */}
             <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-light)]">
               <button onClick={() => { saveAndSendRef.current = true; void createOffer(); }} disabled={saving}
@@ -1405,14 +1435,14 @@ export default function OffersPage() {
                 {saving && saveAndSendRef.current ? (
                   <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Sparar…</>
                 ) : (
-                  <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Spara &amp; skicka</>
+                  <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>{editingOfferId ? 'Uppdatera & skicka' : 'Spara & skicka'}</>
                 )}
               </button>
               <button onClick={() => void createOffer()} disabled={saving}
                 className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] disabled:opacity-50 transition-colors">
-                {saving && !saveAndSendRef.current ? 'Sparar…' : 'Spara som utkast'}
+                {saving && !saveAndSendRef.current ? 'Sparar…' : (editingOfferId ? 'Spara ändringar' : 'Spara som utkast')}
               </button>
-              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); setFieldErrors({}); setContactSearch(''); setContactResults([]); }}
+              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null); setError(null); setFieldErrors({}); setContactSearch(''); setContactResults([]); }}
                 className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors">
                 Avbryt
               </button>
@@ -1567,18 +1597,29 @@ export default function OffersPage() {
                       <p className="text-[10px] text-[var(--text-muted)] truncate leading-tight">{offer.recipientCompany ?? offer.recipientEmail}</p>
                     </td>
 
-                    {/* Status — dot + label */}
+                    {/* Status — dot + label + quick-send for drafts */}
                     <td className="px-3 py-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', {
-                          'bg-[var(--text-muted)]':  offer.status === 'draft',
-                          'bg-blue-500':             offer.status === 'sent',
-                          'bg-violet-500':           offer.status === 'viewed',
-                          'bg-emerald-500':          offer.status === 'accepted',
-                          'bg-red-500':              offer.status === 'declined',
-                          'bg-amber-500':            offer.status === 'expired',
-                        })} />
-                        <span className="text-xs text-[var(--text-secondary)] whitespace-nowrap">{STATUS_LABEL[offer.status]}</span>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', {
+                            'bg-[var(--text-muted)]':  offer.status === 'draft',
+                            'bg-blue-500':             offer.status === 'sent',
+                            'bg-violet-500':           offer.status === 'viewed',
+                            'bg-emerald-500':          offer.status === 'accepted',
+                            'bg-red-500':              offer.status === 'declined',
+                            'bg-amber-500':            offer.status === 'expired',
+                          })} />
+                          <span className="text-xs text-[var(--text-secondary)] whitespace-nowrap">{STATUS_LABEL[offer.status]}</span>
+                        </div>
+                        {offer.status === 'draft' && (
+                          <button type="button" onClick={() => setConfirmSend(offer)} disabled={acting === offer.id}
+                            className="text-[10px] font-medium text-blue-500 hover:text-blue-600 transition-colors text-left disabled:opacity-40 flex items-center gap-0.5">
+                            Skicka
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     </td>
 
@@ -1624,6 +1665,15 @@ export default function OffersPage() {
                               ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                               : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                             }
+                          </button>
+                        )}
+                        {/* Edit draft */}
+                        {offer.status === 'draft' && (
+                          <button type="button" onClick={() => openEdit(offer)}
+                            title="Redigera utkast" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
                           </button>
                         )}
                         {/* Send */}

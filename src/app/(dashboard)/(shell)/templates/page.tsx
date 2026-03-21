@@ -109,7 +109,7 @@ export default function TemplatesPage() {
           <p className="text-sm text-[var(--text-muted)]">Laddar mallar…</p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-[var(--border)] overflow-hidden">
+        <div className="rounded-xl border border-[var(--border)] overflow-hidden">
           <table className="min-w-full divide-y divide-[var(--border)] text-sm">
             <thead className="bg-[var(--surface-alt)]">
               <tr>
