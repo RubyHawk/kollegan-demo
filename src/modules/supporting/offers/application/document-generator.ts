@@ -390,34 +390,12 @@ export function generateFallbackDocument(offer: Offer): string {
  * The result is stored as Offer.generatedDocument (immutable after send).
  */
 export function generateDocument(templateContent: string, offer: Offer): string {
-  // Compute VAT amount (needed by replacements map below)
-  const vatAmount = offer.totalIncVat - offer.totalExVat;
-
-  // Build replacements map (used by both nodeToHtml variable nodes and legacy {{}} substitution)
-  // Format offer number as YYYY-NNN (e.g. 2026-001)
-  const offerNumberStr = offer.offerNumber
-    ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
-    : offer.id.slice(0, 8).toUpperCase();
-
+  // Build replacements map from the shared helper (already HTML-escaped),
+  // then extend with the document-only HTML entries that have no email equivalent.
   const replacements: Record<string, string> = {
-    // Document metadata
-    '{{offerTitle}}':       escapeHtml(offer.title),
-    '{{offerNumber}}':      offerNumberStr,
-    '{{quoteNumber}}':      offerNumberStr, // alias for backwards compat
-    '{{createdDate}}':      fmtDate(offer.createdAt),
-    '{{validUntil}}':       fmtDate(offer.validUntil),
-    // Recipient
-    '{{recipientName}}':    escapeHtml(offer.recipientName),
-    '{{recipientEmail}}':   escapeHtml(offer.recipientEmail),
-    '{{recipientCompany}}': escapeHtml(offer.recipientCompany ?? ''),
-    // Pricing
-    '{{totalExVat}}':       fmtSEK(offer.totalExVat),
-    '{{totalIncVat}}':      fmtSEK(offer.totalIncVat),
-    '{{vatAmount}}':        fmtSEK(vatAmount),
-    // Content
-    '{{notes}}':            escapeHtml(offer.notes ?? ''),
-    '{{lineItems}}':        buildLineItemsTable(offer.lineItems),
-    '{{signature}}':        SIGNATURE_FIELD_HTML,
+    ...buildReplacements(offer),
+    '{{lineItems}}': buildLineItemsTable(offer.lineItems),
+    '{{signature}}': SIGNATURE_FIELD_HTML,
   };
 
   // ─── Parse TipTap JSON (supports TemplateDoc v3, v2, and legacy v1) ─────────
