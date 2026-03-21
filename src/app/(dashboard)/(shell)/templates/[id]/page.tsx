@@ -3,35 +3,50 @@
 /**
  * /templates/[id]  (also handles "new" when params.id === 'new')
  *
- * Visual Word-like offer template editor.
- * Uses the shared TemplateEditor component for the WYSIWYG canvas.
+ * Visual Word-like offer template editor + visual email editor.
+ * Tabs: "Offert" (offer WYSIWYG) | "E-post" (email WYSIWYG)
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import type { TemplateEditorHandle } from '../_components/TemplateEditor';
+import type { EmailEditorHandle } from '../_components/EmailEditor';
 
-// Lazy-load the heavy TipTap editor (avoids SSR issues with ProseMirror)
+// Lazy-load the heavy TipTap editors (avoids SSR issues with ProseMirror)
 const TemplateEditor = dynamic(() => import('../_components/TemplateEditor'), { ssr: false });
+const EmailEditor    = dynamic(() => import('../_components/EmailEditor'),    { ssr: false });
 
-interface OfferTemplate { id: string; name: string; content: string; emailSubject?: string; emailBody?: string; }
+interface OfferTemplate {
+  id: string;
+  name: string;
+  content: string;
+  emailSubject?:      string;
+  emailBody?:         string;
+  emailHeaderConfig?: string;
+}
+
+type Tab = 'offer' | 'email';
 
 export default function TemplateEditorPage() {
   const router   = useRouter();
   const params   = useParams<{ id: string }>();
   const isNew    = params.id === 'new';
 
-  const [name,         setName]         = useState('');
-  const [emailSubject, setEmailSubject] = useState('');
-  const [emailBody,    setEmailBody]    = useState('');
-  const [showEmail,    setShowEmail]    = useState(false);
-  const [loading,      setLoading]      = useState(!isNew);
-  const [saving,       setSaving]       = useState(false);
-  const [error,        setError]        = useState<string | null>(null);
-  const [saved,        setSaved]        = useState(false);
+  const [activeTab,         setActiveTab]         = useState<Tab>('offer');
+  const [name,              setName]              = useState('');
+  const [loading,           setLoading]           = useState(!isNew);
+  const [saving,            setSaving]            = useState(false);
+  const [error,             setError]             = useState<string | null>(null);
+  const [saved,             setSaved]             = useState(false);
 
-  const editorRef = useRef<TemplateEditorHandle | null>(null);
+  // Stored initial values for email editor (passed as props on first render)
+  const [initEmailSubject,  setInitEmailSubject]  = useState('');
+  const [initEmailBody,     setInitEmailBody]     = useState('');
+  const [initEmailHdrCfg,   setInitEmailHdrCfg]   = useState('');
+
+  const editorRef      = useRef<TemplateEditorHandle | null>(null);
+  const emailEditorRef = useRef<EmailEditorHandle | null>(null);
   const initialContentRef = useRef<string | undefined>(undefined);
 
   // ── Load existing template ─────────────────────────────────────────────────
@@ -44,11 +59,10 @@ export default function TemplateEditorPage() {
         if (!res.ok) throw new Error(`Hittade inte mallen (${res.status})`);
         const json = await res.json() as { data: OfferTemplate };
         setName(json.data.name);
-        setEmailSubject(json.data.emailSubject ?? '');
-        setEmailBody(json.data.emailBody ?? '');
-        if (json.data.emailSubject || json.data.emailBody) setShowEmail(true);
+        setInitEmailSubject(json.data.emailSubject ?? '');
+        setInitEmailBody(json.data.emailBody ?? '');
+        setInitEmailHdrCfg(json.data.emailHeaderConfig ?? '');
         initialContentRef.current = json.data.content;
-        // If editor is already mounted, set content directly
         editorRef.current?.setContent(json.data.content);
       } catch (e) {
         setError((e as Error).message);
@@ -66,11 +80,19 @@ export default function TemplateEditorPage() {
     if (!json) { setError('Editorn är inte redo.'); return; }
     const content = JSON.stringify(json);
 
+    const emailSubject      = emailEditorRef.current?.getSubject()      ?? '';
+    const emailBody         = emailEditorRef.current?.getBodyHtml()     ?? '';
+    const emailHeaderConfig = emailEditorRef.current?.getHeaderConfig() ?? '';
+
     setSaving(true); setError(null); setSaved(false);
     try {
-      const payload: Record<string, unknown> = { name: name.trim(), content };
-      if (emailSubject.trim()) payload.emailSubject = emailSubject.trim();
-      if (emailBody.trim())    payload.emailBody    = emailBody.trim();
+      const payload: Record<string, unknown> = {
+        name: name.trim(),
+        content,
+        ...(emailSubject      ? { emailSubject }      : {}),
+        ...(emailBody         ? { emailBody }         : {}),
+        ...(emailHeaderConfig ? { emailHeaderConfig } : {}),
+      };
 
       let res: Response;
       if (isNew) {
@@ -100,7 +122,7 @@ export default function TemplateEditorPage() {
     } finally {
       setSaving(false);
     }
-  }, [isNew, name, emailSubject, emailBody, params.id, router]);
+  }, [isNew, name, params.id, router]);
 
   // Ctrl+S shortcut
   useEffect(() => {
@@ -160,59 +182,43 @@ export default function TemplateEditorPage() {
         </div>
       </div>
 
-      {/* ── Email customization ────────────────────────────────────────────── */}
-      <div className="shrink-0 border-b border-[var(--border)] bg-[var(--surface)]">
-        <button
-          type="button"
-          onClick={() => setShowEmail((v) => !v)}
-          className="w-full flex items-center gap-2 px-6 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-            className={`transition-transform ${showEmail ? 'rotate-90' : ''}`}>
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-          Anpassa e-postmeddelande
-          {(emailSubject || emailBody) && (
-            <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-normal">Anpassad</span>
-          )}
-        </button>
-        {showEmail && (
-          <div className="px-6 pb-4 space-y-3">
-            <p className="text-[11px] text-[var(--text-muted)]">
-              Anpassa e-postmeddelandet som mottagaren ser. Använd platshållare som{' '}
-              <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{recipientName}}'}</code>,{' '}
-              <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{offerTitle}}'}</code>,{' '}
-              <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{totalIncVat}}'}</code>,{' '}
-              <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{validUntil}}'}</code>{' '}
-              för att infoga data automatiskt.
-            </p>
-            <div>
-              <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Ämnesrad</label>
-              <input
-                value={emailSubject}
-                onChange={(e) => setEmailSubject(e.target.value)}
-                placeholder="t.ex. Offert från Företag AB: {{offerTitle}}"
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">E-postinnehåll (HTML)</label>
-              <textarea
-                value={emailBody}
-                onChange={(e) => setEmailBody(e.target.value)}
-                rows={5}
-                placeholder={'t.ex. <h2>Hej {{recipientName}},</h2>\n<p>Vi har nöjet att presentera en offert för <strong>{{offerTitle}}</strong>.</p>\n<p>Totalt: {{totalIncVat}}</p>'}
-                className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors resize-y"
-              />
-              <p className="mt-1 text-[10px] text-[var(--text-muted)]">
-                Knappen &ldquo;Visa &amp; signera offert&rdquo; läggs till automatiskt under innehållet.
-              </p>
-            </div>
-          </div>
-        )}
+      {/* ── Tab bar ────────────────────────────────────────────────────────── */}
+      <div className="shrink-0 flex items-center gap-0 px-6 border-b border-[var(--border)] bg-[var(--surface)]">
+        {(['offer', 'email'] as Tab[]).map((tab) => {
+          const label = tab === 'offer' ? 'Offert' : 'E-post';
+          const icon  = tab === 'offer' ? (
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          ) : (
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          );
+          const active = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                active
+                  ? 'border-[var(--accent)] text-[var(--accent)]'
+                  : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border)]'
+              }`}
+            >
+              {icon}
+              {label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* ── Editor ─────────────────────────────────────────────────────────── */}
+      {/* ── Content area ────────────────────────────────────────────────────── */}
       {loading ? (
         <div className="flex-1 flex items-center justify-center gap-3 text-[var(--text-muted)]">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
@@ -221,12 +227,25 @@ export default function TemplateEditorPage() {
           <span className="text-sm">Laddar mall…</span>
         </div>
       ) : (
-        <div className="flex-1 overflow-hidden rounded-b-2xl">
-          <TemplateEditor
-            initialContent={initialContentRef.current}
-            editorRef={editorRef}
-          />
-        </div>
+        <>
+          {/* Offer editor — keep mounted but hidden when on Email tab */}
+          <div className={`flex-1 overflow-hidden rounded-b-2xl ${activeTab === 'offer' ? '' : 'hidden'}`}>
+            <TemplateEditor
+              initialContent={initialContentRef.current}
+              editorRef={editorRef}
+            />
+          </div>
+
+          {/* Email editor — keep mounted but hidden when on Offer tab */}
+          <div className={`flex-1 overflow-hidden ${activeTab === 'email' ? '' : 'hidden'}`}>
+            <EmailEditor
+              initialSubject={initEmailSubject}
+              initialHtml={initEmailBody}
+              initialHeaderConfig={initEmailHdrCfg}
+              editorRef={emailEditorRef}
+            />
+          </div>
+        </>
       )}
     </div>
   );

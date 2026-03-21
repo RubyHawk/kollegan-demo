@@ -13,12 +13,14 @@
 
 import { useEffect, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
+import { useHeaderFooter } from './header-footer-context';
 import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
 
 type ActiveBlock = 'image' | 'table' | 'signatureBlock' | 'variable' | null;
 
 export default function BlockSettingsSidebar() {
   const editor = useTemplateEditor();
+  const hf     = useHeaderFooter();
   const [active, setActive] = useState<ActiveBlock>(null);
 
   useEffect(() => {
@@ -45,6 +47,8 @@ export default function BlockSettingsSidebar() {
       {active === 'signatureBlock' && editor && <SignatureSettings editor={editor} />}
       {active === 'variable'       && editor && <VariableInfo editor={editor} />}
       {active === null             &&           <PlaceholderReference />}
+      {/* Page settings panel — always visible at the bottom */}
+      {hf && <PageSettings hf={hf} />}
     </div>
   );
 }
@@ -450,6 +454,143 @@ function PlaceholderReference() {
         ))}
       </div>
     </PanelWrap>
+  );
+}
+
+// ── Page settings panel ────────────────────────────────────────────────────────
+
+import type { HFCtxValue } from './header-footer-context';
+
+function PageSettings({ hf }: { hf: HFCtxValue }) {
+  const page = hf.pages[hf.activeIdx];
+  if (!page) return null;
+
+  const { activeHeader, activeFooter, patchActiveHeader, patchActiveFooter } = hf;
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '5px 8px', fontSize: 13, borderRadius: 2,
+    border: '1px solid #d2d0ce', background: '#ffffff', color: '#1e1e1e',
+    fontFamily: 'Calibri, Arial, sans-serif', boxSizing: 'border-box',
+    outline: 'none',
+  };
+
+  const radioRowStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4,
+    fontSize: 12, fontFamily: 'Calibri, Arial, sans-serif', color: '#323130',
+    cursor: 'pointer',
+  };
+
+  const dividerStyle: React.CSSProperties = {
+    height: 1, background: '#d2d0ce', margin: '10px 0',
+  };
+
+  return (
+    <div style={{ borderTop: '2px solid #c8c6c4' }}>
+      <div style={{ padding: '8px 16px 4px', background: '#f3f2f1' }}>
+        <h3 style={{ fontSize: 11, fontWeight: 600, color: '#605e5c', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'Calibri, Arial, sans-serif', margin: 0 }}>
+          Sida
+        </h3>
+      </div>
+      <div style={{ padding: '10px 16px', fontFamily: 'Calibri, Arial, sans-serif' }}>
+
+        {/* Page label */}
+        <Label>Sidnamn</Label>
+        <input
+          type="text"
+          value={page.label}
+          onChange={(e) => hf.renamePage(hf.activeIdx, e.target.value)}
+          style={inputStyle}
+          onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.border = '1px solid #0078d4'; }}
+          onBlur={(e) => { (e.currentTarget as HTMLInputElement).style.border = '1px solid #d2d0ce'; }}
+        />
+
+        <div style={dividerStyle} />
+
+        {/* Header section */}
+        <label style={{ ...radioRowStyle, marginBottom: 6 }}>
+          <input
+            type="checkbox"
+            checked={activeHeader.enabled}
+            onChange={(e) => patchActiveHeader({ enabled: e.target.checked })}
+            style={{ accentColor: '#0078d4' }}
+          />
+          <span style={{ fontSize: 12, fontWeight: 500 }}>Aktivera sidhuvud</span>
+        </label>
+
+        {activeHeader.enabled && (
+          <div style={{ paddingLeft: 20, marginBottom: 6 }}>
+            <label style={radioRowStyle}>
+              <input
+                type="radio"
+                name={`hdr-${page.id}`}
+                checked={activeHeader.useDefault}
+                onChange={() => patchActiveHeader({ useDefault: true })}
+                style={{ accentColor: '#0078d4' }}
+              />
+              Standard
+            </label>
+            <label style={radioRowStyle}>
+              <input
+                type="radio"
+                name={`hdr-${page.id}`}
+                checked={!activeHeader.useDefault}
+                onChange={() => patchActiveHeader({ useDefault: false })}
+                style={{ accentColor: '#0078d4' }}
+              />
+              Unik för denna sida
+            </label>
+            {!activeHeader.useDefault && (
+              <p style={{ fontSize: 11, color: '#a19f9d', fontStyle: 'italic', margin: '2px 0 0', fontFamily: 'Calibri, Arial, sans-serif' }}>
+                Redigera i dokumentet ovan.
+              </p>
+            )}
+          </div>
+        )}
+
+        <div style={dividerStyle} />
+
+        {/* Footer section */}
+        <label style={{ ...radioRowStyle, marginBottom: 6 }}>
+          <input
+            type="checkbox"
+            checked={activeFooter.enabled}
+            onChange={(e) => patchActiveFooter({ enabled: e.target.checked })}
+            style={{ accentColor: '#0078d4' }}
+          />
+          <span style={{ fontSize: 12, fontWeight: 500 }}>Aktivera sidfot</span>
+        </label>
+
+        {activeFooter.enabled && (
+          <div style={{ paddingLeft: 20, marginBottom: 6 }}>
+            <label style={radioRowStyle}>
+              <input
+                type="radio"
+                name={`ftr-${page.id}`}
+                checked={activeFooter.useDefault}
+                onChange={() => patchActiveFooter({ useDefault: true })}
+                style={{ accentColor: '#0078d4' }}
+              />
+              Standard
+            </label>
+            <label style={radioRowStyle}>
+              <input
+                type="radio"
+                name={`ftr-${page.id}`}
+                checked={!activeFooter.useDefault}
+                onChange={() => patchActiveFooter({ useDefault: false })}
+                style={{ accentColor: '#0078d4' }}
+              />
+              Unik för denna sida
+            </label>
+            {!activeFooter.useDefault && (
+              <p style={{ fontSize: 11, color: '#a19f9d', fontStyle: 'italic', margin: '2px 0 0', fontFamily: 'Calibri, Arial, sans-serif' }}>
+                Redigera i dokumentet ovan.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

@@ -423,61 +423,120 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     '{{signature}}':        SIGNATURE_FIELD_HTML,
   };
 
-  // ─── Parse TipTap JSON (supports TemplateDoc v2 and legacy v1) ──────────────
+  // ─── Parse TipTap JSON (supports TemplateDoc v3, v2, and legacy v1) ─────────
 
-  let rootNode: TipTapNode;
-  let headerHtml = '';
-  let footerHtml = '';
+  // Inner helper: render a single page to its HTML string (header + body + footer)
+  interface V3PageDoc {
+    body:   TipTapNode;
+    header: { enabled: boolean; useDefault: boolean; content: TipTapNode };
+    footer: { enabled: boolean; useDefault: boolean; content: TipTapNode };
+  }
+
+  function renderPage(
+    page:          V3PageDoc,
+    defaultHeader: TipTapNode,
+    defaultFooter: TipTapNode,
+    pageIndex:     number,
+  ): string {
+    let pageHeaderHtml = '';
+    let pageFooterHtml = '';
+
+    if (page.header.enabled) {
+      const hdrNode = page.header.useDefault ? defaultHeader : page.header.content;
+      pageHeaderHtml = nodeToHtml(hdrNode, replacements);
+    }
+    if (page.footer.enabled) {
+      const ftrNode = page.footer.useDefault ? defaultFooter : page.footer.content;
+      pageFooterHtml = nodeToHtml(ftrNode, replacements);
+    }
+
+    let bodyHtml = nodeToHtml(page.body, replacements);
+
+    // Legacy {{}} substitution for this page's content
+    for (const [key, value] of Object.entries(replacements)) {
+      bodyHtml       = bodyHtml.split(key).join(value);
+      if (pageHeaderHtml) pageHeaderHtml = pageHeaderHtml.split(key).join(value);
+      if (pageFooterHtml) pageFooterHtml = pageFooterHtml.split(key).join(value);
+    }
+
+    const hdrSection = pageHeaderHtml
+      ? `<div class="doc-header">${pageHeaderHtml}</div><hr class="doc-divider"/>`
+      : '';
+    const ftrSection = pageFooterHtml
+      ? `<hr class="doc-divider"/><div class="doc-footer">${pageFooterHtml}</div>`
+      : '';
+
+    return `<div class="page-block" data-page="${pageIndex + 1}">${hdrSection}${bodyHtml}${ftrSection}</div>`;
+  }
+
+  let bodyHtml = '';
 
   try {
     const parsed = JSON.parse(templateContent) as Record<string, unknown>;
 
-    if (parsed._v === 2) {
-      // TemplateDoc v2 format: body + optional header/footer zones
-      rootNode = (parsed.body as TipTapNode) ?? { type: 'doc', content: [] };
+    if (parsed._v === 3) {
+      // TemplateDoc v3: multi-page format
+      const pages         = (parsed.pages ?? []) as V3PageDoc[];
+      const defaultHeader = (parsed.defaultHeader ?? { type: 'doc', content: [] }) as TipTapNode;
+      const defaultFooter = (parsed.defaultFooter ?? { type: 'doc', content: [] }) as TipTapNode;
 
+      bodyHtml = pages
+        .map((page, i) => renderPage(page, defaultHeader, defaultFooter, i))
+        .join('<hr class="page-separator" />');
+    } else if (parsed._v === 2) {
+      // TemplateDoc v2 format: body + optional header/footer zones
+      const rootNode = (parsed.body as TipTapNode) ?? { type: 'doc', content: [] };
       const settings = (parsed.settings ?? {}) as {
         headerEnabled?: boolean;
         footerEnabled?: boolean;
-        differentFirstPage?: boolean;
       };
+
+      let headerHtml = '';
+      let footerHtml = '';
 
       if (settings.headerEnabled) {
         const hdr = (parsed.header as { default?: TipTapNode } | undefined)?.default;
         if (hdr) headerHtml = nodeToHtml(hdr, replacements);
       }
-
       if (settings.footerEnabled) {
         const ftr = (parsed.footer as { default?: TipTapNode } | undefined)?.default;
         if (ftr) footerHtml = nodeToHtml(ftr, replacements);
       }
+
+      let html = nodeToHtml(rootNode, replacements);
+      for (const [key, value] of Object.entries(replacements)) {
+        html      = html.split(key).join(value);
+        if (headerHtml) headerHtml = headerHtml.split(key).join(value);
+        if (footerHtml) footerHtml = footerHtml.split(key).join(value);
+      }
+
+      const hdrSection = headerHtml
+        ? `<div class="doc-header">${headerHtml}</div><hr class="doc-divider"/>`
+        : '';
+      const ftrSection = footerHtml
+        ? `<hr class="doc-divider"/><div class="doc-footer">${footerHtml}</div>`
+        : '';
+
+      bodyHtml = `${hdrSection}${html}${ftrSection}`;
     } else {
       // Legacy v1: the whole JSON is the body doc
-      rootNode = parsed as unknown as TipTapNode;
+      const rootNode = parsed as unknown as TipTapNode;
+      let html = nodeToHtml(rootNode, replacements);
+      for (const [key, value] of Object.entries(replacements)) {
+        html = html.split(key).join(value);
+      }
+      bodyHtml = html;
     }
   } catch {
     // Unparseable — treat as plain text
-    rootNode = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: templateContent }] }] };
-  }
-
-  let html = nodeToHtml(rootNode, replacements);
-
-  // Legacy {{}} substitution — keeps old plain-text templates working.
-  // New templates use variable nodes (handled above in nodeToHtml).
-  for (const [key, value] of Object.entries(replacements)) {
-    html  = html.split(key).join(value);
-    if (headerHtml) headerHtml = headerHtml.split(key).join(value);
-    if (footerHtml) footerHtml = footerHtml.split(key).join(value);
+    const escaped = escapeHtml(templateContent);
+    bodyHtml = `<p>${escaped}</p>`;
+    for (const [key, value] of Object.entries(replacements)) {
+      bodyHtml = bodyHtml.split(key).join(value);
+    }
   }
 
   // ─── Wrap in a styled document shell ────────────────────────────────────────
-
-  const headerSection = headerHtml
-    ? `<div class="doc-header">${headerHtml}</div><hr class="doc-divider"/>`
-    : '';
-  const footerSection = footerHtml
-    ? `<hr class="doc-divider"/><div class="doc-footer">${footerHtml}</div>`
-    : '';
 
   return `<!DOCTYPE html>
 <html lang="sv">
@@ -493,11 +552,16 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     .doc-header { font-size: 12px; color: #64748b; margin-bottom: 0; }
     .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
     .doc-divider { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
+    .page-separator { border: none; border-top: 2px dashed #e2e8f0; margin: 32px 0; }
+    .page-block { position: relative; }
     @media (max-width: 640px) {
       .doc-wrapper { margin: 0; padding: 24px 0; border: none; border-radius: 0; }${MOBILE_TABLE_CSS}
     }
     @media print {
       .doc-wrapper { margin: 0; padding: 0; border: none; }
+      .page-separator { display: none; }
+      .page-block { page-break-after: always; }
+      .page-block:last-child { page-break-after: auto; }
       .doc-header { position: running(header); }
       .doc-footer { position: running(footer); }
     }
@@ -505,9 +569,7 @@ export function generateDocument(templateContent: string, offer: Offer): string 
 </head>
 <body>
   <div class="doc-wrapper">
-    ${headerSection}
-    ${html}
-    ${footerSection}
+    ${bodyHtml}
   </div>
 </body>
 </html>`;

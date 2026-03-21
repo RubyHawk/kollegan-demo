@@ -3,17 +3,21 @@
 /**
  * TemplateEditor — 3-panel document builder.
  *
- * Owns the TipTap editor instance (body) and four mini-editors (header/footer
- * for default and first-page). Provides both EditorCtx (body editor) and
- * HFCtx (header/footer editors + settings) to all child components.
+ * Owns the TipTap editor instance (body) and four mini-editors:
+ *   - headerDefault / footerDefault — shared defaults for all pages
+ *   - headerPageOverride / footerPageOverride — per-page overrides (content
+ *     swapped when the active page changes via switchPage)
  *
- * Content is serialized as a TemplateDoc v2 object (see template-doc.ts).
+ * Provides both EditorCtx (body editor) and HFCtx (header/footer editors
+ * + page management) to all child components.
+ *
+ * Content is serialized as a TemplateDoc v3 object (see template-doc.ts).
  *
  * Layout:
  *   [BlocksSidebar 208px] | [TopToolbar + DocumentCanvas flex-1] | [BlockSettingsSidebar 256px]
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { CustomImage } from './extensions/custom-image.extension';
@@ -40,8 +44,10 @@ import type { EditorView } from '@tiptap/pm/view';
 import dynamic from 'next/dynamic';
 import { EditorCtx } from './editor-context';
 import { HFCtx } from './header-footer-context';
-import type { HFSettings } from './header-footer-context';
-import { parseTemplateDoc, EMPTY_DOC, DEFAULT_HF_SETTINGS } from './template-doc';
+import {
+  parseTemplateDoc, EMPTY_DOC, makeEmptyPage, genId,
+} from './template-doc';
+import type { PageDoc } from './template-doc';
 import BlocksSidebar from './BlocksSidebar';
 import BlockSettingsSidebar from './BlockSettingsSidebar';
 import TopToolbar from './TopToolbar';
@@ -96,16 +102,32 @@ export default function TemplateEditor({ initialContent, editorRef }: Props) {
   // Parse the full doc once (ref avoids re-parsing on every render)
   const initDoc = useRef(parseTemplateDoc(initialContent));
 
-  // Header/footer display settings (live state — drives DocumentCanvas)
-  const [hfSettings, setHfSettings] = useState<HFSettings>(
-    () => ({ ...DEFAULT_HF_SETTINGS, ...initDoc.current.settings }),
-  );
+  // ── Multi-page state ────────────────────────────────────────────────────────
+  const [pages, setPages]       = useState<PageDoc[]>(initDoc.current.pages);
+  const [activeIdx, setActiveIdx] = useState(0);
 
-  function patchSettings(patch: Partial<HFSettings>) {
-    setHfSettings((prev) => ({ ...prev, ...patch }));
-  }
+  // Active page header/footer display state (enabled / useDefault toggles)
+  const [activeHeader, setActiveHeader] = useState(() => ({
+    enabled:    initDoc.current.pages[0]?.header.enabled    ?? false,
+    useDefault: initDoc.current.pages[0]?.header.useDefault ?? true,
+  }));
+  const [activeFooter, setActiveFooter] = useState(() => ({
+    enabled:    initDoc.current.pages[0]?.footer.enabled    ?? false,
+    useDefault: initDoc.current.pages[0]?.footer.useDefault ?? true,
+  }));
 
-  // ── Body editor ────────────────────────────────────────────────────────────
+  // Keep a ref to pages/activeIdx/activeHeader/activeFooter so callbacks
+  // can read the latest value without becoming stale closures.
+  const pagesRef       = useRef(pages);
+  const activeIdxRef   = useRef(activeIdx);
+  const activeHdrRef   = useRef(activeHeader);
+  const activeFtrRef   = useRef(activeFooter);
+  pagesRef.current     = pages;
+  activeIdxRef.current = activeIdx;
+  activeHdrRef.current = activeHeader;
+  activeFtrRef.current = activeFooter;
+
+  // ── Body editor ─────────────────────────────────────────────────────────────
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -134,7 +156,7 @@ export default function TemplateEditor({ initialContent, editorRef }: Props) {
       SignatureBlockNode,
       DragHandleExtension,
     ],
-    content: initDoc.current.body,
+    content: initDoc.current.pages[0]?.body ?? EMPTY_DOC,
     editorProps: {
       attributes: {
         class: 'outline-none',
@@ -162,53 +184,192 @@ export default function TemplateEditor({ initialContent, editorRef }: Props) {
     },
   });
 
-  // ── Header / footer mini-editors ────────────────────────────────────────────
+  // ── Header/footer mini-editors ───────────────────────────────────────────────
   // All 4 are always created (hooks must not be conditional).
 
   const headerDefault = useEditor({
     immediatelyRender: false,
     extensions: MINI_EXTENSIONS,
-    content: initDoc.current.header.default,
-  });
-
-  const headerFirstPage = useEditor({
-    immediatelyRender: false,
-    extensions: MINI_EXTENSIONS,
-    content: initDoc.current.header.firstPage,
+    content: initDoc.current.defaultHeader,
   });
 
   const footerDefault = useEditor({
     immediatelyRender: false,
     extensions: MINI_EXTENSIONS,
-    content: initDoc.current.footer.default,
+    content: initDoc.current.defaultFooter,
   });
 
-  const footerFirstPage = useEditor({
+  const headerPageOverride = useEditor({
     immediatelyRender: false,
     extensions: MINI_EXTENSIONS,
-    content: initDoc.current.footer.firstPage,
+    content: initDoc.current.pages[0]?.header.content ?? EMPTY_DOC,
   });
 
-  // ── Expose handle to parent pages ──────────────────────────────────────────
+  const footerPageOverride = useEditor({
+    immediatelyRender: false,
+    extensions: MINI_EXTENSIONS,
+    content: initDoc.current.pages[0]?.footer.content ?? EMPTY_DOC,
+  });
+
+  // ── Flush current page state into pages array ─────────────────────────────
+
+  /**
+   * Writes the current editor contents + H/F toggle state back into the
+   * pages array for the given index.  Returns the updated pages array.
+   */
+  const flushPage = useCallback((idx: number, currentPages: PageDoc[]): PageDoc[] => {
+    if (!editor) return currentPages;
+    const updated = [...currentPages];
+    updated[idx] = {
+      ...updated[idx],
+      body:   editor.getJSON(),
+      header: {
+        enabled:    activeHdrRef.current.enabled,
+        useDefault: activeHdrRef.current.useDefault,
+        content:    headerPageOverride?.getJSON() ?? EMPTY_DOC,
+      },
+      footer: {
+        enabled:    activeFtrRef.current.enabled,
+        useDefault: activeFtrRef.current.useDefault,
+        content:    footerPageOverride?.getJSON() ?? EMPTY_DOC,
+      },
+    };
+    return updated;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, headerPageOverride, footerPageOverride]);
+
+  // ── Page management callbacks ────────────────────────────────────────────────
+
+  const switchPage = useCallback((newIdx: number) => {
+    const curIdx   = activeIdxRef.current;
+    const curPages = pagesRef.current;
+    if (newIdx === curIdx) return;
+
+    // 1. Flush current page
+    const flushed = flushPage(curIdx, curPages);
+
+    // 2. Load new page body
+    const newPage = flushed[newIdx];
+    if (!newPage || !editor) return;
+    editor.commands.setContent(newPage.body as Parameters<typeof editor.commands.setContent>[0]);
+
+    // 3. Load new page override H/F content
+    headerPageOverride?.commands.setContent(
+      newPage.header.content as Parameters<typeof editor.commands.setContent>[0],
+    );
+    footerPageOverride?.commands.setContent(
+      newPage.footer.content as Parameters<typeof editor.commands.setContent>[0],
+    );
+
+    // 4. Load new page H/F display toggles
+    setActiveHeader({ enabled: newPage.header.enabled, useDefault: newPage.header.useDefault });
+    setActiveFooter({ enabled: newPage.footer.enabled, useDefault: newPage.footer.useDefault });
+
+    // 5. Commit state
+    setPages(flushed);
+    setActiveIdx(newIdx);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, headerPageOverride, footerPageOverride, flushPage]);
+
+  const addPage = useCallback((preset?: Partial<Pick<PageDoc, 'label' | 'body'>>) => {
+    const curIdx   = activeIdxRef.current;
+    const curPages = pagesRef.current;
+
+    const flushed = flushPage(curIdx, curPages);
+    const newPage = makeEmptyPage(preset?.label ?? `Sida ${flushed.length + 1}`);
+    if (preset?.body) newPage.body = preset.body;
+
+    const newPages  = [...flushed, newPage];
+    const newIdx    = newPages.length - 1;
+
+    // Load new page content
+    editor?.commands.setContent(newPage.body as Parameters<typeof editor.commands.setContent>[0]);
+    headerPageOverride?.commands.setContent(EMPTY_DOC as Parameters<typeof editor.commands.setContent>[0]);
+    footerPageOverride?.commands.setContent(EMPTY_DOC as Parameters<typeof editor.commands.setContent>[0]);
+    setActiveHeader({ enabled: false, useDefault: true });
+    setActiveFooter({ enabled: false, useDefault: true });
+
+    setPages(newPages);
+    setActiveIdx(newIdx);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, headerPageOverride, footerPageOverride, flushPage]);
+
+  const removePage = useCallback((idx: number) => {
+    const curIdx   = activeIdxRef.current;
+    const curPages = pagesRef.current;
+    if (curPages.length <= 1) return;
+
+    // Flush before removing
+    const flushed  = flushPage(curIdx, curPages);
+    const newPages = flushed.filter((_, i) => i !== idx);
+    const newIdx   = Math.min(curIdx, newPages.length - 1);
+    const targetPage = newPages[newIdx];
+
+    editor?.commands.setContent(targetPage.body as Parameters<typeof editor.commands.setContent>[0]);
+    headerPageOverride?.commands.setContent(
+      targetPage.header.content as Parameters<typeof editor.commands.setContent>[0],
+    );
+    footerPageOverride?.commands.setContent(
+      targetPage.footer.content as Parameters<typeof editor.commands.setContent>[0],
+    );
+    setActiveHeader({ enabled: targetPage.header.enabled, useDefault: targetPage.header.useDefault });
+    setActiveFooter({ enabled: targetPage.footer.enabled, useDefault: targetPage.footer.useDefault });
+
+    setPages(newPages);
+    setActiveIdx(newIdx);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, headerPageOverride, footerPageOverride, flushPage]);
+
+  const renamePage = useCallback((idx: number, label: string) => {
+    setPages((prev) => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], label };
+      return updated;
+    });
+  }, []);
+
+  const movePage = useCallback((from: number, to: number) => {
+    const curIdx = activeIdxRef.current;
+    setPages((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(from, 1);
+      updated.splice(to, 0, moved);
+      return updated;
+    });
+    // Keep activeIdx tracking the same page after reorder
+    if (curIdx === from) {
+      setActiveIdx(to);
+    } else if (from < curIdx && to >= curIdx) {
+      setActiveIdx(curIdx - 1);
+    } else if (from > curIdx && to <= curIdx) {
+      setActiveIdx(curIdx + 1);
+    }
+  }, []);
+
+  // ── Patch active page H/F state ──────────────────────────────────────────────
+
+  const patchActiveHeader = useCallback((p: { enabled?: boolean; useDefault?: boolean }) => {
+    setActiveHeader((prev) => ({ ...prev, ...p }));
+  }, []);
+
+  const patchActiveFooter = useCallback((p: { enabled?: boolean; useDefault?: boolean }) => {
+    setActiveFooter((prev) => ({ ...prev, ...p }));
+  }, []);
+
+  // ── Expose handle to parent pages ────────────────────────────────────────────
 
   useEffect(() => {
     if (!editorRef || !editor) return;
 
     editorRef.current = {
       getJSON() {
-        // Serialize as TemplateDoc v2
+        // Flush current page into a local copy and serialize as v3
+        const allPages = flushPage(activeIdxRef.current, pagesRef.current);
         return {
-          _v:      2,
-          body:    editor.getJSON(),
-          header: {
-            default:   headerDefault?.getJSON()   ?? EMPTY_DOC,
-            firstPage: headerFirstPage?.getJSON() ?? EMPTY_DOC,
-          },
-          footer: {
-            default:   footerDefault?.getJSON()   ?? EMPTY_DOC,
-            firstPage: footerFirstPage?.getJSON() ?? EMPTY_DOC,
-          },
-          settings: hfSettings,
+          _v:           3,
+          pages:        allPages,
+          defaultHeader: headerDefault?.getJSON() ?? EMPTY_DOC,
+          defaultFooter: footerDefault?.getJSON()  ?? EMPTY_DOC,
         };
       },
 
@@ -216,30 +377,43 @@ export default function TemplateEditor({ initialContent, editorRef }: Props) {
         const doc = parseTemplateDoc(
           typeof json === 'string' ? json : JSON.stringify(json),
         );
-        editor.commands.setContent(doc.body);
-        headerDefault?.commands.setContent(doc.header.default);
-        headerFirstPage?.commands.setContent(doc.header.firstPage);
-        footerDefault?.commands.setContent(doc.footer.default);
-        footerFirstPage?.commands.setContent(doc.footer.firstPage);
-        setHfSettings({ ...DEFAULT_HF_SETTINGS, ...doc.settings });
+        const firstPage = doc.pages[0] ?? makeEmptyPage();
+        editor.commands.setContent(firstPage.body as Parameters<typeof editor.commands.setContent>[0]);
+        headerDefault?.commands.setContent(doc.defaultHeader as Parameters<typeof editor.commands.setContent>[0]);
+        footerDefault?.commands.setContent(doc.defaultFooter as Parameters<typeof editor.commands.setContent>[0]);
+        headerPageOverride?.commands.setContent(firstPage.header.content as Parameters<typeof editor.commands.setContent>[0]);
+        footerPageOverride?.commands.setContent(firstPage.footer.content as Parameters<typeof editor.commands.setContent>[0]);
+        setActiveHeader({ enabled: firstPage.header.enabled, useDefault: firstPage.header.useDefault });
+        setActiveFooter({ enabled: firstPage.footer.enabled, useDefault: firstPage.footer.useDefault });
+        setPages(doc.pages);
+        setActiveIdx(0);
       },
     };
 
     return () => { if (editorRef.current) editorRef.current = null; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, headerDefault, headerFirstPage, footerDefault, footerFirstPage, hfSettings]);
+  }, [editor, headerDefault, footerDefault, headerPageOverride, footerPageOverride, flushPage]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <EditorCtx.Provider value={editor}>
       <HFCtx.Provider value={{
         headerDefault,
-        headerFirstPage,
         footerDefault,
-        footerFirstPage,
-        settings:      hfSettings,
-        patchSettings,
+        headerPageOverride,
+        footerPageOverride,
+        pages,
+        activeIdx,
+        switchPage,
+        addPage,
+        removePage,
+        renamePage,
+        movePage,
+        activeHeader,
+        activeFooter,
+        patchActiveHeader,
+        patchActiveFooter,
       }}>
         <div className="flex h-full overflow-hidden">
           {/* Left panel */}
