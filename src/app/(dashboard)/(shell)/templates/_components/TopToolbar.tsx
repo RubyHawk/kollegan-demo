@@ -14,11 +14,11 @@ import {
   ArrowUUpLeft, ArrowUUpRight,
   TextAlignLeft, TextAlignCenter, TextAlignRight, TextAlignJustify,
   ListBullets, ListNumbers,
-  TextBolder, TextItalic, TextUnderline, TextStrikethrough,
+  TextB, TextItalic, TextUnderline, TextStrikethrough,
   TextSubscript, TextSuperscript,
   TextIndent, TextOutdent,
   HighlighterCircle, Palette,
-  Eraser, LineHeight,
+  Eraser, ArrowsOutLineVertical as LineHeight,
   Table, Image as PhImage, Link, Minus as PhMinus,
   ArrowFatLinesUp, ArrowFatLinesDown,
   CaretDown,
@@ -310,7 +310,7 @@ export default function TopToolbar() {
             <GroupSep />
 
             <RBtn onClick={() => editor.chain().focus().toggleBold().run()}      active={editor.isActive('bold')}      title="Fet (Ctrl+B)">
-              <TextBolder size={14} />
+              <TextB size={14} />
             </RBtn>
             <RBtn onClick={() => editor.chain().focus().toggleItalic().run()}    active={editor.isActive('italic')}    title="Kursiv (Ctrl+I)">
               <TextItalic size={14} />
