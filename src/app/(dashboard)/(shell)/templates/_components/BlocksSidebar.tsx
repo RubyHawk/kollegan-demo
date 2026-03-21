@@ -16,9 +16,9 @@ import { useHeaderFooter } from './header-footer-context';
 import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
 import {
   FileText, CurrencyDollar, Clipboard, Signature, ChatText,
-  File, FileStar, CheckSquare, Tag, Buildings, Scale,
+  File, Star, CheckSquare, Tag, Buildings, Scales,
   TextHOne, TextHTwo, Paragraph, ListBullets, Table, Minus as PhMinus, Image as PhImage,
-  Braces, PenNib, User, CalendarBlank,
+  BracketsCurly, PenNib, User, CalendarBlank,
 } from '@phosphor-icons/react';
 
 // ── Section presets ────────────────────────────────────────────────────────────
@@ -245,7 +245,7 @@ const PAGE_PRESETS: PagePreset[] = [
     key:     'sammanfattning',
     label:   'Sammanfattning',
     tooltip: 'Ledningssummering / executive summary',
-    icon:    <FileStar size={14} />,
+    icon:    <Star size={14} />,
     body: {
       type: 'doc',
       content: [
@@ -450,7 +450,7 @@ const PAGE_PRESETS: PagePreset[] = [
     key:     'villkor',
     label:   'Allmänna villkor',
     tooltip: 'Standardvillkor för leverans och betalning',
-    icon:    <Scale size={14} />,
+    icon:    <Scales size={14} />,
     body: {
       type: 'doc',
       content: [
@@ -617,7 +617,7 @@ export default function BlocksSidebar() {
             <InsertItem
               key={p.key}
               label={p.label}
-              icon={<Braces size={14} />}
+              icon={<BracketsCurly size={14} />}
               chip
               onClick={() =>
                 editor
@@ -634,7 +634,7 @@ export default function BlocksSidebar() {
         {/* lineItems is a special placeholder — insert as text since it's a full table */}
         <InsertItem
           label="Radartiklar (tabell)"
-          icon={<Braces size={14} />}
+          icon={<BracketsCurly size={14} />}
           chip
           onClick={() =>
             editor
