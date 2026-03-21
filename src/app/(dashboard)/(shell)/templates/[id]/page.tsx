@@ -34,6 +34,7 @@ export default function TemplateEditorPage() {
   const isNew    = params.id === 'new';
 
   const [activeTab,         setActiveTab]         = useState<Tab>('offer');
+  const [emailMounted,      setEmailMounted]      = useState(false); // lazy-mount on first visit
   const [name,              setName]              = useState('');
   const [loading,           setLoading]           = useState(!isNew);
   const [saving,            setSaving]            = useState(false);
@@ -216,7 +217,7 @@ export default function TemplateEditorPage() {
             const label  = t === 'offer' ? 'Offert' : 'E-post';
             const active = activeTab === t;
             return (
-              <button key={t} onClick={() => setActiveTab(t)}
+              <button key={t} onClick={() => { setActiveTab(t); if (t === 'email') setEmailMounted(true); }}
                 className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium transition-colors ${
                   active
                     ? 'bg-[var(--accent)] text-white'
@@ -316,15 +317,17 @@ export default function TemplateEditorPage() {
             />
           </div>
 
-          {/* Email editor — keep mounted but hidden when on Offer tab */}
-          <div className={`flex-1 overflow-hidden ${activeTab === 'email' ? '' : 'hidden'}`}>
-            <EmailEditor
-              initialSubject={initEmailSubject}
-              initialHtml={initEmailBody}
-              initialHeaderConfig={initEmailHdrCfg}
-              editorRef={emailEditorRef}
-            />
-          </div>
+          {/* Email editor — lazy-mounted on first tab visit, then kept alive */}
+          {emailMounted && (
+            <div className={`flex-1 overflow-hidden ${activeTab === 'email' ? '' : 'hidden'}`}>
+              <EmailEditor
+                initialSubject={initEmailSubject}
+                initialHtml={initEmailBody}
+                initialHeaderConfig={initEmailHdrCfg}
+                editorRef={emailEditorRef}
+              />
+            </div>
+          )}
         </>
       )}
 

@@ -164,7 +164,7 @@ export default function DocumentCanvas() {
                       Börja med en sektion
                     </p>
                     <div className="grid grid-cols-2 gap-2">
-                      {SECTION_PRESETS.slice(0, 4).map((preset) => (
+                      {SECTION_PRESETS.map((preset) => (
                         <button
                           key={preset.key}
                           type="button"
