@@ -10,7 +10,7 @@
  *   4. Signature fields (inserts SignatureBlockNode)
  */
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
@@ -531,7 +531,7 @@ export default function BlocksSidebar() {
     <SidebarShell>
       {/* ── Page presets (enterprise) ── */}
       {hf && (
-        <Section label="SIDOR">
+        <Section label="SIDOR" collapsible defaultCollapsed>
           {PAGE_PRESETS.map((preset) => (
             <InsertItem
               key={preset.key}
@@ -610,7 +610,7 @@ export default function BlocksSidebar() {
       </Section>
 
       {/* ── Variables ── */}
-      <Section label="VARIABLER">
+      <Section label="VARIABLER" collapsible defaultCollapsed>
         {OFFER_PLACEHOLDERS
           .filter((p) => p.key !== '{{lineItems}}' && p.key !== '{{signature}}')
           .map((p) => (
@@ -650,7 +650,7 @@ export default function BlocksSidebar() {
       </Section>
 
       {/* ── Signature fields ── */}
-      <Section label="SIGNATURFÄLT">
+      <Section label="SIGNATURFÄLT" collapsible defaultCollapsed>
         <InsertItem
           label="Signaturfält"
           icon={<PenNib size={14} />}
@@ -704,13 +704,35 @@ function SidebarShell({ children }: { children?: React.ReactNode }) {
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function Section({ label, children, collapsible, defaultCollapsed }: { label: string; children: React.ReactNode; collapsible?: boolean; defaultCollapsed?: boolean }) {
+  const [open, setOpen] = useState(!defaultCollapsed);
+  if (!collapsible) {
+    return (
+      <div className="pb-1">
+        <p className="px-3 pt-4 pb-1 text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-wider">
+          {label}
+        </p>
+        {children}
+      </div>
+    );
+  }
   return (
     <div className="pb-1">
-      <p className="px-3 pt-4 pb-1 text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-wider">
-        {label}
-      </p>
-      {children}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full px-3 pt-4 pb-1 flex items-center justify-between text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+      >
+        <span className="text-[10px] font-semibold uppercase tracking-wider">{label}</span>
+        <svg
+          width="10" height="10" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          className={`transition-transform ${open ? '' : '-rotate-90'}`}
+        >
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      {open && children}
     </div>
   );
 }
