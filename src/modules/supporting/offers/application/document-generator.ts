@@ -250,7 +250,9 @@ const SIGNATURE_FIELD_HTML = `
 
 /**
  * Builds the {{placeholder}} → value map for a given offer.
- * Used by both document generation and email interpolation.
+ * All user-controlled text values are HTML-escaped so the map is safe to
+ * interpolate directly into HTML contexts (email bodies, document templates).
+ * Numeric/date values come from controlled formatters and need no escaping.
  */
 export function buildReplacements(offer: Offer): Record<string, string> {
   const vatAmount = offer.totalIncVat - offer.totalExVat;
@@ -259,32 +261,27 @@ export function buildReplacements(offer: Offer): Record<string, string> {
     : offer.id.slice(0, 8).toUpperCase();
 
   return {
-    '{{offerTitle}}':       offer.title,
+    '{{offerTitle}}':       secureEscapeHtml(offer.title),
     '{{offerNumber}}':      offerNumberStr,
     '{{quoteNumber}}':      offerNumberStr,
     '{{createdDate}}':      fmtDate(offer.createdAt),
     '{{validUntil}}':       fmtDate(offer.validUntil),
-    '{{recipientName}}':    offer.recipientName,
-    '{{recipientEmail}}':   offer.recipientEmail,
-    '{{recipientCompany}}': offer.recipientCompany ?? '',
+    '{{recipientName}}':    secureEscapeHtml(offer.recipientName),
+    '{{recipientEmail}}':   secureEscapeHtml(offer.recipientEmail),
+    '{{recipientCompany}}': secureEscapeHtml(offer.recipientCompany ?? ''),
     '{{totalExVat}}':       fmtSEK(offer.totalExVat),
     '{{totalIncVat}}':      fmtSEK(offer.totalIncVat),
     '{{vatAmount}}':        fmtSEK(vatAmount),
-    '{{notes}}':            offer.notes ?? '',
+    '{{notes}}':            secureEscapeHtml(offer.notes ?? ''),
   };
 }
 
 /**
  * Builds HTML-safe replacements for email interpolation.
- * All values are HTML-escaped to prevent XSS when inserted into email HTML.
+ * buildReplacements already returns HTML-escaped values; no further escaping needed.
  */
 function buildEmailReplacements(offer: Offer): Record<string, string> {
-  const raw = buildReplacements(offer);
-  const safe: Record<string, string> = {};
-  for (const [key, value] of Object.entries(raw)) {
-    safe[key] = secureEscapeHtml(value);
-  }
-  return safe;
+  return buildReplacements(offer);
 }
 
 /**

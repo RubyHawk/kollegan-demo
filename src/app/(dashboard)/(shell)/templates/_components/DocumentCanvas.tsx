@@ -15,8 +15,6 @@
  * Only the text-formatting BubbleMenu lives here.
  */
 
-export { EditorCtx, useTemplateEditor } from './editor-context';
-
 import { useState, useRef } from 'react';
 import type { Editor } from '@tiptap/core';
 import { EditorContent } from '@tiptap/react';
