@@ -10,9 +10,10 @@ model OfferTemplate {
   organizationId String
   name           String
   content        String    // TipTap JSON stored as serialized string
-  emailSubject   String?   // Custom email subject (supports {{placeholder}} variables)
-  emailBody      String?   // Custom email body HTML (supports {{placeholder}} variables)
-  createdBy      String    // User.id
+  emailSubject      String?   // Custom email subject (supports {{placeholder}} variables)
+  emailBody         String?   // Custom email body HTML (supports {{placeholder}} variables)
+  emailHeaderConfig String?   // JSON config for visual email header (logo, colors, text)
+  createdBy         String    // User.id
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?

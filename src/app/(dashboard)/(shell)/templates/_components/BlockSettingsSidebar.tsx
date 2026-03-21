@@ -13,12 +13,14 @@
 
 import { useEffect, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
+import { useHeaderFooter } from './header-footer-context';
 import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
 
 type ActiveBlock = 'image' | 'table' | 'signatureBlock' | 'variable' | null;
 
 export default function BlockSettingsSidebar() {
   const editor = useTemplateEditor();
+  const hf     = useHeaderFooter();
   const [active, setActive] = useState<ActiveBlock>(null);
 
   useEffect(() => {
@@ -45,6 +47,8 @@ export default function BlockSettingsSidebar() {
       {active === 'signatureBlock' && editor && <SignatureSettings editor={editor} />}
       {active === 'variable'       && editor && <VariableInfo editor={editor} />}
       {active === null             &&           <PlaceholderReference />}
+      {/* Page settings panel — always visible at the bottom */}
+      {hf && <PageSettings hf={hf} />}
     </div>
   );
 }
@@ -86,12 +90,14 @@ function dispatchLayerSwap(editor: Editor, posA: number, posB: number): void {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ImageSettings({ editor }: { editor: Editor }) {
-  const attrs  = editor.getAttributes('image');
-  const width  = (attrs.width    as number | undefined) ?? 0;
-  const align  = (attrs.align    as string | undefined) ?? 'left';
-  const isFree = (attrs.position as string | undefined) === 'free';
-  const posX   = Math.round((attrs.posX as number | undefined) ?? 100);
-  const posY   = Math.round((attrs.posY as number | undefined) ?? 100);
+  const attrs    = editor.getAttributes('image');
+  const width    = (attrs.width    as number | undefined) ?? 0;
+  const height   = (attrs.height   as number | null | undefined) ?? null;
+  const align    = (attrs.align    as string | undefined) ?? 'left';
+  const isFree   = (attrs.position as string | undefined) === 'free';
+  const wrapText = (attrs.wrapText as string | undefined) ?? 'none';
+  const posX     = Math.round((attrs.posX as number | undefined) ?? 100);
+  const posY     = Math.round((attrs.posY as number | undefined) ?? 100);
 
   // Layer rank info — computed from the live document state
   let layerRank  = 1;
@@ -172,7 +178,7 @@ function ImageSettings({ editor }: { editor: Editor }) {
       {/* ── Width ────────────────────────────────────────────────────────── */}
       <Label>Bredd (px)</Label>
       <input
-        type="range" min={80} max={700} step={10}
+        type="range" min={80} max={816} step={10}
         value={width || 400}
         onChange={(e) => set({ width: Number(e.target.value) })}
         style={{ width: '100%', accentColor: '#0078d4', marginBottom: 4 }}
@@ -222,6 +228,21 @@ function ImageSettings({ editor }: { editor: Editor }) {
         </>
       )}
 
+      {/* ── Text wrap (free mode only) ───────────────────────────────────── */}
+      {isFree && (
+        <>
+          <Label>Textflöde</Label>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+            {(['none', 'left', 'right'] as const).map((w) => (
+              <button key={w} type="button" style={btnStyle(wrapText === w)}
+                onClick={() => set({ wrapText: w })}>
+                {w === 'none' ? 'Inget' : w === 'left' ? 'Vänster' : 'Höger'}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
       {/* ── Free position coordinates ─────────────────────────────────────── */}
       {isFree && (
         <>
@@ -240,15 +261,40 @@ function ImageSettings({ editor }: { editor: Editor }) {
                 style={coordInputStyle} />
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
             <button type="button" style={{ ...quickBtnStyle }}
               onClick={() => set({ posX: 0, posY: 0 })} title="Placera i sidans övre vänstra hörn">
-              Hela sidan (0, 0)
+              Övre vänster
             </button>
             <button type="button" style={{ ...quickBtnStyle }}
               onClick={() => set({ posX: 96, posY: 96 })} title="Placera i textområdets övre vänstra hörn (96px marginal)">
               Textyta
             </button>
+            <button type="button" style={{ ...quickBtnStyle, color: '#0078d4', borderColor: '#c0d8f0' }}
+              onClick={() => set({ posX: 0, posY: 0, width: 816, height: 1056 })}
+              title="Sträck bilden till hela sidan (816×1056 px)">
+              Fyll sida
+            </button>
+          </div>
+
+          {/* ── Height ────────────────────────────────────────────────────── */}
+          <Label>Höjd (px, tomt = auto)</Label>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+            <input
+              type="number"
+              min={0}
+              step={10}
+              value={height ?? ''}
+              placeholder="auto"
+              onChange={(e) => set({ height: e.target.value ? Number(e.target.value) : null })}
+              style={{ ...coordInputStyle, flex: 1 }}
+            />
+            {height !== null && (
+              <button type="button" style={{ ...quickBtnStyle, flexShrink: 0, padding: '3px 8px' }}
+                onClick={() => set({ height: null })} title="Återställ till automatisk höjd">
+                ×
+              </button>
+            )}
           </div>
         </>
       )}
@@ -408,6 +454,143 @@ function PlaceholderReference() {
         ))}
       </div>
     </PanelWrap>
+  );
+}
+
+// ── Page settings panel ────────────────────────────────────────────────────────
+
+import type { HFCtxValue } from './header-footer-context';
+
+function PageSettings({ hf }: { hf: HFCtxValue }) {
+  const page = hf.pages[hf.activeIdx];
+  if (!page) return null;
+
+  const { activeHeader, activeFooter, patchActiveHeader, patchActiveFooter } = hf;
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '5px 8px', fontSize: 13, borderRadius: 2,
+    border: '1px solid #d2d0ce', background: '#ffffff', color: '#1e1e1e',
+    fontFamily: 'Calibri, Arial, sans-serif', boxSizing: 'border-box',
+    outline: 'none',
+  };
+
+  const radioRowStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4,
+    fontSize: 12, fontFamily: 'Calibri, Arial, sans-serif', color: '#323130',
+    cursor: 'pointer',
+  };
+
+  const dividerStyle: React.CSSProperties = {
+    height: 1, background: '#d2d0ce', margin: '10px 0',
+  };
+
+  return (
+    <div style={{ borderTop: '2px solid #c8c6c4' }}>
+      <div style={{ padding: '8px 16px 4px', background: '#f3f2f1' }}>
+        <h3 style={{ fontSize: 11, fontWeight: 600, color: '#605e5c', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'Calibri, Arial, sans-serif', margin: 0 }}>
+          Sida
+        </h3>
+      </div>
+      <div style={{ padding: '10px 16px', fontFamily: 'Calibri, Arial, sans-serif' }}>
+
+        {/* Page label */}
+        <Label>Sidnamn</Label>
+        <input
+          type="text"
+          value={page.label}
+          onChange={(e) => hf.renamePage(hf.activeIdx, e.target.value)}
+          style={inputStyle}
+          onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.border = '1px solid #0078d4'; }}
+          onBlur={(e) => { (e.currentTarget as HTMLInputElement).style.border = '1px solid #d2d0ce'; }}
+        />
+
+        <div style={dividerStyle} />
+
+        {/* Header section */}
+        <label style={{ ...radioRowStyle, marginBottom: 6 }}>
+          <input
+            type="checkbox"
+            checked={activeHeader.enabled}
+            onChange={(e) => patchActiveHeader({ enabled: e.target.checked })}
+            style={{ accentColor: '#0078d4' }}
+          />
+          <span style={{ fontSize: 12, fontWeight: 500 }}>Aktivera sidhuvud</span>
+        </label>
+
+        {activeHeader.enabled && (
+          <div style={{ paddingLeft: 20, marginBottom: 6 }}>
+            <label style={radioRowStyle}>
+              <input
+                type="radio"
+                name={`hdr-${page.id}`}
+                checked={activeHeader.useDefault}
+                onChange={() => patchActiveHeader({ useDefault: true })}
+                style={{ accentColor: '#0078d4' }}
+              />
+              Standard
+            </label>
+            <label style={radioRowStyle}>
+              <input
+                type="radio"
+                name={`hdr-${page.id}`}
+                checked={!activeHeader.useDefault}
+                onChange={() => patchActiveHeader({ useDefault: false })}
+                style={{ accentColor: '#0078d4' }}
+              />
+              Unik för denna sida
+            </label>
+            {!activeHeader.useDefault && (
+              <p style={{ fontSize: 11, color: '#a19f9d', fontStyle: 'italic', margin: '2px 0 0', fontFamily: 'Calibri, Arial, sans-serif' }}>
+                Redigera i dokumentet ovan.
+              </p>
+            )}
+          </div>
+        )}
+
+        <div style={dividerStyle} />
+
+        {/* Footer section */}
+        <label style={{ ...radioRowStyle, marginBottom: 6 }}>
+          <input
+            type="checkbox"
+            checked={activeFooter.enabled}
+            onChange={(e) => patchActiveFooter({ enabled: e.target.checked })}
+            style={{ accentColor: '#0078d4' }}
+          />
+          <span style={{ fontSize: 12, fontWeight: 500 }}>Aktivera sidfot</span>
+        </label>
+
+        {activeFooter.enabled && (
+          <div style={{ paddingLeft: 20, marginBottom: 6 }}>
+            <label style={radioRowStyle}>
+              <input
+                type="radio"
+                name={`ftr-${page.id}`}
+                checked={activeFooter.useDefault}
+                onChange={() => patchActiveFooter({ useDefault: true })}
+                style={{ accentColor: '#0078d4' }}
+              />
+              Standard
+            </label>
+            <label style={radioRowStyle}>
+              <input
+                type="radio"
+                name={`ftr-${page.id}`}
+                checked={!activeFooter.useDefault}
+                onChange={() => patchActiveFooter({ useDefault: false })}
+                style={{ accentColor: '#0078d4' }}
+              />
+              Unik för denna sida
+            </label>
+            {!activeFooter.useDefault && (
+              <p style={{ fontSize: 11, color: '#a19f9d', fontStyle: 'italic', margin: '2px 0 0', fontFamily: 'Calibri, Arial, sans-serif' }}>
+                Redigera i dokumentet ovan.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

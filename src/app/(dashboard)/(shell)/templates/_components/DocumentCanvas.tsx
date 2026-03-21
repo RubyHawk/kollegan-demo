@@ -1,7 +1,8 @@
 'use client';
 
 /**
- * DocumentCanvas — A4 canvas + text-formatting BubbleMenu + header/footer zones.
+ * DocumentCanvas — A4 canvas + text-formatting BubbleMenu + header/footer zones
+ * + Excel-style page tab bar.
  *
  * Header/footer zones are rendered above and below the body area when enabled.
  * Each zone uses its own mini TipTap editor (from HFCtx) and shares the same
@@ -16,12 +17,14 @@
 
 export { EditorCtx, useTemplateEditor } from './editor-context';
 
+import { useState, useRef } from 'react';
 import type { Editor } from '@tiptap/core';
 import { EditorContent } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import { NodeSelection } from '@tiptap/pm/state';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
+import type { PageDoc } from './template-doc';
 
 // ── Horizontal margin shared by body, header, and footer (px) ─────────────────
 const H_PAD = 96;
@@ -30,9 +33,24 @@ export default function DocumentCanvas() {
   const editor = useTemplateEditor();
   const hf     = useHeaderFooter();
 
-  const { headerEnabled, footerEnabled, differentFirstPage } = hf?.settings ?? {
-    headerEnabled: false, footerEnabled: false, differentFirstPage: false,
-  };
+  // Active page H/F display state from context
+  const activeHeader = hf?.activeHeader ?? { enabled: false, useDefault: true };
+  const activeFooter = hf?.activeFooter ?? { enabled: false, useDefault: true };
+
+  // Derive which editor to show for header/footer
+  const headerEditor = activeHeader.enabled
+    ? (activeHeader.useDefault ? hf?.headerDefault : hf?.headerPageOverride) ?? null
+    : null;
+  const headerLabel = activeHeader.enabled
+    ? (activeHeader.useDefault ? 'Sidhuvud (standard)' : 'Sidhuvud (unik för denna sida)')
+    : '';
+
+  const footerEditor = activeFooter.enabled
+    ? (activeFooter.useDefault ? hf?.footerDefault : hf?.footerPageOverride) ?? null
+    : null;
+  const footerLabel = activeFooter.enabled
+    ? (activeFooter.useDefault ? 'Sidfot (standard)' : 'Sidfot (unik för denna sida)')
+    : '';
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -89,7 +107,8 @@ export default function DocumentCanvas() {
             className="mx-auto bg-white"
             data-a4-page="true"
             style={{
-              maxWidth:  816,
+              width:     816,
+              minWidth:  816,
               minHeight: 1056,
               boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
               // Free-positioned images are absolutely placed relative to this div.
@@ -101,22 +120,13 @@ export default function DocumentCanvas() {
           >
 
             {/* ── Header zone ───────────────────────────────────────────────── */}
-            {headerEnabled && hf && (
-              <>
-                {differentFirstPage && (
-                  <HFZone
-                    label="Sidhuvud — Första sida"
-                    editor={hf.headerFirstPage}
-                    zone="header"
-                  />
-                )}
-                <HFZone
-                  label={differentFirstPage ? 'Sidhuvud — Övriga sidor' : 'Sidhuvud'}
-                  editor={hf.headerDefault}
-                  zone="header"
-                  isLast
-                />
-              </>
+            {activeHeader.enabled && headerEditor && (
+              <HFZone
+                label={headerLabel}
+                editor={headerEditor}
+                zone="header"
+                isLast
+              />
             )}
 
             {/* ── Body ──────────────────────────────────────────────────────── */}
@@ -130,22 +140,13 @@ export default function DocumentCanvas() {
             </div>
 
             {/* ── Footer zone ───────────────────────────────────────────────── */}
-            {footerEnabled && hf && (
-              <>
-                <HFZone
-                  label={differentFirstPage ? 'Sidfot — Övriga sidor' : 'Sidfot'}
-                  editor={hf.footerDefault}
-                  zone="footer"
-                  isFirst
-                />
-                {differentFirstPage && (
-                  <HFZone
-                    label="Sidfot — Första sida"
-                    editor={hf.footerFirstPage}
-                    zone="footer"
-                  />
-                )}
-              </>
+            {activeFooter.enabled && footerEditor && (
+              <HFZone
+                label={footerLabel}
+                editor={footerEditor}
+                zone="footer"
+                isFirst
+              />
             )}
 
           </div>
@@ -314,6 +315,175 @@ export default function DocumentCanvas() {
           }
         `}</style>
       </div>
+
+      {/* ── Excel-style page tab bar ──────────────────────────────────────────── */}
+      {hf && (
+        <div style={{
+          display:    'flex',
+          alignItems: 'stretch',
+          borderTop:  '1px solid #d2d0ce',
+          background: '#f0f0f0',
+          overflowX:  'auto',
+          flexShrink: 0,
+          minHeight:  32,
+        }}>
+          {hf.pages.map((page, i) => (
+            <PageTab
+              key={page.id}
+              page={page}
+              active={i === hf.activeIdx}
+              onActivate={() => hf.switchPage(i)}
+              onRename={(label) => hf.renamePage(i, label)}
+              onDelete={hf.pages.length > 1 ? () => hf.removePage(i) : undefined}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={() => hf.addPage()}
+            title="Lägg till sida"
+            style={{
+              padding:    '0 10px',
+              background: 'transparent',
+              border:     'none',
+              borderLeft: '1px solid #d2d0ce',
+              cursor:     'pointer',
+              fontSize:   16,
+              color:      '#605e5c',
+              lineHeight: 1,
+              flexShrink: 0,
+              display:    'flex',
+              alignItems: 'center',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#e4e4e4'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+          >
+            +
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Page Tab component ─────────────────────────────────────────────────────────
+
+function PageTab({
+  page, active, onActivate, onRename, onDelete,
+}: {
+  page:       PageDoc;
+  active:     boolean;
+  onActivate: () => void;
+  onRename:   (label: string) => void;
+  onDelete?:  () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft,   setDraft]   = useState(page.label);
+  const [hovered, setHovered] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function startEdit() {
+    setDraft(page.label);
+    setEditing(true);
+    setTimeout(() => inputRef.current?.select(), 0);
+  }
+
+  function commitEdit() {
+    setEditing(false);
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== page.label) onRename(trimmed);
+    else setDraft(page.label);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') commitEdit();
+    if (e.key === 'Escape') { setEditing(false); setDraft(page.label); }
+  }
+
+  return (
+    <div
+      style={{
+        display:        'flex',
+        alignItems:     'center',
+        gap:            4,
+        padding:        '0 10px',
+        cursor:         'pointer',
+        userSelect:     'none',
+        borderRight:    '1px solid #d2d0ce',
+        borderBottom:   active ? '2px solid #0078d4' : '2px solid transparent',
+        background:     active ? '#ffffff' : hovered ? '#e4e4e4' : 'transparent',
+        color:          active ? '#0078d4' : '#323130',
+        fontFamily:     'Calibri, Arial, sans-serif',
+        fontSize:       12,
+        fontWeight:     active ? 600 : 400,
+        minWidth:       72,
+        flexShrink:     0,
+        position:       'relative',
+        transition:     'background 0.08s',
+      }}
+      onClick={onActivate}
+      onDoubleClick={startEdit}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {editing ? (
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commitEdit}
+          onKeyDown={handleKeyDown}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width:      80,
+            fontSize:   12,
+            fontFamily: 'Calibri, Arial, sans-serif',
+            border:     '1px solid #0078d4',
+            borderRadius: 2,
+            padding:    '1px 4px',
+            outline:    'none',
+            color:      '#323130',
+            background: '#fff',
+          }}
+          autoFocus
+        />
+      ) : (
+        <span style={{
+          overflow:     'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace:   'nowrap',
+          maxWidth:     120,
+          flex:         1,
+        }}>
+          {page.label}
+        </span>
+      )}
+
+      {/* Delete button — shown on hover when deletion is allowed */}
+      {onDelete && !editing && hovered && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          title="Ta bort sida"
+          style={{
+            width:      14,
+            height:     14,
+            display:    'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border:     'none',
+            borderRadius: '50%',
+            background: '#a19f9d',
+            color:      '#ffffff',
+            cursor:     'pointer',
+            fontSize:   10,
+            lineHeight: 1,
+            flexShrink: 0,
+            padding:    0,
+          }}
+        >
+          ×
+        </button>
+      )}
     </div>
   );
 }

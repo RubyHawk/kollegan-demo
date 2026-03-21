@@ -61,11 +61,13 @@ export const VariableNode = Node.create({
   },
 
   renderHTML({ node, HTMLAttributes }) {
+    // Include {{key}} as text content so that email interpolation can find and
+    // replace it. The ReactNodeView overrides the visual appearance in the editor.
     return ['span', mergeAttributes(HTMLAttributes, {
       'data-variable': node.attrs.key,
       'data-label':    node.attrs.label,
       class:           'variable-chip',
-    })];
+    }), `{{${node.attrs.key as string}}}`];
   },
 
   parseHTML() {
