@@ -21,6 +21,7 @@ export default function BlockSettingsSidebar() {
   const editor = useTemplateEditor();
   const hf     = useHeaderFooter();
   const [active, setActive] = useState<ActiveBlock>(null);
+  const [bgImages, setBgImages] = useState<Array<{ pos: number; src: string }>>([]);
 
   useEffect(() => {
     if (!editor) return;
@@ -39,8 +40,46 @@ export default function BlockSettingsSidebar() {
     };
   }, [editor]);
 
+  // Track all background images (free + zIndex < 0) for the selection panel
+  useEffect(() => {
+    if (!editor) return;
+    function scanBg() {
+      const imgs: Array<{ pos: number; src: string }> = [];
+      editor!.state.doc.descendants((n, pos) => {
+        if (n.type.name === 'image' && n.attrs.position === 'free' && (n.attrs.zIndex ?? 0) < 0)
+          imgs.push({ pos, src: n.attrs.src as string });
+      });
+      setBgImages(imgs);
+    }
+    scanBg();
+    editor.on('transaction', scanBg);
+    return () => { editor.off('transaction', scanBg); };
+  }, [editor]);
+
   return (
     <div className="w-64 shrink-0 hidden lg:flex flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface-1)]">
+      {/* Background images panel — always visible when background images exist */}
+      {editor && bgImages.length > 0 && (
+        <div className="border-b border-[var(--border)] p-3 shrink-0">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">
+            Bakgrundsbilder
+          </p>
+          {bgImages.map((img) => (
+            <div key={img.pos} className="flex items-center gap-2 mb-1.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={img.src} alt="" className="w-10 h-7 object-cover rounded border border-[var(--border)] shrink-0" />
+              <span className="text-[11px] text-[var(--text-secondary)] flex-1 truncate">Bakgrundslager</span>
+              <button
+                onClick={() => editor.commands.setNodeSelection(img.pos)}
+                className="text-[10px] text-[var(--accent)] hover:underline shrink-0"
+              >
+                Välj
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {active === 'image'          && editor && <ImageSettings editor={editor} />}
       {active === 'table'          && editor && <TableSettings editor={editor} />}
       {active === 'signatureBlock' && editor && <SignatureSettings editor={editor} />}
@@ -65,7 +104,7 @@ function buildFreeImageStack(editor: Editor): StackItem[] {
   const items: StackItem[] = [];
   editor.state.doc.descendants((n, pos) => {
     if (n.type.name === 'image' && n.attrs.position === 'free') {
-      items.push({ pos, zIndex: Math.max(0, n.attrs.zIndex ?? 0) });
+      items.push({ pos, zIndex: n.attrs.zIndex ?? 0 });
     }
   });
   return items.sort((a, b) => a.zIndex - b.zIndex);

@@ -57,6 +57,7 @@ export const handleListOffers = createHandler(
   async (ctx) => {
     const { query, req } = ctx as { query: z.infer<typeof ListQuerySchema>; req: NextRequest };
     const payload = await requireStaff(req);
+    await expireStaleOffers(); // mark any newly-expired offers before returning the list
     const { offers, total } = await listOffers(payload.orgId!, {
       status: query.status, search: query.search, leadId: query.leadId,
       limit: query.limit, offset: query.offset,

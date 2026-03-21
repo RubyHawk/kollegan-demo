@@ -141,6 +141,7 @@ export default function DocumentCanvas() {
                 editor={headerEditor}
                 zone="header"
                 isLast
+                hPad={H_PAD}
               />
             )}
 
@@ -195,6 +196,7 @@ export default function DocumentCanvas() {
                 editor={footerEditor}
                 zone="footer"
                 isFirst
+                hPad={H_PAD}
               />
             )}
 
@@ -474,13 +476,14 @@ function PageTab({
 // ── Header/Footer Zone ────────────────────────────────────────────────────────
 
 function HFZone({
-  label, editor, zone, isFirst = false, isLast = false,
+  label, editor, zone, isFirst = false, isLast = false, hPad,
 }: {
   label:    string;
   editor:   Editor | null;
   zone:     'header' | 'footer';
   isFirst?: boolean;
   isLast?:  boolean;
+  hPad:     number;
 }) {
   const isHeader = zone === 'header';
 
@@ -500,7 +503,7 @@ function HFZone({
           'text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-wider select-none',
           isHeader ? 'pt-2 pb-0.5' : 'pb-2 pt-0.5',
         )}
-        style={{ paddingLeft: H_PAD, paddingRight: H_PAD }}
+        style={{ paddingLeft: hPad, paddingRight: hPad }}
       >
         {label}
       </div>
@@ -509,7 +512,7 @@ function HFZone({
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
         className="cursor-text min-h-[48px]"
-        style={{ padding: `4px ${H_PAD}px` }}
+        style={{ padding: `4px ${hPad}px` }}
         onClick={() => editor?.commands.focus()}
       >
         <EditorContent editor={editor} className="doc-editor hf-editor" />
