@@ -80,6 +80,7 @@ export interface TemplateEditorHandle {
 interface Props {
   initialContent?: string;
   editorRef?:      React.MutableRefObject<TemplateEditorHandle | null>;
+  onUpdate?:       () => void;
 }
 
 // ── Image drop helper ─────────────────────────────────────────────────────────
@@ -98,7 +99,7 @@ function insertImageFile(view: EditorView, file: File) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function TemplateEditor({ initialContent, editorRef }: Props) {
+export default function TemplateEditor({ initialContent, editorRef, onUpdate }: Props) {
   // Parse the full doc once (ref avoids re-parsing on every render)
   const initDoc = useRef(parseTemplateDoc(initialContent));
 
@@ -182,6 +183,7 @@ export default function TemplateEditor({ initialContent, editorRef }: Props) {
         return true;
       },
     },
+    onUpdate: onUpdate ? () => onUpdate() : undefined,
   });
 
   // ── Header/footer mini-editors ───────────────────────────────────────────────
@@ -358,6 +360,12 @@ export default function TemplateEditor({ initialContent, editorRef }: Props) {
     setActiveFooter((prev) => ({ ...prev, ...p }));
   }, []);
 
+  // ── Document settings ─────────────────────────────────────────────────────
+  const [docSettings, setDocSettings] = useState({ pageMargin: 'normal' as 'tight' | 'normal' | 'wide', defaultFont: 'Calibri' });
+  const patchDocSettings = useCallback((p: Partial<typeof docSettings>) => {
+    setDocSettings((prev) => ({ ...prev, ...p }));
+  }, []);
+
   // ── Expose handle to parent pages ────────────────────────────────────────────
 
   useEffect(() => {
@@ -416,6 +424,8 @@ export default function TemplateEditor({ initialContent, editorRef }: Props) {
         activeFooter,
         patchActiveHeader,
         patchActiveFooter,
+        docSettings,
+        patchDocSettings,
       }}>
         <div className="template-editor-light flex h-full overflow-hidden">
           {/* Left panel */}

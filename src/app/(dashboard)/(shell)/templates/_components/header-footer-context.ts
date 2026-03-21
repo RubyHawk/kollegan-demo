@@ -42,6 +42,13 @@ export interface HFCtxValue {
   activeFooter: { enabled: boolean; useDefault: boolean };
   patchActiveHeader: (p: { enabled?: boolean; useDefault?: boolean }) => void;
   patchActiveFooter: (p: { enabled?: boolean; useDefault?: boolean }) => void;
+
+  // ── Document-level settings ────────────────────────────────────────────────
+  docSettings: {
+    pageMargin: 'tight' | 'normal' | 'wide';
+    defaultFont: string;
+  };
+  patchDocSettings: (p: Partial<HFCtxValue['docSettings']>) => void;
 }
 
 export const HFCtx = createContext<HFCtxValue | null>(null);

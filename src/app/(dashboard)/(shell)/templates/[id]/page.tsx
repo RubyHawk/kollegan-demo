@@ -39,6 +39,10 @@ export default function TemplateEditorPage() {
   const [saving,            setSaving]            = useState(false);
   const [error,             setError]             = useState<string | null>(null);
   const [saved,             setSaved]             = useState(false);
+  const [previewing,        setPreviewing]        = useState(false);
+  const [previewHtml,       setPreviewHtml]       = useState<string | null>(null);
+  const [isDirty,           setIsDirty]           = useState(false);
+  const [draftBanner,       setDraftBanner]       = useState(false);
 
   // Stored initial values for email editor (passed as props on first render)
   const [initEmailSubject,  setInitEmailSubject]  = useState('');
@@ -48,6 +52,7 @@ export default function TemplateEditorPage() {
   const editorRef      = useRef<TemplateEditorHandle | null>(null);
   const emailEditorRef = useRef<EmailEditorHandle | null>(null);
   const initialContentRef = useRef<string | undefined>(undefined);
+  const draftKey = `template-draft-${params.id ?? 'new'}`;
 
   // ── Load existing template ─────────────────────────────────────────────────
   useEffect(() => {
@@ -72,6 +77,29 @@ export default function TemplateEditorPage() {
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNew, params.id]);
+
+  // ── Check for unsaved draft in localStorage after load ────────────────────
+  useEffect(() => {
+    if (loading) return;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) setDraftBanner(true);
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  // ── Autosave to localStorage every 30 s when dirty ────────────────────────
+  useEffect(() => {
+    if (!isDirty) return;
+    const id = setInterval(() => {
+      try {
+        const json = editorRef.current?.getJSON();
+        if (json) localStorage.setItem(draftKey, JSON.stringify(json));
+      } catch { /* ignore */ }
+    }, 30_000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDirty]);
 
   // ── Save ──────────────────────────────────────────────────────────────────
   const save = useCallback(async () => {
@@ -112,8 +140,12 @@ export default function TemplateEditorPage() {
       }
       if (isNew) {
         const j = await res.json() as { data: OfferTemplate };
+        try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
         router.replace(`/templates/${j.data.id}`);
       } else {
+        setIsDirty(false);
+        setDraftBanner(false);
+        try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
         setSaved(true);
         setTimeout(() => setSaved(false), 2500);
       }
@@ -122,7 +154,25 @@ export default function TemplateEditorPage() {
     } finally {
       setSaving(false);
     }
-  }, [isNew, name, params.id, router]);
+  }, [isNew, name, params.id, router, draftKey]);
+
+  // ── Preview ────────────────────────────────────────────────────────────────
+  const openPreview = useCallback(async () => {
+    const json = editorRef.current?.getJSON();
+    setPreviewing(true); setPreviewHtml(null);
+    try {
+      const res = await fetch('/api/templates/preview', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: json ? JSON.stringify(json) : undefined }),
+      });
+      const j = await res.json() as { html?: string; detail?: string };
+      if (!res.ok) throw new Error(j.detail ?? `Fel ${res.status}`);
+      setPreviewHtml(j.html ?? '');
+    } catch (e) {
+      setError((e as Error).message);
+      setPreviewing(false);
+    }
+  }, []);
 
   // Ctrl+S shortcut
   useEffect(() => {
@@ -149,10 +199,13 @@ export default function TemplateEditorPage() {
         {/* Name */}
         <input
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => { setName(e.target.value); setIsDirty(true); }}
           placeholder="Mallnamn…"
           className="flex-1 min-w-0 bg-transparent text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none border-b border-transparent focus:border-[var(--accent)] transition-colors py-0.5 max-w-[260px]"
         />
+        {isDirty && (
+          <span className="text-xs text-amber-500 font-medium shrink-0">Osparat •</span>
+        )}
 
         {/* Spacer */}
         <div className="flex-1"/>
@@ -186,6 +239,22 @@ export default function TemplateEditorPage() {
               Sparat
             </span>
           )}
+          {/* Preview button — only on Offer tab */}
+          {activeTab === 'offer' && (
+            <button onClick={() => void openPreview()} disabled={previewing}
+              className="rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-active)] disabled:opacity-50 transition-colors flex items-center gap-1.5">
+              {previewing ? (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                </svg>
+              ) : (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              )}
+              Förhandsgranska
+            </button>
+          )}
           <button onClick={() => void save()} disabled={saving}
             className="rounded bg-[var(--accent)] px-3 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-1.5">
             {saving ? (
@@ -199,6 +268,34 @@ export default function TemplateEditorPage() {
           </button>
         </div>
       </div>
+
+      {/* ── Draft restore banner ────────────────────────────────────────────── */}
+      {draftBanner && (
+        <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-2 bg-amber-50 border-b border-amber-200 text-amber-800 text-xs">
+          <span>Osparat utkast hittades i din webbläsare.</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                try {
+                  const raw = localStorage.getItem(draftKey);
+                  if (raw) editorRef.current?.setContent(JSON.parse(raw) as object);
+                } catch { /* ignore */ }
+                setDraftBanner(false);
+              }}
+              className="font-medium underline hover:no-underline">
+              Återställ
+            </button>
+            <button
+              onClick={() => {
+                try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
+                setDraftBanner(false);
+              }}
+              className="text-amber-600 hover:text-amber-800">
+              Ignorera
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Content area ────────────────────────────────────────────────────── */}
       {loading ? (
@@ -215,6 +312,7 @@ export default function TemplateEditorPage() {
             <TemplateEditor
               initialContent={initialContentRef.current}
               editorRef={editorRef}
+              onUpdate={() => setIsDirty(true)}
             />
           </div>
 
@@ -228,6 +326,48 @@ export default function TemplateEditorPage() {
             />
           </div>
         </>
+      )}
+
+      {/* ── Preview modal ──────────────────────────────────────────────────── */}
+      {previewing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => { setPreviewing(false); setPreviewHtml(null); }}>
+          <div className="relative w-full max-w-4xl max-h-[90vh] bg-[var(--surface-0)] rounded-xl shadow-2xl overflow-hidden flex flex-col border border-[var(--border)]"
+            onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)] bg-[var(--surface-alt)] shrink-0">
+              <div className="flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                <span className="text-sm font-medium text-[var(--text-primary)]">Förhandsvisning</span>
+                <span className="text-xs text-[var(--text-muted)]">— med exempeldata</span>
+              </div>
+              <button onClick={() => { setPreviewing(false); setPreviewHtml(null); }}
+                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1 rounded hover:bg-[var(--surface-active)]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            {/* Content */}
+            {previewHtml === null ? (
+              <div className="flex-1 flex items-center justify-center gap-3 text-[var(--text-muted)]">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                </svg>
+                <span className="text-sm">Genererar förhandsvisning…</span>
+              </div>
+            ) : (
+              <iframe
+                srcDoc={previewHtml}
+                className="flex-1 w-full border-0"
+                sandbox="allow-same-origin"
+                title="Förhandsvisning av offertdokument"
+              />
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

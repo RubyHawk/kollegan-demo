@@ -45,7 +45,8 @@ export default function BlockSettingsSidebar() {
       {active === 'table'          && editor && <TableSettings editor={editor} />}
       {active === 'signatureBlock' && editor && <SignatureSettings editor={editor} />}
       {active === 'variable'       && editor && <VariableInfo editor={editor} />}
-      {active === null             &&           <PlaceholderReference />}
+      {active === null             && hf        && <DocumentSettings hf={hf} />}
+      {active === null             && !hf       && <PlaceholderReference />}
       {/* Page settings panel — always visible at the bottom */}
       {hf && <PageSettings hf={hf} />}
     </div>
@@ -423,32 +424,65 @@ function VariableInfo({ editor }: { editor: Editor }) {
   );
 }
 
-// ── Placeholder reference ──────────────────────────────────────────────────────
+// ── Document settings (shown when nothing is selected) ────────────────────────
+
+function DocumentSettings({ hf }: { hf: HFCtxValue }) {
+  const { docSettings, patchDocSettings } = hf;
+  const FONTS = ['Calibri', 'Arial', 'Georgia', 'Times New Roman', 'Helvetica Neue'];
+  const MARGINS = [
+    { key: 'tight',  label: 'Smal',   px: '64 px' },
+    { key: 'normal', label: 'Normal', px: '96 px' },
+    { key: 'wide',   label: 'Bred',   px: '128 px' },
+  ] as const;
+
+  return (
+    <PanelWrap title="Dokumentinställningar">
+      <Label>Standardteckensnitt</Label>
+      <select
+        value={docSettings.defaultFont}
+        onChange={(e) => patchDocSettings({ defaultFont: e.target.value })}
+        className="w-full mb-4 px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
+        style={{ fontFamily: docSettings.defaultFont }}
+      >
+        {FONTS.map((f) => (
+          <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>
+        ))}
+      </select>
+
+      <Label>Sidmarginal</Label>
+      <div className="flex gap-1 mb-4">
+        {MARGINS.map(({ key, label, px }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => patchDocSettings({ pageMargin: key })}
+            title={px}
+            className={`flex-1 rounded-md border px-1.5 py-1.5 text-[11px] font-medium transition-colors ${
+              docSettings.pageMargin === key
+                ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
+                : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+        Klicka på ett block i dokumentet för att se dess inställningar här.
+      </p>
+    </PanelWrap>
+  );
+}
+
+// ── Fallback (no HF context) ───────────────────────────────────────────────────
 
 function PlaceholderReference() {
   return (
     <PanelWrap title="Inget markerat">
-      <p className="text-xs text-[var(--text-muted)] leading-relaxed mb-3">
+      <p className="text-xs text-[var(--text-muted)] leading-relaxed">
         Klicka på ett block i dokumentet för att se dess inställningar här.
       </p>
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-          <span className="text-[10px] font-mono text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded">var</span>
-          Variabelchip — klicka för info
-        </div>
-        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-          <span className="w-4 h-4 rounded bg-[var(--surface-3)] inline-flex items-center justify-center shrink-0">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
-          </span>
-          Tabell — rad-/kolumnverktyg
-        </div>
-        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-          <span className="w-4 h-4 rounded bg-[var(--surface-3)] inline-flex items-center justify-center shrink-0">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-          </span>
-          Bild — position, bredd, lager
-        </div>
-      </div>
     </PanelWrap>
   );
 }
