@@ -14,7 +14,6 @@
 import { useEffect, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
-import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
 
 type ActiveBlock = 'image' | 'table' | 'signatureBlock' | 'variable' | null;
 
@@ -428,19 +427,27 @@ function VariableInfo({ editor }: { editor: Editor }) {
 
 function PlaceholderReference() {
   return (
-    <PanelWrap title="Platshållare">
-      <p className="text-xs text-[var(--text-muted)] mb-2">
-        Tillgängliga variabler att infoga:
+    <PanelWrap title="Inget markerat">
+      <p className="text-xs text-[var(--text-muted)] leading-relaxed mb-3">
+        Klicka på ett block i dokumentet för att se dess inställningar här.
       </p>
       <div className="flex flex-col gap-1.5">
-        {OFFER_PLACEHOLDERS.map((p) => (
-          <div key={p.key} className="flex items-start gap-2">
-            <code className="shrink-0 text-[9px] font-mono text-violet-600 bg-violet-50 border border-violet-200 px-1 py-0.5 rounded mt-0.5">
-              {p.key}
-            </code>
-            <span className="text-xs text-[var(--text-muted)]">{p.label}</span>
-          </div>
-        ))}
+        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+          <span className="text-[10px] font-mono text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded">var</span>
+          Variabelchip — klicka för info
+        </div>
+        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+          <span className="w-4 h-4 rounded bg-[var(--surface-3)] inline-flex items-center justify-center shrink-0">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+          </span>
+          Tabell — rad-/kolumnverktyg
+        </div>
+        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+          <span className="w-4 h-4 rounded bg-[var(--surface-3)] inline-flex items-center justify-center shrink-0">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          </span>
+          Bild — position, bredd, lager
+        </div>
       </div>
     </PanelWrap>
   );

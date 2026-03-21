@@ -417,7 +417,7 @@ export default function TemplateEditor({ initialContent, editorRef }: Props) {
         patchActiveHeader,
         patchActiveFooter,
       }}>
-        <div className="flex h-full overflow-hidden">
+        <div className="template-editor-light flex h-full overflow-hidden">
           {/* Left panel */}
           <BlocksSidebar />
 

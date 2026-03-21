@@ -143,11 +143,11 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: '#f8f9fa' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--surface-1)' }}>
 
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
       <div style={{
-        background: '#f3f2f1', borderBottom: '1px solid #d2d0ce',
+        background: 'var(--surface-2)', borderBottom: '1px solid var(--border)',
         padding: '4px 10px', display: 'flex', alignItems: 'center',
         gap: 3, flexWrap: 'wrap', flexShrink: 0, userSelect: 'none',
       }}>
@@ -186,7 +186,7 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
         <Sep />
 
         {/* Variable chips */}
-        <span style={{ fontSize: 10, color: '#605e5c', fontFamily: 'Calibri,sans-serif', marginLeft: 2 }}>Infoga:</span>
+        <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'system-ui,sans-serif', marginLeft: 2 }}>Infoga:</span>
         {EMAIL_VARS.map((p) => {
           const key = p.key.replace(/[{}]/g, '');
           return (
@@ -214,10 +214,10 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
           onMouseDown={(e) => { e.preventDefault(); setShowDesign((v) => !v); }}
           style={{
             marginLeft: 'auto', fontSize: 11, padding: '3px 10px',
-            border: `1px solid ${showDesign ? '#0078d4' : '#d2d0ce'}`,
-            borderRadius: 3, background: showDesign ? '#ddeeff' : '#fff',
-            color: showDesign ? '#0078d4' : '#323130',
-            cursor: 'pointer', fontFamily: 'Calibri,sans-serif',
+            border: `1px solid ${showDesign ? 'var(--accent-border)' : 'var(--border)'}`,
+            borderRadius: 4, background: showDesign ? 'var(--accent-subtle)' : 'var(--surface)',
+            color: showDesign ? 'var(--accent)' : 'var(--text-primary)',
+            cursor: 'pointer', fontFamily: 'system-ui,sans-serif',
             display: 'flex', alignItems: 'center', gap: 5,
           }}
         >
@@ -228,18 +228,18 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
 
       {/* ── Subject line ─────────────────────────────────────────────────────── */}
       <div style={{
-        borderBottom: '1px solid #e2e8f0', background: '#fff',
-        padding: '10px 24px', display: 'flex', alignItems: 'center',
+        borderBottom: '1px solid var(--border)', background: 'var(--surface)',
+        padding: '8px 20px', display: 'flex', alignItems: 'center',
         gap: 10, flexShrink: 0,
       }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', fontFamily: 'system-ui,sans-serif', minWidth: 56 }}>Ämnesrad</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', fontFamily: 'system-ui,sans-serif', minWidth: 56, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Ämne</span>
         <input
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="t.ex. Offert: {{offerTitle}}"
           style={{
-            flex: 1, fontSize: 14, border: 'none', outline: 'none',
-            color: '#1e293b', fontFamily: 'system-ui,sans-serif',
+            flex: 1, fontSize: 13, border: 'none', outline: 'none',
+            color: 'var(--text-primary)', fontFamily: 'system-ui,sans-serif',
             background: 'transparent',
           }}
         />
@@ -325,7 +325,7 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
         {/* ── Design settings panel ─────────────────────────────────────────── */}
         {showDesign && (
           <div style={{
-            width: 288, borderLeft: '1px solid #d2d0ce', background: '#fafafa',
+            width: 280, borderLeft: '1px solid var(--border)', background: 'var(--surface-1)',
             overflow: 'auto', flexShrink: 0, padding: '16px',
           }}>
 
@@ -441,9 +441,9 @@ function parseDesign(configJson?: string): DesignConfig {
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '4px 7px', fontSize: 12,
-  border: '1px solid #d2d0ce', borderRadius: 3,
-  fontFamily: 'Calibri, Arial, sans-serif', color: '#1e1e1e',
-  background: '#fff', outline: 'none', boxSizing: 'border-box',
+  border: '1px solid var(--border)', borderRadius: 4,
+  fontFamily: 'system-ui, sans-serif', color: 'var(--text-primary)',
+  background: 'var(--surface-0)', outline: 'none', boxSizing: 'border-box',
 };
 
 function TBtn({ active, onClick, title, bold, italic, underline, children }: {
@@ -459,17 +459,17 @@ function TBtn({ active, onClick, title, bold, italic, underline, children }: {
       style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         minWidth: 26, height: 26, padding: '0 4px',
-        background: active ? '#ddeeff' : 'transparent',
-        border:     active ? '1px solid #c0d8f0' : '1px solid transparent',
-        color: active ? '#004e8c' : '#1e1e1e',
-        borderRadius: 2, cursor: 'pointer', flexShrink: 0,
+        background: active ? 'var(--accent-subtle)' : 'transparent',
+        border:     active ? '1px solid var(--accent-border)' : '1px solid transparent',
+        color: active ? 'var(--accent)' : 'var(--text-primary)',
+        borderRadius: 3, cursor: 'pointer', flexShrink: 0,
         fontWeight: bold ? 700 : 400,
         fontStyle:  italic ? 'italic' : 'normal',
         textDecoration: underline ? 'underline' : 'none',
-        fontFamily: 'Georgia, serif', fontSize: 13,
+        fontFamily: 'system-ui, sans-serif', fontSize: 12,
       }}
-      onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = '#e8e6e3'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = active ? '#ddeeff' : 'transparent'; }}
+      onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--surface-active)'; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = active ? 'var(--accent-subtle)' : 'transparent'; }}
     >
       {children}
     </button>
@@ -477,13 +477,13 @@ function TBtn({ active, onClick, title, bold, italic, underline, children }: {
 }
 
 function Sep() {
-  return <div style={{ width: 1, height: 20, background: '#d2d0ce', margin: '0 2px', alignSelf: 'center', flexShrink: 0 }} />;
+  return <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 2px', alignSelf: 'center', flexShrink: 0 }} />;
 }
 
 function DesignSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 20 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: '#323130', fontFamily: 'Calibri,sans-serif', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px', borderBottom: '1px solid #e8e6e3', paddingBottom: 4 }}>
+      <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'system-ui,sans-serif', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px', borderBottom: '1px solid var(--border)', paddingBottom: 4 }}>
         {title}
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>{children}</div>
@@ -494,7 +494,7 @@ function DesignSection({ title, children }: { title: string; children: React.Rea
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p style={{ fontSize: 10, color: '#605e5c', fontFamily: 'Calibri,sans-serif', marginBottom: 2, marginTop: 0 }}>{label}</p>
+      <p style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'system-ui,sans-serif', marginBottom: 2, marginTop: 0 }}>{label}</p>
       {children}
     </div>
   );
@@ -504,7 +504,7 @@ function ColorRow({ value, onChange }: { value: string; onChange: (v: string) =>
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
       <input type="color" value={value} onChange={(e) => onChange(e.target.value)}
-        style={{ width: 32, height: 24, padding: 0, border: '1px solid #d2d0ce', borderRadius: 2, cursor: 'pointer' }} />
+        style={{ width: 32, height: 24, padding: 0, border: '1px solid var(--border)', borderRadius: 3, cursor: 'pointer' }} />
       <input value={value} onChange={(e) => onChange(e.target.value)}
         style={{ ...inputStyle, width: 80, fontFamily: 'monospace' }} maxLength={7} />
     </div>
@@ -513,8 +513,8 @@ function ColorRow({ value, onChange }: { value: string; onChange: (v: string) =>
 
 function ToggleRow({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, fontFamily: 'Calibri,sans-serif', color: '#323130' }}>
-      <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} style={{ cursor: 'pointer' }} />
+    <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, fontFamily: 'system-ui,sans-serif', color: 'var(--text-primary)' }}>
+      <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} style={{ cursor: 'pointer', accentColor: 'var(--accent)' }} />
       {label}
     </label>
   );
