@@ -13,7 +13,7 @@
  * - Copy public signing link to clipboard
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { cn } from '@shared/lib/utils';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -51,7 +51,6 @@ interface Offer {
   reminderCount:        number;
   leadId?:              string;
   templateId?:          string;
-  generatedDocument?:   string;
   publicToken:          string;
   publicTokenExpiresAt?: string;
 }
@@ -338,6 +337,7 @@ export default function OffersPage() {
   const [acting,     setActing]     = useState<string | null>(null);
   const [templates,         setTemplates]         = useState<OfferTemplate[]>([]);
   const [previewDoc,        setPreviewDoc]        = useState<string | null>(null); // generated-doc HTML
+  const [fetchingDocId,     setFetchingDocId]     = useState<string | null>(null); // offer being doc-fetched
   const [tplPreview,        setTplPreview]        = useState<{ loading: boolean; html: string | null } | null>(null);
   const [confirmDeleteOffer, setConfirmDeleteOffer] = useState<string | null>(null);
   const [copied,            setCopied]            = useState<string | null>(null); // offerId copied
@@ -415,12 +415,13 @@ export default function OffersPage() {
   useEffect(() => { void load(); setSelected(new Set()); setBulkResult(null); }, [load]);
 
   // ── Derived: filtered + sorted list for current tab ───────────────────────────
-  const offers = (tab === 'all' ? allOffers : allOffers.filter((o) => o.status === tab))
-    .slice()
-    .sort((a, b) => {
+  const offers = useMemo(() => {
+    const base = tab === 'all' ? allOffers : allOffers.filter((o) => o.status === tab);
+    return base.slice().sort((a, b) => {
       const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       return sortAsc ? diff : -diff;
     });
+  }, [allOffers, tab, sortAsc]);
 
   const total = allOffers.length;
 
@@ -559,6 +560,20 @@ export default function OffersPage() {
       setTplPreview(null);
     }
   }, [form.templateId]);
+
+  // ── Fetch & open generated document preview on-demand ─────────────────────────
+  // generatedDocument is excluded from the list payload (too large); fetch by ID.
+  const fetchAndPreviewDoc = useCallback(async (offerId: string) => {
+    setFetchingDocId(offerId);
+    try {
+      const res = await fetch(`/api/offers/${offerId}`);
+      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      const j = await res.json() as { data?: { generatedDocument?: string } };
+      setPreviewDoc(j.data?.generatedDocument ?? null);
+    } catch { /* show nothing on error */ } finally {
+      setFetchingDocId(null);
+    }
+  }, []);
 
   // ── Copy public link ───────────────────────────────────────────────────────────
   const copyLink = useCallback(async (offer: Offer) => {
@@ -1669,15 +1684,23 @@ export default function OffersPage() {
                     {/* Actions — appear on hover */}
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-100">
-                        {/* PDF / preview */}
-                        {offer.generatedDocument && (
+                        {/* PDF / preview — show for all sent/viewed/accepted; fetch doc on-demand */}
+                        {(offer.status === 'sent' || offer.status === 'viewed' || offer.status === 'accepted') && (
                           <>
-                            <button type="button" onClick={() => setPreviewDoc(offer.generatedDocument!)}
+                            <button type="button"
+                              onClick={() => void fetchAndPreviewDoc(offer.id)}
+                              disabled={fetchingDocId === offer.id}
                               title="Förhandsgranska dokument"
-                              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                              </svg>
+                              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40">
+                              {fetchingDocId === offer.id ? (
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+                                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                              ) : (
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                </svg>
+                              )}
                             </button>
                             <button type="button" onClick={() => window.open(`/api/offers/${offer.id}/pdf`, '_blank')}
                               title="Öppna PDF"

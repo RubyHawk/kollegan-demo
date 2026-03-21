@@ -86,6 +86,7 @@ model Offer {
   @@unique([organizationId, offerNumber])
   @@index([organizationId, status])
   @@index([organizationId, createdAt])
+  @@index([organizationId, status, createdAt]) // composite: filtered tab views + sort
   @@index([organizationId, recipientEmail])
   @@index([deletedAt])
   @@map("off_offers")

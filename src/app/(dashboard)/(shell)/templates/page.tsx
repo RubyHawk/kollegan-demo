@@ -124,6 +124,7 @@ export default function TemplatesPage() {
         </div>
         <button
           onClick={() => router.push('/templates/new')}
+          onMouseEnter={() => router.prefetch('/templates/new')}
           className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity shrink-0"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -216,6 +217,7 @@ export default function TemplatesPage() {
                       {/* Edit */}
                       <button
                         onClick={() => router.push(`/templates/${t.id}`)}
+                        onMouseEnter={() => router.prefetch(`/templates/${t.id}`)}
                         className="text-xs text-[var(--accent)] hover:underline"
                       >
                         Redigera

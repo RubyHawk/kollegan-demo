@@ -165,6 +165,22 @@ const OFFER_SELECT = {
   lineItems: { select: LINE_ITEM_SELECT, orderBy: { sortOrder: 'asc' as const } },
 };
 
+// Lightweight select for list queries — omits large document/image fields that are
+// only needed when viewing a single offer. Reduces payload by ~90% for sent offers.
+const OFFER_LIST_SELECT = {
+  id: true, organizationId: true, title: true, status: true,
+  offerNumber: true,
+  recipientName: true, recipientEmail: true, recipientCompany: true,
+  notes: true, validUntil: true, validityDays: true, createdBy: true,
+  totalExVat: true, totalIncVat: true,
+  sentAt: true, viewedAt: true, acceptedAt: true, declinedAt: true,
+  reminderSentAt: true, reminderCount: true,
+  leadId: true, customerId: true, templateId: true,
+  publicToken: true, publicTokenExpiresAt: true,
+  createdAt: true, updatedAt: true,
+  lineItems: { select: LINE_ITEM_SELECT, orderBy: { sortOrder: 'asc' as const } },
+};
+
 // ─── Repository ────────────────────────────────────────────────────────────────
 
 export const offersRepository = {
@@ -236,7 +252,7 @@ export const offersRepository = {
     const [rows, total] = await Promise.all([
       prisma.offer.findMany({
         where: where as Prisma.OfferWhereInput,
-        select: OFFER_SELECT,
+        select: OFFER_LIST_SELECT,
         orderBy: { createdAt: 'desc' },
         take:  filter.limit  ?? 50,
         skip:  filter.offset ?? 0,
