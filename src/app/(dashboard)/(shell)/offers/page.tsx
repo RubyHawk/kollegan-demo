@@ -1640,7 +1640,7 @@ export default function OffersPage() {
               </thead>
               <tbody>
                 {offers.map((offer, i) => (
-                  <tr key={offer.id} className={cn('group hover:bg-[var(--surface-alt)] transition-colors', i > 0 && 'border-t border-[var(--border)]', (offer.status === 'sent' || offer.status === 'viewed') && offer.validUntil && new Date(offer.validUntil) < new Date() && 'bg-amber-50/30 dark:bg-amber-900/10')}>
+                  <tr key={offer.id} className={cn('group hover:bg-[var(--surface-alt)] transition-colors', i > 0 && 'border-t border-[var(--border)]', offer.status === 'expired' && 'bg-amber-50/40 dark:bg-amber-900/10')}>
                     {/* Checkbox */}
                     <td className="px-3 py-3 w-8">
                       {offer.status === 'draft' && (
@@ -1687,9 +1687,16 @@ export default function OffersPage() {
 
                     {/* Valid until */}
                     <td className="px-3 py-3 whitespace-nowrap">
-                      <p className={cn('text-xs leading-tight', offer.validUntil && new Date(offer.validUntil) < new Date() && (offer.status === 'sent' || offer.status === 'viewed') ? 'text-amber-600 font-medium' : 'text-[var(--text-secondary)]')}>
-                        {fmtDate(offer.validUntil) ?? '—'}
-                      </p>
+                      {offer.status === 'expired' ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                          Utgången {fmtDate(offer.validUntil)}
+                        </span>
+                      ) : (
+                        <p className="text-xs leading-tight text-[var(--text-secondary)]">
+                          {fmtDate(offer.validUntil) ?? '—'}
+                        </p>
+                      )}
                     </td>
 
                     {/* Created */}

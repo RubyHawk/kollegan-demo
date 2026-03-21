@@ -104,7 +104,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     const items: StackItem[] = [];
     editor?.state.doc.descendants((n, pos) => {
       if (n.type.name === 'image' && n.attrs.position === 'free') {
-        items.push({ pos, zIndex: Math.max(0, n.attrs.zIndex ?? 0) });
+        items.push({ pos, zIndex: n.attrs.zIndex ?? 0 });
       }
     });
     return items.sort((a, b) => a.zIndex - b.zIndex);
@@ -224,9 +224,11 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
   const onMoveStart = useCallback(
     (e: React.MouseEvent) => {
       if (!isFree) return;
-      // Allow the event to propagate so ProseMirror handles selection on click.
-      // Only preventDefault to suppress text-cursor behaviour.
-      e.preventDefault();
+      // Immediately select this node on mousedown so the sidebar updates right away.
+      // We can't call selectSelf() here (defined later), so inline the same logic.
+      e.preventDefault(); // suppress text-cursor default behaviour
+      const p = typeof getPos === 'function' ? getPos() : null;
+      if (typeof p === 'number') editor?.commands.setNodeSelection(p);
 
       const wrapper = containerRef.current?.parentElement as HTMLElement | null;
       if (!wrapper) return;
@@ -266,7 +268,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
       document.addEventListener('mouseup', onUp);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isFree, isFreeWrapped, wrapText, posX, posY, width, updateAttributes],
+    [isFree, isFreeWrapped, wrapText, posX, posY, width, updateAttributes, getPos, editor],
   );
 
   // ── Command helpers ───────────────────────────────────────────────────────────
@@ -340,14 +342,14 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
         display:     'block',
         lineHeight:  0,
         width:       imgW ? `${imgW}px` : '200px',
-        zIndex:      Math.max(0, zIndex ?? 0),
+        zIndex:      zIndex ?? 0,
       }
     : isFree
       ? {
           position:   'absolute',
           left:       posX,
           top:        posY,
-          zIndex:     Math.max(0, zIndex ?? 0),
+          zIndex:     zIndex ?? 0,
           width:      imgW ? `${imgW}px` : '200px',
           display:    'block',
           lineHeight: 0,
@@ -504,6 +506,24 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
 
                 <ImgBtn active={false} disabled={atTop} tooltip="Flytta framåt" onClick={bringForward}>
                   <LayerUpIcon />
+                </ImgBtn>
+              </>
+            )}
+
+            {/* Background toggle — free mode only */}
+            {isFree && (
+              <>
+                <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
+                <ImgBtn
+                  active={(zIndex ?? 0) < 0}
+                  tooltip={(zIndex ?? 0) < 0 ? 'Bakgrundsbild — klicka för att flytta framåt' : 'Använd som bakgrundsbild (bakom text)'}
+                  onClick={() => updateAttributes({ zIndex: (zIndex ?? 0) < 0 ? 1 : -1 })}
+                >
+                  {/* Simple "image behind lines" icon */}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="6" width="20" height="12" rx="2" />
+                    <path d="M2 10h20M2 14h20" strokeDasharray="3 2" />
+                  </svg>
                 </ImgBtn>
               </>
             )}
