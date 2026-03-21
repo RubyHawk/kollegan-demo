@@ -14,6 +14,12 @@ import { useRef } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
+import {
+  FileText, CurrencyDollar, Clipboard, Signature, ChatText,
+  File, FileStar, CheckSquare, Tag, Buildings, Scale,
+  TextHOne, TextHTwo, Paragraph, ListBullets, Table, Minus as PhMinus, Image as PhImage,
+  Braces, PenNib, User, CalendarBlank,
+} from '@phosphor-icons/react';
 
 // ── Section presets ────────────────────────────────────────────────────────────
 // Each preset is an array of TipTap JSON nodes inserted at the cursor position.
@@ -31,7 +37,7 @@ const SECTION_PRESETS: Array<{
     key:     'offerHeader',
     label:   'Offerthuvud',
     tooltip: 'Titel, mottagare, offert nr och datum',
-    icon:    <LayoutIcon />,
+    icon:    <FileText size={14} />,
     nodes: [
       {
         type: 'heading', attrs: { level: 1 },
@@ -64,7 +70,7 @@ const SECTION_PRESETS: Array<{
     key:     'pricingSection',
     label:   'Prissättning',
     tooltip: 'Radartiklar, moms och totalsumma',
-    icon:    <PriceTagIcon />,
+    icon:    <CurrencyDollar size={14} />,
     nodes: [
       {
         type: 'heading', attrs: { level: 2 },
@@ -102,7 +108,7 @@ const SECTION_PRESETS: Array<{
     key:     'termsSection',
     label:   'Betalningsvillkor',
     tooltip: 'Standard betalnings- och leveransvillkor',
-    icon:    <ClipboardIcon />,
+    icon:    <Clipboard size={14} />,
     nodes: [
       {
         type: 'heading', attrs: { level: 2 },
@@ -144,7 +150,7 @@ const SECTION_PRESETS: Array<{
     key:     'signatureSection',
     label:   'Underskrift',
     tooltip: 'Godkännande och e-signatur',
-    icon:    <SignatureIcon />,
+    icon:    <Signature size={14} />,
     nodes: [
       {
         type: 'heading', attrs: { level: 2 },
@@ -163,7 +169,7 @@ const SECTION_PRESETS: Array<{
     key:     'introSection',
     label:   'Introduktion',
     tooltip: 'Personligt introduktionsstycke',
-    icon:    <MessageIcon />,
+    icon:    <ChatText size={14} />,
     nodes: [
       {
         type: 'paragraph',
@@ -198,7 +204,7 @@ const PAGE_PRESETS: PagePreset[] = [
     key:     'omslag',
     label:   'Omslag',
     tooltip: 'Försättsblad med titel, företag och offertinfo',
-    icon:    <CoverIcon />,
+    icon:    <File size={14} />,
     body: {
       type: 'doc',
       content: [
@@ -239,7 +245,7 @@ const PAGE_PRESETS: PagePreset[] = [
     key:     'sammanfattning',
     label:   'Sammanfattning',
     tooltip: 'Ledningssummering / executive summary',
-    icon:    <SummaryIcon />,
+    icon:    <FileStar size={14} />,
     body: {
       type: 'doc',
       content: [
@@ -266,7 +272,7 @@ const PAGE_PRESETS: PagePreset[] = [
     key:     'leveranser',
     label:   'Leveranser & Scope',
     tooltip: 'Scope of work — vad som ingår och vad som levereras',
-    icon:    <ScopeIcon />,
+    icon:    <CheckSquare size={14} />,
     body: {
       type: 'doc',
       content: [
@@ -308,7 +314,7 @@ const PAGE_PRESETS: PagePreset[] = [
     key:     'prissida',
     label:   'Prissida',
     tooltip: 'Radartiklar, moms och totalsumma',
-    icon:    <PriceTagIcon />,
+    icon:    <Tag size={14} />,
     body: {
       type: 'doc',
       content: [
@@ -349,7 +355,7 @@ const PAGE_PRESETS: PagePreset[] = [
     key:     'omoss',
     label:   'Om oss',
     tooltip: 'Om företaget, team och kontaktinfo',
-    icon:    <TeamIcon />,
+    icon:    <Buildings size={14} />,
     body: {
       type: 'doc',
       content: [
@@ -380,7 +386,7 @@ const PAGE_PRESETS: PagePreset[] = [
     key:     'foretagsinfo',
     label:   'Företagsinformation',
     tooltip: 'Org.nr, adress och kontaktuppgifter',
-    icon:    <CompanyIcon />,
+    icon:    <FileText size={14} />,
     body: {
       type: 'doc',
       content: [
@@ -444,7 +450,7 @@ const PAGE_PRESETS: PagePreset[] = [
     key:     'villkor',
     label:   'Allmänna villkor',
     tooltip: 'Standardvillkor för leverans och betalning',
-    icon:    <ClipboardIcon />,
+    icon:    <Scale size={14} />,
     body: {
       type: 'doc',
       content: [
@@ -557,37 +563,37 @@ export default function BlocksSidebar() {
       <Section label="BLOCK">
         <InsertItem
           label="Rubrik 1"
-          icon={<H1Icon />}
+          icon={<TextHOne size={14} />}
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
         />
         <InsertItem
           label="Rubrik 2"
-          icon={<H2Icon />}
+          icon={<TextHTwo size={14} />}
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         />
         <InsertItem
           label="Brödtext"
-          icon={<ParagraphIcon />}
+          icon={<Paragraph size={14} />}
           onClick={() => editor.chain().focus().setParagraph().run()}
         />
         <InsertItem
           label="Punktlista"
-          icon={<BulletIcon />}
+          icon={<ListBullets size={14} />}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
         />
         <InsertItem
           label="Tabell"
-          icon={<TableIcon />}
+          icon={<Table size={14} />}
           onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
         />
         <InsertItem
           label="Avdelare"
-          icon={<HrIcon />}
+          icon={<PhMinus size={14} />}
           onClick={() => editor.chain().focus().setHorizontalRule().run()}
         />
         <InsertItem
           label="Bild"
-          icon={<ImageIcon />}
+          icon={<PhImage size={14} />}
           onClick={() => fileRef.current?.click()}
         />
         <input
@@ -611,7 +617,7 @@ export default function BlocksSidebar() {
             <InsertItem
               key={p.key}
               label={p.label}
-              icon={<VarIcon />}
+              icon={<Braces size={14} />}
               chip
               onClick={() =>
                 editor
@@ -628,7 +634,7 @@ export default function BlocksSidebar() {
         {/* lineItems is a special placeholder — insert as text since it's a full table */}
         <InsertItem
           label="Radartiklar (tabell)"
-          icon={<VarIcon />}
+          icon={<Braces size={14} />}
           chip
           onClick={() =>
             editor
@@ -647,7 +653,7 @@ export default function BlocksSidebar() {
       <Section label="SIGNATURFÄLT">
         <InsertItem
           label="Signaturfält"
-          icon={<PenIcon />}
+          icon={<PenNib size={14} />}
           onClick={() =>
             editor
               .chain()
@@ -658,7 +664,7 @@ export default function BlocksSidebar() {
         />
         <InsertItem
           label="Namnfält"
-          icon={<UserIcon />}
+          icon={<User size={14} />}
           onClick={() =>
             editor
               .chain()
@@ -669,7 +675,7 @@ export default function BlocksSidebar() {
         />
         <InsertItem
           label="Datumfält"
-          icon={<CalendarIcon />}
+          icon={<CalendarBlank size={14} />}
           onClick={() =>
             editor
               .chain()
@@ -687,9 +693,9 @@ export default function BlocksSidebar() {
 
 function SidebarShell({ children }: { children?: React.ReactNode }) {
   return (
-    <div className="w-52 shrink-0 border-r hidden md:flex flex-col overflow-y-auto" style={{ background: '#f3f2f1', borderColor: '#d2d0ce' }}>
-      <div style={{ padding: '8px 0 4px', borderBottom: '1px solid #d2d0ce', background: '#f3f2f1' }}>
-        <p style={{ fontSize: 11, fontWeight: 600, color: '#605e5c', padding: '0 12px 4px', fontFamily: 'Calibri, Arial, sans-serif', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+    <div className="w-52 shrink-0 flex-col overflow-y-auto border-r border-[var(--border)] bg-[var(--surface-2)] hidden md:flex">
+      <div className="px-3 pt-3 pb-2 border-b border-[var(--border)]">
+        <p className="text-sm font-semibold text-[var(--text-primary)]">
           Infoga
         </p>
       </div>
@@ -700,14 +706,10 @@ function SidebarShell({ children }: { children?: React.ReactNode }) {
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ paddingBottom: 4 }}>
-      <p style={{
-        padding: '10px 12px 3px',
-        fontSize: 10, fontWeight: 600,
-        color: '#a19f9d',
-        fontFamily: 'Calibri, Arial, sans-serif',
-        letterSpacing: '0.06em', textTransform: 'uppercase',
-      }}>{label}</p>
+    <div className="pb-1">
+      <p className="px-3 pt-4 pb-1 text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-wider">
+        {label}
+      </p>
       {children}
     </div>
   );
@@ -725,38 +727,23 @@ function InsertItem({
 }) {
   const resolvedChipLabel = chipLabel ?? (chip ? 'var' : undefined);
   const chipColorStyles =
-    chipColorProp === 'blue'   ? { color: '#1e40af', background: '#dbeafe', border: '1px solid #bfdbfe' }
+    chipColorProp === 'blue'   ? 'text-blue-700 bg-blue-50 border border-blue-200'
     : chipColorProp === 'green' || chipLabel
-      ? { color: '#065f46', background: '#d1fae5', border: '1px solid #a7f3d0' }
-      : { color: '#7b5ea7', background: '#f4f0fa', border: '1px solid #d6c8f0' };
-  // Use renamed var to avoid shadowing — the original code used `chipColor` for the
-  // object literal. Keep the identifier the same so the JSX below still works.
-  const chipColor = chipColorStyles;
+      ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
+      : 'text-violet-700 bg-violet-50 border border-violet-200';
 
   return (
     <button
       type="button"
       onClick={onClick}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        width: '100%', padding: '5px 12px',
-        background: 'transparent', border: 'none',
-        cursor: 'pointer', textAlign: 'left',
-        fontFamily: 'Calibri, Arial, sans-serif',
-        fontSize: 13, color: '#323130',
-        transition: 'background 0.08s',
-      }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#e8e6e3'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+      className="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-md hover:bg-[var(--surface-active)] text-[var(--text-primary)] text-xs font-medium transition-colors group"
     >
-      <span style={{ color: '#605e5c', flexShrink: 0 }}>{icon}</span>
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{label}</span>
+      <span className="w-6 h-6 rounded flex items-center justify-center bg-[var(--surface-3)] text-[var(--accent)] group-hover:bg-[var(--accent-subtle)] shrink-0 transition-colors">
+        {icon}
+      </span>
+      <span className="flex-1 min-w-0 truncate">{label}</span>
       {resolvedChipLabel && (
-        <span style={{
-          fontSize: 9, fontFamily: 'monospace',
-          padding: '1px 4px', borderRadius: 2, flexShrink: 0,
-          ...chipColor,
-        }}>
+        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${chipColorStyles}`}>
           {resolvedChipLabel}
         </span>
       )}
@@ -764,30 +751,4 @@ function InsertItem({
   );
 }
 
-// ── Icons ──────────────────────────────────────────────────────────────────────
 
-const s = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-
-function H1Icon()        { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M4 12h8"/><path d="M4 6v12"/><path d="M12 6v12"/><path d="M17 10l3 2-3 2"/></svg>; }
-function H2Icon()        { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M4 12h8"/><path d="M4 6v12"/><path d="M12 6v12"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/></svg>; }
-function ParagraphIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M13 4H6a4 4 0 0 0 0 8h1v8"/><path d="M13 4v16"/></svg>; }
-function BulletIcon()    { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1" fill="currentColor" stroke="none"/></svg>; }
-function TableIcon()     { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="12" y1="3" x2="12" y2="21"/></svg>; }
-function HrIcon()        { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><line x1="3" y1="12" x2="21" y2="12"/></svg>; }
-function ImageIcon()     { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>; }
-function VarIcon()       { return <svg width="13" height="13" viewBox="0 0 24 24" {...s}><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg>; }
-function PenIcon()       { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>; }
-function UserIcon()      { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>; }
-function CalendarIcon()  { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; }
-// Preset section icons
-function LayoutIcon()    { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>; }
-function PriceTagIcon()  { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>; }
-function ClipboardIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>; }
-function SignatureIcon()  { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M3 17c3.333-5.333 5.333-8 6-8 1 0 1 1 2 1s1-1 2-1 1 1 2 1"/><path d="M17 10c.667 0 1.5.667 2.5 2"/><line x1="3" y1="21" x2="21" y2="21"/></svg>; }
-function MessageIcon()   { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>; }
-// Page preset icons
-function CoverIcon()    { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><rect x="3" y="2" width="18" height="20" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="13" y2="13"/></svg>; }
-function SummaryIcon()  { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>; }
-function ScopeIcon()    { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>; }
-function TeamIcon()     { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>; }
-function CompanyIcon()  { return <svg width="14" height="14" viewBox="0 0 24 24" {...s}><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>; }

@@ -41,7 +41,7 @@ export default function BlockSettingsSidebar() {
   }, [editor]);
 
   return (
-    <div className="w-64 shrink-0 hidden lg:flex flex-col overflow-y-auto" style={{ background: '#f3f2f1', borderLeft: '1px solid #d2d0ce' }}>
+    <div className="w-64 shrink-0 hidden lg:flex flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface-1)]">
       {active === 'image'          && editor && <ImageSettings editor={editor} />}
       {active === 'table'          && editor && <TableSettings editor={editor} />}
       {active === 'signatureBlock' && editor && <SignatureSettings editor={editor} />}
@@ -137,11 +137,11 @@ function ImageSettings({ editor }: { editor: Editor }) {
   };
 
   const btnStyle = (active: boolean): React.CSSProperties => ({
-    flex: 1, padding: '4px 0', fontSize: 11, borderRadius: 2, cursor: 'pointer',
-    fontFamily: 'Calibri, Arial, sans-serif',
-    background: active ? '#ddeeff' : '#ffffff',
-    border:     active ? '1px solid #c0d8f0' : '1px solid #d2d0ce',
-    color:      active ? '#004e8c' : '#323130',
+    flex: 1, padding: '4px 0', fontSize: 11, borderRadius: 6, cursor: 'pointer',
+    background: active ? 'var(--accent-subtle)' : 'var(--surface-0)',
+    border:     active ? '1px solid var(--accent-border)' : '1px solid var(--border)',
+    color:      active ? 'var(--accent)' : 'var(--text-primary)',
+    transition: 'background 0.1s, border-color 0.1s',
   });
 
   return (
@@ -181,10 +181,9 @@ function ImageSettings({ editor }: { editor: Editor }) {
         type="range" min={80} max={816} step={10}
         value={width || 400}
         onChange={(e) => set({ width: Number(e.target.value) })}
-        style={{ width: '100%', accentColor: '#0078d4', marginBottom: 4 }}
+        className="w-full accent-[var(--accent)] mb-1"
       />
-      <p style={{ fontSize: 11, color: '#605e5c', textAlign: 'right',
-        fontFamily: 'Calibri, Arial, sans-serif', marginBottom: 16 }}>
+      <p className="text-[11px] text-[var(--text-muted)] text-right mb-4">
         {width || 400} px
       </p>
 
@@ -304,22 +303,22 @@ function ImageSettings({ editor }: { editor: Editor }) {
 }
 
 const layerBtnStyle: React.CSSProperties = {
-  flex: 1, padding: '4px 0', fontSize: 11, borderRadius: 2,
-  border: '1px solid #d2d0ce', background: '#fff',
-  fontFamily: 'Calibri, Arial, sans-serif', color: '#323130',
+  flex: 1, padding: '4px 0', fontSize: 11, borderRadius: 6,
+  border: '1px solid var(--border)', background: 'var(--surface-0)',
+  color: 'var(--text-primary)', cursor: 'pointer',
 };
 
 const coordInputStyle: React.CSSProperties = {
-  width: '100%', padding: '3px 6px', fontSize: 12,
-  border: '1px solid #d2d0ce', borderRadius: 2,
-  fontFamily: 'Calibri, Arial, sans-serif',
-  color: '#1e1e1e', background: '#fff',
+  width: '100%', padding: '6px 10px', fontSize: 12,
+  border: '1px solid var(--border)', borderRadius: 6,
+  color: 'var(--text-primary)', background: 'var(--surface-0)',
+  outline: 'none',
 };
 
 const quickBtnStyle: React.CSSProperties = {
-  flex: 1, padding: '3px 4px', fontSize: 10, borderRadius: 2, cursor: 'pointer',
-  border: '1px solid #d2d0ce', background: '#fff',
-  fontFamily: 'Calibri, Arial, sans-serif', color: '#323130',
+  flex: 1, padding: '3px 4px', fontSize: 10, borderRadius: 6, cursor: 'pointer',
+  border: '1px solid var(--border)', background: 'var(--surface-0)',
+  color: 'var(--text-primary)',
 };
 
 // ── Table settings ──────────────────────────────────────────────────────────────
@@ -342,23 +341,21 @@ function TableSettings({ editor }: { editor: Editor }) {
   );
 }
 
+import { cn } from '@shared/lib/utils';
+
 function TableBtn({ label, onClick, disabled, danger }: { label: string; onClick: () => void; disabled?: boolean; danger?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      style={{
-        width: '100%', padding: '5px 10px', textAlign: 'left', cursor: disabled ? 'not-allowed' : 'pointer',
-        fontSize: 12, borderRadius: 2, fontFamily: 'Calibri, Arial, sans-serif',
-        opacity: disabled ? 0.4 : 1,
-        background: 'transparent',
-        border: danger ? '1px solid #f1bbbc' : '1px solid #d2d0ce',
-        color: danger ? '#a4262c' : '#323130',
-        transition: 'background 0.08s',
-      }}
-      onMouseEnter={(e) => { if (!disabled) (e.currentTarget as HTMLElement).style.background = danger ? '#fdf3f4' : '#e8e6e3'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+      className={cn(
+        'w-full px-3 py-1.5 text-left text-xs rounded-md border transition-colors',
+        disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
+        danger
+          ? 'border-red-200 text-red-600 hover:bg-red-50 bg-transparent'
+          : 'border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--surface-active)] bg-transparent'
+      )}
     >
       {label}
     </button>
@@ -383,13 +380,12 @@ function SignatureSettings({ editor }: { editor: Editor }) {
               key={ft}
               type="button"
               onClick={() => editor.chain().focus().updateAttributes('signatureBlock', { fieldType: ft }).run()}
-              style={{
-                padding: '5px 10px', fontSize: 12, textAlign: 'left', cursor: 'pointer',
-                borderRadius: 2, fontFamily: 'Calibri, Arial, sans-serif',
-                background: fieldType === ft ? '#ddeeff' : 'transparent',
-                border: fieldType === ft ? '1px solid #c0d8f0' : '1px solid #d2d0ce',
-                color: fieldType === ft ? '#004e8c' : '#323130',
-              }}
+              className={cn(
+                'w-full px-3 py-1.5 text-xs text-left rounded-md border cursor-pointer transition-colors',
+                fieldType === ft
+                  ? 'bg-[var(--accent-subtle)] text-[var(--accent)] border-[var(--accent-border)]'
+                  : 'bg-[var(--surface-0)] text-[var(--text-primary)] border-[var(--border)] hover:bg-[var(--surface-active)]'
+              )}
             >
               {labels[ft]}
             </button>
@@ -401,14 +397,7 @@ function SignatureSettings({ editor }: { editor: Editor }) {
         type="text"
         value={label}
         onChange={(e) => editor.chain().focus().updateAttributes('signatureBlock', { label: e.target.value }).run()}
-        style={{
-          width: '100%', padding: '5px 8px', fontSize: 13, borderRadius: 2,
-          border: '1px solid #d2d0ce', background: '#ffffff', color: '#1e1e1e',
-          fontFamily: 'Calibri, Arial, sans-serif', boxSizing: 'border-box',
-          outline: 'none',
-        }}
-        onFocus={(e) => { (e.currentTarget as HTMLElement).style.border = '1px solid #0078d4'; }}
-        onBlur={(e) => { (e.currentTarget as HTMLElement).style.border = '1px solid #d2d0ce'; }}
+        className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
       />
     </PanelWrap>
   );
@@ -423,12 +412,12 @@ function VariableInfo({ editor }: { editor: Editor }) {
   return (
     <PanelWrap title="Variabel">
       <Label>Variabelnamn</Label>
-      <code style={{ display: 'block', wordBreak: 'break-all', fontSize: 11, fontFamily: 'monospace', color: '#7b5ea7', background: '#f4f0fa', border: '1px solid #d6c8f0', padding: '4px 8px', borderRadius: 2, marginBottom: 12 }}>
+      <code className="block break-all text-[11px] font-mono text-violet-600 bg-violet-50 border border-violet-200 px-2 py-1 rounded-md mb-3">
         {`{{${key}}}`}
       </code>
       <Label>Etikett</Label>
-      <p style={{ fontSize: 13, color: '#1e1e1e', fontFamily: 'Calibri, Arial, sans-serif', marginBottom: 12 }}>{label}</p>
-      <p style={{ fontSize: 11, color: '#a19f9d', fontFamily: 'Calibri, Arial, sans-serif', fontStyle: 'italic' }}>
+      <p className="text-sm text-[var(--text-primary)] mb-3">{label}</p>
+      <p className="text-[11px] text-[var(--text-muted)] italic">
         Tryck Backspace för att ta bort variabeln.
       </p>
     </PanelWrap>
@@ -440,16 +429,16 @@ function VariableInfo({ editor }: { editor: Editor }) {
 function PlaceholderReference() {
   return (
     <PanelWrap title="Platshållare">
-      <p style={{ fontSize: 12, color: '#605e5c', marginBottom: 10, fontFamily: 'Calibri, Arial, sans-serif' }}>
+      <p className="text-xs text-[var(--text-muted)] mb-2">
         Tillgängliga variabler att infoga:
       </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div className="flex flex-col gap-1.5">
         {OFFER_PLACEHOLDERS.map((p) => (
-          <div key={p.key} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-            <code style={{ flexShrink: 0, fontSize: 9, fontFamily: 'monospace', color: '#7b5ea7', background: '#f4f0fa', border: '1px solid #d6c8f0', padding: '1px 4px', borderRadius: 2, marginTop: 2 }}>
+          <div key={p.key} className="flex items-start gap-2">
+            <code className="shrink-0 text-[9px] font-mono text-violet-600 bg-violet-50 border border-violet-200 px-1 py-0.5 rounded mt-0.5">
               {p.key}
             </code>
-            <span style={{ fontSize: 12, color: '#605e5c', fontFamily: 'Calibri, Arial, sans-serif' }}>{p.label}</span>
+            <span className="text-xs text-[var(--text-muted)]">{p.label}</span>
           </div>
         ))}
       </div>
@@ -467,123 +456,106 @@ function PageSettings({ hf }: { hf: HFCtxValue }) {
 
   const { activeHeader, activeFooter, patchActiveHeader, patchActiveFooter } = hf;
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '5px 8px', fontSize: 13, borderRadius: 2,
-    border: '1px solid #d2d0ce', background: '#ffffff', color: '#1e1e1e',
-    fontFamily: 'Calibri, Arial, sans-serif', boxSizing: 'border-box',
-    outline: 'none',
-  };
-
-  const radioRowStyle: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4,
-    fontSize: 12, fontFamily: 'Calibri, Arial, sans-serif', color: '#323130',
-    cursor: 'pointer',
-  };
-
-  const dividerStyle: React.CSSProperties = {
-    height: 1, background: '#d2d0ce', margin: '10px 0',
-  };
-
   return (
-    <div style={{ borderTop: '2px solid #c8c6c4' }}>
-      <div style={{ padding: '8px 16px 4px', background: '#f3f2f1' }}>
-        <h3 style={{ fontSize: 11, fontWeight: 600, color: '#605e5c', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'Calibri, Arial, sans-serif', margin: 0 }}>
+    <div className="border-t-2 border-[var(--border)]">
+      <div className="px-4 py-3 border-b border-[var(--border)]">
+        <h3 className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-wider">
           Sida
         </h3>
       </div>
-      <div style={{ padding: '10px 16px', fontFamily: 'Calibri, Arial, sans-serif' }}>
+      <div className="px-4 py-3 space-y-3">
 
         {/* Page label */}
-        <Label>Sidnamn</Label>
-        <input
-          type="text"
-          value={page.label}
-          onChange={(e) => hf.renamePage(hf.activeIdx, e.target.value)}
-          style={inputStyle}
-          onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.border = '1px solid #0078d4'; }}
-          onBlur={(e) => { (e.currentTarget as HTMLInputElement).style.border = '1px solid #d2d0ce'; }}
-        />
+        <div>
+          <Label>Sidnamn</Label>
+          <input
+            type="text"
+            value={page.label}
+            onChange={(e) => hf.renamePage(hf.activeIdx, e.target.value)}
+            className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
+          />
+        </div>
 
-        <div style={dividerStyle} />
+        <div className="h-px bg-[var(--border)]" />
 
         {/* Header section */}
-        <label style={{ ...radioRowStyle, marginBottom: 6 }}>
+        <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
           <input
             type="checkbox"
             checked={activeHeader.enabled}
             onChange={(e) => patchActiveHeader({ enabled: e.target.checked })}
-            style={{ accentColor: '#0078d4' }}
+            className="accent-[var(--accent)]"
           />
-          <span style={{ fontSize: 12, fontWeight: 500 }}>Aktivera sidhuvud</span>
+          <span className="text-sm font-medium">Aktivera sidhuvud</span>
         </label>
 
         {activeHeader.enabled && (
-          <div style={{ paddingLeft: 20, marginBottom: 6 }}>
-            <label style={radioRowStyle}>
+          <div className="pl-5 space-y-1">
+            <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
               <input
                 type="radio"
                 name={`hdr-${page.id}`}
                 checked={activeHeader.useDefault}
                 onChange={() => patchActiveHeader({ useDefault: true })}
-                style={{ accentColor: '#0078d4' }}
+                className="accent-[var(--accent)]"
               />
               Standard
             </label>
-            <label style={radioRowStyle}>
+            <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
               <input
                 type="radio"
                 name={`hdr-${page.id}`}
                 checked={!activeHeader.useDefault}
                 onChange={() => patchActiveHeader({ useDefault: false })}
-                style={{ accentColor: '#0078d4' }}
+                className="accent-[var(--accent)]"
               />
               Unik för denna sida
             </label>
             {!activeHeader.useDefault && (
-              <p style={{ fontSize: 11, color: '#a19f9d', fontStyle: 'italic', margin: '2px 0 0', fontFamily: 'Calibri, Arial, sans-serif' }}>
+              <p className="text-[11px] text-[var(--text-muted)] italic mt-1">
                 Redigera i dokumentet ovan.
               </p>
             )}
           </div>
         )}
 
-        <div style={dividerStyle} />
+        <div className="h-px bg-[var(--border)]" />
 
         {/* Footer section */}
-        <label style={{ ...radioRowStyle, marginBottom: 6 }}>
+        <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
           <input
             type="checkbox"
             checked={activeFooter.enabled}
             onChange={(e) => patchActiveFooter({ enabled: e.target.checked })}
-            style={{ accentColor: '#0078d4' }}
+            className="accent-[var(--accent)]"
           />
-          <span style={{ fontSize: 12, fontWeight: 500 }}>Aktivera sidfot</span>
+          <span className="text-sm font-medium">Aktivera sidfot</span>
         </label>
 
         {activeFooter.enabled && (
-          <div style={{ paddingLeft: 20, marginBottom: 6 }}>
-            <label style={radioRowStyle}>
+          <div className="pl-5 space-y-1">
+            <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
               <input
                 type="radio"
                 name={`ftr-${page.id}`}
                 checked={activeFooter.useDefault}
                 onChange={() => patchActiveFooter({ useDefault: true })}
-                style={{ accentColor: '#0078d4' }}
+                className="accent-[var(--accent)]"
               />
               Standard
             </label>
-            <label style={radioRowStyle}>
+            <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
               <input
                 type="radio"
                 name={`ftr-${page.id}`}
                 checked={!activeFooter.useDefault}
                 onChange={() => patchActiveFooter({ useDefault: false })}
-                style={{ accentColor: '#0078d4' }}
+                className="accent-[var(--accent)]"
               />
               Unik för denna sida
             </label>
             {!activeFooter.useDefault && (
-              <p style={{ fontSize: 11, color: '#a19f9d', fontStyle: 'italic', margin: '2px 0 0', fontFamily: 'Calibri, Arial, sans-serif' }}>
+              <p className="text-[11px] text-[var(--text-muted)] italic mt-1">
                 Redigera i dokumentet ovan.
               </p>
             )}
@@ -598,17 +570,15 @@ function PageSettings({ hf }: { hf: HFCtxValue }) {
 
 function PanelWrap({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
-      <div style={{ padding: '8px 16px 4px', borderBottom: '1px solid #d2d0ce', background: '#f3f2f1' }}>
-        <h3 style={{ fontSize: 11, fontWeight: 600, color: '#605e5c', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'Calibri, Arial, sans-serif', margin: 0 }}>{title}</h3>
+    <div className="border-b border-[var(--border)]">
+      <div className="px-4 py-3">
+        <h3 className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-wider">{title}</h3>
       </div>
-      <div style={{ padding: '12px 16px', fontFamily: 'Calibri, Arial, sans-serif' }}>
-        {children}
-      </div>
+      <div className="px-4 pb-4">{children}</div>
     </div>
   );
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <p style={{ fontSize: 11, color: '#605e5c', marginBottom: 6, fontFamily: 'Calibri, Arial, sans-serif' }}>{children}</p>;
+  return <p className="text-[var(--text-muted)] text-[11px] mb-1.5">{children}</p>;
 }

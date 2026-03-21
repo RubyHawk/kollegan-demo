@@ -20,6 +20,8 @@ import type { Editor } from '@tiptap/core';
 import { EditorContent } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import { NodeSelection } from '@tiptap/pm/state';
+import { Link as PhLink } from '@phosphor-icons/react';
+import { cn } from '@shared/lib/utils';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import type { PageDoc } from './template-doc';
@@ -64,7 +66,7 @@ export default function DocumentCanvas() {
             if (selection instanceof NodeSelection) return false;
             return selection.from !== selection.to;
           }}
-          className="flex items-center gap-0.5 bg-white border border-slate-200 rounded-lg shadow-md p-1"
+          className="flex items-center gap-0.5 bg-[var(--surface-0)] border border-[var(--border)] rounded-lg shadow-elevated p-1"
         >
           <TBtn active={editor.isActive('bold')}
             onClick={() => editor.chain().focus().toggleBold().run()}
@@ -81,7 +83,7 @@ export default function DocumentCanvas() {
             title="Understruken (Ctrl+U)">
             <u className="text-xs">U</u>
           </TBtn>
-          <div className="w-px h-4 bg-slate-200 mx-0.5" />
+          <div className="w-px h-4 bg-[var(--border)] mx-0.5" />
           <TBtn
             active={editor.isActive('link')}
             onClick={() => {
@@ -93,13 +95,13 @@ export default function DocumentCanvas() {
             }}
             title="Länk"
           >
-            <LinkIcon />
+            <PhLink size={13} />
           </TBtn>
         </BubbleMenu>
       )}
 
       {/* ── Scrollable document area ─────────────────────────────────────────── */}
-      <div className="flex-1 overflow-auto" style={{ background: '#e8e8e8' }}>
+      <div className="flex-1 overflow-auto bg-[var(--surface-2)]">
         <div className="px-8 py-10" style={{ minWidth: 'fit-content' }}>
           <div
             className="mx-auto bg-white"
@@ -314,17 +316,9 @@ export default function DocumentCanvas() {
         `}</style>
       </div>
 
-      {/* ── Excel-style page tab bar ──────────────────────────────────────────── */}
+      {/* ── Page tab bar ──────────────────────────────────────────────────────── */}
       {hf && (
-        <div style={{
-          display:    'flex',
-          alignItems: 'stretch',
-          borderTop:  '1px solid #d2d0ce',
-          background: '#f0f0f0',
-          overflowX:  'auto',
-          flexShrink: 0,
-          minHeight:  32,
-        }}>
+        <div className="flex items-center gap-1 border-t border-[var(--border)] bg-[var(--surface-1)] overflow-x-auto flex-shrink-0 px-3 min-h-[36px]">
           {hf.pages.map((page, i) => (
             <PageTab
               key={page.id}
@@ -339,21 +333,7 @@ export default function DocumentCanvas() {
             type="button"
             onClick={() => hf.addPage()}
             title="Lägg till sida"
-            style={{
-              padding:    '0 10px',
-              background: 'transparent',
-              border:     'none',
-              borderLeft: '1px solid #d2d0ce',
-              cursor:     'pointer',
-              fontSize:   16,
-              color:      '#605e5c',
-              lineHeight: 1,
-              flexShrink: 0,
-              display:    'flex',
-              alignItems: 'center',
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#e4e4e4'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+            className="flex items-center justify-center w-6 h-6 rounded text-[var(--text-muted)] hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)] flex-shrink-0 text-base transition-colors ml-1"
           >
             +
           </button>
@@ -399,25 +379,12 @@ function PageTab({
 
   return (
     <div
-      style={{
-        display:        'flex',
-        alignItems:     'center',
-        gap:            4,
-        padding:        '0 10px',
-        cursor:         'pointer',
-        userSelect:     'none',
-        borderRight:    '1px solid #d2d0ce',
-        borderBottom:   active ? '2px solid #0078d4' : '2px solid transparent',
-        background:     active ? '#ffffff' : hovered ? '#e4e4e4' : 'transparent',
-        color:          active ? '#0078d4' : '#323130',
-        fontFamily:     'Calibri, Arial, sans-serif',
-        fontSize:       12,
-        fontWeight:     active ? 600 : 400,
-        minWidth:       72,
-        flexShrink:     0,
-        position:       'relative',
-        transition:     'background 0.08s',
-      }}
+      className={cn(
+        'flex items-center gap-1 px-3 h-[28px] cursor-pointer select-none flex-shrink-0 rounded-md text-xs transition-colors',
+        active
+          ? 'bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold'
+          : 'text-[var(--text-secondary)] hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)] font-medium',
+      )}
       onClick={onActivate}
       onDoubleClick={startEdit}
       onMouseEnter={() => setHovered(true)}
@@ -431,27 +398,11 @@ function PageTab({
           onBlur={commitEdit}
           onKeyDown={handleKeyDown}
           onClick={(e) => e.stopPropagation()}
-          style={{
-            width:      80,
-            fontSize:   12,
-            fontFamily: 'Calibri, Arial, sans-serif',
-            border:     '1px solid #0078d4',
-            borderRadius: 2,
-            padding:    '1px 4px',
-            outline:    'none',
-            color:      '#323130',
-            background: '#fff',
-          }}
+          className="w-20 text-xs bg-[var(--surface-0)] border border-[var(--accent)] rounded px-1 py-0 outline-none text-[var(--text-primary)]"
           autoFocus
         />
       ) : (
-        <span style={{
-          overflow:     'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace:   'nowrap',
-          maxWidth:     120,
-          flex:         1,
-        }}>
+        <span className="overflow-hidden text-ellipsis whitespace-nowrap max-w-[120px] flex-1">
           {page.label}
         </span>
       )}
@@ -462,22 +413,7 @@ function PageTab({
           type="button"
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
           title="Ta bort sida"
-          style={{
-            width:      14,
-            height:     14,
-            display:    'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border:     'none',
-            borderRadius: '50%',
-            background: '#a19f9d',
-            color:      '#ffffff',
-            cursor:     'pointer',
-            fontSize:   10,
-            lineHeight: 1,
-            flexShrink: 0,
-            padding:    0,
-          }}
+          className="w-3.5 h-3.5 flex items-center justify-center rounded-full bg-[var(--text-muted)] text-white text-[10px] leading-none flex-shrink-0 p-0 border-none cursor-pointer hover:bg-[var(--text-secondary)]"
         >
           ×
         </button>
@@ -501,38 +437,30 @@ function HFZone({
 
   return (
     <div
-      style={{
-        borderTop:    isHeader && !isFirst ? '1px dashed #c0bfbd' : undefined,
-        borderBottom: isHeader && isLast   ? '2px solid #d2d0ce'
-                    : !isHeader && isFirst ? '2px solid #d2d0ce'
-                    : !isHeader            ? '1px dashed #c0bfbd'
-                    : undefined,
-        background: '#fafaf9',
-      }}
+      className={cn(
+        'bg-[var(--surface-1)]',
+        isHeader && !isFirst && 'border-t border-[var(--border)]',
+        isHeader && isLast   && 'border-b-2 border-b-[var(--border)]',
+        !isHeader && isFirst && 'border-t-2 border-t-[var(--border)]',
+        !isHeader && !isFirst && 'border-b border-[var(--border)]',
+      )}
     >
       {/* Zone label */}
-      <div style={{
-        padding:    isHeader ? `8px ${H_PAD}px 2px` : `2px ${H_PAD}px 8px`,
-        order:      isHeader ? 0 : 1,
-        fontSize:   10,
-        fontWeight: 600,
-        color:      '#a19f9d',
-        fontFamily: 'Calibri, Arial, sans-serif',
-        letterSpacing: '0.05em',
-        textTransform: 'uppercase',
-        userSelect: 'none',
-      }}>
+      <div
+        className={cn(
+          'text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-wider select-none',
+          isHeader ? 'pt-2 pb-0.5' : 'pb-2 pt-0.5',
+        )}
+        style={{ paddingLeft: H_PAD, paddingRight: H_PAD }}
+      >
         {label}
       </div>
 
       {/* Editable mini-editor */}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
-        style={{
-          padding:   `4px ${H_PAD}px`,
-          minHeight: 48,
-          cursor:    'text',
-        }}
+        className="cursor-text min-h-[48px]"
+        style={{ padding: `4px ${H_PAD}px` }}
         onClick={() => editor?.commands.focus()}
       >
         <EditorContent editor={editor} className="doc-editor hf-editor" />
@@ -551,22 +479,15 @@ function TBtn({ active, onClick, title, children }: {
       type="button"
       onMouseDown={(e) => { e.preventDefault(); onClick(); }}
       title={title}
-      className={`w-7 h-7 flex items-center justify-center rounded text-sm transition-colors ${
+      className={cn(
+        'w-7 h-7 flex items-center justify-center rounded text-sm transition-colors',
         active
-          ? 'bg-slate-800 text-white'
-          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
-      }`}
+          ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
+          : 'text-[var(--text-muted)] hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]',
+      )}
     >
       {children}
     </button>
   );
 }
 
-function LinkIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-    </svg>
-  );
-}

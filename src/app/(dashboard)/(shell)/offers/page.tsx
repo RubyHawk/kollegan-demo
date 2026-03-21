@@ -635,7 +635,7 @@ export default function OffersPage() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setShowProducts((v) => !v)}
-            className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors"
+            className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors"
           >
             Produktbibliotek
           </button>
@@ -754,7 +754,7 @@ export default function OffersPage() {
 
       {/* Create form panel */}
       {showForm && (
-        <div className="mb-8 rounded-2xl border border-[var(--accent)]/30 bg-[var(--surface)] shadow-lg overflow-hidden">
+        <div className="mb-8 rounded-2xl border border-[var(--accent-border)] bg-[var(--surface-0)] shadow-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">Ny offert</h2>
             <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); setContactSearch(''); setContactResults([]); setShowEmailCustom(false); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
@@ -808,7 +808,7 @@ export default function OffersPage() {
                     ) : (
                       contactResults.map((c) => (
                         <button key={c.id} type="button" onClick={() => pickContact(c)}
-                          className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-hover)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
+                          className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
                           <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-xs font-semibold shrink-0">
                             {(c.name ?? '?').charAt(0).toUpperCase()}
                           </div>
@@ -924,7 +924,7 @@ export default function OffersPage() {
               <button
                 type="button"
                 onClick={() => setShowHeaderBuilder((v) => !v)}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors bg-[var(--surface-alt)]"
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors bg-[var(--surface-alt)]"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                   className={`transition-transform ${showHeaderBuilder ? 'rotate-90' : ''}`}>
@@ -1229,7 +1229,7 @@ export default function OffersPage() {
               <button
                 type="button"
                 onClick={() => setShowEmailCustom((v) => !v)}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors bg-[var(--surface-alt)]"
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors bg-[var(--surface-alt)]"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                   className={`transition-transform ${showEmailCustom ? 'rotate-90' : ''}`}>
@@ -1331,7 +1331,7 @@ export default function OffersPage() {
                                 <div className="px-3 py-2 text-xs text-[var(--text-muted)]">Inga produkter hittades</div>
                               ) : filteredProducts.map((p) => (
                                 <button key={p.id} type="button" onClick={() => pickProduct(idx, p)}
-                                  className="w-full text-left px-3 py-2 hover:bg-[var(--surface-hover)] transition-colors border-b border-[var(--border)] last:border-0 text-xs">
+                                  className="w-full text-left px-3 py-2 hover:bg-[var(--surface-active)] transition-colors border-b border-[var(--border)] last:border-0 text-xs">
                                   <p className="font-medium text-[var(--text-primary)]">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
                                   <p className="text-[var(--text-muted)]">{fmtSEK(p.unitPrice)} · moms {Math.round(p.vatRate * 100)}%</p>
                                 </button>
@@ -1376,15 +1376,15 @@ export default function OffersPage() {
 
               {/* Totals */}
               <div className="mt-4 flex justify-end">
-                <div className="space-y-1.5 text-sm min-w-[220px]">
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-5 py-4 space-y-2 text-sm min-w-[240px]">
                   <div className="flex justify-between gap-8 text-[var(--text-secondary)]">
-                    <span>Summa ex. moms</span><span className="font-medium">{fmtSEK(tots.exVat)}</span>
+                    <span>Summa ex. moms</span><span className="font-medium tabular-nums">{fmtSEK(tots.exVat)}</span>
                   </div>
                   <div className="flex justify-between gap-8 text-[var(--text-muted)] text-xs">
-                    <span>Moms</span><span>{fmtSEK(tots.vat)}</span>
+                    <span>Moms</span><span className="tabular-nums">{fmtSEK(tots.vat)}</span>
                   </div>
-                  <div className="flex justify-between gap-8 text-[var(--text-primary)] font-semibold border-t border-[var(--border)] pt-2 mt-2">
-                    <span>Totalt inkl. moms</span><span>{fmtSEK(tots.incVat)}</span>
+                  <div className="flex justify-between gap-8 text-[var(--text-primary)] font-semibold border-t border-[var(--border)] pt-2.5 mt-1">
+                    <span>Totalt inkl. moms</span><span className="tabular-nums">{fmtSEK(tots.incVat)}</span>
                   </div>
                 </div>
               </div>
@@ -1397,7 +1397,7 @@ export default function OffersPage() {
                 {saving ? 'Sparar…' : 'Spara som utkast'}
               </button>
               <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); setContactSearch(''); setContactResults([]); setShowEmailCustom(false); }}
-                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors">
+                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors">
                 Avbryt
               </button>
             </div>
@@ -1442,14 +1442,29 @@ export default function OffersPage() {
 
       {/* Status tabs + search */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
-        <div className="flex gap-0 border-b border-[var(--border)] overflow-x-auto scrollbar-none flex-1">
-          {STATUS_TABS.map((t) => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={cn('px-3.5 py-2.5 text-xs font-medium whitespace-nowrap shrink-0 border-b-2 -mb-px transition-all duration-150',
-                tab === t.id ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border)]')}>
-              {t.label}
-            </button>
-          ))}
+        <div className="flex gap-1 overflow-x-auto scrollbar-none flex-1 flex-wrap">
+          {STATUS_TABS.map((t) => {
+            const count = t.id === 'all' ? offers.length : offers.filter((o) => o.status === t.id).length;
+            return (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 transition-all duration-150',
+                  tab === t.id
+                    ? 'bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--accent-border)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-active)] border border-transparent',
+                )}>
+                {t.label}
+                {count > 0 && (
+                  <span className={cn(
+                    'text-[10px] font-mono px-1 py-0.5 rounded-full leading-none',
+                    tab === t.id ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface-active)] text-[var(--text-muted)]',
+                  )}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
         <div className="relative shrink-0">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
@@ -1492,7 +1507,7 @@ export default function OffersPage() {
               </thead>
               <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)]">
                 {offers.map((offer) => (
-                  <tr key={offer.id} className="hover:bg-[var(--surface-hover)] transition-colors">
+                  <tr key={offer.id} className="group hover:bg-[var(--surface-active)] transition-colors">
                     <td className="px-4 py-3.5 w-8">
                       {offer.status === 'draft' && (
                         <input
@@ -1549,7 +1564,7 @@ export default function OffersPage() {
                     <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmtDate(offer.validUntil)}</td>
                     <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmtDate(offer.createdAt)}</td>
                     <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1.5 justify-end flex-wrap">
+                      <div className="flex items-center gap-1.5 justify-end flex-wrap opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                         {/* Preview document */}
                         {offer.generatedDocument && (
                           <>
@@ -1686,7 +1701,7 @@ export default function OffersPage() {
               </button>
               <button
                 onClick={() => setConfirmSend(null)}
-                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors"
+                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors"
               >
                 Avbryt
               </button>
@@ -1698,7 +1713,7 @@ export default function OffersPage() {
       {/* Document preview modal */}
       {previewDoc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setPreviewDoc(null)}>
-          <div className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-[var(--surface)] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+          <div className="relative w-full max-w-4xl max-h-[90vh] bg-[var(--surface-0)] rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-[var(--border)]"
             onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)] bg-[var(--surface-alt)] shrink-0">
               <span className="text-sm font-semibold text-[var(--text-primary)]">Förhandsvisning av offertdokument</span>
