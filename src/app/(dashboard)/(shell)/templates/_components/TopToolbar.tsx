@@ -243,7 +243,7 @@ export default function TopToolbar() {
       </div>
 
       {/* ── Ribbon content ─────────────────────────────────────── */}
-      <div className="flex items-center px-2 py-1 gap-1 overflow-x-auto min-h-[40px]">
+      <div className="flex items-center px-2 py-1 gap-1 flex-wrap min-h-[40px] overflow-visible">
 
         {/* ══ HEM ══════════════════════════════════════════════ */}
         {tab === 'hem' && (
@@ -836,7 +836,7 @@ function Dropdown({ open, onToggle, trigger, triggerTitle, children, minWidth }:
 
 function DropdownPanel({ children, minWidth }: { children: React.ReactNode; minWidth?: number }) {
   return (
-    <div className="absolute top-full left-0 mt-1 bg-[var(--surface-0)] border border-[var(--border)] shadow-elevated rounded-lg z-[300] max-h-72 overflow-y-auto" style={{ minWidth: minWidth ?? 160 }}>
+    <div className="absolute top-full left-0 mt-0.5 bg-[var(--surface-0)] border border-[var(--border)] shadow-lg rounded z-[500] max-h-64 overflow-y-auto" style={{ minWidth: minWidth ?? 160 }}>
       {children}
     </div>
   );

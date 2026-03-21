@@ -354,16 +354,22 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
         }
       : isFloating
         ? {
-            float:      imgFloat as 'left' | 'right',
-            margin:     imgFloat === 'left' ? '4px 20px 8px 0' : '4px 0 8px 20px',
-            display:    'block',
-            lineHeight: 0,
+            float:        imgFloat as 'left' | 'right',
+            marginTop:    4,
+            marginRight:  imgFloat === 'left' ? 20 : 0,
+            marginBottom: 8,
+            marginLeft:   imgFloat === 'left' ? 0 : 20,
+            display:      'block',
+            lineHeight:   0,
           }
         : {
             display:        'flex',
             justifyContent: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
             lineHeight:     0,
-            margin:         '4px 0',
+            marginTop:      4,
+            marginRight:    0,
+            marginBottom:   4,
+            marginLeft:     0,
           };
 
   const containerWidth = imgW ? `${imgW}px` : (isFloating || isFreeWrapped) ? '200px' : undefined;

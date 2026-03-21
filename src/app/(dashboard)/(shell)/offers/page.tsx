@@ -323,11 +323,12 @@ function canRemind(offer: Offer): boolean {
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function OffersPage() {
-  const [offers,     setOffers]     = useState<Offer[]>([]);
-  const [total,      setTotal]      = useState(0);
+  // allOffers always holds the full unfiltered list — tab counts stay stable
+  const [allOffers,  setAllOffers]  = useState<Offer[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState<string | null>(null);
   const [tab,        setTab]        = useState<OfferStatus | 'all'>('all');
+  const [sortAsc,    setSortAsc]    = useState(false); // desc by default (newest first)
   const [search,     setSearch]     = useState('');
   const [showForm,   setShowForm]   = useState(false);
   const [form,       setForm]       = useState(EMPTY_FORM);
@@ -386,28 +387,36 @@ export default function OffersPage() {
 
   useEffect(() => { void loadProducts(); }, [loadProducts]);
 
-  // ── Load offers ───────────────────────────────────────────────────────────────
+  // ── Load offers — always fetch all so tab counts stay accurate ───────────────
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ limit: '50', offset: '0' });
-      if (tab !== 'all') params.set('status', tab);
+      const params = new URLSearchParams({ limit: '200', offset: '0' });
       if (search.trim()) params.set('search', search.trim());
       const res = await fetch(`/api/offers?${params}`);
       if (!res.ok) throw new Error(`Fel ${res.status}`);
       const json = await res.json().catch(() => null) as { data: { offers: Offer[]; total: number } } | null;
       if (!json) throw new Error('Serverfel — försök igen.');
-      setOffers(json.data.offers);
-      setTotal(json.data.total);
+      setAllOffers(json.data.offers);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setLoading(false);
     }
-  }, [tab, search]);
+  }, [search]);
 
   useEffect(() => { void load(); setSelected(new Set()); setBulkResult(null); }, [load]);
+
+  // ── Derived: filtered + sorted list for current tab ───────────────────────────
+  const offers = (tab === 'all' ? allOffers : allOffers.filter((o) => o.status === tab))
+    .slice()
+    .sort((a, b) => {
+      const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return sortAsc ? diff : -diff;
+    });
+
+  const total = allOffers.length;
 
   // ── Create offer ──────────────────────────────────────────────────────────────
   const createOffer = useCallback(async () => {
@@ -515,10 +524,10 @@ export default function OffersPage() {
     } finally {
       setBulkSending(false);
     }
-  }, [selected, offers, load]);
+  }, [selected, allOffers, load]);
 
   // ── Selection helpers ─────────────────────────────────────────────────────
-  const draftOffers = offers.filter((o) => o.status === 'draft');
+  const draftOffers = allOffers.filter((o) => o.status === 'draft');
   const selectedDraftCount = Array.from(selected).filter((id) => offers.find((o) => o.id === id)?.status === 'draft').length;
   const allDraftsSelected  = draftOffers.length > 0 && draftOffers.every((o) => selected.has(o.id));
 
@@ -1444,7 +1453,7 @@ export default function OffersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
         <div className="flex gap-1 overflow-x-auto scrollbar-none flex-1 flex-wrap">
           {STATUS_TABS.map((t) => {
-            const count = t.id === 'all' ? offers.length : offers.filter((o) => o.status === t.id).length;
+            const count = t.id === 'all' ? allOffers.length : allOffers.filter((o) => o.status === t.id).length;
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={cn(
@@ -1466,12 +1475,29 @@ export default function OffersPage() {
             );
           })}
         </div>
-        <div className="relative shrink-0">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Sök offert…"
-            className="pl-9 pr-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors w-48"/>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Date sort toggle */}
+          <button
+            onClick={() => setSortAsc((v) => !v)}
+            title={sortAsc ? 'Äldst först — klicka för nyast' : 'Nyast först — klicka för äldst'}
+            className="flex items-center gap-1 px-2.5 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-active)] transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {sortAsc
+                ? <><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></>
+                : <><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></>
+              }
+            </svg>
+            Datum
+          </button>
+          {/* Search */}
+          <div className="relative">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Sök offert…"
+              className="pl-9 pr-4 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors w-44"/>
+          </div>
         </div>
       </div>
 
@@ -1484,148 +1510,155 @@ export default function OffersPage() {
           <p className="text-sm text-[var(--text-muted)]">Laddar offerter…</p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-[var(--border)] overflow-hidden">
+        <div className="rounded-xl border border-[var(--border)] overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-[var(--border)] text-sm">
-              <thead className="bg-[var(--surface-alt)]">
-                <tr>
-                  <th className="px-4 py-3 w-8">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--border)] bg-[var(--surface-alt)]">
+                  <th className="px-3 py-2 w-8">
                     {draftOffers.length > 0 && (
-                      <input
-                        type="checkbox"
-                        checked={allDraftsSelected}
-                        onChange={toggleSelectAllDrafts}
-                        title="Välj alla utkast"
-                        className="rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"
-                      />
+                      <input type="checkbox" checked={allDraftsSelected} onChange={toggleSelectAllDrafts}
+                        title="Välj alla utkast" className="rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"/>
                     )}
                   </th>
-                  {['Rubrik', 'Mottagare', 'Status', 'Totalt inkl. moms', 'Giltig till', 'Skapad', ''].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
+                  {[
+                    { label: 'Rubrik', cls: '' },
+                    { label: 'Mottagare', cls: '' },
+                    { label: 'Status', cls: '' },
+                    { label: 'Belopp', cls: 'text-right' },
+                    { label: 'Giltig / Skapad', cls: '' },
+                    { label: '', cls: '' },
+                  ].map((h) => (
+                    <th key={h.label} className={`px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--text-muted)] ${h.cls}`}>{h.label}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)]">
-                {offers.map((offer) => (
-                  <tr key={offer.id} className="group hover:bg-[var(--surface-active)] transition-colors">
-                    <td className="px-4 py-3.5 w-8">
+              <tbody>
+                {offers.map((offer, i) => (
+                  <tr key={offer.id} className={cn('group hover:bg-[var(--surface-active)] transition-colors', i > 0 && 'border-t border-[var(--border)]')}>
+                    {/* Checkbox */}
+                    <td className="px-3 py-2 w-8">
                       {offer.status === 'draft' && (
-                        <input
-                          type="checkbox"
-                          checked={selected.has(offer.id)}
-                          onChange={() => toggleSelect(offer.id)}
-                          className="rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"
-                        />
+                        <input type="checkbox" checked={selected.has(offer.id)} onChange={() => toggleSelect(offer.id)}
+                          className="rounded border-[var(--border)] accent-[var(--accent)] cursor-pointer"/>
                       )}
                     </td>
-                    <td className="px-4 py-3.5">
-                      <p className="font-medium text-[var(--text-primary)]">{offer.title}</p>
-                      <p className="text-[10px] text-[var(--text-muted)] mt-0.5 font-mono">{fmtOfferNumber(offer)}</p>
-                      {offer.templateId && <p className="text-[10px] text-[var(--accent)] mt-0.5">Mallbaserad</p>}
-                      {offer.leadId    && <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Kopplad till lead</p>}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <p className="text-[var(--text-primary)]">{offer.recipientName}</p>
-                      <p className="text-xs text-[var(--text-muted)]">{offer.recipientEmail}</p>
-                      {offer.recipientCompany && <p className="text-[10px] text-[var(--text-muted)]">{offer.recipientCompany}</p>}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[offer.status]}`}>
-                        {STATUS_LABEL[offer.status]}
-                      </span>
-                      {/* Activity timeline — key timestamps */}
-                      <div className="mt-1.5 space-y-0.5">
-                        {offer.sentAt && (
-                          <p className="text-[10px] text-[var(--text-muted)]">
-                            Skickad {fmtDate(offer.sentAt)}
-                          </p>
-                        )}
-                        {offer.viewedAt && (
-                          <p className="text-[10px] text-violet-500 dark:text-violet-400">
-                            Öppnad {fmtDate(offer.viewedAt)}
-                          </p>
-                        )}
-                        {offer.acceptedAt && (
-                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
-                            Accepterad {fmtDate(offer.acceptedAt)}
-                          </p>
-                        )}
-                        {offer.declinedAt && (
-                          <p className="text-[10px] text-red-500">
-                            Avvisad {fmtDate(offer.declinedAt)}
-                          </p>
-                        )}
+
+                    {/* Title */}
+                    <td className="px-3 py-2 max-w-[220px]">
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <p className="font-medium text-[var(--text-primary)] truncate leading-tight">{offer.title}</p>
+                          <p className="text-[10px] text-[var(--text-muted)] font-mono leading-tight mt-0.5">{fmtOfferNumber(offer)}</p>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 font-semibold text-[var(--text-primary)]">
-                      {fmtSEK(offer.totalIncVat)}
-                      <p className="text-[10px] font-normal text-[var(--text-muted)]">ex. moms: {fmtSEK(offer.totalExVat)}</p>
+
+                    {/* Recipient */}
+                    <td className="px-3 py-2 max-w-[180px]">
+                      <p className="text-xs font-medium text-[var(--text-primary)] truncate leading-tight">{offer.recipientName}</p>
+                      <p className="text-[10px] text-[var(--text-muted)] truncate leading-tight">{offer.recipientCompany ?? offer.recipientEmail}</p>
                     </td>
-                    <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmtDate(offer.validUntil)}</td>
-                    <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmtDate(offer.createdAt)}</td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1.5 justify-end flex-wrap opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                        {/* Preview document */}
+
+                    {/* Status — dot + label */}
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', {
+                          'bg-[var(--text-muted)]':  offer.status === 'draft',
+                          'bg-blue-500':             offer.status === 'sent',
+                          'bg-violet-500':           offer.status === 'viewed',
+                          'bg-emerald-500':          offer.status === 'accepted',
+                          'bg-red-500':              offer.status === 'declined',
+                          'bg-amber-500':            offer.status === 'expired',
+                        })} />
+                        <span className="text-xs text-[var(--text-secondary)] whitespace-nowrap">{STATUS_LABEL[offer.status]}</span>
+                      </div>
+                    </td>
+
+                    {/* Amount */}
+                    <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
+                      <p className="text-xs font-semibold text-[var(--text-primary)]">{fmtSEK(offer.totalIncVat)}</p>
+                      <p className="text-[10px] text-[var(--text-muted)]">ex. {fmtSEK(offer.totalExVat)}</p>
+                    </td>
+
+                    {/* Dates */}
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <p className="text-[10px] text-[var(--text-muted)] leading-tight">Giltig {fmtDate(offer.validUntil)}</p>
+                      <p className="text-[10px] text-[var(--text-muted)] leading-tight">Skapad {fmtDate(offer.createdAt)}</p>
+                    </td>
+
+                    {/* Actions — appear on hover */}
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+                        {/* PDF / preview */}
                         {offer.generatedDocument && (
                           <>
                             <button type="button" onClick={() => setPreviewDoc(offer.generatedDocument!)}
-                              className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline">
-                              Förhandsgranska
+                              title="Förhandsgranska dokument"
+                              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                              </svg>
                             </button>
-                            <span className="text-[var(--border)]">·</span>
-                            <button type="button"
-                              onClick={() => window.open(`/api/offers/${offer.id}/pdf`, '_blank')}
-                              className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline">
-                              PDF
+                            <button type="button" onClick={() => window.open(`/api/offers/${offer.id}/pdf`, '_blank')}
+                              title="Öppna PDF"
+                              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                              </svg>
                             </button>
                           </>
                         )}
-                        {/* Copy public link */}
+                        {/* Copy link */}
                         {(offer.status === 'sent' || offer.status === 'viewed') && (
-                          <button type="button" onClick={() => void copyLink(offer)}
-                            className="text-xs text-violet-500 hover:underline">
-                            {copied === offer.id ? 'Kopierat!' : 'Kopiera länk'}
+                          <button type="button" onClick={() => void copyLink(offer)} title="Kopiera signeringslänk"
+                            className="text-[var(--text-muted)] hover:text-violet-500 transition-colors">
+                            {copied === offer.id
+                              ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                              : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                            }
                           </button>
                         )}
+                        {/* Send */}
                         {offer.status === 'draft' && (
                           <button type="button" onClick={() => setConfirmSend(offer)} disabled={acting === offer.id}
-                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-40">
-                            Skicka
+                            title="Skicka offert" className="text-[var(--text-muted)] hover:text-blue-500 transition-colors disabled:opacity-40">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
                           </button>
                         )}
-                        {(offer.status === 'sent' || offer.status === 'viewed') && (
-                          <>
-                            {canRemind(offer) && (
-                              <>
-                                <span className="text-[var(--border)]">·</span>
-                                <button type="button" onClick={() => void doAction(offer.id, 'remind')} disabled={acting === offer.id}
-                                  className="text-xs text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-40"
-                                  title="Skicka påminnelse till mottagaren">
-                                  Påminn{offer.reminderCount > 0 ? ` (${offer.reminderCount})` : ''}
-                                </button>
-                              </>
-                            )}
-                            <span className="text-[var(--border)]">·</span>
-                            <button type="button" onClick={() => void doAction(offer.id, 'accept')} disabled={acting === offer.id}
-                              className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-40">
-                              Acceptera
-                            </button>
-                            <span className="text-[var(--border)]">·</span>
-                            <button type="button" onClick={() => void doAction(offer.id, 'decline')} disabled={acting === offer.id}
-                              className="text-xs text-red-500 hover:underline disabled:opacity-40">
-                              Avvisa
-                            </button>
-                          </>
+                        {/* Remind */}
+                        {(offer.status === 'sent' || offer.status === 'viewed') && canRemind(offer) && (
+                          <button type="button" onClick={() => void doAction(offer.id, 'remind')} disabled={acting === offer.id}
+                            title="Skicka påminnelse" className="text-[var(--text-muted)] hover:text-amber-500 transition-colors disabled:opacity-40">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                          </button>
                         )}
-                        <span className="text-[var(--border)] mx-0.5">·</span>
+                        {/* Accept */}
+                        {(offer.status === 'sent' || offer.status === 'viewed') && (
+                          <button type="button" onClick={() => void doAction(offer.id, 'accept')} disabled={acting === offer.id}
+                            title="Markera som accepterad" className="text-[var(--text-muted)] hover:text-emerald-500 transition-colors disabled:opacity-40">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          </button>
+                        )}
+                        {/* Duplicate */}
                         <button type="button" onClick={() => void doAction(offer.id, 'duplicate')} disabled={acting === offer.id}
-                          className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:underline transition-colors disabled:opacity-40">
-                          Duplicera
+                          title="Duplicera" className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-40">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                          </svg>
                         </button>
-                        <span className="text-[var(--border)] mx-0.5">·</span>
+                        {/* Delete */}
                         <button type="button" onClick={() => void deleteOffer(offer.id)}
-                          className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors">
-                          Ta bort
+                          title="Ta bort" className="text-[var(--text-muted)] hover:text-red-500 transition-colors">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                          </svg>
                         </button>
                       </div>
                     </td>
@@ -1633,17 +1666,9 @@ export default function OffersPage() {
                 ))}
                 {offers.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center">
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/>
-                            <line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/>
-                          </svg>
-                        </div>
-                        <p className="text-sm font-medium text-[var(--text-primary)]">Inga offerter ännu</p>
-                        <p className="text-xs text-[var(--text-muted)]">Klicka på &ldquo;Ny offert&rdquo; för att komma igång.</p>
-                      </div>
+                    <td colSpan={7} className="px-4 py-16 text-center">
+                      <p className="text-sm font-medium text-[var(--text-primary)] mb-1">Inga offerter</p>
+                      <p className="text-xs text-[var(--text-muted)]">Klicka på &ldquo;Ny offert&rdquo; för att komma igång.</p>
                     </td>
                   </tr>
                 )}
@@ -1651,8 +1676,8 @@ export default function OffersPage() {
             </table>
           </div>
           {total > offers.length && (
-            <div className="px-4 py-3 border-t border-[var(--border)] bg-[var(--surface-alt)] text-xs text-[var(--text-muted)] text-center">
-              Visar {offers.length} av {total} offerter
+            <div className="px-4 py-2 border-t border-[var(--border)] bg-[var(--surface-alt)] text-[11px] text-[var(--text-muted)] text-center">
+              Visar {offers.length} av {total}
             </div>
           )}
         </div>
