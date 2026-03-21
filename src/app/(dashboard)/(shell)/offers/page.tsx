@@ -504,7 +504,7 @@ export default function OffersPage() {
   // ── Bulk send ─────────────────────────────────────────────────────────────
   const doBulkSend = useCallback(async () => {
     const ids = Array.from(selected).filter((id) => {
-      const o = offers.find((o) => o.id === id);
+      const o = allOffers.find((o) => o.id === id);
       return o?.status === 'draft';
     });
     if (ids.length === 0) return;
@@ -528,7 +528,7 @@ export default function OffersPage() {
 
   // ── Selection helpers ─────────────────────────────────────────────────────
   const draftOffers = allOffers.filter((o) => o.status === 'draft');
-  const selectedDraftCount = Array.from(selected).filter((id) => offers.find((o) => o.id === id)?.status === 'draft').length;
+  const selectedDraftCount = Array.from(selected).filter((id) => allOffers.find((o) => o.id === id)?.status === 'draft').length;
   const allDraftsSelected  = draftOffers.length > 0 && draftOffers.every((o) => selected.has(o.id));
 
   function toggleSelect(id: string) {
@@ -689,7 +689,7 @@ export default function OffersPage() {
 
       {/* Product library panel */}
       {showProducts && (
-        <div className="mb-8 rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow overflow-hidden">
+        <div className="mb-8 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">Produktbibliotek</h2>
             <button onClick={() => setShowProducts(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
@@ -763,7 +763,7 @@ export default function OffersPage() {
 
       {/* Create form panel */}
       {showForm && (
-        <div className="mb-8 rounded-2xl border border-[var(--accent-border)] bg-[var(--surface-0)] shadow-lg overflow-hidden">
+        <div className="mb-8 rounded-xl border border-[var(--accent-border)] bg-[var(--surface-0)] shadow-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">Ny offert</h2>
             <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setError(null); setContactSearch(''); setContactResults([]); setShowEmailCustom(false); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
@@ -1686,7 +1686,7 @@ export default function OffersPage() {
       {/* Send confirmation modal */}
       {confirmSend && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmSend(null)}>
-          <div className="relative w-full max-w-sm bg-[var(--surface)] rounded-2xl shadow-2xl overflow-hidden"
+          <div className="relative w-full max-w-sm bg-[var(--surface)] rounded-xl shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}>
             <div className="px-6 py-4 border-b border-[var(--border)]">
               <h2 className="text-sm font-semibold text-[var(--text-primary)]">Bekräfta utskick</h2>
@@ -1738,7 +1738,7 @@ export default function OffersPage() {
       {/* Document preview modal */}
       {previewDoc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setPreviewDoc(null)}>
-          <div className="relative w-full max-w-4xl max-h-[90vh] bg-[var(--surface-0)] rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-[var(--border)]"
+          <div className="relative w-full max-w-4xl max-h-[90vh] bg-[var(--surface-0)] rounded-xl shadow-2xl overflow-hidden flex flex-col border border-[var(--border)]"
             onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)] bg-[var(--surface-alt)] shrink-0">
               <span className="text-sm font-semibold text-[var(--text-primary)]">Förhandsvisning av offertdokument</span>

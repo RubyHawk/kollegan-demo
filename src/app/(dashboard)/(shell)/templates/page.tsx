@@ -100,22 +100,6 @@ export default function TemplatesPage() {
         </div>
       )}
 
-      {/* Placeholder reference */}
-      <div className="mb-6 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3">
-        <p className="text-xs font-semibold text-[var(--text-secondary)] mb-2 uppercase tracking-wider">Tillgängliga platshållare</p>
-        <div className="flex flex-wrap gap-1.5">
-          {[
-            '{{offerTitle}}', '{{recipientName}}', '{{recipientEmail}}', '{{recipientCompany}}',
-            '{{totalExVat}}', '{{totalIncVat}}', '{{vatAmount}}', '{{validUntil}}',
-            '{{notes}}', '{{lineItems}}', '{{signature}}',
-          ].map((p) => (
-            <code key={p} className="rounded-md bg-[var(--surface)] border border-[var(--border)] px-2 py-0.5 text-[11px] text-[var(--accent)] font-mono">
-              {p}
-            </code>
-          ))}
-        </div>
-      </div>
-
       {/* Table */}
       {loading ? (
         <div className="flex items-center justify-center py-20 gap-3">
