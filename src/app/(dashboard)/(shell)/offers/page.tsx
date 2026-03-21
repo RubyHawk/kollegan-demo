@@ -398,7 +398,7 @@ export default function OffersPage() {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ limit: '200', offset: '0' });
+      const params = new URLSearchParams({ limit: '100', offset: '0' });
       if (search.trim()) params.set('search', search.trim());
       const res = await fetch(`/api/offers?${params}`);
       if (!res.ok) throw new Error(`Fel ${res.status}`);

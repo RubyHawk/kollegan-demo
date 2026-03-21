@@ -15,7 +15,7 @@ import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
 import {
-  File, Star, CheckSquare, Tag, Buildings, Scales,
+  File, FileText, Star, CheckSquare, Tag, Buildings, Scales,
   TextHOne, TextHTwo, Paragraph, ListBullets, Table, Minus as PhMinus, Image as PhImage,
   BracketsCurly, PenNib, User, CalendarBlank,
 } from '@phosphor-icons/react';
