@@ -287,14 +287,14 @@ function ImageSettings({ editor }: { editor: Editor }) {
           <Label>Position (px från sidkant)</Label>
           <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 10, color: '#605e5c', fontFamily: 'Calibri, Arial, sans-serif', marginBottom: 2 }}>X (vänster)</p>
-              <input type="number" value={posX} min={0} step={1}
+              <p style={{ fontSize: 11, color: '#475569', fontFamily: 'system-ui,sans-serif', marginBottom: 3, fontWeight: 600 }}>X — horisontellt</p>
+              <input type="number" value={posX} min={0} step={10}
                 onChange={(e) => set({ posX: Number(e.target.value) })}
                 style={coordInputStyle} />
             </div>
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 10, color: '#605e5c', fontFamily: 'Calibri, Arial, sans-serif', marginBottom: 2 }}>Y (topp)</p>
-              <input type="number" value={posY} min={0} step={1}
+              <p style={{ fontSize: 11, color: '#475569', fontFamily: 'system-ui,sans-serif', marginBottom: 3, fontWeight: 600 }}>Y — vertikalt</p>
+              <input type="number" value={posY} min={0} step={10}
                 onChange={(e) => set({ posY: Number(e.target.value) })}
                 style={coordInputStyle} />
             </div>
@@ -348,10 +348,10 @@ const layerBtnStyle: React.CSSProperties = {
 };
 
 const coordInputStyle: React.CSSProperties = {
-  width: '100%', padding: '6px 10px', fontSize: 12,
-  border: '1px solid var(--border)', borderRadius: 6,
-  color: 'var(--text-primary)', background: 'var(--surface-0)',
-  outline: 'none',
+  width: '100%', padding: '6px 10px', fontSize: 13, fontWeight: 600,
+  border: '1.5px solid #cbd5e1', borderRadius: 6,
+  color: '#1e293b', background: '#ffffff',
+  outline: 'none', fontFamily: 'ui-monospace,monospace',
 };
 
 const quickBtnStyle: React.CSSProperties = {

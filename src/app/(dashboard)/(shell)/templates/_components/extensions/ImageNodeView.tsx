@@ -224,11 +224,12 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
   const onMoveStart = useCallback(
     (e: React.MouseEvent) => {
       if (!isFree) return;
-      // Immediately select this node on mousedown so the sidebar updates right away.
-      // We can't call selectSelf() here (defined later), so inline the same logic.
-      e.preventDefault(); // suppress text-cursor default behaviour
+      // Explicitly select this node via chain so ProseMirror processes the selection
+      // synchronously and the right sidebar updates immediately.
+      // NOTE: do NOT call e.preventDefault() — ProseMirror checks event.defaultPrevented
+      // in its own native mousedown handler and will skip selection if it is set.
       const p = typeof getPos === 'function' ? getPos() : null;
-      if (typeof p === 'number') editor?.commands.setNodeSelection(p);
+      if (typeof p === 'number') editor?.chain().focus().setNodeSelection(p).run();
 
       const wrapper = containerRef.current?.parentElement as HTMLElement | null;
       if (!wrapper) return;
@@ -552,18 +553,19 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
           <div
             contentEditable={false}
             style={{
-              position: 'absolute', bottom: -22, left: '50%',
+              position: 'absolute', bottom: -28, left: '50%',
               transform: 'translateX(-50%)',
-              fontSize: 10, color: '#64748b',
-              fontFamily: 'system-ui,sans-serif',
+              fontSize: 12, color: '#ffffff',
+              fontFamily: 'ui-monospace,monospace',
               whiteSpace: 'nowrap', pointerEvents: 'none',
-              background: 'rgba(255,255,255,0.85)',
-              padding: '1px 6px', borderRadius: 4,
-              border: '1px solid #e2e8f0',
+              background: 'rgba(15,23,42,0.82)',
+              padding: '3px 10px', borderRadius: 6,
+              letterSpacing: '0.01em',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
             }}
           >
-            {Math.round(posX)}, {Math.round(posY)} px
-            {layerTotal > 1 && ` · lager ${layerRank}/${layerTotal}`}
+            X: {Math.round(posX)}  Y: {Math.round(posY)}
+            {layerTotal > 1 && <span style={{ opacity: 0.65, marginLeft: 8 }}>lager {layerRank}/{layerTotal}</span>}
           </div>
         )}
 

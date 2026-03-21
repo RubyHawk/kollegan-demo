@@ -45,17 +45,62 @@ function SignatureBlockView({ node }: NodeViewProps) {
   const fieldType = (node.attrs.fieldType as FieldType) ?? 'signature';
   const label     = (node.attrs.label as string) ?? 'Signatur';
 
-  const subtext: Record<FieldType, string> = {
-    signature: 'Underteckna med e-signatur via länken',
-    name:      'Fullständigt namn',
-    date:      'Signeringsdatum fylls i automatiskt',
-  };
+  // Name field: render like a real text input so it's visually obvious
+  if (fieldType === 'name') {
+    return React.createElement(
+      NodeViewWrapper,
+      { className: 'my-3' },
+      React.createElement(
+        'div',
+        { contentEditable: false, style: { userSelect: 'none', cursor: 'default' } },
+        React.createElement('p', {
+          style: {
+            fontSize: 11, color: '#64748b', marginBottom: 5,
+            fontFamily: 'system-ui,sans-serif', fontWeight: 600,
+            textTransform: 'uppercase', letterSpacing: '0.04em',
+          },
+        }, label),
+        React.createElement(
+          'div',
+          {
+            style: {
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: '#ffffff',
+              border: '1.5px solid #cbd5e1',
+              borderRadius: 8,
+              padding: '10px 14px',
+              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)',
+            },
+          },
+          React.createElement(
+            'div',
+            { style: { color: '#94a3b8', display: 'flex', alignItems: 'center', flexShrink: 0 } },
+            React.createElement(UserIcon),
+          ),
+          React.createElement('span', {
+            style: {
+              flex: 1, color: '#94a3b8', fontSize: 14,
+              fontFamily: 'system-ui,sans-serif', fontStyle: 'italic',
+            },
+          }, 'Ange fullständigt namn'),
+          React.createElement('span', {
+            style: {
+              fontSize: 10, color: '#94a3b8', background: '#f1f5f9',
+              padding: '2px 8px', borderRadius: 4,
+              fontFamily: 'system-ui,sans-serif', fontWeight: 500,
+              flexShrink: 0, whiteSpace: 'nowrap',
+            },
+          }, 'Namnfält'),
+        ),
+      ),
+    );
+  }
 
-  const icon = fieldType === 'name'
-    ? React.createElement(UserIcon)
-    : fieldType === 'date'
-      ? React.createElement(CalendarIcon)
-      : React.createElement(PenIcon);
+  // Signature / date fields: keep the dashed-box style (clearly "sign here")
+  const isDate   = fieldType === 'date';
+  const icon     = isDate ? React.createElement(CalendarIcon) : React.createElement(PenIcon);
+  const subtext  = isDate ? 'Signeringsdatum fylls i automatiskt' : 'Underteckna med e-signatur via länken';
+  const tagLabel = isDate ? 'Datumfält' : 'Signaturfält';
 
   return React.createElement(
     NodeViewWrapper,
@@ -64,25 +109,44 @@ function SignatureBlockView({ node }: NodeViewProps) {
       'div',
       {
         contentEditable: false,
-        className:
-          'flex items-center gap-3 border-2 border-dashed border-slate-300 rounded-xl px-6 py-4 bg-slate-50 select-none cursor-default',
+        style: {
+          display: 'flex', alignItems: 'center', gap: 12,
+          border: '2px dashed #cbd5e1', borderRadius: 12,
+          padding: '16px 24px', background: '#f8fafc',
+          userSelect: 'none', cursor: 'default',
+        },
       },
       React.createElement(
         'div',
-        { className: 'w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 shrink-0' },
+        {
+          style: {
+            width: 36, height: 36, borderRadius: '50%',
+            background: '#e2e8f0', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', color: '#64748b', flexShrink: 0,
+          },
+        },
         icon,
       ),
       React.createElement(
         'div',
-        { className: 'flex-1 min-w-0' },
-        React.createElement('p', { className: 'text-sm font-medium text-slate-700 mb-0.5' }, label),
-        React.createElement('p', { className: 'text-xs text-slate-400' }, subtext[fieldType]),
+        { style: { flex: 1, minWidth: 0 } },
+        React.createElement('p', {
+          style: {
+            fontSize: 14, fontWeight: 500, color: '#334155',
+            marginBottom: 2, fontFamily: 'system-ui,sans-serif',
+          },
+        }, label),
+        React.createElement('p', {
+          style: { fontSize: 12, color: '#94a3b8', fontFamily: 'system-ui,sans-serif' },
+        }, subtext),
       ),
-      React.createElement(
-        'span',
-        { className: 'shrink-0 text-xs text-slate-400 bg-slate-200 px-2 py-0.5 rounded font-medium' },
-        'Signaturfält',
-      ),
+      React.createElement('span', {
+        style: {
+          flexShrink: 0, fontSize: 11, color: '#64748b',
+          background: '#e2e8f0', padding: '2px 8px', borderRadius: 4,
+          fontFamily: 'system-ui,sans-serif', fontWeight: 500,
+        },
+      }, tagLabel),
     ),
   );
 }

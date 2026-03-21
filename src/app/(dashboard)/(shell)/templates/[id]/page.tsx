@@ -202,7 +202,7 @@ export default function TemplateEditorPage() {
           value={name}
           onChange={(e) => { setName(e.target.value); setIsDirty(true); }}
           placeholder="Mallnamn…"
-          className="flex-1 min-w-0 bg-transparent text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none border-b border-transparent focus:border-[var(--accent)] transition-colors py-0.5 max-w-[260px]"
+          className="flex-1 min-w-0 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none border border-[var(--border)] bg-[var(--surface-0)] hover:border-[var(--accent)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)] rounded-md px-2.5 py-1 transition-colors max-w-[260px]"
         />
         {isDirty && (
           <span className="text-xs text-amber-500 font-medium shrink-0">Osparat •</span>
