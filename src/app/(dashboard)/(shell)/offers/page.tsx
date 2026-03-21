@@ -59,6 +59,7 @@ interface Offer {
 interface OfferTemplate {
   id:            string;
   name:          string;
+  content?:      string; // TipTap JSON string (may be absent in list responses)
   emailSubject?: string;
   emailBody?:    string;
 }
@@ -538,13 +539,18 @@ export default function OffersPage() {
 
   // ── Template preview (from offer form) ────────────────────────────────────────
   const openTemplatePreview = useCallback(async () => {
-    const tpl = templates.find((t) => t.id === form.templateId);
-    if (!tpl) return;
+    if (!form.templateId) return;
     setTplPreview({ loading: true, html: null });
     try {
+      // Fetch full template (list response omits content for performance)
+      const tplRes = await fetch(`/api/templates/${form.templateId}`);
+      if (!tplRes.ok) throw new Error(`Kunde inte hämta mall (${tplRes.status})`);
+      const tplData = await tplRes.json() as { data?: { content?: string } };
+      const content = tplData.data?.content;
+
       const res = await fetch('/api/templates/preview', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: tpl.content }),
+        body: JSON.stringify({ content }),
       });
       const j = await res.json() as { html?: string; detail?: string };
       if (!res.ok) throw new Error(j.detail ?? `Fel ${res.status}`);
@@ -552,7 +558,7 @@ export default function OffersPage() {
     } catch {
       setTplPreview(null);
     }
-  }, [templates, form.templateId]);
+  }, [form.templateId]);
 
   // ── Copy public link ───────────────────────────────────────────────────────────
   const copyLink = useCallback(async (offer: Offer) => {
