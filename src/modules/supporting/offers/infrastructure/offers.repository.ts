@@ -338,13 +338,61 @@ export const offersRepository = {
     return result.count;
   },
 
-  // Returns the next sequential offer number for the given org
-  async getNextOfferNumber(orgId: string): Promise<number> {
-    const result = await prisma.offer.aggregate({
+  // Returns the next sequential offer number for the given org.
+  // Accepts an optional transaction client so callers can compose this read
+  // inside a larger transaction (e.g. assignOfferNumber below).
+  async getNextOfferNumber(
+    orgId: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<number> {
+    const client = tx ?? prisma;
+    const result = await client.offer.aggregate({
       where: { organizationId: orgId, offerNumber: { not: null } },
       _max:  { offerNumber: true },
     });
     return (result._max.offerNumber ?? 0) + 1;
+  },
+
+  /**
+   * Atomically assigns the next offer number to an offer that doesn't yet have
+   * one.  The read-then-write is wrapped in a serializable transaction; on a
+   * unique-constraint collision (two concurrent sends grabbed the same number)
+   * the transaction is retried up to MAX_RETRIES times before throwing.
+   *
+   * Returns the assigned offer number, or the existing one if already set.
+   */
+  async assignOfferNumber(id: string, orgId: string): Promise<number> {
+    // If the offer already has a number, return it immediately (idempotent).
+    const existing = await prisma.offer.findFirst({
+      where:  { id, organizationId: orgId, deletedAt: null },
+      select: { offerNumber: true },
+    });
+    if (existing?.offerNumber) return existing.offerNumber;
+
+    const MAX_RETRIES = 5;
+    let offerNumber!: number;
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          offerNumber = await offersRepository.getNextOfferNumber(orgId, tx);
+          await tx.offer.update({
+            where: { id },
+            data:  { offerNumber },
+          });
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+        return offerNumber;
+      } catch (err) {
+        // P2002 = unique constraint violation — another concurrent request
+        // claimed this number; retry with the next available one.
+        const isConflict =
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === 'P2002';
+        if (!isConflict || attempt === MAX_RETRIES - 1) throw err;
+      }
+    }
+
+    return offerNumber;
   },
 
   // Internal update by id only — used for public signing flow where orgId is not available

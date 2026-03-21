@@ -302,7 +302,9 @@ export default function TemplateEditor({ initialContent, editorRef }: Props) {
     // Flush before removing
     const flushed  = flushPage(curIdx, curPages);
     const newPages = flushed.filter((_, i) => i !== idx);
-    const newIdx   = Math.min(curIdx, newPages.length - 1);
+    const newIdx   = idx < curIdx
+      ? curIdx - 1
+      : Math.min(curIdx, newPages.length - 1);
     const targetPage = newPages[newIdx];
 
     editor?.commands.setContent(targetPage.body as Parameters<typeof editor.commands.setContent>[0]);

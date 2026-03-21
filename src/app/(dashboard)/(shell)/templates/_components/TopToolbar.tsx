@@ -588,11 +588,14 @@ export default function TopToolbar() {
               <InlineSep />
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
                 <RBtn
-                  active={hf?.activeHeader.enabled && !hf.activeHeader.useDefault}
+                  active={
+                    (hf?.activeHeader.enabled && !hf.activeHeader.useDefault) ||
+                    (hf?.activeFooter.enabled && !hf.activeFooter.useDefault)
+                  }
                   disabled={!hf?.activeHeader.enabled && !hf?.activeFooter.enabled}
                   onClick={() => {
                     if (!hf) return;
-                    const newVal = !(!hf.activeHeader.useDefault);
+                    const newVal = !hf.activeHeader.useDefault;
                     hf.patchActiveHeader({ useDefault: newVal });
                     hf.patchActiveFooter({ useDefault: newVal });
                   }}

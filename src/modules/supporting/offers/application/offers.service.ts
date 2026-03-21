@@ -100,11 +100,10 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
     }
   }
 
-  // Assign sequential offer number on first send
-  let offerNumber = existing.offerNumber;
-  if (!offerNumber) {
-    offerNumber = await offersRepository.getNextOfferNumber(orgId);
-  }
+  // Assign sequential offer number on first send.
+  // assignOfferNumber wraps the read-then-write in a serializable transaction
+  // with retry logic to prevent duplicate numbers under concurrent sends.
+  const offerNumber = await offersRepository.assignOfferNumber(id, orgId);
 
   const sentAt = new Date();
   // Recompute validUntil from sentAt so the period is always measured from send time
