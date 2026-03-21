@@ -224,9 +224,11 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
   const onMoveStart = useCallback(
     (e: React.MouseEvent) => {
       if (!isFree) return;
-      // Allow the event to propagate so ProseMirror handles selection on click.
-      // Only preventDefault to suppress text-cursor behaviour.
-      e.preventDefault();
+      // Immediately select this node on mousedown so the sidebar updates right away.
+      // We can't call selectSelf() here (defined later), so inline the same logic.
+      e.preventDefault(); // suppress text-cursor default behaviour
+      const p = typeof getPos === 'function' ? getPos() : null;
+      if (typeof p === 'number') editor?.commands.setNodeSelection(p);
 
       const wrapper = containerRef.current?.parentElement as HTMLElement | null;
       if (!wrapper) return;
@@ -266,7 +268,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
       document.addEventListener('mouseup', onUp);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isFree, isFreeWrapped, wrapText, posX, posY, width, updateAttributes],
+    [isFree, isFreeWrapped, wrapText, posX, posY, width, updateAttributes, getPos, editor],
   );
 
   // ── Command helpers ───────────────────────────────────────────────────────────
