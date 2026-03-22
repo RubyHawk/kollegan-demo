@@ -217,6 +217,23 @@ export default function PublicOfferPage() {
     const doc = iframe.contentDocument;
     if (!doc) return;
 
+    // ── Inject responsive styles to prevent mobile overflow issues ──
+    const responsiveStyle = doc.createElement('style');
+    responsiveStyle.textContent = `
+      *, *::before, *::after { box-sizing: border-box; }
+      body { overflow-x: hidden !important; }
+      img { max-width: 100% !important; height: auto !important; display: block; }
+      table { max-width: 100% !important; width: 100%; table-layout: fixed; }
+      td, th { word-break: break-word; overflow-wrap: break-word; }
+      pre, code { white-space: pre-wrap !important; word-break: break-word !important; overflow-x: hidden !important; }
+      .doc-wrapper { overflow-x: hidden !important; }
+    `;
+    if (doc.head) {
+      doc.head.appendChild(responsiveStyle);
+    } else if (doc.body) {
+      doc.body.insertBefore(responsiveStyle, doc.body.firstChild);
+    }
+
     const wrapper = doc.querySelector('.doc-wrapper') as HTMLElement | null;
     if (wrapper) {
       const isMobile = window.innerWidth < 640;
@@ -237,12 +254,36 @@ export default function PublicOfferPage() {
     });
 
     const resize = () => {
-      if (doc.body) iframe.style.height = `${doc.body.scrollHeight}px`;
+      if (!doc.body) return;
+      // Reset height first to get accurate scrollHeight measurement
+      iframe.style.height = 'auto';
+      requestAnimationFrame(() => {
+        if (doc.body) iframe.style.height = `${doc.body.scrollHeight}px`;
+      });
     };
     resize();
-    doc.querySelectorAll('img').forEach((img) => {
-      if (!img.complete) img.addEventListener('load', resize);
-    });
+    // Wait for all images to load before final resize
+    const images = doc.querySelectorAll('img');
+    if (images.length > 0) {
+      let loadedCount = 0;
+      images.forEach((img) => {
+        if (img.complete) {
+          loadedCount++;
+          if (loadedCount === images.length) resize();
+        } else {
+          img.addEventListener('load', () => {
+            loadedCount++;
+            if (loadedCount === images.length) resize();
+          });
+          img.addEventListener('error', () => {
+            loadedCount++;
+            if (loadedCount === images.length) resize();
+          });
+        }
+      });
+    } else {
+      resize();
+    }
     new MutationObserver(resize).observe(doc.body, { childList: true, subtree: true, attributes: true });
   }, []);
 
@@ -485,7 +526,7 @@ export default function PublicOfferPage() {
 
       {/* ─── Content ─── */}
       <main className="pb-16 bg-slate-50 min-h-screen">
-        <div className="mx-auto max-w-3xl px-0 sm:px-6 sm:pt-8">
+        <div className="mx-auto max-w-3xl px-0 sm:px-6 sm:pt-8 overflow-x-hidden">
 
         {/* Document */}
         {offer.generatedDocument && (
@@ -502,7 +543,7 @@ export default function PublicOfferPage() {
               title="Offertdokument"
               onLoad={handleIframeLoad}
               className="block w-full border-none"
-              style={{ overflow: 'hidden' }}
+              style={{ overflow: 'hidden', minHeight: '200px' }}
               scrolling="no"
             />
           </motion.section>
