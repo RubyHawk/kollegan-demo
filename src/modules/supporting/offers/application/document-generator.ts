@@ -313,6 +313,23 @@ const MOBILE_TABLE_CSS = `
       .totals td { border: none !important; flex: 1; }
       table:not(.line-items):not(.totals) { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }`;
 
+// ─── Fill-page image detection ─────────────────────────────────────────────────
+
+/**
+ * Returns true if the TipTap node tree contains a fill-page free image
+ * (width=816, height=1056).  Used to cap page-block height at exactly 1056px
+ * so no white space appears below the image in the generated document.
+ */
+function containsFillPageImage(node: TipTapNode): boolean {
+  if (node.type === 'image') {
+    const a = node.attrs ?? {};
+    return String(a.position) === 'free'
+      && Number(a.width)  === 816
+      && Number(a.height) === 1056;
+  }
+  return (node.content ?? []).some(containsFillPageImage);
+}
+
 // ─── Main generator ────────────────────────────────────────────────────────────
 
 /**
@@ -441,7 +458,11 @@ export function generateDocument(templateContent: string, offer: Offer): string 
       ? `<hr class="doc-divider"/><div class="doc-footer">${pageFooterHtml}</div>`
       : '';
 
-    return `<div class="page-block" data-page="${pageIndex + 1}"><div class="page-content">${hdrSection}${bodyHtml}${ftrSection}</div></div>`;
+    // If a fill-page image (816×1056) exists, fix the block to exactly 1056px so
+    // there is no empty white space below the image in the generated document.
+    const fillPage = containsFillPageImage(page.body);
+    const blockStyle = fillPage ? ' style="height:1056px;overflow:hidden;"' : '';
+    return `<div class="page-block"${blockStyle} data-page="${pageIndex + 1}"><div class="page-content">${hdrSection}${bodyHtml}${ftrSection}</div></div>`;
   }
 
   let bodyHtml = '';
