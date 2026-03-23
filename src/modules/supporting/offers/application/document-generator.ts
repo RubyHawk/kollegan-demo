@@ -441,7 +441,7 @@ export function generateDocument(templateContent: string, offer: Offer): string 
       ? `<hr class="doc-divider"/><div class="doc-footer">${pageFooterHtml}</div>`
       : '';
 
-    return `<div class="page-block" data-page="${pageIndex + 1}">${hdrSection}${bodyHtml}${ftrSection}</div>`;
+    return `<div class="page-block" data-page="${pageIndex + 1}"><div class="page-content">${hdrSection}${bodyHtml}${ftrSection}</div></div>`;
   }
 
   let bodyHtml = '';
@@ -492,7 +492,7 @@ export function generateDocument(templateContent: string, offer: Offer): string 
         ? `<hr class="doc-divider"/><div class="doc-footer">${footerHtml}</div>`
         : '';
 
-      bodyHtml = `${hdrSection}${html}${ftrSection}`;
+      bodyHtml = `<div class="page-content">${hdrSection}${html}${ftrSection}</div>`;
     } else {
       // Legacy v1: the whole JSON is the body doc
       const rootNode = parsed as unknown as TipTapNode;
@@ -500,15 +500,16 @@ export function generateDocument(templateContent: string, offer: Offer): string 
       for (const [key, value] of Object.entries(replacements)) {
         html = html.split(key).join(value);
       }
-      bodyHtml = html;
+      bodyHtml = `<div class="page-content">${html}</div>`;
     }
   } catch {
     // Unparseable — treat as plain text
     const escaped = escapeHtml(templateContent);
-    bodyHtml = `<p>${escaped}</p>`;
+    let fallbackHtml = `<p>${escaped}</p>`;
     for (const [key, value] of Object.entries(replacements)) {
-      bodyHtml = bodyHtml.split(key).join(value);
+      fallbackHtml = fallbackHtml.split(key).join(value);
     }
+    bodyHtml = `<div class="page-content">${fallbackHtml}</div>`;
   }
 
   // ─── Wrap in a styled document shell ────────────────────────────────────────
@@ -523,21 +524,28 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; background: #fff; margin: 0; padding: 0; }
     img { max-width: 100%; height: auto; }
-    .doc-wrapper { max-width: 816px; margin: 40px auto; padding: 40px 48px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+    /* doc-wrapper: 816px container — no horizontal padding so page-block fills full width */
+    .doc-wrapper { max-width: 816px; margin: 40px auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+    /* page-content: carries the horizontal padding; position:static so absolute images */
+    /* inside it still anchor to page-block (the nearest position:relative ancestor)    */
+    .page-content { padding: 40px 48px; }
     .doc-header { font-size: 12px; color: #64748b; margin-bottom: 0; }
     .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
     .doc-divider { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
-    .page-separator { border: none; border-top: 2px dashed #e2e8f0; margin: 48px 0; }
-    /* min-height matches A4 (1056px) so absolute-positioned images stay within their page */
+    .page-separator { border: none; border-top: 2px dashed #e2e8f0; margin: 0; }
+    /* page-block is exactly 816px wide — matches the editor's data-a4-page dimensions */
+    /* so fill-page images (posX:0, posY:0, width:816, height:1056) render without crop */
     .page-block { position: relative; min-height: 1056px; overflow: hidden; }
     @media (max-width: 640px) {
-      .doc-wrapper { margin: 0; padding: 20px 16px; border: none; border-radius: 0; }
+      .doc-wrapper { margin: 0; border: none; border-radius: 0; }
+      .page-content { padding: 20px 16px; }
       .page-block { min-height: 0; overflow: visible; }
       .page-block > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
       ${MOBILE_TABLE_CSS}
     }
     @media print {
-      .doc-wrapper { margin: 0; padding: 0; border: none; }
+      .doc-wrapper { margin: 0; border: none; }
+      .page-content { padding: 0; }
       .page-separator { display: none; }
       .page-block { page-break-after: always; min-height: 0; }
       .page-block:last-child { page-break-after: auto; }
