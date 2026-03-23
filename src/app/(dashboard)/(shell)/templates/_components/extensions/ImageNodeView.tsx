@@ -41,7 +41,7 @@
 
 import { NodeViewWrapper } from '@tiptap/react';
 import type { NodeViewProps } from '@tiptap/react';
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState, useLayoutEffect } from 'react';
 import type { CSSProperties } from 'react';
 
 const MIN_W = 80;
@@ -87,6 +87,32 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
   const isFree        = imgPosition === 'free';
   const isFreeWrapped = isFree && (wrapText === 'left' || wrapText === 'right');
   const isFloating    = !isFree && (imgFloat === 'left' || imgFloat === 'right');
+
+  // ── ProseMirror → page-canvas offset correction ──────────────────────────────
+  //
+  // ProseMirror always sets `.ProseMirror { position: relative }` internally.
+  // That makes .ProseMirror the containing block for position:absolute children,
+  // but .ProseMirror sits *inside* the body-div padding (H_PAD px from each edge
+  // of data-a4-page).  Coordinates are stored relative to data-a4-page (so that
+  // posX=0,posY=0 = true page corner), so we subtract the ProseMirror offset
+  // when applying left/top in the editor.
+  const [pmOffset, setPmOffset] = useState({ x: 0, y: 0 });
+  useLayoutEffect(() => {
+    if (!isFree) return;
+    const container = containerRef.current;
+    if (!container) return;
+    // Walk up to .ProseMirror and to data-a4-page
+    let pm: HTMLElement | null = container;
+    while (pm && !pm.classList.contains('ProseMirror')) pm = pm.parentElement;
+    let page: HTMLElement | null = container;
+    while (page && !page.dataset.a4Page) page = page.parentElement;
+    if (!pm || !page) return;
+    const pmRect   = pm.getBoundingClientRect();
+    const pageRect = page.getBoundingClientRect();
+    const x = Math.round(pmRect.left - pageRect.left);
+    const y = Math.round(pmRect.top  - pageRect.top);
+    setPmOffset(prev => (prev.x === x && prev.y === y ? prev : { x, y }));
+  }); // intentionally no deps — re-runs on every render to track header-zone changes
 
   // Refs for direct DOM writes during drags (no React state → no re-renders)
   const containerRef = useRef<HTMLDivElement>(null);
@@ -238,6 +264,8 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
       const origX  = posX,      origY  = posY;
       let latestX  = posX,      latestY = posY;
       let dragging = false;
+      // Capture pmOffset at drag start (stable for the duration of the drag)
+      const offX = pmOffset.x, offY = pmOffset.y;
 
       const onMove = (ev: MouseEvent) => {
         const dx = ev.clientX - startX;
@@ -252,8 +280,9 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
           if (wrapText === 'right') wrapper.style.marginRight = `${Math.max(0, 816 - latestX - (width ?? 200))}px`;
           wrapper.style.marginTop = `${latestY}px`;
         } else {
-          wrapper.style.left = `${latestX}px`;
-          wrapper.style.top  = `${latestY}px`;
+          // latestX/Y are page-relative; subtract ProseMirror offset for CSS left/top
+          wrapper.style.left = `${latestX - offX}px`;
+          wrapper.style.top  = `${latestY - offY}px`;
         }
       };
 
@@ -269,7 +298,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
       document.addEventListener('mouseup', onUp);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isFree, isFreeWrapped, wrapText, posX, posY, width, updateAttributes, getPos, editor],
+    [isFree, isFreeWrapped, wrapText, posX, posY, width, updateAttributes, getPos, editor, pmOffset],
   );
 
   // ── Command helpers ───────────────────────────────────────────────────────────
@@ -348,8 +377,10 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     : isFree
       ? {
           position:   'absolute',
-          left:       posX,
-          top:        posY,
+          // Subtract ProseMirror offset so (0,0) = true top-left of page canvas.
+          // See pmOffset comment above.
+          left:       posX - pmOffset.x,
+          top:        posY - pmOffset.y,
           zIndex:     zIndex ?? 0,
           width:      imgW ? `${imgW}px` : '200px',
           display:    'block',
