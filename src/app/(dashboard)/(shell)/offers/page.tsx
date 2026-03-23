@@ -220,8 +220,14 @@ export default function OffersPage() {
   const [wizardStep,         setWizardStep]         = useState<1 | 2>(1);
   const [livePreviewHtml,    setLivePreviewHtml]    = useState<string | null>(null);
   const [livePreviewLoading, setLivePreviewLoading] = useState(false);
+  const [previewDirty,       setPreviewDirty]       = useState(false);
+  const [activeField,        setActiveField]        = useState<string | null>(null);
   const [cachedTplContent,   setCachedTplContent]   = useState<string | null>(null);
+  const [openCards, setOpenCards] = useState({ mottagare: true, detaljer: true });
+  const autoCollapsed = useRef({ mottagare: false, detaljer: false });
   const livePreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [openLines, setOpenLines] = useState<Set<number>>(new Set([0]));
+  const autoCollapsedLines = useRef<Set<number>>(new Set());
 
   // ── Load templates ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -603,6 +609,11 @@ export default function OffersPage() {
     setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null);
     setError(null); setFieldErrors({}); setContactSearch(''); setContactResults([]);
     setWizardStep(1); setLivePreviewHtml(null); setCachedTplContent(null);
+    setPreviewDirty(false); setActiveField(null);
+    setOpenCards({ mottagare: true, detaljer: true });
+    autoCollapsed.current = { mottagare: false, detaljer: false };
+    setOpenLines(new Set([0]));
+    autoCollapsedLines.current = new Set();
     if (livePreviewTimer.current) clearTimeout(livePreviewTimer.current);
   }, []);
 
@@ -630,13 +641,36 @@ export default function OffersPage() {
     }
   }, []);
 
+  // Auto-collapse cards when their required fields are complete
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const mottagareComplete = form.recipientName.trim().length >= 2 && emailRe.test(form.recipientEmail.trim());
+  const detajerComplete   = form.title.trim().length >= 2;
+
+  useEffect(() => {
+    if (mottagareComplete && !autoCollapsed.current.mottagare) {
+      autoCollapsed.current.mottagare = true;
+      const t = setTimeout(() => setOpenCards((o) => ({ ...o, mottagare: false })), 600);
+      return () => clearTimeout(t);
+    }
+  }, [mottagareComplete]);
+
+  useEffect(() => {
+    if (detajerComplete && !autoCollapsed.current.detaljer) {
+      autoCollapsed.current.detaljer = true;
+      const t = setTimeout(() => setOpenCards((o) => ({ ...o, detaljer: false })), 600);
+      return () => clearTimeout(t);
+    }
+  }, [detajerComplete]);
+
   /** Schedule a debounced re-render of the live preview with current form values. */
   const scheduleLivePreview = useCallback((currentForm: typeof form, content: string) => {
+    setPreviewDirty(true);
     if (livePreviewTimer.current) clearTimeout(livePreviewTimer.current);
     livePreviewTimer.current = setTimeout(async () => {
       const validItems = currentForm.lineItems.filter((i) => i.description.trim() && i.quantity > 0);
       try {
         setLivePreviewLoading(true);
+        setPreviewDirty(false);
         const res = await fetch('/api/templates/preview', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -655,8 +689,9 @@ export default function OffersPage() {
         if (j.html) setLivePreviewHtml(j.html);
       } catch { /* ignore */ } finally {
         setLivePreviewLoading(false);
+        setActiveField(null);
       }
-    }, 500);
+    }, 1000);
   }, []);
 
   // Re-render preview whenever form values change (step 2 only)
@@ -679,7 +714,13 @@ export default function OffersPage() {
     setForm((f) => { const items = [...f.lineItems]; items[idx] = { ...items[idx], [field]: v }; return { ...f, lineItems: items }; });
     setFieldErrors((fe) => { const next = { ...fe }; delete next[`line_${idx}_${field}`]; return next; });
   }
-  function addLine() { setForm((f) => ({ ...f, lineItems: [...f.lineItems, { ...EMPTY_LINE }] })); }
+  function addLine() {
+    setForm((f) => {
+      const newIdx = f.lineItems.length;
+      setOpenLines((s) => { const n = new Set(s); n.add(newIdx); return n; });
+      return { ...f, lineItems: [...f.lineItems, { ...EMPTY_LINE }] };
+    });
+  }
   function removeLine(idx: number) {
     setForm((f) => ({ ...f, lineItems: f.lineItems.filter((_, i) => i !== idx) }));
     setFieldErrors((fe) => {
@@ -688,12 +729,25 @@ export default function OffersPage() {
         const m = k.match(/^line_(\d+)_(.+)$/);
         if (!m) { next[k] = v; continue; }
         const rowIdx = parseInt(m[1]);
-        if (rowIdx === idx) continue;           // drop errors for removed row
+        if (rowIdx === idx) continue;
         const newKey = `line_${rowIdx < idx ? rowIdx : rowIdx - 1}_${m[2]}`;
         next[newKey] = v;
       }
       return next;
     });
+    setOpenLines((s) => {
+      const n = new Set<number>();
+      for (const i of s) {
+        if (i < idx) n.add(i);
+        else if (i > idx) n.add(i - 1);
+      }
+      return n;
+    });
+    autoCollapsedLines.current = new Set(
+      Array.from(autoCollapsedLines.current)
+        .filter((i) => i !== idx)
+        .map((i) => (i > idx ? i - 1 : i))
+    );
   }
 
   const tots = computeTotals(form.lineItems);
@@ -806,6 +860,23 @@ export default function OffersPage() {
 
               {/* ── Left: live preview canvas (hidden on small screens) ── */}
               <div className="hidden lg:flex flex-1 bg-slate-100 dark:bg-slate-900/60 overflow-auto flex-col items-center py-10 px-8 relative">
+                {/* Dirty / updating badge */}
+                {livePreviewHtml && (previewDirty || livePreviewLoading) && (
+                  <div className="sticky top-0 z-30 w-full flex justify-center pointer-events-none mb-4" style={{ marginTop: '-2rem' }}>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-sm text-[11px] text-slate-500 dark:text-slate-400 backdrop-blur-sm mt-8">
+                      {livePreviewLoading ? (
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--accent)] shrink-0">
+                          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                        </svg>
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse shrink-0"/>
+                      )}
+                      {livePreviewLoading
+                        ? (activeField ? `Uppdaterar ${activeField}…` : 'Uppdaterar förhandsvisning…')
+                        : (activeField ? `Skriver: ${activeField}` : 'Väntar på att uppdatera…')}
+                    </div>
+                  </div>
+                )}
                 <AnimatePresence mode="wait">
                   {!livePreviewHtml && !livePreviewLoading && (
                     <motion.div key="preview-empty"
@@ -845,11 +916,15 @@ export default function OffersPage() {
                     <motion.div key="preview-iframe"
                       initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
                       className="relative w-full max-w-3xl">
-                      {livePreviewLoading && (
-                        <div className="absolute inset-0 z-10 rounded-xl flex items-center justify-center bg-slate-100/70 dark:bg-slate-900/70 backdrop-blur-sm">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--accent)]">
-                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                          </svg>
+                      {(livePreviewLoading || previewDirty) && (
+                        <div className={`absolute inset-0 z-10 rounded-xl transition-all ${livePreviewLoading ? 'bg-slate-100/60 dark:bg-slate-900/60 backdrop-blur-[2px]' : 'bg-slate-100/20 dark:bg-slate-900/20'}`}>
+                          {livePreviewLoading && (
+                            <div className="absolute top-4 right-4">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--accent)]">
+                                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                              </svg>
+                            </div>
+                          )}
                         </div>
                       )}
                       <iframe
@@ -998,11 +1073,30 @@ export default function OffersPage() {
 
                     {/* ── CARD 1: Mottagare ── */}
                     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-visible">
-                      <div className="flex items-center gap-2 px-4 pt-3.5 pb-3">
-                        <div className="w-0.5 h-3.5 rounded-full bg-[var(--accent)] shrink-0"/>
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Mottagare</span>
-                      </div>
-                      <div className="px-4 pb-4 space-y-3">
+                      <button type="button" onClick={() => setOpenCards((o) => ({ ...o, mottagare: !o.mottagare }))}
+                        className="w-full flex items-center justify-between px-4 pt-3.5 pb-3 text-left group/card">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className={cn('w-0.5 h-3.5 rounded-full shrink-0 transition-colors', mottagareComplete ? 'bg-emerald-500' : 'bg-[var(--accent)]')}/>
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Mottagare</span>
+                          {!openCards.mottagare && mottagareComplete && (
+                            <span className="text-[11px] text-[var(--text-muted)] truncate font-normal normal-case tracking-normal">
+                              — {form.recipientName}{form.recipientCompany ? ` · ${form.recipientCompany}` : ''}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {mottagareComplete && (
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          )}
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                            className={cn('text-[var(--text-muted)] transition-transform', openCards.mottagare ? 'rotate-180' : '')}>
+                            <polyline points="6 9 12 15 18 9"/>
+                          </svg>
+                        </div>
+                      </button>
+                      {openCards.mottagare && <div className="px-4 pb-4 space-y-3 border-t border-[var(--border)]/60">
                         {/* Contact autofill */}
                         <div className="relative">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
@@ -1067,6 +1161,7 @@ export default function OffersPage() {
                             <input value={form.recipientName}
                               onChange={(e) => { setForm((f) => ({ ...f, recipientName: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientName: '' })); }}
                               onBlur={(e) => { const v = e.target.value.trim(); if (!v) setFieldErrors((fe) => ({ ...fe, recipientName: 'Obligatoriskt' })); else if (v.length < 2) setFieldErrors((fe) => ({ ...fe, recipientName: 'Minst 2 tecken' })); }}
+                              onFocus={() => setActiveField('Mottagare')}
                               placeholder="Anna Lindström"
                               className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientName ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                             {fieldErrors.recipientName && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.recipientName}</p>}
@@ -1076,6 +1171,7 @@ export default function OffersPage() {
                             <input type="email" value={form.recipientEmail}
                               onChange={(e) => { setForm((f) => ({ ...f, recipientEmail: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientEmail: '' })); }}
                               onBlur={(e) => { const v = e.target.value.trim(); if (!v) setFieldErrors((fe) => ({ ...fe, recipientEmail: 'Obligatoriskt' })); else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) setFieldErrors((fe) => ({ ...fe, recipientEmail: 'Ogiltig e-postadress' })); }}
+                              onFocus={() => setActiveField('E-post')}
                               placeholder="anna@example.com"
                               className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientEmail ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                             {fieldErrors.recipientEmail && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.recipientEmail}</p>}
@@ -1083,24 +1179,46 @@ export default function OffersPage() {
                         </div>
                         <div>
                           <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">Företag</label>
-                          <input value={form.recipientCompany} onChange={(e) => setForm((f) => ({ ...f, recipientCompany: e.target.value }))} placeholder="Lindström AB"
+                          <input value={form.recipientCompany} onChange={(e) => setForm((f) => ({ ...f, recipientCompany: e.target.value }))}
+                            onFocus={() => setActiveField('Mottagare')}
+                            placeholder="Lindström AB"
                             className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"/>
                         </div>
-                      </div>
+                      </div>}
                     </div>
 
                     {/* ── CARD 2: Offertdetaljer ── */}
                     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
-                      <div className="flex items-center gap-2 px-4 pt-3.5 pb-3">
-                        <div className="w-0.5 h-3.5 rounded-full bg-[var(--accent)] shrink-0"/>
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Offertdetaljer</span>
-                      </div>
-                      <div className="px-4 pb-4 space-y-3">
+                      <button type="button" onClick={() => setOpenCards((o) => ({ ...o, detaljer: !o.detaljer }))}
+                        className="w-full flex items-center justify-between px-4 pt-3.5 pb-3 text-left group/card">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className={cn('w-0.5 h-3.5 rounded-full shrink-0 transition-colors', detajerComplete ? 'bg-emerald-500' : 'bg-[var(--accent)]')}/>
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Offertdetaljer</span>
+                          {!openCards.detaljer && detajerComplete && (
+                            <span className="text-[11px] text-[var(--text-muted)] truncate font-normal normal-case tracking-normal">
+                              — {form.title} · {form.validityDays} dagar
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {detajerComplete && (
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          )}
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                            className={cn('text-[var(--text-muted)] transition-transform', openCards.detaljer ? 'rotate-180' : '')}>
+                            <polyline points="6 9 12 15 18 9"/>
+                          </svg>
+                        </div>
+                      </button>
+                      {openCards.detaljer && <div className="px-4 pb-4 space-y-3 border-t border-[var(--border)]/60">
                         <div>
                           <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">Rubrik *</label>
                           <input value={form.title}
                             onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); setFieldErrors((fe) => ({ ...fe, title: '' })); }}
                             onBlur={(e) => { const v = e.target.value.trim(); if (!v) setFieldErrors((fe) => ({ ...fe, title: 'Obligatoriskt' })); else if (v.length < 2) setFieldErrors((fe) => ({ ...fe, title: 'Minst 2 tecken' })); }}
+                            onFocus={() => setActiveField('Rubrik')}
                             placeholder="t.ex. Hotellprojekt Q2 2026"
                             className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.title ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                           {fieldErrors.title && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.title}</p>}
@@ -1134,7 +1252,7 @@ export default function OffersPage() {
                               className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all resize-none"/>
                           </div>
                         </details>
-                      </div>
+                      </div>}
                     </div>
 
                     {/* ── CARD 3: Offert-rader ── */}
@@ -1150,109 +1268,165 @@ export default function OffersPage() {
                         {form.lineItems.map((item, idx) => {
                           const disc = 1 - (item.discount / 100);
                           const lineExVat = item.quantity * item.unitPrice * disc;
+                          const lineComplete = item.description.trim().length > 0 && item.quantity > 0;
+                          const isOpen = openLines.has(idx);
                           return (
-                            <div key={idx} className="px-3 py-3 space-y-2.5 group/row">
-                              {/* Description + row# + delete */}
-                              <div className="flex items-center gap-2">
-                                <span className="shrink-0 w-5 h-5 rounded-md bg-[var(--surface-alt)] text-[var(--text-muted)] text-[10px] font-semibold flex items-center justify-center tabular-nums select-none">
-                                  {idx + 1}
-                                </span>
-                                <div className="flex-1 relative">
-                                  <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} placeholder="Tjänst eller produkt"
-                                    className={`w-full rounded-lg border bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all pr-8 ${fieldErrors[`line_${idx}_description`] ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
-                                  {fieldErrors[`line_${idx}_description`] && (
-                                    <p className="text-[10px] text-red-500 mt-0.5">{fieldErrors[`line_${idx}_description`]}</p>
-                                  )}
-                                  {services.length > 0 && (
-                                    <button type="button" onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }}
-                                      title="Välj från produktbibliotek"
-                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
-                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                            <div key={idx} className="group/row">
+                              {/* ── Collapsed summary row (when complete + closed) ── */}
+                              {!isOpen && lineComplete ? (
+                                <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-[var(--surface-alt)] transition-colors">
+                                  <span className="shrink-0 w-5 h-5 rounded-md bg-[var(--surface-alt)] text-[var(--text-muted)] text-[10px] font-semibold flex items-center justify-center tabular-nums select-none border border-[var(--border)]">
+                                    {idx + 1}
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium text-[var(--text-primary)] truncate">{item.description}</p>
+                                    <p className="text-[10px] text-[var(--text-muted)] mt-0.5 tabular-nums">
+                                      {item.quantity} × {fmtSEK(item.unitPrice)}{item.discount > 0 ? ` − ${item.discount}%` : ''} · moms {Math.round(item.vatRate * 100)}%
+                                    </p>
+                                  </div>
+                                  <p className="text-sm font-semibold text-[var(--text-primary)] tabular-nums shrink-0">{fmtSEK(lineExVat)}</p>
+                                  <button type="button" title="Redigera rad"
+                                    onClick={() => setOpenLines((s) => { const n = new Set(s); n.add(idx); return n; })}
+                                    className="shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--surface-active)] transition-colors opacity-0 group-hover/row:opacity-100">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                    </svg>
+                                  </button>
+                                  <button type="button" onClick={() => removeLine(idx)}
+                                    className={cn(
+                                      'shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors',
+                                      form.lineItems.length > 1 ? 'opacity-0 group-hover/row:opacity-100' : 'invisible',
+                                    )}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                                    </svg>
+                                  </button>
+                                </div>
+                              ) : (
+                                /* ── Expanded edit form ── */
+                                <div className="px-3 py-3 space-y-2.5">
+                                  {/* Description + row# + collapse + delete */}
+                                  <div className="flex items-center gap-2">
+                                    <span className="shrink-0 w-5 h-5 rounded-md bg-[var(--surface-alt)] text-[var(--text-muted)] text-[10px] font-semibold flex items-center justify-center tabular-nums select-none">
+                                      {idx + 1}
+                                    </span>
+                                    <div className="flex-1 relative">
+                                      <input value={item.description}
+                                        onChange={(e) => updateLine(idx, 'description', e.target.value)}
+                                        onFocus={() => setActiveField('Rad ' + (idx + 1))}
+                                        onBlur={() => {
+                                          if (item.description.trim() && item.quantity > 0 && !autoCollapsedLines.current.has(idx)) {
+                                            autoCollapsedLines.current.add(idx);
+                                            setTimeout(() => setOpenLines((s) => { const n = new Set(s); n.delete(idx); return n; }), 500);
+                                          }
+                                        }}
+                                        placeholder="Tjänst eller produkt"
+                                        className={`w-full rounded-lg border bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all pr-8 ${fieldErrors[`line_${idx}_description`] ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                                      {fieldErrors[`line_${idx}_description`] && (
+                                        <p className="text-[10px] text-red-500 mt-0.5">{fieldErrors[`line_${idx}_description`]}</p>
+                                      )}
+                                      {services.length > 0 && (
+                                        <button type="button" onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }}
+                                          title="Välj från produktbibliotek"
+                                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
+                                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                                          </svg>
+                                        </button>
+                                      )}
+                                    </div>
+                                    {lineComplete && (
+                                      <button type="button" title="Dölj rad"
+                                        onClick={() => setOpenLines((s) => { const n = new Set(s); n.delete(idx); return n; })}
+                                        className="shrink-0 p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                          <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                      </button>
+                                    )}
+                                    <button type="button" onClick={() => removeLine(idx)}
+                                      className={cn(
+                                        'shrink-0 rounded-lg p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all',
+                                        form.lineItems.length > 1 ? 'opacity-0 group-hover/row:opacity-100' : 'invisible',
+                                      )}>
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
                                       </svg>
                                     </button>
-                                  )}
-                                </div>
-                                <button type="button" onClick={() => removeLine(idx)}
-                                  className={cn(
-                                    'shrink-0 rounded-lg p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all',
-                                    form.lineItems.length > 1 ? 'opacity-0 group-hover/row:opacity-100' : 'invisible',
-                                  )}>
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
-                                  </svg>
-                                </button>
-                              </div>
-                              {/* Product picker dropdown */}
-                              {productPickerRow === idx && (
-                                <div className="relative z-50">
-                                  <div className="absolute top-0 left-0 right-0 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
-                                    <div className="p-2 border-b border-[var(--border)]">
-                                      <input autoFocus value={productSearch} onChange={(e) => setProductSearch(e.target.value)}
-                                        placeholder="Sök produkt…"
-                                        className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                  </div>
+                                  {/* Product picker dropdown */}
+                                  {productPickerRow === idx && (
+                                    <div className="relative z-50">
+                                      <div className="absolute top-0 left-0 right-0 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
+                                        <div className="p-2 border-b border-[var(--border)]">
+                                          <input autoFocus value={productSearch} onChange={(e) => setProductSearch(e.target.value)}
+                                            placeholder="Sök produkt…"
+                                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                        </div>
+                                        <div className="max-h-40 overflow-y-auto">
+                                          {filteredServices.length === 0 ? (
+                                            <div className="px-3 py-2 text-xs text-[var(--text-muted)]">Inga produkter hittades</div>
+                                          ) : filteredServices.map((p) => (
+                                            <button key={p.id} type="button" onClick={() => pickProduct(idx, p)}
+                                              className="w-full text-left px-3 py-2 hover:bg-[var(--surface-active)] transition-colors border-b border-[var(--border)] last:border-0 text-xs">
+                                              <p className="font-medium text-[var(--text-primary)]">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
+                                              <p className="text-[var(--text-muted)]">{fmtSEK(p.unitPrice)} · moms {Math.round(p.vatRate * 100)}%</p>
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div className="max-h-40 overflow-y-auto">
-                                      {filteredServices.length === 0 ? (
-                                        <div className="px-3 py-2 text-xs text-[var(--text-muted)]">Inga produkter hittades</div>
-                                      ) : filteredServices.map((p) => (
-                                        <button key={p.id} type="button" onClick={() => pickProduct(idx, p)}
-                                          className="w-full text-left px-3 py-2 hover:bg-[var(--surface-active)] transition-colors border-b border-[var(--border)] last:border-0 text-xs">
-                                          <p className="font-medium text-[var(--text-primary)]">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
-                                          <p className="text-[var(--text-muted)]">{fmtSEK(p.unitPrice)} · moms {Math.round(p.vatRate * 100)}%</p>
+                                  )}
+                                  {/* Antal × Á-pris = Summa */}
+                                  <div className="flex items-end gap-1.5">
+                                    <div className="w-16 shrink-0">
+                                      <label className="block text-[10px] text-[var(--text-muted)] mb-1">Antal</label>
+                                      <input type="number" min={0} step={0.1} value={item.quantity} onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                                        onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} setActiveField('Rad ' + (idx + 1)); }}
+                                        className={`w-full rounded-lg border bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${fieldErrors[`line_${idx}_quantity`] ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                                      {fieldErrors[`line_${idx}_quantity`] && (
+                                        <p className="text-[10px] text-red-500 mt-0.5 text-center">{fieldErrors[`line_${idx}_quantity`]}</p>
+                                      )}
+                                    </div>
+                                    <span className="pb-2 text-[var(--text-muted)] text-xs shrink-0 select-none">×</span>
+                                    <div className="flex-1 min-w-0">
+                                      <label className="block text-[10px] text-[var(--text-muted)] mb-1">Á-pris (SEK)</label>
+                                      <input type="number" min={0} value={item.unitPrice} onChange={(e) => updateLine(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                        onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} setActiveField('Rad ' + (idx + 1)); }}
+                                        className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                                    </div>
+                                    <span className="pb-2 text-[var(--text-muted)] text-xs shrink-0 select-none">=</span>
+                                    <div className="shrink-0 text-right min-w-[72px] pb-1.5">
+                                      <p className="text-[10px] text-[var(--text-muted)] mb-1">Summa</p>
+                                      <p className="text-sm font-semibold text-[var(--text-primary)] tabular-nums">{fmtSEK(lineExVat)}</p>
+                                    </div>
+                                  </div>
+                                  {/* Moms pills + discount */}
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[10px] text-[var(--text-muted)] shrink-0">Moms:</span>
+                                    <div className="flex gap-1">
+                                      {([0, 0.06, 0.12, 0.25] as const).map((rate) => (
+                                        <button key={rate} type="button" onClick={() => updateLine(idx, 'vatRate', rate)}
+                                          className={`rounded-md px-2 py-0.5 text-[10px] font-medium transition-all ${
+                                            item.vatRate === rate
+                                              ? 'bg-[var(--accent)] text-white shadow-sm'
+                                              : 'bg-[var(--surface-alt)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/50'
+                                          }`}>
+                                          {Math.round(rate * 100)}%
                                         </button>
                                       ))}
+                                    </div>
+                                    <div className="ml-auto flex items-center gap-1 shrink-0">
+                                      <span className="text-[10px] text-[var(--text-muted)]">Rabatt:</span>
+                                      <input type="number" min={0} max={100} value={item.discount} onChange={(e) => updateLine(idx, 'discount', parseFloat(e.target.value) || 0)}
+                                        onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} }}
+                                        className="w-10 rounded-md border border-[var(--border)] bg-[var(--surface-alt)] px-1.5 py-0.5 text-[10px] text-center text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                                      <span className="text-[10px] text-[var(--text-muted)]">%</span>
                                     </div>
                                   </div>
                                 </div>
                               )}
-                              {/* Antal × Á-pris = Summa */}
-                              <div className="flex items-end gap-1.5">
-                                <div className="w-16 shrink-0">
-                                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Antal</label>
-                                  <input type="number" min={0} step={0.1} value={item.quantity} onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
-                                    onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} }}
-                                    className={`w-full rounded-lg border bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${fieldErrors[`line_${idx}_quantity`] ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
-                                  {fieldErrors[`line_${idx}_quantity`] && (
-                                    <p className="text-[10px] text-red-500 mt-0.5 text-center">{fieldErrors[`line_${idx}_quantity`]}</p>
-                                  )}
-                                </div>
-                                <span className="pb-2 text-[var(--text-muted)] text-xs shrink-0 select-none">×</span>
-                                <div className="flex-1 min-w-0">
-                                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Á-pris (SEK)</label>
-                                  <input type="number" min={0} value={item.unitPrice} onChange={(e) => updateLine(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
-                                    onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} }}
-                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
-                                </div>
-                                <span className="pb-2 text-[var(--text-muted)] text-xs shrink-0 select-none">=</span>
-                                <div className="shrink-0 text-right min-w-[72px] pb-1.5">
-                                  <p className="text-[10px] text-[var(--text-muted)] mb-1">Summa</p>
-                                  <p className="text-sm font-semibold text-[var(--text-primary)] tabular-nums">{fmtSEK(lineExVat)}</p>
-                                </div>
-                              </div>
-                              {/* Moms pills + discount */}
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-[10px] text-[var(--text-muted)] shrink-0">Moms:</span>
-                                <div className="flex gap-1">
-                                  {([0, 0.06, 0.12, 0.25] as const).map((rate) => (
-                                    <button key={rate} type="button" onClick={() => updateLine(idx, 'vatRate', rate)}
-                                      className={`rounded-md px-2 py-0.5 text-[10px] font-medium transition-all ${
-                                        item.vatRate === rate
-                                          ? 'bg-[var(--accent)] text-white shadow-sm'
-                                          : 'bg-[var(--surface-alt)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/50'
-                                      }`}>
-                                      {Math.round(rate * 100)}%
-                                    </button>
-                                  ))}
-                                </div>
-                                <div className="ml-auto flex items-center gap-1 shrink-0">
-                                  <span className="text-[10px] text-[var(--text-muted)]">Rabatt:</span>
-                                  <input type="number" min={0} max={100} value={item.discount} onChange={(e) => updateLine(idx, 'discount', parseFloat(e.target.value) || 0)}
-                                    onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} }}
-                                    className="w-10 rounded-md border border-[var(--border)] bg-[var(--surface-alt)] px-1.5 py-0.5 text-[10px] text-center text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
-                                  <span className="text-[10px] text-[var(--text-muted)]">%</span>
-                                </div>
-                              </div>
                             </div>
                           );
                         })}
