@@ -227,6 +227,10 @@ export default function PublicOfferPage() {
       td, th { word-break: break-word; overflow-wrap: break-word; }
       pre, code { white-space: pre-wrap !important; word-break: break-word !important; overflow-x: hidden !important; }
       .doc-wrapper { overflow-x: hidden !important; }
+      .page-block { overflow: visible !important; }
+      @media (max-width: 640px) {
+        .page-block > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
+      }
     `;
     if (doc.head) {
       doc.head.appendChild(responsiveStyle);
