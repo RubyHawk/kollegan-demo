@@ -1120,9 +1120,12 @@ export default function OffersPage() {
                                     <label className="block text-[10px] font-medium text-[var(--text-secondary)] mb-1">Företag</label>
                                     <input value={form.recipientCompany} onChange={(e) => setForm((f) => ({ ...f, recipientCompany: e.target.value }))} onFocus={() => setActiveField('Mottagare')} placeholder="Lindström AB" className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"/>
                                   </div>
-                                  <button type="button" disabled={!mottagareComplete} onClick={() => { if (mottagareComplete) { setConfirmedSections((s) => { const n = new Set(s); n.add('mottagare'); return n; }); setOpenCards((o) => ({ ...o, mottagare: false })); } }} className={cn('w-full py-2 rounded-lg text-xs font-medium transition-all mt-1', mottagareComplete ? 'bg-[var(--accent)] text-white hover:opacity-90 cursor-pointer' : 'bg-[var(--surface-alt)] border border-[var(--border)] text-[var(--text-muted)] cursor-not-allowed opacity-40')}>
-                                    Klar
-                                  </button>
+                                  <div className="flex items-center justify-end pt-2 mt-1 border-t border-[var(--border)]/30">
+                                    <button type="button" disabled={!mottagareComplete} onClick={() => { if (mottagareComplete) { setConfirmedSections((s) => { const n = new Set(s); n.add('mottagare'); return n; }); setOpenCards((o) => ({ ...o, mottagare: false })); } }} className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150', mottagareComplete ? 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:border-emerald-400/60 hover:text-emerald-600 hover:bg-emerald-50/50 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400 dark:hover:bg-emerald-950/30 cursor-pointer' : 'border-[var(--border)]/40 text-[var(--text-muted)] opacity-35 cursor-not-allowed bg-transparent')}>
+                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                      Klar
+                                    </button>
+                                  </div>
                                 </div>
                               </motion.div>
                             )}
@@ -1191,9 +1194,12 @@ export default function OffersPage() {
                                       <textarea value={form.notes} rows={2} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Eventuella villkor eller kommentarer…" className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all resize-none"/>
                                     </div>
                                   </details>
-                                  <button type="button" disabled={!detajerComplete} onClick={() => { if (detajerComplete) { setConfirmedSections((s) => { const n = new Set(s); n.add('detaljer'); return n; }); setOpenCards((o) => ({ ...o, detaljer: false })); } }} className={cn('w-full py-2 rounded-lg text-xs font-medium transition-all mt-1', detajerComplete ? 'bg-[var(--accent)] text-white hover:opacity-90 cursor-pointer' : 'bg-[var(--surface-alt)] border border-[var(--border)] text-[var(--text-muted)] cursor-not-allowed opacity-40')}>
-                                    Klar
-                                  </button>
+                                  <div className="flex items-center justify-end pt-2 mt-1 border-t border-[var(--border)]/30">
+                                    <button type="button" disabled={!detajerComplete} onClick={() => { if (detajerComplete) { setConfirmedSections((s) => { const n = new Set(s); n.add('detaljer'); return n; }); setOpenCards((o) => ({ ...o, detaljer: false })); } }} className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150', detajerComplete ? 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:border-emerald-400/60 hover:text-emerald-600 hover:bg-emerald-50/50 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400 dark:hover:bg-emerald-950/30 cursor-pointer' : 'border-[var(--border)]/40 text-[var(--text-muted)] opacity-35 cursor-not-allowed bg-transparent')}>
+                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                      Klar
+                                    </button>
+                                  </div>
                                 </div>
                               </motion.div>
                             )}
@@ -1316,9 +1322,14 @@ export default function OffersPage() {
                                           <span className="text-[10px] text-[var(--text-muted)]">%</span>
                                         </div>
                                       </div>
-                                      <button type="button" disabled={!lineComplete} onClick={() => { if (lineComplete) setOpenLines((s) => { const n = new Set(s); n.delete(idx); return n; }); }} className={cn('w-full py-1.5 rounded-lg text-[10px] font-medium transition-all', lineComplete ? 'bg-[var(--surface-alt)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] cursor-pointer' : 'bg-[var(--surface-alt)] border border-[var(--border)] text-[var(--text-muted)] cursor-not-allowed opacity-40')}>
-                                        {lineComplete ? 'Klar med rad' : 'Fyll i beskrivning och antal'}
-                                      </button>
+                                      <div className="flex items-center justify-between pt-2 mt-0.5 border-t border-[var(--border)]/30">
+                                        {!lineComplete && <span className="text-[10px] text-[var(--text-muted)]">Fyll i beskrivning och antal</span>}
+                                        <div className="flex-1"/>
+                                        <button type="button" disabled={!lineComplete} onClick={() => { if (lineComplete) setOpenLines((s) => { const n = new Set(s); n.delete(idx); return n; }); }} className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150', lineComplete ? 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:border-emerald-400/60 hover:text-emerald-600 hover:bg-emerald-50/50 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400 dark:hover:bg-emerald-950/30 cursor-pointer' : 'border-[var(--border)]/40 text-[var(--text-muted)] opacity-35 cursor-not-allowed bg-transparent')}>
+                                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                          Klar
+                                        </button>
+                                      </div>
                                     </motion.div>
                                   )}
                                 </AnimatePresence>
