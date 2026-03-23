@@ -1223,7 +1223,7 @@ export default function OffersPage() {
                                 <AnimatePresence key={idx} mode="wait">
                                   {!isOpen && lineComplete ? (
                                     <motion.div key="collapsed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className={cn('flex items-center gap-2.5 px-3 py-2.5 group/row hover:bg-[var(--surface-alt)] transition-colors', idx > 0 && 'border-t border-[var(--border)]/40')}>
-                                      <span className="shrink-0 w-5 h-5 rounded bg-[var(--surface-alt)] text-[var(--text-muted)] text-[9px] font-semibold flex items-center justify-center tabular-nums select-none border border-[var(--border)]">
+                                      <span className="shrink-0 w-5 h-5 rounded-md bg-[var(--surface-alt)] text-[var(--text-secondary)] text-[10px] font-semibold flex items-center justify-center tabular-nums select-none border border-[var(--border)]">
                                         {idx + 1}
                                       </span>
                                       <div className="flex-1 min-w-0">
@@ -1247,7 +1247,7 @@ export default function OffersPage() {
                                   ) : (
                                     <motion.div key="expanded" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className={cn('px-3 py-3 space-y-2.5 group/row', idx > 0 && 'border-t border-[var(--border)]/40')}>
                                       <div className="flex items-center gap-2">
-                                        <span className="shrink-0 w-5 h-5 rounded bg-[var(--surface-alt)] text-[var(--text-muted)] text-[9px] font-semibold flex items-center justify-center tabular-nums select-none">
+                                        <span className="shrink-0 w-5 h-5 rounded-md bg-[var(--surface-alt)] text-[var(--text-secondary)] text-[10px] font-semibold flex items-center justify-center tabular-nums select-none border border-[var(--border)]">
                                           {idx + 1}
                                         </span>
                                         <div className="flex-1 relative">
