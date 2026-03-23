@@ -227,7 +227,6 @@ export default function OffersPage() {
   const autoCollapsed = useRef({ mottagare: false, detaljer: false });
   const livePreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [openLines, setOpenLines] = useState<Set<number>>(new Set([0]));
-  const autoCollapsedLines = useRef<Set<number>>(new Set());
 
   // ── Load templates ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -613,7 +612,6 @@ export default function OffersPage() {
     setOpenCards({ mottagare: true, detaljer: true });
     autoCollapsed.current = { mottagare: false, detaljer: false };
     setOpenLines(new Set([0]));
-    autoCollapsedLines.current = new Set();
     if (livePreviewTimer.current) clearTimeout(livePreviewTimer.current);
   }, []);
 
@@ -743,11 +741,7 @@ export default function OffersPage() {
       }
       return n;
     });
-    autoCollapsedLines.current = new Set(
-      Array.from(autoCollapsedLines.current)
-        .filter((i) => i !== idx)
-        .map((i) => (i > idx ? i - 1 : i))
-    );
+
   }
 
   const tots = computeTotals(form.lineItems);
@@ -814,45 +808,22 @@ export default function OffersPage() {
             className="fixed inset-0 z-50 flex flex-col bg-[var(--surface)]"
           >
             {/* ── Top bar ── */}
-            <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] bg-[var(--surface-alt)]">
+            <div className="shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-[var(--border)] bg-[var(--surface)]">
               <button onClick={closeWizard} title="Stäng"
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-[var(--surface-active)] transition-colors shrink-0">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-[var(--surface-alt)] transition-colors shrink-0">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
               </button>
-              <h2 className="font-semibold text-sm text-[var(--text-primary)]">
+              <h2 className="text-sm font-medium text-[var(--text-primary)]">
                 {editingOfferId ? 'Redigera offert' : 'Ny offert'}
               </h2>
               <div className="flex-1"/>
-              {/* Step indicator */}
-              <div className="flex items-center gap-2 text-xs">
-                <span className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-all',
-                  wizardStep === 1
-                    ? 'bg-[var(--accent)] text-white shadow-sm'
-                    : 'bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)]',
-                )}>
-                  {wizardStep > 1
-                    ? <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    : <span>1</span>}
-                  <span>Välj mall</span>
+              {wizardStep === 2 && form.templateId && (
+                <span className="text-[11px] text-[var(--text-muted)] truncate max-w-[140px]">
+                  {templates.find((t) => t.id === form.templateId)?.name}
                 </span>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--border)]">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-                <span className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-all',
-                  wizardStep === 2
-                    ? 'bg-[var(--accent)] text-white shadow-sm'
-                    : 'bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)]',
-                )}>
-                  <span>2</span>
-                  <span>Fyll i</span>
-                </span>
-              </div>
-              <div className="flex-1"/>
-              <div className="w-9 shrink-0"/>
+              )}
             </div>
 
             {/* ── Split body ── */}
@@ -1031,33 +1002,14 @@ export default function OffersPage() {
                 {/* ════ STEP 2: Form ════ */}
                 {wizardStep === 2 && (
                   <>
-                    {/* Step 2 header */}
-                    <div className="shrink-0 border-b border-[var(--border)] bg-[var(--surface-alt)]">
+                    {/* Step 2 header – accent line only */}
+                    <div className="shrink-0">
                       <div className="h-0.5 w-full bg-[var(--accent)]"/>
-                      <div className="px-5 py-3 flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-semibold text-[var(--text-primary)]">Offertuppgifter</p>
-                          {form.templateId && (
-                            <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
-                              {templates.find((t) => t.id === form.templateId)?.name ?? ''}
-                            </p>
-                          )}
-                        </div>
-                        {!editingOfferId && (
-                          <button type="button" onClick={() => setWizardStep(1)}
-                            className="flex items-center gap-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors bg-[var(--surface)] border border-[var(--border)] rounded-lg px-2.5 py-1.5">
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-                            </svg>
-                            Byt mall
-                          </button>
-                        )}
-                      </div>
                     </div>
 
                     {/* Scrollable body */}
                     <div className="flex-1 overflow-y-auto">
-                    <div className="p-4 space-y-3">
+                    <div className="p-4 space-y-4">
 
                     {/* Error */}
                     {error && (
@@ -1096,7 +1048,7 @@ export default function OffersPage() {
                           </svg>
                         </div>
                       </button>
-                      {openCards.mottagare && <div className="px-4 pb-4 space-y-3 border-t border-[var(--border)]/60">
+                      {openCards.mottagare && <div className="px-4 pt-4 pb-5 space-y-4 border-t border-[var(--border)]/40">
                         {/* Contact autofill */}
                         <div className="relative">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
@@ -1163,7 +1115,7 @@ export default function OffersPage() {
                               onBlur={(e) => { const v = e.target.value.trim(); if (!v) setFieldErrors((fe) => ({ ...fe, recipientName: 'Obligatoriskt' })); else if (v.length < 2) setFieldErrors((fe) => ({ ...fe, recipientName: 'Minst 2 tecken' })); }}
                               onFocus={() => setActiveField('Mottagare')}
                               placeholder="Anna Lindström"
-                              className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientName ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                              className={`w-full rounded-lg border px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientName ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                             {fieldErrors.recipientName && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.recipientName}</p>}
                           </div>
                           <div>
@@ -1173,7 +1125,7 @@ export default function OffersPage() {
                               onBlur={(e) => { const v = e.target.value.trim(); if (!v) setFieldErrors((fe) => ({ ...fe, recipientEmail: 'Obligatoriskt' })); else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) setFieldErrors((fe) => ({ ...fe, recipientEmail: 'Ogiltig e-postadress' })); }}
                               onFocus={() => setActiveField('E-post')}
                               placeholder="anna@example.com"
-                              className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientEmail ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                              className={`w-full rounded-lg border px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientEmail ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                             {fieldErrors.recipientEmail && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.recipientEmail}</p>}
                           </div>
                         </div>
@@ -1182,7 +1134,7 @@ export default function OffersPage() {
                           <input value={form.recipientCompany} onChange={(e) => setForm((f) => ({ ...f, recipientCompany: e.target.value }))}
                             onFocus={() => setActiveField('Mottagare')}
                             placeholder="Lindström AB"
-                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"/>
+                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"/>
                         </div>
                       </div>}
                     </div>
@@ -1212,7 +1164,7 @@ export default function OffersPage() {
                           </svg>
                         </div>
                       </button>
-                      {openCards.detaljer && <div className="px-4 pb-4 space-y-3 border-t border-[var(--border)]/60">
+                      {openCards.detaljer && <div className="px-4 pt-4 pb-5 space-y-5 border-t border-[var(--border)]/40">
                         <div>
                           <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">Rubrik *</label>
                           <input value={form.title}
@@ -1220,26 +1172,25 @@ export default function OffersPage() {
                             onBlur={(e) => { const v = e.target.value.trim(); if (!v) setFieldErrors((fe) => ({ ...fe, title: 'Obligatoriskt' })); else if (v.length < 2) setFieldErrors((fe) => ({ ...fe, title: 'Minst 2 tecken' })); }}
                             onFocus={() => setActiveField('Rubrik')}
                             placeholder="t.ex. Hotellprojekt Q2 2026"
-                            className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.title ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                            className={`w-full rounded-lg border px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.title ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                           {fieldErrors.title && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.title}</p>}
                         </div>
                         <div>
-                          <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1.5">Giltighetstid</label>
-                          <div className="flex gap-1.5 flex-wrap">
+                          <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-2">Giltighetstid</label>
+                          <div className="flex rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] p-0.5 gap-0.5">
                             {VALIDITY_OPTIONS.map(({ days, label }) => (
                               <button key={days} type="button" onClick={() => setForm((f) => ({ ...f, validityDays: days }))}
-                                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
+                                className={`flex-1 rounded-md px-1 py-1.5 text-xs font-medium transition-all ${
                                   form.validityDays === days
-                                    ? 'border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm'
-                                    : 'border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50'
+                                    ? 'bg-[var(--surface)] text-[var(--text-primary)] shadow-sm border border-[var(--border)]'
+                                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                                 }`}>
                                 {label}
                               </button>
                             ))}
                           </div>
-                          <p className="mt-1 text-[11px] text-[var(--text-muted)]">Räknas från skickad-datum</p>
                         </div>
-                        <details className="rounded-lg border border-[var(--border)] overflow-hidden group">
+                        <details className="rounded-lg border border-[var(--border)]/60 overflow-hidden group">
                           <summary className="px-3 py-2.5 text-[11px] font-medium text-[var(--text-secondary)] cursor-pointer bg-[var(--surface-alt)] list-none flex items-center justify-between hover:bg-[var(--surface-active)] transition-colors select-none">
                             <span>Anteckningar{form.notes ? ' · ifyllt' : ' (frivilligt)'}</span>
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -1287,7 +1238,7 @@ export default function OffersPage() {
                                   <p className="text-sm font-semibold text-[var(--text-primary)] tabular-nums shrink-0">{fmtSEK(lineExVat)}</p>
                                   <button type="button" title="Redigera rad"
                                     onClick={() => setOpenLines((s) => { const n = new Set(s); n.add(idx); return n; })}
-                                    className="shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--surface-active)] transition-colors opacity-0 group-hover/row:opacity-100">
+                                    className="shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--surface-active)] transition-colors">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -1296,7 +1247,7 @@ export default function OffersPage() {
                                   <button type="button" onClick={() => removeLine(idx)}
                                     className={cn(
                                       'shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors',
-                                      form.lineItems.length > 1 ? 'opacity-0 group-hover/row:opacity-100' : 'invisible',
+                                      form.lineItems.length > 1 ? '' : 'invisible',
                                     )}>
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                       <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
@@ -1315,14 +1266,8 @@ export default function OffersPage() {
                                       <input value={item.description}
                                         onChange={(e) => updateLine(idx, 'description', e.target.value)}
                                         onFocus={() => setActiveField('Rad ' + (idx + 1))}
-                                        onBlur={() => {
-                                          if (item.description.trim() && item.quantity > 0 && !autoCollapsedLines.current.has(idx)) {
-                                            autoCollapsedLines.current.add(idx);
-                                            setTimeout(() => setOpenLines((s) => { const n = new Set(s); n.delete(idx); return n; }), 500);
-                                          }
-                                        }}
                                         placeholder="Tjänst eller produkt"
-                                        className={`w-full rounded-lg border bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all pr-8 ${fieldErrors[`line_${idx}_description`] ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                                        className={`w-full rounded-lg border bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all pr-8 ${fieldErrors[`line_${idx}_description`] ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                                       {fieldErrors[`line_${idx}_description`] && (
                                         <p className="text-[10px] text-red-500 mt-0.5">{fieldErrors[`line_${idx}_description`]}</p>
                                       )}
@@ -1336,15 +1281,6 @@ export default function OffersPage() {
                                         </button>
                                       )}
                                     </div>
-                                    {lineComplete && (
-                                      <button type="button" title="Dölj rad"
-                                        onClick={() => setOpenLines((s) => { const n = new Set(s); n.delete(idx); return n; })}
-                                        className="shrink-0 p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                          <polyline points="20 6 9 17 4 12"/>
-                                        </svg>
-                                      </button>
-                                    )}
                                     <button type="button" onClick={() => removeLine(idx)}
                                       className={cn(
                                         'shrink-0 rounded-lg p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all',
@@ -1405,13 +1341,13 @@ export default function OffersPage() {
                                   {/* Moms pills + discount */}
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-[10px] text-[var(--text-muted)] shrink-0">Moms:</span>
-                                    <div className="flex gap-1">
+                                    <div className="flex gap-0.5 rounded-md border border-[var(--border)] bg-[var(--surface-alt)] p-0.5">
                                       {([0, 0.06, 0.12, 0.25] as const).map((rate) => (
                                         <button key={rate} type="button" onClick={() => updateLine(idx, 'vatRate', rate)}
-                                          className={`rounded-md px-2 py-0.5 text-[10px] font-medium transition-all ${
+                                          className={`rounded px-2 py-0.5 text-[10px] font-medium transition-all ${
                                             item.vatRate === rate
-                                              ? 'bg-[var(--accent)] text-white shadow-sm'
-                                              : 'bg-[var(--surface-alt)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/50'
+                                              ? 'bg-[var(--surface)] text-[var(--text-primary)] shadow-sm'
+                                              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                                           }`}>
                                           {Math.round(rate * 100)}%
                                         </button>
@@ -1425,6 +1361,20 @@ export default function OffersPage() {
                                       <span className="text-[10px] text-[var(--text-muted)]">%</span>
                                     </div>
                                   </div>
+                                  {/* ── Confirm button – only when row is complete ── */}
+                                  <button type="button"
+                                    disabled={!lineComplete}
+                                    onClick={() => { if (lineComplete) setOpenLines((s) => { const n = new Set(s); n.delete(idx); return n; }); }}
+                                    className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                                      lineComplete
+                                        ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 cursor-pointer'
+                                        : 'bg-[var(--surface-alt)] border border-[var(--border)] text-[var(--text-muted)] cursor-not-allowed opacity-50'
+                                    }`}>
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                    {lineComplete ? 'Bekräfta rad' : 'Fyll i beskrivning och antal'}
+                                  </button>
                                 </div>
                               )}
                             </div>
