@@ -964,13 +964,11 @@ export default function OffersPage() {
 
                     {/* ── CARD 1: Mottagare ── */}
                     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-visible">
-                      <div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--surface-alt)] border-b border-[var(--border)] rounded-t-xl">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)] shrink-0">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                        </svg>
-                        <span className="text-xs font-semibold text-[var(--text-primary)]">Mottagare</span>
+                      <div className="flex items-center gap-2 px-4 pt-3.5 pb-3">
+                        <div className="w-0.5 h-3.5 rounded-full bg-[var(--accent)] shrink-0"/>
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Mottagare</span>
                       </div>
-                      <div className="p-4 space-y-3">
+                      <div className="px-4 pb-4 space-y-3">
                         {/* Contact autofill */}
                         <div className="relative">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
@@ -983,7 +981,7 @@ export default function OffersPage() {
                               : contactSearch}
                             onChange={(e) => { if (form.contactId) setForm((f) => ({ ...f, contactId: '' })); searchContacts(e.target.value); }}
                             placeholder="Sök kontakt för autofyll…"
-                            className="w-full pl-9 pr-9 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                            className="w-full pl-9 pr-9 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
                           />
                           {(contactSearch || form.contactId) && (
                             <button type="button" onClick={() => { setForm((f) => ({ ...f, contactId: '' })); setContactSearch(''); setContactResults([]); }}
@@ -1029,47 +1027,43 @@ export default function OffersPage() {
                             Fält ifyllda från kontakt
                           </p>
                         )}
-                        {/* Name + Email */}
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">Namn *</label>
+                            <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">Namn *</label>
                             <input value={form.recipientName} onChange={(e) => { setForm((f) => ({ ...f, recipientName: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientName: '' })); }} placeholder="Anna Lindström"
-                              className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.recipientName ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                              className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientName ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                             {fieldErrors.recipientName && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.recipientName}</p>}
                           </div>
                           <div>
-                            <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">E-post *</label>
+                            <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">E-post *</label>
                             <input type="email" value={form.recipientEmail} onChange={(e) => { setForm((f) => ({ ...f, recipientEmail: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientEmail: '' })); }} placeholder="anna@example.com"
-                              className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.recipientEmail ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                              className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientEmail ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                             {fieldErrors.recipientEmail && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.recipientEmail}</p>}
                           </div>
                         </div>
                         <div>
-                          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">Företag</label>
+                          <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">Företag</label>
                           <input value={form.recipientCompany} onChange={(e) => setForm((f) => ({ ...f, recipientCompany: e.target.value }))} placeholder="Lindström AB"
-                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"/>
                         </div>
                       </div>
                     </div>
 
                     {/* ── CARD 2: Offertdetaljer ── */}
                     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
-                      <div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--surface-alt)] border-b border-[var(--border)]">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)] shrink-0">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                          <polyline points="14 2 14 8 20 8"/>
-                        </svg>
-                        <span className="text-xs font-semibold text-[var(--text-primary)]">Offertdetaljer</span>
+                      <div className="flex items-center gap-2 px-4 pt-3.5 pb-3">
+                        <div className="w-0.5 h-3.5 rounded-full bg-[var(--accent)] shrink-0"/>
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Offertdetaljer</span>
                       </div>
-                      <div className="p-4 space-y-3">
+                      <div className="px-4 pb-4 space-y-3">
                         <div>
-                          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">Rubrik *</label>
+                          <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">Rubrik *</label>
                           <input value={form.title} onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); setFieldErrors((fe) => ({ ...fe, title: '' })); }} placeholder="t.ex. Hotellprojekt Q2 2026"
-                            className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.title ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                            className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.title ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                           {fieldErrors.title && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.title}</p>}
                         </div>
                         <div>
-                          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">Giltighetstid</label>
+                          <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1.5">Giltighetstid</label>
                           <div className="flex gap-1.5 flex-wrap">
                             {VALIDITY_OPTIONS.map(({ days, label }) => (
                               <button key={days} type="button" onClick={() => setForm((f) => ({ ...f, validityDays: days }))}
@@ -1084,7 +1078,6 @@ export default function OffersPage() {
                           </div>
                           <p className="mt-1 text-[11px] text-[var(--text-muted)]">Räknas från skickad-datum</p>
                         </div>
-                        {/* Notes — accordion via <details> */}
                         <details className="rounded-lg border border-[var(--border)] overflow-hidden group">
                           <summary className="px-3 py-2.5 text-[11px] font-medium text-[var(--text-secondary)] cursor-pointer bg-[var(--surface-alt)] list-none flex items-center justify-between hover:bg-[var(--surface-active)] transition-colors select-none">
                             <span>Anteckningar{form.notes ? ' · ifyllt' : ' (frivilligt)'}</span>
@@ -1095,7 +1088,7 @@ export default function OffersPage() {
                           </summary>
                           <div className="p-3 border-t border-[var(--border)]">
                             <textarea value={form.notes} rows={2} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Eventuella villkor eller kommentarer…"
-                              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"/>
+                              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all resize-none"/>
                           </div>
                         </details>
                       </div>
@@ -1103,28 +1096,27 @@ export default function OffersPage() {
 
                     {/* ── CARD 3: Offert-rader ── */}
                     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-visible">
-                      <div className="flex items-center justify-between px-4 py-2.5 bg-[var(--surface-alt)] border-b border-[var(--border)] rounded-t-xl">
+                      <div className="flex items-center justify-between px-4 pt-3.5 pb-3">
                         <div className="flex items-center gap-2">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)] shrink-0">
-                            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-                            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-                          </svg>
-                          <span className="text-xs font-semibold text-[var(--text-primary)]">Offert-rader</span>
+                          <div className="w-0.5 h-3.5 rounded-full bg-[var(--accent)] shrink-0"/>
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Offert-rader</span>
                           {fieldErrors.lineItems && <span className="text-xs text-red-500">{fieldErrors.lineItems}</span>}
                         </div>
                       </div>
-                      {/* Row cards */}
                       <div className="divide-y divide-[var(--border)]">
                         {form.lineItems.map((item, idx) => {
                           const disc = 1 - (item.discount / 100);
                           const lineExVat = item.quantity * item.unitPrice * disc;
                           return (
-                            <div key={idx} className="p-3 space-y-2">
-                              {/* Description row */}
-                              <div className="flex gap-2 items-center">
+                            <div key={idx} className="px-3 py-3 space-y-2.5 group/row">
+                              {/* Description + row# + delete */}
+                              <div className="flex items-center gap-2">
+                                <span className="shrink-0 w-5 h-5 rounded-md bg-[var(--surface-alt)] text-[var(--text-muted)] text-[10px] font-semibold flex items-center justify-center tabular-nums select-none">
+                                  {idx + 1}
+                                </span>
                                 <div className="flex-1 relative">
                                   <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} placeholder="Tjänst eller produkt"
-                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors pr-8"/>
+                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all pr-8"/>
                                   {services.length > 0 && (
                                     <button type="button" onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }}
                                       title="Välj från produktbibliotek"
@@ -1135,14 +1127,15 @@ export default function OffersPage() {
                                     </button>
                                   )}
                                 </div>
-                                {form.lineItems.length > 1 && (
-                                  <button type="button" onClick={() => removeLine(idx)}
-                                    className="shrink-0 rounded-lg border border-[var(--border)] p-2 text-[var(--text-muted)] hover:text-red-500 hover:border-red-300 dark:hover:border-red-800 transition-colors">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
-                                    </svg>
-                                  </button>
-                                )}
+                                <button type="button" onClick={() => removeLine(idx)}
+                                  className={cn(
+                                    'shrink-0 rounded-lg p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all',
+                                    form.lineItems.length > 1 ? 'opacity-0 group-hover/row:opacity-100' : 'invisible',
+                                  )}>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                                  </svg>
+                                </button>
                               </div>
                               {/* Product picker dropdown */}
                               {productPickerRow === idx && (
@@ -1167,45 +1160,55 @@ export default function OffersPage() {
                                   </div>
                                 </div>
                               )}
-                              {/* Numeric fields */}
-                              <div className="grid grid-cols-4 gap-2">
-                                <div>
+                              {/* Antal × Á-pris = Summa */}
+                              <div className="flex items-end gap-1.5">
+                                <div className="w-16 shrink-0">
                                   <label className="block text-[10px] text-[var(--text-muted)] mb-1">Antal</label>
                                   <input type="number" min={0} step={0.1} value={item.quantity} onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
-                                    onFocus={(e) => { const l = e.target.value.length; e.target.setSelectionRange(l, l); }}
-                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                                    onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} }}
+                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-center text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
                                 </div>
-                                <div>
-                                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Á-pris</label>
+                                <span className="pb-2 text-[var(--text-muted)] text-xs shrink-0 select-none">×</span>
+                                <div className="flex-1 min-w-0">
+                                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Á-pris (SEK)</label>
                                   <input type="number" min={0} value={item.unitPrice} onChange={(e) => updateLine(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
-                                    onFocus={(e) => { const l = e.target.value.length; e.target.setSelectionRange(l, l); }}
-                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                                    onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} }}
+                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
                                 </div>
-                                <div>
-                                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Moms</label>
-                                  <select value={item.vatRate} onChange={(e) => updateLine(idx, 'vatRate', parseFloat(e.target.value))}
-                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-1.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
-                                    <option value={0}>0%</option><option value={0.06}>6%</option>
-                                    <option value={0.12}>12%</option><option value={0.25}>25%</option>
-                                  </select>
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Rabatt %</label>
-                                  <input type="number" min={0} max={100} value={item.discount} onChange={(e) => updateLine(idx, 'discount', parseFloat(e.target.value) || 0)}
-                                    onFocus={(e) => { const l = e.target.value.length; e.target.setSelectionRange(l, l); }}
-                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                                <span className="pb-2 text-[var(--text-muted)] text-xs shrink-0 select-none">=</span>
+                                <div className="shrink-0 text-right min-w-[72px] pb-1.5">
+                                  <p className="text-[10px] text-[var(--text-muted)] mb-1">Summa</p>
+                                  <p className="text-sm font-semibold text-[var(--text-primary)] tabular-nums">{fmtSEK(lineExVat)}</p>
                                 </div>
                               </div>
-                              {/* Line total */}
-                              <div className="flex justify-end items-center gap-1">
-                                <span className="text-xs font-semibold text-[var(--text-primary)]">{fmtSEK(lineExVat)}</span>
-                                <span className="text-[11px] text-[var(--text-muted)]">ex. moms</span>
+                              {/* Moms pills + discount */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] text-[var(--text-muted)] shrink-0">Moms:</span>
+                                <div className="flex gap-1">
+                                  {([0, 0.06, 0.12, 0.25] as const).map((rate) => (
+                                    <button key={rate} type="button" onClick={() => updateLine(idx, 'vatRate', rate)}
+                                      className={`rounded-md px-2 py-0.5 text-[10px] font-medium transition-all ${
+                                        item.vatRate === rate
+                                          ? 'bg-[var(--accent)] text-white shadow-sm'
+                                          : 'bg-[var(--surface-alt)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/50'
+                                      }`}>
+                                      {Math.round(rate * 100)}%
+                                    </button>
+                                  ))}
+                                </div>
+                                <div className="ml-auto flex items-center gap-1 shrink-0">
+                                  <span className="text-[10px] text-[var(--text-muted)]">Rabatt:</span>
+                                  <input type="number" min={0} max={100} value={item.discount} onChange={(e) => updateLine(idx, 'discount', parseFloat(e.target.value) || 0)}
+                                    onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} }}
+                                    className="w-10 rounded-md border border-[var(--border)] bg-[var(--surface-alt)] px-1.5 py-0.5 text-[10px] text-center text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                                  <span className="text-[10px] text-[var(--text-muted)]">%</span>
+                                </div>
                               </div>
                             </div>
                           );
                         })}
                       </div>
-                      {/* Add row button */}
+                      {/* Add row */}
                       <div className="border-t border-[var(--border)] p-2">
                         <button type="button" onClick={addLine}
                           className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-[var(--border)] text-xs text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
@@ -1217,7 +1220,7 @@ export default function OffersPage() {
                       </div>
                     </div>
 
-                    {/* ── CARD 4: Service library ── */}
+                    {/* ── CARD 4: Produktbibliotek ── */}
                     <div className="rounded-xl border border-[var(--border)] overflow-hidden">
                       <button type="button" onClick={() => setShowServiceLibrary((v) => !v)}
                         className="w-full flex items-center justify-between px-4 py-3 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors bg-[var(--surface-alt)]">
@@ -1240,13 +1243,13 @@ export default function OffersPage() {
                               <div className="col-span-2">
                                 <input value={serviceForm.name} onChange={(e) => setServiceForm((f) => ({ ...f, name: e.target.value }))}
                                   placeholder="Tjänst- / produktnamn *"
-                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"/>
                               </div>
                               <div>
                                 <input type="number" min={0} value={serviceForm.unitPrice} onChange={(e) => setServiceForm((f) => ({ ...f, unitPrice: parseFloat(e.target.value) || 0 }))}
                                   placeholder="Á-pris (SEK)"
-                                  onFocus={(e) => { const l = e.target.value.length; e.target.setSelectionRange(l, l); }}
-                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                                  onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} }}
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
                               </div>
                               <div>
                                 <select value={serviceForm.vatRate} onChange={(e) => setServiceForm((f) => ({ ...f, vatRate: parseFloat(e.target.value) }))}
@@ -1337,6 +1340,7 @@ export default function OffersPage() {
                     </div>
                   </>
                 )}
+
 
 
               </div>
