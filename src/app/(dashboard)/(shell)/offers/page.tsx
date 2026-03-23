@@ -1172,12 +1172,14 @@ export default function OffersPage() {
                                 <div>
                                   <label className="block text-[10px] text-[var(--text-muted)] mb-1">Antal</label>
                                   <input type="number" min={0} step={0.1} value={item.quantity} onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
-                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                    onFocus={(e) => { const l = e.target.value.length; e.target.setSelectionRange(l, l); }}
+                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
                                 </div>
                                 <div>
                                   <label className="block text-[10px] text-[var(--text-muted)] mb-1">Á-pris</label>
                                   <input type="number" min={0} value={item.unitPrice} onChange={(e) => updateLine(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
-                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                    onFocus={(e) => { const l = e.target.value.length; e.target.setSelectionRange(l, l); }}
+                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
                                 </div>
                                 <div>
                                   <label className="block text-[10px] text-[var(--text-muted)] mb-1">Moms</label>
@@ -1190,7 +1192,8 @@ export default function OffersPage() {
                                 <div>
                                   <label className="block text-[10px] text-[var(--text-muted)] mb-1">Rabatt %</label>
                                   <input type="number" min={0} max={100} value={item.discount} onChange={(e) => updateLine(idx, 'discount', parseFloat(e.target.value) || 0)}
-                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                    onFocus={(e) => { const l = e.target.value.length; e.target.setSelectionRange(l, l); }}
+                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
                                 </div>
                               </div>
                               {/* Line total */}
@@ -1242,7 +1245,8 @@ export default function OffersPage() {
                               <div>
                                 <input type="number" min={0} value={serviceForm.unitPrice} onChange={(e) => setServiceForm((f) => ({ ...f, unitPrice: parseFloat(e.target.value) || 0 }))}
                                   placeholder="Á-pris (SEK)"
-                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                  onFocus={(e) => { const l = e.target.value.length; e.target.setSelectionRange(l, l); }}
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
                               </div>
                               <div>
                                 <select value={serviceForm.vatRate} onChange={(e) => setServiceForm((f) => ({ ...f, vatRate: parseFloat(e.target.value) }))}
