@@ -337,12 +337,27 @@ export default function OffersPage() {
   // ── Create / update offer ──────────────────────────────────────────────────────
   const createOffer = useCallback(async () => {
     const errs: Record<string, string> = {};
-    if (!form.title.trim())         errs.title         = 'Obligatoriskt fält';
-    if (!form.recipientName.trim()) errs.recipientName = 'Obligatoriskt fält';
-    if (!form.recipientEmail.trim()) errs.recipientEmail = 'Obligatoriskt fält';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.recipientEmail.trim())) errs.recipientEmail = 'Ogiltig e-postadress';
-    const validItems = form.lineItems.filter((i) => i.description.trim() && i.quantity > 0);
-    if (validItems.length === 0)    errs.lineItems     = 'Minst en rad måste ha beskrivning och kvantitet.';
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+    if (!form.title.trim())                errs.title          = 'Obligatoriskt';
+    else if (form.title.trim().length < 2) errs.title          = 'Minst 2 tecken';
+
+    if (!form.recipientName.trim())                errs.recipientName  = 'Obligatoriskt';
+    else if (form.recipientName.trim().length < 2) errs.recipientName  = 'Minst 2 tecken';
+
+    if (!form.recipientEmail.trim())              errs.recipientEmail = 'Obligatoriskt';
+    else if (!emailRe.test(form.recipientEmail.trim())) errs.recipientEmail = 'Ogiltig e-postadress';
+
+    let anyComplete = false;
+    form.lineItems.forEach((item, idx) => {
+      const hasDesc = item.description.trim().length > 0;
+      const hasQty  = item.quantity > 0;
+      if (hasDesc && hasQty) anyComplete = true;
+      if (hasDesc && !hasQty)  errs[`line_${idx}_quantity`]    = 'Måste vara > 0';
+      if (hasQty  && !hasDesc) errs[`line_${idx}_description`] = 'Beskrivning saknas';
+    });
+    if (!anyComplete) errs.lineItems = 'Minst en rad måste ha beskrivning och antal > 0.';
+
     if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
 
     setSaving(true); setError(null); setFieldErrors({});
@@ -354,7 +369,7 @@ export default function OffersPage() {
         recipientCompany: form.recipientCompany || undefined,
         notes:            form.notes || undefined,
         validityDays:     form.validityDays,
-        lineItems:        validItems,
+        lineItems:        form.lineItems.filter((i) => i.description.trim() && i.quantity > 0),
       };
       if (form.templateId)    body.templateId   = form.templateId;
       if (form.contactId)     body.customerId   = form.contactId;
@@ -657,10 +672,29 @@ export default function OffersPage() {
 
   // ── Line item helpers ─────────────────────────────────────────────────────────
   function updateLine(idx: number, field: keyof LineItem, value: string | number) {
-    setForm((f) => { const items = [...f.lineItems]; items[idx] = { ...items[idx], [field]: value }; return { ...f, lineItems: items }; });
+    let v: string | number = value;
+    if (field === 'quantity')  v = Math.max(0, Number(v));
+    if (field === 'unitPrice') v = Math.max(0, Number(v));
+    if (field === 'discount')  v = Math.min(100, Math.max(0, Number(v)));
+    setForm((f) => { const items = [...f.lineItems]; items[idx] = { ...items[idx], [field]: v }; return { ...f, lineItems: items }; });
+    setFieldErrors((fe) => { const next = { ...fe }; delete next[`line_${idx}_${field}`]; return next; });
   }
   function addLine() { setForm((f) => ({ ...f, lineItems: [...f.lineItems, { ...EMPTY_LINE }] })); }
-  function removeLine(idx: number) { setForm((f) => ({ ...f, lineItems: f.lineItems.filter((_, i) => i !== idx) })); }
+  function removeLine(idx: number) {
+    setForm((f) => ({ ...f, lineItems: f.lineItems.filter((_, i) => i !== idx) }));
+    setFieldErrors((fe) => {
+      const next: Record<string, string> = {};
+      for (const [k, v] of Object.entries(fe)) {
+        const m = k.match(/^line_(\d+)_(.+)$/);
+        if (!m) { next[k] = v; continue; }
+        const rowIdx = parseInt(m[1]);
+        if (rowIdx === idx) continue;           // drop errors for removed row
+        const newKey = `line_${rowIdx < idx ? rowIdx : rowIdx - 1}_${m[2]}`;
+        next[newKey] = v;
+      }
+      return next;
+    });
+  }
 
   const tots = computeTotals(form.lineItems);
 
@@ -1030,13 +1064,19 @@ export default function OffersPage() {
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">Namn *</label>
-                            <input value={form.recipientName} onChange={(e) => { setForm((f) => ({ ...f, recipientName: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientName: '' })); }} placeholder="Anna Lindström"
+                            <input value={form.recipientName}
+                              onChange={(e) => { setForm((f) => ({ ...f, recipientName: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientName: '' })); }}
+                              onBlur={(e) => { const v = e.target.value.trim(); if (!v) setFieldErrors((fe) => ({ ...fe, recipientName: 'Obligatoriskt' })); else if (v.length < 2) setFieldErrors((fe) => ({ ...fe, recipientName: 'Minst 2 tecken' })); }}
+                              placeholder="Anna Lindström"
                               className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientName ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                             {fieldErrors.recipientName && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.recipientName}</p>}
                           </div>
                           <div>
                             <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">E-post *</label>
-                            <input type="email" value={form.recipientEmail} onChange={(e) => { setForm((f) => ({ ...f, recipientEmail: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientEmail: '' })); }} placeholder="anna@example.com"
+                            <input type="email" value={form.recipientEmail}
+                              onChange={(e) => { setForm((f) => ({ ...f, recipientEmail: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientEmail: '' })); }}
+                              onBlur={(e) => { const v = e.target.value.trim(); if (!v) setFieldErrors((fe) => ({ ...fe, recipientEmail: 'Obligatoriskt' })); else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) setFieldErrors((fe) => ({ ...fe, recipientEmail: 'Ogiltig e-postadress' })); }}
+                              placeholder="anna@example.com"
                               className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientEmail ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                             {fieldErrors.recipientEmail && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.recipientEmail}</p>}
                           </div>
@@ -1058,7 +1098,10 @@ export default function OffersPage() {
                       <div className="px-4 pb-4 space-y-3">
                         <div>
                           <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">Rubrik *</label>
-                          <input value={form.title} onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); setFieldErrors((fe) => ({ ...fe, title: '' })); }} placeholder="t.ex. Hotellprojekt Q2 2026"
+                          <input value={form.title}
+                            onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); setFieldErrors((fe) => ({ ...fe, title: '' })); }}
+                            onBlur={(e) => { const v = e.target.value.trim(); if (!v) setFieldErrors((fe) => ({ ...fe, title: 'Obligatoriskt' })); else if (v.length < 2) setFieldErrors((fe) => ({ ...fe, title: 'Minst 2 tecken' })); }}
+                            placeholder="t.ex. Hotellprojekt Q2 2026"
                             className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.title ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                           {fieldErrors.title && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.title}</p>}
                         </div>
@@ -1116,7 +1159,10 @@ export default function OffersPage() {
                                 </span>
                                 <div className="flex-1 relative">
                                   <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} placeholder="Tjänst eller produkt"
-                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all pr-8"/>
+                                    className={`w-full rounded-lg border bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all pr-8 ${fieldErrors[`line_${idx}_description`] ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                                  {fieldErrors[`line_${idx}_description`] && (
+                                    <p className="text-[10px] text-red-500 mt-0.5">{fieldErrors[`line_${idx}_description`]}</p>
+                                  )}
                                   {services.length > 0 && (
                                     <button type="button" onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }}
                                       title="Välj från produktbibliotek"
@@ -1166,7 +1212,10 @@ export default function OffersPage() {
                                   <label className="block text-[10px] text-[var(--text-muted)] mb-1">Antal</label>
                                   <input type="number" min={0} step={0.1} value={item.quantity} onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
                                     onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} }}
-                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-center text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                                    className={`w-full rounded-lg border bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${fieldErrors[`line_${idx}_quantity`] ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                                  {fieldErrors[`line_${idx}_quantity`] && (
+                                    <p className="text-[10px] text-red-500 mt-0.5 text-center">{fieldErrors[`line_${idx}_quantity`]}</p>
+                                  )}
                                 </div>
                                 <span className="pb-2 text-[var(--text-muted)] text-xs shrink-0 select-none">×</span>
                                 <div className="flex-1 min-w-0">
