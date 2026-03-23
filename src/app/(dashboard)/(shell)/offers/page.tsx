@@ -744,7 +744,7 @@ export default function OffersPage() {
 
   }
 
-  const tots = computeTotals(form.lineItems);
+  const tots = useMemo(() => computeTotals(form.lineItems), [form.lineItems]);
 
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -805,32 +805,21 @@ export default function OffersPage() {
             key="offer-wizard"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-50 flex flex-col bg-[var(--surface)]"
+            className="fixed inset-0 z-50 flex overflow-hidden bg-[var(--surface)]"
           >
-            {/* ── Top bar ── */}
-            <div className="shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-[var(--border)] bg-[var(--surface)]">
-              <button onClick={closeWizard} title="Stäng"
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-[var(--surface-alt)] transition-colors shrink-0">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-              <h2 className="text-sm font-medium text-[var(--text-primary)]">
-                {editingOfferId ? 'Redigera offert' : 'Ny offert'}
-              </h2>
-              <div className="flex-1"/>
-              {wizardStep === 2 && form.templateId && (
-                <span className="text-[11px] text-[var(--text-muted)] truncate max-w-[140px]">
-                  {templates.find((t) => t.id === form.templateId)?.name}
-                </span>
-              )}
-            </div>
-
-            {/* ── Split body ── */}
+            {/* ── Split body — full height, no top bar ── */}
             <div className="flex-1 flex overflow-hidden">
 
               {/* ── Left: live preview canvas (hidden on small screens) ── */}
               <div className="hidden lg:flex flex-1 bg-slate-100 dark:bg-slate-900/60 overflow-auto flex-col items-center py-10 px-8 relative">
+                {/* Floating close button */}
+                <button onClick={closeWizard} title="Stäng (Esc)"
+                  className="absolute top-4 left-4 z-40 flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-sm text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 backdrop-blur-sm transition-colors">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                  Stäng
+                </button>
                 {/* Dirty / updating badge */}
                 {livePreviewHtml && (previewDirty || livePreviewLoading) && (
                   <div className="sticky top-0 z-30 w-full flex justify-center pointer-events-none mb-4" style={{ marginTop: '-2rem' }}>
@@ -902,14 +891,21 @@ export default function OffersPage() {
                         srcDoc={livePreviewHtml}
                         title="Live-förhandsvisning"
                         className="w-full rounded-xl shadow-2xl"
-                        style={{ border: 'none', minHeight: '85vh' }}
+                        style={{ border: 'none', height: '200px', display: 'block', overflow: 'hidden' }}
                         sandbox="allow-same-origin"
+                        scrolling="no"
                         onLoad={(e) => {
                           const iframe = e.currentTarget;
                           const resize = () => {
                             try {
                               const d = iframe.contentDocument;
-                              if (d?.body) iframe.style.height = `${d.body.scrollHeight}px`;
+                              if (!d) return;
+                              // Suppress the iframe body's own scrollbar
+                              if (d.documentElement) d.documentElement.style.overflow = 'hidden';
+                              if (d.body) {
+                                d.body.style.overflow = 'hidden';
+                                iframe.style.height = `${d.body.scrollHeight}px`;
+                              }
                             } catch { /* cross-origin */ }
                           };
                           resize();
@@ -929,9 +925,17 @@ export default function OffersPage() {
                 {/* ════ STEP 1: Template picker ════ */}
                 {wizardStep === 1 && (
                   <>
-                    <div className="px-5 py-4 border-b border-[var(--border)] bg-[var(--surface-alt)] shrink-0">
-                      <h3 className="text-sm font-semibold text-[var(--text-primary)]">Välj offertmall</h3>
-                      <p className="text-xs text-[var(--text-muted)] mt-0.5">Mallen styr dokumentets layout och design</p>
+                    <div className="px-5 py-3.5 border-b border-[var(--border)] bg-[var(--surface-alt)] shrink-0 flex items-center gap-3">
+                      <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-[var(--text-primary)]">Välj offertmall</h3>
+                        <p className="text-xs text-[var(--text-muted)] mt-0.5">Mallen styr dokumentets layout och design</p>
+                      </div>
+                      <button onClick={closeWizard} title="Stäng"
+                        className="lg:hidden shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-active)] transition-colors">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
                       {templates.length === 0 ? (
@@ -1002,10 +1006,26 @@ export default function OffersPage() {
                 {/* ════ STEP 2: Form ════ */}
                 {wizardStep === 2 && (
                   <>
-                    {/* Step 2 header – accent line only */}
-                    <div className="shrink-0">
-                      <div className="h-0.5 w-full bg-[var(--accent)]"/>
+                    {/* Step 2 micro-header */}
+                    <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 bg-[var(--surface-alt)] border-b border-[var(--border)]/50">
+                      <span className="flex-1 text-[10px] text-[var(--text-muted)] truncate">
+                        {editingOfferId ? 'Redigera offert' : 'Ny offert'}
+                        {form.templateId && ` · ${templates.find((t) => t.id === form.templateId)?.name ?? ''}`}
+                      </span>
+                      {!editingOfferId && (
+                        <button type="button" onClick={() => setWizardStep(1)}
+                          className="shrink-0 text-[10px] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
+                          Byt mall
+                        </button>
+                      )}
+                      <button onClick={closeWizard} title="Stäng"
+                        className="lg:hidden shrink-0 p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
                     </div>
+                    <div className="h-0.5 w-full bg-[var(--accent)]"/>
 
                     {/* Scrollable body */}
                     <div className="flex-1 overflow-y-auto">
