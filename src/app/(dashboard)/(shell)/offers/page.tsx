@@ -922,27 +922,35 @@ export default function OffersPage() {
                 {/* ════ STEP 2: Form ════ */}
                 {wizardStep === 2 && (
                   <>
-                    <div className="shrink-0 px-5 py-3.5 border-b border-[var(--border)] bg-[var(--surface-alt)] flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-semibold text-[var(--text-primary)]">Fyll i offertuppgifter</p>
-                        <p className="text-[11px] text-[var(--text-muted)] mt-0.5">Förhandsvisningen uppdateras automatiskt</p>
+                    {/* Step 2 header */}
+                    <div className="shrink-0 border-b border-[var(--border)] bg-[var(--surface-alt)]">
+                      <div className="h-0.5 w-full bg-[var(--accent)]"/>
+                      <div className="px-5 py-3 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-[var(--text-primary)]">Offertuppgifter</p>
+                          {form.templateId && (
+                            <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                              {templates.find((t) => t.id === form.templateId)?.name ?? ''}
+                            </p>
+                          )}
+                        </div>
+                        {!editingOfferId && (
+                          <button type="button" onClick={() => setWizardStep(1)}
+                            className="flex items-center gap-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors bg-[var(--surface)] border border-[var(--border)] rounded-lg px-2.5 py-1.5">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+                            </svg>
+                            Byt mall
+                          </button>
+                        )}
                       </div>
-                      {!editingOfferId && (
-                        <button type="button" onClick={() => setWizardStep(1)}
-                          className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-                          </svg>
-                          Byt mall
-                        </button>
-                      )}
                     </div>
 
-                    {/* Scrollable form body */}
+                    {/* Scrollable body */}
                     <div className="flex-1 overflow-y-auto">
-                    <div className="p-5 space-y-5">
+                    <div className="p-4 space-y-3">
 
-                    {/* Error inside wizard */}
+                    {/* Error */}
                     {error && (
                       <div className="rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center justify-between gap-3">
                         <span>{error}</span>
@@ -954,175 +962,192 @@ export default function OffersPage() {
                       </div>
                     )}
 
-                    {/* Contact picker */}
-                    <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-                        Sök kontakt
-                        <span className="ml-1 font-normal text-[var(--text-muted)]">— fyller i mottagarfälten automatiskt</span>
-                      </label>
-                      <div className="relative">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none">
-                          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    {/* ── CARD 1: Mottagare ── */}
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-visible">
+                      <div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--surface-alt)] border-b border-[var(--border)] rounded-t-xl">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)] shrink-0">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                         </svg>
-                        <input
-                          value={form.contactId
-                            ? (contactResults.find((c) => c.id === form.contactId)?.name ?? (contactSearch || 'Kontakt vald ✓'))
-                            : contactSearch}
-                          onChange={(e) => { if (form.contactId) setForm((f) => ({ ...f, contactId: '' })); searchContacts(e.target.value); }}
-                          placeholder="Sök på namn, e-post eller företag…"
-                          className="w-full pl-9 pr-10 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                        />
-                        {(contactSearch || form.contactId) && (
-                          <button type="button" onClick={() => { setForm((f) => ({ ...f, contactId: '' })); setContactSearch(''); setContactResults([]); }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                          </button>
-                        )}
-                        {/* Dropdown */}
-                        {contactSearch && !form.contactId && (
-                          <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
-                            {contactLoading ? (
-                              <div className="flex items-center gap-2 px-4 py-3 text-sm text-[var(--text-muted)]">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin shrink-0">
-                                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                </svg>
-                                Söker…
-                              </div>
-                            ) : contactResults.length === 0 ? (
-                              <div className="px-4 py-3 text-sm text-[var(--text-muted)]">Inga kontakter hittades</div>
-                            ) : (
-                              contactResults.map((c) => (
-                                <button key={c.id} type="button" onClick={() => pickContact(c)}
-                                  className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
-                                  <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-xs font-semibold shrink-0">
-                                    {(c.name ?? '?').charAt(0).toUpperCase()}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-[var(--text-primary)] truncate">{c.name ?? '—'}</p>
-                                    <p className="text-xs text-[var(--text-muted)] truncate">{[c.email, c.company].filter(Boolean).join(' · ')}</p>
-                                  </div>
-                                </button>
-                              ))
-                            )}
-                          </div>
-                        )}
+                        <span className="text-xs font-semibold text-[var(--text-primary)]">Mottagare</span>
                       </div>
-                      {form.contactId && (
-                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12"/>
+                      <div className="p-4 space-y-3">
+                        {/* Contact autofill */}
+                        <div className="relative">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none z-10">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                           </svg>
-                          Fält ifyllda från kontakt
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Basic info */}
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Rubrik *</label>
-                        <input value={form.title} onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); setFieldErrors((fe) => ({ ...fe, title: '' })); }} placeholder="t.ex. Hotellprojekt Q2 2026"
-                          className={`w-full rounded-xl border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.title ? 'border-red-400 focus:border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
-                        {fieldErrors.title && <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Mottagarens namn *</label>
-                        <input value={form.recipientName} onChange={(e) => { setForm((f) => ({ ...f, recipientName: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientName: '' })); }} placeholder="Anna Lindström"
-                          className={`w-full rounded-xl border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.recipientName ? 'border-red-400 focus:border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
-                        {fieldErrors.recipientName && <p className="text-xs text-red-500 mt-1">{fieldErrors.recipientName}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">E-postadress *</label>
-                        <input type="email" value={form.recipientEmail} onChange={(e) => { setForm((f) => ({ ...f, recipientEmail: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientEmail: '' })); }} placeholder="anna@example.com"
-                          className={`w-full rounded-xl border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.recipientEmail ? 'border-red-400 focus:border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
-                        {fieldErrors.recipientEmail && <p className="text-xs text-red-500 mt-1">{fieldErrors.recipientEmail}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Företag</label>
-                        <input value={form.recipientCompany} onChange={(e) => setForm((f) => ({ ...f, recipientCompany: e.target.value }))} placeholder="Lindström AB"
-                          className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Giltighetstid *</label>
-                        <div className="flex gap-1.5 flex-wrap">
-                          {VALIDITY_OPTIONS.map(({ days, label }) => (
-                            <button
-                              key={days}
-                              type="button"
-                              onClick={() => setForm((f) => ({ ...f, validityDays: days }))}
-                              className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
-                                form.validityDays === days
-                                  ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
-                                  : 'border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
-                              }`}
-                            >
-                              {label}
+                          <input
+                            value={form.contactId
+                              ? (contactResults.find((c) => c.id === form.contactId)?.name ?? (contactSearch || 'Kontakt vald ✓'))
+                              : contactSearch}
+                            onChange={(e) => { if (form.contactId) setForm((f) => ({ ...f, contactId: '' })); searchContacts(e.target.value); }}
+                            placeholder="Sök kontakt för autofyll…"
+                            className="w-full pl-9 pr-9 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                          />
+                          {(contactSearch || form.contactId) && (
+                            <button type="button" onClick={() => { setForm((f) => ({ ...f, contactId: '' })); setContactSearch(''); setContactResults([]); }}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors z-10">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                              </svg>
                             </button>
-                          ))}
+                          )}
+                          {contactSearch && !form.contactId && (
+                            <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
+                              {contactLoading ? (
+                                <div className="flex items-center gap-2 px-4 py-3 text-sm text-[var(--text-muted)]">
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin shrink-0">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                  </svg>
+                                  Söker…
+                                </div>
+                              ) : contactResults.length === 0 ? (
+                                <div className="px-4 py-3 text-sm text-[var(--text-muted)]">Inga kontakter hittades</div>
+                              ) : (
+                                contactResults.map((c) => (
+                                  <button key={c.id} type="button" onClick={() => pickContact(c)}
+                                    className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
+                                    <div className="w-7 h-7 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-xs font-semibold shrink-0">
+                                      {(c.name ?? '?').charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-[var(--text-primary)] truncate">{c.name ?? '—'}</p>
+                                      <p className="text-xs text-[var(--text-muted)] truncate">{[c.email, c.company].filter(Boolean).join(' · ')}</p>
+                                    </div>
+                                  </button>
+                                ))
+                              )}
+                            </div>
+                          )}
                         </div>
-                        <p className="mt-1.5 text-[11px] text-[var(--text-muted)]">Räknas från skickad-datum</p>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Anteckningar</label>
-                        <textarea value={form.notes} rows={2} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Eventuella villkor eller kommentarer…"
-                          className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"/>
+                        {form.contactId && (
+                          <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Fält ifyllda från kontakt
+                          </p>
+                        )}
+                        {/* Name + Email */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">Namn *</label>
+                            <input value={form.recipientName} onChange={(e) => { setForm((f) => ({ ...f, recipientName: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientName: '' })); }} placeholder="Anna Lindström"
+                              className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.recipientName ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                            {fieldErrors.recipientName && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.recipientName}</p>}
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">E-post *</label>
+                            <input type="email" value={form.recipientEmail} onChange={(e) => { setForm((f) => ({ ...f, recipientEmail: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientEmail: '' })); }} placeholder="anna@example.com"
+                              className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.recipientEmail ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                            {fieldErrors.recipientEmail && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.recipientEmail}</p>}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">Företag</label>
+                          <input value={form.recipientCompany} onChange={(e) => setForm((f) => ({ ...f, recipientCompany: e.target.value }))} placeholder="Lindström AB"
+                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Line items */}
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Rader</p>
-                          {fieldErrors.lineItems && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.lineItems}</p>}
-                        </div>
-                        <button onClick={addLine} className="text-xs text-[var(--accent)] font-medium hover:opacity-80 transition-opacity flex items-center gap-1">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                          </svg>
-                          Lägg till rad
-                        </button>
+                    {/* ── CARD 2: Offertdetaljer ── */}
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden">
+                      <div className="flex items-center gap-2 px-4 py-2.5 bg-[var(--surface-alt)] border-b border-[var(--border)]">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)] shrink-0">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <span className="text-xs font-semibold text-[var(--text-primary)]">Offertdetaljer</span>
                       </div>
-                      {services.length > 0 && (
-                        <p className="text-[10px] text-[var(--text-muted)] mb-2">
-                          Tips: Klicka på väskikonen i beskrivningsfältet för att välja från produktbiblioteket.
-                        </p>
-                      )}
-
-                      <div className="rounded-xl border border-[var(--border)] overflow-hidden">
-                        <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-[var(--surface-alt)] text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                          <span className="col-span-4">Beskrivning</span>
-                          <span className="col-span-2 text-right">Antal</span>
-                          <span className="col-span-2 text-right">Á-pris (SEK)</span>
-                          <span className="col-span-1 text-right">Moms %</span>
-                          <span className="col-span-1 text-right">Rabatt %</span>
-                          <span className="col-span-1 text-right">Summa</span>
-                          <span className="col-span-1"/>
+                      <div className="p-4 space-y-3">
+                        <div>
+                          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">Rubrik *</label>
+                          <input value={form.title} onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); setFieldErrors((fe) => ({ ...fe, title: '' })); }} placeholder="t.ex. Hotellprojekt Q2 2026"
+                            className={`w-full rounded-lg border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.title ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                          {fieldErrors.title && <p className="text-[11px] text-red-500 mt-0.5">{fieldErrors.title}</p>}
                         </div>
+                        <div>
+                          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">Giltighetstid</label>
+                          <div className="flex gap-1.5 flex-wrap">
+                            {VALIDITY_OPTIONS.map(({ days, label }) => (
+                              <button key={days} type="button" onClick={() => setForm((f) => ({ ...f, validityDays: days }))}
+                                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
+                                  form.validityDays === days
+                                    ? 'border-[var(--accent)] bg-[var(--accent)] text-white shadow-sm'
+                                    : 'border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50'
+                                }`}>
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                          <p className="mt-1 text-[11px] text-[var(--text-muted)]">Räknas från skickad-datum</p>
+                        </div>
+                        {/* Notes — accordion via <details> */}
+                        <details className="rounded-lg border border-[var(--border)] overflow-hidden group">
+                          <summary className="px-3 py-2.5 text-[11px] font-medium text-[var(--text-secondary)] cursor-pointer bg-[var(--surface-alt)] list-none flex items-center justify-between hover:bg-[var(--surface-active)] transition-colors select-none">
+                            <span>Anteckningar{form.notes ? ' · ifyllt' : ' (frivilligt)'}</span>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                              className="transition-transform group-open:rotate-180">
+                              <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                          </summary>
+                          <div className="p-3 border-t border-[var(--border)]">
+                            <textarea value={form.notes} rows={2} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Eventuella villkor eller kommentarer…"
+                              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"/>
+                          </div>
+                        </details>
+                      </div>
+                    </div>
+
+                    {/* ── CARD 3: Offert-rader ── */}
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-visible">
+                      <div className="flex items-center justify-between px-4 py-2.5 bg-[var(--surface-alt)] border-b border-[var(--border)] rounded-t-xl">
+                        <div className="flex items-center gap-2">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--accent)] shrink-0">
+                            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                          </svg>
+                          <span className="text-xs font-semibold text-[var(--text-primary)]">Offert-rader</span>
+                          {fieldErrors.lineItems && <span className="text-xs text-red-500">{fieldErrors.lineItems}</span>}
+                        </div>
+                      </div>
+                      {/* Row cards */}
+                      <div className="divide-y divide-[var(--border)]">
                         {form.lineItems.map((item, idx) => {
                           const disc = 1 - (item.discount / 100);
                           const lineExVat = item.quantity * item.unitPrice * disc;
                           return (
-                            <div key={idx} className="grid grid-cols-12 gap-2 px-3 py-2 border-t border-[var(--border)] items-center">
-                              <div className="col-span-4 relative">
-                                <div className="flex gap-1">
+                            <div key={idx} className="p-3 space-y-2">
+                              {/* Description row */}
+                              <div className="flex gap-2 items-center">
+                                <div className="flex-1 relative">
                                   <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} placeholder="Tjänst eller produkt"
-                                    className="flex-1 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors pr-8"/>
                                   {services.length > 0 && (
                                     <button type="button" onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }}
                                       title="Välj från produktbibliotek"
-                                      className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1.5 text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
                                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
                                       </svg>
                                     </button>
                                   )}
                                 </div>
-                                {productPickerRow === idx && (
-                                  <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
+                                {form.lineItems.length > 1 && (
+                                  <button type="button" onClick={() => removeLine(idx)}
+                                    className="shrink-0 rounded-lg border border-[var(--border)] p-2 text-[var(--text-muted)] hover:text-red-500 hover:border-red-300 dark:hover:border-red-800 transition-colors">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                              {/* Product picker dropdown */}
+                              {productPickerRow === idx && (
+                                <div className="relative z-50">
+                                  <div className="absolute top-0 left-0 right-0 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
                                     <div className="p-2 border-b border-[var(--border)]">
                                       <input autoFocus value={productSearch} onChange={(e) => setProductSearch(e.target.value)}
                                         placeholder="Sök produkt…"
@@ -1140,76 +1165,72 @@ export default function OffersPage() {
                                       ))}
                                     </div>
                                   </div>
-                                )}
+                                </div>
+                              )}
+                              {/* Numeric fields */}
+                              <div className="grid grid-cols-4 gap-2">
+                                <div>
+                                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Antal</label>
+                                  <input type="number" min={0} step={0.1} value={item.quantity} onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Á-pris</label>
+                                  <input type="number" min={0} value={item.unitPrice} onChange={(e) => updateLine(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Moms</label>
+                                  <select value={item.vatRate} onChange={(e) => updateLine(idx, 'vatRate', parseFloat(e.target.value))}
+                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-1.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
+                                    <option value={0}>0%</option><option value={0.06}>6%</option>
+                                    <option value={0.12}>12%</option><option value={0.25}>25%</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] text-[var(--text-muted)] mb-1">Rabatt %</label>
+                                  <input type="number" min={0} max={100} value={item.discount} onChange={(e) => updateLine(idx, 'discount', parseFloat(e.target.value) || 0)}
+                                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                </div>
                               </div>
-                              <div className="col-span-2">
-                                <input type="number" min={0} step={0.1} value={item.quantity} onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
-                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                              </div>
-                              <div className="col-span-2">
-                                <input type="number" min={0} value={item.unitPrice} onChange={(e) => updateLine(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
-                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                              </div>
-                              <div className="col-span-1">
-                                <select value={item.vatRate} onChange={(e) => updateLine(idx, 'vatRate', parseFloat(e.target.value))}
-                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-1.5 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
-                                  <option value={0}>0%</option><option value={0.06}>6%</option>
-                                  <option value={0.12}>12%</option><option value={0.25}>25%</option>
-                                </select>
-                              </div>
-                              <div className="col-span-1">
-                                <input type="number" min={0} max={100} value={item.discount} onChange={(e) => updateLine(idx, 'discount', parseFloat(e.target.value) || 0)}
-                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                              </div>
-                              <div className="col-span-1 text-right text-xs font-medium text-[var(--text-primary)]">{fmtSEK(lineExVat)}</div>
-                              <div className="col-span-1 flex justify-end">
-                                {form.lineItems.length > 1 && (
-                                  <button onClick={() => removeLine(idx)} className="text-[var(--text-muted)] hover:text-red-500 transition-colors">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
-                                    </svg>
-                                  </button>
-                                )}
+                              {/* Line total */}
+                              <div className="flex justify-end items-center gap-1">
+                                <span className="text-xs font-semibold text-[var(--text-primary)]">{fmtSEK(lineExVat)}</span>
+                                <span className="text-[11px] text-[var(--text-muted)]">ex. moms</span>
                               </div>
                             </div>
                           );
                         })}
                       </div>
-
-                      {/* Totals */}
-                      <div className="mt-4 flex justify-end">
-                        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-5 py-4 space-y-2 text-sm min-w-[240px]">
-                          <div className="flex justify-between gap-8 text-[var(--text-secondary)]">
-                            <span>Summa ex. moms</span><span className="font-medium tabular-nums">{fmtSEK(tots.exVat)}</span>
-                          </div>
-                          <div className="flex justify-between gap-8 text-[var(--text-muted)] text-xs">
-                            <span>Moms</span><span className="tabular-nums">{fmtSEK(tots.vat)}</span>
-                          </div>
-                          <div className="flex justify-between gap-8 text-[var(--text-primary)] font-semibold border-t border-[var(--border)] pt-2.5 mt-1">
-                            <span>Totalt inkl. moms</span><span className="tabular-nums">{fmtSEK(tots.incVat)}</span>
-                          </div>
-                        </div>
+                      {/* Add row button */}
+                      <div className="border-t border-[var(--border)] p-2">
+                        <button type="button" onClick={addLine}
+                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-[var(--border)] text-xs text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                          Lägg till rad
+                        </button>
                       </div>
                     </div>
 
-                    {/* ── Tjänst- & produktbibliotek (collapsible) ── */}
+                    {/* ── CARD 4: Service library ── */}
                     <div className="rounded-xl border border-[var(--border)] overflow-hidden">
                       <button type="button" onClick={() => setShowServiceLibrary((v) => !v)}
                         className="w-full flex items-center justify-between px-4 py-3 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors bg-[var(--surface-alt)]">
                         <span className="flex items-center gap-2">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
                           </svg>
-                          Hantera tjänst- &amp; produktbibliotek{services.length > 0 ? ` (${services.length})` : ''}
+                          Produktbibliotek{services.length > 0 ? ` (${services.length})` : ''}
                         </span>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                           className={`transition-transform ${showServiceLibrary ? 'rotate-180' : ''}`}>
                           <polyline points="6 9 12 15 18 9"/>
                         </svg>
                       </button>
                       {showServiceLibrary && (
                         <div className="p-4 space-y-4 border-t border-[var(--border)]">
-                          {/* Add new service form */}
                           <div>
                             <p className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Lägg till tjänst</p>
                             <div className="grid gap-2 grid-cols-2">
@@ -1243,11 +1264,10 @@ export default function OffersPage() {
                               </div>
                             </div>
                           </div>
-                          {/* Existing services list */}
                           {services.length > 0 && (
                             <div className="rounded-lg border border-[var(--border)] overflow-hidden">
                               {services.map((p, i) => (
-                                <div key={p.id} className={cn('flex items-center gap-3 px-3 py-2.5 text-sm', i > 0 && 'border-t border-[var(--border)]')}>
+                                <div key={p.id} className={cn('flex items-center gap-3 px-3 py-2.5', i > 0 && 'border-t border-[var(--border)]')}>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-xs font-medium text-[var(--text-primary)] truncate">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
                                   </div>
@@ -1263,7 +1283,7 @@ export default function OffersPage() {
                             </div>
                           )}
                           {services.length === 0 && (
-                            <p className="text-xs text-[var(--text-muted)]">Inga tjänster ännu. Lägg till en tjänst ovan.</p>
+                            <p className="text-xs text-[var(--text-muted)]">Inga tjänster ännu. Lägg till ovan.</p>
                           )}
                         </div>
                       )}
@@ -1272,28 +1292,48 @@ export default function OffersPage() {
                     </div>
                     </div>
 
-                    {/* Sticky footer */}
-                    <div className="shrink-0 px-5 py-3 border-t border-[var(--border)] bg-[var(--surface-alt)] flex items-center gap-2">
-                      <button onClick={() => { saveAndSendRef.current = true; void createOffer(); }} disabled={saving}
-                        className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2">
-                        {saving && saveAndSendRef.current ? (
-                          <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Sparar…</>
-                        ) : (
-                          <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>{editingOfferId ? 'Uppdatera & skicka' : 'Spara & skicka'}</>
-                        )}
-                      </button>
-                      <button onClick={() => void createOffer()} disabled={saving}
-                        className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] disabled:opacity-50 transition-colors">
-                        {saving && !saveAndSendRef.current ? 'Sparar…' : (editingOfferId ? 'Spara ändringar' : 'Spara som utkast')}
-                      </button>
-                      <button onClick={closeWizard}
-                        className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors">
-                        Avbryt
-                      </button>
+                    {/* ── Sticky footer: totals + actions ── */}
+                    <div className="shrink-0 border-t border-[var(--border)] bg-[var(--surface-alt)]">
+                      {/* Totals summary */}
+                      <div className="px-5 py-2.5 space-y-1 border-b border-[var(--border)]/60">
+                        <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+                          <span>Summa ex. moms</span>
+                          <span className="tabular-nums font-medium">{fmtSEK(tots.exVat)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+                          <span>Moms</span>
+                          <span className="tabular-nums">{fmtSEK(tots.vat)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm font-semibold text-[var(--text-primary)] pt-1 border-t border-[var(--border)]">
+                          <span>Totalt inkl. moms</span>
+                          <span className="tabular-nums text-[var(--accent)]">{fmtSEK(tots.incVat)}</span>
+                        </div>
+                      </div>
+                      {/* Action buttons */}
+                      <div className="px-4 py-3 flex items-center gap-2">
+                        <button onClick={() => { saveAndSendRef.current = true; void createOffer(); }} disabled={saving}
+                          className="flex-1 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2">
+                          {saving && saveAndSendRef.current ? (
+                            <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Sparar…</>
+                          ) : (
+                            <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>{editingOfferId ? 'Uppdatera & skicka' : 'Spara & skicka'}</>
+                          )}
+                        </button>
+                        <button onClick={() => void createOffer()} disabled={saving}
+                          className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] disabled:opacity-50 transition-colors whitespace-nowrap">
+                          {saving && !saveAndSendRef.current ? '…' : (editingOfferId ? 'Spara' : 'Utkast')}
+                        </button>
+                        <button onClick={closeWizard}
+                          className="shrink-0 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2.5 text-[var(--text-muted)] hover:bg-[var(--surface-active)] transition-colors" title="Avbryt">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-
                   </>
                 )}
+
 
               </div>
             </div>
