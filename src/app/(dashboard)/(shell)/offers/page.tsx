@@ -14,6 +14,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@shared/lib/utils';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -120,162 +121,11 @@ const VALIDITY_OPTIONS = [
   { days: 90, label: '90 dagar' },
 ] as const;
 
-// ─── Email Design System ────────────────────────────────────────────────────────
-// Full email template config based on 2026 EU enterprise B2B patterns.
-// Covers: branded header, body theming, CTA button, and footer with trust signals.
-
-interface EmailDesignConfig {
-  header: {
-    logoUrl?: string;
-    companyName?: string;
-    tagline?: string;
-    bgColor: string;
-    textColor: string;
-    accentColor: string;
-    alignment: 'left' | 'center';
-    showDivider: boolean;
-  };
-  body: {
-    bgColor: string;          // outer/page background
-    contentBgColor: string;   // card/content area
-    textColor: string;        // primary body text
-    mutedColor: string;       // secondary/muted text
-    linkColor: string;        // links and highlights
-  };
-  cta: {
-    bgColor: string;
-    textColor: string;
-    borderRadius: number;     // px
-    label: string;            // button text
-  };
-  footer: {
-    companyInfo?: string;     // e.g. "Acme AB · Storgatan 1, 111 22 Stockholm"
-    showSocial: boolean;
-    socialLinks?: {
-      website?: string;
-      linkedin?: string;
-      twitter?: string;
-      instagram?: string;
-    };
-    legalText?: string;       // GDPR/privacy text
-    bgColor: string;
-    textColor: string;
-  };
-}
-
-// Backwards compat: old configs only had header fields
-type EmailHeaderConfig = EmailDesignConfig['header'];
-
-const DEFAULT_DESIGN: EmailDesignConfig = {
-  header: {
-    logoUrl: '', companyName: '', tagline: '',
-    bgColor: '#0f172a', textColor: '#ffffff', accentColor: '#94a3b8',
-    alignment: 'center', showDivider: true,
-  },
-  body: {
-    bgColor: '#f1f5f9',
-    contentBgColor: '#ffffff',
-    textColor: '#1e293b',
-    mutedColor: '#64748b',
-    linkColor: '#2563eb',
-  },
-  cta: {
-    bgColor: '#0f172a',
-    textColor: '#ffffff',
-    borderRadius: 8,
-    label: 'Visa & signera offert',
-  },
-  footer: {
-    companyInfo: '',
-    showSocial: false,
-    socialLinks: { website: '', linkedin: '', twitter: '', instagram: '' },
-    legalText: '',
-    bgColor: '#0f172a',
-    textColor: '#94a3b8',
-  },
-};
-
-// Theme presets based on 2026 EU enterprise B2B email patterns
-const DESIGN_PRESETS: { id: string; label: string; config: EmailDesignConfig }[] = [
-  {
-    id: 'nordic-dark',
-    label: 'Nordisk Mörk',
-    config: {
-      header: { bgColor: '#0f172a', textColor: '#f8fafc', accentColor: '#94a3b8', alignment: 'center', showDivider: true, logoUrl: '', companyName: '', tagline: '' },
-      body:   { bgColor: '#f1f5f9', contentBgColor: '#ffffff', textColor: '#1e293b', mutedColor: '#64748b', linkColor: '#2563eb' },
-      cta:    { bgColor: '#0f172a', textColor: '#ffffff', borderRadius: 8, label: 'Visa & signera offert' },
-      footer: { bgColor: '#0f172a', textColor: '#94a3b8', showSocial: false, legalText: '' },
-    },
-  },
-  {
-    id: 'clean-light',
-    label: 'Ren Ljus',
-    config: {
-      header: { bgColor: '#ffffff', textColor: '#0f172a', accentColor: '#64748b', alignment: 'left', showDivider: true, logoUrl: '', companyName: '', tagline: '' },
-      body:   { bgColor: '#f8fafc', contentBgColor: '#ffffff', textColor: '#1e293b', mutedColor: '#64748b', linkColor: '#0f172a' },
-      cta:    { bgColor: '#0f172a', textColor: '#ffffff', borderRadius: 8, label: 'Visa & signera offert' },
-      footer: { bgColor: '#f1f5f9', textColor: '#64748b', showSocial: false, legalText: '' },
-    },
-  },
-  {
-    id: 'corporate-blue',
-    label: 'Företagsblå',
-    config: {
-      header: { bgColor: '#1e3a5f', textColor: '#ffffff', accentColor: '#93c5fd', alignment: 'center', showDivider: true, logoUrl: '', companyName: '', tagline: '' },
-      body:   { bgColor: '#eff6ff', contentBgColor: '#ffffff', textColor: '#1e293b', mutedColor: '#64748b', linkColor: '#1d4ed8' },
-      cta:    { bgColor: '#1d4ed8', textColor: '#ffffff', borderRadius: 8, label: 'Visa & signera offert' },
-      footer: { bgColor: '#1e3a5f', textColor: '#93c5fd', showSocial: false, legalText: '' },
-    },
-  },
-  {
-    id: 'warm-professional',
-    label: 'Varm Professionell',
-    config: {
-      header: { bgColor: '#1c1917', textColor: '#fafaf9', accentColor: '#a8a29e', alignment: 'center', showDivider: true, logoUrl: '', companyName: '', tagline: '' },
-      body:   { bgColor: '#fafaf9', contentBgColor: '#ffffff', textColor: '#1c1917', mutedColor: '#78716c', linkColor: '#b45309' },
-      cta:    { bgColor: '#b45309', textColor: '#ffffff', borderRadius: 24, label: 'Visa & signera offert' },
-      footer: { bgColor: '#1c1917', textColor: '#a8a29e', showSocial: false, legalText: '' },
-    },
-  },
-  {
-    id: 'modern-green',
-    label: 'Modern Grön',
-    config: {
-      header: { bgColor: '#064e3b', textColor: '#ecfdf5', accentColor: '#6ee7b7', alignment: 'center', showDivider: true, logoUrl: '', companyName: '', tagline: '' },
-      body:   { bgColor: '#f0fdf4', contentBgColor: '#ffffff', textColor: '#1e293b', mutedColor: '#64748b', linkColor: '#059669' },
-      cta:    { bgColor: '#059669', textColor: '#ffffff', borderRadius: 8, label: 'Visa & signera offert' },
-      footer: { bgColor: '#064e3b', textColor: '#6ee7b7', showSocial: false, legalText: '' },
-    },
-  },
-];
-
-/** Normalize old EmailHeaderConfig or new EmailDesignConfig from JSON */
-function normalizeDesignConfig(raw: unknown): EmailDesignConfig {
-  if (!raw || typeof raw !== 'object') return { ...DEFAULT_DESIGN };
-  const obj = raw as Record<string, unknown>;
-  // Old format: flat header-only config (has bgColor at root level)
-  if ('bgColor' in obj && !('header' in obj)) {
-    return {
-      ...DEFAULT_DESIGN,
-      header: { ...DEFAULT_DESIGN.header, ...(obj as Partial<EmailHeaderConfig>) },
-    };
-  }
-  // New format
-  const d = obj as Partial<EmailDesignConfig>;
-  return {
-    header: { ...DEFAULT_DESIGN.header, ...d.header },
-    body:   { ...DEFAULT_DESIGN.body, ...d.body },
-    cta:    { ...DEFAULT_DESIGN.cta, ...d.cta },
-    footer: { ...DEFAULT_DESIGN.footer, ...d.footer },
-  };
-}
 
 const EMPTY_FORM = {
   templateId: '', contactId: '',
   title: '', recipientName: '', recipientEmail: '', recipientCompany: '',
-  notes: '', emailSubject: '', emailBody: '',
-  emailHeaderConfig: null as EmailDesignConfig | null,
-  validityDays: 30 as number, lineItems: [{ ...EMPTY_LINE }],
+  notes: '', validityDays: 30 as number, lineItems: [{ ...EMPTY_LINE }],
 };
 
 // ─── Utilities ─────────────────────────────────────────────────────────────────
@@ -353,27 +203,18 @@ export default function OffersPage() {
   const [contactSearch,    setContactSearch]    = useState('');
   const [contactResults,   setContactResults]   = useState<ContactResult[]>([]);
   const [contactLoading,   setContactLoading]   = useState(false);
-  const [showHeaderBuilder, setShowHeaderBuilder] = useState(false);
   const [draftSaved,       setDraftSaved]       = useState(false);
   const [fieldErrors,      setFieldErrors]      = useState<Record<string, string>>({});
   const saveAndSendRef = useRef(false);
-  const [orgDefaultHeader, setOrgDefaultHeader] = useState<EmailDesignConfig | null>(null);
   const contactSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Product library state
-  const [products,        setProducts]        = useState<OfferProduct[]>([]);
-  const [productPickerRow, setProductPickerRow] = useState<number | null>(null);
-  const [productSearch,   setProductSearch]   = useState('');
-  const [showProducts,    setShowProducts]    = useState(false);
-  const [productForm,     setProductForm]     = useState({ name: '', description: '', unitPrice: 0, vatRate: 0.25, unit: '' });
-  const [savingProduct,   setSavingProduct]   = useState(false);
-
-  // ── Load org default email header ───────────────────────────────────────────
-  useEffect(() => {
-    void fetch('/api/org/email-settings')
-      .then(async (r) => { if (r.ok) { const j = await r.json(); const d = j.data ?? j; if (d.emailHeaderConfig) { try { setOrgDefaultHeader(normalizeDesignConfig(JSON.parse(d.emailHeaderConfig))); } catch {} } } })
-      .catch(() => {});
-  }, []);
+  // Service/product library state
+  const [services,          setServices]          = useState<OfferProduct[]>([]);
+  const [productPickerRow,  setProductPickerRow]  = useState<number | null>(null);
+  const [productSearch,     setProductSearch]     = useState('');
+  const [showServiceLibrary, setShowServiceLibrary] = useState(false);
+  const [serviceForm,       setServiceForm]       = useState({ name: '', description: '', unitPrice: 0, vatRate: 0.25, unit: '' });
+  const [savingService,     setSavingService]     = useState(false);
 
   // ── Load templates ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -388,15 +229,15 @@ export default function OffersPage() {
   }, []);
 
   // ── Load products ─────────────────────────────────────────────────────────────
-  const loadProducts = useCallback(async () => {
+  const loadServices = useCallback(async () => {
     const r = await fetch('/api/offers/products');
     if (r.ok) {
       const j = await r.json() as { data: { products: OfferProduct[] } };
-      setProducts(j.data.products);
+      setServices(j.data.products);
     }
   }, []);
 
-  useEffect(() => { void loadProducts(); }, [loadProducts]);
+  useEffect(() => { void loadServices(); }, [loadServices]);
 
   // ── Load offers — always fetch all so tab counts stay accurate ───────────────
   const load = useCallback(async (silent = false) => {
@@ -450,9 +291,6 @@ export default function OffersPage() {
       recipientEmail:   offer.recipientEmail,
       recipientCompany: offer.recipientCompany ?? '',
       notes:            offer.notes ?? '',
-      emailSubject:     '',
-      emailBody:        '',
-      emailHeaderConfig: null,
       validityDays:     30,
       lineItems:        offer.lineItems.length > 0 ? offer.lineItems : [{ ...EMPTY_LINE }],
     });
@@ -486,12 +324,6 @@ export default function OffersPage() {
         lineItems:        validItems,
       };
       if (form.templateId)    body.templateId   = form.templateId;
-      if (form.emailSubject)  body.emailSubject = form.emailSubject;
-      if (form.emailBody)     body.emailBody    = form.emailBody;
-      const designCfg = form.emailHeaderConfig ?? orgDefaultHeader;
-      if (designCfg && (designCfg.header.companyName || designCfg.header.logoUrl || designCfg.footer.companyInfo)) {
-        body.emailHeaderConfig = JSON.stringify(designCfg);
-      }
       if (form.contactId)     body.customerId   = form.contactId;
 
       const isEdit = Boolean(editingOfferId);
@@ -685,35 +517,35 @@ export default function OffersPage() {
     setProductSearch('');
   }, []);
 
-  const saveProduct = useCallback(async () => {
-    if (!productForm.name.trim() || productForm.unitPrice < 0) return;
-    setSavingProduct(true);
+  const saveService = useCallback(async () => {
+    if (!serviceForm.name.trim() || serviceForm.unitPrice < 0) return;
+    setSavingService(true);
     try {
       const res = await fetch('/api/offers/products', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name:        productForm.name,
-          description: productForm.description || undefined,
-          unitPrice:   productForm.unitPrice,
-          vatRate:     productForm.vatRate,
-          unit:        productForm.unit || undefined,
+          name:        serviceForm.name,
+          description: serviceForm.description || undefined,
+          unitPrice:   serviceForm.unitPrice,
+          vatRate:     serviceForm.vatRate,
+          unit:        serviceForm.unit || undefined,
         }),
       });
       if (!res.ok) throw new Error(`Fel ${res.status}`);
-      setProductForm({ name: '', description: '', unitPrice: 0, vatRate: 0.25, unit: '' });
-      await loadProducts();
+      setServiceForm({ name: '', description: '', unitPrice: 0, vatRate: 0.25, unit: '' });
+      await loadServices();
     } catch { /* ignore */ } finally {
-      setSavingProduct(false);
+      setSavingService(false);
     }
-  }, [productForm, loadProducts]);
+  }, [serviceForm, loadServices]);
 
-  const removeProduct = useCallback(async (id: string) => {
+  const removeService = useCallback(async (id: string) => {
     if (!confirm('Ta bort produkt?')) return;
     await fetch(`/api/offers/products/${id}`, { method: 'DELETE' });
-    await loadProducts();
-  }, [loadProducts]);
+    await loadServices();
+  }, [loadServices]);
 
-  const filteredProducts = products.filter((p) =>
+  const filteredServices = services.filter((p) =>
     !productSearch.trim() || p.name.toLowerCase().includes(productSearch.toLowerCase())
   );
 
@@ -729,7 +561,7 @@ export default function OffersPage() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="px-8 py-10 max-w-7xl mx-auto">
+    <div className="px-8 py-10 max-w-6xl mx-auto">
 
       {/* Header */}
       <div className="mb-8 flex items-start justify-between gap-4">
@@ -738,12 +570,6 @@ export default function OffersPage() {
           <p className="text-sm text-[var(--text-muted)]">Skapa, skicka och följ upp offerter direkt från plattformen.</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => setShowProducts((v) => !v)}
-            className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors"
-          >
-            Produktbibliotek
-          </button>
           <button
             onClick={() => { setShowForm(true); setEditingOfferId(null); setForm(EMPTY_FORM); setError(null); }}
             className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
@@ -783,93 +609,36 @@ export default function OffersPage() {
         </div>
       )}
 
-      {/* Product library panel */}
-      {showProducts && (
-        <div className="mb-8 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Produktbibliotek</h2>
-            <button onClick={() => setShowProducts(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          </div>
-          <div className="p-6 space-y-5">
-            {/* Add new product form */}
-            <div>
-              <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-3">Lägg till produkt</p>
-              <div className="grid gap-3 sm:grid-cols-5">
-                <div className="sm:col-span-2">
-                  <input value={productForm.name} onChange={(e) => setProductForm((f) => ({ ...f, name: e.target.value }))}
-                    placeholder="Produktnamn *"
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                </div>
-                <div>
-                  <input type="number" min={0} value={productForm.unitPrice} onChange={(e) => setProductForm((f) => ({ ...f, unitPrice: parseFloat(e.target.value) || 0 }))}
-                    placeholder="Á-pris (SEK)"
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                </div>
-                <div>
-                  <select value={productForm.vatRate} onChange={(e) => setProductForm((f) => ({ ...f, vatRate: parseFloat(e.target.value) }))}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
-                    <option value={0}>0% moms</option><option value={0.06}>6% moms</option>
-                    <option value={0.12}>12% moms</option><option value={0.25}>25% moms</option>
-                  </select>
-                </div>
-                <div className="flex gap-2">
-                  <input value={productForm.unit} onChange={(e) => setProductForm((f) => ({ ...f, unit: e.target.value }))}
-                    placeholder="Enhet (tim, st…)"
-                    className="flex-1 min-w-0 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                  <button onClick={() => void saveProduct()} disabled={!productForm.name.trim() || savingProduct}
-                    className="shrink-0 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
-                    {savingProduct ? '…' : 'Spara'}
-                  </button>
-                </div>
-              </div>
-            </div>
-            {/* Existing products list */}
-            {products.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Dina produkter ({products.length})</p>
-                <div className="rounded-xl border border-[var(--border)] overflow-hidden">
-                  {products.map((p, i) => (
-                    <div key={p.id} className={cn('flex items-center gap-3 px-4 py-3 text-sm', i > 0 && 'border-t border-[var(--border)]')}>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-[var(--text-primary)] truncate">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
-                        {p.description && <p className="text-xs text-[var(--text-muted)] truncate">{p.description}</p>}
-                      </div>
-                      <p className="text-sm font-semibold text-[var(--text-primary)] shrink-0">{fmtSEK(p.unitPrice)}</p>
-                      <p className="text-xs text-[var(--text-muted)] shrink-0">{Math.round(p.vatRate * 100)}% moms</p>
-                      <button onClick={() => void removeProduct(p.id)} className="text-[var(--text-muted)] hover:text-red-500 transition-colors shrink-0">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {products.length === 0 && (
-              <p className="text-xs text-[var(--text-muted)]">Inga produkter ännu. Lägg till en produkt ovan för att kunna välja den vid offertsskapande.</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Create form panel */}
+      {/* Create / Edit offer — slide-over sheet */}
+      <AnimatePresence>
       {showForm && (
-        <div className="mb-8 rounded-xl border border-[var(--accent-border)] bg-[var(--surface-0)] shadow-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">{editingOfferId ? 'Redigera offert' : 'Ny offert'}</h2>
-            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null); setError(null); setContactSearch(''); setContactResults([]); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          </div>
+        <>
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+            onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null); setError(null); setFieldErrors({}); setContactSearch(''); setContactResults([]); }}
+          />
+          <motion.div
+            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+            className="fixed right-0 top-0 h-full z-50 w-full max-w-xl bg-[var(--surface)] shadow-2xl flex flex-col overflow-hidden"
+          >
+            {/* Sticky header */}
+            <div className="shrink-0 px-6 py-4 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface-alt)]">
+              <div>
+                <h2 className="font-semibold text-[var(--text-primary)]">{editingOfferId ? 'Redigera offert' : 'Ny offert'}</h2>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">Fyll i uppgifterna nedan</p>
+              </div>
+              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null); setError(null); setFieldErrors({}); setContactSearch(''); setContactResults([]); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1.5 rounded-lg hover:bg-[var(--surface-active)]">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
 
-          <div className="p-6 space-y-6">
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto">
+            <div className="p-6 space-y-6">
 
             {/* Contact picker */}
             <div>
@@ -954,8 +723,6 @@ export default function OffersPage() {
                   setForm((f) => ({
                     ...f,
                     templateId: tid,
-                    emailSubject: tpl?.emailSubject ?? f.emailSubject,
-                    emailBody:    tpl?.emailBody ?? f.emailBody,
                   }));
                 }}
                 disabled={templates.length === 0}
@@ -1044,7 +811,7 @@ export default function OffersPage() {
                   Lägg till rad
                 </button>
               </div>
-              {products.length > 0 && (
+              {services.length > 0 && (
                 <p className="text-[10px] text-[var(--text-muted)] mb-2">
                   Tips: Klicka på väskikonen i beskrivningsfältet för att välja från produktbiblioteket.
                 </p>
@@ -1069,7 +836,7 @@ export default function OffersPage() {
                         <div className="flex gap-1">
                           <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} placeholder="Tjänst eller produkt"
                             className="flex-1 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                          {products.length > 0 && (
+                          {services.length > 0 && (
                             <button type="button" onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }}
                               title="Välj från produktbibliotek"
                               className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1.5 text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
@@ -1087,9 +854,9 @@ export default function OffersPage() {
                                 className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)] transition-colors"/>
                             </div>
                             <div className="max-h-40 overflow-y-auto">
-                              {filteredProducts.length === 0 ? (
+                              {filteredServices.length === 0 ? (
                                 <div className="px-3 py-2 text-xs text-[var(--text-muted)]">Inga produkter hittades</div>
-                              ) : filteredProducts.map((p) => (
+                              ) : filteredServices.map((p) => (
                                 <button key={p.id} type="button" onClick={() => pickProduct(idx, p)}
                                   className="w-full text-left px-3 py-2 hover:bg-[var(--surface-active)] transition-colors border-b border-[var(--border)] last:border-0 text-xs">
                                   <p className="font-medium text-[var(--text-primary)]">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
@@ -1150,346 +917,88 @@ export default function OffersPage() {
               </div>
             </div>
 
-            {/* ── Email subject/body — always visible ── */}
-            <div className="space-y-3">
-              <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">E-postmeddelande</p>
-              <p className="text-[11px] text-[var(--text-muted)] -mt-1">
-                Platshållare som{' '}
-                <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{recipientName}}'}</code>,{' '}
-                <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-[10px]">{'{{offerTitle}}'}</code>{' '}
-                ersätts automatiskt.
-              </p>
-              <div>
-                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Ämnesrad</label>
-                <input
-                  value={form.emailSubject}
-                  onChange={(e) => setForm((f) => ({ ...f, emailSubject: e.target.value }))}
-                  placeholder="t.ex. Offert från Företag AB: {{offerTitle}}"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">E-postinnehåll</label>
-                <textarea
-                  value={form.emailBody}
-                  onChange={(e) => setForm((f) => ({ ...f, emailBody: e.target.value }))}
-                  rows={3}
-                  placeholder={'<h2>Hej {{recipientName}},</h2>\n<p>Vi har skickat en offert för <strong>{{offerTitle}}</strong>.</p>'}
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--accent)] transition-colors resize-y"
-                />
-                <p className="mt-1 text-[10px] text-[var(--text-muted)]">
-                  Vanlig text eller HTML fungerar. Knappen &ldquo;Visa &amp; signera offert&rdquo; läggs till automatiskt.
-                </p>
-              </div>
-            </div>
-
-            {/* ── Email Design Builder (advanced) ── */}
+            {/* ── Tjänst- & produktbibliotek (collapsible) ── */}
             <div className="rounded-xl border border-[var(--border)] overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setShowHeaderBuilder((v) => !v)}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors bg-[var(--surface-alt)]"
-              >
+              <button type="button" onClick={() => setShowServiceLibrary((v) => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors bg-[var(--surface-alt)]">
+                <span className="flex items-center gap-2">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                  </svg>
+                  Hantera tjänst- &amp; produktbibliotek{services.length > 0 ? ` (${services.length})` : ''}
+                </span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  className={`transition-transform ${showHeaderBuilder ? 'rotate-90' : ''}`}>
-                  <polyline points="9 18 15 12 9 6"/>
+                  className={`transition-transform ${showServiceLibrary ? 'rotate-180' : ''}`}>
+                  <polyline points="6 9 12 15 18 9"/>
                 </svg>
-                Avancerat — e-posthuvud &amp; sidfot
-                {(form.emailHeaderConfig?.header.companyName || form.emailHeaderConfig?.footer.companyInfo) && (
-                  <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-normal">Aktiv</span>
-                )}
               </button>
-              {showHeaderBuilder && (() => {
-                const cfg = form.emailHeaderConfig ?? orgDefaultHeader ?? { ...DEFAULT_DESIGN, header: { ...DEFAULT_DESIGN.header }, body: { ...DEFAULT_DESIGN.body }, cta: { ...DEFAULT_DESIGN.cta }, footer: { ...DEFAULT_DESIGN.footer } };
-                const setDesign = (patch: Partial<EmailDesignConfig>) => setForm((f) => {
-                  const prev = f.emailHeaderConfig ?? orgDefaultHeader ?? { ...DEFAULT_DESIGN, header: { ...DEFAULT_DESIGN.header }, body: { ...DEFAULT_DESIGN.body }, cta: { ...DEFAULT_DESIGN.cta }, footer: { ...DEFAULT_DESIGN.footer } };
-                  return { ...f, emailHeaderConfig: { ...prev, ...patch } };
-                });
-                const setH = (p: Partial<EmailDesignConfig['header']>) => setDesign({ header: { ...cfg.header, ...p } });
-                const setB = (p: Partial<EmailDesignConfig['body']>) => setDesign({ body: { ...cfg.body, ...p } });
-                const setC = (p: Partial<EmailDesignConfig['cta']>) => setDesign({ cta: { ...cfg.cta, ...p } });
-                const setF = (p: Partial<EmailDesignConfig['footer']>) => setDesign({ footer: { ...cfg.footer, ...p } });
-                const setSocial = (p: Partial<NonNullable<EmailDesignConfig['footer']['socialLinks']>>) =>
-                  setF({ socialLinks: { ...cfg.footer.socialLinks, ...p } });
-
-                type DesignTab = 'preview' | 'header' | 'style' | 'footer';
-                // Use a data attribute on the container to track active tab without extra state
-                const tabAttr = 'data-design-tab';
-
-                const ColorField = ({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) => (
+              {showServiceLibrary && (
+                <div className="p-4 space-y-4 border-t border-[var(--border)]">
+                  {/* Add new service form */}
                   <div>
-                    <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">{label}</label>
-                    <div className="flex items-center gap-2">
-                      <input type="color" value={value} onChange={(e) => onChange(e.target.value)}
-                        className="w-7 h-7 rounded-md border border-[var(--border)] cursor-pointer p-0.5 shrink-0" />
-                      <input value={value} onChange={(e) => onChange(e.target.value)}
-                        className="flex-1 rounded-md border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1 text-[11px] font-mono text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-                    </div>
-                  </div>
-                );
-
-                const SmallInput = ({ label, value, onChange, placeholder, type }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) => (
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">{label}</label>
-                    <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} type={type ?? 'text'}
-                      className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-                  </div>
-                );
-
-                // Use internal state for tabs via a wrapper component
-                const BuilderContent = () => {
-                  const [activeTab, setActiveTab] = useState<DesignTab>('preview');
-
-                  return (
-                    <div className="border-t border-[var(--border)]">
-                      {/* Tab bar */}
-                      <div className="flex border-b border-[var(--border-light)] bg-[var(--surface-alt)]">
-                        {([
-                          { id: 'preview' as DesignTab, label: 'Förhandsvisning', icon: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8zm0 0' },
-                          { id: 'header' as DesignTab, label: 'Huvud', icon: 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z' },
-                          { id: 'style' as DesignTab, label: 'Stil & Knapp', icon: 'M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z' },
-                          { id: 'footer' as DesignTab, label: 'Sidfot', icon: 'M21 15a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
-                        ]).map(({ id, label }) => (
-                          <button key={id} type="button" onClick={() => setActiveTab(id)}
-                            className={cn(
-                              'flex-1 px-3 py-2 text-[11px] font-medium transition-colors border-b-2',
-                              activeTab === id
-                                ? 'border-[var(--accent)] text-[var(--accent)]'
-                                : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
-                            )}>
-                            {label}
-                          </button>
-                        ))}
+                    <p className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Lägg till tjänst</p>
+                    <div className="grid gap-2 grid-cols-2">
+                      <div className="col-span-2">
+                        <input value={serviceForm.name} onChange={(e) => setServiceForm((f) => ({ ...f, name: e.target.value }))}
+                          placeholder="Tjänst- / produktnamn *"
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
                       </div>
-
-                      {/* ── Preview Tab ── */}
-                      {activeTab === 'preview' && (
-                        <div className="p-4">
-                          {/* Theme presets */}
-                          <div className="flex items-center gap-2 mb-3 flex-wrap">
-                            <span className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Tema:</span>
-                            {DESIGN_PRESETS.map((preset) => (
-                              <button key={preset.id} type="button"
-                                onClick={() => {
-                                  const p = preset.config;
-                                  setDesign({
-                                    header: { ...cfg.header, bgColor: p.header.bgColor, textColor: p.header.textColor, accentColor: p.header.accentColor, alignment: p.header.alignment, showDivider: p.header.showDivider },
-                                    body: { ...p.body },
-                                    cta: { ...cfg.cta, bgColor: p.cta.bgColor, textColor: p.cta.textColor, borderRadius: p.cta.borderRadius },
-                                    footer: { ...cfg.footer, bgColor: p.footer.bgColor, textColor: p.footer.textColor },
-                                  });
-                                }}
-                                className="px-2.5 py-1 rounded-md text-[10px] font-medium border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
-                                <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ background: preset.config.header.bgColor, border: '1px solid rgba(0,0,0,0.1)' }} />
-                                {preset.label}
-                              </button>
-                            ))}
-                          </div>
-
-                          {/* Full email preview */}
-                          <div className="rounded-lg overflow-hidden border border-[var(--border)] shadow-sm" style={{ background: cfg.body.bgColor }}>
-                            {/* Header */}
-                            {(cfg.header.companyName || cfg.header.logoUrl) ? (
-                              <div style={{
-                                background: cfg.header.bgColor, padding: '24px 20px 16px',
-                                textAlign: cfg.header.alignment, fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
-                              }}>
-                                {cfg.header.logoUrl && (
-                                  <img src={cfg.header.logoUrl} alt="" style={{ maxHeight: 48, maxWidth: 200, marginBottom: 10, display: cfg.header.alignment === 'center' ? 'inline-block' : 'block' }}
-                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                )}
-                                {cfg.header.companyName && <div style={{ fontSize: 18, fontWeight: 700, color: cfg.header.textColor }}>{cfg.header.companyName}</div>}
-                                {cfg.header.tagline && <div style={{ fontSize: 12, color: cfg.header.accentColor, marginTop: 2 }}>{cfg.header.tagline}</div>}
-                                {cfg.header.showDivider && <div style={{ height: 2, background: cfg.header.accentColor, opacity: 0.3, marginTop: 12, borderRadius: 2 }} />}
-                              </div>
-                            ) : (
-                              <div style={{ background: cfg.header.bgColor, padding: '16px 20px', textAlign: 'center' }}>
-                                <span style={{ fontSize: 11, color: cfg.header.accentColor, opacity: 0.6 }}>Huvud visas här</span>
-                              </div>
-                            )}
-
-                            {/* Body */}
-                            <div style={{ padding: '20px', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' }}>
-                              <div style={{ background: cfg.body.contentBgColor, borderRadius: 8, padding: '20px', maxWidth: 480, margin: '0 auto' }}>
-                                <p style={{ color: cfg.body.mutedColor, fontSize: 12, margin: '0 0 12px' }}>Hej {form.recipientName || 'mottagare'},</p>
-                                <p style={{ color: cfg.body.textColor, fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>
-                                  Du har en ny offert: <strong>{form.title || 'Offertnamn'}</strong>
-                                </p>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
-                                  <tbody>
-                                    <tr><td style={{ padding: '6px 0', color: cfg.body.mutedColor, fontSize: 12 }}>Totalt inkl. moms</td><td style={{ padding: '6px 0', fontWeight: 700, textAlign: 'right', color: cfg.body.textColor, fontSize: 12 }}>1 250 kr</td></tr>
-                                    <tr><td style={{ padding: '6px 0', color: cfg.body.mutedColor, fontSize: 12 }}>Giltig till</td><td style={{ padding: '6px 0', textAlign: 'right', color: cfg.body.textColor, fontSize: 12 }}>30 apr 2026</td></tr>
-                                  </tbody>
-                                </table>
-                                <div style={{ textAlign: 'center' }}>
-                                  <span style={{
-                                    display: 'inline-block', background: cfg.cta.bgColor, color: cfg.cta.textColor,
-                                    padding: '10px 24px', borderRadius: cfg.cta.borderRadius, fontWeight: 600, fontSize: 13,
-                                  }}>
-                                    {cfg.cta.label || 'Visa & signera offert'}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Footer */}
-                            <div style={{ background: cfg.footer.bgColor, padding: '16px 20px', textAlign: 'center', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' }}>
-                              {cfg.footer.companyInfo && <p style={{ color: cfg.footer.textColor, fontSize: 11, margin: '0 0 6px' }}>{cfg.footer.companyInfo}</p>}
-                              {cfg.footer.showSocial && cfg.footer.socialLinks && (
-                                <div style={{ display: 'flex', justifyContent: 'center', gap: 12, margin: '6px 0' }}>
-                                  {cfg.footer.socialLinks.website && <span style={{ color: cfg.footer.textColor, fontSize: 10 }}>Webb</span>}
-                                  {cfg.footer.socialLinks.linkedin && <span style={{ color: cfg.footer.textColor, fontSize: 10 }}>LinkedIn</span>}
-                                  {cfg.footer.socialLinks.twitter && <span style={{ color: cfg.footer.textColor, fontSize: 10 }}>X</span>}
-                                  {cfg.footer.socialLinks.instagram && <span style={{ color: cfg.footer.textColor, fontSize: 10 }}>Instagram</span>}
-                                </div>
-                              )}
-                              {cfg.footer.legalText && <p style={{ color: cfg.footer.textColor, fontSize: 9, margin: '6px 0 0', opacity: 0.7 }}>{cfg.footer.legalText}</p>}
-                              {!cfg.footer.companyInfo && !cfg.footer.legalText && (
-                                <span style={{ color: cfg.footer.textColor, fontSize: 10, opacity: 0.5 }}>Sidfot visas här</span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Reset */}
-                          <div className="flex justify-end mt-2">
-                            <button type="button" onClick={() => setForm((f) => ({ ...f, emailHeaderConfig: null }))}
-                              className="text-[11px] text-red-500 hover:text-red-600 transition-colors">
-                              Nollställ design
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* ── Header Tab ── */}
-                      {activeTab === 'header' && (
-                        <div className="px-4 py-3 space-y-3">
-                          <div className="grid grid-cols-2 gap-3">
-                            <SmallInput label="Företagsnamn" value={cfg.header.companyName ?? ''} onChange={(v) => setH({ companyName: v })} placeholder="Mitt Företag AB" />
-                            <SmallInput label="Tagline" value={cfg.header.tagline ?? ''} onChange={(v) => setH({ tagline: v })} placeholder="Professionella lösningar" />
-                          </div>
-                          <SmallInput label="Logotyp-URL" value={cfg.header.logoUrl ?? ''} onChange={(v) => setH({ logoUrl: v })} placeholder="https://example.com/logo.png" type="url" />
-                          <div className="grid grid-cols-3 gap-3">
-                            <ColorField label="Bakgrund" value={cfg.header.bgColor} onChange={(v) => setH({ bgColor: v })} />
-                            <ColorField label="Textfärg" value={cfg.header.textColor} onChange={(v) => setH({ textColor: v })} />
-                            <ColorField label="Accent" value={cfg.header.accentColor} onChange={(v) => setH({ accentColor: v })} />
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                              <label className="text-[11px] font-semibold text-[var(--text-secondary)]">Layout:</label>
-                              {(['left', 'center'] as const).map((a) => (
-                                <button key={a} type="button" onClick={() => setH({ alignment: a })}
-                                  className={cn('px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors',
-                                    cfg.header.alignment === a ? 'border-[var(--accent)] bg-[var(--accent)] text-white' : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]')}>
-                                  {a === 'left' ? 'Vänster' : 'Centrerad'}
-                                </button>
-                              ))}
-                            </div>
-                            <label className="flex items-center gap-1.5 cursor-pointer">
-                              <input type="checkbox" checked={cfg.header.showDivider} onChange={(e) => setH({ showDivider: e.target.checked })}
-                                className="w-3.5 h-3.5 rounded accent-[var(--accent)]" />
-                              <span className="text-[11px] text-[var(--text-secondary)]">Avdelare</span>
-                            </label>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* ── Style & Button Tab ── */}
-                      {activeTab === 'style' && (
-                        <div className="px-4 py-3 space-y-4">
-                          <div>
-                            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Bakgrund & Innehåll</p>
-                            <div className="grid grid-cols-2 gap-3">
-                              <ColorField label="Yttre bakgrund" value={cfg.body.bgColor} onChange={(v) => setB({ bgColor: v })} />
-                              <ColorField label="Innehållsyta" value={cfg.body.contentBgColor} onChange={(v) => setB({ contentBgColor: v })} />
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Textfärger</p>
-                            <div className="grid grid-cols-3 gap-3">
-                              <ColorField label="Primär text" value={cfg.body.textColor} onChange={(v) => setB({ textColor: v })} />
-                              <ColorField label="Sekundär text" value={cfg.body.mutedColor} onChange={(v) => setB({ mutedColor: v })} />
-                              <ColorField label="Länkar" value={cfg.body.linkColor} onChange={(v) => setB({ linkColor: v })} />
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">CTA-knapp</p>
-                            <div className="grid grid-cols-2 gap-3 mb-2">
-                              <ColorField label="Knappfärg" value={cfg.cta.bgColor} onChange={(v) => setC({ bgColor: v })} />
-                              <ColorField label="Knapptext" value={cfg.cta.textColor} onChange={(v) => setC({ textColor: v })} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                              <SmallInput label="Knapptext" value={cfg.cta.label} onChange={(v) => setC({ label: v })} placeholder="Visa & signera offert" />
-                              <div>
-                                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Rundning</label>
-                                <div className="flex items-center gap-2">
-                                  <input type="range" min={0} max={24} value={cfg.cta.borderRadius}
-                                    onChange={(e) => setC({ borderRadius: Number(e.target.value) })}
-                                    className="flex-1 accent-[var(--accent)]" />
-                                  <span className="text-[11px] text-[var(--text-muted)] font-mono w-8 text-right">{cfg.cta.borderRadius}px</span>
-                                </div>
-                              </div>
-                            </div>
-                            {/* Button preview */}
-                            <div className="mt-2 flex justify-center">
-                              <span style={{
-                                display: 'inline-block', background: cfg.cta.bgColor, color: cfg.cta.textColor,
-                                padding: '10px 24px', borderRadius: cfg.cta.borderRadius, fontWeight: 600, fontSize: 13,
-                                fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
-                              }}>
-                                {cfg.cta.label || 'Visa & signera offert'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* ── Footer Tab ── */}
-                      {activeTab === 'footer' && (
-                        <div className="px-4 py-3 space-y-3">
-                          <SmallInput label="Företagsinfo" value={cfg.footer.companyInfo ?? ''} onChange={(v) => setF({ companyInfo: v })}
-                            placeholder="Acme AB · Storgatan 1, 111 22 Stockholm · org.nr 556123-4567" />
-                          <div className="grid grid-cols-2 gap-3">
-                            <ColorField label="Bakgrund" value={cfg.footer.bgColor} onChange={(v) => setF({ bgColor: v })} />
-                            <ColorField label="Textfärg" value={cfg.footer.textColor} onChange={(v) => setF({ textColor: v })} />
-                          </div>
-
-                          {/* Social links */}
-                          <div>
-                            <label className="flex items-center gap-1.5 cursor-pointer mb-2">
-                              <input type="checkbox" checked={cfg.footer.showSocial} onChange={(e) => setF({ showSocial: e.target.checked })}
-                                className="w-3.5 h-3.5 rounded accent-[var(--accent)]" />
-                              <span className="text-[11px] font-semibold text-[var(--text-secondary)]">Visa sociala länkar</span>
-                            </label>
-                            {cfg.footer.showSocial && (
-                              <div className="grid grid-cols-2 gap-2">
-                                <SmallInput label="Webbplats" value={cfg.footer.socialLinks?.website ?? ''} onChange={(v) => setSocial({ website: v })} placeholder="https://acme.se" />
-                                <SmallInput label="LinkedIn" value={cfg.footer.socialLinks?.linkedin ?? ''} onChange={(v) => setSocial({ linkedin: v })} placeholder="https://linkedin.com/company/acme" />
-                                <SmallInput label="X (Twitter)" value={cfg.footer.socialLinks?.twitter ?? ''} onChange={(v) => setSocial({ twitter: v })} placeholder="https://x.com/acme" />
-                                <SmallInput label="Instagram" value={cfg.footer.socialLinks?.instagram ?? ''} onChange={(v) => setSocial({ instagram: v })} placeholder="https://instagram.com/acme" />
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Legal/GDPR text */}
-                          <div>
-                            <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">Juridisk text / GDPR</label>
-                            <textarea value={cfg.footer.legalText ?? ''} onChange={(e) => setF({ legalText: e.target.value })} rows={2}
-                              placeholder="Detta e-postmeddelande har skickats som en del av en offertförfrågan. Kontakta oss för att hantera dina inställningar."
-                              className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-y" />
-                            <p className="mt-1 text-[10px] text-[var(--text-muted)]">Enligt EU:s tillgänglighetsdirektiv (EAA) och GDPR bör du inkludera information om varför mottagaren får detta meddelande.</p>
-                          </div>
-                        </div>
-                      )}
+                      <div>
+                        <input type="number" min={0} value={serviceForm.unitPrice} onChange={(e) => setServiceForm((f) => ({ ...f, unitPrice: parseFloat(e.target.value) || 0 }))}
+                          placeholder="Á-pris (SEK)"
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                      </div>
+                      <div>
+                        <select value={serviceForm.vatRate} onChange={(e) => setServiceForm((f) => ({ ...f, vatRate: parseFloat(e.target.value) }))}
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
+                          <option value={0}>0% moms</option><option value={0.06}>6% moms</option>
+                          <option value={0.12}>12% moms</option><option value={0.25}>25% moms</option>
+                        </select>
+                      </div>
+                      <div>
+                        <input value={serviceForm.unit} onChange={(e) => setServiceForm((f) => ({ ...f, unit: e.target.value }))}
+                          placeholder="Enhet (tim, st…)"
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                      </div>
+                      <div>
+                        <button onClick={() => void saveService()} disabled={!serviceForm.name.trim() || savingService}
+                          className="w-full rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
+                          {savingService ? '…' : 'Spara'}
+                        </button>
+                      </div>
                     </div>
-                  );
-                };
-
-                return <BuilderContent />;
-              })()}
+                  </div>
+                  {/* Existing services list */}
+                  {services.length > 0 && (
+                    <div className="rounded-lg border border-[var(--border)] overflow-hidden">
+                      {services.map((p, i) => (
+                        <div key={p.id} className={cn('flex items-center gap-3 px-3 py-2.5 text-sm', i > 0 && 'border-t border-[var(--border)]')}>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-[var(--text-primary)] truncate">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
+                          </div>
+                          <p className="text-xs font-semibold text-[var(--text-primary)] shrink-0">{fmtSEK(p.unitPrice)}</p>
+                          <p className="text-[10px] text-[var(--text-muted)] shrink-0">{Math.round(p.vatRate * 100)}% moms</p>
+                          <button onClick={() => void removeService(p.id)} className="text-[var(--text-muted)] hover:text-red-500 transition-colors shrink-0">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {services.length === 0 && (
+                    <p className="text-xs text-[var(--text-muted)]">Inga tjänster ännu. Lägg till en tjänst ovan.</p>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-light)]">
+            </div>
+            </div>
+
+            {/* Sticky footer */}
+            <div className="shrink-0 px-6 py-4 border-t border-[var(--border)] bg-[var(--surface-alt)] flex items-center gap-2">
               <button onClick={() => { saveAndSendRef.current = true; void createOffer(); }} disabled={saving}
                 className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2">
                 {saving && saveAndSendRef.current ? (
@@ -1507,9 +1016,10 @@ export default function OffersPage() {
                 Avbryt
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </>
       )}
+      </AnimatePresence>
 
       {/* Floating bulk action bar */}
       {selected.size > 0 && (
@@ -1548,23 +1058,24 @@ export default function OffersPage() {
 
       {/* Status tabs + filters */}
       <div className="flex flex-col gap-3 mb-4">
-        {/* Row 1: tabs */}
-        <div className="flex gap-1 overflow-x-auto scrollbar-none flex-wrap">
+        {/* Row 1: pipeline pills */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {STATUS_TABS.map((t) => {
             const count = t.id === 'all' ? allOffers.length : allOffers.filter((o) => o.status === t.id).length;
+            const isActive = tab === t.id;
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap shrink-0 transition-all duration-150',
-                  tab === t.id
-                    ? 'bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--accent-border)]'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] border border-[var(--border)]',
+                  'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0',
+                  isActive
+                    ? 'bg-[var(--accent)] text-white shadow-sm'
+                    : 'bg-[var(--surface-alt)] text-[var(--text-secondary)] hover:bg-[var(--surface-active)] border border-[var(--border)]',
                 )}>
                 {t.label}
                 {count > 0 && (
                   <span className={cn(
-                    'text-[10px] font-mono px-1.5 py-0.5 rounded leading-none',
-                    tab === t.id ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface-3)] text-[var(--text-muted)]',
+                    'text-xs tabular-nums px-1.5 py-0.5 rounded-full leading-none',
+                    isActive ? 'bg-white/25 text-white' : 'bg-[var(--surface)] text-[var(--text-muted)]',
                   )}>
                     {count}
                   </span>
@@ -1608,7 +1119,76 @@ export default function OffersPage() {
           <p className="text-sm text-[var(--text-muted)]">Laddar offerter…</p>
         </div>
       ) : (
-        <div className="rounded border border-[var(--border)] overflow-hidden">
+        <>
+        {/* Mobile cards */}
+        <div className="sm:hidden space-y-3">
+          {offers.length === 0 && (
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-12 text-center">
+              <p className="text-sm font-medium text-[var(--text-primary)] mb-1">Inga offerter</p>
+              <p className="text-xs text-[var(--text-muted)]">Klicka på &ldquo;Ny offert&rdquo; för att komma igång.</p>
+            </div>
+          )}
+          {offers.map((offer) => (
+            <div key={offer.id} className={cn('rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4', offer.status === 'expired' && 'bg-amber-50/40 dark:bg-amber-900/10')}>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-[var(--text-primary)] truncate">{offer.title}</p>
+                  <p className="text-[11px] text-[var(--text-muted)] font-mono">{fmtOfferNumber(offer)}</p>
+                </div>
+                <span className={cn('shrink-0 text-[10px] px-2.5 py-1 rounded-full font-semibold', STATUS_STYLES[offer.status])}>
+                  {STATUS_LABEL[offer.status]}
+                </span>
+              </div>
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-sm text-[var(--text-secondary)]">{offer.recipientName}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{offer.recipientCompany ?? offer.recipientEmail}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-bold text-[var(--text-primary)]">{fmtSEK(offer.totalIncVat)}</p>
+                  <p className="text-[11px] text-[var(--text-muted)]">ex. {fmtSEK(offer.totalExVat)}</p>
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between gap-2">
+                <p className="text-[11px] text-[var(--text-muted)]">Giltig t.o.m. {fmtDate(offer.validUntil)}</p>
+                <div className="flex items-center gap-2">
+                  {offer.status === 'draft' && (
+                    <button type="button" onClick={() => openEdit(offer)} title="Redigera" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                  )}
+                  {offer.status === 'draft' && (
+                    <button type="button" onClick={() => setConfirmSend(offer)} disabled={acting === offer.id} title="Skicka" className="text-[var(--text-muted)] hover:text-blue-500 transition-colors disabled:opacity-40">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                  )}
+                  {(offer.status === 'sent' || offer.status === 'viewed') && canRemind(offer) && (
+                    <button type="button" onClick={() => void doAction(offer.id, 'remind')} disabled={acting === offer.id} title="Skicka påminnelse" className="text-[var(--text-muted)] hover:text-amber-500 transition-colors disabled:opacity-40">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    </button>
+                  )}
+                  {(offer.status === 'sent' || offer.status === 'viewed') && (
+                    <button type="button" onClick={() => void copyLink(offer)} title="Kopiera länk" className="text-[var(--text-muted)] hover:text-violet-500 transition-colors">
+                      {copied === offer.id
+                        ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                      }
+                    </button>
+                  )}
+                  <button type="button" onClick={() => void doAction(offer.id, 'duplicate')} disabled={acting === offer.id} title="Duplicera" className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-40">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>
+                  <button type="button" onClick={() => setConfirmDeleteOffer(offer.id)} title="Ta bort" className="text-[var(--text-muted)] hover:text-red-500 transition-colors">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden sm:block rounded border border-[var(--border)] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
@@ -1838,6 +1418,7 @@ export default function OffersPage() {
             )}
           </div>
         </div>
+        </>
       )}
 
       {/* Draft saved toast */}
