@@ -222,7 +222,10 @@ export default function PublicOfferPage() {
     responsiveStyle.textContent = `
       *, *::before, *::after { box-sizing: border-box; }
       body { overflow-x: hidden !important; }
-      img { max-width: 100% !important; height: auto !important; display: block; }
+      /* Only set height:auto on images that don't have an explicit height style
+         (fill-page images carry height:NNNpx inline and must keep it)           */
+      img { max-width: 100% !important; display: block; }
+      img:not([style*="height:"]) { height: auto; }
       table { max-width: 100% !important; width: 100%; table-layout: fixed; }
       td, th { word-break: break-word; overflow-wrap: break-word; }
       pre, code { white-space: pre-wrap !important; word-break: break-word !important; overflow-x: hidden !important; }
@@ -230,6 +233,7 @@ export default function PublicOfferPage() {
       .page-block { overflow: visible !important; }
       @media (max-width: 640px) {
         .page-block > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
+        .page-content > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
       }
     `;
     if (doc.head) {
@@ -239,14 +243,28 @@ export default function PublicOfferPage() {
     }
 
     const wrapper = doc.querySelector('.doc-wrapper') as HTMLElement | null;
+    // Detect new-format docs (have .page-content; padding lives there, not on .doc-wrapper)
+    const hasPageContent = !!doc.querySelector('.page-content');
     if (wrapper) {
       const isMobile = window.innerWidth < 640;
       wrapper.style.margin = '0';
-      wrapper.style.padding = isMobile ? '20px 16px' : '40px 48px';
       wrapper.style.border = 'none';
       wrapper.style.borderRadius = '0';
       wrapper.style.maxWidth = 'none';
       wrapper.style.boxShadow = 'none';
+      if (hasPageContent) {
+        // New format: padding is on .page-content; leave doc-wrapper padding-free
+        wrapper.style.padding = '0';
+        // On mobile, override .page-content padding to compact value
+        if (isMobile) {
+          doc.querySelectorAll<HTMLElement>('.page-content').forEach((pc) => {
+            pc.style.padding = '20px 16px';
+          });
+        }
+      } else {
+        // Old format: padding was on .doc-wrapper
+        wrapper.style.padding = isMobile ? '20px 16px' : '40px 48px';
+      }
     }
     doc.body.style.margin = '0';
     doc.body.style.padding = '0';
