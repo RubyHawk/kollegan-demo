@@ -532,7 +532,9 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     .page-block { position: relative; min-height: 1056px; overflow: hidden; }
     @media (max-width: 640px) {
       .doc-wrapper { margin: 0; padding: 20px 16px; border: none; border-radius: 0; }
-      .page-block { min-height: 0; }${MOBILE_TABLE_CSS}
+      .page-block { min-height: 0; overflow: visible; }
+      .page-block > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
+      ${MOBILE_TABLE_CSS}
     }
     @media print {
       .doc-wrapper { margin: 0; padding: 0; border: none; }
