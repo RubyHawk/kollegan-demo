@@ -216,6 +216,13 @@ export default function OffersPage() {
   const [serviceForm,       setServiceForm]       = useState({ name: '', description: '', unitPrice: 0, vatRate: 0.25, unit: '' });
   const [savingService,     setSavingService]     = useState(false);
 
+  // ── Guided wizard (full-screen create/edit flow) ───────────────────────────
+  const [wizardStep,         setWizardStep]         = useState<1 | 2>(1);
+  const [livePreviewHtml,    setLivePreviewHtml]    = useState<string | null>(null);
+  const [livePreviewLoading, setLivePreviewLoading] = useState(false);
+  const [cachedTplContent,   setCachedTplContent]   = useState<string | null>(null);
+  const livePreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // ── Load templates ────────────────────────────────────────────────────────────
   useEffect(() => {
     void fetch('/api/templates')
@@ -294,9 +301,35 @@ export default function OffersPage() {
       validityDays:     30,
       lineItems:        offer.lineItems.length > 0 ? offer.lineItems : [{ ...EMPTY_LINE }],
     });
+    setWizardStep(2);           // skip template picker when editing
+    setLivePreviewHtml(null);
+    setCachedTplContent(null);
     setFieldErrors({});
     setContactSearch('');
     setContactResults([]);
+    // Load template preview if the offer has a template
+    if (offer.templateId) {
+      void (async () => {
+        setLivePreviewLoading(true);
+        try {
+          const tplRes = await fetch(`/api/templates/${offer.templateId}`);
+          if (!tplRes.ok) throw new Error();
+          const tplData = await tplRes.json() as { data?: { content?: string } };
+          const content = tplData.data?.content ?? null;
+          setCachedTplContent(content);
+          if (content) {
+            const res = await fetch('/api/templates/preview', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ content }),
+            });
+            const j = await res.json() as { html?: string };
+            setLivePreviewHtml(j.html ?? null);
+          }
+        } catch { /* ignore */ } finally {
+          setLivePreviewLoading(false);
+        }
+      })();
+    }
     setError(null);
     setShowForm(true);
   }, []);
@@ -549,6 +582,79 @@ export default function OffersPage() {
     !productSearch.trim() || p.name.toLowerCase().includes(productSearch.toLowerCase())
   );
 
+  // ── Wizard helpers ────────────────────────────────────────────────────────────
+
+  const closeWizard = useCallback(() => {
+    setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null);
+    setError(null); setFieldErrors({}); setContactSearch(''); setContactResults([]);
+    setWizardStep(1); setLivePreviewHtml(null); setCachedTplContent(null);
+    if (livePreviewTimer.current) clearTimeout(livePreviewTimer.current);
+  }, []);
+
+  /** Fetch a template's full content, set it selected, load initial preview, advance to step 2. */
+  const selectTemplate = useCallback(async (tplId: string) => {
+    setForm((f) => ({ ...f, templateId: tplId }));
+    setWizardStep(2);
+    setLivePreviewLoading(true);
+    setLivePreviewHtml(null);
+    setCachedTplContent(null);
+    try {
+      const tplRes = await fetch(`/api/templates/${tplId}`);
+      if (!tplRes.ok) throw new Error();
+      const tplData = await tplRes.json() as { data?: { content?: string } };
+      const content = tplData.data?.content ?? null;
+      setCachedTplContent(content);
+      const res = await fetch('/api/templates/preview', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      });
+      const j = await res.json() as { html?: string };
+      setLivePreviewHtml(j.html ?? null);
+    } catch { /* ignore */ } finally {
+      setLivePreviewLoading(false);
+    }
+  }, []);
+
+  /** Schedule a debounced re-render of the live preview with current form values. */
+  const scheduleLivePreview = useCallback((currentForm: typeof form, content: string) => {
+    if (livePreviewTimer.current) clearTimeout(livePreviewTimer.current);
+    livePreviewTimer.current = setTimeout(async () => {
+      const validItems = currentForm.lineItems.filter((i) => i.description.trim() && i.quantity > 0);
+      try {
+        setLivePreviewLoading(true);
+        const res = await fetch('/api/templates/preview', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content,
+            offer: {
+              title:            currentForm.title            || undefined,
+              recipientName:    currentForm.recipientName    || undefined,
+              recipientEmail:   currentForm.recipientEmail   || undefined,
+              recipientCompany: currentForm.recipientCompany || undefined,
+              notes:            currentForm.notes            || undefined,
+              lineItems:        validItems.length > 0 ? validItems : undefined,
+            },
+          }),
+        });
+        const j = await res.json() as { html?: string };
+        if (j.html) setLivePreviewHtml(j.html);
+      } catch { /* ignore */ } finally {
+        setLivePreviewLoading(false);
+      }
+    }, 500);
+  }, []);
+
+  // Re-render preview whenever form values change (step 2 only)
+  useEffect(() => {
+    if (!showForm || wizardStep !== 2 || !cachedTplContent) return;
+    scheduleLivePreview(form, cachedTplContent);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    form.title, form.recipientName, form.recipientEmail,
+    form.recipientCompany, form.notes, form.lineItems,
+    showForm, wizardStep, cachedTplContent, scheduleLivePreview,
+  ]);
+
   // ── Line item helpers ─────────────────────────────────────────────────────────
   function updateLine(idx: number, field: keyof LineItem, value: string | number) {
     setForm((f) => { const items = [...f.lineItems]; items[idx] = { ...items[idx], [field]: value }; return { ...f, lineItems: items }; });
@@ -571,7 +677,7 @@ export default function OffersPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => { setShowForm(true); setEditingOfferId(null); setForm(EMPTY_FORM); setError(null); }}
+            onClick={() => { setShowForm(true); setEditingOfferId(null); setForm(EMPTY_FORM); setError(null); setWizardStep(1); setLivePreviewHtml(null); setCachedTplContent(null); }}
             className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -609,412 +715,587 @@ export default function OffersPage() {
         </div>
       )}
 
-      {/* Create / Edit offer — slide-over sheet */}
+      {/* ── Guided offer wizard — full-screen split layout ── */}
       <AnimatePresence>
       {showForm && (
         <>
           <motion.div
+            key="offer-wizard"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-            onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null); setError(null); setFieldErrors({}); setContactSearch(''); setContactResults([]); }}
-          />
-          <motion.div
-            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-            className="fixed right-0 top-0 h-full z-50 w-full max-w-xl bg-[var(--surface)] shadow-2xl flex flex-col overflow-hidden"
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-50 flex flex-col bg-[var(--surface)]"
           >
-            {/* Sticky header */}
-            <div className="shrink-0 px-6 py-4 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface-alt)]">
-              <div>
-                <h2 className="font-semibold text-[var(--text-primary)]">{editingOfferId ? 'Redigera offert' : 'Ny offert'}</h2>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5">Fyll i uppgifterna nedan</p>
-              </div>
-              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null); setError(null); setFieldErrors({}); setContactSearch(''); setContactResults([]); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1.5 rounded-lg hover:bg-[var(--surface-active)]">
+            {/* ── Top bar ── */}
+            <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] bg-[var(--surface-alt)]">
+              <button onClick={closeWizard} title="Stäng"
+                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 rounded-lg hover:bg-[var(--surface-active)] transition-colors shrink-0">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
               </button>
-            </div>
-
-            {/* Scrollable body */}
-            <div className="flex-1 overflow-y-auto">
-            <div className="p-6 space-y-6">
-
-            {/* Contact picker */}
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-                Sök kontakt
-                <span className="ml-1 font-normal text-[var(--text-muted)]">— fyller i mottagarfälten automatiskt</span>
-              </label>
-              <div className="relative">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <h2 className="font-semibold text-sm text-[var(--text-primary)]">
+                {editingOfferId ? 'Redigera offert' : 'Ny offert'}
+              </h2>
+              <div className="flex-1"/>
+              {/* Step indicator */}
+              <div className="flex items-center gap-2 text-xs">
+                <span className={cn(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-all',
+                  wizardStep === 1
+                    ? 'bg-[var(--accent)] text-white shadow-sm'
+                    : 'bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)]',
+                )}>
+                  {wizardStep > 1
+                    ? <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    : <span>1</span>}
+                  <span>Välj mall</span>
+                </span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--border)]">
+                  <polyline points="9 18 15 12 9 6"/>
                 </svg>
-                <input
-                  value={form.contactId
-                    ? (contactResults.find((c) => c.id === form.contactId)?.name ?? (contactSearch || 'Kontakt vald ✓'))
-                    : contactSearch}
-                  onChange={(e) => { if (form.contactId) setForm((f) => ({ ...f, contactId: '' })); searchContacts(e.target.value); }}
-                  placeholder="Sök på namn, e-post eller företag…"
-                  className="w-full pl-9 pr-10 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
-                {(contactSearch || form.contactId) && (
-                  <button type="button" onClick={() => { setForm((f) => ({ ...f, contactId: '' })); setContactSearch(''); setContactResults([]); }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </button>
-                )}
-                {/* Dropdown */}
-                {contactSearch && !form.contactId && (
-                  <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
-                    {contactLoading ? (
-                      <div className="flex items-center gap-2 px-4 py-3 text-sm text-[var(--text-muted)]">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin shrink-0">
-                          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                <span className={cn(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium transition-all',
+                  wizardStep === 2
+                    ? 'bg-[var(--accent)] text-white shadow-sm'
+                    : 'bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)]',
+                )}>
+                  <span>2</span>
+                  <span>Fyll i</span>
+                </span>
+              </div>
+              <div className="flex-1"/>
+              <div className="w-9 shrink-0"/>
+            </div>
+
+            {/* ── Split body ── */}
+            <div className="flex-1 flex overflow-hidden">
+
+              {/* ── Left: live preview canvas (hidden on small screens) ── */}
+              <div className="hidden lg:flex flex-1 bg-slate-100 dark:bg-slate-900/60 overflow-auto flex-col items-center py-10 px-8 relative">
+                <AnimatePresence mode="wait">
+                  {!livePreviewHtml && !livePreviewLoading && (
+                    <motion.div key="preview-empty"
+                      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                      className="flex flex-col items-center justify-center h-full text-center gap-5 max-w-xs mx-auto">
+                      <div className="w-20 h-20 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm">
+                        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300 dark:text-slate-600">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                          <polyline points="10 9 9 9 8 9"/>
                         </svg>
-                        Söker…
                       </div>
-                    ) : contactResults.length === 0 ? (
-                      <div className="px-4 py-3 text-sm text-[var(--text-muted)]">Inga kontakter hittades</div>
-                    ) : (
-                      contactResults.map((c) => (
-                        <button key={c.id} type="button" onClick={() => pickContact(c)}
-                          className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
-                          <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-xs font-semibold shrink-0">
-                            {(c.name ?? '?').charAt(0).toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[var(--text-primary)] truncate">{c.name ?? '—'}</p>
-                            <p className="text-xs text-[var(--text-muted)] truncate">{[c.email, c.company].filter(Boolean).join(' · ')}</p>
-                          </div>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-              {form.contactId && (
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  Fält ifyllda från kontakt
-                </p>
-              )}
-            </div>
-
-            {/* Template selector */}
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-                Offertmall
-                <a href="/templates" target="_blank" rel="noreferrer"
-                  className="ml-2 font-normal text-[var(--accent)] hover:underline">
-                  {templates.length === 0 ? 'Skapa mall →' : 'Hantera mallar →'}
-                </a>
-              </label>
-              <select
-                value={form.templateId}
-                onChange={(e) => {
-                  const tid = e.target.value;
-                  const tpl = templates.find((t) => t.id === tid);
-                  setForm((f) => ({
-                    ...f,
-                    templateId: tid,
-                  }));
-                }}
-                disabled={templates.length === 0}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors disabled:opacity-50"
-              >
-                <option value="">{templates.length === 0 ? 'Inga mallar skapade ännu' : 'Ingen mall (fritext)'}</option>
-                {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
-              {form.templateId && (
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  Dokumentet genereras med vald mall när offerten skickas.{' '}
-                  <button type="button" onClick={() => void openTemplatePreview()}
-                    className="underline hover:no-underline text-emerald-600 dark:text-emerald-400">
-                    Förhandsgranska →
-                  </button>
-                </p>
-              )}
-            </div>
-
-            {/* Basic info */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Rubrik *</label>
-                <input value={form.title} onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); setFieldErrors((fe) => ({ ...fe, title: '' })); }} placeholder="t.ex. Hotellprojekt Q2 2026"
-                  className={`w-full rounded-xl border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.title ? 'border-red-400 focus:border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
-                {fieldErrors.title && <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Mottagarens namn *</label>
-                <input value={form.recipientName} onChange={(e) => { setForm((f) => ({ ...f, recipientName: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientName: '' })); }} placeholder="Anna Lindström"
-                  className={`w-full rounded-xl border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.recipientName ? 'border-red-400 focus:border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
-                {fieldErrors.recipientName && <p className="text-xs text-red-500 mt-1">{fieldErrors.recipientName}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">E-postadress *</label>
-                <input type="email" value={form.recipientEmail} onChange={(e) => { setForm((f) => ({ ...f, recipientEmail: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientEmail: '' })); }} placeholder="anna@example.com"
-                  className={`w-full rounded-xl border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.recipientEmail ? 'border-red-400 focus:border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
-                {fieldErrors.recipientEmail && <p className="text-xs text-red-500 mt-1">{fieldErrors.recipientEmail}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Företag</label>
-                <input value={form.recipientCompany} onChange={(e) => setForm((f) => ({ ...f, recipientCompany: e.target.value }))} placeholder="Lindström AB"
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Giltighetstid *</label>
-                <div className="flex gap-1.5 flex-wrap">
-                  {VALIDITY_OPTIONS.map(({ days, label }) => (
-                    <button
-                      key={days}
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, validityDays: days }))}
-                      className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
-                        form.validityDays === days
-                          ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
-                          : 'border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-1.5 text-[11px] text-[var(--text-muted)]">Räknas från skickad-datum</p>
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Anteckningar</label>
-                <textarea value={form.notes} rows={2} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Eventuella villkor eller kommentarer…"
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"/>
-              </div>
-            </div>
-
-            {/* Line items */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Rader</p>
-                  {fieldErrors.lineItems && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.lineItems}</p>}
-                </div>
-                <button onClick={addLine} className="text-xs text-[var(--accent)] font-medium hover:opacity-80 transition-opacity flex items-center gap-1">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                  Lägg till rad
-                </button>
-              </div>
-              {services.length > 0 && (
-                <p className="text-[10px] text-[var(--text-muted)] mb-2">
-                  Tips: Klicka på väskikonen i beskrivningsfältet för att välja från produktbiblioteket.
-                </p>
-              )}
-
-              <div className="rounded-xl border border-[var(--border)] overflow-hidden">
-                <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-[var(--surface-alt)] text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                  <span className="col-span-4">Beskrivning</span>
-                  <span className="col-span-2 text-right">Antal</span>
-                  <span className="col-span-2 text-right">Á-pris (SEK)</span>
-                  <span className="col-span-1 text-right">Moms %</span>
-                  <span className="col-span-1 text-right">Rabatt %</span>
-                  <span className="col-span-1 text-right">Summa</span>
-                  <span className="col-span-1"/>
-                </div>
-                {form.lineItems.map((item, idx) => {
-                  const disc = 1 - (item.discount / 100);
-                  const lineExVat = item.quantity * item.unitPrice * disc;
-                  return (
-                    <div key={idx} className="grid grid-cols-12 gap-2 px-3 py-2 border-t border-[var(--border)] items-center">
-                      <div className="col-span-4 relative">
-                        <div className="flex gap-1">
-                          <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} placeholder="Tjänst eller produkt"
-                            className="flex-1 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                          {services.length > 0 && (
-                            <button type="button" onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }}
-                              title="Välj från produktbibliotek"
-                              className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1.5 text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
-                              </svg>
-                            </button>
-                          )}
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--text-primary)] mb-1.5">Välj en mall för att se förhandsvisning</p>
+                        <p className="text-xs text-[var(--text-muted)] leading-relaxed">Mallen styr offertens utseende. Välj bland dina mallar i panelen till höger — förhandsvisningen uppdateras live.</p>
+                      </div>
+                      {templates.length === 0 && (
+                        <a href="/templates" target="_blank" rel="noreferrer" className="text-xs text-[var(--accent)] hover:underline font-medium">
+                          Skapa din första mall →
+                        </a>
+                      )}
+                    </motion.div>
+                  )}
+                  {livePreviewLoading && !livePreviewHtml && (
+                    <motion.div key="preview-loading"
+                      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      className="flex flex-col items-center justify-center h-full gap-3 text-[var(--text-muted)]">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--accent)]">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                      </svg>
+                      <p className="text-xs">Laddar mall…</p>
+                    </motion.div>
+                  )}
+                  {livePreviewHtml && (
+                    <motion.div key="preview-iframe"
+                      initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+                      className="relative w-full max-w-3xl">
+                      {livePreviewLoading && (
+                        <div className="absolute inset-0 z-10 rounded-xl flex items-center justify-center bg-slate-100/70 dark:bg-slate-900/70 backdrop-blur-sm">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--accent)]">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                          </svg>
                         </div>
-                        {productPickerRow === idx && (
-                          <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
-                            <div className="p-2 border-b border-[var(--border)]">
-                              <input autoFocus value={productSearch} onChange={(e) => setProductSearch(e.target.value)}
-                                placeholder="Sök produkt…"
-                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                      )}
+                      <iframe
+                        srcDoc={livePreviewHtml}
+                        title="Live-förhandsvisning"
+                        className="w-full rounded-xl shadow-2xl"
+                        style={{ border: 'none', minHeight: '85vh' }}
+                        sandbox="allow-same-origin"
+                        onLoad={(e) => {
+                          const iframe = e.currentTarget;
+                          const resize = () => {
+                            try {
+                              const d = iframe.contentDocument;
+                              if (d?.body) iframe.style.height = `${d.body.scrollHeight}px`;
+                            } catch { /* cross-origin */ }
+                          };
+                          resize();
+                          iframe.contentDocument?.querySelectorAll('img').forEach((img) => {
+                            img.addEventListener('load', resize);
+                          });
+                        }}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* ── Right: step panel ── */}
+              <div className="w-full lg:w-[460px] shrink-0 border-l border-[var(--border)] bg-[var(--surface)] flex flex-col overflow-hidden">
+
+                {/* ════ STEP 1: Template picker ════ */}
+                {wizardStep === 1 && (
+                  <>
+                    <div className="px-5 py-4 border-b border-[var(--border)] bg-[var(--surface-alt)] shrink-0">
+                      <h3 className="text-sm font-semibold text-[var(--text-primary)]">Välj offertmall</h3>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">Mallen styr dokumentets layout och design</p>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                      {templates.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-center gap-4 px-4">
+                          <div className="w-14 h-14 rounded-xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                              <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">Inga mallar ännu</p>
+                            <p className="text-xs text-[var(--text-muted)]">Skapa en offertmall innan du skapar en offert.</p>
+                          </div>
+                          <a href="/templates" target="_blank" rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity">
+                            Skapa mall
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>
+                            </svg>
+                          </a>
+                        </div>
+                      ) : (
+                        templates.map((t) => (
+                          <button key={t.id} type="button" onClick={() => void selectTemplate(t.id)}
+                            className={cn(
+                              'w-full text-left rounded-xl border p-4 transition-all flex items-center gap-3 group',
+                              form.templateId === t.id
+                                ? 'border-[var(--accent)] bg-[var(--accent)]/5 shadow-sm'
+                                : 'border-[var(--border)] bg-[var(--surface-alt)] hover:border-[var(--accent)]/50 hover:shadow-sm',
+                            )}>
+                            <div className={cn(
+                              'shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
+                              form.templateId === t.id
+                                ? 'bg-[var(--accent)] text-white'
+                                : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] group-hover:border-[var(--accent)]/40 group-hover:text-[var(--accent)]',
+                            )}>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                              </svg>
                             </div>
-                            <div className="max-h-40 overflow-y-auto">
-                              {filteredServices.length === 0 ? (
-                                <div className="px-3 py-2 text-xs text-[var(--text-muted)]">Inga produkter hittades</div>
-                              ) : filteredServices.map((p) => (
-                                <button key={p.id} type="button" onClick={() => pickProduct(idx, p)}
-                                  className="w-full text-left px-3 py-2 hover:bg-[var(--surface-active)] transition-colors border-b border-[var(--border)] last:border-0 text-xs">
-                                  <p className="font-medium text-[var(--text-primary)]">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
-                                  <p className="text-[var(--text-muted)]">{fmtSEK(p.unitPrice)} · moms {Math.round(p.vatRate * 100)}%</p>
+                            <div className="flex-1 min-w-0">
+                              <p className={cn('text-sm font-semibold truncate transition-colors', form.templateId === t.id ? 'text-[var(--accent)]' : 'text-[var(--text-primary)] group-hover:text-[var(--accent)]')}>{t.name}</p>
+                              <p className="text-xs text-[var(--text-muted)] mt-0.5">Klicka för att välja och förhandsgranska</p>
+                            </div>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                              className={cn('shrink-0 transition-colors', form.templateId === t.id ? 'text-[var(--accent)]' : 'text-[var(--border)] group-hover:text-[var(--accent)]/50')}>
+                              <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                    {templates.length > 0 && (
+                      <div className="shrink-0 px-5 py-3 border-t border-[var(--border)] bg-[var(--surface-alt)]">
+                        <a href="/templates" target="_blank" rel="noreferrer"
+                          className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
+                          Hantera mallar →
+                        </a>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* ════ STEP 2: Form ════ */}
+                {wizardStep === 2 && (
+                  <>
+                    <div className="shrink-0 px-5 py-3.5 border-b border-[var(--border)] bg-[var(--surface-alt)] flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-[var(--text-primary)]">Fyll i offertuppgifter</p>
+                        <p className="text-[11px] text-[var(--text-muted)] mt-0.5">Förhandsvisningen uppdateras automatiskt</p>
+                      </div>
+                      {!editingOfferId && (
+                        <button type="button" onClick={() => setWizardStep(1)}
+                          className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+                          </svg>
+                          Byt mall
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Scrollable form body */}
+                    <div className="flex-1 overflow-y-auto">
+                    <div className="p-5 space-y-5">
+
+                    {/* Error inside wizard */}
+                    {error && (
+                      <div className="rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center justify-between gap-3">
+                        <span>{error}</span>
+                        <button onClick={() => setError(null)} className="shrink-0 opacity-60 hover:opacity-100">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Contact picker */}
+                    <div>
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+                        Sök kontakt
+                        <span className="ml-1 font-normal text-[var(--text-muted)]">— fyller i mottagarfälten automatiskt</span>
+                      </label>
+                      <div className="relative">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none">
+                          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input
+                          value={form.contactId
+                            ? (contactResults.find((c) => c.id === form.contactId)?.name ?? (contactSearch || 'Kontakt vald ✓'))
+                            : contactSearch}
+                          onChange={(e) => { if (form.contactId) setForm((f) => ({ ...f, contactId: '' })); searchContacts(e.target.value); }}
+                          placeholder="Sök på namn, e-post eller företag…"
+                          className="w-full pl-9 pr-10 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                        />
+                        {(contactSearch || form.contactId) && (
+                          <button type="button" onClick={() => { setForm((f) => ({ ...f, contactId: '' })); setContactSearch(''); setContactResults([]); }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                          </button>
+                        )}
+                        {/* Dropdown */}
+                        {contactSearch && !form.contactId && (
+                          <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
+                            {contactLoading ? (
+                              <div className="flex items-center gap-2 px-4 py-3 text-sm text-[var(--text-muted)]">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin shrink-0">
+                                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                                Söker…
+                              </div>
+                            ) : contactResults.length === 0 ? (
+                              <div className="px-4 py-3 text-sm text-[var(--text-muted)]">Inga kontakter hittades</div>
+                            ) : (
+                              contactResults.map((c) => (
+                                <button key={c.id} type="button" onClick={() => pickContact(c)}
+                                  className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
+                                  <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-xs font-semibold shrink-0">
+                                    {(c.name ?? '?').charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-[var(--text-primary)] truncate">{c.name ?? '—'}</p>
+                                    <p className="text-xs text-[var(--text-muted)] truncate">{[c.email, c.company].filter(Boolean).join(' · ')}</p>
+                                  </div>
                                 </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {form.contactId && (
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                          Fält ifyllda från kontakt
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Basic info */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Rubrik *</label>
+                        <input value={form.title} onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); setFieldErrors((fe) => ({ ...fe, title: '' })); }} placeholder="t.ex. Hotellprojekt Q2 2026"
+                          className={`w-full rounded-xl border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.title ? 'border-red-400 focus:border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                        {fieldErrors.title && <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Mottagarens namn *</label>
+                        <input value={form.recipientName} onChange={(e) => { setForm((f) => ({ ...f, recipientName: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientName: '' })); }} placeholder="Anna Lindström"
+                          className={`w-full rounded-xl border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.recipientName ? 'border-red-400 focus:border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                        {fieldErrors.recipientName && <p className="text-xs text-red-500 mt-1">{fieldErrors.recipientName}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">E-postadress *</label>
+                        <input type="email" value={form.recipientEmail} onChange={(e) => { setForm((f) => ({ ...f, recipientEmail: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientEmail: '' })); }} placeholder="anna@example.com"
+                          className={`w-full rounded-xl border px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none transition-colors bg-[var(--surface-alt)] ${fieldErrors.recipientEmail ? 'border-red-400 focus:border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                        {fieldErrors.recipientEmail && <p className="text-xs text-red-500 mt-1">{fieldErrors.recipientEmail}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Företag</label>
+                        <input value={form.recipientCompany} onChange={(e) => setForm((f) => ({ ...f, recipientCompany: e.target.value }))} placeholder="Lindström AB"
+                          className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Giltighetstid *</label>
+                        <div className="flex gap-1.5 flex-wrap">
+                          {VALIDITY_OPTIONS.map(({ days, label }) => (
+                            <button
+                              key={days}
+                              type="button"
+                              onClick={() => setForm((f) => ({ ...f, validityDays: days }))}
+                              className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                                form.validityDays === days
+                                  ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
+                                  : 'border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="mt-1.5 text-[11px] text-[var(--text-muted)]">Räknas från skickad-datum</p>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Anteckningar</label>
+                        <textarea value={form.notes} rows={2} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Eventuella villkor eller kommentarer…"
+                          className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"/>
+                      </div>
+                    </div>
+
+                    {/* Line items */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Rader</p>
+                          {fieldErrors.lineItems && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.lineItems}</p>}
+                        </div>
+                        <button onClick={addLine} className="text-xs text-[var(--accent)] font-medium hover:opacity-80 transition-opacity flex items-center gap-1">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                          Lägg till rad
+                        </button>
+                      </div>
+                      {services.length > 0 && (
+                        <p className="text-[10px] text-[var(--text-muted)] mb-2">
+                          Tips: Klicka på väskikonen i beskrivningsfältet för att välja från produktbiblioteket.
+                        </p>
+                      )}
+
+                      <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+                        <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-[var(--surface-alt)] text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                          <span className="col-span-4">Beskrivning</span>
+                          <span className="col-span-2 text-right">Antal</span>
+                          <span className="col-span-2 text-right">Á-pris (SEK)</span>
+                          <span className="col-span-1 text-right">Moms %</span>
+                          <span className="col-span-1 text-right">Rabatt %</span>
+                          <span className="col-span-1 text-right">Summa</span>
+                          <span className="col-span-1"/>
+                        </div>
+                        {form.lineItems.map((item, idx) => {
+                          const disc = 1 - (item.discount / 100);
+                          const lineExVat = item.quantity * item.unitPrice * disc;
+                          return (
+                            <div key={idx} className="grid grid-cols-12 gap-2 px-3 py-2 border-t border-[var(--border)] items-center">
+                              <div className="col-span-4 relative">
+                                <div className="flex gap-1">
+                                  <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} placeholder="Tjänst eller produkt"
+                                    className="flex-1 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                  {services.length > 0 && (
+                                    <button type="button" onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }}
+                                      title="Välj från produktbibliotek"
+                                      className="shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1.5 text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
+                                {productPickerRow === idx && (
+                                  <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
+                                    <div className="p-2 border-b border-[var(--border)]">
+                                      <input autoFocus value={productSearch} onChange={(e) => setProductSearch(e.target.value)}
+                                        placeholder="Sök produkt…"
+                                        className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                    </div>
+                                    <div className="max-h-40 overflow-y-auto">
+                                      {filteredServices.length === 0 ? (
+                                        <div className="px-3 py-2 text-xs text-[var(--text-muted)]">Inga produkter hittades</div>
+                                      ) : filteredServices.map((p) => (
+                                        <button key={p.id} type="button" onClick={() => pickProduct(idx, p)}
+                                          className="w-full text-left px-3 py-2 hover:bg-[var(--surface-active)] transition-colors border-b border-[var(--border)] last:border-0 text-xs">
+                                          <p className="font-medium text-[var(--text-primary)]">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
+                                          <p className="text-[var(--text-muted)]">{fmtSEK(p.unitPrice)} · moms {Math.round(p.vatRate * 100)}%</p>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="col-span-2">
+                                <input type="number" min={0} step={0.1} value={item.quantity} onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                              </div>
+                              <div className="col-span-2">
+                                <input type="number" min={0} value={item.unitPrice} onChange={(e) => updateLine(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                              </div>
+                              <div className="col-span-1">
+                                <select value={item.vatRate} onChange={(e) => updateLine(idx, 'vatRate', parseFloat(e.target.value))}
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-1.5 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
+                                  <option value={0}>0%</option><option value={0.06}>6%</option>
+                                  <option value={0.12}>12%</option><option value={0.25}>25%</option>
+                                </select>
+                              </div>
+                              <div className="col-span-1">
+                                <input type="number" min={0} max={100} value={item.discount} onChange={(e) => updateLine(idx, 'discount', parseFloat(e.target.value) || 0)}
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                              </div>
+                              <div className="col-span-1 text-right text-xs font-medium text-[var(--text-primary)]">{fmtSEK(lineExVat)}</div>
+                              <div className="col-span-1 flex justify-end">
+                                {form.lineItems.length > 1 && (
+                                  <button onClick={() => removeLine(idx)} className="text-[var(--text-muted)] hover:text-red-500 transition-colors">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Totals */}
+                      <div className="mt-4 flex justify-end">
+                        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-5 py-4 space-y-2 text-sm min-w-[240px]">
+                          <div className="flex justify-between gap-8 text-[var(--text-secondary)]">
+                            <span>Summa ex. moms</span><span className="font-medium tabular-nums">{fmtSEK(tots.exVat)}</span>
+                          </div>
+                          <div className="flex justify-between gap-8 text-[var(--text-muted)] text-xs">
+                            <span>Moms</span><span className="tabular-nums">{fmtSEK(tots.vat)}</span>
+                          </div>
+                          <div className="flex justify-between gap-8 text-[var(--text-primary)] font-semibold border-t border-[var(--border)] pt-2.5 mt-1">
+                            <span>Totalt inkl. moms</span><span className="tabular-nums">{fmtSEK(tots.incVat)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ── Tjänst- & produktbibliotek (collapsible) ── */}
+                    <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+                      <button type="button" onClick={() => setShowServiceLibrary((v) => !v)}
+                        className="w-full flex items-center justify-between px-4 py-3 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors bg-[var(--surface-alt)]">
+                        <span className="flex items-center gap-2">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                          </svg>
+                          Hantera tjänst- &amp; produktbibliotek{services.length > 0 ? ` (${services.length})` : ''}
+                        </span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                          className={`transition-transform ${showServiceLibrary ? 'rotate-180' : ''}`}>
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </button>
+                      {showServiceLibrary && (
+                        <div className="p-4 space-y-4 border-t border-[var(--border)]">
+                          {/* Add new service form */}
+                          <div>
+                            <p className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Lägg till tjänst</p>
+                            <div className="grid gap-2 grid-cols-2">
+                              <div className="col-span-2">
+                                <input value={serviceForm.name} onChange={(e) => setServiceForm((f) => ({ ...f, name: e.target.value }))}
+                                  placeholder="Tjänst- / produktnamn *"
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                              </div>
+                              <div>
+                                <input type="number" min={0} value={serviceForm.unitPrice} onChange={(e) => setServiceForm((f) => ({ ...f, unitPrice: parseFloat(e.target.value) || 0 }))}
+                                  placeholder="Á-pris (SEK)"
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                              </div>
+                              <div>
+                                <select value={serviceForm.vatRate} onChange={(e) => setServiceForm((f) => ({ ...f, vatRate: parseFloat(e.target.value) }))}
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
+                                  <option value={0}>0% moms</option><option value={0.06}>6% moms</option>
+                                  <option value={0.12}>12% moms</option><option value={0.25}>25% moms</option>
+                                </select>
+                              </div>
+                              <div>
+                                <input value={serviceForm.unit} onChange={(e) => setServiceForm((f) => ({ ...f, unit: e.target.value }))}
+                                  placeholder="Enhet (tim, st…)"
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                              </div>
+                              <div>
+                                <button onClick={() => void saveService()} disabled={!serviceForm.name.trim() || savingService}
+                                  className="w-full rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
+                                  {savingService ? '…' : 'Spara'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Existing services list */}
+                          {services.length > 0 && (
+                            <div className="rounded-lg border border-[var(--border)] overflow-hidden">
+                              {services.map((p, i) => (
+                                <div key={p.id} className={cn('flex items-center gap-3 px-3 py-2.5 text-sm', i > 0 && 'border-t border-[var(--border)]')}>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium text-[var(--text-primary)] truncate">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
+                                  </div>
+                                  <p className="text-xs font-semibold text-[var(--text-primary)] shrink-0">{fmtSEK(p.unitPrice)}</p>
+                                  <p className="text-[10px] text-[var(--text-muted)] shrink-0">{Math.round(p.vatRate * 100)}% moms</p>
+                                  <button onClick={() => void removeService(p.id)} className="text-[var(--text-muted)] hover:text-red-500 transition-colors shrink-0">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                                    </svg>
+                                  </button>
+                                </div>
                               ))}
                             </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="col-span-2">
-                        <input type="number" min={0} step={0.1} value={item.quantity} onChange={(e) => updateLine(idx, 'quantity', parseFloat(e.target.value) || 0)}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                      </div>
-                      <div className="col-span-2">
-                        <input type="number" min={0} value={item.unitPrice} onChange={(e) => updateLine(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                      </div>
-                      <div className="col-span-1">
-                        <select value={item.vatRate} onChange={(e) => updateLine(idx, 'vatRate', parseFloat(e.target.value))}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-1.5 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
-                          <option value={0}>0%</option><option value={0.06}>6%</option>
-                          <option value={0.12}>12%</option><option value={0.25}>25%</option>
-                        </select>
-                      </div>
-                      <div className="col-span-1">
-                        <input type="number" min={0} max={100} value={item.discount} onChange={(e) => updateLine(idx, 'discount', parseFloat(e.target.value) || 0)}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                      </div>
-                      <div className="col-span-1 text-right text-xs font-medium text-[var(--text-primary)]">{fmtSEK(lineExVat)}</div>
-                      <div className="col-span-1 flex justify-end">
-                        {form.lineItems.length > 1 && (
-                          <button onClick={() => removeLine(idx)} className="text-[var(--text-muted)] hover:text-red-500 transition-colors">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Totals */}
-              <div className="mt-4 flex justify-end">
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-5 py-4 space-y-2 text-sm min-w-[240px]">
-                  <div className="flex justify-between gap-8 text-[var(--text-secondary)]">
-                    <span>Summa ex. moms</span><span className="font-medium tabular-nums">{fmtSEK(tots.exVat)}</span>
-                  </div>
-                  <div className="flex justify-between gap-8 text-[var(--text-muted)] text-xs">
-                    <span>Moms</span><span className="tabular-nums">{fmtSEK(tots.vat)}</span>
-                  </div>
-                  <div className="flex justify-between gap-8 text-[var(--text-primary)] font-semibold border-t border-[var(--border)] pt-2.5 mt-1">
-                    <span>Totalt inkl. moms</span><span className="tabular-nums">{fmtSEK(tots.incVat)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Tjänst- & produktbibliotek (collapsible) ── */}
-            <div className="rounded-xl border border-[var(--border)] overflow-hidden">
-              <button type="button" onClick={() => setShowServiceLibrary((v) => !v)}
-                className="w-full flex items-center justify-between px-4 py-3 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors bg-[var(--surface-alt)]">
-                <span className="flex items-center gap-2">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
-                  </svg>
-                  Hantera tjänst- &amp; produktbibliotek{services.length > 0 ? ` (${services.length})` : ''}
-                </span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  className={`transition-transform ${showServiceLibrary ? 'rotate-180' : ''}`}>
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </button>
-              {showServiceLibrary && (
-                <div className="p-4 space-y-4 border-t border-[var(--border)]">
-                  {/* Add new service form */}
-                  <div>
-                    <p className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Lägg till tjänst</p>
-                    <div className="grid gap-2 grid-cols-2">
-                      <div className="col-span-2">
-                        <input value={serviceForm.name} onChange={(e) => setServiceForm((f) => ({ ...f, name: e.target.value }))}
-                          placeholder="Tjänst- / produktnamn *"
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                      </div>
-                      <div>
-                        <input type="number" min={0} value={serviceForm.unitPrice} onChange={(e) => setServiceForm((f) => ({ ...f, unitPrice: parseFloat(e.target.value) || 0 }))}
-                          placeholder="Á-pris (SEK)"
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                      </div>
-                      <div>
-                        <select value={serviceForm.vatRate} onChange={(e) => setServiceForm((f) => ({ ...f, vatRate: parseFloat(e.target.value) }))}
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
-                          <option value={0}>0% moms</option><option value={0.06}>6% moms</option>
-                          <option value={0.12}>12% moms</option><option value={0.25}>25% moms</option>
-                        </select>
-                      </div>
-                      <div>
-                        <input value={serviceForm.unit} onChange={(e) => setServiceForm((f) => ({ ...f, unit: e.target.value }))}
-                          placeholder="Enhet (tim, st…)"
-                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-                      </div>
-                      <div>
-                        <button onClick={() => void saveService()} disabled={!serviceForm.name.trim() || savingService}
-                          className="w-full rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
-                          {savingService ? '…' : 'Spara'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  {/* Existing services list */}
-                  {services.length > 0 && (
-                    <div className="rounded-lg border border-[var(--border)] overflow-hidden">
-                      {services.map((p, i) => (
-                        <div key={p.id} className={cn('flex items-center gap-3 px-3 py-2.5 text-sm', i > 0 && 'border-t border-[var(--border)]')}>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-[var(--text-primary)] truncate">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
-                          </div>
-                          <p className="text-xs font-semibold text-[var(--text-primary)] shrink-0">{fmtSEK(p.unitPrice)}</p>
-                          <p className="text-[10px] text-[var(--text-muted)] shrink-0">{Math.round(p.vatRate * 100)}% moms</p>
-                          <button onClick={() => void removeService(p.id)} className="text-[var(--text-muted)] hover:text-red-500 transition-colors shrink-0">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
-                            </svg>
-                          </button>
+                          )}
+                          {services.length === 0 && (
+                            <p className="text-xs text-[var(--text-muted)]">Inga tjänster ännu. Lägg till en tjänst ovan.</p>
+                          )}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
-                  {services.length === 0 && (
-                    <p className="text-xs text-[var(--text-muted)]">Inga tjänster ännu. Lägg till en tjänst ovan.</p>
-                  )}
-                </div>
-              )}
-            </div>
 
-            </div>
-            </div>
+                    </div>
+                    </div>
 
-            {/* Sticky footer */}
-            <div className="shrink-0 px-6 py-4 border-t border-[var(--border)] bg-[var(--surface-alt)] flex items-center gap-2">
-              <button onClick={() => { saveAndSendRef.current = true; void createOffer(); }} disabled={saving}
-                className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2">
-                {saving && saveAndSendRef.current ? (
-                  <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Sparar…</>
-                ) : (
-                  <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>{editingOfferId ? 'Uppdatera & skicka' : 'Spara & skicka'}</>
+                    {/* Sticky footer */}
+                    <div className="shrink-0 px-5 py-3 border-t border-[var(--border)] bg-[var(--surface-alt)] flex items-center gap-2">
+                      <button onClick={() => { saveAndSendRef.current = true; void createOffer(); }} disabled={saving}
+                        className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2">
+                        {saving && saveAndSendRef.current ? (
+                          <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Sparar…</>
+                        ) : (
+                          <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>{editingOfferId ? 'Uppdatera & skicka' : 'Spara & skicka'}</>
+                        )}
+                      </button>
+                      <button onClick={() => void createOffer()} disabled={saving}
+                        className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] disabled:opacity-50 transition-colors">
+                        {saving && !saveAndSendRef.current ? 'Sparar…' : (editingOfferId ? 'Spara ändringar' : 'Spara som utkast')}
+                      </button>
+                      <button onClick={closeWizard}
+                        className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors">
+                        Avbryt
+                      </button>
+                    </div>
+
+                  </>
                 )}
-              </button>
-              <button onClick={() => void createOffer()} disabled={saving}
-                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] disabled:opacity-50 transition-colors">
-                {saving && !saveAndSendRef.current ? 'Sparar…' : (editingOfferId ? 'Spara ändringar' : 'Spara som utkast')}
-              </button>
-              <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null); setError(null); setFieldErrors({}); setContactSearch(''); setContactResults([]); }}
-                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors">
-                Avbryt
-              </button>
+
+              </div>
             </div>
           </motion.div>
         </>
