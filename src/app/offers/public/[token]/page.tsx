@@ -548,7 +548,7 @@ export default function PublicOfferPage() {
 
       {/* ─── Content ─── */}
       <main className="pb-16 bg-slate-50 min-h-screen">
-        <div className="mx-auto max-w-3xl px-0 sm:px-6 sm:pt-8 overflow-x-hidden">
+        <div className="mx-auto max-w-4xl px-0 sm:px-6 sm:pt-8 overflow-x-hidden">
 
         {/* Document */}
         {offer.generatedDocument && (
