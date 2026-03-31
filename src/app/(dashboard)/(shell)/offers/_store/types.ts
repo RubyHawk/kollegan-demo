@@ -34,6 +34,7 @@ export interface Offer {
   reminderSentAt?:      string;
   reminderCount:        number;
   leadId?:              string;
+  companyId?:           string;
   templateId?:          string;
   publicToken:          string;
   publicTokenExpiresAt?: string;
@@ -76,6 +77,7 @@ export interface BulkResult { sent: number; failed: number }
 export interface OfferForm {
   templateId:       string;
   contactId:        string;
+  companyId:        string;
   title:            string;
   recipientName:    string;
   recipientEmail:   string;
@@ -96,7 +98,7 @@ export interface ServiceForm {
 export const EMPTY_LINE: LineItem = { description: '', quantity: 1, unitPrice: 0, vatRate: 0.25, discount: 0 };
 
 export const EMPTY_FORM: OfferForm = {
-  templateId: '', contactId: '', title: '', recipientName: '',
+  templateId: '', contactId: '', companyId: '', title: '', recipientName: '',
   recipientEmail: '', recipientCompany: '', notes: '',
   validityDays: 30, lineItems: [{ ...EMPTY_LINE }],
 };

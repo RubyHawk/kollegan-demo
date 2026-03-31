@@ -268,6 +268,7 @@ export default function OffersPage() {
     setForm({
       templateId:       offer.templateId ?? '',
       contactId:        '',
+      companyId:        offer.companyId ?? '',
       title:            offer.title,
       recipientName:    offer.recipientName,
       recipientEmail:   offer.recipientEmail,
@@ -353,6 +354,7 @@ export default function OffersPage() {
       };
       if (form.templateId)    body.templateId   = form.templateId;
       if (form.contactId)     body.customerId   = form.contactId;
+      if (form.companyId)     body.companyId    = form.companyId;
 
       const isEdit = Boolean(editingOfferId);
       const res = isEdit
@@ -1068,7 +1070,7 @@ export default function OffersPage() {
                         <div className="relative">
                           <input
                             value={form.recipientCompany}
-                            onChange={(e) => { setForm((f) => ({ ...f, recipientCompany: e.target.value })); searchCompanies(e.target.value); }}
+                            onChange={(e) => { setForm((f) => ({ ...f, recipientCompany: e.target.value, companyId: '' })); searchCompanies(e.target.value); }}
                             onFocus={() => { if (form.recipientCompany) searchCompanies(form.recipientCompany); }}
                             onBlur={() => setTimeout(() => setCompanyResults([]), 150)}
                             placeholder="Företag (valfri)"
@@ -1083,7 +1085,7 @@ export default function OffersPage() {
                                 </div>
                               ) : companyResults.map((co) => (
                                 <button key={co.id} type="button"
-                                  onMouseDown={(e) => { e.preventDefault(); setForm((f) => ({ ...f, recipientCompany: co.name })); setCompanyResults([]); }}
+                                  onMouseDown={(e) => { e.preventDefault(); setForm((f) => ({ ...f, recipientCompany: co.name, companyId: co.id })); setCompanyResults([]); }}
                                   className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
                                   <div className="w-6 h-6 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-[10px] font-semibold shrink-0">
                                     {co.name.charAt(0).toUpperCase()}
@@ -1256,7 +1258,7 @@ export default function OffersPage() {
                                     <input
                                       value={form.recipientCompany}
                                       onChange={(e) => {
-                                        setForm((f) => ({ ...f, recipientCompany: e.target.value }));
+                                        setForm((f) => ({ ...f, recipientCompany: e.target.value, companyId: '' }));
                                         searchCompanies(e.target.value);
                                       }}
                                       onFocus={() => { setActiveField('Mottagare'); if (form.recipientCompany) searchCompanies(form.recipientCompany); }}
@@ -1275,7 +1277,7 @@ export default function OffersPage() {
                                           </div>
                                         ) : companyResults.map((co) => (
                                           <button key={co.id} type="button"
-                                            onMouseDown={(e) => { e.preventDefault(); setForm((f) => ({ ...f, recipientCompany: co.name })); setCompanyResults([]); }}
+                                            onMouseDown={(e) => { e.preventDefault(); setForm((f) => ({ ...f, recipientCompany: co.name, companyId: co.id })); setCompanyResults([]); }}
                                             className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
                                             <div className="w-6 h-6 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-[10px] font-semibold shrink-0">
                                               {co.name.charAt(0).toUpperCase()}

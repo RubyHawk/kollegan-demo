@@ -110,6 +110,7 @@ const CreateBodySchema = z.object({
   }),
   leadId: z.string().optional(),
   customerId: z.string().optional(),
+  companyId: z.string().optional(),
   templateId: z.string().optional(),
   emailSubject: z.string().max(500).regex(/^[^\r\n]*$/, 'Subject must not contain newlines').optional(),
   emailBody: z.string().max(50_000).optional(),
@@ -130,7 +131,7 @@ export const handleCreateOffer = createHandler(
       title: body.title, recipientName: body.recipientName,
       recipientEmail: body.recipientEmail, recipientCompany: body.recipientCompany,
       notes: body.notes, validUntil: placeholderValidUntil, validityDays: body.validityDays,
-      leadId: body.leadId, customerId: body.customerId,
+      leadId: body.leadId, customerId: body.customerId, companyId: body.companyId,
       templateId: body.templateId,
       emailSubject: body.emailSubject, emailBody: body.emailBody, emailHeaderConfig: body.emailHeaderConfig,
       lineItems: body.lineItems,
@@ -165,6 +166,7 @@ const PatchBodySchema = z.object({
   validityDays: z.number().int().refine((v) => (VALID_VALIDITY_DAYS as readonly number[]).includes(v), {
     message: `validityDays must be one of: ${VALID_VALIDITY_DAYS.join(', ')}`,
   }).optional(),
+  companyId: z.string().optional(),
   emailSubject: z.string().max(500).regex(/^[^\r\n]*$/, 'Subject must not contain newlines').optional(),
   emailBody: z.string().max(50_000).optional(),
   emailHeaderConfig: z.string().max(5_000).optional(),
@@ -206,6 +208,7 @@ export const handleUpdateOffer = createHandler(
         title: body.title, recipientName: body.recipientName,
         recipientEmail: body.recipientEmail, recipientCompany: body.recipientCompany,
         notes: body.notes, validUntil: newValidUntil, validityDays: body.validityDays,
+        companyId: body.companyId,
         emailSubject: body.emailSubject, emailBody: body.emailBody, emailHeaderConfig: body.emailHeaderConfig,
         lineItems: body.lineItems,
       });
