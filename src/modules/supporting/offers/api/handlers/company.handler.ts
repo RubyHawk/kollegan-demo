@@ -1,0 +1,124 @@
+/**
+ * Company API handlers — selling entity / brand management.
+ */
+
+import { z } from 'zod';
+import { NextRequest } from 'next/server';
+import { createHandler } from '@platform/api/handler';
+import { ok, created } from '@platform/api/response';
+import { Errors } from '@platform/api/errors';
+import { verifyToken } from '@platform/auth/jwt';
+import { companiesRepository } from '../../infrastructure/companies.repository';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function extractToken(req: NextRequest): string {
+  return req.headers.get('authorization')?.slice(7) ?? req.cookies.get('at')?.value ?? '';
+}
+
+function extractId(req: NextRequest): string {
+  return req.nextUrl.pathname.split('/').at(-1) ?? '';
+}
+
+async function requireStaff(req: NextRequest) {
+  const payload = await verifyToken(extractToken(req));
+  if (!payload.orgId) throw Errors.forbidden('No organization context');
+  return payload;
+}
+
+// ── List Companies ─────────────────────────────────────────────────────────────
+
+const ListQuerySchema = z.object({
+  search: z.string().max(100).optional(),
+});
+
+export const handleListCompanies = createHandler(
+  { auth: 'jwt', tag: 'Companies:List', query: ListQuerySchema, rateLimit: { max: 120, windowMs: 60_000 } },
+  async (ctx) => {
+    const { query, req } = ctx as { query: z.infer<typeof ListQuerySchema>; req: NextRequest };
+    const payload = await requireStaff(req);
+    const companies = await companiesRepository.list(payload.orgId!, query.search);
+    return ok({ companies });
+  },
+);
+
+// ── Get Company ───────────────────────────────────────────────────────────────
+
+export const handleGetCompany = createHandler(
+  { auth: 'jwt', tag: 'Companies:Get', rateLimit: { max: 120, windowMs: 60_000 } },
+  async (ctx) => {
+    const { req } = ctx as { req: NextRequest };
+    const id = extractId(req);
+    const payload = await requireStaff(req);
+    const company = await companiesRepository.getById(id, payload.orgId!);
+    if (!company) throw Errors.notFound('Company not found');
+    return ok(company);
+  },
+);
+
+// ── Create Company ─────────────────────────────────────────────────────────────
+
+const CreateBodySchema = z.object({
+  name:      z.string().min(1).max(300),
+  orgNumber: z.string().max(20).optional(),
+  website:   z.string().url().max(500).optional(),
+  logoUrl:   z.string().url().max(2000).optional(),
+  industry:  z.string().max(100).optional(),
+  notes:     z.string().max(2000).optional(),
+});
+
+export const handleCreateCompany = createHandler(
+  { auth: 'jwt', tag: 'Companies:Create', body: CreateBodySchema, rateLimit: { max: 60, windowMs: 60_000 } },
+  async (ctx) => {
+    const { body, req } = ctx as { body: z.infer<typeof CreateBodySchema>; req: NextRequest };
+    const payload = await requireStaff(req);
+    const company = await companiesRepository.create({
+      organizationId: payload.orgId!,
+      name:      body.name,
+      orgNumber: body.orgNumber,
+      website:   body.website,
+      logoUrl:   body.logoUrl,
+      industry:  body.industry,
+      notes:     body.notes,
+      createdBy: payload.sub,
+    });
+    return created(company, `/api/companies/${company.id}`);
+  },
+);
+
+// ── Update Company ─────────────────────────────────────────────────────────────
+
+const UpdateBodySchema = z.object({
+  name:      z.string().min(1).max(300).optional(),
+  orgNumber: z.string().max(20).optional(),
+  website:   z.string().url().max(500).optional().nullable(),
+  logoUrl:   z.string().url().max(2000).optional().nullable(),
+  industry:  z.string().max(100).optional(),
+  notes:     z.string().max(2000).optional(),
+});
+
+export const handleUpdateCompany = createHandler(
+  { auth: 'jwt', tag: 'Companies:Update', body: UpdateBodySchema, rateLimit: { max: 60, windowMs: 60_000 } },
+  async (ctx) => {
+    const { body, req } = ctx as { body: z.infer<typeof UpdateBodySchema>; req: NextRequest };
+    const id = extractId(req);
+    const payload = await requireStaff(req);
+    const updated = await companiesRepository.update(id, payload.orgId!, body);
+    if (!updated) throw Errors.notFound('Company not found');
+    return ok(updated);
+  },
+);
+
+// ── Delete Company ─────────────────────────────────────────────────────────────
+
+export const handleDeleteCompany = createHandler(
+  { auth: 'jwt', tag: 'Companies:Delete', rateLimit: { max: 30, windowMs: 60_000 } },
+  async (ctx) => {
+    const { req } = ctx as { req: NextRequest };
+    const id = extractId(req);
+    const payload = await requireStaff(req);
+    const deleted = await companiesRepository.delete(id, payload.orgId!);
+    if (!deleted) throw Errors.notFound('Company not found');
+    return ok(null);
+  },
+);

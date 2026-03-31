@@ -51,6 +51,7 @@ import {
   ReceiptIcon,
   CalendarIcon,
   NoteIcon,
+  PackageIcon,
 } from '@shared/ui/icons';
 import { SPRING_SNAPPY, SPRING_STANDARD, EASE_SPRING } from '@shared/lib/motion';
 import { cn } from '@shared/lib/utils';
@@ -127,12 +128,27 @@ const NAV_CONFIG: NavSection[] = [
           { href: '/crm/contacts', label: 'Contacts' },
         ],
       },
-      { type: 'link', href: '/messages',      label: 'Messages',      icon: MessageSquareIcon },
-      { type: 'link', href: '/offers',         label: 'Offers',        icon: ReceiptIcon },
-      { type: 'link', href: '/templates',      label: 'Templates',     icon: FileTextIcon },
+      { type: 'link', href: '/messages',        label: 'Messages',      icon: MessageSquareIcon },
       { type: 'link', href: '/announcements',  label: 'Announcements', icon: NoteIcon },
       { type: 'link', href: '/meetings',       label: 'Meetings',      icon: CalendarIcon },
       { type: 'link', href: '/admin/compliance', label: 'ISO 27001',   icon: ShieldIcon },
+    ],
+  },
+  {
+    section: 'Quoting',
+    items: [
+      {
+        type: 'dropdown',
+        key: 'offers',
+        label: 'Offerter',
+        icon: ReceiptIcon,
+        items: [
+          { href: '/offers',     label: 'Alla offerter' },
+          { href: '/offers/new', label: 'Ny offert' },
+        ],
+      },
+      { type: 'link', href: '/templates', label: 'Mallar',    icon: FileTextIcon },
+      { type: 'link', href: '/products',  label: 'Produkter', icon: PackageIcon },
     ],
   },
   {

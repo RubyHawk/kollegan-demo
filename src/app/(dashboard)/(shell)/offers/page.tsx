@@ -94,12 +94,12 @@ const STATUS_TABS: { id: OfferStatus | 'all'; label: string }[] = [
 ];
 
 const STATUS_STYLES: Record<OfferStatus, string> = {
-  draft:    'bg-[var(--surface-alt)] text-[var(--text-muted)] border border-[var(--border)]',
-  sent:     'bg-blue-50 dark:bg-blue-900/25 text-blue-700 dark:text-blue-400',
-  viewed:   'bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-400',
-  accepted: 'bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-400',
-  declined: 'bg-red-50 dark:bg-red-900/25 text-red-600 dark:text-red-400',
-  expired:  'bg-amber-50 dark:bg-amber-900/25 text-amber-700 dark:text-amber-400',
+  draft:    'bg-[var(--status-draft-bg)] text-[var(--status-draft-text)] border border-[var(--status-draft-border)]',
+  sent:     'bg-[var(--status-sent-bg)] text-[var(--status-sent-text)]',
+  viewed:   'bg-[var(--status-viewed-bg)] text-[var(--status-viewed-text)]',
+  accepted: 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted-text)]',
+  declined: 'bg-[var(--status-declined-bg)] text-[var(--status-declined-text)]',
+  expired:  'bg-[var(--status-expired-bg)] text-[var(--status-expired-text)]',
 };
 
 const STATUS_LABEL: Record<OfferStatus, string> = {

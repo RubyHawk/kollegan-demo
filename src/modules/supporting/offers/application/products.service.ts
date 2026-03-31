@@ -10,8 +10,17 @@ export type { CreateProductInput, UpdateProductInput };
 
 const TAG = 'ProductsService';
 
-export async function listProducts(orgId: string, search?: string): Promise<OfferProduct[]> {
-  return productsRepository.list(orgId, search);
+export async function listProducts(
+  orgId: string,
+  search?: string,
+  category?: string,
+  isActive?: boolean,
+): Promise<OfferProduct[]> {
+  return productsRepository.list(orgId, search, category, isActive);
+}
+
+export async function listProductCategories(orgId: string): Promise<string[]> {
+  return productsRepository.listCategories(orgId);
 }
 
 export async function createProduct(

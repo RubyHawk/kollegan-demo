@@ -42,4 +42,19 @@
   /* Icon semantic colors */
   --icon-muted: var(--text-muted);
   --icon-accent: var(--accent);
+
+  /* Offer status badge colors */
+  --status-draft-bg:      var(--surface-alt);
+  --status-draft-text:    var(--text-muted);
+  --status-draft-border:  var(--border);
+  --status-sent-bg:       oklch(0.97 0.02 250);
+  --status-sent-text:     oklch(0.38 0.15 250);
+  --status-viewed-bg:     oklch(0.97 0.04 300);
+  --status-viewed-text:   oklch(0.40 0.15 300);
+  --status-accepted-bg:   oklch(0.97 0.04 145);
+  --status-accepted-text: oklch(0.38 0.15 145);
+  --status-declined-bg:   oklch(0.97 0.04 25);
+  --status-declined-text: oklch(0.40 0.15 25);
+  --status-expired-bg:    oklch(0.97 0.04 70);
+  --status-expired-text:  oklch(0.42 0.15 70);
 }
