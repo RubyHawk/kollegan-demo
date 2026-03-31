@@ -21,12 +21,13 @@ interface ProductForm {
   unit:        string;
   sku:         string;
   category:    string;
+  imageUrl:    string;
   isActive:    boolean;
 }
 
 const EMPTY_FORM: ProductForm = {
   name: '', description: '', unitPrice: '', vatRate: '0.25',
-  unit: '', sku: '', category: '', isActive: true,
+  unit: '', sku: '', category: '', imageUrl: '', isActive: true,
 };
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -164,6 +165,7 @@ function ProductModal({
         unit:        product.unit ?? '',
         sku:         product.sku ?? '',
         category:    product.category ?? '',
+        imageUrl:    product.imageUrl ?? '',
         isActive:    product.isActive,
       } : EMPTY_FORM);
     }
@@ -248,6 +250,23 @@ function ProductModal({
               placeholder="Kort beskrivning av produkten eller tjänsten…"
               className={cn(inputCls, 'resize-none')}
             />
+          </div>
+
+          <div>
+            <label className={labelCls}>Bild-URL (valfri)</label>
+            <div className="flex items-center gap-2">
+              {form.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={form.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 border border-[var(--border)]" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+              )}
+              <input
+                type="url"
+                value={form.imageUrl}
+                onChange={set('imageUrl')}
+                placeholder="https://example.com/bild.png"
+                className={inputCls}
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -369,6 +388,7 @@ export default function ProductsPage() {
         unit:        form.unit.trim() || undefined,
         sku:         form.sku.trim() || undefined,
         category:    form.category.trim() || undefined,
+        imageUrl:    form.imageUrl.trim() || undefined,
         isActive:    form.isActive,
       };
 

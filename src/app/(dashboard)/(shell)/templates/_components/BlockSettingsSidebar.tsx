@@ -518,11 +518,11 @@ function DocumentSettings({ hf }: { hf: HFCtxValue }) {
 
 function PlaceholderReference() {
   return (
-    <PanelWrap title="Inget markerat">
-      <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-        Klicka på ett block i dokumentet för att se dess inställningar här.
+    <div className="px-4 py-2 border-b border-[var(--border)]">
+      <p className="text-xs text-[var(--text-muted)] leading-tight">
+        Inget markerat · Klicka på ett block för inställningar
       </p>
-    </PanelWrap>
+    </div>
   );
 }
 
