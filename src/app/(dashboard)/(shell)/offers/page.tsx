@@ -594,10 +594,9 @@ export default function OffersPage() {
     if (livePreviewTimer.current) clearTimeout(livePreviewTimer.current);
   }, []);
 
-  /** Fetch a template's full content, set it selected, load initial preview, advance to step 2. */
+  /** Fetch a template's full content, set it selected, load initial preview (stays on step 1). */
   const selectTemplate = useCallback(async (tplId: string) => {
     setForm((f) => ({ ...f, templateId: tplId }));
-    setWizardStep(2);
     setLivePreviewLoading(true);
     setLivePreviewHtml(null);
     setCachedTplContent(null);
@@ -902,13 +901,14 @@ export default function OffersPage() {
               {/* ── Right: step panel ── */}
               <div className="w-full lg:w-[460px] shrink-0 border-l border-[var(--border)] bg-[var(--surface)] flex flex-col overflow-hidden">
 
-                {/* ════ STEP 1: Template picker ════ */}
+                {/* ════ STEP 1: Template + Recipient ════ */}
                 {wizardStep === 1 && (
                   <>
+                    {/* Header */}
                     <div className="px-5 py-3.5 border-b border-[var(--border)] bg-[var(--surface-alt)] shrink-0 flex items-center gap-3">
                       <div className="flex-1">
-                        <h3 className="text-sm font-semibold text-[var(--text-primary)]">Välj offertmall</h3>
-                        <p className="text-xs text-[var(--text-muted)] mt-0.5">Mallen styr dokumentets layout och design</p>
+                        <h3 className="text-sm font-semibold text-[var(--text-primary)]">Ny offert</h3>
+                        <p className="text-xs text-[var(--text-muted)] mt-0.5">Välj mall och mottagare</p>
                       </div>
                       <button onClick={closeWizard} title="Stäng"
                         className="lg:hidden shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-active)] transition-colors">
@@ -917,9 +917,12 @@ export default function OffersPage() {
                         </svg>
                       </button>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+
+                    {/* Template list — scrollable */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] px-1 mb-3">Mall</p>
                       {templates.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-center gap-4 px-4">
+                        <div className="flex flex-col items-center justify-center py-12 text-center gap-4 px-4">
                           <div className="w-14 h-14 rounded-xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
                               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -942,18 +945,18 @@ export default function OffersPage() {
                         templates.map((t) => (
                           <button key={t.id} type="button" onClick={() => void selectTemplate(t.id)}
                             className={cn(
-                              'w-full text-left rounded-xl border p-4 transition-all flex items-center gap-3 group',
+                              'w-full text-left rounded-xl border p-3.5 transition-all flex items-center gap-3 group',
                               form.templateId === t.id
                                 ? 'border-[var(--accent)] bg-[var(--accent)]/5 shadow-sm'
                                 : 'border-[var(--border)] bg-[var(--surface-alt)] hover:border-[var(--accent)]/50 hover:shadow-sm',
                             )}>
                             <div className={cn(
-                              'shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
+                              'shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-colors',
                               form.templateId === t.id
                                 ? 'bg-[var(--accent)] text-white'
                                 : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] group-hover:border-[var(--accent)]/40 group-hover:text-[var(--accent)]',
                             )}>
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                                 <polyline points="14 2 14 8 20 8"/>
                                 <line x1="16" y1="13" x2="8" y2="13"/>
@@ -962,24 +965,105 @@ export default function OffersPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className={cn('text-sm font-semibold truncate transition-colors', form.templateId === t.id ? 'text-[var(--accent)]' : 'text-[var(--text-primary)] group-hover:text-[var(--accent)]')}>{t.name}</p>
-                              <p className="text-xs text-[var(--text-muted)] mt-0.5">Klicka för att välja och förhandsgranska</p>
                             </div>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                              className={cn('shrink-0 transition-colors', form.templateId === t.id ? 'text-[var(--accent)]' : 'text-[var(--border)] group-hover:text-[var(--accent)]/50')}>
-                              <polyline points="9 18 15 12 9 6"/>
-                            </svg>
+                            {form.templateId === t.id && (
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--accent)]">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            )}
                           </button>
                         ))
                       )}
                     </div>
-                    {templates.length > 0 && (
-                      <div className="shrink-0 px-5 py-3 border-t border-[var(--border)] bg-[var(--surface-alt)]">
+
+                    {/* Recipient section — fixed at bottom */}
+                    <div className="shrink-0 border-t border-[var(--border)] bg-[var(--surface-alt)]">
+                      <div className="px-4 py-3 space-y-2.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Mottagare</p>
+
+                        {/* Contact search */}
+                        <div className="relative">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none z-10">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                          </svg>
+                          <input
+                            value={form.contactId ? (contactResults.find((c) => c.id === form.contactId)?.name ?? (contactSearch || 'Kontakt vald')) : contactSearch}
+                            onChange={(e) => { if (form.contactId) setForm((f) => ({ ...f, contactId: '' })); searchContacts(e.target.value); }}
+                            placeholder="Sök kontakt för autofyll…"
+                            className="w-full pl-8 pr-8 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
+                          />
+                          {(contactSearch || form.contactId) && (
+                            <button type="button" onClick={() => { setForm((f) => ({ ...f, contactId: '' })); setContactSearch(''); setContactResults([]); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors z-10">
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                              </svg>
+                            </button>
+                          )}
+                          {contactSearch && !form.contactId && (
+                            <div className="absolute bottom-full left-0 right-0 mb-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto">
+                              {contactLoading ? (
+                                <div className="flex items-center gap-2 px-4 py-3 text-xs text-[var(--text-muted)]">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin shrink-0">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                  </svg>
+                                  Söker…
+                                </div>
+                              ) : contactResults.length === 0 ? (
+                                <div className="px-4 py-3 text-xs text-[var(--text-muted)]">Inga kontakter hittades</div>
+                              ) : (
+                                contactResults.map((c) => (
+                                  <button key={c.id} type="button" onClick={() => pickContact(c)} className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
+                                    <div className="w-6 h-6 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-[10px] font-semibold shrink-0">
+                                      {(c.name ?? '?').charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-medium text-[var(--text-primary)] truncate">{c.name ?? '—'}</p>
+                                      <p className="text-[10px] text-[var(--text-muted)] truncate">{[c.email, c.company].filter(Boolean).join(' · ')}</p>
+                                    </div>
+                                  </button>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Name + email quick fields */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            value={form.recipientName}
+                            onChange={(e) => setForm((f) => ({ ...f, recipientName: e.target.value }))}
+                            placeholder="Namn *"
+                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
+                          />
+                          <input
+                            type="email"
+                            value={form.recipientEmail}
+                            onChange={(e) => setForm((f) => ({ ...f, recipientEmail: e.target.value }))}
+                            placeholder="E-post *"
+                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Proceed footer */}
+                      <div className="px-4 py-3 border-t border-[var(--border)] flex items-center justify-between gap-3">
                         <a href="/templates" target="_blank" rel="noreferrer"
                           className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
                           Hantera mallar →
                         </a>
+                        <button
+                          type="button"
+                          disabled={!form.templateId}
+                          onClick={() => setWizardStep(2)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed"
+                        >
+                          Fortsätt
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                          </svg>
+                        </button>
                       </div>
-                    )}
+                    </div>
                   </>
                 )}
 
