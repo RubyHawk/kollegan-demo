@@ -273,7 +273,9 @@ export default function OffersPage() {
       recipientEmail:   offer.recipientEmail,
       recipientCompany: offer.recipientCompany ?? '',
       notes:            offer.notes ?? '',
-      validityDays:     30,
+      validityDays:     offer.validUntil
+        ? Math.max(1, Math.round((new Date(offer.validUntil).getTime() - new Date(offer.createdAt).getTime()) / 86_400_000))
+        : 30,
       lineItems:        offer.lineItems.length > 0 ? offer.lineItems : [{ ...EMPTY_LINE }],
     });
     setWizardStep(2);           // skip template picker when editing
@@ -599,6 +601,9 @@ export default function OffersPage() {
   // ── Wizard helpers ────────────────────────────────────────────────────────────
 
   const closeWizard = useCallback(() => {
+    const s = useOffersFormStore.getState();
+    const dirty = s.form.recipientName.trim() !== '' || s.form.lineItems.some((l) => l.description.trim() !== '');
+    if (dirty && !window.confirm('Stäng utan att spara? Alla ändringar försvinner.')) return;
     setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null);
     setError(null); setFieldErrors({}); setContactSearch(''); setContactResults([]);
     setWizardStep(1); setLivePreviewHtml(null); setCachedTplContent(null);
@@ -1058,6 +1063,40 @@ export default function OffersPage() {
                             className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
                           />
                         </div>
+
+                        {/* Company typeahead */}
+                        <div className="relative">
+                          <input
+                            value={form.recipientCompany}
+                            onChange={(e) => { setForm((f) => ({ ...f, recipientCompany: e.target.value })); searchCompanies(e.target.value); }}
+                            onFocus={() => { if (form.recipientCompany) searchCompanies(form.recipientCompany); }}
+                            onBlur={() => setTimeout(() => setCompanyResults([]), 150)}
+                            placeholder="Företag (valfri)"
+                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
+                          />
+                          {(companyResults.length > 0 || companyLoading) && (
+                            <div className="absolute bottom-full left-0 right-0 mb-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
+                              {companyLoading ? (
+                                <div className="flex items-center gap-2 px-4 py-3 text-xs text-[var(--text-muted)]">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin shrink-0"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                  Söker…
+                                </div>
+                              ) : companyResults.map((co) => (
+                                <button key={co.id} type="button"
+                                  onMouseDown={(e) => { e.preventDefault(); setForm((f) => ({ ...f, recipientCompany: co.name })); setCompanyResults([]); }}
+                                  className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
+                                  <div className="w-6 h-6 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-[10px] font-semibold shrink-0">
+                                    {co.name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium text-[var(--text-primary)] truncate">{co.name}</p>
+                                    {co.orgNumber && <p className="text-[10px] text-[var(--text-muted)]">{co.orgNumber}</p>}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Proceed footer */}
@@ -1068,8 +1107,11 @@ export default function OffersPage() {
                         </a>
                         <button
                           type="button"
-                          disabled={!form.templateId}
-                          onClick={() => setWizardStep(2)}
+                          disabled={!form.templateId || !form.recipientName.trim()}
+                          onClick={() => {
+                            setConfirmedSections((s) => { const n = new Set(s); n.add('mottagare'); return n; });
+                            setWizardStep(2);
+                          }}
                           className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed"
                         >
                           Fortsätt
