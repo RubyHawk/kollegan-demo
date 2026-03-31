@@ -202,6 +202,21 @@ export default function OffersPage() {
   // Keep lastActiveFieldRef in sync so onLoad can reference it after activeField resets to null
   useEffect(() => { if (activeField) lastActiveFieldRef.current = activeField; }, [activeField]);
 
+  // ── Auto-open wizard when navigated from "Ny offert" sidebar link ─────────────
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('new') === 'true') {
+      setShowForm(true);
+      setEditingOfferId(null);
+      resetForm();
+      setWizardStep(1);
+      // Clean the URL so a refresh doesn't re-trigger
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Load templates ────────────────────────────────────────────────────────────
   useEffect(() => {
     void fetch('/api/templates')
