@@ -13,7 +13,7 @@
  * - Copy public signing link to clipboard
  */
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useCallback, useRef, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@shared/lib/utils';
 import {
@@ -33,73 +33,12 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
-
-type OfferStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
-
-interface LineItem {
-  id?:         string;
-  description: string;
-  quantity:    number;
-  unitPrice:   number;
-  vatRate:     number;
-  discount:    number;
-}
-
-interface Offer {
-  id:                   string;
-  title:                string;
-  status:               OfferStatus;
-  offerNumber?:         number;
-  recipientName:        string;
-  recipientEmail:       string;
-  recipientCompany?:    string;
-  notes?:               string;
-  validUntil:           string;
-  totalExVat:           number;
-  totalIncVat:          number;
-  lineItems:            LineItem[];
-  createdAt:            string;
-  sentAt?:              string;
-  viewedAt?:            string;
-  acceptedAt?:          string;
-  declinedAt?:          string;
-  reminderSentAt?:      string;
-  reminderCount:        number;
-  leadId?:              string;
-  templateId?:          string;
-  publicToken:          string;
-  publicTokenExpiresAt?: string;
-}
-
-interface OfferTemplate {
-  id:            string;
-  name:          string;
-  content?:      string; // TipTap JSON string (may be absent in list responses)
-  emailSubject?: string;
-  emailBody?:    string;
-}
-
-interface OfferProduct {
-  id:          string;
-  name:        string;
-  description?: string;
-  unitPrice:   number;
-  vatRate:     number;
-  unit?:       string;
-}
-
-interface ContactResult {
-  id:      string;
-  name:    string | null;
-  email:   string | null;
-  company: string | null;
-}
+import { useOffersListStore, PAGE_SIZE } from './_store/offers-list.store';
+import { useOffersFormStore } from './_store/offers-form.store';
+import type { OfferStatus, LineItem, Offer, OfferTemplate, OfferProduct, ContactResult } from './_store/types';
+import { EMPTY_LINE, EMPTY_FORM } from './_store/types';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
-
-const PAGE_SIZE = 25;
 
 const STATUS_TABS: { id: OfferStatus | 'all'; label: string }[] = [
   { id: 'all',      label: 'Alla' },
@@ -128,8 +67,6 @@ const STATUS_LABEL: Record<OfferStatus, string> = {
   expired:  'Utgången',
 };
 
-const EMPTY_LINE: LineItem = { description: '', quantity: 1, unitPrice: 0, vatRate: 0.25, discount: 0 };
-
 const VALIDITY_OPTIONS = [
   { days: 7,  label: '7 dagar' },
   { days: 14, label: '14 dagar' },
@@ -137,13 +74,6 @@ const VALIDITY_OPTIONS = [
   { days: 60, label: '60 dagar' },
   { days: 90, label: '90 dagar' },
 ] as const;
-
-
-const EMPTY_FORM = {
-  templateId: '', contactId: '',
-  title: '', recipientName: '', recipientEmail: '', recipientCompany: '',
-  notes: '', validityDays: 30 as number, lineItems: [{ ...EMPTY_LINE }],
-};
 
 // ─── Utilities ─────────────────────────────────────────────────────────────────
 
@@ -227,63 +157,45 @@ function SortableRow({ id, children }: {
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function OffersPage() {
-  const [allOffers,  setAllOffers]  = useState<Offer[]>([]);
-  const [serverTotal, setServerTotal] = useState(0);
-  const [tabCounts,  setTabCounts]  = useState<Record<string, number>>({ all: 0, draft: 0, sent: 0, viewed: 0, accepted: 0, declined: 0, expired: 0 });
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState<string | null>(null);
-  const [tab,        setTab]        = useState<OfferStatus | 'all'>('all');
-  const [sortAsc,    setSortAsc]    = useState(false); // desc by default (newest first)
-  const [searchInput, setSearchInput] = useState('');
-  const [search,      setSearch]      = useState('');
+  // ── List store ─────────────────────────────────────────────────────────────
+  const {
+    allOffers, serverTotal, tabCounts, loading, error,
+    searchInput, search,
+    tab, sortAsc, dateFrom, dateTo, currentPage,
+    selected, bulkSending, bulkResult,
+    acting, confirmDeleteOffer, copied, confirmSend,
+    setSearchInput, setSearch, setTab, setSortAsc, setDateFrom, setDateTo, setCurrentPage,
+    setError,
+    setSelected, toggleSelected, clearSelected, setBulkSending, setBulkResult,
+    setActing, setConfirmDeleteOffer, setCopied, setConfirmSend,
+    load, loadCounts,
+  } = useOffersListStore();
+
+  // ── Form store ─────────────────────────────────────────────────────────────
+  const {
+    showForm, editingOfferId, wizardStep, form, fieldErrors, saving, draftSaved,
+    livePreviewHtml, livePreviewLoading, previewDirty, activeField, cachedTplContent,
+    previewDoc, fetchingDocId, tplPreview,
+    contactSearch, contactResults, contactLoading,
+    services, templates, productPickerRow, productSearch, showServiceLibrary, serviceForm, savingService,
+    openLines, openCards, confirmedSections,
+    setShowForm, setEditingOfferId, setWizardStep, setForm, setFieldErrors, setSaving, setDraftSaved,
+    setLivePreviewHtml, setLivePreviewLoading, setPreviewDirty, setActiveField, setCachedTplContent,
+    setPreviewDoc, setFetchingDocId, setTplPreview,
+    setContactSearch, setContactResults, setContactLoading,
+    setServices, setTemplates, setProductPickerRow, setProductSearch,
+    setShowServiceLibrary, setServiceForm, setSavingService,
+    setOpenLines, setOpenCards, setConfirmedSections,
+    updateLine, addLine, removeLine, reorderLines, resetForm,
+  } = useOffersFormStore();
+
+  // ── Local refs (non-serializable / timer handles) ─────────────────────────
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [dateFrom,   setDateFrom]   = useState('');
-  const [dateTo,     setDateTo]     = useState('');
-  const [currentPage, setCurrentPage] = useState(0);
-  const [showForm,         setShowForm]         = useState(false);
-  const [editingOfferId,   setEditingOfferId]   = useState<string | null>(null);
-  const [form,             setForm]             = useState(EMPTY_FORM);
-  const [saving,     setSaving]     = useState(false);
-  const [acting,     setActing]     = useState<string | null>(null);
-  const [templates,         setTemplates]         = useState<OfferTemplate[]>([]);
-  const [previewDoc,        setPreviewDoc]        = useState<string | null>(null); // generated-doc HTML
-  const [fetchingDocId,     setFetchingDocId]     = useState<string | null>(null); // offer being doc-fetched
-  const [tplPreview,        setTplPreview]        = useState<{ loading: boolean; html: string | null } | null>(null);
-  const [confirmDeleteOffer, setConfirmDeleteOffer] = useState<string | null>(null);
-  const [copied,            setCopied]            = useState<string | null>(null); // offerId copied
-  const [confirmSend,       setConfirmSend]       = useState<Offer | null>(null);  // offer pending send confirmation
-  const [selected,       setSelected]       = useState<Set<string>>(new Set()); // bulk-selected offer ids
-  const [bulkSending,    setBulkSending]    = useState(false);
-  const [bulkResult,     setBulkResult]     = useState<{ sent: number; failed: number } | null>(null);
-  const [contactSearch,    setContactSearch]    = useState('');
-  const [contactResults,   setContactResults]   = useState<ContactResult[]>([]);
-  const [contactLoading,   setContactLoading]   = useState(false);
-  const [draftSaved,       setDraftSaved]       = useState(false);
-  const [fieldErrors,      setFieldErrors]      = useState<Record<string, string>>({});
   const saveAndSendRef = useRef(false);
   const contactSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Service/product library state
-  const [services,          setServices]          = useState<OfferProduct[]>([]);
-  const [productPickerRow,  setProductPickerRow]  = useState<number | null>(null);
-  const [productSearch,     setProductSearch]     = useState('');
-  const [showServiceLibrary, setShowServiceLibrary] = useState(false);
-  const [serviceForm,       setServiceForm]       = useState({ name: '', description: '', unitPrice: 0, vatRate: 0.25, unit: '' });
-  const [savingService,     setSavingService]     = useState(false);
-
-  // ── Guided wizard (full-screen create/edit flow) ───────────────────────────
-  const [wizardStep,         setWizardStep]         = useState<1 | 2>(1);
-  const [livePreviewHtml,    setLivePreviewHtml]    = useState<string | null>(null);
-  const [livePreviewLoading, setLivePreviewLoading] = useState(false);
-  const [previewDirty,       setPreviewDirty]       = useState(false);
-  const [activeField,        setActiveField]        = useState<string | null>(null);
-  const [cachedTplContent,   setCachedTplContent]   = useState<string | null>(null);
-  const [openCards, setOpenCards] = useState({ mottagare: true, detaljer: true });
-  const [confirmedSections, setConfirmedSections] = useState<Set<'mottagare' | 'detaljer'>>(new Set());
   const livePreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
   const lastActiveFieldRef = useRef<string | null>(null);
-  const [openLines, setOpenLines] = useState<Set<number>>(new Set([0]));
 
   // Keep lastActiveFieldRef in sync so onLoad can reference it after activeField resets to null
   useEffect(() => { if (activeField) lastActiveFieldRef.current = activeField; }, [activeField]);
@@ -298,7 +210,7 @@ export default function OffersPage() {
         }
       })
       .catch(() => { /* templates unavailable — dropdown stays empty */ });
-  }, []);
+  }, [setTemplates]);
 
   // ── Load products ─────────────────────────────────────────────────────────────
   const loadServices = useCallback(async () => {
@@ -307,50 +219,19 @@ export default function OffersPage() {
       const j = await r.json() as { data: { products: OfferProduct[] } };
       setServices(j.data.products);
     }
-  }, []);
+  }, [setServices]);
 
   useEffect(() => { void loadServices(); }, [loadServices]);
 
-  // ── Load tab counts (lightweight groupBy) ────────────────────────────────────
-  const loadCounts = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      if (search.trim()) params.set('search', search.trim());
-      const res = await fetch(`/api/offers/counts?${params}`);
-      if (!res.ok) return;
-      const json = await res.json().catch(() => null) as { data: { counts: Record<string, number> } } | null;
-      if (json?.data?.counts) setTabCounts(json.data.counts);
-    } catch { /* non-critical */ }
-  }, [search]);
-
-  // ── Load offers — server-side status filter + pagination ─────────────────────
-  const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({
-        limit:  String(PAGE_SIZE),
-        offset: String(currentPage * PAGE_SIZE),
-      });
-      if (tab !== 'all')    params.set('status', tab);
-      if (search.trim())    params.set('search', search.trim());
-      if (dateFrom)         params.set('dateFrom', dateFrom);
-      if (dateTo)           params.set('dateTo', dateTo);
-      const res = await fetch(`/api/offers?${params}`);
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      const json = await res.json().catch(() => null) as { data: { offers: Offer[]; total: number } } | null;
-      if (!json) throw new Error('Serverfel — försök igen.');
-      setAllOffers(json.data.offers);
-      setServerTotal(json.data.total);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [search, tab, currentPage, dateFrom, dateTo]);
-
-  useEffect(() => { void load(); void loadCounts(); setSelected(new Set()); setBulkResult(null); }, [load, loadCounts]);
-  useEffect(() => { setCurrentPage(0); }, [tab, dateFrom, dateTo, search]);
+  // ── Reload offers when filters change (store actions read their own state) ────
+  useEffect(() => {
+    void load();
+    void loadCounts();
+    clearSelected();
+    setBulkResult(null);
+    // load/loadCounts/clearSelected/setBulkResult are stable store actions
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, search, currentPage, dateFrom, dateTo]);
 
   // ── Derived: client-side sort only (status + date filtering is server-side) ───
   const filteredOffers = useMemo(() => {
@@ -483,7 +364,7 @@ export default function OffersPage() {
     } finally {
       setSaving(false);
     }
-  }, [form, load, editingOfferId]);
+  }, [form, editingOfferId]);
 
   // ── Status actions (send / accept / decline / duplicate / remind) ────────────
   const doAction = useCallback(async (id: string, action: 'send' | 'accept' | 'decline' | 'duplicate' | 'remind') => {
@@ -499,7 +380,7 @@ export default function OffersPage() {
     } finally {
       setActing(null);
     }
-  }, [load, loadCounts]);
+  }, []);
 
   // ── Delete ────────────────────────────────────────────────────────────────────
   const deleteOffer = useCallback(async (id: string) => {
@@ -510,7 +391,7 @@ export default function OffersPage() {
     } catch (e) {
       setError((e as Error).message);
     }
-  }, [load, loadCounts]);
+  }, []);
 
   // ── Template preview (from offer form) ────────────────────────────────────────
   const openTemplatePreview = useCallback(async () => {
@@ -573,14 +454,14 @@ export default function OffersPage() {
       if (!res.ok) throw new Error(`Fel ${res.status}`);
       const j = await res.json() as { data: { sent: number; failed: number } };
       setBulkResult(j.data);
-      setSelected(new Set());
+      clearSelected();
       await Promise.all([load(true), loadCounts()]);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setBulkSending(false);
     }
-  }, [selected, allOffers, load, loadCounts]);
+  }, [selected, allOffers]);
 
   // ── Selection helpers ─────────────────────────────────────────────────────
   const draftOffers = allOffers.filter((o) => o.status === 'draft');
@@ -588,7 +469,7 @@ export default function OffersPage() {
   const allDraftsSelected  = draftOffers.length > 0 && draftOffers.every((o) => selected.has(o.id));
 
   function toggleSelect(id: string) {
-    setSelected((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+    toggleSelected(id);
   }
   function toggleSelectAllDrafts() {
     if (allDraftsSelected) {
@@ -764,47 +645,6 @@ export default function OffersPage() {
     showForm, wizardStep, cachedTplContent, scheduleLivePreview,
   ]);
 
-  // ── Line item helpers ─────────────────────────────────────────────────────────
-  function updateLine(idx: number, field: keyof LineItem, value: string | number) {
-    let v: string | number = value;
-    if (field === 'quantity')  v = Math.max(0, Number(v));
-    if (field === 'unitPrice') v = Math.max(0, Number(v));
-    if (field === 'discount')  v = Math.min(100, Math.max(0, Number(v)));
-    setForm((f) => { const items = [...f.lineItems]; items[idx] = { ...items[idx], [field]: v }; return { ...f, lineItems: items }; });
-    setFieldErrors((fe) => { const next = { ...fe }; delete next[`line_${idx}_${field}`]; return next; });
-  }
-  function addLine() {
-    setForm((f) => {
-      const newIdx = f.lineItems.length;
-      setOpenLines((s) => { const n = new Set(s); n.add(newIdx); return n; });
-      return { ...f, lineItems: [...f.lineItems, { ...EMPTY_LINE }] };
-    });
-  }
-  function removeLine(idx: number) {
-    setForm((f) => ({ ...f, lineItems: f.lineItems.filter((_, i) => i !== idx) }));
-    setFieldErrors((fe) => {
-      const next: Record<string, string> = {};
-      for (const [k, v] of Object.entries(fe)) {
-        const m = k.match(/^line_(\d+)_(.+)$/);
-        if (!m) { next[k] = v; continue; }
-        const rowIdx = parseInt(m[1]);
-        if (rowIdx === idx) continue;
-        const newKey = `line_${rowIdx < idx ? rowIdx : rowIdx - 1}_${m[2]}`;
-        next[newKey] = v;
-      }
-      return next;
-    });
-    setOpenLines((s) => {
-      const n = new Set<number>();
-      for (const i of s) {
-        if (i < idx) n.add(i);
-        else if (i > idx) n.add(i - 1);
-      }
-      return n;
-    });
-
-  }
-
   const tots = useMemo(() => computeTotals(form.lineItems), [form.lineItems]);
 
   // ── Drag-to-reorder line items ────────────────────────────────────────────────
@@ -822,16 +662,7 @@ export default function OffersPage() {
     const oldIdx = lineItemIds.indexOf(active.id as string);
     const newIdx = lineItemIds.indexOf(over.id as string);
     if (oldIdx === -1 || newIdx === -1) return;
-    setForm((f) => ({ ...f, lineItems: arrayMove(f.lineItems, oldIdx, newIdx) }));
-    setOpenLines((s) => {
-      const n = new Set<number>();
-      const mapping = arrayMove([...Array(form.lineItems.length).keys()], oldIdx, newIdx);
-      for (const i of s) {
-        const newI = mapping.indexOf(i);
-        if (newI !== -1) n.add(newI);
-      }
-      return n;
-    });
+    reorderLines(oldIdx, newIdx);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -1736,7 +1567,7 @@ export default function OffersPage() {
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between gap-2">
-                <p className="text-[11px] text-[var(--text-muted)]">Giltig t.o.m. {fmtDate(offer.validUntil)}</p>
+                <p className="text-[11px] text-[var(--text-muted)]">Giltig t.o.m. {offer.validUntil ? fmtDate(offer.validUntil) : '—'}</p>
                 <div className="flex items-center gap-2">
                   {offer.status === 'draft' && (
                     <button type="button" onClick={() => openEdit(offer)} title="Redigera" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
@@ -1791,7 +1622,7 @@ export default function OffersPage() {
                   <th className="px-3 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Belopp</th>
                   <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Giltigt t.o.m.</th>
                   <th className="px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-                    <button onClick={() => setSortAsc((v) => !v)} className="flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors">
+                    <button onClick={() => setSortAsc(!sortAsc)} className="flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors">
                       Skapad
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         {sortAsc
@@ -1856,11 +1687,11 @@ export default function OffersPage() {
                       {offer.status === 'expired' ? (
                         <span className="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400 font-medium">
                           <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                          Utgången {fmtDate(offer.validUntil)}
+                          Utgången {offer.validUntil ? fmtDate(offer.validUntil) : '—'}
                         </span>
                       ) : (
                         <p className="text-xs leading-tight text-[var(--text-secondary)]">
-                          {fmtDate(offer.validUntil) ?? '—'}
+                          {offer.validUntil ? fmtDate(offer.validUntil) : '—'}
                         </p>
                       )}
                     </td>

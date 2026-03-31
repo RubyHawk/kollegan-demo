@@ -1,70 +1,97 @@
 /**
- * Offers list store — manages the list view state for the offers page.
- *
- * Separates list/pagination/filter state from the form/wizard state so that
- * tab navigation, search, and bulk selection don't trigger full-component
- * re-renders when only a slice of state changes.
+ * Offers list store — all state for the list view, filters, search, bulk ops.
+ * Async actions (load, loadCounts) live here so components just call store.load().
  */
 
 import { create } from 'zustand';
-import type { Offer, OfferStatus } from '@modules/supporting/offers';
+import type { Offer, OfferStatus, BulkResult, OfferTemplate } from './types';
 
 const PAGE_SIZE = 25;
+const EMPTY_COUNTS = { all: 0, draft: 0, sent: 0, viewed: 0, accepted: 0, declined: 0, expired: 0 };
 
-interface BulkResult { sent: number; failed: number }
+// ─── State + Actions interface ─────────────────────────────────────────────────
 
 interface OffersListState {
-  // ── Data ──────────────────────────────────────────────────────────────────────
+  // Data
   allOffers:   Offer[];
   serverTotal: number;
   tabCounts:   Record<string, number>;
   loading:     boolean;
   error:       string | null;
+  templates:   OfferTemplate[]; // loaded once for the wizard
 
-  // ── Filters ───────────────────────────────────────────────────────────────────
+  // Search (split: controlled input vs debounced query)
+  searchInput: string;
+  search:      string;
+
+  // Filters
   tab:         OfferStatus | 'all';
   sortAsc:     boolean;
   dateFrom:    string;
   dateTo:      string;
   currentPage: number;
 
-  // ── Bulk selection ────────────────────────────────────────────────────────────
-  selected:     Set<string>;
-  bulkSending:  boolean;
-  bulkResult:   BulkResult | null;
+  // Bulk selection
+  selected:    Set<string>;
+  bulkSending: boolean;
+  bulkResult:  BulkResult | null;
 
-  // ── Actions ───────────────────────────────────────────────────────────────────
+  // Action/dialog state (list-level)
+  acting:              string | null;
+  confirmDeleteOffer:  string | null;
+  copied:              string | null;
+  confirmSend:         Offer | null;
+
+  // ── Setters ─────────────────────────────────────────────────────────────────
   setAllOffers:   (offers: Offer[]) => void;
   setServerTotal: (total: number) => void;
   setTabCounts:   (counts: Record<string, number>) => void;
   setLoading:     (loading: boolean) => void;
   setError:       (error: string | null) => void;
+  setTemplates:   (templates: OfferTemplate[]) => void;
+
+  setSearchInput: (v: string) => void;
+  setSearch:      (v: string) => void;
 
   setTab:         (tab: OfferStatus | 'all') => void;
   setSortAsc:     (asc: boolean) => void;
   setDateFrom:    (date: string) => void;
   setDateTo:      (date: string) => void;
-  setCurrentPage: (page: number) => void;
+  setCurrentPage: (page: number | ((prev: number) => number)) => void;
 
-  setSelected:    (selected: Set<string>) => void;
+  setSelected:    (selected: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   toggleSelected: (id: string) => void;
   selectAll:      (ids: string[]) => void;
   clearSelected:  () => void;
   setBulkSending: (sending: boolean) => void;
   setBulkResult:  (result: BulkResult | null) => void;
 
-  resetFilters:   () => void;
+  setActing:             (id: string | null) => void;
+  setConfirmDeleteOffer: (id: string | null) => void;
+  setCopied:             (id: string | null) => void;
+  setConfirmSend:        (offer: Offer | null) => void;
+
+  resetFilters: () => void;
+
+  // ── Async actions ────────────────────────────────────────────────────────────
+  load:       (silent?: boolean) => Promise<void>;
+  loadCounts: () => Promise<void>;
 }
 
-const EMPTY_COUNTS = { all: 0, draft: 0, sent: 0, viewed: 0, accepted: 0, declined: 0, expired: 0 };
+// ─── Store ─────────────────────────────────────────────────────────────────────
 
-export const useOffersListStore = create<OffersListState>()((set) => ({
+export const useOffersListStore = create<OffersListState>()((set, get) => ({
   // Data
   allOffers:   [],
   serverTotal: 0,
   tabCounts:   { ...EMPTY_COUNTS },
   loading:     true,
   error:       null,
+  templates:   [],
+
+  // Search
+  searchInput: '',
+  search:      '',
 
   // Filters
   tab:         'all',
@@ -78,31 +105,89 @@ export const useOffersListStore = create<OffersListState>()((set) => ({
   bulkSending: false,
   bulkResult:  null,
 
-  // Actions
+  // Dialogs
+  acting:             null,
+  confirmDeleteOffer: null,
+  copied:             null,
+  confirmSend:        null,
+
+  // ── Setters ──────────────────────────────────────────────────────────────────
   setAllOffers:   (allOffers)   => set({ allOffers }),
   setServerTotal: (serverTotal) => set({ serverTotal }),
   setTabCounts:   (tabCounts)   => set({ tabCounts }),
   setLoading:     (loading)     => set({ loading }),
   setError:       (error)       => set({ error }),
+  setTemplates:   (templates)   => set({ templates }),
+
+  setSearchInput: (searchInput) => set({ searchInput }),
+  setSearch:      (search)      => set({ search, currentPage: 0 }),
 
   setTab:         (tab)         => set({ tab, currentPage: 0 }),
   setSortAsc:     (sortAsc)     => set({ sortAsc }),
   setDateFrom:    (dateFrom)    => set({ dateFrom, currentPage: 0 }),
   setDateTo:      (dateTo)      => set({ dateTo, currentPage: 0 }),
-  setCurrentPage: (currentPage) => set({ currentPage }),
+  setCurrentPage: (page)        => set((s) => ({
+    currentPage: typeof page === 'function' ? page(s.currentPage) : page,
+  })),
 
-  setSelected:    (selected)    => set({ selected }),
-  toggleSelected: (id)          => set((s) => {
+  setSelected: (selected) => set((s) => ({
+    selected: typeof selected === 'function' ? selected(s.selected) : selected,
+  })),
+  toggleSelected: (id) => set((s) => {
     const next = new Set(s.selected);
     if (next.has(id)) next.delete(id); else next.add(id);
     return { selected: next };
   }),
-  selectAll:      (ids)         => set({ selected: new Set(ids) }),
-  clearSelected:  ()            => set({ selected: new Set<string>() }),
+  selectAll:      (ids)  => set({ selected: new Set(ids) }),
+  clearSelected:  ()     => set({ selected: new Set<string>() }),
   setBulkSending: (bulkSending) => set({ bulkSending }),
   setBulkResult:  (bulkResult)  => set({ bulkResult }),
 
-  resetFilters:   ()            => set({ tab: 'all', dateFrom: '', dateTo: '', currentPage: 0 }),
+  setActing:             (acting)             => set({ acting }),
+  setConfirmDeleteOffer: (confirmDeleteOffer) => set({ confirmDeleteOffer }),
+  setCopied:             (copied)             => set({ copied }),
+  setConfirmSend:        (confirmSend)        => set({ confirmSend }),
+
+  resetFilters: () => set({ tab: 'all', dateFrom: '', dateTo: '', currentPage: 0, search: '', searchInput: '' }),
+
+  // ── Async: load offers page for current tab/filter ────────────────────────────
+  load: async (silent = false) => {
+    const s = get();
+    if (!silent) set({ loading: true });
+    set({ error: null });
+    try {
+      const params = new URLSearchParams({
+        limit:  String(PAGE_SIZE),
+        offset: String(s.currentPage * PAGE_SIZE),
+      });
+      if (s.tab !== 'all')   params.set('status',   s.tab);
+      if (s.search.trim())   params.set('search',   s.search.trim());
+      if (s.dateFrom)        params.set('dateFrom', s.dateFrom);
+      if (s.dateTo)          params.set('dateTo',   s.dateTo);
+      const res = await fetch(`/api/offers?${params}`);
+      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      const json = await res.json().catch(() => null) as { data: { offers: Offer[]; total: number } } | null;
+      if (!json) throw new Error('Serverfel — försök igen.');
+      set({ allOffers: json.data.offers, serverTotal: json.data.total });
+    } catch (e) {
+      set({ error: (e as Error).message });
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  // ── Async: lightweight groupBy counts for tab badges ─────────────────────────
+  loadCounts: async () => {
+    const s = get();
+    try {
+      const params = new URLSearchParams();
+      if (s.search.trim()) params.set('search', s.search.trim());
+      const res = await fetch(`/api/offers/counts?${params}`);
+      if (!res.ok) return;
+      const json = await res.json().catch(() => null) as { data: { counts: Record<string, number> } } | null;
+      if (json?.data?.counts) set({ tabCounts: json.data.counts });
+    } catch { /* non-critical */ }
+  },
 }));
 
 export { PAGE_SIZE };
