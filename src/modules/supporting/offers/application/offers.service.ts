@@ -150,9 +150,10 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   const sender = org ? { senderEmail: org.senderEmail, senderName: org.senderName } : undefined;
 
   // Enqueue email (non-blocking)
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-  const publicUrl = `${appUrl}/offers/public/${updated.publicToken}`;
-  await enqueueOfferEmail(updated, publicUrl, sender).catch((err: unknown) =>
+  const appUrl = process.env.PUBLIC_OFFER_BASE_URL
+    ? `${process.env.PUBLIC_OFFER_BASE_URL}`
+    : `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/offers/public`;
+  const publicUrl = `${appUrl}/${updated.publicToken}`;(updated, publicUrl, sender).catch((err: unknown) =>
     logger.warn(TAG, 'Failed to enqueue offer email', { err })
   );
 
@@ -502,8 +503,10 @@ export async function sendOfferReminder(id: string, orgId: string): Promise<Offe
   const org = await identityService.getOrg(orgId);
   const senderInfo = org ? { senderEmail: org.senderEmail, senderName: org.senderName } : undefined;
 
-  const appUrl   = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-  const publicUrl = `${appUrl}/offers/public/${updated.publicToken}`;
+  const appUrl = process.env.PUBLIC_OFFER_BASE_URL
+    ? `${process.env.PUBLIC_OFFER_BASE_URL}`
+    : `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/offers/public`;
+  const publicUrl = `${appUrl}/${updated.publicToken}`;
   await enqueueReminderEmail(updated, publicUrl, senderInfo).catch((err: unknown) =>
     logger.warn(TAG, 'Failed to enqueue reminder email', { err })
   );
