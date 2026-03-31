@@ -72,6 +72,28 @@ export interface OfferProduct {
   unitPrice: number;    // SEK, ex VAT
   vatRate: number;      // 0.25 = 25%
   unit?: string;        // "st", "tim", "mån", etc.
+  sku?: string;
+  category?: string;
+  imageUrl?: string;
+  isActive: boolean;
+  minQuantity?: number;
+  maxQuantity?: number;
   createdBy: string;
   createdAt: string;
+}
+
+// ─── Company (brand / selling entity) ────────────────────────────────────────
+
+export interface Company {
+  id: string;
+  organizationId: string;
+  name: string;
+  orgNumber?: string;
+  website?: string;
+  logoUrl?: string;
+  industry?: string;
+  notes?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }

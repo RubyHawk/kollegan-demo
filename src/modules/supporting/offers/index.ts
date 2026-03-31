@@ -5,7 +5,7 @@
  */
 
 // Domain types
-export type { Offer, OfferLineItem, OfferStatus, OfferProduct } from './domain/offer.entity';
+export type { Offer, OfferLineItem, OfferStatus, OfferProduct, Company } from './domain/offer.entity';
 export type { OfferTemplate, PlaceholderKey }      from './domain/template.entity';
 export { OFFER_PLACEHOLDERS }                       from './domain/template.entity';
 
@@ -33,6 +33,7 @@ export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter } from './app
 // Application use cases — products
 export {
   listProducts,
+  listProductCategories,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -94,10 +95,20 @@ export {
 // ── API Handlers — products ────────────────────────────────────────────────────
 export {
   handleListProducts,
+  handleListProductCategories,
   handleCreateProduct,
   handleUpdateProduct,
   handleDeleteProduct,
 } from './api/handlers/product.handler';
+
+// ── API Handlers — companies ───────────────────────────────────────────────────
+export {
+  handleListCompanies,
+  handleGetCompany,
+  handleCreateCompany,
+  handleUpdateCompany,
+  handleDeleteCompany,
+} from './api/handlers/company.handler';
 
 // ── API Handlers — public signing flow ────────────────────────────────────────
 export {

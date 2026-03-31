@@ -71,6 +71,9 @@ model Offer {
   // validUntil is recomputed as sentAt + validityDays when the offer is sent
   validityDays      Int       @default(30)
 
+  // Company (brand / selling entity)
+  companyId  String?   // off_companies.id
+
   // Cross-domain links
   leadId     String?   // lead_leads.id
   customerId String?   // crm_customers.id
@@ -81,6 +84,7 @@ model Offer {
 
   template     OfferTemplate? @relation(fields: [templateId], references: [id])
   organization Organization   @relation(fields: [organizationId], references: [id])
+  company      Company?        @relation(fields: [companyId], references: [id])
   lineItems    OfferLineItem[]
 
   @@unique([organizationId, offerNumber])
@@ -119,6 +123,12 @@ model OfferProduct {
   unitPrice      Float
   vatRate        Float     @default(0.25)  // 0.25 = 25%
   unit           String?                   // "st", "tim", "mån", etc.
+  sku            String?                   // internal product code
+  category       String?                   // free-text grouping label
+  imageUrl       String?                   // CDN URL for product thumbnail
+  isActive       Boolean   @default(true)  // soft toggle — hides from pickers without deletion
+  minQuantity    Float?                    // optional floor for qty in offer picker
+  maxQuantity    Float?                    // optional ceiling for qty in offer picker
   createdBy      String                    // User.id
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -126,7 +136,36 @@ model OfferProduct {
 
   organization Organization @relation(fields: [organizationId], references: [id])
 
+  @@index([organizationId, category])
+  @@index([organizationId, isActive, name])
   @@index([organizationId, createdAt])
   @@index([deletedAt])
   @@map("off_products")
+}
+
+// ─── Company ──────────────────────────────────────────────────────────────────
+// Represents a selling entity / brand (NOT the SaaS tenant Organisation).
+// Scopes offers, templates, and product libraries per brand.
+// Example: org "Kollegan AB" manages brands "Soleria" and "Nordhem".
+
+model Company {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  orgNumber      String?   // Swedish org number, e.g. "556677-8899"
+  website        String?
+  logoUrl        String?
+  industry       String?
+  notes          String?
+  createdBy      String    // User.id
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  offers         Offer[]
+
+  @@index([organizationId, name])
+  @@index([deletedAt])
+  @@map("off_companies")
 }

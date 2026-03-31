@@ -10,6 +10,7 @@ import { Errors } from '@platform/api/errors';
 import { verifyToken } from '@platform/auth/jwt';
 import {
   listProducts,
+  listProductCategories,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -34,7 +35,9 @@ async function requireStaff(req: NextRequest) {
 // ── List Products ─────────────────────────────────────────────────────────────
 
 const ListQuerySchema = z.object({
-  search: z.string().max(100).optional(),
+  search:   z.string().max(100).optional(),
+  category: z.string().max(100).optional(),
+  isActive: z.enum(['true', 'false']).optional(),
 });
 
 export const handleListProducts = createHandler(
@@ -42,8 +45,19 @@ export const handleListProducts = createHandler(
   async (ctx) => {
     const { query, req } = ctx as { query: z.infer<typeof ListQuerySchema>; req: NextRequest };
     const payload = await requireStaff(req);
-    const products = await listProducts(payload.orgId!, query.search);
+    const isActive = query.isActive === 'true' ? true : query.isActive === 'false' ? false : undefined;
+    const products = await listProducts(payload.orgId!, query.search, query.category, isActive);
     return ok({ products });
+  },
+);
+
+export const handleListProductCategories = createHandler(
+  { auth: 'jwt', tag: 'OfferProducts:ListCategories', rateLimit: { max: 120, windowMs: 60_000 } },
+  async (ctx) => {
+    const { req } = ctx as { req: NextRequest };
+    const payload = await requireStaff(req);
+    const categories = await listProductCategories(payload.orgId!);
+    return ok({ categories });
   },
 );
 
@@ -55,6 +69,12 @@ const CreateBodySchema = z.object({
   unitPrice:   z.number().min(0),
   vatRate:     z.number().min(0).max(1).default(0.25),
   unit:        z.string().max(50).optional(),
+  sku:         z.string().max(100).optional(),
+  category:    z.string().max(100).optional(),
+  imageUrl:    z.string().url().max(2000).optional(),
+  isActive:    z.boolean().default(true),
+  minQuantity: z.number().min(0).optional(),
+  maxQuantity: z.number().min(0).optional(),
 });
 
 export const handleCreateProduct = createHandler(
@@ -69,6 +89,12 @@ export const handleCreateProduct = createHandler(
       unitPrice:      body.unitPrice,
       vatRate:        body.vatRate,
       unit:           body.unit,
+      sku:            body.sku,
+      category:       body.category,
+      imageUrl:       body.imageUrl,
+      isActive:       body.isActive,
+      minQuantity:    body.minQuantity,
+      maxQuantity:    body.maxQuantity,
     }, payload.sub);
     return created(product, `/api/offers/products/${product.id}`);
   },
@@ -82,6 +108,12 @@ const UpdateBodySchema = z.object({
   unitPrice:   z.number().min(0).optional(),
   vatRate:     z.number().min(0).max(1).optional(),
   unit:        z.string().max(50).optional(),
+  sku:         z.string().max(100).optional(),
+  category:    z.string().max(100).optional(),
+  imageUrl:    z.string().url().max(2000).optional().nullable(),
+  isActive:    z.boolean().optional(),
+  minQuantity: z.number().min(0).optional().nullable(),
+  maxQuantity: z.number().min(0).optional().nullable(),
 });
 
 export const handleUpdateProduct = createHandler(

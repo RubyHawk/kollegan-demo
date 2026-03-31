@@ -27,9 +27,10 @@ model Organization {
   leads       Lead[]
   users       User[]
   portal        Portal?
-  offers        Offer[]
+  offers         Offer[]
   offerTemplates OfferTemplate[]
   offerProducts  OfferProduct[]
+  companies      Company[]
   conversations Conversation[]
   projects      Project[]
   announcements Announcement[]
