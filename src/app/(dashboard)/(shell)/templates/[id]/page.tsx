@@ -109,9 +109,9 @@ export default function TemplateEditorPage() {
     if (!json) { setError('Editorn är inte redo.'); return; }
     const content = JSON.stringify(json);
 
-    const emailSubject      = emailEditorRef.current?.getSubject()      ?? '';
-    const emailBody         = emailEditorRef.current?.getBodyHtml()     ?? '';
-    const emailHeaderConfig = emailEditorRef.current?.getHeaderConfig() ?? '';
+    const emailSubject      = emailEditorRef.current?.getSubject()      ?? initEmailSubject;
+    const emailBody         = emailEditorRef.current?.getBodyHtml()     ?? initEmailBody;
+    const emailHeaderConfig = emailEditorRef.current?.getHeaderConfig() ?? initEmailHdrCfg;
 
     setSaving(true); setError(null); setSaved(false);
     try {

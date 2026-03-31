@@ -181,7 +181,9 @@ export default function OffersPage() {
   const [error,      setError]      = useState<string | null>(null);
   const [tab,        setTab]        = useState<OfferStatus | 'all'>('all');
   const [sortAsc,    setSortAsc]    = useState(false); // desc by default (newest first)
-  const [search,     setSearch]     = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [search,      setSearch]      = useState('');
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [dateFrom,   setDateFrom]   = useState('');
   const [dateTo,     setDateTo]     = useState('');
   const [currentPage, setCurrentPage] = useState(0);
@@ -601,8 +603,11 @@ export default function OffersPage() {
     await loadServices();
   }, [loadServices]);
 
-  const filteredServices = services.filter((p) =>
-    !productSearch.trim() || p.name.toLowerCase().includes(productSearch.toLowerCase())
+  const filteredServices = useMemo(
+    () => !productSearch.trim()
+      ? services
+      : services.filter((p) => p.name.toLowerCase().includes(productSearch.toLowerCase())),
+    [services, productSearch],
   );
 
   // ── Wizard helpers ────────────────────────────────────────────────────────────
@@ -1528,7 +1533,12 @@ export default function OffersPage() {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Sök offert…"
+            <input value={searchInput} onChange={(e) => {
+                const v = e.target.value;
+                setSearchInput(v);
+                if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+                searchDebounceRef.current = setTimeout(() => setSearch(v), 300);
+              }} placeholder="Sök offert…"
               className="pl-8 pr-4 py-1.5 rounded border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors w-44"/>
           </div>
           <div className="flex items-center gap-1.5">
