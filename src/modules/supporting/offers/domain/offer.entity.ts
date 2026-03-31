@@ -47,6 +47,7 @@ export interface Offer {
   reminderCount: number;         // how many reminders have been sent
   leadId?: string;          // Link to Leads module
   customerId?: string;      // Link to CRM module
+  companyId?: string;       // Link to Company entity
   totalExVat: number;
   totalIncVat: number;
   // Template & document fields

@@ -15,6 +15,7 @@ export interface CreateOfferInput {
   createdBy:        string;
   leadId?:          string;
   customerId?:      string;
+  companyId?:       string;
   templateId?:      string;
   generatedDocument?: string;
   emailSubject?:      string;
@@ -46,6 +47,7 @@ export interface UpdateOfferInput {
   declinedAt?:           Date;
   reminderSentAt?:       Date;
   reminderCount?:        number;
+  companyId?:            string;
   generatedDocument?:    string;
   emailSubject?:         string;
   emailBody?:            string;
@@ -110,6 +112,7 @@ function mapOffer(r: Record<string, unknown>): Offer {
     reminderCount:        (r.reminderCount as number) ?? 0,
     leadId:               (r.leadId as string | null) ?? undefined,
     customerId:           (r.customerId as string | null) ?? undefined,
+    companyId:            (r.companyId as string | null) ?? undefined,
     totalExVat:           r.totalExVat as number,
     totalIncVat:          r.totalIncVat as number,
     templateId:           (r.templateId as string | null) ?? undefined,
@@ -160,7 +163,7 @@ const OFFER_SELECT = {
   totalExVat: true, totalIncVat: true,
   sentAt: true, viewedAt: true, acceptedAt: true, declinedAt: true,
   reminderSentAt: true, reminderCount: true,
-  leadId: true, customerId: true,
+  leadId: true, customerId: true, companyId: true,
   templateId: true, generatedDocument: true, emailSubject: true, emailBody: true, emailHeaderConfig: true, signatureImage: true, signerName: true, signatureMethod: true,
   publicToken: true, publicTokenExpiresAt: true,
   createdAt: true, updatedAt: true,
@@ -177,7 +180,7 @@ const OFFER_LIST_SELECT = {
   totalExVat: true, totalIncVat: true,
   sentAt: true, viewedAt: true, acceptedAt: true, declinedAt: true,
   reminderSentAt: true, reminderCount: true,
-  leadId: true, customerId: true, templateId: true,
+  leadId: true, customerId: true, companyId: true, templateId: true,
   publicToken: true, publicTokenExpiresAt: true,
   createdAt: true, updatedAt: true,
   lineItems: { select: LINE_ITEM_SELECT, orderBy: { sortOrder: 'asc' as const } },
@@ -202,6 +205,7 @@ export const offersRepository = {
         createdBy:         input.createdBy,
         leadId:            input.leadId ?? null,
         customerId:        input.customerId ?? null,
+        companyId:         input.companyId ?? null,
         templateId:        input.templateId ?? null,
         generatedDocument: input.generatedDocument ?? null,
         emailSubject:      input.emailSubject ?? null,
@@ -330,6 +334,7 @@ export const offersRepository = {
         ...(input.declinedAt           !== undefined ? { declinedAt: input.declinedAt }                     : {}),
         ...(input.reminderSentAt       !== undefined ? { reminderSentAt: input.reminderSentAt }             : {}),
         ...(input.reminderCount        !== undefined ? { reminderCount: input.reminderCount }               : {}),
+        ...(input.companyId            !== undefined ? { companyId: input.companyId || null }               : {}),
         ...(input.generatedDocument    !== undefined ? { generatedDocument: input.generatedDocument }       : {}),
         ...(input.emailSubject         !== undefined ? { emailSubject: input.emailSubject ?? null }         : {}),
         ...(input.emailBody            !== undefined ? { emailBody: input.emailBody ?? null }               : {}),
