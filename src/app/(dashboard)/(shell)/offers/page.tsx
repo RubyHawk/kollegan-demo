@@ -860,6 +860,16 @@ export default function OffersPage() {
                               target.classList.add('just-updated');
                               const t = target; // closure capture
                               setTimeout(() => t.classList.remove('just-updated'), 1300);
+
+                              // ── Scroll preview panel to show the highlighted element ──
+                              let scrollEl: HTMLElement | null = iframe.parentElement;
+                              while (scrollEl && getComputedStyle(scrollEl).overflowY === 'visible') {
+                                scrollEl = scrollEl.parentElement;
+                              }
+                              if (scrollEl) {
+                                const scrollTop = iframe.offsetTop + target.offsetTop - scrollEl.clientHeight / 3;
+                                scrollEl.scrollTo({ top: Math.max(0, scrollTop), behavior: 'smooth' });
+                              }
                             }
                           }
                         }}

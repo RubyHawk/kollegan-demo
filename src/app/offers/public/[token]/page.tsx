@@ -559,19 +559,38 @@ export default function PublicOfferPage() {
               className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-40"
               title="Ladda ner som PDF"
             >
-              <FileTextIcon size={13} />
-              <span className="hidden sm:inline">{downloading ? 'Laddar...' : 'PDF'}</span>
+              {downloading ? (
+                <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                </svg>
+              ) : (
+                <FileTextIcon size={13} />
+              )}
+              <span className="hidden sm:inline">{downloading ? 'Genererar...' : 'PDF'}</span>
             </button>
           </div>
         </div>
-        {/* Scroll progress bar */}
+        {/* Scroll progress bar / PDF indeterminate bar */}
         {offer.generatedDocument && (
-          <div className="h-0.5 w-full bg-slate-100">
-            <div
-              className="h-full bg-slate-900 transition-[width] duration-75"
-              style={{ width: `${scrollProgress}%` }}
-            />
-          </div>
+          downloading ? (
+            <div className="h-0.5 w-full bg-slate-100 overflow-hidden">
+              <div className="h-full bg-slate-900 w-1/3 animate-[slide-indeterminate_1.4s_ease-in-out_infinite]" />
+              <style>{`
+                @keyframes slide-indeterminate {
+                  0%   { transform: translateX(-100%); width: 40%; }
+                  50%  { transform: translateX(150%);  width: 60%; }
+                  100% { transform: translateX(300%);  width: 40%; }
+                }
+              `}</style>
+            </div>
+          ) : (
+            <div className="h-0.5 w-full bg-slate-100">
+              <div
+                className="h-full bg-slate-900 transition-[width] duration-75"
+                style={{ width: `${scrollProgress}%` }}
+              />
+            </div>
+          )
         )}
       </header>
 
