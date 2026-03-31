@@ -3,6 +3,8 @@
 import { useState, FormEvent, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Input } from '@shared/ui/input';
+import { Button } from '@shared/ui/button';
 
 type Step = 'credentials' | 'mfa';
 
@@ -101,14 +103,13 @@ function LoginForm() {
                   <label className="block text-sm text-(--text-secondary) mb-1" htmlFor="email">
                     E-post
                   </label>
-                  <input
+                  <Input
                     id="email"
                     type="email"
                     autoComplete="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-(--border) bg-(--surface-1) text-(--text-primary) text-sm focus:outline-none focus:border-(--accent)"
                   />
                 </div>
 
@@ -116,14 +117,13 @@ function LoginForm() {
                   <label className="block text-sm text-(--text-secondary) mb-1" htmlFor="password">
                     Lösenord
                   </label>
-                  <input
+                  <Input
                     id="password"
                     type="password"
                     autoComplete="current-password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-(--border) bg-(--surface-1) text-(--text-primary) text-sm focus:outline-none focus:border-(--accent)"
                   />
                 </div>
 
@@ -131,13 +131,9 @@ function LoginForm() {
                   <p className="text-sm text-red-500">{error}</p>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-2 px-4 rounded-lg bg-(--accent) text-white text-sm font-medium hover:bg-(--accent-light) transition-colors disabled:opacity-60"
-                >
+                <Button type="submit" disabled={loading} className="w-full">
                   {loading ? 'Loggar in…' : 'Logga in'}
-                </button>
+                </Button>
 
                 <Link href="/register" className="text-sm text-(--text-muted) hover:text-(--text-secondary) text-center transition-colors">
                   Inget konto? Skapa ett
@@ -167,7 +163,7 @@ function LoginForm() {
                   <label className="block text-sm text-(--text-secondary) mb-1" htmlFor="mfa-code">
                     Verifieringskod
                   </label>
-                  <input
+                  <Input
                     id="mfa-code"
                     type="text"
                     inputMode="numeric"
@@ -177,7 +173,7 @@ function LoginForm() {
                     value={mfaCode}
                     onChange={(e) => setMfaCode(e.target.value)}
                     placeholder="123456"
-                    className="w-full px-3 py-2 rounded-lg border border-(--border) bg-(--surface-1) text-(--text-primary) text-sm focus:outline-none focus:border-(--accent) tracking-widest text-center"
+                    className="tracking-widest text-center"
                   />
                 </div>
 
@@ -185,21 +181,18 @@ function LoginForm() {
                   <p className="text-sm text-red-500">{error}</p>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-2 px-4 rounded-lg bg-(--accent) text-white text-sm font-medium hover:bg-(--accent-light) transition-colors disabled:opacity-60"
-                >
+                <Button type="submit" disabled={loading} className="w-full">
                   {loading ? 'Verifierar…' : 'Verifiera'}
-                </button>
+                </Button>
 
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  className="w-full text-sm"
                   onClick={() => { setStep('credentials'); setError(''); setMfaCode(''); }}
-                  className="text-sm text-(--text-muted) hover:text-(--text-secondary) text-center transition-colors"
                 >
                   ← Tillbaka
-                </button>
+                </Button>
               </form>
             </>
           )}

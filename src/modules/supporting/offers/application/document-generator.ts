@@ -146,7 +146,9 @@ function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): st
       const key   = String(node.attrs?.key ?? '');
       const label = String(node.attrs?.label ?? key);
       const value = replacements?.[`{{${key}}}`];
-      return value ?? escapeHtml(label);
+      const content = value ?? escapeHtml(label);
+      // Wrap in a span so the live preview can highlight/scroll to this variable
+      return `<span data-var="${escapeHtml(key)}">${content}</span>`;
     }
 
     case 'signatureBlock': {

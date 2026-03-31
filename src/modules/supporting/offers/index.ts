@@ -14,6 +14,7 @@ export {
   createOffer,
   getOffer,
   listOffers,
+  countOffers,
   updateOffer,
   sendOffer,
   viewOffer,
@@ -75,6 +76,7 @@ export { registerOfferEmailJobs } from './jobs/offer-email.jobs';
 // ── API Handlers — offers ─────────────────────────────────────────────────────
 export {
   handleListOffers,
+  handleCountOffers,
   handleCreateOffer,
   handleGetOffer,
   handleUpdateOffer,

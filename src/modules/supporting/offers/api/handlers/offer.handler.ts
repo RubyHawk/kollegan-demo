@@ -15,6 +15,7 @@ import {
   createOffer,
   getOffer,
   listOffers,
+  countOffers,
   updateOffer,
   sendOffer,
   acceptOffer,
@@ -45,11 +46,13 @@ async function requireStaff(req: NextRequest) {
 // ── List Offers ──────────────────────────────────────────────────────────────
 
 const ListQuerySchema = z.object({
-  status: z.enum(['draft', 'sent', 'viewed', 'accepted', 'declined', 'expired']).optional(),
-  search: z.string().max(100).optional(),
-  leadId: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
+  status:   z.enum(['draft', 'sent', 'viewed', 'accepted', 'declined', 'expired']).optional(),
+  search:   z.string().max(100).optional(),
+  leadId:   z.string().optional(),
+  limit:    z.coerce.number().int().min(1).max(200).default(50),
+  offset:   z.coerce.number().int().min(0).default(0),
+  dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  dateTo:   z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
 export const handleListOffers = createHandler(
@@ -61,8 +64,25 @@ export const handleListOffers = createHandler(
     const { offers, total } = await listOffers(payload.orgId!, {
       status: query.status, search: query.search, leadId: query.leadId,
       limit: query.limit, offset: query.offset,
+      dateFrom: query.dateFrom, dateTo: query.dateTo,
     });
     return ok({ offers, total, limit: query.limit, offset: query.offset });
+  },
+);
+
+// ── Count Offers (tab badge counts) ──────────────────────────────────────────
+
+const CountQuerySchema = z.object({
+  search: z.string().max(100).optional(),
+});
+
+export const handleCountOffers = createHandler(
+  { auth: 'jwt', tag: 'Offers:Count', query: CountQuerySchema, rateLimit: { max: 120, windowMs: 60_000 } },
+  async (ctx) => {
+    const { query, req } = ctx as { query: z.infer<typeof CountQuerySchema>; req: NextRequest };
+    const payload = await requireStaff(req);
+    const counts = await countOffers(payload.orgId!, query.search);
+    return ok({ counts });
   },
 );
 

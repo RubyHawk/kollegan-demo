@@ -16,6 +16,23 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@shared/lib/utils';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -172,11 +189,47 @@ function canRemind(offer: Offer): boolean {
   return Date.now() - new Date(offer.reminderSentAt).getTime() >= 3 * 24 * 60 * 60 * 1000;
 }
 
+// ─── SortableRow — thin wrapper enabling drag-to-reorder for line items ────────
+
+function SortableRow({ id, children }: {
+  id: string;
+  children: (grip: React.ReactNode) => React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  const grip = (
+    <button
+      type="button"
+      {...attributes}
+      {...listeners}
+      className="shrink-0 p-1 rounded text-[var(--text-muted)] hover:text-[var(--accent)] cursor-grab active:cursor-grabbing touch-none opacity-0 group-hover/row:opacity-100 transition-opacity"
+      aria-label="Dra för att sortera"
+      tabIndex={-1}
+    >
+      <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">
+        <circle cx="3" cy="2" r="1.25"/><circle cx="7" cy="2" r="1.25"/>
+        <circle cx="3" cy="7" r="1.25"/><circle cx="7" cy="7" r="1.25"/>
+        <circle cx="3" cy="12" r="1.25"/><circle cx="7" cy="12" r="1.25"/>
+      </svg>
+    </button>
+  );
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children(grip)}
+    </div>
+  );
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function OffersPage() {
-  // allOffers always holds the full unfiltered list — tab counts stay stable
   const [allOffers,  setAllOffers]  = useState<Offer[]>([]);
+  const [serverTotal, setServerTotal] = useState(0);
+  const [tabCounts,  setTabCounts]  = useState<Record<string, number>>({ all: 0, draft: 0, sent: 0, viewed: 0, accepted: 0, declined: 0, expired: 0 });
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState<string | null>(null);
   const [tab,        setTab]        = useState<OfferStatus | 'all'>('all');
@@ -228,7 +281,12 @@ export default function OffersPage() {
   const [openCards, setOpenCards] = useState({ mottagare: true, detaljer: true });
   const [confirmedSections, setConfirmedSections] = useState<Set<'mottagare' | 'detaljer'>>(new Set());
   const livePreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previewIframeRef = useRef<HTMLIFrameElement>(null);
+  const lastActiveFieldRef = useRef<string | null>(null);
   const [openLines, setOpenLines] = useState<Set<number>>(new Set([0]));
+
+  // Keep lastActiveFieldRef in sync so onLoad can reference it after activeField resets to null
+  useEffect(() => { if (activeField) lastActiveFieldRef.current = activeField; }, [activeField]);
 
   // ── Load templates ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -253,46 +311,58 @@ export default function OffersPage() {
 
   useEffect(() => { void loadServices(); }, [loadServices]);
 
-  // ── Load offers — always fetch all so tab counts stay accurate ───────────────
+  // ── Load tab counts (lightweight groupBy) ────────────────────────────────────
+  const loadCounts = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (search.trim()) params.set('search', search.trim());
+      const res = await fetch(`/api/offers/counts?${params}`);
+      if (!res.ok) return;
+      const json = await res.json().catch(() => null) as { data: { counts: Record<string, number> } } | null;
+      if (json?.data?.counts) setTabCounts(json.data.counts);
+    } catch { /* non-critical */ }
+  }, [search]);
+
+  // ── Load offers — server-side status filter + pagination ─────────────────────
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ limit: '100', offset: '0' });
-      if (search.trim()) params.set('search', search.trim());
+      const params = new URLSearchParams({
+        limit:  String(PAGE_SIZE),
+        offset: String(currentPage * PAGE_SIZE),
+      });
+      if (tab !== 'all')    params.set('status', tab);
+      if (search.trim())    params.set('search', search.trim());
+      if (dateFrom)         params.set('dateFrom', dateFrom);
+      if (dateTo)           params.set('dateTo', dateTo);
       const res = await fetch(`/api/offers?${params}`);
       if (!res.ok) throw new Error(`Fel ${res.status}`);
       const json = await res.json().catch(() => null) as { data: { offers: Offer[]; total: number } } | null;
       if (!json) throw new Error('Serverfel — försök igen.');
       setAllOffers(json.data.offers);
+      setServerTotal(json.data.total);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, tab, currentPage, dateFrom, dateTo]);
 
-  useEffect(() => { void load(); setSelected(new Set()); setBulkResult(null); }, [load]);
+  useEffect(() => { void load(); void loadCounts(); setSelected(new Set()); setBulkResult(null); }, [load, loadCounts]);
   useEffect(() => { setCurrentPage(0); }, [tab, dateFrom, dateTo, search]);
 
-  // ── Derived: filtered + sorted list for current tab ───────────────────────────
+  // ── Derived: client-side sort only (status + date filtering is server-side) ───
   const filteredOffers = useMemo(() => {
-    let base = tab === 'all' ? allOffers : allOffers.filter((o) => o.status === tab);
-    if (dateFrom) base = base.filter((o) => new Date(o.createdAt) >= new Date(dateFrom));
-    if (dateTo)   base = base.filter((o) => new Date(o.createdAt) <= new Date(dateTo + 'T23:59:59'));
-    return base.slice().sort((a, b) => {
+    return allOffers.slice().sort((a, b) => {
       const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       return sortAsc ? diff : -diff;
     });
-  }, [allOffers, tab, sortAsc, dateFrom, dateTo]);
+  }, [allOffers, sortAsc]);
 
-  const offers       = useMemo(
-    () => filteredOffers.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE),
-    [filteredOffers, currentPage]);
-
-  const total          = allOffers.length;
-  const totalFiltered  = filteredOffers.length;
-  const totalPages     = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
+  const offers     = filteredOffers;
+  const total      = tabCounts.all;
+  const totalPages = Math.max(1, Math.ceil(serverTotal / PAGE_SIZE));
 
   // ── Open edit form for an existing draft offer ────────────────────────────────
   const openEdit = useCallback((offer: Offer) => {
@@ -400,7 +470,7 @@ export default function OffersPage() {
       }
       const j = await res.json() as { data: Offer };
       setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null);
-      await load(true);
+      await Promise.all([load(true), loadCounts()]);
       if (saveAndSendRef.current) {
         saveAndSendRef.current = false;
         setConfirmSend(j.data);
@@ -423,24 +493,24 @@ export default function OffersPage() {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error(`Fel ${res.status}`);
-      await load(true);
+      await Promise.all([load(true), loadCounts()]);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setActing(null);
     }
-  }, [load]);
+  }, [load, loadCounts]);
 
   // ── Delete ────────────────────────────────────────────────────────────────────
   const deleteOffer = useCallback(async (id: string) => {
     setConfirmDeleteOffer(null);
     try {
       await fetch(`/api/offers/${id}`, { method: 'DELETE' });
-      await load(true);
+      await Promise.all([load(true), loadCounts()]);
     } catch (e) {
       setError((e as Error).message);
     }
-  }, [load]);
+  }, [load, loadCounts]);
 
   // ── Template preview (from offer form) ────────────────────────────────────────
   const openTemplatePreview = useCallback(async () => {
@@ -504,13 +574,13 @@ export default function OffersPage() {
       const j = await res.json() as { data: { sent: number; failed: number } };
       setBulkResult(j.data);
       setSelected(new Set());
-      await load(true);
+      await Promise.all([load(true), loadCounts()]);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setBulkSending(false);
     }
-  }, [selected, allOffers, load]);
+  }, [selected, allOffers, load, loadCounts]);
 
   // ── Selection helpers ─────────────────────────────────────────────────────
   const draftOffers = allOffers.filter((o) => o.status === 'draft');
@@ -737,6 +807,33 @@ export default function OffersPage() {
 
   const tots = useMemo(() => computeTotals(form.lineItems), [form.lineItems]);
 
+  // ── Drag-to-reorder line items ────────────────────────────────────────────────
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const lineItemIds = useMemo(
+    () => form.lineItems.map((item, idx) => item.id ?? `new-${idx}`),
+    [form.lineItems],
+  );
+  function handleLineItemDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = lineItemIds.indexOf(active.id as string);
+    const newIdx = lineItemIds.indexOf(over.id as string);
+    if (oldIdx === -1 || newIdx === -1) return;
+    setForm((f) => ({ ...f, lineItems: arrayMove(f.lineItems, oldIdx, newIdx) }));
+    setOpenLines((s) => {
+      const n = new Set<number>();
+      const mapping = arrayMove([...Array(form.lineItems.length).keys()], oldIdx, newIdx);
+      for (const i of s) {
+        const newI = mapping.indexOf(i);
+        if (newI !== -1) n.add(newI);
+      }
+      return n;
+    });
+  }
+
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
@@ -879,6 +976,7 @@ export default function OffersPage() {
                         </div>
                       )}
                       <iframe
+                        ref={previewIframeRef}
                         srcDoc={livePreviewHtml}
                         title="Live-förhandsvisning"
                         className="w-full rounded-xl shadow-2xl"
@@ -887,22 +985,52 @@ export default function OffersPage() {
                         scrolling="no"
                         onLoad={(e) => {
                           const iframe = e.currentTarget;
+                          const d = iframe.contentDocument;
+                          if (!d) return;
+
+                          // Suppress scrollbar
+                          if (d.documentElement) d.documentElement.style.overflow = 'hidden';
+                          if (d.body) d.body.style.overflow = 'hidden';
+
                           const resize = () => {
                             try {
-                              const d = iframe.contentDocument;
-                              if (!d) return;
-                              // Suppress the iframe body's own scrollbar
-                              if (d.documentElement) d.documentElement.style.overflow = 'hidden';
-                              if (d.body) {
-                                d.body.style.overflow = 'hidden';
-                                iframe.style.height = `${d.body.scrollHeight}px`;
-                              }
+                              if (d.body) iframe.style.height = `${d.body.scrollHeight}px`;
                             } catch { /* cross-origin */ }
                           };
                           resize();
-                          iframe.contentDocument?.querySelectorAll('img').forEach((img) => {
-                            img.addEventListener('load', resize);
-                          });
+                          d.querySelectorAll('img').forEach((img) => { img.addEventListener('load', resize); });
+
+                          // ── Inject highlight animation ───────────────────────────
+                          const style = d.createElement('style');
+                          style.textContent = `
+                            @keyframes highlight-fade {
+                              0%   { background: oklch(0.95 0.12 250 / 0.35); box-shadow: 0 0 0 3px oklch(0.44 0.19 250 / 0.2); border-radius: 3px; }
+                              100% { background: transparent; box-shadow: none; }
+                            }
+                            [data-var].just-updated { animation: highlight-fade 1.2s ease-out forwards; }
+                          `;
+                          if (d.head) d.head.appendChild(style);
+
+                          // ── Highlight the field that triggered this preview ──────
+                          const fieldToVarKeys: Record<string, string[]> = {
+                            'Mottagare': ['recipientName', 'recipientCompany'],
+                            'E-post':    ['recipientEmail'],
+                            'Rubrik':    ['title'],
+                          };
+                          const field = lastActiveFieldRef.current;
+                          const varKeys = field ? (fieldToVarKeys[field] ?? []) : [];
+                          if (varKeys.length > 0) {
+                            let target: HTMLElement | null = null;
+                            for (const key of varKeys) {
+                              target = d.querySelector(`[data-var="${key}"]`) as HTMLElement | null;
+                              if (target) break;
+                            }
+                            if (target) {
+                              target.classList.add('just-updated');
+                              const t = target; // closure capture
+                              setTimeout(() => t.classList.remove('just-updated'), 1300);
+                            }
+                          }
                         }}
                       />
                     </motion.div>
@@ -1219,15 +1347,20 @@ export default function OffersPage() {
                             {fieldErrors.lineItems && <span className="text-[10px] text-red-500">{fieldErrors.lineItems}</span>}
                           </div>
                           <div className="border-t border-[var(--border)]/40">
+                            <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleLineItemDragEnd}>
+                              <SortableContext items={lineItemIds} strategy={verticalListSortingStrategy}>
                             {form.lineItems.map((item, idx) => {
                               const disc = 1 - (item.discount / 100);
                               const lineExVat = item.quantity * item.unitPrice * disc;
                               const lineComplete = item.description.trim().length > 0 && item.quantity > 0;
                               const isOpen = openLines.has(idx);
                               return (
-                                <AnimatePresence key={idx} mode="wait">
+                                <SortableRow key={lineItemIds[idx]} id={lineItemIds[idx]}>
+                                {(grip) => (
+                                <AnimatePresence mode="wait">
                                   {!isOpen && lineComplete ? (
                                     <motion.div key="collapsed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className={cn('flex items-center gap-2.5 px-3 py-2.5 group/row hover:bg-[var(--surface-alt)] transition-colors', idx > 0 && 'border-t border-[var(--border)]/40')}>
+                                      {grip}
                                       <span className="shrink-0 w-5 h-5 rounded-md bg-[var(--surface-alt)] text-[var(--text-secondary)] text-[10px] font-semibold flex items-center justify-center tabular-nums select-none border border-[var(--border)]">
                                         {idx + 1}
                                       </span>
@@ -1252,6 +1385,7 @@ export default function OffersPage() {
                                   ) : (
                                     <motion.div key="expanded" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className={cn('px-3 py-3 space-y-2.5 group/row', idx > 0 && 'border-t border-[var(--border)]/40')}>
                                       <div className="flex items-center gap-2">
+                                        {grip}
                                         <span className="shrink-0 w-5 h-5 rounded-md bg-[var(--surface-alt)] text-[var(--text-secondary)] text-[10px] font-semibold flex items-center justify-center tabular-nums select-none border border-[var(--border)]">
                                           {idx + 1}
                                         </span>
@@ -1338,8 +1472,12 @@ export default function OffersPage() {
                                     </motion.div>
                                   )}
                                 </AnimatePresence>
+                                )}
+                                </SortableRow>
                               );
                             })}
+                              </SortableContext>
+                            </DndContext>
                           </div>
                           <div className="border-t border-[var(--border)]/40 p-2">
                             <button type="button" onClick={addLine} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-[var(--border)] text-xs text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
@@ -1504,7 +1642,7 @@ export default function OffersPage() {
         {/* Row 1: pipeline pills */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {STATUS_TABS.map((t) => {
-            const count = t.id === 'all' ? allOffers.length : allOffers.filter((o) => o.status === t.id).length;
+            const count = tabCounts[t.id] ?? 0;
             const isActive = tab === t.id;
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
@@ -1840,8 +1978,8 @@ export default function OffersPage() {
           {/* Pagination footer */}
           <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--border)] bg-[var(--surface-alt)]">
             <span className="text-[11px] text-[var(--text-muted)]">
-              {totalFiltered === 0 ? 'Inga resultat' : `Visar ${currentPage * PAGE_SIZE + 1}–${Math.min((currentPage + 1) * PAGE_SIZE, totalFiltered)} av ${totalFiltered}`}
-              {total !== totalFiltered && ` (filtrerat från ${total})`}
+              {serverTotal === 0 ? 'Inga resultat' : `Visar ${currentPage * PAGE_SIZE + 1}–${Math.min((currentPage + 1) * PAGE_SIZE, serverTotal)} av ${serverTotal}`}
+              {total > serverTotal && ` (filtrerat från ${total})`}
             </span>
             {totalPages > 1 && (
               <div className="flex items-center gap-1">
