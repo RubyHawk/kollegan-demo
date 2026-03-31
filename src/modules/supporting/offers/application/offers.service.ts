@@ -57,6 +57,12 @@ export async function listOffers(
   return offersRepository.list(orgId, filter);
 }
 
+// ─── countOffers ──────────────────────────────────────────────────────────────
+
+export async function countOffers(orgId: string, search?: string): Promise<Record<string, number>> {
+  return offersRepository.counts(orgId, search);
+}
+
 // ─── updateOffer ──────────────────────────────────────────────────────────────
 
 export async function updateOffer(

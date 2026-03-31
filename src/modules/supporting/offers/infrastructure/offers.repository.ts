@@ -65,11 +65,13 @@ export interface UpdateOfferInput {
 }
 
 export interface ListOffersFilter {
-  status?:  string;
-  search?:  string;
-  leadId?:  string;
-  limit?:   number;
-  offset?:  number;
+  status?:   string;
+  search?:   string;
+  leadId?:   string;
+  limit?:    number;
+  offset?:   number;
+  dateFrom?: string; // ISO date string YYYY-MM-DD (inclusive)
+  dateTo?:   string; // ISO date string YYYY-MM-DD (inclusive)
 }
 
 // ─── Mappers ───────────────────────────────────────────────────────────────────
@@ -247,6 +249,12 @@ export const offersRepository = {
           { recipientEmail:{ contains: filter.search, mode: 'insensitive' } },
         ],
       } : {}),
+      ...((filter.dateFrom || filter.dateTo) ? {
+        createdAt: {
+          ...(filter.dateFrom ? { gte: new Date(filter.dateFrom) } : {}),
+          ...(filter.dateTo   ? { lte: new Date(filter.dateTo + 'T23:59:59') } : {}),
+        },
+      } : {}),
     };
 
     const [rows, total] = await Promise.all([
@@ -266,6 +274,33 @@ export const offersRepository = {
       offers: rows.map((r: unknown) => mapOffer(r as Record<string, unknown>)),
       total,
     };
+  },
+
+  async counts(orgId: string, search?: string): Promise<Record<string, number>> {
+    const where: Prisma.OfferWhereInput = {
+      organizationId: orgId,
+      deletedAt: null,
+      ...(search ? {
+        OR: [
+          { title:         { contains: search, mode: 'insensitive' } },
+          { recipientName: { contains: search, mode: 'insensitive' } },
+          { recipientEmail:{ contains: search, mode: 'insensitive' } },
+        ],
+      } : {}),
+    };
+
+    const rows = await prisma.offer.groupBy({
+      by: ['status'],
+      where,
+      _count: { id: true },
+    });
+
+    const result: Record<string, number> = { all: 0, draft: 0, sent: 0, viewed: 0, accepted: 0, declined: 0, expired: 0 };
+    for (const row of rows) {
+      result[row.status] = row._count.id;
+      result.all += row._count.id;
+    }
+    return result;
   },
 
   async update(id: string, orgId: string, input: UpdateOfferInput): Promise<Offer | null> {

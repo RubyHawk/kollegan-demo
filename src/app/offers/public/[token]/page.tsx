@@ -206,9 +206,28 @@ export default function PublicOfferPage() {
   const [sigFont, setSigFont] = useState<typeof SIG_FONTS[number]['id']>(SIG_FONTS[0].id);
   const [typedSig, setTypedSig] = useState('');
 
+  const [scrollProgress, setScrollProgress] = useState(0);
+
   const sigRef = useRef<SignatureCanvas>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // ── Scroll progress ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const handleScroll = () => {
+      const iframe = iframeRef.current;
+      if (!iframe) return;
+      const rect = iframe.getBoundingClientRect();
+      const iframeHeight = iframe.offsetHeight;
+      const viewportHeight = window.innerHeight;
+      const scrolled = -rect.top;
+      const total = iframeHeight - viewportHeight;
+      if (total <= 0) { setScrollProgress(100); return; }
+      setScrollProgress(Math.min(100, Math.max(0, Math.round((scrolled / total) * 100))));
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // ── Iframe setup ─────────────────────────────────────────────────────────────
   const handleIframeLoad = useCallback(() => {
@@ -517,6 +536,7 @@ export default function PublicOfferPage() {
       {/* ─── Sticky header ─── */}
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
         <div className="flex h-14 items-center justify-between gap-4 px-4 sm:px-6">
+
           <div className="flex items-center gap-3 min-w-0">
             <FileTextIcon size={16} className="shrink-0 text-slate-400" />
             <div className="min-w-0">
@@ -544,6 +564,15 @@ export default function PublicOfferPage() {
             </button>
           </div>
         </div>
+        {/* Scroll progress bar */}
+        {offer.generatedDocument && (
+          <div className="h-0.5 w-full bg-slate-100">
+            <div
+              className="h-full bg-slate-900 transition-[width] duration-75"
+              style={{ width: `${scrollProgress}%` }}
+            />
+          </div>
+        )}
       </header>
 
       {/* ─── Content ─── */}

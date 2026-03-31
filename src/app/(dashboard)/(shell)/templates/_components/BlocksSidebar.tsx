@@ -528,7 +528,7 @@ export default function BlocksSidebar() {
 
 function SidebarShell({ children }: { children?: React.ReactNode }) {
   return (
-    <div className="w-52 shrink-0 flex-col overflow-y-auto border-r border-[var(--border)] bg-[var(--surface-2)] hidden md:flex">
+    <div className="w-44 lg:w-52 shrink-0 flex-col overflow-y-auto border-r border-[var(--border)] bg-[var(--surface-2)] hidden md:flex">
       <div className="px-3 pt-3 pb-2 border-b border-[var(--border)]">
         <p className="text-sm font-semibold text-[var(--text-primary)]">
           Infoga

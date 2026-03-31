@@ -57,7 +57,7 @@ export default function BlockSettingsSidebar() {
   }, [editor]);
 
   return (
-    <div className="w-64 shrink-0 hidden lg:flex flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface-1)]">
+    <div className="w-56 xl:w-64 shrink-0 hidden lg:flex flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface-1)]">
       {/* Background images panel — always visible when background images exist */}
       {editor && bgImages.length > 0 && (
         <div className="border-b border-[var(--border)] p-3 shrink-0">
