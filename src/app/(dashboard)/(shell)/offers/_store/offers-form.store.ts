@@ -8,6 +8,7 @@ import type {
   OfferProduct,
   OfferTemplate,
   ContactResult,
+  CompanyResult,
   ServiceForm,
   LineItem,
 } from './types';
@@ -46,6 +47,10 @@ interface OffersFormState {
   contactResults:  ContactResult[];
   contactLoading:  boolean;
 
+  // ── Company typeahead ────────────────────────────────────────────────────────
+  companyResults:  CompanyResult[];
+  companyLoading:  boolean;
+
   // ── Product library / picker ─────────────────────────────────────────────────
   services:          OfferProduct[];
   templates:         OfferTemplate[];
@@ -83,6 +88,9 @@ interface OffersFormState {
   setContactSearch:  (v: string) => void;
   setContactResults: (results: ContactResult[]) => void;
   setContactLoading: (loading: boolean) => void;
+
+  setCompanyResults: (results: CompanyResult[]) => void;
+  setCompanyLoading: (loading: boolean) => void;
 
   setServices:          (products: OfferProduct[]) => void;
   setTemplates:         (templates: OfferTemplate[]) => void;
@@ -136,6 +144,10 @@ export const useOffersFormStore = create<OffersFormState>()((set, get) => ({
   contactResults: [],
   contactLoading: false,
 
+  // Company typeahead
+  companyResults: [],
+  companyLoading: false,
+
   // Product/service
   services:           [],
   templates:          [],
@@ -173,6 +185,9 @@ export const useOffersFormStore = create<OffersFormState>()((set, get) => ({
   setContactSearch:  (contactSearch)  => set({ contactSearch }),
   setContactResults: (contactResults) => set({ contactResults }),
   setContactLoading: (contactLoading) => set({ contactLoading }),
+
+  setCompanyResults: (companyResults) => set({ companyResults }),
+  setCompanyLoading: (companyLoading) => set({ companyLoading }),
 
   setServices:    (services)   => set({ services }),
   setTemplates:   (templates)  => set({ templates }),
@@ -263,6 +278,7 @@ export const useOffersFormStore = create<OffersFormState>()((set, get) => ({
     openLines: new Set([0]), openCards: { mottagare: true, detaljer: true },
     confirmedSections: new Set<'mottagare' | 'detaljer'>(),
     contactSearch: '', contactResults: [], contactLoading: false,
+    companyResults: [], companyLoading: false,
     productPickerRow: null, productSearch: '',
     showServiceLibrary: false, serviceForm: { ...EMPTY_SERVICE_FORM }, savingService: false,
     editingOfferId: null,

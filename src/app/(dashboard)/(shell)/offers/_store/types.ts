@@ -65,6 +65,12 @@ export interface ContactResult {
   company: string | null;
 }
 
+export interface CompanyResult {
+  id:        string;
+  name:      string;
+  orgNumber?: string | null;
+}
+
 export interface BulkResult { sent: number; failed: number }
 
 export interface OfferForm {

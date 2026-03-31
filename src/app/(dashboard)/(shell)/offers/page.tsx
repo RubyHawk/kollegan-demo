@@ -35,7 +35,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useOffersListStore, PAGE_SIZE } from './_store/offers-list.store';
 import { useOffersFormStore } from './_store/offers-form.store';
-import type { OfferStatus, LineItem, Offer, OfferTemplate, OfferProduct, ContactResult } from './_store/types';
+import type { OfferStatus, LineItem, Offer, OfferTemplate, OfferProduct, ContactResult, CompanyResult } from './_store/types';
 import { EMPTY_LINE, EMPTY_FORM } from './_store/types';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -177,12 +177,14 @@ export default function OffersPage() {
     livePreviewHtml, livePreviewLoading, previewDirty, activeField, cachedTplContent,
     previewDoc, fetchingDocId, tplPreview,
     contactSearch, contactResults, contactLoading,
+    companyResults, companyLoading,
     services, templates, productPickerRow, productSearch, showServiceLibrary, serviceForm, savingService,
     openLines, openCards, confirmedSections,
     setShowForm, setEditingOfferId, setWizardStep, setForm, setFieldErrors, setSaving, setDraftSaved,
     setLivePreviewHtml, setLivePreviewLoading, setPreviewDirty, setActiveField, setCachedTplContent,
     setPreviewDoc, setFetchingDocId, setTplPreview,
     setContactSearch, setContactResults, setContactLoading,
+    setCompanyResults, setCompanyLoading,
     setServices, setTemplates, setProductPickerRow, setProductSearch,
     setShowServiceLibrary, setServiceForm, setSavingService,
     setOpenLines, setOpenCards, setConfirmedSections,
@@ -497,6 +499,24 @@ export default function OffersPage() {
       }
     }, 280);
   }, []);
+
+  const companySearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchCompanies = useCallback((q: string) => {
+    if (companySearchRef.current) clearTimeout(companySearchRef.current);
+    if (!q.trim()) { setCompanyResults([]); return; }
+    companySearchRef.current = setTimeout(async () => {
+      setCompanyLoading(true);
+      try {
+        const res = await fetch(`/api/companies?search=${encodeURIComponent(q)}&limit=8`);
+        if (res.ok) {
+          const j = await res.json() as { data: { companies: CompanyResult[] } };
+          setCompanyResults(j.data.companies ?? []);
+        }
+      } catch { /* ignore */ } finally {
+        setCompanyLoading(false);
+      }
+    }, 280);
+  }, [setCompanyResults, setCompanyLoading]);
 
   const pickContact = useCallback((c: ContactResult) => {
     setForm((f) => ({
@@ -1090,9 +1110,43 @@ export default function OffersPage() {
                                       {fieldErrors.recipientEmail && <p className="text-[10px] text-red-500 mt-0.5">{fieldErrors.recipientEmail}</p>}
                                     </div>
                                   </div>
-                                  <div>
+                                  <div className="relative">
                                     <label className="block text-[10px] font-medium text-[var(--text-secondary)] mb-1">Företag</label>
-                                    <input value={form.recipientCompany} onChange={(e) => setForm((f) => ({ ...f, recipientCompany: e.target.value }))} onFocus={() => setActiveField('Mottagare')} placeholder="Lindström AB" className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"/>
+                                    <input
+                                      value={form.recipientCompany}
+                                      onChange={(e) => {
+                                        setForm((f) => ({ ...f, recipientCompany: e.target.value }));
+                                        searchCompanies(e.target.value);
+                                      }}
+                                      onFocus={() => { setActiveField('Mottagare'); if (form.recipientCompany) searchCompanies(form.recipientCompany); }}
+                                      onBlur={() => setTimeout(() => setCompanyResults([]), 150)}
+                                      placeholder="Lindström AB"
+                                      className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
+                                    />
+                                    {(companyResults.length > 0 || companyLoading) && (
+                                      <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
+                                        {companyLoading ? (
+                                          <div className="flex items-center gap-2 px-4 py-3 text-xs text-[var(--text-muted)]">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin shrink-0">
+                                              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                            </svg>
+                                            Söker…
+                                          </div>
+                                        ) : companyResults.map((co) => (
+                                          <button key={co.id} type="button"
+                                            onMouseDown={(e) => { e.preventDefault(); setForm((f) => ({ ...f, recipientCompany: co.name })); setCompanyResults([]); }}
+                                            className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
+                                            <div className="w-6 h-6 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-[10px] font-semibold shrink-0">
+                                              {co.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-xs font-medium text-[var(--text-primary)] truncate">{co.name}</p>
+                                              {co.orgNumber && <p className="text-[10px] text-[var(--text-muted)]">{co.orgNumber}</p>}
+                                            </div>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                   <div className="flex items-center justify-end pt-2 mt-1 border-t border-[var(--border)]/30">
                                     <button type="button" disabled={!mottagareComplete} onClick={() => { if (mottagareComplete) { setConfirmedSections((s) => { const n = new Set(s); n.add('mottagare'); return n; }); setOpenCards((o) => ({ ...o, mottagare: false })); } }} className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150', mottagareComplete ? 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:border-emerald-400/60 hover:text-emerald-600 hover:bg-emerald-50/50 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400 dark:hover:bg-emerald-950/30 cursor-pointer' : 'border-[var(--border)]/40 text-[var(--text-muted)] opacity-35 cursor-not-allowed bg-transparent')}>
@@ -1251,17 +1305,27 @@ export default function OffersPage() {
                                       </div>
                                       {productPickerRow === idx && (
                                         <div className="relative z-50">
-                                          <div className="absolute top-0 left-0 right-0 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
-                                            <div className="p-2 border-b border-[var(--border)]">
-                                              <input autoFocus value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="Sök produkt…" className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)] transition-colors"/>
+                                          <div className="absolute top-0 left-0 right-0 bg-[var(--surface-0)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden">
+                                            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[var(--border)]">
+                                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--text-muted)]">
+                                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                              </svg>
+                                              <input autoFocus value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="Sök produkt…" className="flex-1 bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none"/>
+                                              <kbd className="shrink-0 text-[10px] text-[var(--text-muted)] border border-[var(--border)] rounded px-1 py-0.5">Esc</kbd>
                                             </div>
-                                            <div className="max-h-40 overflow-y-auto">
+                                            <div className="max-h-72 overflow-y-auto divide-y divide-[var(--border)]/50">
                                               {filteredServices.length === 0 ? (
-                                                <div className="px-3 py-2 text-xs text-[var(--text-muted)]">Inga produkter hittades</div>
+                                                <div className="px-4 py-6 text-center text-xs text-[var(--text-muted)]">Inga produkter hittades</div>
                                               ) : filteredServices.map((p) => (
-                                                <button key={p.id} type="button" onClick={() => pickProduct(idx, p)} className="w-full text-left px-3 py-2 hover:bg-[var(--surface-active)] transition-colors border-b border-[var(--border)] last:border-0 text-xs">
-                                                  <p className="font-medium text-[var(--text-primary)]">{p.name}{p.unit ? ` / ${p.unit}` : ''}</p>
-                                                  <p className="text-[var(--text-muted)]">{fmtSEK(p.unitPrice)} · {Math.round(p.vatRate * 100)}% moms</p>
+                                                <button key={p.id} type="button" onClick={() => pickProduct(idx, p)}
+                                                  className="w-full text-left px-4 py-3 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3">
+                                                  <div className="w-8 h-8 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center shrink-0 text-[var(--accent)] text-[11px] font-bold">
+                                                    {p.name.charAt(0).toUpperCase()}
+                                                  </div>
+                                                  <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-medium text-[var(--text-primary)] truncate">{p.name}</p>
+                                                    <p className="text-[10px] text-[var(--text-muted)]">{fmtSEK(p.unitPrice)}{p.unit ? ` / ${p.unit}` : ''} · {Math.round(p.vatRate * 100)}% moms</p>
+                                                  </div>
                                                 </button>
                                               ))}
                                             </div>
