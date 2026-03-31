@@ -52,6 +52,7 @@ import {
   CalendarIcon,
   NoteIcon,
   PackageIcon,
+  CompanyIcon,
 } from '@shared/ui/icons';
 import { SPRING_SNAPPY, SPRING_STANDARD, EASE_SPRING } from '@shared/lib/motion';
 import { cn } from '@shared/lib/utils';
@@ -149,6 +150,7 @@ const NAV_CONFIG: NavSection[] = [
       },
       { type: 'link', href: '/templates', label: 'Mallar',    icon: FileTextIcon },
       { type: 'link', href: '/products',  label: 'Produkter', icon: PackageIcon },
+      { type: 'link', href: '/companies', label: 'Företag',   icon: CompanyIcon },
     ],
   },
   {
