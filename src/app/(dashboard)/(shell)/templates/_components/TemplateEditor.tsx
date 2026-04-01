@@ -253,14 +253,14 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
     // 2. Load new page body
     const newPage = flushed[newIdx];
     if (!newPage || !editor) return;
-    editor.commands.setContent(newPage.body as Parameters<typeof editor.commands.setContent>[0]);
+    editor.commands.setContent(newPage.body as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
 
     // 3. Load new page override H/F content
     headerPageOverride?.commands.setContent(
-      newPage.header.content as Parameters<typeof editor.commands.setContent>[0],
+      newPage.header.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
     );
     footerPageOverride?.commands.setContent(
-      newPage.footer.content as Parameters<typeof editor.commands.setContent>[0],
+      newPage.footer.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
     );
 
     // 4. Load new page H/F display toggles
@@ -285,9 +285,9 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
     const newIdx    = newPages.length - 1;
 
     // Load new page content
-    editor?.commands.setContent(newPage.body as Parameters<typeof editor.commands.setContent>[0]);
-    headerPageOverride?.commands.setContent(EMPTY_DOC as Parameters<typeof editor.commands.setContent>[0]);
-    footerPageOverride?.commands.setContent(EMPTY_DOC as Parameters<typeof editor.commands.setContent>[0]);
+    editor?.commands.setContent(newPage.body as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
+    headerPageOverride?.commands.setContent(EMPTY_DOC as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
+    footerPageOverride?.commands.setContent(EMPTY_DOC as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
     setActiveHeader({ enabled: false, useDefault: true });
     setActiveFooter({ enabled: false, useDefault: true });
 
@@ -309,12 +309,12 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
       : Math.min(curIdx, newPages.length - 1);
     const targetPage = newPages[newIdx];
 
-    editor?.commands.setContent(targetPage.body as Parameters<typeof editor.commands.setContent>[0]);
+    editor?.commands.setContent(targetPage.body as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
     headerPageOverride?.commands.setContent(
-      targetPage.header.content as Parameters<typeof editor.commands.setContent>[0],
+      targetPage.header.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
     );
     footerPageOverride?.commands.setContent(
-      targetPage.footer.content as Parameters<typeof editor.commands.setContent>[0],
+      targetPage.footer.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
     );
     setActiveHeader({ enabled: targetPage.header.enabled, useDefault: targetPage.header.useDefault });
     setActiveFooter({ enabled: targetPage.footer.enabled, useDefault: targetPage.footer.useDefault });
@@ -388,11 +388,11 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
           typeof json === 'string' ? json : JSON.stringify(json),
         );
         const firstPage = doc.pages[0] ?? makeEmptyPage();
-        editor.commands.setContent(firstPage.body as Parameters<typeof editor.commands.setContent>[0]);
-        headerDefault?.commands.setContent(doc.defaultHeader as Parameters<typeof editor.commands.setContent>[0]);
-        footerDefault?.commands.setContent(doc.defaultFooter as Parameters<typeof editor.commands.setContent>[0]);
-        headerPageOverride?.commands.setContent(firstPage.header.content as Parameters<typeof editor.commands.setContent>[0]);
-        footerPageOverride?.commands.setContent(firstPage.footer.content as Parameters<typeof editor.commands.setContent>[0]);
+        editor.commands.setContent(firstPage.body as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
+        headerDefault?.commands.setContent(doc.defaultHeader as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
+        footerDefault?.commands.setContent(doc.defaultFooter as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
+        headerPageOverride?.commands.setContent(firstPage.header.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
+        footerPageOverride?.commands.setContent(firstPage.footer.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
         setActiveHeader({ enabled: firstPage.header.enabled, useDefault: firstPage.header.useDefault });
         setActiveFooter({ enabled: firstPage.footer.enabled, useDefault: firstPage.footer.useDefault });
         setPages(doc.pages);

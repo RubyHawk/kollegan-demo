@@ -153,7 +153,8 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   const appUrl = process.env.PUBLIC_OFFER_BASE_URL
     ? `${process.env.PUBLIC_OFFER_BASE_URL}`
     : `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/offers/public`;
-  const publicUrl = `${appUrl}/${updated.publicToken}`;(updated, publicUrl, sender).catch((err: unknown) =>
+  const publicUrl = `${appUrl}/${updated.publicToken}`;
+  enqueueOfferEmail(updated, publicUrl, sender).catch((err: unknown) =>
     logger.warn(TAG, 'Failed to enqueue offer email', { err })
   );
 

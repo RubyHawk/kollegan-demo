@@ -103,7 +103,11 @@ export const handleUpdateCompany = createHandler(
     const { body, req } = ctx as { body: z.infer<typeof UpdateBodySchema>; req: NextRequest };
     const id = extractId(req);
     const payload = await requireStaff(req);
-    const updated = await companiesRepository.update(id, payload.orgId!, body);
+    const updated = await companiesRepository.update(id, payload.orgId!, {
+      ...body,
+      website: body.website ?? undefined,
+      logoUrl: body.logoUrl ?? undefined,
+    });
     if (!updated) throw Errors.notFound('Company not found');
     return ok(updated);
   },

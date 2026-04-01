@@ -23,7 +23,24 @@ const PUBLIC_PREFIXES = [
   '/favicon',
 ];
 
+const OFFER_SUBDOMAIN = process.env.PUBLIC_OFFER_SUBDOMAIN ?? 'offert';
+
 export async function proxy(request: NextRequest): Promise<NextResponse> {
+  const host = request.headers.get('host') ?? '';
+  const hostname = host.split(':')[0];
+
+  // Subdomain routing: offert.soleria.se/<token> → /offers/public/<token>
+  if (hostname.startsWith(`${OFFER_SUBDOMAIN}.`)) {
+    const { pathname } = request.nextUrl;
+    if (!pathname.startsWith('/offers/public') && !pathname.startsWith('/_next')) {
+      const token = pathname.slice(1);
+      if (token && !token.includes('/')) {
+        return NextResponse.rewrite(new URL(`/offers/public/${token}`, request.url));
+      }
+    }
+    return NextResponse.next();
+  }
+
   const { pathname } = request.nextUrl;
 
   if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
