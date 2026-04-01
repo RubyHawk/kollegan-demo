@@ -122,7 +122,12 @@ export const handleUpdateProduct = createHandler(
     const { body, req } = ctx as { body: z.infer<typeof UpdateBodySchema>; req: NextRequest };
     const id = extractId(req);
     const payload = await requireStaff(req);
-    const updated = await updateProduct(id, payload.orgId!, body);
+    const updated = await updateProduct(id, payload.orgId!, {
+      ...body,
+      imageUrl:    body.imageUrl    ?? undefined,
+      minQuantity: body.minQuantity ?? undefined,
+      maxQuantity: body.maxQuantity ?? undefined,
+    });
     if (!updated) throw Errors.notFound('Product not found');
     return ok(updated);
   },
