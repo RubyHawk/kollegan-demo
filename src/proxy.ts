@@ -30,9 +30,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const hostname = host.split(':')[0];
 
   // Subdomain routing: offert.soleria.se/<token> → /offers/public/<token>
+  // Only rewrite bare single-segment paths that are NOT known app routes.
   if (hostname.startsWith(`${OFFER_SUBDOMAIN}.`)) {
     const { pathname } = request.nextUrl;
-    if (!pathname.startsWith('/offers/public') && !pathname.startsWith('/_next')) {
+    const isAppRoute = PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+    if (!isAppRoute && !pathname.startsWith('/offers/') && !pathname.startsWith('/_next')) {
       const token = pathname.slice(1);
       if (token && !token.includes('/')) {
         return NextResponse.rewrite(new URL(`/offers/public/${token}`, request.url));
