@@ -1425,6 +1425,39 @@ function AnslutningarTab() {
 
 function SakerhetTab({ user }: { user: UserProps }) {
   const [mfaClicked, setMfaClicked] = useState(false);
+  const [currentPw,  setCurrentPw]  = useState('');
+  const [newPw,      setNewPw]      = useState('');
+  const [confirmPw,  setConfirmPw]  = useState('');
+  const [pwPending,  setPwPending]  = useState(false);
+  const [pwError,    setPwError]    = useState('');
+  const [pwSaved,    setPwSaved]    = useState(false);
+
+  async function changePassword() {
+    setPwPending(true);
+    setPwError('');
+    setPwSaved(false);
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ currentPassword: currentPw, newPassword: newPw, confirmPassword: confirmPw }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setPwError(data.error ?? 'Något gick fel.');
+        return;
+      }
+      setPwSaved(true);
+      setCurrentPw('');
+      setNewPw('');
+      setConfirmPw('');
+      setTimeout(() => setPwSaved(false), 3000);
+    } catch {
+      setPwError('Nätverksfel. Försök igen.');
+    } finally {
+      setPwPending(false);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -1433,22 +1466,20 @@ function SakerhetTab({ user }: { user: UserProps }) {
         <div className="flex flex-col gap-4">
           <div>
             <FieldLabel>Nuvarande lösenord</FieldLabel>
-            <Input value="••••••••••••" readOnly type="password" />
+            <Input value={currentPw} onChange={setCurrentPw} type="password" placeholder="Ditt nuvarande lösenord" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <FieldLabel>Nytt lösenord</FieldLabel>
-              <Input value="" onChange={() => {}} placeholder="Minst 12 tecken" type="password" />
+              <Input value={newPw} onChange={setNewPw} placeholder="Minst 8 tecken" type="password" />
             </div>
             <div>
               <FieldLabel>Bekräfta nytt lösenord</FieldLabel>
-              <Input value="" onChange={() => {}} placeholder="Upprepa lösenordet" type="password" />
+              <Input value={confirmPw} onChange={setConfirmPw} placeholder="Upprepa lösenordet" type="password" />
             </div>
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] bg-[var(--surface-alt)] border border-[var(--border-light)] rounded-xl px-3 py-2.5">
-            <Icon path={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>} size={13} className="shrink-0 text-[var(--accent)]" />
-            Lösenordsändring är inaktiverad i demo-läge.
-          </div>
+          {pwError && <p className="text-sm text-red-500">{pwError}</p>}
+          <SaveButton pending={pwPending} saved={pwSaved} onClick={() => void changePassword()} />
         </div>
       </SectionCard>
 

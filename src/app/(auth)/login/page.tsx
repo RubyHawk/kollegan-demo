@@ -2,7 +2,6 @@
 
 import { useState, FormEvent, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { Input } from '@shared/ui/input';
 import { Button } from '@shared/ui/button';
 
@@ -131,9 +130,6 @@ function LoginForm() {
                   {loading ? 'Loggar in…' : 'Logga in'}
                 </Button>
 
-                <Link href="/register" className="text-sm text-(--text-muted) hover:text-(--text-secondary) text-center transition-colors">
-                  Inget konto? Skapa ett
-                </Link>
               </form>
 
               {process.env.NODE_ENV !== 'production' && (
