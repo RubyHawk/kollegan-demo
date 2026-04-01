@@ -84,12 +84,8 @@ function LoginForm() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
-            </svg>
-          </div>
-          <span className="font-heading text-xl font-semibold text-(--text-primary)">Kollegan</span>
+          <img src="/soleria-logo.png" alt="Soleria" className="h-12 w-auto" />
+          <span className="font-heading text-xl font-semibold text-(--text-primary)">Soleria</span>
         </div>
 
         {/* Login card */}
