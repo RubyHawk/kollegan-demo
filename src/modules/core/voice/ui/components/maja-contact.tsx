@@ -8,7 +8,7 @@ const MAJA_BRAND: VoiceBrand = {
   assistantId: process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID || '',
   accentColor: 'gold',
   callStartMessage:
-    'Välkommen till Grand Hotel Kollegan, det är Maja i receptionen. Hur kan jag hjälpa dig idag?',
+    'Välkommen till Grand Hotel Soleria, det är Maja i receptionen. Hur kan jag hjälpa dig idag?',
   chatWelcomeMessage: 'Hej! Skriv ditt meddelande så hjälper jag dig.',
   chatWelcomeMessageLong:
     'Hej! Skriv ditt meddelande så hjälper jag dig. Vill du boka rum rekommenderar jag att ringa mig för snabbast hjälp!',

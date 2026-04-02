@@ -213,7 +213,7 @@ export default function ServiceDetailModal({ type, item, onClose, onEdit, onTogg
                 : 'bg-white/10 text-white/60 border border-white/20'
             }`}>
               <span className={`w-1.5 h-1.5 rounded-full ${item.isActive ? 'bg-emerald-400' : 'bg-white/40'}`} />
-              {item.isActive ? 'Aktiv — visas för Kollegan' : 'Inaktiv — dold för Kollegan'}
+          {item.isActive ? 'Aktiv — visas för Soleria' : 'Inaktiv — dold för Soleria'}
             </span>
           </div>
         </div>

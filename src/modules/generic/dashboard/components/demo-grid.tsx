@@ -32,7 +32,7 @@ export default function DemoGrid({ userRole }: Props) {
             </svg>
           </div>
           <span className="font-heading text-base font-semibold text-[var(--text-primary)]">
-            Kollegan
+          Soleria
           </span>
         </div>
 
@@ -75,7 +75,7 @@ export default function DemoGrid({ userRole }: Props) {
               </div>
 
               <h2 className="font-semibold text-[var(--text-primary)] mb-1">
-                Grand Hotel Kollegan
+            Grand Hotel Soleria
               </h2>
               <p className="text-sm text-[var(--text-muted)] leading-relaxed">
                 AI-receptionist som hanterar rum, bokningar och gästfrågor i realtid.

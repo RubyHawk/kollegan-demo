@@ -314,7 +314,7 @@ export default function HotelDemoPage() {
                 </div>
                 <div>
                   <span className="font-heading text-sm font-semibold text-(--text-primary)">
-                    Grand Hotel Kollegan
+                    Grand Hotel Soleria
                   </span>
                   <div className="flex items-center gap-4 mt-0.5">
                     <span className="text-xs text-(--text-muted) flex items-center gap-1">

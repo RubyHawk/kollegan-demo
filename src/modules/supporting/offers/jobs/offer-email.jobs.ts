@@ -149,7 +149,7 @@ function sendToRecipientHtml(p: SendToRecipientPayload): string {
   const c = d?.cta ?? DESIGN_DEFAULTS.cta;
 
   const headerHtml = renderHeader((d ?? DESIGN_DEFAULTS).header);
-  const footerHtml = d ? renderFooter(d.footer) : '';
+  const footerHtml = renderFooter((d ?? DESIGN_DEFAULTS).footer);
   const ctaHtml = renderCta(c, p.publicUrl);
   const fallbackLink = `<p style="margin:24px 0 0 0;font-size:12px;color:${b.mutedColor};">Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/><a href="${p.publicUrl}" style="color:${b.mutedColor};">${p.publicUrl}</a></p>`;
 
@@ -215,7 +215,7 @@ function reminderHtml(p: ReminderPayload): string {
   const c = d?.cta ?? DESIGN_DEFAULTS.cta;
 
   const headerHtml = renderHeader((d ?? DESIGN_DEFAULTS).header);
-  const footerHtml = d ? renderFooter(d.footer) : '';
+  const footerHtml = renderFooter((d ?? DESIGN_DEFAULTS).footer);
   const ctaHtml = renderCta(c, p.publicUrl);
   const fallbackLink = `<p style="margin:24px 0 0 0;font-size:12px;color:${b.mutedColor};">Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/><a href="${p.publicUrl}" style="color:${b.mutedColor};">${p.publicUrl}</a></p>`;
 

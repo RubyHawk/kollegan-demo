@@ -92,7 +92,7 @@ export default function HotelInfoTab({ onCountChange, onModalOpenChange }: Props
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-heading text-xl font-semibold text-[var(--text-primary)]">Hotellinfo</h2>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">All information som Kollegan hämtar och använder under samtal</p>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">All information som Soleria hämtar och använder under samtal</p>
         </div>
         <span className="text-xs font-medium text-purple-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-full px-3 py-1.5">
           {activeCount} aktiva tjänster
@@ -177,7 +177,7 @@ export default function HotelInfoTab({ onCountChange, onModalOpenChange }: Props
               </svg>
             </div>
             <h3 className="font-heading font-semibold text-[var(--text-primary)] mb-1">Inga {currentSection.label.toLowerCase()} ännu</h3>
-            <p className="text-sm text-[var(--text-muted)] mb-4">Lägg till information som Kollegan kan använda under samtal.</p>
+            <p className="text-sm text-[var(--text-muted)] mb-4">Lägg till information som Soleria kan använda under samtal.</p>
             <button
               onClick={() => setCreatingType(currentSection.type)}
               className="text-sm text-amber-600 dark:text-amber-400 hover:underline font-medium"
@@ -214,9 +214,9 @@ export default function HotelInfoTab({ onCountChange, onModalOpenChange }: Props
             </svg>
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-1">Hur använder Kollegan denna data?</h4>
+            <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-1">Hur använder Soleria denna data?</h4>
             <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-              Precis innan ett samtal startar hämtar Kollegan all aktiv information via <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-amber-600 dark:text-amber-400">/api/hotel-info</code>. Under samtalet kan gäster fråga om restauranger, öppettider, aktiviteter, parkering och mer — Kollegan svarar baserat på vad du har lagt in här.
+              Precis innan ett samtal startar hämtar Soleria all aktiv information via <code className="bg-[var(--surface-alt)] px-1 py-0.5 rounded text-amber-600 dark:text-amber-400">/api/hotel-info</code>. Under samtalet kan gäster fråga om restauranger, öppettider, aktiviteter, parkering och mer — Soleria svarar baserat på vad du har lagt in här.
             </p>
           </div>
         </div>

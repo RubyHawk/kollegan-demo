@@ -190,7 +190,7 @@ function EmptyState() {
       </div>
       <p className="text-[var(--text-secondary)] font-semibold text-sm">Inga aktiva bokningar</p>
       <p className="text-[var(--text-muted)] text-xs mt-1.5 max-w-[260px] leading-relaxed">
-        Klicka på ett tillgängligt rum för att skapa en bokning, eller ring Kollegan.
+        Klicka på ett tillgängligt rum för att skapa en bokning, eller ring Soleria.
       </p>
     </div>
   );
@@ -681,7 +681,7 @@ function GoogleCalendarView() {
             <div>
               <p className="text-base font-semibold text-[var(--text-primary)]">Anslut Google Kalender</p>
               <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                Bokningar skapas och synkroniseras automatiskt i realtid via Kollegan AI.
+                Bokningar skapas och synkroniseras automatiskt i realtid via Soleria AI.
               </p>
             </div>
           </div>
@@ -802,7 +802,7 @@ function GoogleCalendarView() {
       </div>
 
       <p className="text-[10px] text-[var(--text-muted)] text-center">
-        Bokningar skapade via Kollegan synkroniseras automatiskt · Kalendern måste vara offentlig för iframe-visning
+        Bokningar skapade via Soleria synkroniseras automatiskt · Kalendern måste vara offentlig för iframe-visning
       </p>
     </div>
   );

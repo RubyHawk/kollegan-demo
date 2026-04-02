@@ -45,7 +45,7 @@ export default function DemosPage() {
 
           {/* Content */}
           <div className="p-5">
-            <h2 className="font-semibold text-[var(--text-primary)] mb-1">Grand Hotel Kollegan</h2>
+            <h2 className="font-semibold text-[var(--text-primary)] mb-1">Grand Hotel Soleria</h2>
             <p className="text-sm text-[var(--text-muted)] leading-relaxed mb-4">
               AI-receptionist som hanterar rum, bokningar och gästfrågor i realtid via röstsamtal.
             </p>

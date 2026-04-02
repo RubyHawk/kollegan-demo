@@ -133,7 +133,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
           : mode === 'chat'
             ? 'Chatt'
             : isDark
-              ? `Receptionist — Grand Hotel Kollegan`
+              ? `Receptionist — Grand Hotel Soleria`
               : 'Receptionist';
 
   /* ── Helper: open chat mode ── */
@@ -845,7 +845,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
                     {callStatus === 'active' && (isSpeaking ? 'Talar...' : 'Lyssnar...')}
                     {callStatus === 'ended' && 'Samtalet avslutat'}
                     {callStatus === 'idle' && mode === 'chat' && 'Chatt'}
-                    {callStatus === 'idle' && mode === 'idle' && `Receptionist — Grand Hotel Kollegan`}
+                    {callStatus === 'idle' && mode === 'idle' && `Receptionist — Grand Hotel Soleria`}
                   </p>
                 </div>
 
@@ -881,7 +881,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
                     </div>
                     <h3 className="font-heading text-lg font-bold text-cream-100">Hej, jag &auml;r {brand.name}!</h3>
                     <p className="text-cream-400 text-xs mt-1 leading-relaxed">
-                      Receptionist p&aring; Grand Hotel Kollegan.<br />
+                      Receptionist p&aring; Grand Hotel Soleria.<br />
                       Hur vill du kontakta mig?
                     </p>
                   </div>

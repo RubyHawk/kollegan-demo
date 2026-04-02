@@ -66,7 +66,7 @@ export default function DashboardHeader({
 
           <div className="hidden sm:flex flex-col justify-center">
             <span className="font-heading text-[14px] font-semibold tracking-wide text-[var(--text-primary)] leading-tight">
-              Grand Hotel Kollegan
+              Grand Hotel Soleria
             </span>
             <span className="text-[10.5px] text-[var(--text-muted)] leading-tight">Storgatan 1 · Stockholm</span>
           </div>

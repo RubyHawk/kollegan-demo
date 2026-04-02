@@ -463,7 +463,7 @@ export default function ActivityLog({ activities, focusEventId, onFocusConsumed 
     <div className="flex items-center justify-between mb-5">
       <div>
         <h2 className="font-heading text-xl font-semibold text-[var(--text-primary)]">Aktivitetslogg</h2>
-        <p className="text-xs text-[var(--text-muted)] mt-0.5">Realtidshändelser — samtal, bokningar och sökningar via Kollegan</p>
+        <p className="text-xs text-[var(--text-muted)] mt-0.5">Realtidshändelser — samtal, bokningar och sökningar via Soleria</p>
       </div>
       <span className="text-xs font-medium text-purple-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-full px-3 py-1.5">
         {activities.length} händelser
@@ -483,7 +483,7 @@ export default function ActivityLog({ activities, focusEventId, onFocusConsumed 
           </div>
           <p className="text-[var(--text-secondary)] font-medium text-sm">Inga aktiviteter än</p>
           <p className="text-[var(--text-muted)] text-xs mt-1.5 max-w-xs mx-auto leading-relaxed">
-            Ring Kollegan eller boka ett rum manuellt för att se aktiviteten loggas här i realtid.
+            Ring Soleria eller boka ett rum manuellt för att se aktiviteten loggas här i realtid.
           </p>
         </div>
       </div>

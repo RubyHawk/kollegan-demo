@@ -4,11 +4,11 @@ import VoiceContact from './voice-contact';
 import type { VoiceBrand } from '../../domain/voice-brand.vo';
 
 const KOLLEGAN_BRAND: VoiceBrand = {
-  name: 'Kollegan',
+  name: 'Soleria',
   assistantId: process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID || '',
   accentColor: 'amber',
   callStartMessage:
-    'Välkommen till Grand Hotel Kollegan, det är Kollegan i receptionen. Hur kan jag hjälpa dig idag?',
+    'Välkommen till Grand Hotel Soleria, det är Soleria i receptionen. Hur kan jag hjälpa dig idag?',
   chatWelcomeMessage: 'Hej! Skriv ditt meddelande så hjälper jag dig.',
   chatWelcomeMessageLong:
     'Hej! Skriv ditt meddelande så hjälper jag dig. Vill du boka rum rekommenderar jag att ringa mig för snabbast hjälp!',
