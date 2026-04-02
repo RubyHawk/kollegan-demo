@@ -154,10 +154,10 @@ function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): st
     case 'signatureBlock': {
       const fieldType = String(node.attrs?.fieldType ?? 'signature');
       const label     = escapeHtml(String(node.attrs?.label ?? 'Signatur'));
-      const icons: Record<string, string> = { signature: '✍', name: '👤', date: '📅' };
+      const icons: Record<string, string> = { signature: '&#9997;', name: '&#128100;', date: '&#128197;' };
       const subtext: Record<string, string> = {
-        signature: 'Underteckna med e-signatur via länken',
-        name:      'Fullständigt namn',
+        signature: 'Underteckna med e-signatur via l&auml;nken',
+        name:      'Fullst&auml;ndigt namn',
         date:      'Signeringsdatum fylls i automatiskt',
       };
       return `
@@ -208,7 +208,7 @@ function buildLineItemsTable(items: OfferLineItem[]): string {
   const numStyle    = `${cellStyle}text-align:right;`;
 
   const vatLabel = (r: number) => `${Math.round(r * 100)}%`;
-  const discountLabel = (d?: number) => d ? `${d}%` : '–';
+  const discountLabel = (d?: number) => d ? `${d}%` : '-';
 
   const rows = items.map((item) => {
     const disc      = 1 - ((item.discount ?? 0) / 100);
@@ -217,7 +217,7 @@ function buildLineItemsTable(items: OfferLineItem[]): string {
       <tr>
         <td data-label="Beskrivning" style="${cellStyle}">${escapeHtml(item.description)}</td>
         <td data-label="Antal"       style="${numStyle}">${item.quantity}</td>
-        <td data-label="Á-pris"      style="${numStyle}">${fmtSEK(item.unitPrice)}</td>
+        <td data-label="&Aring;-pris" style="${numStyle}">${fmtSEK(item.unitPrice)}</td>
         <td data-label="Moms"        style="${numStyle}">${vatLabel(item.vatRate)}</td>
         <td data-label="Rabatt"      style="${numStyle}">${discountLabel(item.discount)}</td>
         <td data-label="Summa"       style="${numStyle};font-weight:600;">${fmtSEK(lineExVat)}</td>
@@ -230,7 +230,7 @@ function buildLineItemsTable(items: OfferLineItem[]): string {
         <tr>
           <th style="${headerStyle}">Beskrivning</th>
           <th style="${headerStyle}text-align:right;">Antal</th>
-          <th style="${headerStyle}text-align:right;">Á-pris</th>
+          <th style="${headerStyle}text-align:right;">&Aring;-pris</th>
           <th style="${headerStyle}text-align:right;">Moms</th>
           <th style="${headerStyle}text-align:right;">Rabatt</th>
           <th style="${headerStyle}text-align:right;">Summa</th>
@@ -245,7 +245,7 @@ function buildLineItemsTable(items: OfferLineItem[]): string {
 const SIGNATURE_FIELD_HTML = `
   <div data-sig-field="signature" style="border:2px dashed #cbd5e1;border-radius:8px;padding:24px 20px;margin:24px 0;text-align:center;min-height:80px;background:#f8fafc;">
     <p style="color:#94a3b8;font-size:12px;margin:0 0 4px 0;text-transform:uppercase;letter-spacing:0.1em;font-weight:600;">Signatur</p>
-    <p style="color:#cbd5e1;font-size:11px;margin:0;">Underteckna med e-signatur via länken du mottog</p>
+    <p style="color:#cbd5e1;font-size:11px;margin:0;">Underteckna med e-signatur via l&auml;nken du mottog</p>
   </div>`;
 
 // ─── Shared placeholder builder ─────────────────────────────────────────────────
