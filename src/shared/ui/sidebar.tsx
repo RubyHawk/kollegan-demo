@@ -42,6 +42,7 @@ import {
   FileTextIcon,
   ReceiptIcon,
   PackageIcon,
+  HomeIcon,
 } from '@shared/ui/icons';
 import { SPRING_SNAPPY, SPRING_STANDARD, EASE_SPRING } from '@shared/lib/motion';
 import { cn } from '@shared/lib/utils';
@@ -81,6 +82,7 @@ interface User {
   email: string;
   firstName: string | null;
   lastName: string | null;
+  avatarUrl?: string | null;
   role: string;
 }
 
@@ -98,6 +100,7 @@ const NAV_CONFIG: NavSection[] = [
   {
     section: 'Offertsystem',
     items: [
+      { type: 'link', href: '/',          label: 'Översikt',         icon: HomeIcon, exact: true },
       {
         type: 'dropdown',
         key: 'offerter',
@@ -615,6 +618,29 @@ interface SidebarFooterProps {
   onMobileClose?: () => void;
 }
 
+function AvatarBadge({ user, size }: { user: User; size: 'sm' | 'md' }) {
+  const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+  const initials = displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  const dim = size === 'md' ? 'w-7 h-7' : 'w-7 h-7';
+  const radius = size === 'md' ? 'rounded-md' : 'rounded-md';
+
+  if (user.avatarUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={user.avatarUrl}
+        alt={displayName}
+        className={`${dim} ${radius} object-cover shrink-0`}
+      />
+    );
+  }
+  return (
+    <div className={`${dim} ${radius} bg-[var(--accent)]/15 flex items-center justify-center shrink-0`}>
+      <span className="text-[10px] font-semibold text-[var(--accent)]">{initials}</span>
+    </div>
+  );
+}
+
 function SidebarFooter({
   user,
   collapsed,
@@ -623,12 +649,6 @@ function SidebarFooter({
 }: SidebarFooterProps) {
   const displayName =
     [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
-  const initials = displayName
-    .split(' ')
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
   // ── Collapsed footer ──────────────────────────────────────────────────────
   if (collapsed) {
@@ -641,9 +661,7 @@ function SidebarFooter({
               onClick={onMobileClose}
               className="w-9 h-9 rounded-lg hover:bg-[var(--surface-hover)] flex items-center justify-center transition-colors"
             >
-              <div className="w-7 h-7 rounded-md bg-[var(--accent)]/15 flex items-center justify-center">
-                <span className="text-[10px] font-semibold text-[var(--accent)]">{initials}</span>
-              </div>
+              <AvatarBadge user={user} size="sm" />
             </Link>
           </TooltipTrigger>
           <TooltipContent side="right">{displayName}</TooltipContent>
@@ -659,13 +677,13 @@ function SidebarFooter({
               <LogOutIcon size={14} />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right">Log out</TooltipContent>
+          <TooltipContent side="right">Logga ut</TooltipContent>
         </Tooltip>
       </div>
     );
   }
 
-  // ── Expanded footer — flat layout ──────────────────────────────────────────
+  // ── Expanded footer ────────────────────────────────────────────────────────
   return (
     <div className="px-3 py-3 border-t border-[var(--border)] flex flex-col gap-2">
       {/* User identity row */}
@@ -674,9 +692,7 @@ function SidebarFooter({
         onClick={onMobileClose}
         className="flex items-center gap-2.5 rounded-lg px-1 py-1 -mx-1 hover:bg-[var(--surface-hover)] transition-colors group"
       >
-        <div className="w-7 h-7 rounded-md bg-[var(--accent)]/15 flex items-center justify-center shrink-0">
-          <span className="text-[10px] font-semibold text-[var(--accent)]">{initials}</span>
-        </div>
+        <AvatarBadge user={user} size="md" />
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-medium text-[var(--text-primary)] truncate">
             {displayName}
@@ -692,7 +708,7 @@ function SidebarFooter({
       <div className="flex items-center gap-1">
         <button
           onClick={onLogout}
-          aria-label="Log out"
+          aria-label="Logga ut"
           className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/8 transition-all"
         >
           <LogOutIcon size={14} />
