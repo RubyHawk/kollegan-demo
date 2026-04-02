@@ -81,10 +81,10 @@ function LoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-(--page-bg) px-4">
       <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <img src="/soleria-logo.png" alt="Soleria" className="h-12 w-auto" />
-          <span className="font-heading text-xl font-semibold text-(--text-primary)">Soleria</span>
+        {/* Logo — replace /soleria-logo.svg (or .png/.jpg) with your own asset */}
+        <div className="flex flex-col items-center gap-3 mb-8">
+          <img src="/soleria-logo.svg" alt="Soleria" className="h-16 w-auto" onError={(e) => { (e.target as HTMLImageElement).src = '/soleria-logo.png'; }} />
+          <span className="font-heading text-2xl font-semibold text-(--text-primary) tracking-tight">Soleria</span>
         </div>
 
         {/* Login card */}

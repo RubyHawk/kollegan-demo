@@ -34,25 +34,14 @@ import {
   TooltipProvider,
 } from '@shared/ui/tooltip';
 import {
-  HomeIcon,
-  UsersIcon,
   UserIcon,
-  BuildingIcon,
   SettingsIcon,
   LogOutIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
-  BarChart2Icon,
   FileTextIcon,
-  FolderIcon,
-  MessageSquareIcon,
-  CreditCardIcon,
-  ShieldIcon,
   ReceiptIcon,
-  CalendarIcon,
-  NoteIcon,
   PackageIcon,
-  CompanyIcon,
 } from '@shared/ui/icons';
 import { SPRING_SNAPPY, SPRING_STANDARD, EASE_SPRING } from '@shared/lib/motion';
 import { cn } from '@shared/lib/utils';
@@ -107,36 +96,7 @@ interface SidebarProps {
 
 const NAV_CONFIG: NavSection[] = [
   {
-    section: 'Main',
-    items: [
-      { type: 'link', href: '/',          label: 'Dashboard', icon: HomeIcon,     exact: true },
-      { type: 'link', href: '/analytics', label: 'Analytics', icon: BarChart2Icon },
-      { type: 'link', href: '/reports',   label: 'Reports',   icon: FileTextIcon },
-    ],
-  },
-  {
-    section: 'Workspace',
-    items: [
-      { type: 'link', href: '/projects', label: 'Projects', icon: FolderIcon },
-      {
-        type: 'dropdown',
-        key: 'crm',
-        label: 'CRM',
-        icon: UsersIcon,
-        items: [
-          { href: '/crm',          label: 'Customers' },
-          { href: '/crm/leads',    label: 'Leads' },
-          { href: '/crm/contacts', label: 'Contacts' },
-        ],
-      },
-      { type: 'link', href: '/messages',        label: 'Messages',      icon: MessageSquareIcon },
-      { type: 'link', href: '/announcements',  label: 'Announcements', icon: NoteIcon },
-      { type: 'link', href: '/meetings',       label: 'Meetings',      icon: CalendarIcon },
-      { type: 'link', href: '/admin/compliance', label: 'ISO 27001',   icon: ShieldIcon },
-    ],
-  },
-  {
-    section: 'Quoting',
+    section: 'Offertsystem',
     items: [
       {
         type: 'dropdown',
@@ -148,34 +108,25 @@ const NAV_CONFIG: NavSection[] = [
           { href: '/offers/new', label: 'Ny offert' },
         ],
       },
-      { type: 'link', href: '/templates', label: 'Mallar',    icon: FileTextIcon },
-      { type: 'link', href: '/products',  label: 'Produkter', icon: PackageIcon },
-      { type: 'link', href: '/companies', label: 'Företag',   icon: CompanyIcon },
+      { type: 'link', href: '/templates', label: 'Mallar',         icon: FileTextIcon },
+      { type: 'link', href: '/products',  label: 'Produktbibliotek', icon: PackageIcon },
     ],
   },
   {
-    section: 'Management',
+    section: 'Admin',
     adminOnly: true,
     items: [
-      { type: 'link', href: '/settings/users',   label: 'Users',      icon: UserIcon },
-      { type: 'link', href: '/settings/billing', label: 'Billing',    icon: CreditCardIcon },
+      { type: 'link', href: '/settings/users', label: 'Användare', icon: UserIcon },
       {
         type: 'dropdown',
         key: 'settings',
-        label: 'Settings',
+        label: 'Inställningar',
         icon: SettingsIcon,
         items: [
-          { href: '/settings',              label: 'General' },
-          { href: '/settings/profile',      label: 'Profile' },
-          { href: '/settings/integrations', label: 'Integrations' },
+          { href: '/settings',         label: 'Allmänt' },
+          { href: '/settings/profile', label: 'Profil' },
         ],
       },
-    ],
-  },
-  {
-    section: 'Demos',
-    items: [
-      { type: 'link', href: '/demos', label: 'Demos', icon: BuildingIcon },
     ],
   },
 ];
@@ -621,9 +572,16 @@ function SidebarHeader({ collapsed, onToggleCollapse }: SidebarHeaderProps) {
           strokeLinecap="round" strokeLinejoin="round"
           aria-hidden="true"
         >
-          <path d="M3 21h18" />
-          <path d="M5 21V7l7-4 7 4v14" />
-          <path d="M9 21v-4h6v4" />
+          {/* Soleria sun: circle with cross + rays */}
+          <circle cx="12" cy="12" r="4" />
+          <line x1="12" y1="2"  x2="12" y2="5" />
+          <line x1="12" y1="19" x2="12" y2="22" />
+          <line x1="2"  y1="12" x2="5"  y2="12" />
+          <line x1="19" y1="12" x2="22" y2="12" />
+          <line x1="4.93" y1="4.93"  x2="6.34" y2="6.34" />
+          <line x1="17.66" y1="17.66" x2="19.07" y2="19.07" />
+          <line x1="19.07" y1="4.93"  x2="17.66" y2="6.34" />
+          <line x1="6.34"  y1="17.66" x2="4.93"  y2="19.07" />
         </svg>
       </motion.div>
 
@@ -639,7 +597,7 @@ function SidebarHeader({ collapsed, onToggleCollapse }: SidebarHeaderProps) {
             exit="hidden"
             transition={{ duration: 0.14, ease: EASE_SPRING }}
           >
-            Kollegan
+            Soleria
           </motion.span>
         </AnimatePresence>
       )}
