@@ -1,6 +1,6 @@
-﻿'use client';
+'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@shared/lib/utils';
 import { SPRING_SNAPPY } from '@shared/lib/motion';
@@ -16,15 +16,15 @@ import {
 } from '../_components/theme-data';
 
 const FONT_SIZE_OPTIONS: { id: FontSize; label: string; desc: string }[] = [
-  { id: 'small', label: 'Liten', desc: 'Mer information på skärmen' },
+  { id: 'small', label: 'Liten', desc: 'Mer information' },
   { id: 'medium', label: 'Normal', desc: 'Balanserad läsbarhet' },
-  { id: 'large', label: 'Stor', desc: 'Lugnare och tydligare' },
+  { id: 'large', label: 'Stor', desc: 'Lugn och tydlig' },
 ];
 
 const MODE_OPTIONS: { id: ThemeMode; label: string; desc: string }[] = [
-  { id: 'light', label: 'Ljust', desc: 'Rent och luftigt hela dagen' },
-  { id: 'dark', label: 'Mörkt', desc: 'Dämpat och fokusvänligt' },
-  { id: 'auto', label: 'Auto', desc: 'Följer din enhet' },
+  { id: 'light', label: 'Ljust', desc: 'Rent hela dagen' },
+  { id: 'dark', label: 'Mörkt', desc: 'Dämpat fokusläge' },
+  { id: 'auto', label: 'Auto', desc: 'Följer enheten' },
 ];
 
 function WorkspacePreview({
@@ -42,111 +42,159 @@ function WorkspacePreview({
 
   return (
     <div
-      className="overflow-hidden rounded-[28px] border p-4 shadow-[0_24px_60px_rgba(0,0,0,0.12)]"
+      className="overflow-hidden rounded-[24px] border p-3 shadow-[0_18px_40px_rgba(0,0,0,0.08)] sm:p-4"
       style={{
         borderColor: vars['--border'],
         background: `linear-gradient(180deg, ${vars['--surface-0']}, ${vars['--surface-1']})`,
       }}
     >
-      <div className="grid gap-4 sm:grid-cols-[120px_minmax(0,1fr)]">
-        <div
-          className="rounded-[22px] border p-3"
-          style={{ borderColor: vars['--border'], background: vars['--surface'] }}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span
+          className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]"
+          style={{ background: vars['--accent-subtle'], color: vars['--accent'] }}
         >
-          <div className="space-y-2.5">
-            {['Översikt', 'Offerter', 'Mallar', 'Produkter'].map((item, index) => (
-              <div
-                key={item}
-                className="rounded-2xl px-3 py-2 text-[11px] font-medium"
-                style={{
-                  background: index === 0 ? vars['--accent-subtle'] : vars['--surface-alt'],
-                  color: index === 0 ? vars['--accent'] : vars['--text-secondary'],
-                }}
-              >
-                {item}
-              </div>
-            ))}
+          Förhandsvisning
+        </span>
+        <span
+          className="rounded-full px-2.5 py-1 text-[11px] font-medium"
+          style={{ background: vars['--surface-alt'], color: vars['--text-secondary'] }}
+        >
+          {theme.label}
+        </span>
+        <span
+          className="rounded-full px-2.5 py-1 text-[11px] font-medium"
+          style={{ background: vars['--surface-alt'], color: vars['--text-secondary'] }}
+        >
+          {fontLabel}
+        </span>
+        <span
+          className="rounded-full px-2.5 py-1 text-[11px] font-medium"
+          style={{ background: vars['--surface-alt'], color: vars['--text-secondary'] }}
+        >
+          {sizeLabel}
+        </span>
+      </div>
+
+      <div
+        className="overflow-hidden rounded-[22px] border"
+        style={{ borderColor: vars['--border'], background: vars['--surface'] }}
+      >
+        <div
+          className="flex items-center justify-between border-b px-3 py-2.5"
+          style={{ borderColor: vars['--border'], background: vars['--surface-1'] }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: vars['--accent'] }} />
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: vars['--surface-3'] }} />
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: vars['--surface-3'] }} />
           </div>
+          <div
+            className="h-2.5 w-20 rounded-full sm:w-24"
+            style={{ background: vars['--surface-3'] }}
+          />
         </div>
 
-        <div className="space-y-3">
+        <div className="grid gap-3 p-3 sm:grid-cols-[88px_minmax(0,1fr)]">
           <div
-            className="rounded-[22px] border p-4"
-            style={{ borderColor: vars['--border'], background: vars['--surface'] }}
+            className="rounded-[18px] border p-2.5"
+            style={{ borderColor: vars['--border'], background: vars['--surface-0'] }}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: vars['--text-muted'] }}>
-                  Förhandsvisning
-                </p>
-                <h4 className="mt-2 text-lg font-semibold" style={{ color: vars['--text-primary'] }}>
-                  Soleria-offerter
-                </h4>
+            <div className="space-y-2">
+              {['Översikt', 'Offerter', 'Mallar'].map((item, index) => (
+                <div
+                  key={item}
+                  className="rounded-xl px-2 py-1.5 text-[10px] font-medium"
+                  style={{
+                    background: index === 0 ? vars['--accent-subtle'] : vars['--surface-alt'],
+                    color: index === 0 ? vars['--accent'] : vars['--text-secondary'],
+                  }}
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div
+              className="rounded-[18px] border p-3"
+              style={{ borderColor: vars['--border'], background: vars['--surface-0'] }}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p
+                    className="text-[10px] font-semibold uppercase tracking-[0.16em]"
+                    style={{ color: vars['--text-muted'] }}
+                  >
+                    Soleria-offerter
+                  </p>
+                  <p
+                    className="mt-1 truncate text-sm font-semibold"
+                    style={{ color: vars['--text-primary'] }}
+                  >
+                    Arbetsyta som känns lätt och samlad
+                  </p>
+                </div>
+                <span
+                  className="rounded-full px-2 py-1 text-[10px] font-medium"
+                  style={{ background: vars['--accent-subtle'], color: vars['--accent'] }}
+                >
+                  {sizeLabel}
+                </span>
               </div>
-              <div className="flex gap-2">
-                {theme.swatches.slice(0, 3).map((swatch) => (
-                  <span key={swatch} className="h-3.5 w-3.5 rounded-full" style={{ background: swatch }} />
+
+              <div className="mt-3 grid gap-2.5">
+                {[0.36, 0.84, 0.48].map((opacity, index) => (
+                  <div
+                    key={index}
+                    className="rounded-2xl"
+                    style={{
+                      height: index === 1 ? 54 : 38,
+                      background: index === 1 ? vars['--accent'] : vars['--surface-2'],
+                      opacity,
+                    }}
+                  />
                 ))}
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-[1.2fr_0.8fr]">
+            <div className="grid gap-2.5 min-[420px]:grid-cols-2">
               <div
-                className="rounded-[20px] p-3"
-                style={{ background: vars['--surface-alt'], color: vars['--text-secondary'] }}
+                className="rounded-[18px] border p-3"
+                style={{ borderColor: vars['--border'], background: vars['--surface-0'] }}
               >
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="h-3 w-20 rounded-full" style={{ background: vars['--text-muted'], opacity: 0.35 }} />
-                  <div className="rounded-full px-2 py-1 text-[10px] font-medium" style={{ background: vars['--accent-subtle'], color: vars['--accent'] }}>
-                    {sizeLabel}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {[62, 88, 74].map((height, index) => (
-                    <motion.div
-                      key={height}
-                      initial={{ scaleY: 0.7, opacity: 0.6 }}
-                      animate={{ scaleY: 1, opacity: 1 }}
-                      transition={{ duration: 0.35, delay: 0.05 * index, ease: 'easeOut' }}
-                      className="origin-bottom rounded-2xl"
-                      style={{
-                        height,
-                        background: index === 1 ? vars['--accent'] : vars['--surface-3'],
-                        opacity: index === 1 ? 0.88 : 0.72,
-                      }}
-                    />
-                  ))}
-                </div>
+                <p
+                  className="text-[10px] font-semibold uppercase tracking-[0.16em]"
+                  style={{ color: vars['--text-muted'] }}
+                >
+                  Typografi
+                </p>
+                <p className="mt-1 text-sm font-semibold" style={{ color: vars['--text-primary'] }}>
+                  {fontLabel}
+                </p>
+                <p className="mt-1 text-xs" style={{ color: vars['--text-secondary'] }}>
+                  Konsekvent och lättläst
+                </p>
               </div>
 
-              <div className="space-y-3">
-                <div
-                  className="rounded-[20px] p-3"
-                  style={{ background: vars['--surface-alt'], color: vars['--text-secondary'] }}
-                >
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: vars['--text-muted'] }}>
-                    Typografi
-                  </p>
-                  <p className="mt-2 text-base font-semibold" style={{ color: vars['--text-primary'] }}>{fontLabel}</p>
-                  <p className="mt-1 text-sm" style={{ color: vars['--text-secondary'] }}>Lättläst och konsekvent</p>
+              <div
+                className="rounded-[18px] border p-3"
+                style={{ borderColor: vars['--border'], background: vars['--surface-0'] }}
+              >
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: vars['--accent'] }} />
+                  <span className="text-xs font-medium" style={{ color: vars['--text-primary'] }}>
+                    Accent i fokus
+                  </span>
                 </div>
-                <div
-                  className="rounded-[20px] p-3"
-                  style={{ background: vars['--surface-alt'], color: vars['--text-secondary'] }}
-                >
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: vars['--accent'] }} />
-                    <span className="text-sm font-medium" style={{ color: vars['--text-primary'] }}>Accent i fokus</span>
-                  </div>
-                  <div className="h-2.5 rounded-full" style={{ background: vars['--surface-3'] }}>
-                    <motion.div
-                      initial={{ width: '35%' }}
-                      animate={{ width: '72%' }}
-                      transition={{ duration: 0.5, ease: 'easeOut' }}
-                      className="h-full rounded-full"
-                      style={{ background: vars['--accent'] }}
-                    />
-                  </div>
+                <div className="h-2.5 rounded-full" style={{ background: vars['--surface-2'] }}>
+                  <motion.div
+                    initial={{ width: '28%' }}
+                    animate={{ width: '70%' }}
+                    transition={{ duration: 0.45, ease: 'easeOut' }}
+                    className="h-full rounded-full"
+                    style={{ background: vars['--accent'] }}
+                  />
                 </div>
               </div>
             </div>
@@ -323,32 +371,50 @@ export default function UtseendePage() {
   const previewIsDark = theme === 'dark' || (theme === 'auto' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       <motion.section
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[linear-gradient(135deg,var(--surface-0),var(--surface-1))] shadow-[0_20px_48px_rgba(0,0,0,0.08)]"
+        className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] p-4 shadow-[0_18px_44px_rgba(0,0,0,0.06)] sm:p-5 lg:p-6"
       >
-        <div className="p-5 sm:p-6 lg:p-7">
-          <div className="max-w-3xl">
-            <span className="rounded-full border border-[var(--accent-border)] bg-[var(--accent-subtle)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-              Utseende
-            </span>
-            <h2 className="mt-4 text-[28px] font-semibold tracking-tight text-[var(--text-primary)] sm:text-[34px]">
-              Gör arbetsytan lugnare, varmare och tydligare.
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
-              Välj ett uttryck som känns premium utan att störa jobbet. Förhandsvisningen uppdateras direkt så att du ser resultatet innan du sparar.
-            </p>
-          </div>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)] xl:items-start">
+          <div className="space-y-3">
+            <div className="space-y-3">
+              <span className="inline-flex rounded-full border border-[var(--accent-border)] bg-[var(--accent-subtle)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+                Utseende
+              </span>
+              <div className="space-y-2">
+                <h2 className="max-w-3xl text-[2rem] font-semibold tracking-tight text-[var(--text-primary)] sm:text-[2.35rem] lg:text-[2.7rem]">
+                  Gör arbetsytan lugnare, varmare och tydligare.
+                </h2>
+                <p className="max-w-2xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
+                  Välj ett uttryck som känns premium utan att störa jobbet. Allt uppdateras direkt, men själva sidan ska också vara snabb att överblicka och lätt att justera.
+                </p>
+              </div>
+            </div>
 
-          <div className="mt-6 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
-            <div className="grid gap-4 xl:grid-cols-2">
-              <div>
-                <p className="text-sm font-semibold text-[var(--text-primary)]">Visningsläge</p>
-                <p className="mt-1 text-xs text-[var(--text-muted)]">Välj om arbetsytan ska kännas ljus, mörk eller följa enheten.</p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full bg-[var(--surface-alt)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
+                {activeTheme.label}
+              </span>
+              <span className="rounded-full bg-[var(--surface-alt)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
+                {activeFont.label}
+              </span>
+              <span className="rounded-full bg-[var(--surface-alt)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
+                {activeFontSize.label}
+              </span>
+            </div>
+
+            <div className="grid gap-2.5 lg:grid-cols-2">
+              <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-3">
+                <div className="mb-2">
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">Visningsläge</p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-[var(--text-muted)]">
+                    Ljust, mörkt eller auto.
+                  </p>
+                </div>
+                <div className="grid gap-1.5">
                   {MODE_OPTIONS.map((mode) => {
                     const active = theme === mode.id;
                     return (
@@ -357,24 +423,39 @@ export default function UtseendePage() {
                         type="button"
                         onClick={() => applyTheme(mode.id)}
                         className={cn(
-                          'rounded-2xl border px-4 py-3 text-left transition-all',
+                          'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition-all',
                           active
                             ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_10px_22px_rgba(0,0,0,0.05)]'
                             : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
                         )}
                       >
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">{mode.label}</p>
-                        <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{mode.desc}</p>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[var(--text-primary)]">{mode.label}</p>
+                        </div>
+                        <span
+                          className={cn(
+                            'flex h-4.5 w-4.5 items-center justify-center rounded-full border text-[9px]',
+                            active
+                              ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
+                              : 'border-[var(--border)] text-[var(--text-muted)]',
+                          )}
+                        >
+                          {active ? '✓' : ''}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              <div>
-                <p className="text-sm font-semibold text-[var(--text-primary)]">Textstorlek</p>
-                <p className="mt-1 text-xs text-[var(--text-muted)]">Håll läsbarheten konsekvent utan att lägga plats på onödiga kort.</p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-3">
+                <div className="mb-2">
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">Textstorlek</p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-[var(--text-muted)]">
+                    Tät, normal eller luftig.
+                  </p>
+                </div>
+                <div className="grid gap-1.5">
                   {FONT_SIZE_OPTIONS.map((size) => {
                     const active = fontSize === size.id;
                     return (
@@ -383,18 +464,34 @@ export default function UtseendePage() {
                         type="button"
                         onClick={() => applyFontSize(size.id)}
                         className={cn(
-                          'flex min-h-[84px] w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-all',
+                          'grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition-all',
                           active
                             ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_10px_22px_rgba(0,0,0,0.05)]'
                             : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
                         )}
                       >
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-sm font-semibold text-[var(--text-primary)]">{size.label}</p>
-                          <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{size.desc}</p>
                         </div>
-                        <span className={cn('font-semibold text-[var(--text-primary)]', size.id === 'small' && 'text-sm', size.id === 'medium' && 'text-base', size.id === 'large' && 'text-lg')}>
+                        <span
+                          className={cn(
+                            'text-sm font-semibold text-[var(--text-primary)]',
+                            size.id === 'small' && 'text-sm',
+                            size.id === 'medium' && 'text-base',
+                            size.id === 'large' && 'text-lg',
+                          )}
+                        >
                           Aa
+                        </span>
+                        <span
+                          className={cn(
+                            'flex h-4.5 w-4.5 items-center justify-center rounded-full border text-[9px]',
+                            active
+                              ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
+                              : 'border-[var(--border)] text-[var(--text-muted)]',
+                          )}
+                        >
+                          {active ? '✓' : ''}
                         </span>
                       </button>
                     );
@@ -403,53 +500,38 @@ export default function UtseendePage() {
               </div>
             </div>
           </div>
+
+          <div className="xl:pt-11">
+            <WorkspacePreview
+              theme={activeTheme}
+              dark={previewIsDark}
+              fontLabel={activeFont.label}
+              sizeLabel={activeFontSize.label}
+            />
+          </div>
         </div>
       </motion.section>
 
-      <motion.section
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.22, delay: 0.03, ease: 'easeOut' }}
-        className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] p-5 shadow-[0_20px_48px_rgba(0,0,0,0.08)] sm:p-6"
-      >
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-[var(--surface-alt)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
-            {activeTheme.label}
-          </span>
-          <span className="rounded-full bg-[var(--surface-alt)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
-            {activeFont.label}
-          </span>
-          <span className="rounded-full bg-[var(--surface-alt)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
-            {activeFontSize.label}
-          </span>
-        </div>
-
-        <WorkspacePreview
-          theme={activeTheme}
-          dark={previewIsDark}
-          fontLabel={activeFont.label}
-          sizeLabel={activeFontSize.label}
-        />
-      </motion.section>
-
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.22, delay: 0.03, ease: 'easeOut' }}
-          className="rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] p-5 shadow-[0_18px_44px_rgba(0,0,0,0.07)] sm:p-6"
+          className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-[0_18px_44px_rgba(0,0,0,0.06)] sm:p-5"
         >
-          <div className="flex items-start justify-between gap-4">
-            <div>
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div className="max-w-xl">
               <h3 className="text-lg font-semibold text-[var(--text-primary)]">Accentpaletter</h3>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">Varje palett justerar ytor, kontrast och accentfärg som ett sammanhållet paket.</p>
+              <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
+                Kompakta val för färgkänslan. Previewn ovan visar hur den aktiva paletten faktiskt beter sig.
+              </p>
             </div>
             <span className="rounded-full bg-[var(--accent)]/10 px-3 py-1 text-xs font-medium text-[var(--accent)]">
               Aktiv: {activeTheme.label}
             </span>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {THEMES.map((item, index) => {
               const active = item.id === selectedTheme;
               return (
@@ -457,34 +539,47 @@ export default function UtseendePage() {
                   key={item.id}
                   type="button"
                   onClick={() => applySelectedTheme(item)}
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.22, delay: index * 0.02, ease: 'easeOut' }}
+                  transition={{ duration: 0.2, delay: index * 0.02, ease: 'easeOut' }}
                   className={cn(
-                    'relative overflow-hidden rounded-[24px] border p-4 text-left transition-all',
+                    'relative rounded-[20px] border p-3 text-left transition-all',
                     active
-                      ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_18px_38px_rgba(0,0,0,0.08)]'
+                      ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_14px_28px_rgba(0,0,0,0.06)]'
                       : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
                   )}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">{item.label}</p>
-                      <p className="mt-1 text-xs text-[var(--text-muted)]">{item.desc}</p>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{item.label}</p>
+                      <p className="mt-0.5 text-[11px] leading-4 text-[var(--text-muted)]">{item.desc}</p>
                     </div>
-                    <div className="flex gap-1.5">
+                    <div className="flex max-w-[64px] flex-wrap justify-end gap-1">
                       {item.swatches.slice(0, 4).map((swatch) => (
-                        <span key={swatch} className="h-3.5 w-3.5 rounded-full border border-black/5" style={{ background: swatch }} />
+                        <span
+                          key={swatch}
+                          className="h-2.5 w-2.5 rounded-full border border-black/5 shrink-0"
+                          style={{ background: swatch }}
+                        />
                       ))}
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-[0.7fr_1fr] overflow-hidden rounded-[18px] border border-[var(--border)]">
-                    <div className="h-16" style={{ background: item.light['--surface-2'] }} />
-                    <div className="space-y-2 p-3" style={{ background: item.light['--surface'] }}>
-                      <div className="h-2.5 w-16 rounded-full" style={{ background: item.light['--text-muted'], opacity: 0.32 }} />
-                      <div className="h-2.5 w-24 rounded-full" style={{ background: item.light['--surface-3'] }} />
-                      <div className="h-2.5 w-20 rounded-full" style={{ background: item.light['--accent'], opacity: 0.7 }} />
+                  <div className="mt-2.5 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-2">
+                    <div className="flex items-center gap-1.5">
+                      {item.swatches.slice(0, 4).map((swatch) => (
+                        <span
+                          key={`${item.id}-${swatch}-bar`}
+                          className="h-4 flex-1 rounded-full"
+                          style={{ background: swatch }}
+                        />
+                      ))}
+                    </div>
+                    <div className="mt-1.5 h-2 rounded-full" style={{ background: item.light['--surface-2'] }}>
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: '62%', background: item.light['--accent'], opacity: 0.82 }}
+                      />
                     </div>
                   </div>
 
@@ -495,9 +590,9 @@ export default function UtseendePage() {
                         animate={{ scale: 1 }}
                         exit={{ scale: 0 }}
                         transition={SPRING_SNAPPY}
-                        className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)] text-white"
+                        className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white"
                       >
-                        <Icon path={<polyline points="20 6 9 17 4 12" />} size={12} />
+                        <Icon path={<polyline points="20 6 9 17 4 12" />} size={11} />
                       </motion.span>
                     )}
                   </AnimatePresence>
@@ -511,14 +606,16 @@ export default function UtseendePage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.22, delay: 0.05, ease: 'easeOut' }}
-          className="rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] p-5 shadow-[0_18px_44px_rgba(0,0,0,0.07)] sm:p-6"
+          className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-[0_18px_44px_rgba(0,0,0,0.06)] sm:p-5"
         >
-          <div>
+          <div className="mb-4">
             <h3 className="text-lg font-semibold text-[var(--text-primary)]">Typsnitt</h3>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">Välj ett tydligt uttryck utan att layouten blir orolig.</p>
+            <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
+              Välj ett tydligt uttryck utan att fylla sidan med stora, onödiga kort.
+            </p>
           </div>
 
-          <div className="mt-5 space-y-2">
+          <div className="grid gap-2 min-[420px]:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
             {FONT_OPTIONS.map((font, index) => {
               const active = font.id === fontFamily;
               return (
@@ -530,23 +627,27 @@ export default function UtseendePage() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.18, delay: index * 0.02, ease: 'easeOut' }}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-[22px] border px-4 py-3 text-left transition-all',
+                    'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[20px] border px-3 py-3 text-left transition-all',
                     active
-                      ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_14px_28px_rgba(0,0,0,0.06)]'
+                      ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_12px_24px_rgba(0,0,0,0.05)]'
                       : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
                   )}
                 >
-                  <span className="min-w-[34px] text-xl font-medium text-[var(--text-primary)]" style={font.sampleStyle}>Aa</span>
-                  <div className="min-w-0 flex-1">
+                  <span className="min-w-[28px] text-lg font-medium text-[var(--text-primary)]" style={font.sampleStyle}>
+                    Aa
+                  </span>
+                  <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{font.label}</p>
                     <p className="truncate text-xs text-[var(--text-muted)]">{font.desc}</p>
                   </div>
-                  <span className={cn(
-                    'flex h-6 w-6 items-center justify-center rounded-full border text-[11px]',
-                    active
-                      ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
-                      : 'border-[var(--border)] text-[var(--text-muted)]',
-                  )}>
+                  <span
+                    className={cn(
+                      'flex h-5 w-5 items-center justify-center rounded-full border text-[10px]',
+                      active
+                        ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
+                        : 'border-[var(--border)] text-[var(--text-muted)]',
+                    )}
+                  >
                     {active ? '✓' : ''}
                   </span>
                 </motion.button>
@@ -556,8 +657,13 @@ export default function UtseendePage() {
         </motion.section>
       </div>
 
-      <div className="flex justify-end rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] px-5 py-4 shadow-[0_16px_40px_rgba(0,0,0,0.07)]">
-        <SaveButton pending={pending} saved={saved} onClick={save} />
+      <div className="flex flex-col gap-3 rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] px-4 py-4 shadow-[0_14px_36px_rgba(0,0,0,0.05)] sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <p className="text-sm text-[var(--text-muted)]">
+          Inställningarna sparas lokalt direkt. Använd knappen om du vill bekräfta ändringen tydligt.
+        </p>
+        <div className="flex justify-end">
+          <SaveButton pending={pending} saved={saved} onClick={save} />
+        </div>
       </div>
     </div>
   );
