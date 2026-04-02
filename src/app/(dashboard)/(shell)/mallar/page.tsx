@@ -13,6 +13,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@shared/lib/utils';
+import { fetchWithRefresh } from '@shared/lib/api-client';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -48,7 +49,7 @@ export default function TemplatesPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/templates');
+      const res = await fetchWithRefresh('/api/templates');
       if (!res.ok) throw new Error(`Fel ${res.status}`);
       const json = await res.json() as { data: OfferTemplate[] };
       setTemplates(json.data);
@@ -66,7 +67,7 @@ export default function TemplatesPage() {
     setPreviewing(t.id);
     setPreviewHtml(null);
     try {
-      const res = await fetch('/api/templates/preview', {
+      const res = await fetchWithRefresh('/api/templates/preview', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: t.content }),
       });
@@ -83,7 +84,7 @@ export default function TemplatesPage() {
   const handleDuplicate = useCallback(async (t: OfferTemplate) => {
     setDuplicating(t.id);
     try {
-      const res = await fetch('/api/templates', {
+      const res = await fetchWithRefresh('/api/templates', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: `Kopia av ${t.name}`, content: t.content }),
       });
@@ -101,7 +102,7 @@ export default function TemplatesPage() {
     setDeleting(id);
     setConfirmDelete(null);
     try {
-      const res = await fetch(`/api/templates/${id}`, { method: 'DELETE' });
+      const res = await fetchWithRefresh(`/api/templates/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`Fel ${res.status}`);
       await load();
     } catch (e) {

@@ -13,6 +13,7 @@ import dynamic from 'next/dynamic';
 import { fetchWithRefresh } from '@shared/lib/api-client';
 import type { TemplateEditorHandle } from '../_components/TemplateEditor';
 import type { EmailEditorHandle } from '../_components/EmailEditor';
+import { normalizeTemplateImages } from '../_components/template-image-upload';
 
 // Lazy-load the heavy TipTap editors (avoids SSR issues with ProseMirror)
 const TemplateEditor = dynamic(() => import('../_components/TemplateEditor'), { ssr: false });
@@ -105,8 +106,10 @@ export default function TemplateEditorPage() {
   // ── Save ──────────────────────────────────────────────────────────────────
   const save = useCallback(async () => {
     if (!name.trim()) { setError('Ange ett namn för mallen.'); return; }
-    const json = editorRef.current?.getJSON();
+    const rawJson = editorRef.current?.getJSON();
+    const json = rawJson ? await normalizeTemplateImages(rawJson) : null;
     if (!json) { setError('Editorn är inte redo.'); return; }
+    editorRef.current?.setContent(json);
     const content = JSON.stringify(json);
 
     const emailSubject      = emailEditorRef.current?.getSubject()      ?? initEmailSubject;
@@ -159,9 +162,11 @@ export default function TemplateEditorPage() {
 
   // ── Preview ────────────────────────────────────────────────────────────────
   const openPreview = useCallback(async () => {
-    const json = editorRef.current?.getJSON();
+    const rawJson = editorRef.current?.getJSON();
     setPreviewing(true); setPreviewHtml(null);
     try {
+      const json = rawJson ? await normalizeTemplateImages(rawJson) : undefined;
+      if (json) editorRef.current?.setContent(json);
       const res = await fetchWithRefresh('/api/templates/preview', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: json ? JSON.stringify(json) : undefined }),

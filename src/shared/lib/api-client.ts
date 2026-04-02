@@ -20,7 +20,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 // Attempt a silent token refresh. Returns true if the server issued a new `at` cookie.
 async function tryRefresh(): Promise<boolean> {
   try {
-    const res = await fetch('/api/auth/refresh', { method: 'POST' });
+    const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
     return res.ok;
   } catch {
     return false;
@@ -30,13 +30,18 @@ async function tryRefresh(): Promise<boolean> {
 // Wrap a fetch call so that a single 401 triggers a token refresh + one retry.
 // If the refresh also fails, the original 401 error is re-thrown.
 async function fetchWithRefresh(input: string, init?: RequestInit): Promise<Response> {
-  const res = await fetch(input, init);
+  const requestInit: RequestInit = {
+    credentials: 'include',
+    ...init,
+  };
+
+  const res = await fetch(input, requestInit);
   if (res.status !== 401) return res;
 
   const refreshed = await tryRefresh();
   if (!refreshed) return res; // let caller throw from the original 401
 
-  return fetch(input, init); // retry once with the new `at` cookie
+  return fetch(input, requestInit); // retry once with the new `at` cookie
 }
 
 export async function apiGet<T>(url: string): Promise<T> {

@@ -44,6 +44,7 @@ import type { EditorView } from '@tiptap/pm/view';
 import dynamic from 'next/dynamic';
 import { EditorCtx } from './editor-context';
 import { HFCtx } from './header-footer-context';
+import { uploadTemplateImage } from './template-image-upload';
 import {
   parseTemplateDoc, EMPTY_DOC, makeEmptyPage, makeDocumentPage,
 } from './template-doc';
@@ -85,16 +86,16 @@ interface Props {
 
 // ── Image drop helper ─────────────────────────────────────────────────────────
 
-function insertImageFile(view: EditorView, file: File) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const src = e.target?.result as string;
+async function insertImageFile(view: EditorView, file: File) {
+  try {
+    const src = await uploadTemplateImage(file);
     const node = view.state.schema.nodes['image']?.create({ src });
     if (!node) return;
     const tr = view.state.tr.replaceSelectionWith(node);
     view.dispatch(tr);
-  };
-  reader.readAsDataURL(file);
+  } catch (error) {
+    window.alert(error instanceof Error ? error.message : 'Kunde inte ladda upp bilden.');
+  }
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -169,7 +170,7 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
         if (!imageItem) return false;
         event.preventDefault();
         const file = imageItem.getAsFile();
-        if (file) insertImageFile(view, file);
+        if (file) void insertImageFile(view, file);
         return true;
       },
       handleDrop(view, event, _slice, moved) {
@@ -179,7 +180,7 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
         );
         if (!file) return false;
         event.preventDefault();
-        insertImageFile(view, file);
+        void insertImageFile(view, file);
         return true;
       },
     },
