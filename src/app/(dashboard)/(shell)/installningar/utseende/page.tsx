@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -15,42 +15,141 @@ import {
   type FontOption,
 } from '../_components/theme-data';
 
-const FONT_SIZE_OPTIONS: { id: FontSize; label: string; sample: string }[] = [
-  { id: 'small', label: 'Liten', sample: 'Aa' },
-  { id: 'medium', label: 'Normal', sample: 'Aa' },
-  { id: 'large', label: 'Stor', sample: 'Aa' },
+const FONT_SIZE_OPTIONS: { id: FontSize; label: string; desc: string }[] = [
+  { id: 'small', label: 'Liten', desc: 'Mer information på skärmen' },
+  { id: 'medium', label: 'Normal', desc: 'Balanserad läsbarhet' },
+  { id: 'large', label: 'Stor', desc: 'Lugnare och tydligare' },
 ];
 
 const MODE_OPTIONS: { id: ThemeMode; label: string; desc: string }[] = [
-  { id: 'light', label: 'Ljust', desc: 'Alltid ljust läge' },
-  { id: 'dark', label: 'Mörkt', desc: 'Alltid mörkt läge' },
-  { id: 'auto', label: 'Auto', desc: 'Följer systemet' },
+  { id: 'light', label: 'Ljust', desc: 'Rent och luftigt hela dagen' },
+  { id: 'dark', label: 'Mörkt', desc: 'Dämpat och fokusvänligt' },
+  { id: 'auto', label: 'Auto', desc: 'Följer din enhet' },
 ];
 
-function CompactPreview({ theme }: { theme: ThemeDef }) {
+function WorkspacePreview({
+  theme,
+  dark,
+  fontLabel,
+  sizeLabel,
+}: {
+  theme: ThemeDef;
+  dark: boolean;
+  fontLabel: string;
+  sizeLabel: string;
+}) {
+  const vars = dark ? theme.dark : theme.light;
+
   return (
-    <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)]">
-      <div className="flex h-28">
+    <div
+      className="overflow-hidden rounded-[28px] border p-4 shadow-[0_24px_60px_rgba(0,0,0,0.12)]"
+      style={{
+        borderColor: vars['--border'],
+        background: `linear-gradient(180deg, ${vars['--surface-0']}, ${vars['--surface-1']})`,
+      }}
+    >
+      <div className="grid gap-4 sm:grid-cols-[120px_minmax(0,1fr)]">
         <div
-          className="w-20 border-r border-black/5"
-          style={{ background: `linear-gradient(180deg, ${theme.light['--surface-2']}, ${theme.light['--surface-3']})` }}
-        />
-        <div
-          className="flex flex-1 flex-col gap-2 p-4"
-          style={{ background: `linear-gradient(180deg, ${theme.light['--page-bg']}, ${theme.light['--surface']})` }}
+          className="rounded-[22px] border p-3"
+          style={{ borderColor: vars['--border'], background: vars['--surface'] }}
         >
-          <div className="flex items-center justify-between">
-            <div className="h-3 w-24 rounded-full" style={{ backgroundColor: theme.light['--text-muted'] }} />
-            <div className="flex gap-1.5">
-              {theme.swatches.slice(0, 3).map((color) => (
-                <div key={color} className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
-              ))}
-            </div>
+          <div className="space-y-2.5">
+            {['Översikt', 'Offerter', 'Mallar', 'Produkter'].map((item, index) => (
+              <div
+                key={item}
+                className="rounded-2xl px-3 py-2 text-[11px] font-medium"
+                style={{
+                  background: index === 0 ? vars['--accent-subtle'] : vars['--surface-alt'],
+                  color: index === 0 ? vars['--accent'] : vars['--text-secondary'],
+                }}
+              >
+                {item}
+              </div>
+            ))}
           </div>
-          <div className="h-9 rounded-2xl" style={{ backgroundColor: theme.light['--surface-alt'] }} />
-          <div className="grid grid-cols-2 gap-2">
-            <div className="h-10 rounded-2xl" style={{ backgroundColor: theme.light['--surface-alt'] }} />
-            <div className="h-10 rounded-2xl" style={{ backgroundColor: theme.light['--surface-3'] }} />
+        </div>
+
+        <div className="space-y-3">
+          <div
+            className="rounded-[22px] border p-4"
+            style={{ borderColor: vars['--border'], background: vars['--surface'] }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: vars['--text-muted'] }}>
+                  Förhandsvisning
+                </p>
+                <h4 className="mt-2 text-lg font-semibold" style={{ color: vars['--text-primary'] }}>
+                  Soleria-offerter
+                </h4>
+              </div>
+              <div className="flex gap-2">
+                {theme.swatches.slice(0, 3).map((swatch) => (
+                  <span key={swatch} className="h-3.5 w-3.5 rounded-full" style={{ background: swatch }} />
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-[1.2fr_0.8fr]">
+              <div
+                className="rounded-[20px] p-3"
+                style={{ background: vars['--surface-alt'], color: vars['--text-secondary'] }}
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="h-3 w-20 rounded-full" style={{ background: vars['--text-muted'], opacity: 0.35 }} />
+                  <div className="rounded-full px-2 py-1 text-[10px] font-medium" style={{ background: vars['--accent-subtle'], color: vars['--accent'] }}>
+                    {sizeLabel}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {[62, 88, 74].map((height, index) => (
+                    <motion.div
+                      key={height}
+                      initial={{ scaleY: 0.7, opacity: 0.6 }}
+                      animate={{ scaleY: 1, opacity: 1 }}
+                      transition={{ duration: 0.35, delay: 0.05 * index, ease: 'easeOut' }}
+                      className="origin-bottom rounded-2xl"
+                      style={{
+                        height,
+                        background: index === 1 ? vars['--accent'] : vars['--surface-3'],
+                        opacity: index === 1 ? 0.88 : 0.72,
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div
+                  className="rounded-[20px] p-3"
+                  style={{ background: vars['--surface-alt'], color: vars['--text-secondary'] }}
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: vars['--text-muted'] }}>
+                    Typografi
+                  </p>
+                  <p className="mt-2 text-base font-semibold" style={{ color: vars['--text-primary'] }}>{fontLabel}</p>
+                  <p className="mt-1 text-sm" style={{ color: vars['--text-secondary'] }}>Lättläst och konsekvent</p>
+                </div>
+                <div
+                  className="rounded-[20px] p-3"
+                  style={{ background: vars['--surface-alt'], color: vars['--text-secondary'] }}
+                >
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: vars['--accent'] }} />
+                    <span className="text-sm font-medium" style={{ color: vars['--text-primary'] }}>Accent i fokus</span>
+                  </div>
+                  <div className="h-2.5 rounded-full" style={{ background: vars['--surface-3'] }}>
+                    <motion.div
+                      initial={{ width: '35%' }}
+                      animate={{ width: '72%' }}
+                      transition={{ duration: 0.5, ease: 'easeOut' }}
+                      className="h-full rounded-full"
+                      style={{ background: vars['--accent'] }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -202,8 +301,8 @@ export default function UtseendePage() {
     setTimeout(() => {
       setPending(false);
       setSaved(true);
-      setTimeout(() => setSaved(false), 2400);
-    }, 450);
+      setTimeout(() => setSaved(false), 2200);
+    }, 420);
   }
 
   const activeTheme = useMemo(
@@ -211,188 +310,246 @@ export default function UtseendePage() {
     [selectedTheme],
   );
 
+  const activeFont = useMemo(
+    () => FONT_OPTIONS.find((item) => item.id === fontFamily) ?? FONT_OPTIONS[0],
+    [fontFamily],
+  );
+
+  const activeFontSize = useMemo(
+    () => FONT_SIZE_OPTIONS.find((item) => item.id === fontSize) ?? FONT_SIZE_OPTIONS[1],
+    [fontSize],
+  );
+
+  const previewIsDark = theme === 'dark' || (theme === 'auto' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <motion.section
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.18, ease: 'easeOut' }}
-        className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]"
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        className="overflow-hidden rounded-[34px] border border-[var(--border)] bg-[linear-gradient(135deg,var(--surface-0),var(--surface-1))] shadow-[0_24px_70px_rgba(0,0,0,0.10)]"
       >
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-0)] p-5 shadow-sm">
+        <div className="grid gap-0 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
+          <div className="p-6 sm:p-8">
+            <div className="max-w-2xl">
+              <span className="rounded-full border border-[var(--accent-border)] bg-[var(--accent-subtle)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+                Utseende
+              </span>
+              <h2 className="mt-4 text-[28px] font-semibold tracking-tight text-[var(--text-primary)] sm:text-[34px]">
+                Gör arbetsytan lugnare, varmare och tydligare.
+              </h2>
+              <p className="mt-3 max-w-xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
+                Välj ett uttryck som känns premium utan att störa jobbet. Förhandsvisningen uppdateras direkt så att du ser resultatet innan du sparar.
+              </p>
+            </div>
+
+            <div className="mt-7 grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px]">
+              <div>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">Visningsläge</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {MODE_OPTIONS.map((mode) => {
+                    const active = theme === mode.id;
+                    return (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => applyTheme(mode.id)}
+                        className={cn(
+                          'rounded-2xl border px-4 py-3 text-left transition-all',
+                          active
+                            ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_12px_24px_rgba(0,0,0,0.06)]'
+                            : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
+                        )}
+                      >
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">{mode.label}</p>
+                        <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{mode.desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">Textstorlek</p>
+                <div className="mt-3 space-y-2">
+                  {FONT_SIZE_OPTIONS.map((size) => {
+                    const active = fontSize === size.id;
+                    return (
+                      <button
+                        key={size.id}
+                        type="button"
+                        onClick={() => applyFontSize(size.id)}
+                        className={cn(
+                          'flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-all',
+                          active
+                            ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_12px_24px_rgba(0,0,0,0.06)]'
+                            : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
+                        )}
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-[var(--text-primary)]">{size.label}</p>
+                          <p className="mt-1 text-xs text-[var(--text-muted)]">{size.desc}</p>
+                        </div>
+                        <span className={cn('font-semibold text-[var(--text-primary)]', size.id === 'small' && 'text-sm', size.id === 'medium' && 'text-base', size.id === 'large' && 'text-lg')}>
+                          Aa
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,var(--surface),var(--surface-1))] p-6 sm:p-8 xl:border-l xl:border-t-0">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-[var(--surface-alt)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
+                {activeTheme.label}
+              </span>
+              <span className="rounded-full bg-[var(--surface-alt)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
+                {activeFont.label}
+              </span>
+              <span className="rounded-full bg-[var(--surface-alt)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
+                {activeFontSize.label}
+              </span>
+            </div>
+
+            <WorkspacePreview
+              theme={activeTheme}
+              dark={previewIsDark}
+              fontLabel={activeFont.label}
+              sizeLabel={activeFontSize.label}
+            />
+          </div>
+        </div>
+      </motion.section>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, delay: 0.03, ease: 'easeOut' }}
+          className="rounded-[32px] border border-[var(--border)] bg-[var(--surface-0)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.08)]"
+        >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Tema</h3>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">Välj läge och accent utan att behöva bläddra genom stora kort.</p>
+              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Accentpaletter</h3>
+              <p className="mt-1 text-sm text-[var(--text-muted)]">Varje palett justerar ytor, kontrast och accentfärg som ett sammanhållet paket.</p>
             </div>
-            <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-xs font-medium text-[var(--accent)]">
-              {activeTheme.label}
+            <span className="rounded-full bg-[var(--accent)]/10 px-3 py-1 text-xs font-medium text-[var(--accent)]">
+              Aktiv: {activeTheme.label}
             </span>
           </div>
 
-          <div className="mt-4 grid gap-2 sm:grid-cols-3">
-            {MODE_OPTIONS.map((mode) => {
-              const active = theme === mode.id;
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {THEMES.map((item, index) => {
+              const active = item.id === selectedTheme;
               return (
-                <button
-                  key={mode.id}
+                <motion.button
+                  key={item.id}
                   type="button"
-                  onClick={() => applyTheme(mode.id)}
+                  onClick={() => applySelectedTheme(item)}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.22, delay: index * 0.02, ease: 'easeOut' }}
                   className={cn(
-                    'rounded-2xl border px-3 py-3 text-left transition-colors',
+                    'relative overflow-hidden rounded-[24px] border p-4 text-left transition-all',
                     active
-                      ? 'border-[var(--accent)] bg-[var(--accent)]/8'
-                      : 'border-[var(--border)] hover:bg-[var(--surface-alt)]',
+                      ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_18px_38px_rgba(0,0,0,0.08)]'
+                      : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
                   )}
                 >
-                  <p className="text-sm font-medium text-[var(--text-primary)]">{mode.label}</p>
-                  <p className="mt-1 text-xs text-[var(--text-muted)]">{mode.desc}</p>
-                </button>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{item.label}</p>
+                      <p className="mt-1 text-xs text-[var(--text-muted)]">{item.desc}</p>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {item.swatches.slice(0, 4).map((swatch) => (
+                        <span key={swatch} className="h-3.5 w-3.5 rounded-full border border-black/5" style={{ background: swatch }} />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-[0.7fr_1fr] overflow-hidden rounded-[18px] border border-[var(--border)]">
+                    <div className="h-16" style={{ background: item.light['--surface-2'] }} />
+                    <div className="space-y-2 p-3" style={{ background: item.light['--surface'] }}>
+                      <div className="h-2.5 w-16 rounded-full" style={{ background: item.light['--text-muted'], opacity: 0.32 }} />
+                      <div className="h-2.5 w-24 rounded-full" style={{ background: item.light['--surface-3'] }} />
+                      <div className="h-2.5 w-20 rounded-full" style={{ background: item.light['--accent'], opacity: 0.7 }} />
+                    </div>
+                  </div>
+
+                  <AnimatePresence>
+                    {active && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        transition={SPRING_SNAPPY}
+                        className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)] text-white"
+                      >
+                        <Icon path={<polyline points="20 6 9 17 4 12" />} size={12} />
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
               );
             })}
           </div>
+        </motion.section>
 
-          <div className="mt-5">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-[var(--text-primary)]">Accent</p>
-                <p className="mt-1 text-xs text-[var(--text-muted)]">{activeTheme.desc}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {THEMES.map((item) => {
-                const active = item.id === selectedTheme;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => applySelectedTheme(item)}
-                    className={cn(
-                      'relative rounded-2xl border px-3 py-3 text-left transition-all',
-                      active
-                        ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-sm'
-                        : 'border-[var(--border)] hover:bg-[var(--surface-alt)]',
-                    )}
-                  >
-                    <div className="mb-2 flex gap-1.5">
-                      {item.swatches.slice(0, 4).map((swatch) => (
-                        <div key={swatch} className="h-4 w-4 rounded-full border border-black/5" style={{ backgroundColor: swatch }} />
-                      ))}
-                    </div>
-                    <p className="text-sm font-medium text-[var(--text-primary)]">{item.label}</p>
-                    <AnimatePresence>
-                      {active && (
-                        <motion.span
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          exit={{ scale: 0 }}
-                          transition={SPRING_SNAPPY}
-                          className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white"
-                        >
-                          <Icon path={<polyline points="20 6 9 17 4 12" />} size={10} />
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <motion.div
+        <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, delay: 0.03, ease: 'easeOut' }}
-          className="space-y-5"
+          transition={{ duration: 0.22, delay: 0.05, ease: 'easeOut' }}
+          className="rounded-[32px] border border-[var(--border)] bg-[var(--surface-0)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.08)]"
         >
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-0)] p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--text-primary)]">Förhandsvisning</h3>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">En snabb känsla för hur gränssnittet kommer att se ut.</p>
-              </div>
-              <span className="rounded-full bg-[var(--surface-alt)] px-2.5 py-1 text-xs text-[var(--text-secondary)]">
-                {theme === 'auto' ? 'Auto' : theme === 'dark' ? 'Mörkt' : 'Ljust'}
-              </span>
-            </div>
-            <div className="mt-4">
-              <CompactPreview theme={activeTheme} />
-            </div>
+          <div>
+            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Typsnitt</h3>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">Välj ett tydligt uttryck utan att layouten blir orolig.</p>
           </div>
 
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-0)] p-5 shadow-sm">
-            <div>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Typografi</h3>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">Håll font och textstorlek samlade på ett ställe.</p>
-            </div>
-
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {FONT_OPTIONS.map((font) => {
-                const active = font.id === fontFamily;
-                return (
-                  <button
-                    key={font.id}
-                    type="button"
-                    onClick={() => applyFont(font)}
-                    className={cn(
-                      'rounded-2xl border px-3 py-3 text-left transition-colors',
-                      active
-                        ? 'border-[var(--accent)] bg-[var(--accent)]/8'
-                        : 'border-[var(--border)] hover:bg-[var(--surface-alt)]',
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg font-medium text-[var(--text-primary)]" style={font.sampleStyle}>Aa</span>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-[var(--text-primary)]">{font.label}</p>
-                        <p className="truncate text-xs text-[var(--text-muted)]">{font.desc}</p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-5">
-              <p className="text-sm font-semibold text-[var(--text-primary)]">Textstorlek</p>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {FONT_SIZE_OPTIONS.map((size) => {
-                  const active = fontSize === size.id;
-                  return (
-                    <button
-                      key={size.id}
-                      type="button"
-                      onClick={() => applyFontSize(size.id)}
-                      className={cn(
-                        'rounded-2xl border px-3 py-3 text-center transition-colors',
-                        active
-                          ? 'border-[var(--accent)] bg-[var(--accent)]/8'
-                          : 'border-[var(--border)] hover:bg-[var(--surface-alt)]',
-                      )}
-                    >
-                      <p
-                        className={cn(
-                          'font-medium text-[var(--text-primary)]',
-                          size.id === 'small' && 'text-sm',
-                          size.id === 'medium' && 'text-base',
-                          size.id === 'large' && 'text-lg',
-                        )}
-                      >
-                        {size.sample}
-                      </p>
-                      <p className="mt-1 text-xs text-[var(--text-muted)]">{size.label}</p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+          <div className="mt-5 space-y-2">
+            {FONT_OPTIONS.map((font, index) => {
+              const active = font.id === fontFamily;
+              return (
+                <motion.button
+                  key={font.id}
+                  type="button"
+                  onClick={() => applyFont(font)}
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.18, delay: index * 0.02, ease: 'easeOut' }}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-[22px] border px-4 py-3 text-left transition-all',
+                    active
+                      ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_14px_28px_rgba(0,0,0,0.06)]'
+                      : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
+                  )}
+                >
+                  <span className="min-w-[34px] text-xl font-medium text-[var(--text-primary)]" style={font.sampleStyle}>Aa</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{font.label}</p>
+                    <p className="truncate text-xs text-[var(--text-muted)]">{font.desc}</p>
+                  </div>
+                  <span className={cn(
+                    'flex h-6 w-6 items-center justify-center rounded-full border text-[11px]',
+                    active
+                      ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
+                      : 'border-[var(--border)] text-[var(--text-muted)]',
+                  )}>
+                    {active ? '✓' : ''}
+                  </span>
+                </motion.button>
+              );
+            })}
           </div>
-        </motion.div>
-      </motion.section>
+        </motion.section>
+      </div>
 
-      <div className="flex justify-end rounded-3xl border border-[var(--border)] bg-[var(--surface-0)] px-5 py-4 shadow-sm">
+      <div className="flex justify-end rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] px-5 py-4 shadow-[0_18px_50px_rgba(0,0,0,0.08)]">
         <SaveButton pending={pending} saved={saved} onClick={save} />
       </div>
     </div>
