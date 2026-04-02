@@ -21,14 +21,14 @@ import {
   consumeBackupCode,
 } from '../../application/mfa.service';
 import { completeMfaLogin } from '../../application/auth.service';
+import { userRepository } from '../../infrastructure/user.repository';
 import { log, AUDIT_ACTIONS } from '@modules/supporting/audit';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function extractToken(req: NextRequest): string {
   return req.headers.get('authorization')?.slice(7)
-    ?? req.cookies.get('token')?.value
-    ?? req.cookies.get('portal_token')?.value
+    ?? req.cookies.get('at')?.value
     ?? '';
 }
 
@@ -39,7 +39,8 @@ export const handleMfaSetup = createHandler(
   async (ctx) => {
     const { req } = ctx as { req: NextRequest };
     const payload = await verifyToken(extractToken(req));
-    const userEmail = String(payload['email'] ?? payload.sub);
+    const user = await userRepository.findById(payload.sub);
+    const userEmail = user?.email ?? payload.sub;
     const setup = await generateTotpSetup(payload.sub, userEmail);
     return ok({ secret: setup.secret, qrDataUrl: setup.qrDataUrl, otpAuthUrl: setup.otpAuthUrl });
   },
