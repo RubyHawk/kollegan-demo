@@ -12,7 +12,6 @@
 
 import { registerVoiceTools }          from '@modules/core/voice/register';
 import { registerAutomationListeners } from '@modules/core/automation/events/subscribers/domain-events.subscriber';
-import { registerComplianceJobs }      from '@modules/supporting/compliance';
 import { registerOfferEmailJobs }      from '@modules/supporting/offers';
 import { logger }                      from '@platform/logging/logger';
 
@@ -33,12 +32,7 @@ export function initializeApp(): void {
   registerAutomationListeners();
   // Future: registerCrmListeners(), registerLeadsListeners(), ...
 
-  // 3. Register scheduled jobs
-  registerComplianceJobs().catch(err =>
-    logger.error(TAG, 'Failed to register compliance jobs', { err })
-  );
-
-  // 4. Register offer email job handlers (Resend-backed, retryable)
+  // 3. Register offer email job handlers (Resend-backed, retryable)
   registerOfferEmailJobs();
 
   logger.info(TAG, 'Platform initialized');
