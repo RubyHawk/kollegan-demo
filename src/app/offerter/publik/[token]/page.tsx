@@ -246,53 +246,31 @@ export default function PublicOfferPage() {
     const doc = iframe.contentDocument;
     if (!doc) return;
 
-    // ── Inject responsive styles to prevent mobile overflow issues ──
+    // Inject base styles inside the iframe
     const responsiveStyle = doc.createElement('style');
     responsiveStyle.textContent = `
       *, *::before, *::after { box-sizing: border-box; }
-      body { overflow-x: hidden !important; }
-      /* Only set height:auto on images that don't have an explicit height style
-         (fill-page images carry height:NNNpx inline and must keep it)           */
       img { max-width: 100% !important; display: block; }
       img:not([style*="height:"]) { height: auto; }
       table { max-width: 100% !important; width: 100%; table-layout: fixed; }
       td, th { word-break: break-word; overflow-wrap: break-word; }
       pre, code { white-space: pre-wrap !important; word-break: break-word !important; overflow-x: hidden !important; }
-      /* Do NOT override .page-block overflow — it must stay hidden so each A4 page
-         clips its own fill-page images at the 816×1056 boundary.                  */
     `;
-    if (doc.head) {
-      doc.head.appendChild(responsiveStyle);
-    } else if (doc.body) {
-      doc.body.insertBefore(responsiveStyle, doc.body.firstChild);
-    }
+    if (doc.head) doc.head.appendChild(responsiveStyle);
+    else if (doc.body) doc.body.insertBefore(responsiveStyle, doc.body.firstChild);
 
     const wrapper = doc.querySelector('.doc-wrapper') as HTMLElement | null;
-    // Detect new-format docs (have .page-content; padding lives there, not on .doc-wrapper)
+    // Detect new-format docs (have .page-content; padding lives inside page-block)
     const hasPageContent = !!doc.querySelector('.page-content');
     if (wrapper) {
-      const isMobile = window.innerWidth < 640;
-      wrapper.style.margin = '0 auto';        // centre within iframe
+      wrapper.style.margin = '0 auto';
       wrapper.style.border = 'none';
       wrapper.style.borderRadius = '0';
-      // Keep max-width at 816px — this is the A4 pixel width the document is built for.
-      // Setting it to 'none' widens .page-block beyond 816px so fill-page images
-      // (position:absolute; left:0; width:816px) no longer cover the full "page".
+      // Keep max-width at 816px — the A4 pixel width the document is designed for.
       wrapper.style.maxWidth = '816px';
       wrapper.style.boxShadow = 'none';
-      if (hasPageContent) {
-        // New format: padding is on .page-content; leave doc-wrapper padding-free
-        wrapper.style.padding = '0';
-        // On mobile, override .page-content padding to compact value
-        if (isMobile) {
-          doc.querySelectorAll<HTMLElement>('.page-content').forEach((pc) => {
-            pc.style.padding = '20px 16px';
-          });
-        }
-      } else {
-        // Old format: padding was on .doc-wrapper
-        wrapper.style.padding = isMobile ? '20px 16px' : '40px 48px';
-      }
+      // New-format docs carry their own padding in .page-content
+      wrapper.style.padding = hasPageContent ? '0' : '40px 48px';
     }
     doc.body.style.margin = '0';
     doc.body.style.padding = '0';
@@ -303,33 +281,39 @@ export default function PublicOfferPage() {
       (el as HTMLElement).style.display = 'none';
     });
 
+    // ── Viewport scaling ───────────────────────────────────────────────────────
+    // The document is authored at 816 px. On narrower viewports we scale the
+    // entire document down so it fits without horizontal scrolling.
+    const DOC_WIDTH = 816;
+    const containerW = iframe.getBoundingClientRect().width || window.innerWidth;
+    const scale = Math.min(1, containerW / DOC_WIDTH);
+    if (scale < 1 && doc.documentElement) {
+      doc.documentElement.style.width = `${DOC_WIDTH}px`;
+      doc.documentElement.style.transformOrigin = 'top left';
+      doc.documentElement.style.transform = `scale(${scale})`;
+      doc.documentElement.style.overflowX = 'hidden';
+    }
+
     const resize = () => {
-      if (!doc.body) return;
-      // Reset height first to get accurate scrollHeight measurement
+      if (!doc.documentElement) return;
       iframe.style.height = 'auto';
       requestAnimationFrame(() => {
-        if (doc.body) iframe.style.height = `${doc.body.scrollHeight}px`;
+        if (!doc.documentElement) return;
+        // Natural layout height × scale = the height the iframe must show
+        const naturalH = doc.documentElement.scrollHeight;
+        iframe.style.height = `${Math.ceil(naturalH * scale)}px`;
       });
     };
     resize();
-    // Wait for all images to load before final resize
+
+    // Re-measure once all images have loaded
     const images = doc.querySelectorAll('img');
     if (images.length > 0) {
       let loadedCount = 0;
+      const onLoad = () => { if (++loadedCount === images.length) resize(); };
       images.forEach((img) => {
-        if (img.complete) {
-          loadedCount++;
-          if (loadedCount === images.length) resize();
-        } else {
-          img.addEventListener('load', () => {
-            loadedCount++;
-            if (loadedCount === images.length) resize();
-          });
-          img.addEventListener('error', () => {
-            loadedCount++;
-            if (loadedCount === images.length) resize();
-          });
-        }
+        if (img.complete) onLoad();
+        else { img.addEventListener('load', onLoad); img.addEventListener('error', onLoad); }
       });
     } else {
       resize();
@@ -396,7 +380,7 @@ export default function PublicOfferPage() {
   }, [sigMode, typedSig, sigFont]);
 
   const handleSign = useCallback(async () => {
-    if (!signerName.trim()) { setErrMsg('Ange ditt fullstandiga namn.'); return; }
+    if (!signerName.trim()) { setErrMsg('Ange ditt fullständiga namn.'); return; }
     const signatureImage = getSignatureImage();
     if (!signatureImage) { setErrMsg(sigMode === 'draw' ? 'Rita din namnteckning i rutan.' : 'Skriv din namnteckning.'); return; }
     setBusy(true); setErrMsg('');
@@ -406,8 +390,12 @@ export default function PublicOfferPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ signatureImage, signerName: signerName.trim() }),
       });
-      if (!res.ok) { const j = await res.json().catch(() => ({})) as { detail?: string }; throw new Error(j.detail ?? `Fel ${res.status}`); }
-      // Brief pause for the animation feel
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({})) as { detail?: string };
+        // Show the API detail if it's a user-actionable message, otherwise generic
+        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Signeringen misslyckades. Försök igen eller kontakta avsändaren.';
+        throw new Error(msg);
+      }
       await new Promise((r) => setTimeout(r, 600));
       setState('accepted');
     } catch (e) { setErrMsg((e as Error).message); setState('ready'); } finally { setBusy(false); }
@@ -420,7 +408,11 @@ export default function PublicOfferPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ comment: comment.trim() || undefined }),
       });
-      if (!res.ok) { const j = await res.json().catch(() => ({})) as { detail?: string }; throw new Error(j.detail ?? `Fel ${res.status}`); }
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({})) as { detail?: string };
+        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Avvisningen misslyckades. Försök igen.';
+        throw new Error(msg);
+      }
       setState('declined');
     } catch (e) { setErrMsg((e as Error).message); } finally { setBusy(false); }
   }, [token, comment]);
@@ -432,7 +424,7 @@ export default function PublicOfferPage() {
       const safeName = offer.title.replace(/[^a-zA-Z0-9\u00C0-\u024F ]/g, '').trim().replace(/\s+/g, '-');
       await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`);
     } catch {
-      setErrMsg('Kunde inte ladda ner PDF. Forsok igen.');
+      setErrMsg('Kunde inte ladda ner PDF. Försök igen.');
     } finally {
       setDownloading(false);
     }
@@ -460,8 +452,8 @@ export default function PublicOfferPage() {
   // Terminal status screens
   if (state === 'expired' || state === 'error' || state === 'accepted' || state === 'declined') {
     const configs = {
-      expired:  { icon: <ClockIcon size={40} className="text-slate-400" />, title: 'Lanken har gatt ut', sub: 'Kontakta avsandaren for att fa en ny lank till offerten.' },
-      error:    { icon: <XCircleIcon size={40} className="text-red-400" />, title: 'Offerten hittades inte', sub: errMsg || 'Kontrollera lanken och forsok igen.' },
+      expired:  { icon: <ClockIcon size={40} className="text-slate-400" />, title: 'Länken har gått ut', sub: 'Kontakta avsändaren för att få en ny länk till offerten.' },
+      error:    { icon: <XCircleIcon size={40} className="text-red-400" />, title: 'Offerten hittades inte', sub: 'Kontrollera länken och försök igen.' },
       accepted: { icon: null, title: 'Offert signerad', sub: 'Tack! Avsandaren har meddelats om din signering.' },
       declined: { icon: <XCircleIcon size={40} className="text-slate-400" />, title: 'Offert avvisad', sub: 'Avsandaren har meddelats.' },
     };
@@ -543,29 +535,38 @@ export default function PublicOfferPage() {
       className="min-h-screen"
     >
       {/* ─── Sticky header ─── */}
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
-        <div className="flex h-14 items-center justify-between gap-4 px-4 sm:px-6">
+      <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/96 backdrop-blur-md">
+        <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
 
-          <div className="flex items-center gap-3 min-w-0">
-            <FileTextIcon size={16} className="shrink-0 text-slate-400" />
+          {/* Left: title + recipient */}
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+              <FileTextIcon size={14} className="text-slate-500" />
+            </div>
             <div className="min-w-0">
-              <h1 className="truncate text-sm font-semibold text-slate-900">{offer.title}</h1>
-              <p className="truncate text-[11px] text-slate-400">
-                {offer.recipientName}{offer.recipientCompany ? ` / ${offer.recipientCompany}` : ''}
+              <h1 className="truncate text-sm font-semibold leading-tight text-slate-900">{offer.title}</h1>
+              <p className="truncate text-[11px] leading-tight text-slate-400">
+                {offer.recipientName}{offer.recipientCompany ? ` · ${offer.recipientCompany}` : ''}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
+
+          {/* Right: price + PDF */}
+          <div className="flex shrink-0 items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
               <span className="text-sm font-bold tabular-nums text-slate-900">{fmtSEK(offer.totalIncVat)}</span>
-              <span className="hidden sm:block h-3.5 w-px bg-slate-300" />
-              <span className="hidden sm:block text-[11px] text-slate-400">Giltig till {fmtDate(offer.validUntil)}</span>
+              <span className="h-3.5 w-px bg-slate-300" />
+              <span className="text-[11px] text-slate-400">Giltig till {fmtDate(offer.validUntil)}</span>
+            </div>
+            {/* Mobile price pill */}
+            <div className="flex sm:hidden items-center rounded-md bg-slate-900 px-2.5 py-1">
+              <span className="text-xs font-bold tabular-nums text-white">{fmtSEK(offer.totalIncVat)}</span>
             </div>
             {/* PDF download */}
             <button
               onClick={() => void handleDownloadPdf()}
               disabled={downloading || !offer.generatedDocument}
-              className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-40"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 active:bg-slate-100 disabled:opacity-40"
               title="Ladda ner som PDF"
             >
               {downloading ? (
@@ -575,45 +576,37 @@ export default function PublicOfferPage() {
               ) : (
                 <FileTextIcon size={13} />
               )}
-              <span className="hidden sm:inline">{downloading ? 'Genererar...' : 'PDF'}</span>
+              <span className="hidden sm:inline">{downloading ? 'Genererar…' : 'PDF'}</span>
             </button>
           </div>
         </div>
-        {/* Scroll progress bar / PDF indeterminate bar */}
+
+        {/* Progress bar */}
         {offer.generatedDocument && (
           downloading ? (
-            <div className="h-0.5 w-full bg-slate-100 overflow-hidden">
-              <div className="h-full bg-slate-900 w-1/3 animate-[slide-indeterminate_1.4s_ease-in-out_infinite]" />
-              <style>{`
-                @keyframes slide-indeterminate {
-                  0%   { transform: translateX(-100%); width: 40%; }
-                  50%  { transform: translateX(150%);  width: 60%; }
-                  100% { transform: translateX(300%);  width: 40%; }
-                }
-              `}</style>
+            <div className="h-0.5 w-full overflow-hidden bg-slate-100">
+              <div className="h-full w-1/3 bg-slate-800 animate-[slide-indeterminate_1.4s_ease-in-out_infinite]" />
+              <style>{`@keyframes slide-indeterminate{0%{transform:translateX(-100%);width:40%}50%{transform:translateX(150%);width:60%}100%{transform:translateX(300%);width:40%}}`}</style>
             </div>
           ) : (
             <div className="h-0.5 w-full bg-slate-100">
-              <div
-                className="h-full bg-slate-900 transition-[width] duration-75"
-                style={{ width: `${scrollProgress}%` }}
-              />
+              <div className="h-full bg-slate-800 transition-[width] duration-75" style={{ width: `${scrollProgress}%` }} />
             </div>
           )
         )}
       </header>
 
       {/* ─── Content ─── */}
-      <main className="pb-16 bg-slate-50 min-h-screen">
-        <div className="mx-auto max-w-4xl px-0 sm:px-6 sm:pt-8 overflow-x-hidden">
+      <main className="min-h-screen bg-slate-50 pb-16">
+        <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-8">
 
-        {/* Document */}
+        {/* Document iframe */}
         {offer.generatedDocument && (
           <motion.section
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.05 }}
-            className="mb-6 overflow-hidden bg-white border border-slate-200 sm:rounded-xl sm:shadow-sm"
+            transition={{ duration: 0.35, delay: 0.04 }}
+            className="mb-5 overflow-hidden bg-white shadow-sm sm:rounded-xl sm:border sm:border-slate-200/80"
           >
             <iframe
               ref={iframeRef}
@@ -622,7 +615,7 @@ export default function PublicOfferPage() {
               title="Offertdokument"
               onLoad={handleIframeLoad}
               className="block w-full border-none"
-              style={{ overflow: 'hidden', minHeight: '200px' }}
+              style={{ minHeight: '200px', overflow: 'hidden' }}
               scrolling="no"
             />
           </motion.section>
@@ -634,26 +627,26 @@ export default function PublicOfferPage() {
           {!isDecline ? (
             <motion.section
               key="sign"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm"
             >
               {/* Header */}
-              <div className="border-b border-slate-100 px-6 py-5 sm:px-8">
-                <div className="flex items-center justify-between gap-4">
+              <div className="border-b border-slate-100 px-5 py-4 sm:px-7 sm:py-5">
+                <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-900">
                       <ShieldIcon size={14} className="text-white" />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-slate-900">Godkannande och underskrift</h2>
-                      <p className="text-[12px] text-slate-400">Underteckna for att bekrafta offerten</p>
+                      <h2 className="text-sm font-bold text-slate-900">Godkännande och underskrift</h2>
+                      <p className="text-[12px] text-slate-400">Underteckna för att bekräfta offerten</p>
                     </div>
                   </div>
-                  <div className="shrink-0 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2 text-right">
-                    <p className="text-base font-bold tabular-nums text-emerald-700">{fmtSEK(offer.totalIncVat)}</p>
+                  <div className="shrink-0 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-right sm:px-4 sm:py-2">
+                    <p className="text-sm font-bold tabular-nums text-emerald-700 sm:text-base">{fmtSEK(offer.totalIncVat)}</p>
                     <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-500">inkl. moms</p>
                   </div>
                 </div>
@@ -678,40 +671,40 @@ export default function PublicOfferPage() {
               </AnimatePresence>
 
               {/* Fields */}
-              <div className="px-6 pt-5 sm:px-8">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="px-5 pt-5 sm:px-7">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {/* Name */}
                   <div>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-                      <UserIcon size={13} />
-                      Fullstandigt namn
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                      <UserIcon size={12} />
+                      Fullständigt namn
                     </label>
                     <input
                       type="text"
                       value={signerName}
                       onChange={(e) => setSignerName(e.target.value)}
                       placeholder="Ditt namn"
-                      className="w-full rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-[border-color,box-shadow] focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-[border-color,box-shadow] focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
                     />
                   </div>
                   {/* Date */}
                   <div>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-                      <CalendarIcon size={13} />
+                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                      <CalendarIcon size={12} />
                       Datum
                     </label>
                     <input
                       type="text"
                       value={todaySv()}
                       readOnly
-                      className="w-full cursor-default rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-500 outline-none"
+                      className="w-full cursor-default rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-500 outline-none"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Signature */}
-              <div className="px-6 pt-5 pb-6 sm:px-8">
+              <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6">
                 <div className="mb-2 flex items-center justify-between">
                   <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
                     <EditIcon size={13} />
@@ -769,7 +762,7 @@ export default function PublicOfferPage() {
                           type="text"
                           value={typedSig}
                           onChange={(e) => setTypedSig(e.target.value)}
-                          placeholder="Skriv ditt namn har..."
+                          placeholder="Skriv ditt namn här..."
                           className="w-full border-none bg-transparent p-0 text-3xl text-slate-900 outline-none placeholder:text-slate-300"
                           style={{ fontFamily: selectedFont.family }}
                         />
@@ -812,11 +805,11 @@ export default function PublicOfferPage() {
               </div>
 
               {/* Action bar */}
-              <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4 sm:px-8">
+              <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-4 sm:px-7">
                 <button
                   type="button"
                   onClick={() => setState('declining')}
-                  className="rounded-md border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-500 transition-colors hover:bg-red-50"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500"
                 >
                   Avvisa
                 </button>
@@ -824,10 +817,10 @@ export default function PublicOfferPage() {
                   type="button"
                   onClick={() => void handleSign()}
                   disabled={busy}
-                  className="flex items-center gap-2 rounded-md bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50"
                 >
                   <CheckCircleIcon size={15} />
-                  {busy ? 'Signerar...' : 'Signera offert'}
+                  {busy ? 'Signerar…' : 'Signera offert'}
                 </button>
               </div>
             </motion.section>
@@ -839,13 +832,13 @@ export default function PublicOfferPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+              className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm"
             >
-              <div className="border-b border-slate-100 px-6 py-5 sm:px-8">
+              <div className="border-b border-slate-100 px-5 py-4 sm:px-7 sm:py-5">
                 <h2 className="text-base font-bold text-red-600">Avvisa offert</h2>
-                <p className="mt-1 text-[13px] text-slate-500">Avsandaren kommer att meddelas om ditt beslut.</p>
+                <p className="mt-0.5 text-[13px] text-slate-500">Avsändaren kommer att meddelas om ditt beslut.</p>
               </div>
-              <div className="px-6 py-5 sm:px-8">
+              <div className="px-5 py-5 sm:px-7">
                 <AnimatePresence>
                   {errMsg && (
                     <motion.div
@@ -863,15 +856,15 @@ export default function PublicOfferPage() {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
-                  placeholder="Beratta garna varfor..."
-                  className="w-full resize-y rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-[border-color,box-shadow] focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+                  placeholder="Berätta gärna varför..."
+                  className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-[border-color,box-shadow] focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
                 />
               </div>
-              <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4 sm:px-8">
+              <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-4 sm:px-7">
                 <button
                   type="button"
                   onClick={() => { setState('ready'); setErrMsg(''); }}
-                  className="rounded-md border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
                 >
                   Avbryt
                 </button>
@@ -879,9 +872,9 @@ export default function PublicOfferPage() {
                   type="button"
                   onClick={() => void handleDecline()}
                   disabled={busy}
-                  className="rounded-md bg-red-600 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                  className="rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:bg-red-700 disabled:opacity-50"
                 >
-                  {busy ? 'Avvisar...' : 'Bekrafta avvisning'}
+                  {busy ? 'Avvisar…' : 'Bekräfta avvisning'}
                 </button>
               </div>
             </motion.section>
@@ -889,9 +882,15 @@ export default function PublicOfferPage() {
         </AnimatePresence>
         </div>
 
+        {/* Mobile validity strip */}
+        <div className="flex sm:hidden items-center justify-center gap-1.5 mt-4 px-4">
+          <CalendarIcon size={11} className="text-slate-400" />
+          <p className="text-[11px] text-slate-400">Giltig till {fmtDate(offer.validUntil)}</p>
+        </div>
+
         {/* Footer */}
-        <p className="mt-8 px-4 text-center text-[11px] text-slate-400">
-          Elektronisk signering &middot; {offer?.recipientEmail}
+        <p className="mt-6 px-4 text-center text-[11px] text-slate-300">
+          Elektronisk signering · {offer?.recipientEmail}
         </p>
         </div>
       </main>

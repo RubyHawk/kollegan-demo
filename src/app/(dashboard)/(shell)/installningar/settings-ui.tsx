@@ -227,20 +227,25 @@ function ProfilTab({ user }: { user: UserProps }) {
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Resize + convert to base64 via a canvas
-    const img = new Image();
-    const objectUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      const MAX = 256;
-      const scale = Math.min(MAX / img.width, MAX / img.height, 1);
-      const canvas = document.createElement('canvas');
-      canvas.width  = Math.round(img.width  * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-      setAvatarUrl(canvas.toDataURL('image/jpeg', 0.82));
-      URL.revokeObjectURL(objectUrl);
+    // Use FileReader so the image loads as a data: URI — blob: URIs are blocked by
+    // the page's img-src CSP which only permits 'self', data:, and https:.
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string | undefined;
+      if (!dataUrl) return;
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 400;
+        const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+        const canvas = document.createElement('canvas');
+        canvas.width  = Math.round(img.width  * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setAvatarUrl(canvas.toDataURL('image/jpeg', 0.88));
+      };
+      img.src = dataUrl;
     };
-    img.src = objectUrl;
+    reader.readAsDataURL(file);
     // Reset so re-selecting the same file triggers onChange
     e.target.value = '';
   }
@@ -1121,7 +1126,7 @@ function UtseendeTab() {
       <div className="pb-6">
         <div className="mb-1">
           <h3 className="text-sm font-semibold text-[var(--text-primary)]">Läge</h3>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">Välj hur Kollegan visas.</p>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">Välj hur appen visas.</p>
         </div>
         <div className="grid grid-cols-3 gap-4 mt-4">
           {modes.map((m) => {
@@ -1381,7 +1386,7 @@ function AnslutningarTab() {
     {
       id: 'github',
       name: 'GitHub',
-      description: 'Synka repositories, issues och pull requests direkt i Kollegan.',
+      description: 'Synka repositories, issues och pull requests direkt i Soleria.',
       connected: connections.github,
       icon: (
         <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" className="text-[var(--text-primary)]" aria-hidden="true">
@@ -1441,7 +1446,7 @@ function AnslutningarTab() {
 
   return (
     <div className="flex flex-col gap-5">
-      <SectionCard title="Integrationer" description="Anslut Kollegan till de verktyg du redan använder.">
+      <SectionCard title="Integrationer" description="Anslut Soleria till de verktyg du redan använder.">
         <div className="flex flex-col divide-y divide-[var(--border-light)]">
           {integrations.map((integration, idx) => (
             <motion.div

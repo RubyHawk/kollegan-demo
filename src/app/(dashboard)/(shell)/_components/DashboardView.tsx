@@ -36,6 +36,7 @@ export interface MonthBucket {
 
 export interface DashboardViewProps {
   greetingText: string;
+  greetingSub: string;
   dateLabel: string;
   acceptedValue: number;
   pipelineValue: number;
@@ -334,6 +335,7 @@ function fmtDate(iso: string) {
 
 export default function DashboardView({
   greetingText,
+  greetingSub,
   dateLabel,
   acceptedValue,
   pipelineValue,
@@ -347,7 +349,7 @@ export default function DashboardView({
   const activePipeline = (countMap['sent'] ?? 0) + (countMap['viewed'] ?? 0);
 
   return (
-    <div className="px-6 py-8 max-w-[1280px] mx-auto">
+    <div className="px-4 py-7 sm:px-6 sm:py-8 max-w-[1280px] mx-auto">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <motion.div
@@ -356,11 +358,15 @@ export default function DashboardView({
         animate="show"
         className="flex items-start justify-between gap-4 mb-8"
       >
-        <motion.div variants={fadeUp}>
-          <h1 className="font-heading text-[28px] font-semibold tracking-tight text-[var(--text-primary)] leading-tight">
+        <motion.div variants={fadeUp} className="flex flex-col gap-0.5">
+          {/* Date chip */}
+          <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-widest mb-1">
+            {dateLabel}
+          </p>
+          <h1 className="font-heading text-[26px] font-semibold tracking-tight text-[var(--text-primary)] leading-tight sm:text-[28px]">
             {greetingText}
           </h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">{dateLabel}</p>
+          <p className="text-sm text-[var(--text-secondary)] mt-0.5">{greetingSub}</p>
         </motion.div>
 
         <motion.div variants={fadeUp}>
@@ -371,7 +377,8 @@ export default function DashboardView({
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            Ny offert
+            <span className="hidden sm:inline">Ny offert</span>
+            <span className="sm:hidden">Ny</span>
           </Link>
         </motion.div>
       </motion.div>
@@ -417,7 +424,7 @@ export default function DashboardView({
         <KpiCard
           label="Utgår snart"
           value={<Counter to={expiringSoon} />}
-          sub="Aktivt inom 7 dagar"
+          sub={expiringSoon > 0 ? `Offert${expiringSoon === 1 ? '' : 'er'} inom 7 dagar` : 'Ingenting på gång'}
           icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
           accent={expiringSoon > 0 ? 'var(--status-declined-text)' : undefined}
         />
@@ -439,7 +446,9 @@ export default function DashboardView({
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
             <div>
               <h2 className="text-sm font-semibold text-[var(--text-primary)]">Senaste offerter</h2>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">De {Math.min(recentOffers.length, 8)} senast skapade</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                {recentOffers.length === 0 ? 'Inga offerter skapade ännu' : `Senast skapade · ${recentOffers.length} visas`}
+              </p>
             </div>
             <Link href="/offerter" className="text-xs font-medium text-[var(--accent)] hover:underline flex items-center gap-1">
               Visa alla

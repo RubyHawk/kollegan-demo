@@ -5,26 +5,49 @@ import type { RecentOffer, MonthBucket } from './_components/DashboardView';
 
 // ─── Swedish-timezone greeting ────────────────────────────────────────────────
 
-function makeGreeting(name: string | null) {
+function makeGreeting(name: string | null): { greeting: string; sub: string } {
+  const now  = new Date();
   const hour = parseInt(
     new Intl.DateTimeFormat('sv', { hour: 'numeric', hour12: false, timeZone: 'Europe/Stockholm' })
-      .format(new Date()),
+      .format(now),
     10,
   );
+  const dow = new Intl.DateTimeFormat('sv', { weekday: 'long', timeZone: 'Europe/Stockholm' })
+    .format(now);            // e.g. "måndag"
+  const dowCap = dow.charAt(0).toUpperCase() + dow.slice(1);   // "Måndag"
+
   const prefix =
     hour < 5  ? 'God natt' :
     hour < 12 ? 'God morgon' :
     hour < 17 ? 'God eftermiddag' :
     hour < 22 ? 'God kväll' :
                 'God natt';
-  return name ? `${prefix}, ${name}` : prefix;
+
+  const firstName = name?.split(' ')[0] ?? null;
+  const greeting  = firstName ? `${prefix}, ${firstName}.` : `${prefix}.`;
+
+  // Context-aware subtitle
+  const sub =
+    hour < 5  ? 'Ta det lugnt — det är mitt i natten.' :
+    hour < 9  ? `${dowCap}smorgon — kaffet är på, dags att sätta igång.` :
+    hour < 12 ? `En fin ${dow} — vad ska vi ta itu med idag?` :
+    hour < 14 ? 'Bra jobbat i morse — håll tempot uppe.' :
+    hour < 17 ? `${dowCap}seftermiddag — kolla läget på dina offerter.` :
+    hour < 20 ? 'Dagen lider mot sitt slut — se hur det gick idag.' :
+    hour < 22 ? 'Kvällspasset — lugn och ro för att fatta beslut.' :
+                'Sent på natten — kom ihåg att vila.';
+
+  return { greeting, sub };
 }
 
 function makeDateLabel() {
-  return new Date().toLocaleDateString('sv-SE', {
-    weekday: 'long', day: 'numeric', month: 'long',
+  const now = new Date();
+  // "Måndag 7 april 2025"
+  const fmt = new Intl.DateTimeFormat('sv-SE', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     timeZone: 'Europe/Stockholm',
-  });
+  }).format(now);
+  return fmt.charAt(0).toUpperCase() + fmt.slice(1);
 }
 
 // ─── Data layer ───────────────────────────────────────────────────────────────
@@ -50,7 +73,7 @@ async function getDashboardData(orgId: string) {
       select: {
         id: true, title: true, status: true, offerNumber: true,
         recipientName: true, recipientCompany: true,
-        totalIncVat: true, createdAt: true, sentAt: true, validUntil: true,
+        totalIncVat: true, createdAt: true, validUntil: true,
       },
     }),
 
@@ -117,7 +140,6 @@ async function getDashboardData(orgId: string) {
     recipientCompany: o.recipientCompany,
     totalIncVat:      Number(o.totalIncVat ?? 0),
     createdAt:        o.createdAt.toISOString(),
-    sentAt:           o.sentAt?.toISOString() ?? null,
     validUntil:       o.validUntil?.toISOString() ?? null,
   }));
 
@@ -145,10 +167,12 @@ export default async function DashboardPage() {
   const data = await getDashboardData(orgId);
 
   const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || null;
+  const { greeting: greetingText, sub: greetingSub } = makeGreeting(displayName);
 
   return (
     <DashboardView
-      greetingText={makeGreeting(displayName)}
+      greetingText={greetingText}
+      greetingSub={greetingSub}
       dateLabel={makeDateLabel()}
       {...data}
     />
