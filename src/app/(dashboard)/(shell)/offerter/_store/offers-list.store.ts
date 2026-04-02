@@ -4,6 +4,7 @@
  */
 
 import { create } from 'zustand';
+import { fetchWithRefresh } from '@shared/lib/api-client';
 import type { Offer, OfferStatus, BulkResult, OfferTemplate } from './types';
 
 const PAGE_SIZE = 25;
@@ -164,7 +165,7 @@ export const useOffersListStore = create<OffersListState>()((set, get) => ({
       if (s.search.trim())   params.set('search',   s.search.trim());
       if (s.dateFrom)        params.set('dateFrom', s.dateFrom);
       if (s.dateTo)          params.set('dateTo',   s.dateTo);
-      const res = await fetch(`/api/offers?${params}`);
+      const res = await fetchWithRefresh(`/api/offers?${params}`);
       if (!res.ok) throw new Error(`Fel ${res.status}`);
       const json = await res.json().catch(() => null) as { data: { offers: Offer[]; total: number } } | null;
       if (!json) throw new Error('Serverfel — försök igen.');
@@ -182,7 +183,7 @@ export const useOffersListStore = create<OffersListState>()((set, get) => ({
     try {
       const params = new URLSearchParams();
       if (s.search.trim()) params.set('search', s.search.trim());
-      const res = await fetch(`/api/offers/counts?${params}`);
+      const res = await fetchWithRefresh(`/api/offers/counts?${params}`);
       if (!res.ok) return;
       const json = await res.json().catch(() => null) as { data: { counts: Record<string, number> } } | null;
       if (json?.data?.counts) set({ tabCounts: json.data.counts });

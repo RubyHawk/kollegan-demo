@@ -70,4 +70,4 @@ export async function apiDelete(url: string): Promise<void> {
   }
 }
 
-export { ApiError };
+export { ApiError, fetchWithRefresh };

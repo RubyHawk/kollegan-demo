@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useCallback, useRef, useMemo } from 'react';
+import { fetchWithRefresh } from '@shared/lib/api-client';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@shared/lib/utils';
 import {
@@ -231,7 +232,7 @@ export default function OffersPage() {
 
   // ── Load products ─────────────────────────────────────────────────────────────
   const loadServices = useCallback(async () => {
-    const r = await fetch('/api/offers/products');
+    const r = await fetchWithRefresh('/api/offers/products');
     if (r.ok) {
       const j = await r.json() as { data: { products: OfferProduct[] } };
       setServices(j.data.products);
@@ -290,13 +291,13 @@ export default function OffersPage() {
       void (async () => {
         setLivePreviewLoading(true);
         try {
-          const tplRes = await fetch(`/api/templates/${offer.templateId}`);
+          const tplRes = await fetchWithRefresh(`/api/templates/${offer.templateId}`);
           if (!tplRes.ok) throw new Error();
           const tplData = await tplRes.json() as { data?: { content?: string } };
           const content = tplData.data?.content ?? null;
           setCachedTplContent(content);
           if (content) {
-            const res = await fetch('/api/templates/preview', {
+            const res = await fetchWithRefresh('/api/templates/preview', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ content }),
             });
@@ -358,11 +359,11 @@ export default function OffersPage() {
 
       const isEdit = Boolean(editingOfferId);
       const res = isEdit
-        ? await fetch(`/api/offers/${editingOfferId}`, {
+        ? await fetchWithRefresh(`/api/offers/${editingOfferId}`, {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
           })
-        : await fetch('/api/offers', {
+        : await fetchWithRefresh('/api/offers', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body:   JSON.stringify(body),
           });
@@ -391,7 +392,7 @@ export default function OffersPage() {
   const doAction = useCallback(async (id: string, action: 'send' | 'accept' | 'decline' | 'duplicate' | 'remind') => {
     setActing(id);
     try {
-      const res = await fetch(`/api/offers/${id}?action=${action}`, {
+      const res = await fetchWithRefresh(`/api/offers/${id}?action=${action}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error(`Fel ${res.status}`);
@@ -407,7 +408,7 @@ export default function OffersPage() {
   const deleteOffer = useCallback(async (id: string) => {
     setConfirmDeleteOffer(null);
     try {
-      await fetch(`/api/offers/${id}`, { method: 'DELETE' });
+      await fetchWithRefresh(`/api/offers/${id}`, { method: 'DELETE' });
       await Promise.all([load(true), loadCounts()]);
     } catch (e) {
       setError((e as Error).message);
@@ -420,12 +421,12 @@ export default function OffersPage() {
     setTplPreview({ loading: true, html: null });
     try {
       // Fetch full template (list response omits content for performance)
-      const tplRes = await fetch(`/api/templates/${form.templateId}`);
+      const tplRes = await fetchWithRefresh(`/api/templates/${form.templateId}`);
       if (!tplRes.ok) throw new Error(`Kunde inte hämta mall (${tplRes.status})`);
       const tplData = await tplRes.json() as { data?: { content?: string } };
       const content = tplData.data?.content;
 
-      const res = await fetch('/api/templates/preview', {
+      const res = await fetchWithRefresh('/api/templates/preview', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),
       });
@@ -442,7 +443,7 @@ export default function OffersPage() {
   const fetchAndPreviewDoc = useCallback(async (offerId: string) => {
     setFetchingDocId(offerId);
     try {
-      const res = await fetch(`/api/offers/${offerId}`);
+      const res = await fetchWithRefresh(`/api/offers/${offerId}`);
       if (!res.ok) throw new Error(`Fel ${res.status}`);
       const j = await res.json() as { data?: { generatedDocument?: string } };
       setPreviewDoc(j.data?.generatedDocument ?? null);
@@ -468,7 +469,7 @@ export default function OffersPage() {
     if (ids.length === 0) return;
     setBulkSending(true); setBulkResult(null); setError(null);
     try {
-      const res = await fetch('/api/offers/bulk-send', {
+      const res = await fetchWithRefresh('/api/offers/bulk-send', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body:   JSON.stringify({ ids }),
       });
@@ -508,7 +509,7 @@ export default function OffersPage() {
     contactSearchRef.current = setTimeout(async () => {
       setContactLoading(true);
       try {
-        const res = await fetch(`/api/crm/contacts?search=${encodeURIComponent(q)}&limit=8`);
+        const res = await fetchWithRefresh(`/api/crm/contacts?search=${encodeURIComponent(q)}&limit=8`);
         if (res.ok) {
           const j = await res.json() as { data: { contacts: ContactResult[] } };
           setContactResults(j.data.contacts);
@@ -526,7 +527,7 @@ export default function OffersPage() {
     companySearchRef.current = setTimeout(async () => {
       setCompanyLoading(true);
       try {
-        const res = await fetch(`/api/companies?search=${encodeURIComponent(q)}&limit=8`);
+        const res = await fetchWithRefresh(`/api/companies?search=${encodeURIComponent(q)}&limit=8`);
         if (res.ok) {
           const j = await res.json() as { data: { companies: CompanyResult[] } };
           setCompanyResults(j.data.companies ?? []);
@@ -569,7 +570,7 @@ export default function OffersPage() {
     if (!serviceForm.name.trim() || serviceForm.unitPrice < 0) return;
     setSavingService(true);
     try {
-      const res = await fetch('/api/offers/products', {
+      const res = await fetchWithRefresh('/api/offers/products', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name:        serviceForm.name,
@@ -589,7 +590,7 @@ export default function OffersPage() {
 
   const removeService = useCallback(async (id: string) => {
     if (!confirm('Ta bort produkt?')) return;
-    await fetch(`/api/offers/products/${id}`, { method: 'DELETE' });
+    await fetchWithRefresh(`/api/offers/products/${id}`, { method: 'DELETE' });
     await loadServices();
   }, [loadServices]);
 
@@ -623,12 +624,12 @@ export default function OffersPage() {
     setLivePreviewHtml(null);
     setCachedTplContent(null);
     try {
-      const tplRes = await fetch(`/api/templates/${tplId}`);
+      const tplRes = await fetchWithRefresh(`/api/templates/${tplId}`);
       if (!tplRes.ok) throw new Error();
       const tplData = await tplRes.json() as { data?: { content?: string } };
       const content = tplData.data?.content ?? null;
       setCachedTplContent(content);
-      const res = await fetch('/api/templates/preview', {
+      const res = await fetchWithRefresh('/api/templates/preview', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),
       });
@@ -652,7 +653,7 @@ export default function OffersPage() {
       try {
         setLivePreviewLoading(true);
         setPreviewDirty(false);
-        const res = await fetch('/api/templates/preview', {
+        const res = await fetchWithRefresh('/api/templates/preview', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             content,
