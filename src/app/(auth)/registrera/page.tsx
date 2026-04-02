@@ -79,7 +79,7 @@ export default function RegisterPage() {
                 {loading ? 'Creating…' : 'Create account'}
               </button>
 
-              <Link href="/login" className="text-sm text-(--text-muted) hover:text-(--text-secondary) text-center transition-colors">
+              <Link href="/logga-in" className="text-sm text-(--text-muted) hover:text-(--text-secondary) text-center transition-colors">
                 Already have an account? Log in
               </Link>
             </form>
