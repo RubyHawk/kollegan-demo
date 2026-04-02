@@ -9,11 +9,12 @@ export default async function SettingsPage() {
   return (
     <SettingsClient
       user={{
-        email:     user.email,
-        firstName: user.firstName ?? null,
-        lastName:  user.lastName ?? null,
-        avatarUrl: user.avatarUrl ?? null,
-        role:      user.role,
+        email:      user.email,
+        firstName:  user.firstName ?? null,
+        lastName:   user.lastName ?? null,
+        avatarUrl:  user.avatarUrl ?? null,
+        role:       user.role,
+        mfaEnabled: user.mfaEnabled,
       }}
     />
   );

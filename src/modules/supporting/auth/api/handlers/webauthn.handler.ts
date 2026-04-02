@@ -18,17 +18,33 @@ import {
   completeAuthentication,
 } from '../../application/webauthn.service';
 import { completeMfaLogin } from '../../application/auth.service';
+import { userRepository } from '../../infrastructure/user.repository';
 import { log, AUDIT_ACTIONS } from '@modules/supporting/audit';
 import type { RegistrationResponseJSON, AuthenticationResponseJSON } from '@simplewebauthn/browser';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+// Reads the access JWT (at cookie) or Bearer token. The opaque refresh token
+// cookies (token/portal_token) are NOT JWTs and must not be used here.
 function extractToken(req: NextRequest): string {
   return req.headers.get('authorization')?.slice(7)
-    ?? req.cookies.get('token')?.value
-    ?? req.cookies.get('portal_token')?.value
+    ?? req.cookies.get('at')?.value
     ?? '';
 }
+
+// ── Constants ────────────────────────────────────────────────────────────────
+
+const REFRESH_TTL_SEC_STAFF          = 60 * 60 * 24 * 7;
+const REFRESH_TTL_SEC_STAFF_REMEMBER = 60 * 60 * 24 * 30;
+const REFRESH_TTL_SEC_CUSTOMER       = 60 * 60 * 24 * 30;
+const ACCESS_TTL_SEC                 = 60 * 15;
+
+const cookieOpts = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+};
 
 // ── Register Options ─────────────────────────────────────────────────────────
 
@@ -37,7 +53,9 @@ export const handleRegisterOptions = createHandler(
   async (ctx) => {
     const { req } = ctx as { req: NextRequest };
     const payload = await verifyToken(extractToken(req));
-    const options = await beginRegistration(payload.sub, String(payload['email'] ?? payload.sub));
+    const user = await userRepository.findById(payload.sub);
+    const userEmail = user?.email ?? payload.sub;
+    const options = await beginRegistration(payload.sub, userEmail);
     return ok(options);
   },
 );
@@ -117,9 +135,6 @@ export async function handleAuthenticateOptions(req: NextRequest): Promise<NextR
 
 // ── Authenticate Verify ──────────────────────────────────────────────────────
 
-const REFRESH_TTL_SEC_STAFF    = 60 * 60 * 24 * 7;
-const REFRESH_TTL_SEC_CUSTOMER = 60 * 60 * 24 * 30;
-
 export async function handleAuthenticateVerify(req: NextRequest): Promise<NextResponse> {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
     ?? req.headers.get('x-real-ip') ?? 'unknown';
@@ -141,8 +156,9 @@ export async function handleAuthenticateVerify(req: NextRequest): Promise<NextRe
   }
 
   let userId: string;
+  let rememberMe = false;
   try {
-    ({ userId } = await verifyMfaChallengeToken(challengeToken));
+    ({ userId, rememberMe } = await verifyMfaChallengeToken(challengeToken));
   } catch {
     return NextResponse.json(
       { type: 'https://docs.kollegan.ai/problems/unauthorized', title: 'Unauthorized', status: 401, detail: 'MFA challenge expired' },
@@ -184,7 +200,7 @@ export async function handleAuthenticateVerify(req: NextRequest): Promise<NextRe
     );
   }
 
-  const result = await completeMfaLogin(userId, 'hwk', ipAddress, userAgent);
+  const result = await completeMfaLogin(userId, 'hwk', ipAddress, userAgent, rememberMe);
 
   await log({
     action: AUDIT_ACTIONS.USER_LOGIN,
@@ -196,15 +212,18 @@ export async function handleAuthenticateVerify(req: NextRequest): Promise<NextRe
 
   const isCustomer = result.user.userType === 'customer';
   const cookieName = isCustomer ? 'portal_token' : 'token';
-  const ttlSec     = isCustomer ? REFRESH_TTL_SEC_CUSTOMER : REFRESH_TTL_SEC_STAFF;
+  const ttlSec     = isCustomer
+    ? REFRESH_TTL_SEC_CUSTOMER
+    : (rememberMe ? REFRESH_TTL_SEC_STAFF_REMEMBER : REFRESH_TTL_SEC_STAFF);
 
   const res = NextResponse.json({
     data: { user: { id: result.user.id, email: result.user.email, userType: result.user.userType, roles: result.user.roles } },
   });
 
-  res.cookies.set(cookieName, result.refreshToken, {
-    httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: ttlSec, path: '/',
-  });
+  // Set BOTH the refresh token AND the access token — the at cookie is required
+  // for the middleware to pass requests through without a DB round-trip.
+  res.cookies.set(cookieName, result.refreshToken, { ...cookieOpts, maxAge: ttlSec });
+  res.cookies.set('at', result.accessToken, { ...cookieOpts, maxAge: ACCESS_TTL_SEC });
   res.cookies.set('mfa_challenge', '', { maxAge: 0, path: '/' });
 
   return res;

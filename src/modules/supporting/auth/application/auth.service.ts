@@ -36,6 +36,7 @@ type SessionMfaMethod = 'totp' | 'webauthn';
 const TAG = 'AuthService';
 const MIN_BCRYPT_COST = 12;
 const REFRESH_TTL_DAYS = 7;
+const REMEMBER_ME_TTL_DAYS = 30;
 const CUSTOMER_REFRESH_TTL_DAYS = 30;
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -45,6 +46,7 @@ export interface LoginInput {
   password: string;
   userAgent?: string;
   ipAddress?: string;
+  rememberMe?: boolean;
 }
 
 /** Full token result — returned when MFA is not required or already completed. */
@@ -104,6 +106,7 @@ async function issueTokens(
   userAgent?: string,
   mfaVerifiedAt?: Date,
   mfaMethod?: SessionMfaMethod,
+  rememberMe?: boolean,
 ): Promise<{ accessToken: string; refreshToken: string }> {
   const orgId = user.organizationId;
   const aud   = user.userType === 'staff' ? 'internal' : `customer:${orgId ?? 'unknown'}`;
@@ -117,7 +120,8 @@ async function issueTokens(
     amr,
   };
 
-  const ttlDays = user.userType === 'customer' ? CUSTOMER_REFRESH_TTL_DAYS : REFRESH_TTL_DAYS;
+  const defaultTtlDays = user.userType === 'customer' ? CUSTOMER_REFRESH_TTL_DAYS : REFRESH_TTL_DAYS;
+  const ttlDays = (rememberMe && user.userType !== 'customer') ? REMEMBER_ME_TTL_DAYS : defaultTtlDays;
 
   const [{ token: accessToken }, { raw: refreshToken, hash: refreshTokenHash }] = await Promise.all([
     signAccessToken(jwtPayload),
@@ -205,7 +209,7 @@ export async function login(input: LoginInput): Promise<LoginOutcome> {
     }
 
     // Grace period still active — issue tokens with warning
-    const tokens = await issueTokens(user, roles, ['pwd'], input.ipAddress, input.userAgent);
+    const tokens = await issueTokens(user, roles, ['pwd'], input.ipAddress, input.userAgent, undefined, undefined, input.rememberMe);
     logger.info(TAG, `Login OK (MFA grace period): ${email}`, { userId: user.id });
     return {
       ...tokens,
@@ -215,7 +219,7 @@ export async function login(input: LoginInput): Promise<LoginOutcome> {
   }
 
   // No MFA required for this user (customer viewers etc.)
-  const tokens = await issueTokens(user, roles, ['pwd'], input.ipAddress, input.userAgent);
+  const tokens = await issueTokens(user, roles, ['pwd'], input.ipAddress, input.userAgent, undefined, undefined, input.rememberMe);
   logger.info(TAG, `Login: ${email}`, { userId: user.id, userType: user.userType });
   return {
     ...tokens,
@@ -233,6 +237,7 @@ export async function completeMfaLogin(
   amrMethod: 'otp' | 'hwk', // IANA AMR values: otp=TOTP/backup, hwk=hardware key (WebAuthn)
   ipAddress?: string,
   userAgent?: string,
+  rememberMe?: boolean,
 ): Promise<LoginResult> {
   const user = await userRepository.findById(userId);
   if (!user || !user.isActive) {
@@ -242,7 +247,7 @@ export async function completeMfaLogin(
   const roles = await userRepository.getUserRoles(userId, user.organizationId ?? '');
   const amr   = ['pwd', amrMethod];
   const mfaMethod: SessionMfaMethod = amrMethod === 'hwk' ? 'webauthn' : 'totp';
-  const tokens = await issueTokens(user, roles, amr, ipAddress, userAgent, new Date(), mfaMethod);
+  const tokens = await issueTokens(user, roles, amr, ipAddress, userAgent, new Date(), mfaMethod, rememberMe);
 
   logger.info(TAG, `MFA login complete (${amrMethod}): ${user.email}`, { userId });
 

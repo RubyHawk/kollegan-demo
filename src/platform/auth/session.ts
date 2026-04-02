@@ -17,6 +17,7 @@ export interface SessionUser {
   avatarUrl: string | null;
   userType: string;
   role: string;
+  mfaEnabled: boolean;
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
@@ -32,7 +33,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
       const user = await prisma.user.findFirst({
         where: { id: session.userId, deletedAt: null },
-        select: { id: true, email: true, firstName: true, lastName: true, avatarUrl: true, userType: true },
+        select: { id: true, email: true, firstName: true, lastName: true, avatarUrl: true, userType: true, mfaEnabled: true },
       });
       if (!user) return null;
 
@@ -52,13 +53,14 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       const payload = await verifyToken(accessToken).catch(() => null);
       if (!payload) return null;
       return {
-        id:        payload.sub,
-        email:     payload.sub,
-        firstName: null,
-        lastName:  null,
-        avatarUrl: null,
-        userType:  payload.userType ?? 'staff',
-        role:      payload.roles?.[0] ?? 'staff',
+        id:         payload.sub,
+        email:      payload.sub,
+        firstName:  null,
+        lastName:   null,
+        avatarUrl:  null,
+        userType:   payload.userType ?? 'staff',
+        role:       payload.roles?.[0] ?? 'staff',
+        mfaEnabled: false,
       };
     }
 

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { getSessionUser } from '@platform/auth/session';
 import { prisma } from '@platform/database/prisma';
+import { revokeAllSessions } from '@modules/supporting/auth';
 
 const Schema = z.object({
   currentPassword: z.string().min(1),
@@ -48,5 +49,13 @@ export async function POST(req: NextRequest) {
   const newHash = await bcrypt.hash(newPassword, 12);
   await prisma.user.update({ where: { id: user.id }, data: { passwordHash: newHash } });
 
-  return NextResponse.json({ ok: true });
+  // Revoke all sessions so stolen tokens cannot be reused after a password change.
+  await revokeAllSessions(user.id);
+
+  const res = NextResponse.json({ ok: true });
+  const clearOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/', maxAge: 0 };
+  res.cookies.set('token', '', clearOpts);
+  res.cookies.set('portal_token', '', clearOpts);
+  res.cookies.set('at', '', clearOpts);
+  return res;
 }
