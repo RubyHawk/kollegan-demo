@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { fetchWithRefresh } from '@shared/lib/api-client';
 import type { TemplateEditorHandle } from '../_components/TemplateEditor';
 import type { EmailEditorHandle } from '../_components/EmailEditor';
 
@@ -61,7 +62,7 @@ export default function TemplateEditorPage() {
     void (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/templates/${params.id}`);
+        const res = await fetchWithRefresh(`/api/templates/${params.id}`);
         if (!res.ok) throw new Error(`Hittade inte mallen (${res.status})`);
         const json = await res.json() as { data: OfferTemplate };
         setName(json.data.name);
@@ -125,12 +126,12 @@ export default function TemplateEditorPage() {
 
       let res: Response;
       if (isNew) {
-        res = await fetch('/api/templates', {
+        res = await fetchWithRefresh('/api/templates', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
       } else {
-        res = await fetch(`/api/templates/${params.id}`, {
+        res = await fetchWithRefresh(`/api/templates/${params.id}`, {
           method: 'PUT', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
@@ -142,7 +143,7 @@ export default function TemplateEditorPage() {
       if (isNew) {
         const j = await res.json() as { data: OfferTemplate };
         try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
-        router.replace(`/templates/${j.data.id}`);
+        router.replace(`/mallar/${j.data.id}`);
       } else {
         setIsDirty(false);
         setDraftBanner(false);
@@ -162,7 +163,7 @@ export default function TemplateEditorPage() {
     const json = editorRef.current?.getJSON();
     setPreviewing(true); setPreviewHtml(null);
     try {
-      const res = await fetch('/api/templates/preview', {
+      const res = await fetchWithRefresh('/api/templates/preview', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: json ? JSON.stringify(json) : undefined }),
       });
