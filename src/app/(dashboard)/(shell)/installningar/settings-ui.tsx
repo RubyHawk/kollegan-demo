@@ -28,6 +28,7 @@ interface UserProps {
   lastName: string | null;
   avatarUrl?: string | null;
   role: string;
+  mfaEnabled?: boolean;
 }
 
 interface SettingsClientProps {
@@ -1506,14 +1507,26 @@ function AnslutningarTab() {
 
 // ─── Säkerhet tab ─────────────────────────────────────────────────────────────
 
+type MfaStep = 'idle' | 'scan' | 'confirm' | 'backup' | 'disable';
+
 function SakerhetTab({ user }: { user: UserProps }) {
-  const [mfaClicked, setMfaClicked] = useState(false);
   const [currentPw,  setCurrentPw]  = useState('');
   const [newPw,      setNewPw]      = useState('');
   const [confirmPw,  setConfirmPw]  = useState('');
   const [pwPending,  setPwPending]  = useState(false);
   const [pwError,    setPwError]    = useState('');
   const [pwSaved,    setPwSaved]    = useState(false);
+
+  // MFA state
+  const [mfaEnabled, setMfaEnabled]       = useState(user.mfaEnabled ?? false);
+  const [mfaStep,    setMfaStep]          = useState<MfaStep>('idle');
+  const [mfaLoading, setMfaLoading]       = useState(false);
+  const [mfaError,   setMfaError]         = useState('');
+  const [mfaQr,      setMfaQr]           = useState('');
+  const [mfaSecret,  setMfaSecret]        = useState('');
+  const [mfaCode,    setMfaCode]          = useState('');
+  const [backupCodes, setBackupCodes]     = useState<string[]>([]);
+  const [disableCode, setDisableCode]     = useState('');
 
   async function changePassword() {
     setPwPending(true);
@@ -1542,6 +1555,88 @@ function SakerhetTab({ user }: { user: UserProps }) {
     }
   }
 
+  async function startMfaSetup() {
+    setMfaLoading(true);
+    setMfaError('');
+    try {
+      const res = await fetch('/api/auth/mfa/setup', { method: 'POST' });
+      if (!res.ok) {
+        setMfaError('Kunde inte starta MFA-konfiguration. Försök igen.');
+        return;
+      }
+      const { data } = await res.json() as { data: { qrDataUrl: string; secret: string } };
+      setMfaQr(data.qrDataUrl);
+      setMfaSecret(data.secret);
+      setMfaStep('scan');
+    } catch {
+      setMfaError('Nätverksfel. Försök igen.');
+    } finally {
+      setMfaLoading(false);
+    }
+  }
+
+  async function confirmMfaSetup() {
+    setMfaLoading(true);
+    setMfaError('');
+    try {
+      const res = await fetch('/api/auth/mfa/enable', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ code: mfaCode }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { detail?: string };
+        setMfaError(data.detail ?? 'Ogiltig kod. Kontrollera din autentiseringsapp och försök igen.');
+        setMfaCode('');
+        return;
+      }
+      const { data } = await res.json() as { data: { backupCodes: string[] } };
+      setBackupCodes(data.backupCodes);
+      setMfaCode('');
+      setMfaStep('backup');
+      setMfaEnabled(true);
+    } catch {
+      setMfaError('Nätverksfel. Försök igen.');
+    } finally {
+      setMfaLoading(false);
+    }
+  }
+
+  async function confirmMfaDisable() {
+    setMfaLoading(true);
+    setMfaError('');
+    try {
+      const res = await fetch('/api/auth/mfa/disable', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ code: disableCode }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { detail?: string };
+        setMfaError(data.detail ?? 'Ogiltig kod. Försök igen.');
+        setDisableCode('');
+        return;
+      }
+      setDisableCode('');
+      setMfaStep('idle');
+      setMfaEnabled(false);
+    } catch {
+      setMfaError('Nätverksfel. Försök igen.');
+    } finally {
+      setMfaLoading(false);
+    }
+  }
+
+  function cancelMfa() {
+    setMfaStep('idle');
+    setMfaError('');
+    setMfaCode('');
+    setDisableCode('');
+    setMfaQr('');
+    setMfaSecret('');
+    setBackupCodes([]);
+  }
+
   return (
     <div className="flex flex-col gap-5">
       {/* Password */}
@@ -1568,6 +1663,7 @@ function SakerhetTab({ user }: { user: UserProps }) {
 
       {/* MFA */}
       <SectionCard title="Tvåfaktorsautentisering" description="Lägg till ett extra lager av säkerhet till ditt konto.">
+        {/* Status row */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] flex items-center justify-center shrink-0">
@@ -1579,30 +1675,178 @@ function SakerhetTab({ user }: { user: UserProps }) {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="px-2 py-0.5 rounded-md bg-[var(--border-light)] text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-wide">
-              Ej aktiverad
-            </span>
-            <button
-              onClick={() => setMfaClicked(true)}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-[var(--accent)]/40 text-[var(--accent)] hover:bg-[var(--accent)]/5 hover:border-[var(--accent)]/60 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
-            >
-              Aktivera
-            </button>
+            {mfaEnabled ? (
+              <>
+                <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold uppercase tracking-wide">
+                  Aktiv
+                </span>
+                {mfaStep === 'idle' && (
+                  <button
+                    onClick={() => { setMfaStep('disable'); setMfaError(''); }}
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-red-300/60 dark:border-red-700/40 text-red-500 hover:bg-red-500/5 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-red-400/40"
+                  >
+                    Inaktivera
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="px-2 py-0.5 rounded-md bg-[var(--border-light)] text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-wide">
+                  Ej aktiverad
+                </span>
+                {mfaStep === 'idle' && (
+                  <button
+                    onClick={() => void startMfaSetup()}
+                    disabled={mfaLoading}
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-[var(--accent)]/40 text-[var(--accent)] hover:bg-[var(--accent)]/5 hover:border-[var(--accent)]/60 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 disabled:opacity-50 disabled:cursor-wait"
+                  >
+                    {mfaLoading ? 'Laddar…' : 'Aktivera'}
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
 
+        {/* MFA setup / disable panels */}
         <AnimatePresence>
-          {mfaClicked && (
+          {mfaStep !== 'idle' && (
             <motion.div
+              key={mfaStep}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2, ease: EASE_SPRING }}
               className="overflow-hidden"
             >
-              <div className="mt-4 flex items-center gap-2 text-[11px] text-[var(--accent)] bg-[var(--accent)]/5 border border-[var(--accent)]/20 rounded-xl px-3 py-2.5">
-                <Icon path={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>} size={13} className="shrink-0" />
-                MFA-konfiguration är tillgänglig i produktionsmiljön.
+              <div className="mt-4 border-t border-[var(--border)] pt-4 flex flex-col gap-4">
+
+                {/* Step: scan QR */}
+                {mfaStep === 'scan' && (
+                  <>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Skanna QR-koden med din autentiseringsapp (t.ex. Google Authenticator eller Authy), klicka sedan på <strong>Nästa</strong>.
+                    </p>
+                    <div className="flex flex-col items-center gap-3">
+                      {mfaQr && (
+                        <img src={mfaQr} alt="TOTP QR-kod" className="w-40 h-40 rounded-xl border border-[var(--border)]" />
+                      )}
+                      <div className="w-full">
+                        <p className="text-[11px] text-[var(--text-muted)] mb-1">Eller ange koden manuellt:</p>
+                        <code className="block w-full text-center text-xs font-mono bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg px-3 py-2 tracking-widest select-all break-all">
+                          {mfaSecret}
+                        </code>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={cancelMfa} className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                        Avbryt
+                      </button>
+                      <button
+                        onClick={() => { setMfaStep('confirm'); setMfaError(''); }}
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--accent)] text-white hover:opacity-90 transition-opacity"
+                      >
+                        Nästa
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* Step: confirm with TOTP code */}
+                {mfaStep === 'confirm' && (
+                  <>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Ange den 6-siffriga koden från din autentiseringsapp för att bekräfta aktiveringen.
+                    </p>
+                    <div>
+                      <FieldLabel>Verifieringskod</FieldLabel>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        autoFocus
+                        value={mfaCode}
+                        onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        placeholder="123456"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-primary)] text-sm text-center tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                      />
+                    </div>
+                    {mfaError && <p className="text-xs text-red-500">{mfaError}</p>}
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => setMfaStep('scan')} className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                        Tillbaka
+                      </button>
+                      <button
+                        onClick={() => void confirmMfaSetup()}
+                        disabled={mfaCode.length < 6 || mfaLoading}
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--accent)] text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-wait"
+                      >
+                        {mfaLoading ? 'Verifierar…' : 'Aktivera MFA'}
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* Step: show backup codes */}
+                {mfaStep === 'backup' && (
+                  <>
+                    <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/8 border border-amber-400/30 text-amber-700 dark:text-amber-300">
+                      <Icon path={<><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>} size={16} className="shrink-0 mt-0.5" />
+                      <p className="text-xs">MFA aktiverat! Spara dessa reservkoder på ett säkert ställe — de visas aldrig igen.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {backupCodes.map((code) => (
+                        <code key={code} className="text-center text-xs font-mono bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg px-2 py-1.5 tracking-widest">
+                          {code}
+                        </code>
+                      ))}
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={cancelMfa}
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--accent)] text-white hover:opacity-90 transition-opacity"
+                      >
+                        Klar
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* Step: disable MFA */}
+                {mfaStep === 'disable' && (
+                  <>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Ange din nuvarande TOTP-kod eller ett reservkod för att inaktivera tvåfaktorsautentisering.
+                    </p>
+                    <div>
+                      <FieldLabel>Verifieringskod</FieldLabel>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        autoFocus
+                        value={disableCode}
+                        onChange={(e) => setDisableCode(e.target.value)}
+                        placeholder="123456"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-primary)] text-sm text-center tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-red-400/40"
+                      />
+                    </div>
+                    {mfaError && <p className="text-xs text-red-500">{mfaError}</p>}
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={cancelMfa} className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                        Avbryt
+                      </button>
+                      <button
+                        onClick={() => void confirmMfaDisable()}
+                        disabled={disableCode.length < 1 || mfaLoading}
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-red-300/60 dark:border-red-700/40 text-red-500 hover:bg-red-500/5 transition-all disabled:opacity-50 disabled:cursor-wait"
+                      >
+                        {mfaLoading ? 'Inaktiverar…' : 'Inaktivera MFA'}
+                      </button>
+                    </div>
+                  </>
+                )}
+
               </div>
             </motion.div>
           )}

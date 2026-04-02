@@ -174,12 +174,14 @@ export async function getMfaStatus(userId: string): Promise<MfaStatus> {
 // ─── Internal helpers ──────────────────────────────────────────────────────────
 
 async function generateBackupCodesInternal(): Promise<{ plainCodes: string[]; hashedCodes: string[] }> {
+  // Generate BACKUP_CODE_LENGTH random alphanumeric characters per code.
+  // Use 5 random bytes per code: base32-hex (0-9A-V) gives 8 chars from 5 bytes
+  // with full byte entropy — no slicing required.
+  const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const plainCodes: string[] = [];
   for (let i = 0; i < BACKUP_CODE_COUNT; i++) {
     const bytes = crypto.getRandomValues(new Uint8Array(BACKUP_CODE_LENGTH));
-    const code = Array.from(bytes, (b) => b.toString(36).toUpperCase().padStart(2, '0'))
-      .join('')
-      .slice(0, BACKUP_CODE_LENGTH);
+    const code = Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]).join('');
     plainCodes.push(code);
   }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@platform/auth/session';
 import { prisma } from '@platform/database/prisma';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const schema = z.object({
   firstName: z.string().max(50).optional(),
