@@ -19,6 +19,7 @@ import { userRepository } from '../../infrastructure/user.repository';
 import { sessionRepository } from '../../infrastructure/session.repository';
 import { log, AUDIT_ACTIONS } from '@modules/supporting/audit';
 import { identityService } from '@modules/supporting/identity';
+import { BRAND_API_REALM, BRAND_PROBLEM_BASE } from '@shared/branding';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -45,7 +46,7 @@ function extractIp(req: NextRequest): string {
 
 function problemJson(type: string, title: string, status: number, detail?: string, extraHeaders?: Record<string, string>) {
   return NextResponse.json(
-    { type: `https://docs.kollegan.ai/problems/${type}`, title, status, ...(detail ? { detail } : {}) },
+    { type: `${BRAND_PROBLEM_BASE}/${type}`, title, status, ...(detail ? { detail } : {}) },
     { status, headers: { 'Content-Type': 'application/problem+json', ...extraHeaders } },
   );
 }
@@ -100,7 +101,7 @@ export async function handleLogin(req: NextRequest): Promise<NextResponse> {
 
     if (code === 'INVALID_CREDENTIALS' || code === 'ACCOUNT_DISABLED') {
       return problemJson('unauthorized', 'Unauthorized', 401, 'Invalid email or password', {
-        'WWW-Authenticate': 'Bearer realm="api.kollegan.ai", charset="UTF-8"',
+        'WWW-Authenticate': `Bearer realm="${BRAND_API_REALM}", charset="UTF-8"`,
       });
     }
     if (code === 'MFA_SETUP_REQUIRED') {
@@ -203,7 +204,7 @@ export async function handleRefresh(req: NextRequest): Promise<NextResponse> {
   const rawRefreshToken = req.cookies.get('token')?.value ?? req.cookies.get('portal_token')?.value;
   if (!rawRefreshToken) {
     return problemJson('unauthorized', 'Unauthorized', 401, 'No refresh token present', {
-      'WWW-Authenticate': 'Bearer realm="api.kollegan.ai", charset="UTF-8"',
+        'WWW-Authenticate': `Bearer realm="${BRAND_API_REALM}", charset="UTF-8"`,
     });
   }
 
@@ -212,7 +213,7 @@ export async function handleRefresh(req: NextRequest): Promise<NextResponse> {
     result = await refreshTokens(rawRefreshToken);
   } catch {
     return problemJson('unauthorized', 'Unauthorized', 401, 'Invalid or expired refresh token', {
-      'WWW-Authenticate': 'Bearer realm="api.kollegan.ai", charset="UTF-8"',
+        'WWW-Authenticate': `Bearer realm="${BRAND_API_REALM}", charset="UTF-8"`,
     });
   }
 

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@shared/ui/sidebar';
 import { MenuIcon, ChevronRightIcon } from '@shared/ui/icons';
 import { SearchTrigger } from '@shared/ui/search-command';
+import { BrandLockup } from '@shared/ui/brand';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -156,7 +157,7 @@ export default function AppShell({ user, children }: Props) {
           >
             <MenuIcon size={18} />
           </button>
-          <span className="font-heading text-sm font-semibold text-[var(--text-primary)]">Soleria</span>
+          <BrandLockup size={22} className="gap-2" textClassName="font-heading text-sm text-[var(--text-primary)]" />
         </div>
 
         {/* Desktop topbar with breadcrumbs */}

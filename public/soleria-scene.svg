@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="sky" x1="512" y1="0" x2="512" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#CDEFFF" />
+      <stop offset="1" stop-color="#A3DCF8" />
+    </linearGradient>
+    <linearGradient id="sunCore" x1="440" y1="252" x2="584" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2AB1FA" />
+      <stop offset="1" stop-color="#1470CE" />
+    </linearGradient>
+    <linearGradient id="ink" x1="512" y1="220" x2="512" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#121B34" />
+      <stop offset="1" stop-color="#060B1A" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#sky)" />
+
+  <path d="M0 532C114 446 252 420 390 440C522 459 657 522 780 530C880 537 960 507 1024 447V1024H0V532Z" fill="#1E6DAE" />
+  <path d="M0 659C139 578 295 546 449 561C617 577 733 677 852 702C923 717 978 694 1024 649V1024H0V659Z" fill="#237DBE" opacity=".86" />
+  <path d="M0 787C160 651 334 613 482 641C635 670 715 809 860 818C929 822 981 803 1024 770V1024H0V787Z" fill="#37A1E5" opacity=".86" />
+  <path d="M357 1024C322 888 330 782 412 711C468 663 562 652 646 689C767 742 809 849 868 880C930 914 982 901 1024 867V1024H357Z" fill="#2A5D96" opacity=".72" />
+  <path d="M705 1024C696 949 733 883 810 825C867 782 947 732 1024 684V1024H705Z" fill="#2A1646" opacity=".92" />
+
+  <g transform="translate(0 8)">
+    <g stroke="url(#ink)" stroke-linecap="round" stroke-width="12">
+      <line x1="512" y1="214" x2="512" y2="247" />
+      <line x1="512" y1="435" x2="512" y2="468" />
+      <line x1="401" y1="325" x2="434" y2="325" />
+      <line x1="590" y1="325" x2="623" y2="325" />
+      <line x1="433" y1="247" x2="456" y2="270" />
+      <line x1="568" y1="381" x2="591" y2="404" />
+      <line x1="591" y1="247" x2="568" y2="270" />
+      <line x1="456" y1="381" x2="433" y2="404" />
+      <line x1="473" y1="224" x2="485" y2="252" />
+      <line x1="551" y1="398" x2="563" y2="426" />
+      <line x1="623" y1="286" x2="595" y2="298" />
+      <line x1="429" y1="352" x2="401" y2="364" />
+      <line x1="551" y1="252" x2="563" y2="224" />
+      <line x1="473" y1="426" x2="485" y2="398" />
+      <line x1="623" y1="364" x2="595" y2="352" />
+      <line x1="429" y1="298" x2="401" y2="286" />
+    </g>
+
+    <circle cx="512" cy="325" r="110" fill="#FAFDFF" stroke="url(#ink)" stroke-width="16" />
+    <circle cx="512" cy="325" r="86" fill="url(#sunCore)" />
+    <g stroke="#F4F8FE" stroke-linecap="round" stroke-width="12">
+      <line x1="512" y1="247" x2="512" y2="403" />
+      <line x1="434" y1="325" x2="590" y2="325" />
+    </g>
+  </g>
+</svg>

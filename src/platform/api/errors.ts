@@ -15,6 +15,7 @@
  */
 
 import type { z } from 'zod';
+import { BRAND_PROBLEM_BASE } from '@shared/branding';
 
 // ─── Problem Details (RFC 9457) ────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ import type { z } from 'zod';
  * RFC 9457 §3.1.1: resolvable URIs are encouraged but not required.
  * Treat as a stable namespace, not a live HTTP URL.
  */
-const PROBLEM_BASE = 'https://docs.kollegan.ai/problems';
+const PROBLEM_BASE = BRAND_PROBLEM_BASE;
 
 /**
  * Field-level validation issue.

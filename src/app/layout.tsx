@@ -3,10 +3,16 @@ import { Inter, Cormorant_Garamond, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { cn } from "@/lib/utils";
+import { BRAND_MARK_PATH, BRAND_NAME, BRAND_TAGLINE } from '@shared/branding';
 
 export const metadata: Metadata = {
-  title: 'Soleria',
-  description: 'Soleria — Offertsystem',
+  title: BRAND_NAME,
+  description: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
+  icons: {
+    icon: BRAND_MARK_PATH,
+    shortcut: BRAND_MARK_PATH,
+    apple: BRAND_MARK_PATH,
+  },
 };
 
 const themeScript = `

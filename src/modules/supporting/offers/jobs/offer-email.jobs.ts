@@ -13,6 +13,7 @@ import { jobQueue }   from '@platform/queue/job-queue';
 import { prisma }     from '@platform/database/prisma';
 import { logger }     from '@platform/logging/logger';
 import { sanitizeEmailHtml, escapeHtml } from '@platform/security/sanitize';
+import { BRAND_EMAIL_FALLBACK, BRAND_NAME, BRAND_TAGLINE } from '@shared/branding';
 import type {
   SendToRecipientPayload,
   NotifyCreatorPayload,
@@ -43,7 +44,7 @@ async function sendEmail(opts: { from: string; to: string; subject: string; html
 }
 
 function fromAddress(senderEmail?: string, senderName?: string): string {
-  const email = senderEmail || process.env.EMAIL_FROM || 'no-reply@kollegan.ai';
+  const email = senderEmail || process.env.EMAIL_FROM || BRAND_EMAIL_FALLBACK;
   if (senderName) return `${senderName} <${email}>`;
   return email;
 }
@@ -74,10 +75,23 @@ interface EmailDesignConfig {
 }
 
 const DESIGN_DEFAULTS: EmailDesignConfig = {
-  header: { bgColor: '#0f172a', textColor: '#ffffff', accentColor: '#94a3b8', alignment: 'center', showDivider: true },
+  header: {
+    companyName: BRAND_NAME,
+    tagline: BRAND_TAGLINE,
+    bgColor: '#0f172a',
+    textColor: '#ffffff',
+    accentColor: '#94a3b8',
+    alignment: 'center',
+    showDivider: true,
+  },
   body:   { bgColor: '#f1f5f9', contentBgColor: '#ffffff', textColor: '#1e293b', mutedColor: '#64748b', linkColor: '#2563eb' },
   cta:    { bgColor: '#0f172a', textColor: '#ffffff', borderRadius: 8, label: 'Visa & signera offert' },
-  footer: { bgColor: '#0f172a', textColor: '#94a3b8', showSocial: false },
+  footer: {
+    bgColor: '#0f172a',
+    textColor: '#94a3b8',
+    showSocial: false,
+    legalText: `Skickat via ${BRAND_NAME}`,
+  },
 };
 
 function parseDesignConfig(configJson?: string): EmailDesignConfig | null {
@@ -134,7 +148,7 @@ function sendToRecipientHtml(p: SendToRecipientPayload): string {
   const b = d?.body ?? DESIGN_DEFAULTS.body;
   const c = d?.cta ?? DESIGN_DEFAULTS.cta;
 
-  const headerHtml = d ? renderHeader(d.header) : '';
+  const headerHtml = renderHeader((d ?? DESIGN_DEFAULTS).header);
   const footerHtml = d ? renderFooter(d.footer) : '';
   const ctaHtml = renderCta(c, p.publicUrl);
   const fallbackLink = `<p style="margin:24px 0 0 0;font-size:12px;color:${b.mutedColor};">Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/><a href="${p.publicUrl}" style="color:${b.mutedColor};">${p.publicUrl}</a></p>`;
@@ -200,7 +214,7 @@ function reminderHtml(p: ReminderPayload): string {
   const b = d?.body ?? DESIGN_DEFAULTS.body;
   const c = d?.cta ?? DESIGN_DEFAULTS.cta;
 
-  const headerHtml = d ? renderHeader(d.header) : '';
+  const headerHtml = renderHeader((d ?? DESIGN_DEFAULTS).header);
   const footerHtml = d ? renderFooter(d.footer) : '';
   const ctaHtml = renderCta(c, p.publicUrl);
   const fallbackLink = `<p style="margin:24px 0 0 0;font-size:12px;color:${b.mutedColor};">Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/><a href="${p.publicUrl}" style="color:${b.mutedColor};">${p.publicUrl}</a></p>`;

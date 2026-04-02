@@ -21,6 +21,7 @@ import { completeMfaLogin } from '../../application/auth.service';
 import { userRepository } from '../../infrastructure/user.repository';
 import { log, AUDIT_ACTIONS } from '@modules/supporting/audit';
 import type { RegistrationResponseJSON, AuthenticationResponseJSON } from '@simplewebauthn/browser';
+import { BRAND_PROBLEM_BASE } from '@shared/branding';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -93,7 +94,7 @@ export async function handleAuthenticateOptions(req: NextRequest): Promise<NextR
   const rl = await checkRateLimit(`webauthn:${ip}`, 20, 60_000);
   if (!rl.allowed) {
     return NextResponse.json(
-      { type: 'https://docs.kollegan.ai/problems/rate-limit', title: 'Too Many Requests', status: 429 },
+      { type: `${BRAND_PROBLEM_BASE}/rate-limit`, title: 'Too Many Requests', status: 429 },
       { status: 429, headers: { 'Content-Type': 'application/problem+json' } },
     );
   }
@@ -101,7 +102,7 @@ export async function handleAuthenticateOptions(req: NextRequest): Promise<NextR
   const challengeToken = req.cookies.get('mfa_challenge')?.value;
   if (!challengeToken) {
     return NextResponse.json(
-      { type: 'https://docs.kollegan.ai/problems/unauthorized', title: 'Unauthorized', status: 401, detail: 'MFA challenge not found or expired' },
+      { type: `${BRAND_PROBLEM_BASE}/unauthorized`, title: 'Unauthorized', status: 401, detail: 'MFA challenge not found or expired' },
       { status: 401, headers: { 'Content-Type': 'application/problem+json' } },
     );
   }
@@ -111,7 +112,7 @@ export async function handleAuthenticateOptions(req: NextRequest): Promise<NextR
     ({ userId } = await verifyMfaChallengeToken(challengeToken));
   } catch {
     return NextResponse.json(
-      { type: 'https://docs.kollegan.ai/problems/unauthorized', title: 'Unauthorized', status: 401, detail: 'MFA challenge expired' },
+      { type: `${BRAND_PROBLEM_BASE}/unauthorized`, title: 'Unauthorized', status: 401, detail: 'MFA challenge expired' },
       { status: 401, headers: { 'Content-Type': 'application/problem+json' } },
     );
   }
@@ -122,12 +123,12 @@ export async function handleAuthenticateOptions(req: NextRequest): Promise<NextR
   } catch (err: unknown) {
     if ((err as { code?: string }).code === 'NO_CREDENTIALS') {
       return NextResponse.json(
-        { type: 'https://docs.kollegan.ai/problems/bad-request', title: 'Bad Request', status: 400, detail: 'No passkeys registered for this account' },
+      { type: `${BRAND_PROBLEM_BASE}/bad-request`, title: 'Bad Request', status: 400, detail: 'No passkeys registered for this account' },
         { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
       );
     }
     return NextResponse.json(
-      { type: 'https://docs.kollegan.ai/problems/internal', title: 'Internal Server Error', status: 500 },
+      { type: `${BRAND_PROBLEM_BASE}/internal`, title: 'Internal Server Error', status: 500 },
       { status: 500, headers: { 'Content-Type': 'application/problem+json' } },
     );
   }
@@ -142,7 +143,7 @@ export async function handleAuthenticateVerify(req: NextRequest): Promise<NextRe
   const rl = await checkRateLimit(`webauthn:${ip}`, 20, 60_000);
   if (!rl.allowed) {
     return NextResponse.json(
-      { type: 'https://docs.kollegan.ai/problems/rate-limit', title: 'Too Many Requests', status: 429 },
+      { type: `${BRAND_PROBLEM_BASE}/rate-limit`, title: 'Too Many Requests', status: 429 },
       { status: 429, headers: { 'Content-Type': 'application/problem+json' } },
     );
   }
@@ -150,7 +151,7 @@ export async function handleAuthenticateVerify(req: NextRequest): Promise<NextRe
   const challengeToken = req.cookies.get('mfa_challenge')?.value;
   if (!challengeToken) {
     return NextResponse.json(
-      { type: 'https://docs.kollegan.ai/problems/unauthorized', title: 'Unauthorized', status: 401, detail: 'MFA challenge not found or expired' },
+      { type: `${BRAND_PROBLEM_BASE}/unauthorized`, title: 'Unauthorized', status: 401, detail: 'MFA challenge not found or expired' },
       { status: 401, headers: { 'Content-Type': 'application/problem+json' } },
     );
   }
@@ -161,7 +162,7 @@ export async function handleAuthenticateVerify(req: NextRequest): Promise<NextRe
     ({ userId, rememberMe } = await verifyMfaChallengeToken(challengeToken));
   } catch {
     return NextResponse.json(
-      { type: 'https://docs.kollegan.ai/problems/unauthorized', title: 'Unauthorized', status: 401, detail: 'MFA challenge expired' },
+      { type: `${BRAND_PROBLEM_BASE}/unauthorized`, title: 'Unauthorized', status: 401, detail: 'MFA challenge expired' },
       { status: 401, headers: { 'Content-Type': 'application/problem+json' } },
     );
   }
@@ -169,7 +170,7 @@ export async function handleAuthenticateVerify(req: NextRequest): Promise<NextRe
   let body: unknown;
   try { body = await req.json(); } catch {
     return NextResponse.json(
-      { type: 'https://docs.kollegan.ai/problems/bad-request', title: 'Bad Request', status: 400 },
+      { type: `${BRAND_PROBLEM_BASE}/bad-request`, title: 'Bad Request', status: 400 },
       { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
     );
   }
@@ -190,12 +191,12 @@ export async function handleAuthenticateVerify(req: NextRequest): Promise<NextRe
 
     if (code === 'CHALLENGE_EXPIRED') {
       return NextResponse.json(
-        { type: 'https://docs.kollegan.ai/problems/unauthorized', title: 'Unauthorized', status: 401, detail: 'Passkey challenge expired — please start again' },
+      { type: `${BRAND_PROBLEM_BASE}/unauthorized`, title: 'Unauthorized', status: 401, detail: 'Passkey challenge expired — please start again' },
         { status: 401, headers: { 'Content-Type': 'application/problem+json' } },
       );
     }
     return NextResponse.json(
-      { type: 'https://docs.kollegan.ai/problems/unauthorized', title: 'Unauthorized', status: 401, detail: 'Passkey verification failed' },
+      { type: `${BRAND_PROBLEM_BASE}/unauthorized`, title: 'Unauthorized', status: 401, detail: 'Passkey verification failed' },
       { status: 401, headers: { 'Content-Type': 'application/problem+json' } },
     );
   }

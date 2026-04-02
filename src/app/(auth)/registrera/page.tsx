@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react';
 import Link from 'next/link';
 import { Input } from '@shared/ui/input';
 import { Button } from '@shared/ui/button';
+import { BrandLockup } from '@shared/ui/brand';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -40,10 +41,13 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-(--page-bg) px-4">
       <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center gap-3 mb-8">
-          <img src="/soleria-logo.svg" alt="Soleria" className="h-16 w-auto" onError={(e) => { (e.target as HTMLImageElement).src = '/soleria-logo.png'; }} />
-          <span className="font-heading text-2xl font-semibold text-(--text-primary) tracking-tight">Soleria</span>
-        </div>
+        <BrandLockup
+          size={64}
+          priority
+          align="center"
+          className="flex flex-col items-center gap-3 mb-8"
+          textClassName="font-heading text-2xl text-(--text-primary)"
+        />
 
         <div className="p-8 rounded-2xl border border-(--border) bg-(--surface-0) shadow-lg">
           <div className="mb-6 space-y-2">

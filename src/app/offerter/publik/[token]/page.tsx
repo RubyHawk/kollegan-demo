@@ -25,6 +25,7 @@ import {
   ShieldIcon,
   TrashIcon,
 } from '@shared/ui/icons';
+import { BrandMark } from '@shared/ui/brand';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -541,7 +542,7 @@ export default function PublicOfferPage() {
           {/* Left: title + recipient */}
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-              <FileTextIcon size={14} className="text-slate-500" />
+              <BrandMark size={18} alt="" />
             </div>
             <div className="min-w-0">
               <h1 className="truncate text-sm font-semibold leading-tight text-slate-900">{offer.title}</h1>
@@ -891,7 +892,7 @@ export default function PublicOfferPage() {
 
         {/* Footer */}
         <p className="mt-6 px-4 text-center text-[12px] text-slate-500">
-          Elektronisk signering · {offer?.recipientEmail}
+          Soleria offertportal · {offer?.recipientEmail}
         </p>
         </div>
       </main>
