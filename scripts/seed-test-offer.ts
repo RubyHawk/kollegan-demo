@@ -5,6 +5,7 @@
 
 import { prisma } from '../src/platform/database/prisma';
 import { generateDocument } from '../src/modules/supporting/offers/application/document-generator';
+import type { Offer } from '../src/modules/supporting/offers/domain/offer.entity';
 import { writeFileSync } from 'fs';
 
 // ── SVG images as data URIs ───────────────────────────────────────────────────
@@ -191,7 +192,7 @@ async function main() {
     signatureMethod: offer.signatureMethod,
   };
 
-  const html = generateDocument(JSON.stringify(templateContent), offerForGen as any);
+  const html = generateDocument(JSON.stringify(templateContent), offerForGen as Offer);
 
   const outPath = '/tmp/offer-3page-preview.html';
   writeFileSync(outPath, html, 'utf-8');

@@ -10,11 +10,16 @@ interface SSEPayload {
   payload: unknown;
 }
 
-export function useSSE() {
+export function useSSE(enabled = true) {
   const { setFullState, updateRoom, addActivity, setCallStatus, setConnected } =
     useRealtimeStore();
 
   useEffect(() => {
+    if (!enabled) {
+      setConnected(false);
+      return;
+    }
+
     const es = new EventSource("/api/sse");
 
     es.onopen = () => setConnected(true);
@@ -47,6 +52,9 @@ export function useSSE() {
       }
     };
 
-    return () => es.close();
-  }, [setFullState, updateRoom, addActivity, setCallStatus, setConnected]);
+    return () => {
+      setConnected(false);
+      es.close();
+    };
+  }, [enabled, setFullState, updateRoom, addActivity, setCallStatus, setConnected]);
 }

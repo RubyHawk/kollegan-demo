@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@shared/ui/sidebar';
@@ -66,11 +66,10 @@ export default function AppShell({ user, children }: Props) {
   const pathname    = usePathname();
   const router      = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed,  setCollapsed]  = useState(false);
-
-  useEffect(() => {
-    if (localStorage.getItem(LS_KEY) === 'true') setCollapsed(true);
-  }, []);
+  const [collapsed,  setCollapsed]  = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(LS_KEY) === 'true';
+  });
 
   function toggleCollapse() {
     const next = !collapsed;

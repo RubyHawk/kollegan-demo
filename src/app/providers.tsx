@@ -2,11 +2,13 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { ToastProvider } from '@shared/ui/toast/toast-context';
 import { useSSE } from '@shared/hooks/use-sse';
 
 function SSEInitializer({ children }: { children: React.ReactNode }) {
-  useSSE();
+  const pathname = usePathname();
+  useSSE(pathname.startsWith('/demos/hotel'));
   return <>{children}</>;
 }
 

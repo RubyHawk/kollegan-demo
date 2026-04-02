@@ -308,7 +308,7 @@ function TimelineView({ rooms, onRoomClick }: { rooms: Room[]; onRoomClick?: (r:
   const [viewKey, setViewKey] = useState<View>('month');
   const [baseDate, setBaseDate] = useState(() => todayMidnight());
 
-  const today    = useMemo(todayMidnight, []);
+  const today    = useMemo(() => todayMidnight(), []);
   const todayKey = toKey(today);
 
   const { startDate, totalDays } = useMemo(() => {

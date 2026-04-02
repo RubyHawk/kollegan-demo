@@ -15,7 +15,7 @@
  * Only the text-formatting BubbleMenu lives here.
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 import type { Editor } from '@tiptap/core';
 import { EditorContent } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
@@ -35,14 +35,15 @@ export default function DocumentCanvas() {
   const hf     = useHeaderFooter();
 
   // Track whether the editor body is empty to show the onboarding overlay
-  const [isEmpty, setIsEmpty] = useState(() => editor?.isEmpty ?? true);
-  useEffect(() => {
-    if (!editor) return;
-    setIsEmpty(editor.isEmpty);
-    const handler = () => setIsEmpty(editor.isEmpty);
-    editor.on('update', handler);
-    return () => { editor.off('update', handler); };
-  }, [editor]);
+  const isEmpty = useSyncExternalStore(
+    (onStoreChange) => {
+      if (!editor) return () => {};
+      editor.on('update', onStoreChange);
+      return () => { editor.off('update', onStoreChange); };
+    },
+    () => editor?.isEmpty ?? true,
+    () => true,
+  );
 
   // Active page H/F display state from context
   const activeHeader = hf?.activeHeader ?? { enabled: false, useDefault: true };
@@ -146,7 +147,6 @@ export default function DocumentCanvas() {
             )}
 
             {/* ── Body ──────────────────────────────────────────────────────── */}
-            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
             <div
               className="cursor-text relative"
               style={{ padding: `${H_PAD}px ${H_PAD}px` }}
@@ -509,7 +509,6 @@ function HFZone({
       </div>
 
       {/* Editable mini-editor */}
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
         className="cursor-text min-h-[48px]"
         style={{ padding: `4px ${hPad}px` }}

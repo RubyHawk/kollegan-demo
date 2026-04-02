@@ -152,7 +152,7 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   // Enqueue email (non-blocking)
   const appUrl = process.env.PUBLIC_OFFER_BASE_URL
     ? `${process.env.PUBLIC_OFFER_BASE_URL}`
-    : `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/offers/public`;
+    : `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/offerter/publik`;
   const publicUrl = `${appUrl}/${updated.publicToken}`;
   enqueueOfferEmail(updated, publicUrl, sender).catch((err: unknown) =>
     logger.warn(TAG, 'Failed to enqueue offer email', { err })
@@ -506,7 +506,7 @@ export async function sendOfferReminder(id: string, orgId: string): Promise<Offe
 
   const appUrl = process.env.PUBLIC_OFFER_BASE_URL
     ? `${process.env.PUBLIC_OFFER_BASE_URL}`
-    : `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/offers/public`;
+    : `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/offerter/publik`;
   const publicUrl = `${appUrl}/${updated.publicToken}`;
   await enqueueReminderEmail(updated, publicUrl, senderInfo).catch((err: unknown) =>
     logger.warn(TAG, 'Failed to enqueue reminder email', { err })

@@ -100,7 +100,7 @@ function mapProjectWithCounts(r: Record<string, unknown>): Project {
 export const projectRepository = {
 
   async create(input: CreateProjectData): Promise<Project> {
-    const row = await (prisma as any).project.create({
+    const row = await prisma.project.create({
       data: {
         organizationId: input.organizationId,
         name:           input.name,
@@ -119,7 +119,7 @@ export const projectRepository = {
   },
 
   async findById(id: string, orgId: string): Promise<Project | null> {
-    const row = await (prisma as any).project.findFirst({
+    const row = await prisma.project.findFirst({
       where: { id, organizationId: orgId, deletedAt: null },
       include: {
         tasks: { where: { deletedAt: null }, orderBy: { sortOrder: 'asc' } },
@@ -146,7 +146,7 @@ export const projectRepository = {
     };
 
     const [rows, total] = await Promise.all([
-      (prisma as any).project.findMany({
+      prisma.project.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         take:  filter.limit  ?? 50,
@@ -155,7 +155,7 @@ export const projectRepository = {
           tasks: { where: { deletedAt: null }, select: { id: true, status: true } },
         },
       }),
-      (prisma as any).project.count({ where }),
+      prisma.project.count({ where }),
     ]);
 
     return {
@@ -165,12 +165,12 @@ export const projectRepository = {
   },
 
   async update(id: string, orgId: string, input: UpdateProjectInput): Promise<Project | null> {
-    const existing = await (prisma as any).project.findFirst({
+    const existing = await prisma.project.findFirst({
       where: { id, organizationId: orgId, deletedAt: null },
     });
     if (!existing) return null;
 
-    const row = await (prisma as any).project.update({
+    const row = await prisma.project.update({
       where: { id },
       data: {
         ...(input.name        !== undefined ? { name: input.name }               : {}),
@@ -188,11 +188,11 @@ export const projectRepository = {
   },
 
   async softDelete(id: string, orgId: string): Promise<boolean> {
-    const existing = await (prisma as any).project.findFirst({
+    const existing = await prisma.project.findFirst({
       where: { id, organizationId: orgId, deletedAt: null },
     });
     if (!existing) return false;
-    await (prisma as any).project.update({ where: { id }, data: { deletedAt: new Date() } });
+    await prisma.project.update({ where: { id }, data: { deletedAt: new Date() } });
     return true;
   },
 };

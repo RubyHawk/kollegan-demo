@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint react-hooks/exhaustive-deps: "off" */
+
 /**
  * /offers
  *
@@ -31,7 +33,6 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-  arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useOffersListStore, PAGE_SIZE } from './_store/offers-list.store';
@@ -104,7 +105,7 @@ function computeTotals(items: LineItem[]) {
 
 function publicUrl(token: string): string {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${base}/offers/public/${token}`;
+  return `${base}/offerter/publik/${token}`;
 }
 
 function fmtOfferNumber(offer: Offer): string {
@@ -215,7 +216,6 @@ export default function OffersPage() {
       // Clean the URL so a refresh doesn't re-trigger
       window.history.replaceState(null, '', window.location.pathname);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Load templates ────────────────────────────────────────────────────────────
@@ -248,7 +248,6 @@ export default function OffersPage() {
     clearSelected();
     setBulkResult(null);
     // load/loadCounts/clearSelected/setBulkResult are stable store actions
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, search, currentPage, dateFrom, dateTo]);
 
   // ── Derived: client-side sort only (status + date filtering is server-side) ───
@@ -416,6 +415,7 @@ export default function OffersPage() {
   }, []);
 
   // ── Template preview (from offer form) ────────────────────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const openTemplatePreview = useCallback(async () => {
     if (!form.templateId) return;
     setTplPreview({ loading: true, html: null });
@@ -680,7 +680,6 @@ export default function OffersPage() {
   useEffect(() => {
     if (!showForm || wizardStep !== 2 || !cachedTplContent) return;
     scheduleLivePreview(form, cachedTplContent);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     form.title, form.recipientName, form.recipientEmail,
     form.recipientCompany, form.notes, form.lineItems,
@@ -1812,7 +1811,7 @@ export default function OffersPage() {
                     </button>
                   )}
                   {(offer.status === 'sent' || offer.status === 'viewed') && canRemind(offer) && (
-                    <button type="button" onClick={() => void doAction(offer.id, 'remind')} disabled={acting === offer.id} title="Skicka påminnelse" className="text-[var(--text-muted)] hover:text-amber-500 transition-colors disabled:opacity-40">
+                    <button type="button" onClick={() => void doAction(offer.id, 'remind')} disabled={acting === offer.id} title="Skicka påminnelse" aria-label="Skicka påminnelse" className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-amber-500 transition-colors disabled:opacity-40">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                     </button>
                   )}
@@ -1935,7 +1934,7 @@ export default function OffersPage() {
 
                     {/* Actions — appear on hover */}
                     <td className="px-3 py-2">
-                      <div className="flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+                      <div className="flex items-center justify-end gap-1 rounded-lg bg-[var(--surface-0)]/80 px-1 py-0.5 opacity-90 transition-opacity duration-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
                         {/* PDF / preview — show for all sent/viewed/accepted; fetch doc on-demand */}
                         {(offer.status === 'sent' || offer.status === 'viewed' || offer.status === 'accepted') && (
                           <>
@@ -1943,7 +1942,8 @@ export default function OffersPage() {
                               onClick={() => void fetchAndPreviewDoc(offer.id)}
                               disabled={fetchingDocId === offer.id}
                               title="Förhandsgranska dokument"
-                              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40">
+                              aria-label="Förhandsgranska dokument"
+                              className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40">
                               {fetchingDocId === offer.id ? (
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
                                   <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
@@ -1956,7 +1956,8 @@ export default function OffersPage() {
                             </button>
                             <button type="button" onClick={() => window.open(`/api/offers/${offer.id}/pdf`, '_blank')}
                               title="Öppna PDF"
-                              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                              aria-label="Öppna PDF"
+                              className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors">
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
                               </svg>
@@ -1966,7 +1967,8 @@ export default function OffersPage() {
                         {/* Copy link */}
                         {(offer.status === 'sent' || offer.status === 'viewed') && (
                           <button type="button" onClick={() => void copyLink(offer)} title="Kopiera signeringslänk"
-                            className="text-[var(--text-muted)] hover:text-violet-500 transition-colors">
+                            aria-label="Kopiera signeringslänk"
+                            className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--accent)] transition-colors">
                             {copied === offer.id
                               ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                               : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
@@ -1976,7 +1978,7 @@ export default function OffersPage() {
                         {/* Edit draft */}
                         {offer.status === 'draft' && (
                           <button type="button" onClick={() => openEdit(offer)}
-                            title="Redigera utkast" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                            title="Redigera utkast" aria-label="Redigera utkast" className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                             </svg>
@@ -1985,7 +1987,7 @@ export default function OffersPage() {
                         {/* Send */}
                         {offer.status === 'draft' && (
                           <button type="button" onClick={() => setConfirmSend(offer)} disabled={acting === offer.id}
-                            title="Skicka offert" className="text-[var(--text-muted)] hover:text-blue-500 transition-colors disabled:opacity-40">
+                            title="Skicka offert" aria-label="Skicka offert" className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-blue-500 transition-colors disabled:opacity-40">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                             </svg>
@@ -1994,7 +1996,7 @@ export default function OffersPage() {
                         {/* Remind */}
                         {(offer.status === 'sent' || offer.status === 'viewed') && canRemind(offer) && (
                           <button type="button" onClick={() => void doAction(offer.id, 'remind')} disabled={acting === offer.id}
-                            title="Skicka påminnelse" className="text-[var(--text-muted)] hover:text-amber-500 transition-colors disabled:opacity-40">
+                            title="Skicka påminnelse" aria-label="Skicka påminnelse" className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-amber-500 transition-colors disabled:opacity-40">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                             </svg>
@@ -2003,7 +2005,7 @@ export default function OffersPage() {
                         {/* Accept */}
                         {(offer.status === 'sent' || offer.status === 'viewed') && (
                           <button type="button" onClick={() => void doAction(offer.id, 'accept')} disabled={acting === offer.id}
-                            title="Markera som accepterad" className="text-[var(--text-muted)] hover:text-emerald-500 transition-colors disabled:opacity-40">
+                            title="Markera som accepterad" aria-label="Markera som accepterad" className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-emerald-500 transition-colors disabled:opacity-40">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                               <polyline points="20 6 9 17 4 12"/>
                             </svg>
@@ -2011,14 +2013,14 @@ export default function OffersPage() {
                         )}
                         {/* Duplicate */}
                         <button type="button" onClick={() => void doAction(offer.id, 'duplicate')} disabled={acting === offer.id}
-                          title="Duplicera" className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-40">
+                          title="Duplicera" aria-label="Duplicera offert" className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-40">
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                           </svg>
                         </button>
                         {/* Delete */}
                         <button type="button" onClick={() => setConfirmDeleteOffer(offer.id)}
-                          title="Ta bort" className="text-[var(--text-muted)] hover:text-red-500 transition-colors">
+                          title="Ta bort" aria-label="Ta bort offert" className="rounded-md p-1 text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500 transition-colors">
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
                           </svg>
@@ -2042,9 +2044,24 @@ export default function OffersPage() {
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-sm font-semibold text-[var(--text-primary)]">Inga offerter</p>
-                          <p className="text-xs text-[var(--text-muted)]">Klicka på &ldquo;Ny offert&rdquo; för att komma igång.</p>
+                          <p className="text-sm font-semibold text-[var(--text-primary)]">Inga offerter ännu</p>
+                          <p className="text-sm text-[var(--text-secondary)]">Skapa din första offert för att komma igång med en tydlig och trygg kunddialog.</p>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowForm(true);
+                            setEditingOfferId(null);
+                            resetForm();
+                            setWizardStep(1);
+                          }}
+                          className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                        >
+                          Skapa ny offert
+                        </button>
+                        <p className="text-xs text-[var(--text-muted)]">
+                          Du kan alltid justera innehållet innan du skickar.
+                        </p>
                       </div>
                     </td>
                   </tr>

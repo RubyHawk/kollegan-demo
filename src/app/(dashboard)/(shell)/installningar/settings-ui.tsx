@@ -921,41 +921,30 @@ function EpostTab() {
 // ─── Utseende tab ─────────────────────────────────────────────────────────────
 
 function UtseendeTab() {
-  const [theme,       setTheme]       = useState<ThemeMode>('auto');
-  const [fontSize,    setFontSize]    = useState<FontSize>('medium');
-  const [selectedTheme, setSelectedTheme] = useState<ThemeId>('claude');
-  const [fontFamily,  setFontFamily]  = useState<FontId>('inter');
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    if (typeof window === 'undefined') return 'auto';
+    const storedTheme = localStorage.getItem('theme') as ThemeMode | null;
+    return storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'auto';
+  });
+  const [fontSize, setFontSize] = useState<FontSize>(() => {
+    if (typeof window === 'undefined') return 'medium';
+    const storedFontSize = localStorage.getItem('fontSize') as FontSize | null;
+    return storedFontSize === 'small' || storedFontSize === 'medium' || storedFontSize === 'large'
+      ? storedFontSize
+      : 'medium';
+  });
+  const [selectedTheme, setSelectedTheme] = useState<ThemeId>(() => {
+    if (typeof window === 'undefined') return 'claude';
+    const storedAccent = localStorage.getItem('accentColor') as ThemeId | null;
+    return THEMES.find((themeDef) => themeDef.id === storedAccent)?.id ?? 'claude';
+  });
+  const [fontFamily, setFontFamily] = useState<FontId>(() => {
+    if (typeof window === 'undefined') return 'inter';
+    const storedFont = localStorage.getItem('fontFamily') as FontId | null;
+    return FONT_OPTIONS.find((option) => option.id === storedFont)?.id ?? 'inter';
+  });
   const [pending, setPending] = useState(false);
   const [saved,   setSaved]   = useState(false);
-  // Sync initial state from localStorage
-  useEffect(() => {
-    try {
-      const storedTheme = localStorage.getItem('theme') as ThemeMode | null;
-      if (storedTheme === 'light' || storedTheme === 'dark') setTheme(storedTheme);
-      else setTheme('auto');
-
-      const storedFs = localStorage.getItem('fontSize') as FontSize | null;
-      if (storedFs) applyFontSize(storedFs);
-
-      const storedAccent = localStorage.getItem('accentColor') as ThemeId | null;
-      const matchedTheme = THEMES.find((c) => c.id === storedAccent);
-      if (matchedTheme) {
-        setSelectedTheme(matchedTheme.id);
-        // Apply all theme variables for the current mode
-        const isDark = document.documentElement.classList.contains('dark');
-        const vars = isDark ? matchedTheme.dark : matchedTheme.light;
-        for (const [prop, val] of Object.entries(vars)) {
-          document.documentElement.style.setProperty(prop, val);
-        }
-      }
-
-      const storedFont = localStorage.getItem('fontFamily') as FontId | null;
-      if (storedFont) {
-        const f = FONT_OPTIONS.find((o) => o.id === storedFont);
-        if (f) applyFont(f);
-      }
-    } catch { /* ignore */ }
-  }, []);
 
   function applyTheme(t: ThemeMode) {
     setTheme(t);
@@ -1061,6 +1050,45 @@ function UtseendeTab() {
       localStorage.setItem('fontSize', f);
     } catch { /* ignore */ }
   }
+
+  // Sync persisted appearance preferences into the live DOM without triggering state churn.
+  useEffect(() => {
+    try {
+      const matchedTheme = THEMES.find((c) => c.id === selectedTheme);
+      if (matchedTheme) {
+        const isDark = document.documentElement.classList.contains('dark');
+        const vars = isDark ? matchedTheme.dark : matchedTheme.light;
+        for (const [prop, val] of Object.entries(vars)) {
+          document.documentElement.style.setProperty(prop, val);
+        }
+      }
+
+      const font = FONT_OPTIONS.find((o) => o.id === fontFamily);
+      if (font) injectStyle(
+        'font-family-override',
+        font.id === 'inter' ? '' : `body { font-family: ${font.css} !important; }`,
+      );
+
+      const scales: Record<FontSize, number> = { small: 0.875, medium: 1, large: 1.125 };
+      const s = scales[fontSize];
+      injectStyle('font-size-override', s === 1 ? `
+        .text-xs, .text-sm, .text-base, .text-lg, .text-xl, .text-2xl, .text-3xl {
+          transition: font-size 150ms ease-out, line-height 150ms ease-out;
+        }
+      ` : `
+        .text-xs, .text-sm, .text-base, .text-lg, .text-xl, .text-2xl, .text-3xl {
+          transition: font-size 150ms ease-out, line-height 150ms ease-out;
+        }
+        .text-xs   { font-size: ${(0.75  * s).toFixed(4)}rem !important; line-height: ${(1     * s).toFixed(4)}rem !important; }
+        .text-sm   { font-size: ${(0.875 * s).toFixed(4)}rem !important; line-height: ${(1.25  * s).toFixed(4)}rem !important; }
+        .text-base { font-size: ${(1     * s).toFixed(4)}rem !important; line-height: ${(1.5   * s).toFixed(4)}rem !important; }
+        .text-lg   { font-size: ${(1.125 * s).toFixed(4)}rem !important; line-height: ${(1.75  * s).toFixed(4)}rem !important; }
+        .text-xl   { font-size: ${(1.25  * s).toFixed(4)}rem !important; line-height: ${(1.75  * s).toFixed(4)}rem !important; }
+        .text-2xl  { font-size: ${(1.5   * s).toFixed(4)}rem !important; line-height: ${(2     * s).toFixed(4)}rem !important; }
+        .text-3xl  { font-size: ${(1.875 * s).toFixed(4)}rem !important; line-height: ${(2.25  * s).toFixed(4)}rem !important; }
+      `);
+    } catch { /* ignore */ }
+  }, [fontFamily, fontSize, selectedTheme]);
 
   function save() {
     setPending(true);

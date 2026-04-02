@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * /templates/[id]  (also handles "new" when params.id === 'new')
+ * /mallar/[id]  (also handles "ny" / "new" for create mode)
  *
  * Visual Word-like offer template editor + visual email editor.
  * Tabs: "Offert" (offer WYSIWYG) | "E-post" (email WYSIWYG)
@@ -32,7 +32,7 @@ type Tab = 'offer' | 'email';
 export default function TemplateEditorPage() {
   const router   = useRouter();
   const params   = useParams<{ id: string }>();
-  const isNew    = params.id === 'new';
+  const isNew    = params.id === 'new' || params.id === 'ny';
 
   const [activeTab,         setActiveTab]         = useState<Tab>('offer');
   const [emailMounted,      setEmailMounted]      = useState(false); // lazy-mount on first visit
@@ -77,7 +77,6 @@ export default function TemplateEditorPage() {
         setLoading(false);
       }
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNew, params.id]);
 
   // ── Check for unsaved draft in localStorage after load ────────────────────
@@ -156,7 +155,7 @@ export default function TemplateEditorPage() {
     } finally {
       setSaving(false);
     }
-  }, [isNew, name, params.id, router, draftKey]);
+  }, [draftKey, initEmailBody, initEmailHdrCfg, initEmailSubject, isNew, name, params.id, router]);
 
   // ── Preview ────────────────────────────────────────────────────────────────
   const openPreview = useCallback(async () => {

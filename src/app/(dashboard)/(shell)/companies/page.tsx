@@ -10,6 +10,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@shared/lib/utils';
 import type { Company } from '@modules/supporting/offers';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@shared/ui/dialog';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -24,6 +32,18 @@ interface CompanyForm {
 const EMPTY_FORM: CompanyForm = {
   name: '', orgNumber: '', website: '', industry: '', notes: '',
 };
+
+function formFromCompany(company: Company | null): CompanyForm {
+  if (!company) return EMPTY_FORM;
+
+  return {
+    name:      company.name,
+    orgNumber: company.orgNumber ?? '',
+    website:   company.website ?? '',
+    industry:  company.industry ?? '',
+    notes:     company.notes ?? '',
+  };
+}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -127,19 +147,7 @@ function CompanyModal({
   onSave:  (form: CompanyForm) => void;
   saving:  boolean;
 }) {
-  const [form, setForm] = useState<CompanyForm>(EMPTY_FORM);
-
-  useEffect(() => {
-    if (open) {
-      setForm(company ? {
-        name:      company.name,
-        orgNumber: company.orgNumber ?? '',
-        website:   company.website   ?? '',
-        industry:  company.industry  ?? '',
-        notes:     company.notes     ?? '',
-      } : EMPTY_FORM);
-    }
-  }, [open, company]);
+  const [form, setForm] = useState<CompanyForm>(() => formFromCompany(company));
 
   if (!open) return null;
 
@@ -226,6 +234,7 @@ export default function CompaniesPage() {
   const [search,      setSearch]      = useState('');
   const [modalOpen,   setModalOpen]   = useState(false);
   const [editCompany, setEditCompany] = useState<Company | null>(null);
+  const [deleteCompany, setDeleteCompany] = useState<Company | null>(null);
   const [saving,      setSaving]      = useState(false);
 
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -285,9 +294,9 @@ export default function CompaniesPage() {
   }, [editCompany, load]);
 
   const handleDelete = useCallback(async (c: Company) => {
-    if (!confirm(`Ta bort "${c.name}"?`)) return;
     const res = await fetch(`/api/companies/${c.id}`, { method: 'DELETE' });
     if (!res.ok) { setError('Kunde inte ta bort företaget'); return; }
+    setDeleteCompany(null);
     void load();
   }, [load]);
 
@@ -380,20 +389,58 @@ export default function CompaniesPage() {
                 key={c.id}
                 company={c}
                 onEdit={openEdit}
-                onDelete={handleDelete}
+                onDelete={setDeleteCompany}
               />
             ))}
           </div>
         )}
       </div>
 
-      <CompanyModal
-        open={modalOpen}
-        company={editCompany}
-        onClose={closeModal}
-        onSave={handleSave}
-        saving={saving}
-      />
+      {modalOpen && (
+        <CompanyModal
+          key={editCompany?.id ?? 'new-company'}
+          open={modalOpen}
+          company={editCompany}
+          onClose={closeModal}
+          onSave={handleSave}
+          saving={saving}
+        />
+      )}
+
+      <Dialog open={Boolean(deleteCompany)} onOpenChange={(open) => { if (!open) setDeleteCompany(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ta bort företag?</DialogTitle>
+            <DialogDescription>
+              Företaget tas bort från registret och kan inte återställas automatiskt.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteCompany && (
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+              <p className="font-medium text-[var(--text-primary)]">{deleteCompany.name}</p>
+              {deleteCompany.orgNumber && <p className="mt-1">Org.nr: {deleteCompany.orgNumber}</p>}
+            </div>
+          )}
+
+          <DialogFooter className="mt-2">
+            <button
+              type="button"
+              onClick={() => setDeleteCompany(null)}
+              className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)]"
+            >
+              Avbryt
+            </button>
+            <button
+              type="button"
+              onClick={() => { if (deleteCompany) void handleDelete(deleteCompany); }}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+            >
+              Ta bort
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
