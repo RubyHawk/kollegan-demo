@@ -64,9 +64,9 @@ export function hashOpaqueToken(raw: string): string {
 
 const MFA_CHALLENGE_TTL = '5m';
 
-export async function signMfaChallengeToken(userId: string): Promise<string> {
+export async function signMfaChallengeToken(userId: string, rememberMe?: boolean): Promise<string> {
   const jti = randomJti();
-  return new SignJWT({ sub: userId, type: 'mfa_challenge', roles: [], aud: 'mfa', orgId: null, userType: 'staff' } as Record<string, unknown>)
+  return new SignJWT({ sub: userId, type: 'mfa_challenge', roles: [], aud: 'mfa', orgId: null, userType: 'staff', rememberMe: rememberMe ?? false } as Record<string, unknown>)
     .setProtectedHeader({ alg: ALGORITHM })
     .setIssuedAt()
     .setExpirationTime(MFA_CHALLENGE_TTL)
@@ -74,13 +74,13 @@ export async function signMfaChallengeToken(userId: string): Promise<string> {
     .sign(SECRET_KEY);
 }
 
-export async function verifyMfaChallengeToken(token: string): Promise<{ userId: string }> {
+export async function verifyMfaChallengeToken(token: string): Promise<{ userId: string; rememberMe: boolean }> {
   const { payload } = await jwtVerify(token, SECRET_KEY, { algorithms: [ALGORITHM] });
-  const p = payload as JWTPayload;
+  const p = payload as JWTPayload & { rememberMe?: boolean };
   if (p.type !== 'mfa_challenge') {
     throw new Error('Invalid token type');
   }
-  return { userId: p.sub };
+  return { userId: p.sub, rememberMe: p.rememberMe ?? false };
 }
 
 // ─── Token signing ─────────────────────────────────────────────────────────────
@@ -188,7 +188,10 @@ export async function isUserBlacklisted(userId: string, issuedAt: number): Promi
     const { redis } = await import('@platform/cache/redis');
     const value = await redis.get(`blacklist:user:${userId}`);
     if (value === null) return false;
-    return issuedAt <= parseInt(value, 10);
+    // Strict less-than: tokens issued AT the exact revocation second are valid.
+    // Using <= would block tokens issued in the same second as the logout,
+    // preventing immediate re-login after sign-out.
+    return issuedAt < parseInt(value, 10);
   } catch {
     return false; // fail open — same rationale as isTokenBlacklisted
   }

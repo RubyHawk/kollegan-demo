@@ -23,6 +23,7 @@ import { identityService } from '@modules/supporting/identity';
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const REFRESH_TTL_SEC_STAFF    = 60 * 60 * 24 * 7;
+const REFRESH_TTL_SEC_STAFF_REMEMBER = 60 * 60 * 24 * 30;
 const REFRESH_TTL_SEC_CUSTOMER = 60 * 60 * 24 * 30;
 const MFA_CHALLENGE_TTL_SEC    = 60 * 5;
 const ACCESS_TTL_SEC           = 60 * 15;
@@ -54,6 +55,7 @@ function problemJson(type: string, title: string, status: number, detail?: strin
 const LoginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+  rememberMe: z.boolean().optional(),
 });
 
 export async function handleLogin(req: NextRequest): Promise<NextResponse> {
@@ -79,13 +81,13 @@ export async function handleLogin(req: NextRequest): Promise<NextResponse> {
     return problemJson('bad-request', 'Bad Request', 400, 'Invalid email or password format');
   }
 
-  const { email, password } = parsed.data;
+  const { email, password, rememberMe } = parsed.data;
   const userAgent = req.headers.get('user-agent') ?? undefined;
   const ipAddress = ip !== 'unknown' ? ip : undefined;
 
   let outcome;
   try {
-    outcome = await login({ email, password, ipAddress, userAgent });
+    outcome = await login({ email, password, ipAddress, userAgent, rememberMe });
   } catch (err: unknown) {
     const code = (err as { code?: string }).code;
 
@@ -110,7 +112,7 @@ export async function handleLogin(req: NextRequest): Promise<NextResponse> {
   }
 
   if ('status' in outcome && outcome.status === 'mfa_required') {
-    const challengeToken = await signMfaChallengeToken(outcome.userId);
+    const challengeToken = await signMfaChallengeToken(outcome.userId, rememberMe);
     const res = NextResponse.json({ data: { status: 'mfa_required', methods: outcome.methods } }, { status: 202 });
     res.cookies.set('mfa_challenge', challengeToken, { ...sharedCookieOpts, maxAge: MFA_CHALLENGE_TTL_SEC });
     return res;
@@ -130,7 +132,9 @@ export async function handleLogin(req: NextRequest): Promise<NextResponse> {
 
   const isCustomer = loginResult.user.userType === 'customer';
   const cookieName = isCustomer ? 'portal_token' : 'token';
-  const ttlSec     = isCustomer ? REFRESH_TTL_SEC_CUSTOMER : REFRESH_TTL_SEC_STAFF;
+  const ttlSec     = isCustomer
+    ? REFRESH_TTL_SEC_CUSTOMER
+    : (rememberMe ? REFRESH_TTL_SEC_STAFF_REMEMBER : REFRESH_TTL_SEC_STAFF);
 
   const res = NextResponse.json({
     data: {
