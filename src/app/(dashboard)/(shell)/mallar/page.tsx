@@ -155,7 +155,7 @@ export default function TemplatesPage() {
           <p className="text-sm text-[var(--text-muted)]">Laddar mallar…</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+        <div className="rounded-2xl border border-[var(--border)] overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.07)]">
           <table className="min-w-full divide-y divide-[var(--border)] text-sm">
             <thead className="bg-[var(--surface-alt)]">
               <tr>
@@ -241,18 +241,32 @@ export default function TemplatesPage() {
               {templates.length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-4 py-16 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                          <polyline points="14,2 14,8 20,8"/>
-                          <line x1="16" y1="13" x2="8" y2="13"/>
-                          <line x1="16" y1="17" x2="8" y2="17"/>
-                          <polyline points="10,9 9,9 8,9"/>
-                        </svg>
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="relative">
+                        <span className="absolute inset-0 rounded-2xl animate-[empty-state-ring_2.4s_ease-in-out_infinite]" style={{ background: 'var(--accent-subtle)' }} />
+                        <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14,2 14,8 20,8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                          </svg>
+                        </div>
                       </div>
-                      <p className="text-sm font-medium text-[var(--text-primary)]">Inga mallar ännu</p>
-                      <p className="text-xs text-[var(--text-muted)]">Klicka på &ldquo;Ny mall&rdquo; för att skapa din första offertmall.</p>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">Inga mallar ännu</p>
+                        <p className="text-xs text-[var(--text-muted)]">Skapa din första offertmall för att snabba upp ditt arbetsflöde.</p>
+                      </div>
+                      <button
+                        onClick={() => router.push('/mallar/ny')}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all shadow-md"
+                        style={{ boxShadow: '0 4px 12px var(--accent-subtle)' }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                        Skapa första mallen
+                      </button>
                     </div>
                   </td>
                 </tr>

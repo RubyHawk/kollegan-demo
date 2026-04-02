@@ -44,6 +44,18 @@
   animation: splash-icon-pulse 2s ease-in-out infinite;
 }
 
+/* ───── Empty state ring pulse ───── */
+@keyframes empty-state-ring {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.12;
+    transform: scale(1.18);
+  }
+}
+
 /* ───── Fade-in-up (stat cards, general entrance) ───── */
 @keyframes fade-in-up {
   0% {

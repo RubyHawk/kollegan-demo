@@ -8,9 +8,10 @@
  *  - Staggered Framer Motion entrance (spring physics, no layout jank)
  *  - Inline SVG charts: donut (status mix) + bar (monthly trend)
  *  - Color system uses design tokens exclusively (light/dark/theme aware)
+ *  - Real-time clock displayed near the greeting header
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, useMotionValue, animate } from 'framer-motion';
 import Link from 'next/link';
 
@@ -71,20 +72,54 @@ const fadeIn = {
 // ─── Status metadata ──────────────────────────────────────────────────────────
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  draft:    { label: 'Utkast',    color: 'var(--status-draft-text)',    bg: 'var(--status-draft-bg)'    },
-  sent:     { label: 'Skickad',   color: 'var(--status-sent-text)',     bg: 'var(--status-sent-bg)'     },
-  viewed:   { label: 'Visad',     color: 'var(--status-viewed-text)',   bg: 'var(--status-viewed-bg)'   },
-  accepted: { label: 'Accepterad',color: 'var(--status-accepted-text)', bg: 'var(--status-accepted-bg)' },
-  declined: { label: 'Avvisad',   color: 'var(--status-declined-text)', bg: 'var(--status-declined-bg)' },
-  expired:  { label: 'Utgången',  color: 'var(--status-expired-text)',  bg: 'var(--status-expired-bg)'  },
+  draft:    { label: 'Utkast',     color: 'var(--status-draft-text)',    bg: 'var(--status-draft-bg)'    },
+  sent:     { label: 'Skickad',    color: 'var(--status-sent-text)',     bg: 'var(--status-sent-bg)'     },
+  viewed:   { label: 'Visad',      color: 'var(--status-viewed-text)',   bg: 'var(--status-viewed-bg)'   },
+  accepted: { label: 'Accepterad', color: 'var(--status-accepted-text)', bg: 'var(--status-accepted-bg)' },
+  declined: { label: 'Avvisad',    color: 'var(--status-declined-text)', bg: 'var(--status-declined-bg)' },
+  expired:  { label: 'Utgången',   color: 'var(--status-expired-text)',  bg: 'var(--status-expired-bg)'  },
 };
+
+// ─── Real-time dashboard clock ────────────────────────────────────────────────
+
+function DashboardClock() {
+  const [time, setTime] = useState('');
+
+  useEffect(() => {
+    function tick() {
+      setTime(
+        new Date().toLocaleTimeString('sv-SE', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZone: 'Europe/Stockholm',
+        }),
+      );
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!time) return <div className="w-24 h-7" aria-hidden="true" />;
+
+  return (
+    <span
+      className="font-mono text-[18px] font-semibold tabular-nums leading-none tracking-tight"
+      style={{ color: 'var(--text-primary)' }}
+      aria-label="Aktuell tid"
+    >
+      {time}
+    </span>
+  );
+}
 
 // ─── Animated number counter ──────────────────────────────────────────────────
 
 function Counter({ to, prefix = '', suffix = '', decimals = 0 }: {
   to: number; prefix?: string; suffix?: string; decimals?: number;
 }) {
-  const mv  = useMotionValue(0);
+  const mv = useMotionValue(0);
   const [display, setDisplay] = useState('0');
 
   useEffect(() => {
@@ -167,7 +202,7 @@ function DonutChart({ countMap, total }: { countMap: Record<string, number>; tot
 
       {/* Legend */}
       <div className="w-full space-y-1.5">
-        {statuses.filter(s => (countMap[s] ?? 0) > 0 || true).map((s) => {
+        {statuses.map((s) => {
           const meta  = STATUS_META[s];
           const count = countMap[s] ?? 0;
           const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
@@ -192,25 +227,20 @@ function BarChart({ data }: { data: MonthBucket[] }) {
   useEffect(() => { const t = setTimeout(() => setAnimated(true), 300); return () => clearTimeout(t); }, []);
 
   const maxCount = Math.max(...data.map(d => d.count), 1);
-  const H = 72;
-  const W = 28;
-  const GAP = 8;
+  const H  = 72;
+  const W  = 28;
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-end gap-2" style={{ height: H + 28 }}>
         {data.map((d, i) => {
-          const barH   = animated ? Math.max((d.count / maxCount) * H, d.count > 0 ? 4 : 0) : 0;
-          const accH   = animated ? Math.max((d.accepted / maxCount) * H, d.accepted > 0 ? 3 : 0) : 0;
+          const barH = animated ? Math.max((d.count   / maxCount) * H, d.count   > 0 ? 4 : 0) : 0;
+          const accH = animated ? Math.max((d.accepted / maxCount) * H, d.accepted > 0 ? 3 : 0) : 0;
           return (
             <div key={i} className="flex flex-col items-center gap-1" style={{ width: W }}>
               <div
-                className="relative flex items-end rounded-t-md overflow-hidden"
-                style={{
-                  width: W, height: H,
-                  background: 'var(--surface-2)',
-                  borderRadius: 6,
-                }}
+                className="relative flex items-end overflow-hidden"
+                style={{ width: W, height: H, background: 'var(--surface-2)', borderRadius: 6 }}
                 title={`${d.label}: ${d.count} skapade, ${d.accepted} accepterade`}
               >
                 {/* Total bar */}
@@ -258,23 +288,26 @@ function BarChart({ data }: { data: MonthBucket[] }) {
 // ─── KPI card ─────────────────────────────────────────────────────────────────
 
 function KpiCard({
-  label, value, sub, icon, accent, highlight,
+  label, value, sub, icon, iconBg, iconColor, highlight,
 }: {
   label: string;
   value: React.ReactNode;
   sub?: string;
   icon: React.ReactNode;
-  accent?: string;
+  iconBg?: string;
+  iconColor?: string;
   highlight?: boolean;
 }) {
   return (
     <motion.div
       variants={fadeUp}
-      className={`relative rounded-2xl border bg-[var(--surface-0)] p-5 flex flex-col gap-3 overflow-hidden ${
+      className={[
+        'card-interactive relative rounded-2xl border bg-[var(--surface-0)]',
+        'p-5 flex flex-col gap-3 overflow-hidden',
         highlight
-          ? 'border-[var(--accent)]/30 shadow-[0_0_0_1px_var(--accent-border),0_2px_12px_var(--accent-subtle)]'
-          : 'border-[var(--border)] shadow-[0_1px_4px_rgba(0,0,0,0.06)]'
-      }`}
+          ? 'border-[var(--accent)]/30 shadow-[0_0_0_1px_var(--accent-border),0_4px_16px_var(--accent-subtle)]'
+          : 'border-[var(--border)] shadow-[0_2px_8px_rgba(0,0,0,0.07)]',
+      ].join(' ')}
     >
       {highlight && (
         <div
@@ -284,21 +317,31 @@ function KpiCard({
           }}
         />
       )}
-      {/* Icon */}
+
+      {/* Colored icon container */}
       <div
-        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: accent ? `${accent}1a` : 'var(--surface-2)' }}
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        style={{
+          background: iconBg ?? 'var(--surface-2)',
+          color:      iconColor ?? 'var(--text-muted)',
+        }}
       >
-        <span style={{ color: accent ?? 'var(--text-muted)' }}>{icon}</span>
+        {icon}
       </div>
+
       {/* Value */}
       <div>
-        <p className="text-2xl font-bold tabular-nums tracking-tight"
-          style={{ color: accent ?? 'var(--text-primary)' }}>
+        <p
+          className="text-[28px] font-bold tabular-nums tracking-tight leading-none"
+          style={{ color: iconColor ?? 'var(--text-primary)' }}
+        >
           {value}
         </p>
-        <p className="text-xs font-semibold text-[var(--text-secondary)] mt-0.5 uppercase tracking-wider">{label}</p>
+        <p className="text-[11px] font-semibold text-[var(--text-secondary)] mt-1.5 uppercase tracking-wider">
+          {label}
+        </p>
       </div>
+
       {sub && <p className="text-xs text-[var(--text-muted)] -mt-1">{sub}</p>}
     </motion.div>
   );
@@ -358,17 +401,23 @@ export default function DashboardView({
         animate="show"
         className="flex items-start justify-between gap-4 mb-8"
       >
+        {/* Left: greeting */}
         <motion.div variants={fadeUp} className="flex flex-col gap-0.5">
-          {/* Date chip */}
-          <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-widest mb-1">
-            {dateLabel}
-          </p>
+          {/* Date + clock row */}
+          <div className="flex items-center gap-3 mb-1">
+            <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-widest">
+              {dateLabel}
+            </p>
+            <span className="text-[var(--border)] text-[11px]" aria-hidden="true">·</span>
+            <DashboardClock />
+          </div>
           <h1 className="font-heading text-[26px] font-semibold tracking-tight text-[var(--text-primary)] leading-tight sm:text-[28px]">
             {greetingText}
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-0.5">{greetingSub}</p>
         </motion.div>
 
+        {/* Right: CTA */}
         <motion.div variants={fadeUp}>
           <Link
             href="/offerter/ny"
@@ -390,43 +439,67 @@ export default function DashboardView({
         animate="show"
         className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
       >
+        {/* Pipeline */}
         <KpiCard
           label="Pipeline"
           value={pipelineValue > 0
             ? <Counter to={pipelineValue} suffix=" kr" />
             : <span className="text-[var(--text-muted)]">—</span>}
           sub={`${activePipeline} aktiva offert${activePipeline === 1 ? '' : 'er'}`}
-          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>}
-          accent="var(--status-sent-text)"
+          icon={
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          }
+          iconBg="var(--status-sent-bg)"
+          iconColor="var(--status-sent-text)"
         />
 
+        {/* Accepted value */}
         <KpiCard
           label="Accepterat värde"
           value={acceptedValue > 0
             ? <Counter to={acceptedValue} suffix=" kr" />
             : <span className="text-[var(--text-muted)]">—</span>}
           sub={countMap['accepted'] ? `${countMap['accepted']} affär${countMap['accepted'] === 1 ? '' : 'er'}` : 'Inga ännu'}
-          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-          accent="var(--status-accepted-text)"
+          icon={
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          }
+          iconBg="var(--status-accepted-bg)"
+          iconColor="var(--status-accepted-text)"
           highlight={acceptedValue > 0}
         />
 
+        {/* Win rate */}
         <KpiCard
           label="Vinstgrad"
           value={acceptanceRate !== null
             ? <><Counter to={acceptanceRate} /><span className="text-xl">%</span></>
             : <span className="text-[var(--text-muted)]">—</span>}
           sub={acceptanceRate !== null ? 'Av avslutade offerter' : 'Inga avslutade ännu'}
-          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>}
-          accent={acceptanceRate !== null && acceptanceRate >= 50 ? 'var(--status-accepted-text)' : undefined}
+          icon={
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 20V10M12 20V4M6 20v-6"/>
+            </svg>
+          }
+          iconBg="var(--status-expired-bg)"
+          iconColor="var(--status-expired-text)"
         />
 
+        {/* Expiring soon */}
         <KpiCard
           label="Utgår snart"
           value={<Counter to={expiringSoon} />}
           sub={expiringSoon > 0 ? `Offert${expiringSoon === 1 ? '' : 'er'} inom 7 dagar` : 'Ingenting på gång'}
-          icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-          accent={expiringSoon > 0 ? 'var(--status-declined-text)' : undefined}
+          icon={
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+          }
+          iconBg={expiringSoon > 0 ? 'var(--status-declined-bg)' : 'var(--surface-2)'}
+          iconColor={expiringSoon > 0 ? 'var(--status-declined-text)' : 'var(--text-muted)'}
         />
       </motion.div>
 
@@ -441,13 +514,15 @@ export default function DashboardView({
         {/* ── Recent offers — 3/5 cols ─────────────────────────────────── */}
         <motion.div
           variants={fadeUp}
-          className="lg:col-span-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+          className="lg:col-span-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.07)]"
         >
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
             <div>
               <h2 className="text-sm font-semibold text-[var(--text-primary)]">Senaste offerter</h2>
               <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                {recentOffers.length === 0 ? 'Inga offerter skapade ännu' : `Senast skapade · ${recentOffers.length} visas`}
+                {recentOffers.length === 0
+                  ? 'Inga offerter skapade ännu'
+                  : `Senast skapade · ${recentOffers.length} visas`}
               </p>
             </div>
             <Link href="/offerter" className="text-xs font-medium text-[var(--accent)] hover:underline flex items-center gap-1">
@@ -459,16 +534,55 @@ export default function DashboardView({
           </div>
 
           {recentOffers.length === 0 ? (
-            <motion.div variants={fadeIn} className="flex flex-col items-center justify-center py-16 px-6 text-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-[var(--surface-2)] flex items-center justify-center">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/>
-                </svg>
+            /* ── Empty state ─────────────────────────────────────────── */
+            <motion.div
+              variants={fadeIn}
+              className="flex flex-col items-center justify-center py-16 px-8 text-center gap-5"
+            >
+              <motion.div
+                initial={{ scale: 0.7, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 220, damping: 22, delay: 0.15 }}
+                className="relative"
+              >
+                {/* Outer ring pulse */}
+                <span
+                  className="absolute inset-0 rounded-2xl animate-[empty-state-ring_2.4s_ease-in-out_infinite]"
+                  style={{ background: 'var(--accent-subtle)' }}
+                />
+                <div
+                  className="relative w-16 h-16 rounded-2xl flex items-center justify-center"
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                    stroke="var(--accent)" strokeWidth="1.5"
+                    strokeLinecap="round" strokeLinejoin="round"
+                  >
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                    <rect x="9" y="3" width="6" height="4" rx="1"/>
+                    <path d="M9 12h6M9 16h4"/>
+                  </svg>
+                </div>
+              </motion.div>
+
+              <div className="space-y-1.5">
+                <p className="text-sm font-semibold text-[var(--text-primary)]">Inga offerter än</p>
+                <p className="text-xs text-[var(--text-muted)] max-w-[200px] mx-auto leading-relaxed">
+                  Skapa din första offert och börja vinna affärer.
+                </p>
               </div>
-              <p className="text-sm text-[var(--text-muted)]">Inga offerter än.</p>
-              <Link href="/offerter/ny"
-                className="text-sm font-medium text-[var(--accent)] hover:underline">
-                Skapa din första →
+
+              <Link
+                href="/offerter/ny"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all shadow-md shadow-[var(--accent)]/20"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Skapa första offerten
               </Link>
             </motion.div>
           ) : (
@@ -477,7 +591,7 @@ export default function DashboardView({
                 <motion.div key={offer.id} variants={fadeIn}>
                   <Link
                     href={`/offerter/${offer.id}`}
-                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-[var(--surface-hover)] transition-colors group"
+                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-[var(--surface-hover)] transition-colors duration-200 group"
                   >
                     {/* Offer number */}
                     <span className="text-[11px] font-mono text-[var(--text-muted)] w-8 shrink-0">
@@ -486,7 +600,7 @@ export default function DashboardView({
 
                     {/* Title + recipient */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--text-primary)] truncate group-hover:text-[var(--accent)] transition-colors">
+                      <p className="text-sm font-medium text-[var(--text-primary)] truncate group-hover:text-[var(--accent)] transition-colors duration-200">
                         {offer.title}
                       </p>
                       <p className="text-[11px] text-[var(--text-muted)] truncate mt-0.5">
@@ -519,7 +633,7 @@ export default function DashboardView({
           {/* Status donut */}
           <motion.div
             variants={fadeUp}
-            className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] p-5 shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+            className="card-interactive rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.07)]"
           >
             <div className="mb-4">
               <h2 className="text-sm font-semibold text-[var(--text-primary)]">Statusfördelning</h2>
@@ -531,7 +645,7 @@ export default function DashboardView({
           {/* Monthly trend */}
           <motion.div
             variants={fadeUp}
-            className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] p-5 shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+            className="card-interactive rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.07)]"
           >
             <div className="mb-4">
               <h2 className="text-sm font-semibold text-[var(--text-primary)]">Månadsöversikt</h2>

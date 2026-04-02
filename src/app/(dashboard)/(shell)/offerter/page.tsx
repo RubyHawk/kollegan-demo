@@ -1758,9 +1758,23 @@ export default function OffersPage() {
         {/* Mobile cards */}
         <div className="sm:hidden space-y-3">
           {offers.length === 0 && (
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-12 text-center">
-              <p className="text-sm font-medium text-[var(--text-primary)] mb-1">Inga offerter</p>
-              <p className="text-xs text-[var(--text-muted)]">Klicka på &ldquo;Ny offert&rdquo; för att komma igång.</p>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-4 py-14 text-center shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative">
+                  <span className="absolute inset-0 rounded-2xl animate-[empty-state-ring_2.4s_ease-in-out_infinite]" style={{ background: 'var(--accent-subtle)' }} />
+                  <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                      <rect x="9" y="3" width="6" height="4" rx="1"/>
+                      <path d="M9 12h6M9 16h4"/>
+                    </svg>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">Inga offerter</p>
+                  <p className="text-xs text-[var(--text-muted)]">Skapa din första offert för att komma igång.</p>
+                </div>
+              </div>
             </div>
           )}
           {offers.map((offer) => (
@@ -2016,8 +2030,22 @@ export default function OffersPage() {
                 {offers.length === 0 && (
                   <tr>
                     <td colSpan={8} className="px-4 py-16 text-center">
-                      <p className="text-sm font-medium text-[var(--text-primary)] mb-1">Inga offerter</p>
-                      <p className="text-xs text-[var(--text-muted)]">Klicka på &ldquo;Ny offert&rdquo; för att komma igång.</p>
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="relative">
+                          <span className="absolute inset-0 rounded-2xl animate-[empty-state-ring_2.4s_ease-in-out_infinite]" style={{ background: 'var(--accent-subtle)' }} />
+                          <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                              <rect x="9" y="3" width="6" height="4" rx="1"/>
+                              <path d="M9 12h6M9 16h4"/>
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-[var(--text-primary)]">Inga offerter</p>
+                          <p className="text-xs text-[var(--text-muted)]">Klicka på &ldquo;Ny offert&rdquo; för att komma igång.</p>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 )}
