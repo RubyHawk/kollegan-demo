@@ -36,6 +36,25 @@ type PagePreset = {
 
 const PAGE_PRESETS: PagePreset[] = [
   {
+    key:     'offertsida',
+    label:   'Offertsida',
+    tooltip: 'Strukturerad dokumentmall för klassisk offert',
+    icon:    <FileText size={14} />,
+    body: {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Skriv tilläggsinformation eller en kort introduktion till kunden här.' }],
+        },
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Lägg sedan in anteckningar och juridiska villkor längre ned. Tabell, summering och footer är fasta dokumentblock.' }],
+        },
+      ],
+    },
+  },
+  {
     key:     'omslag',
     label:   'Omslag',
     tooltip: 'Försättsblad med titel, företag och offertinfo',
@@ -372,9 +391,29 @@ export default function BlocksSidebar() {
               key={preset.key}
               label={preset.label}
               icon={preset.icon}
-              chipLabel="sida"
-              chipColor="blue"
-              onClick={() => hf.addPage({ label: preset.label, body: preset.body })}
+              chipLabel={preset.key === 'offertsida' ? 'dokument' : 'sida'}
+              chipColor={preset.key === 'offertsida' ? 'purple' : 'blue'}
+              onClick={() => hf.addPage({
+                label: preset.label,
+                body: preset.body,
+                kind: preset.key === 'offertsida' ? 'document' : 'presentation',
+                document: preset.key === 'offertsida'
+                  ? {
+                      backgroundOpacity: 0.08,
+                      watermarkMode: 'bottom',
+                      showLogo: true,
+                      showSenderDetails: true,
+                      showCustomerBlock: true,
+                      showIntro: true,
+                      showLineItems: true,
+                      showSummary: true,
+                      showNotes: true,
+                      showTerms: true,
+                      showFooter: true,
+                      summaryPlacement: 'right',
+                    }
+                  : undefined,
+              })}
             />
           ))}
         </Section>

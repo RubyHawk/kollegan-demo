@@ -32,10 +32,11 @@ export interface HFCtxValue {
   pages:      PageDoc[];
   activeIdx:  number;
   switchPage: (idx: number) => void;
-  addPage:    (preset?: Partial<Pick<PageDoc, 'label' | 'body'>>) => void;
+  addPage:    (preset?: Partial<PageDoc>) => void;
   removePage: (idx: number) => void;
   renamePage: (idx: number, label: string) => void;
   movePage:   (from: number, to: number) => void;
+  patchActivePage: (p: Partial<PageDoc>) => void;
 
   // ── Active page H/F state ──────────────────────────────────────────────────
   activeHeader: { enabled: boolean; useDefault: boolean };
