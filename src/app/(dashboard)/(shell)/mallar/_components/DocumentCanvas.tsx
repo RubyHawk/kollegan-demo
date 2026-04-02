@@ -37,7 +37,6 @@ export default function DocumentCanvas() {
   const isDocumentPage = activePage?.kind === 'document';
   const documentSettings = activePage?.document;
 
-  // Track whether the editor body is empty to show the onboarding overlay
   const isEmpty = useSyncExternalStore(
     (onStoreChange) => {
       if (!editor) return () => {};
@@ -194,7 +193,7 @@ export default function DocumentCanvas() {
                 >
                   <div className="pointer-events-auto w-full max-w-sm">
                     <p className="text-center text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-4">
-                      Börja med en sektion
+                      
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       {SECTION_PRESETS.map((preset) => (
@@ -214,7 +213,7 @@ export default function DocumentCanvas() {
                       ))}
                     </div>
                     <p className="text-center text-[10px] text-[var(--text-muted)] mt-3">
-                      eller börja skriva direkt på sidan
+                      
                     </p>
                   </div>
                 </div>

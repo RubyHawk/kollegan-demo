@@ -13,6 +13,7 @@
 import { useRef, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
+import { uploadTemplateImage } from './template-image-upload';
 import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
 import {
   File, FileText, Star, CheckSquare, Tag, Buildings, Scales,
@@ -372,13 +373,13 @@ export default function BlocksSidebar() {
 
   if (!editor) return <SidebarShell />;
 
-  function insertImage(file: File) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const src = e.target?.result as string;
+  async function insertImage(file: File) {
+    try {
+      const src = await uploadTemplateImage(file);
       editor!.chain().focus().setImage({ src }).run();
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Kunde inte ladda upp bilden.');
+    }
   }
 
   return (

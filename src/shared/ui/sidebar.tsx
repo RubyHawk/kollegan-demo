@@ -693,9 +693,16 @@ function SidebarFooter({
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return;
 
+    const panelWidth = 224;
+    const viewportPadding = 12;
+    const desiredLeft = rect.right + 10;
+
     setCollapsedPopoverPosition({
-      left: rect.right + 8,
-      top: rect.bottom,
+      left: Math.max(
+        viewportPadding,
+        Math.min(desiredLeft, window.innerWidth - panelWidth - viewportPadding),
+      ),
+      top: rect.top + (rect.height / 2),
     });
   }, []);
 
@@ -796,7 +803,7 @@ function SidebarFooter({
                 style={{
                   left: collapsedPopoverPosition.left,
                   top: collapsedPopoverPosition.top,
-                  transform: 'translateY(-100%)',
+                  transform: 'translateY(-50%)',
                 }}
               >
                 <div className="pointer-events-auto">{popoverPanel}</div>
