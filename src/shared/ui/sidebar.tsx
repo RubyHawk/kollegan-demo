@@ -19,7 +19,7 @@
  *  Sidebar width: CSS transition (no Framer layout reflow)
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createPortal } from 'react-dom';
@@ -676,28 +676,29 @@ function SidebarFooter({
     };
   }, [popoverOpen]);
 
+  const updateCollapsedPopoverPosition = useCallback(() => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    setCollapsedPopoverPosition({
+      left: rect.right + 8,
+      top: rect.bottom,
+    });
+  }, []);
+
   useEffect(() => {
     if (!popoverOpen || !collapsed) return;
 
-    function updateCollapsedPopoverPosition() {
-      const rect = triggerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      setCollapsedPopoverPosition({
-        left: rect.right + 8,
-        top: rect.bottom,
-      });
-    }
-
-    updateCollapsedPopoverPosition();
+    const frame = window.requestAnimationFrame(updateCollapsedPopoverPosition);
     window.addEventListener('resize', updateCollapsedPopoverPosition);
     window.addEventListener('scroll', updateCollapsedPopoverPosition, true);
 
     return () => {
+      window.cancelAnimationFrame(frame);
       window.removeEventListener('resize', updateCollapsedPopoverPosition);
       window.removeEventListener('scroll', updateCollapsedPopoverPosition, true);
     };
-  }, [collapsed, popoverOpen]);
+  }, [collapsed, popoverOpen, updateCollapsedPopoverPosition]);
 
   const popoverPanel = (
     <motion.div
@@ -773,22 +774,25 @@ function SidebarFooter({
     </motion.div>
   );
 
-  const popoverContent =
-    collapsed && popoverOpen && collapsedPopoverPosition
-      ? createPortal(
-          <div
-            className="fixed z-[70] pointer-events-none"
-            style={{
-              left: collapsedPopoverPosition.left,
-              top: collapsedPopoverPosition.top,
-              transform: 'translateY(-100%)',
-            }}
-          >
-            <div className="pointer-events-auto">{popoverPanel}</div>
-          </div>,
-          document.body,
-        )
-      : popoverPanel;
+  const popoverContent = collapsed
+    ? (
+        popoverOpen && collapsedPopoverPosition
+          ? createPortal(
+              <div
+                className="fixed z-[70] pointer-events-none"
+                style={{
+                  left: collapsedPopoverPosition.left,
+                  top: collapsedPopoverPosition.top,
+                  transform: 'translateY(-100%)',
+                }}
+              >
+                <div className="pointer-events-auto">{popoverPanel}</div>
+              </div>,
+              document.body,
+            )
+          : null
+      )
+    : popoverPanel;
 
   // ── Collapsed footer ──────────────────────────────────────────────────────
   if (collapsed) {
@@ -796,7 +800,11 @@ function SidebarFooter({
       <div className="relative py-3 flex flex-col items-center gap-1.5 border-t border-[var(--border)]">
         <button
           ref={triggerRef}
-          onClick={() => setPopoverOpen((v) => !v)}
+          onClick={() => {
+            const nextOpen = !popoverOpen;
+            if (nextOpen) updateCollapsedPopoverPosition();
+            setPopoverOpen(nextOpen);
+          }}
           className="w-9 h-9 rounded-lg hover:bg-[var(--surface-hover)] flex items-center justify-center transition-colors"
         >
           <AvatarBadge user={user} size="sm" />

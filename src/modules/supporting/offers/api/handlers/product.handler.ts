@@ -142,7 +142,8 @@ export const handleDeleteProduct = createHandler(
     const id = extractId(req);
     const payload = await verifyToken(extractToken(req));
     if (!payload.orgId) throw Errors.forbidden('No organization context');
-    const isAdmin = payload.roles.some((r) => ['super_admin', 'admin'].includes(r));
+    const roleNames = payload.roles?.length ? payload.roles : payload.role ? [payload.role] : [];
+    const isAdmin = roleNames.some((r) => ['super_admin', 'admin'].includes(r));
     if (!isAdmin) throw Errors.forbidden('Product deletion requires admin role');
     const deleted = await deleteProduct(id, payload.orgId);
     if (!deleted) throw Errors.notFound('Product not found');
