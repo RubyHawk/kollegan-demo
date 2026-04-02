@@ -5,7 +5,7 @@
  */
 
 // Domain types
-export type { Offer, OfferLineItem, OfferStatus, OfferProduct, Company } from './domain/offer.entity';
+export type { Offer, OfferLineItem, OfferStatus, OfferProduct, ProductCategory, Company } from './domain/offer.entity';
 export type { OfferTemplate, PlaceholderKey }      from './domain/template.entity';
 export { OFFER_PLACEHOLDERS }                       from './domain/template.entity';
 
@@ -34,12 +34,20 @@ export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter } from './app
 // Application use cases — products
 export {
   listProducts,
-  listProductCategories,
   createProduct,
   updateProduct,
   deleteProduct,
 } from './application/products.service';
 export type { CreateProductInput, UpdateProductInput } from './infrastructure/products.repository';
+
+// Application use cases — product categories
+export {
+  listProductCategoryTree,
+  createProductCategory,
+  updateProductCategory,
+  deleteProductCategory,
+} from './application/product-categories.service';
+export type { CreateCategoryInput, UpdateCategoryInput } from './infrastructure/product-categories.repository';
 
 // Application use cases — templates
 export {
@@ -97,11 +105,18 @@ export {
 // ── API Handlers — products ────────────────────────────────────────────────────
 export {
   handleListProducts,
-  handleListProductCategories,
   handleCreateProduct,
   handleUpdateProduct,
   handleDeleteProduct,
 } from './api/handlers/product.handler';
+
+// ── API Handlers — product categories ─────────────────────────────────────────
+export {
+  handleListProductCategories,
+  handleCreateProductCategory,
+  handleUpdateProductCategory,
+  handleDeleteProductCategory,
+} from './api/handlers/product-categories.handler';
 
 // ── API Handlers — companies ───────────────────────────────────────────────────
 export {

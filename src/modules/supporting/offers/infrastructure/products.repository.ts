@@ -12,6 +12,7 @@ export interface CreateProductInput {
   unit?:          string;
   sku?:           string;
   category?:      string;
+  categoryId?:    string | null;
   imageUrl?:      string;
   isActive?:      boolean;
   minQuantity?:   number;
@@ -27,6 +28,7 @@ export interface UpdateProductInput {
   unit?:        string;
   sku?:         string;
   category?:    string;
+  categoryId?:  string | null;
   imageUrl?:    string;
   isActive?:    boolean;
   minQuantity?: number;
@@ -46,6 +48,7 @@ function mapProduct(r: Record<string, unknown>): OfferProduct {
     unit:           (r.unit as string | null) ?? undefined,
     sku:            (r.sku as string | null) ?? undefined,
     category:       (r.category as string | null) ?? undefined,
+    categoryId:     (r.categoryId as string | null) ?? undefined,
     imageUrl:       (r.imageUrl as string | null) ?? undefined,
     isActive:       (r.isActive as boolean) ?? true,
     minQuantity:    (r.minQuantity as number | null) ?? undefined,
@@ -58,7 +61,7 @@ function mapProduct(r: Record<string, unknown>): OfferProduct {
 const PRODUCT_SELECT = {
   id: true, organizationId: true, name: true, description: true,
   unitPrice: true, vatRate: true, unit: true,
-  sku: true, category: true, imageUrl: true, isActive: true,
+  sku: true, category: true, categoryId: true, imageUrl: true, isActive: true,
   minQuantity: true, maxQuantity: true,
   createdBy: true, createdAt: true,
 };
@@ -103,6 +106,7 @@ export const productsRepository = {
         unit:           input.unit ?? null,
         sku:            input.sku ?? null,
         category:       input.category ?? null,
+        categoryId:     input.categoryId ?? null,
         imageUrl:       input.imageUrl ?? null,
         isActive:       input.isActive ?? true,
         minQuantity:    input.minQuantity ?? null,
@@ -127,6 +131,7 @@ export const productsRepository = {
         ...(input.unit        !== undefined ? { unit: input.unit }               : {}),
         ...(input.sku         !== undefined ? { sku: input.sku }                 : {}),
         ...(input.category    !== undefined ? { category: input.category }       : {}),
+        ...(input.categoryId  !== undefined ? { categoryId: input.categoryId }   : {}),
         ...(input.imageUrl    !== undefined ? { imageUrl: input.imageUrl }       : {}),
         ...(input.isActive    !== undefined ? { isActive: input.isActive }       : {}),
         ...(input.minQuantity !== undefined ? { minQuantity: input.minQuantity } : {}),
