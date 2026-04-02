@@ -385,7 +385,7 @@ export default function DashboardSidebar({
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-white/85 truncate leading-tight">
-                Hotell Kollegan
+                Hotell Soleria
               </p>
               <p className="text-[10px] text-[var(--text-muted)] dark:text-white/35 leading-tight">Demo</p>
             </div>

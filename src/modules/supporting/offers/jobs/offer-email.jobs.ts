@@ -13,6 +13,7 @@ import { jobQueue }   from '@platform/queue/job-queue';
 import { prisma }     from '@platform/database/prisma';
 import { logger }     from '@platform/logging/logger';
 import { sanitizeEmailHtml, escapeHtml } from '@platform/security/sanitize';
+import { BRAND_EMAIL_FALLBACK, BRAND_NAME, BRAND_TAGLINE } from '@shared/branding';
 import type {
   SendToRecipientPayload,
   NotifyCreatorPayload,
@@ -20,11 +21,31 @@ import type {
 } from '../application/offer-email';
 
 const TAG = 'OfferEmailJobs';
+const RESEND_ONBOARDING_FROM = process.env.RESEND_ONBOARDING_FROM || 'onboarding@resend.dev';
 
 function getResend(): Resend | null {
   const key = process.env.RESEND_API_KEY;
   if (!key) return null;
   return new Resend(key);
+}
+
+function extractMailbox(from: string): string {
+  const match = from.match(/<([^>]+)>/);
+  return (match ? match[1] : from).trim();
+}
+
+function replaceMailbox(from: string, mailbox: string): string {
+  const match = from.match(/^(.*)<[^>]+>\s*$/);
+  if (!match) return mailbox;
+
+  const displayName = match[1].trim();
+  return displayName ? `${displayName} <${mailbox}>` : mailbox;
+}
+
+function isUnverifiedDomainError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const message = 'message' in error && typeof error.message === 'string' ? error.message.toLowerCase() : '';
+  return message.includes('domain is not verified');
 }
 
 async function sendEmail(opts: { from: string; to: string; subject: string; html: string }): Promise<void> {
@@ -38,12 +59,31 @@ async function sendEmail(opts: { from: string; to: string; subject: string; html
   if (testTo) {
     logger.info(TAG, `[DEV] Redirecting email to test address ${testTo} (original: ${opts.to})`);
   }
-  const { error } = await resend.emails.send(effective);
-  if (error) throw new Error(`Resend error: ${JSON.stringify(error)}`);
+  const firstAttempt = await resend.emails.send(effective);
+  if (!firstAttempt.error) return;
+
+  const currentMailbox = extractMailbox(effective.from).toLowerCase();
+  const canRetryWithOnboarding = isUnverifiedDomainError(firstAttempt.error)
+    && currentMailbox !== RESEND_ONBOARDING_FROM.toLowerCase();
+
+  if (canRetryWithOnboarding) {
+    const fallbackFrom = replaceMailbox(effective.from, RESEND_ONBOARDING_FROM);
+    logger.warn(TAG, 'Resend rejected sender domain, retrying with onboarding sender', {
+      originalFrom: effective.from,
+      fallbackFrom,
+    });
+
+    const fallbackAttempt = await resend.emails.send({ ...effective, from: fallbackFrom });
+    if (!fallbackAttempt.error) return;
+
+    throw new Error(`Resend error: ${JSON.stringify(fallbackAttempt.error)}`);
+  }
+
+  throw new Error(`Resend error: ${JSON.stringify(firstAttempt.error)}`);
 }
 
 function fromAddress(senderEmail?: string, senderName?: string): string {
-  const email = senderEmail || process.env.EMAIL_FROM || 'no-reply@kollegan.ai';
+  const email = senderEmail || process.env.EMAIL_FROM || BRAND_EMAIL_FALLBACK;
   if (senderName) return `${senderName} <${email}>`;
   return email;
 }
@@ -74,10 +114,23 @@ interface EmailDesignConfig {
 }
 
 const DESIGN_DEFAULTS: EmailDesignConfig = {
-  header: { bgColor: '#0f172a', textColor: '#ffffff', accentColor: '#94a3b8', alignment: 'center', showDivider: true },
+  header: {
+    companyName: BRAND_NAME,
+    tagline: BRAND_TAGLINE,
+    bgColor: '#0f172a',
+    textColor: '#ffffff',
+    accentColor: '#94a3b8',
+    alignment: 'center',
+    showDivider: true,
+  },
   body:   { bgColor: '#f1f5f9', contentBgColor: '#ffffff', textColor: '#1e293b', mutedColor: '#64748b', linkColor: '#2563eb' },
   cta:    { bgColor: '#0f172a', textColor: '#ffffff', borderRadius: 8, label: 'Visa & signera offert' },
-  footer: { bgColor: '#0f172a', textColor: '#94a3b8', showSocial: false },
+  footer: {
+    bgColor: '#0f172a',
+    textColor: '#94a3b8',
+    showSocial: false,
+    legalText: `Skickat via ${BRAND_NAME}`,
+  },
 };
 
 function parseDesignConfig(configJson?: string): EmailDesignConfig | null {
@@ -134,8 +187,8 @@ function sendToRecipientHtml(p: SendToRecipientPayload): string {
   const b = d?.body ?? DESIGN_DEFAULTS.body;
   const c = d?.cta ?? DESIGN_DEFAULTS.cta;
 
-  const headerHtml = d ? renderHeader(d.header) : '';
-  const footerHtml = d ? renderFooter(d.footer) : '';
+  const headerHtml = renderHeader((d ?? DESIGN_DEFAULTS).header);
+  const footerHtml = renderFooter((d ?? DESIGN_DEFAULTS).footer);
   const ctaHtml = renderCta(c, p.publicUrl);
   const fallbackLink = `<p style="margin:24px 0 0 0;font-size:12px;color:${b.mutedColor};">Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/><a href="${p.publicUrl}" style="color:${b.mutedColor};">${p.publicUrl}</a></p>`;
 
@@ -200,8 +253,8 @@ function reminderHtml(p: ReminderPayload): string {
   const b = d?.body ?? DESIGN_DEFAULTS.body;
   const c = d?.cta ?? DESIGN_DEFAULTS.cta;
 
-  const headerHtml = d ? renderHeader(d.header) : '';
-  const footerHtml = d ? renderFooter(d.footer) : '';
+  const headerHtml = renderHeader((d ?? DESIGN_DEFAULTS).header);
+  const footerHtml = renderFooter((d ?? DESIGN_DEFAULTS).footer);
   const ctaHtml = renderCta(c, p.publicUrl);
   const fallbackLink = `<p style="margin:24px 0 0 0;font-size:12px;color:${b.mutedColor};">Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/><a href="${p.publicUrl}" style="color:${b.mutedColor};">${p.publicUrl}</a></p>`;
 

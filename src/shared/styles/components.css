@@ -123,7 +123,7 @@ a:focus-visible,
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
-  border: 1px solid rgba(109, 40, 217, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.18);
 }
 .dark .glass-panel {
   background: rgba(255, 255, 255, 0.04);
@@ -162,7 +162,7 @@ a:focus-visible,
   background: var(--accent-subtle) !important;
   border: 1px solid var(--accent-border) !important;
   box-shadow:
-    0 0 14px var(--accent-subtle),
+    0 0 10px color-mix(in srgb, var(--accent-subtle) 75%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 .dark .nav-active {
@@ -182,12 +182,12 @@ body {
     linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px),
     radial-gradient(
       ellipse 80% 40% at 20% -10%,
-      rgba(109, 40, 217, 0.07),
+      rgba(251, 191, 36, 0.05),
       transparent 55%
     ),
     radial-gradient(
       ellipse 60% 40% at 85% 105%,
-      rgba(124, 58, 237, 0.04),
+      rgba(14, 165, 233, 0.035),
       transparent 55%
     );
   background-size:
@@ -215,12 +215,12 @@ body {
     linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px),
     radial-gradient(
       ellipse 80% 40% at 20% -10%,
-      rgba(245, 158, 11, 0.07),
+      rgba(245, 158, 11, 0.06),
       transparent 55%
     ),
     radial-gradient(
       ellipse 60% 40% at 85% 105%,
-      rgba(99, 102, 241, 0.04),
+      rgba(14, 165, 233, 0.03),
       transparent 55%
     );
 }

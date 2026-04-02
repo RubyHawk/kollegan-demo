@@ -19,9 +19,10 @@
  *  Sidebar width: CSS transition (no Framer layout reflow)
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { createPortal } from 'react-dom';
 import {
   motion,
   AnimatePresence,
@@ -46,6 +47,7 @@ import {
 } from '@shared/ui/icons';
 import { SPRING_SNAPPY, SPRING_STANDARD, EASE_SPRING } from '@shared/lib/motion';
 import { cn } from '@shared/lib/utils';
+import { BrandMark } from '@shared/ui/brand';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -551,10 +553,9 @@ function SectionGroup({
 
 interface SidebarHeaderProps {
   collapsed: boolean;
-  onToggleCollapse: () => void;
 }
 
-function SidebarHeader({ collapsed, onToggleCollapse }: SidebarHeaderProps) {
+function SidebarHeader({ collapsed }: SidebarHeaderProps) {
   return (
     <div
       className={cn(
@@ -569,23 +570,7 @@ function SidebarHeader({ collapsed, onToggleCollapse }: SidebarHeaderProps) {
         whileHover={{ scale: 1.04 }}
         transition={SPRING_SNAPPY}
       >
-        <svg
-          width="14" height="14" viewBox="0 0 24 24"
-          fill="none" stroke="white" strokeWidth="1.75"
-          strokeLinecap="round" strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          {/* Soleria sun: circle with cross + rays */}
-          <circle cx="12" cy="12" r="4" />
-          <line x1="12" y1="2"  x2="12" y2="5" />
-          <line x1="12" y1="19" x2="12" y2="22" />
-          <line x1="2"  y1="12" x2="5"  y2="12" />
-          <line x1="19" y1="12" x2="22" y2="12" />
-          <line x1="4.93" y1="4.93"  x2="6.34" y2="6.34" />
-          <line x1="17.66" y1="17.66" x2="19.07" y2="19.07" />
-          <line x1="19.07" y1="4.93"  x2="17.66" y2="6.34" />
-          <line x1="6.34"  y1="17.66" x2="4.93"  y2="19.07" />
-        </svg>
+        <BrandMark size={18} alt="" className="brightness-0 invert" />
       </motion.div>
 
       {/* Wordmark */}
@@ -656,6 +641,7 @@ function SidebarFooter({
   onMobileClose,
 }: SidebarFooterProps) {
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [collapsedPopoverPosition, setCollapsedPopoverPosition] = useState<{ left: number; top: number } | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -690,7 +676,30 @@ function SidebarFooter({
     };
   }, [popoverOpen]);
 
-  const popoverContent = (
+  useEffect(() => {
+    if (!popoverOpen || !collapsed) return;
+
+    function updateCollapsedPopoverPosition() {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      setCollapsedPopoverPosition({
+        left: rect.right + 8,
+        top: rect.bottom,
+      });
+    }
+
+    updateCollapsedPopoverPosition();
+    window.addEventListener('resize', updateCollapsedPopoverPosition);
+    window.addEventListener('scroll', updateCollapsedPopoverPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updateCollapsedPopoverPosition);
+      window.removeEventListener('scroll', updateCollapsedPopoverPosition, true);
+    };
+  }, [collapsed, popoverOpen]);
+
+  const popoverPanel = (
     <motion.div
       ref={popoverRef}
       initial={{ opacity: 0, scale: 0.95, y: 4 }}
@@ -698,8 +707,8 @@ function SidebarFooter({
       exit={{ opacity: 0, scale: 0.95, y: 4 }}
       transition={{ duration: 0.15, ease: EASE_SPRING }}
       className={cn(
-        'absolute z-50 w-56 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-lg shadow-black/8',
-        collapsed ? 'left-full ml-2 bottom-0' : 'bottom-full mb-2 left-0',
+        'z-50 w-56 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-lg shadow-black/8',
+        collapsed ? 'max-w-[calc(100vw-1.5rem)]' : 'absolute bottom-full mb-2 left-0',
       )}
     >
       {/* User info */}
@@ -764,6 +773,23 @@ function SidebarFooter({
     </motion.div>
   );
 
+  const popoverContent =
+    collapsed && popoverOpen && collapsedPopoverPosition
+      ? createPortal(
+          <div
+            className="fixed z-[70] pointer-events-none"
+            style={{
+              left: collapsedPopoverPosition.left,
+              top: collapsedPopoverPosition.top,
+              transform: 'translateY(-100%)',
+            }}
+          >
+            <div className="pointer-events-auto">{popoverPanel}</div>
+          </div>,
+          document.body,
+        )
+      : popoverPanel;
+
   // ── Collapsed footer ──────────────────────────────────────────────────────
   if (collapsed) {
     return (
@@ -823,40 +849,15 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname      = usePathname();
   const reducedMotion = useReducedMotion() ?? false;
-  const [openDropdowns, setOpenDropdowns] = useState<string[]>([]);
-  const [mounted, setMounted]             = useState(false);
-
-  // Defer active-state computation to client to avoid SSR/client pathname mismatch
-  useEffect(() => { setMounted(true); }, []);
-
-  // Restore dropdown state from localStorage
-  useEffect(() => {
+  const [openDropdowns, setOpenDropdowns] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
     try {
       const stored = localStorage.getItem(LS_DROPDOWNS_KEY);
-      if (stored) setOpenDropdowns(JSON.parse(stored) as string[]);
-    } catch { /* ignore */ }
-  }, []);
-
-  // Auto-open dropdown if current route is a child
-  useEffect(() => {
-    const keysToOpen: string[] = [];
-    for (const section of NAV_CONFIG) {
-      for (const entry of section.items) {
-        if (
-          entry.type === 'dropdown' &&
-          entry.items.some(
-            (c) => pathname === c.href || pathname.startsWith(c.href + '/'),
-          )
-        ) {
-          keysToOpen.push(entry.key);
-        }
-      }
+      return stored ? (JSON.parse(stored) as string[]) : [];
+    } catch {
+      return [];
     }
-    if (keysToOpen.length > 0) {
-      setOpenDropdowns((prev) => Array.from(new Set([...prev, ...keysToOpen])));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  });
 
   function toggleDropdown(key: string) {
     setOpenDropdowns((prev) => {
@@ -872,6 +873,15 @@ export default function Sidebar({
   const visibleSections = NAV_CONFIG.filter(
     (s) => !s.adminOnly || user.role === 'admin',
   );
+  const routeOpenDropdowns = NAV_CONFIG.flatMap((section) =>
+    section.items.flatMap((entry) =>
+      entry.type === 'dropdown' &&
+      entry.items.some((c) => pathname === c.href || pathname.startsWith(c.href + '/'))
+        ? [entry.key]
+        : [],
+    ),
+  );
+  const activeOpenDropdowns = Array.from(new Set([...openDropdowns, ...routeOpenDropdowns]));
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -900,7 +910,7 @@ export default function Sidebar({
 
         {/* Sidebar panel */}
         <aside className="h-full w-full flex flex-col glass-sidebar border-r border-[var(--border)] overflow-hidden">
-          <SidebarHeader collapsed={collapsed} onToggleCollapse={onToggleCollapse} />
+          <SidebarHeader collapsed={collapsed} />
 
           {/* Scrollable nav */}
           <div
@@ -914,9 +924,9 @@ export default function Sidebar({
                 key={section.section}
                 section={section}
                 collapsed={collapsed}
-                openDropdowns={openDropdowns}
+                openDropdowns={activeOpenDropdowns}
                 onToggleDropdown={toggleDropdown}
-                pathname={mounted ? pathname : ''}
+                pathname={pathname}
                 userRole={user.role}
                 reducedMotion={reducedMotion}
                 onMobileClose={onMobileClose}

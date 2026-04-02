@@ -2,6 +2,7 @@
 
 import { useState, FormEvent, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { BrandLockup, BrandScene } from '@shared/ui/brand';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -174,19 +175,16 @@ function LoginForm() {
     <div className="min-h-screen flex bg-(--page-bg)">
 
       {/* ── Left decorative panel (desktop only) ── */}
-      <div className="hidden lg:flex lg:w-[420px] lg:shrink-0 relative overflow-hidden bg-[var(--accent)] flex-col items-start justify-between p-10">
-        {/* Dot grid overlay */}
-        <div className="absolute inset-0 opacity-15" style={{
-          backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
-        }} />
+      <div className="hidden lg:flex lg:w-[420px] lg:shrink-0 relative overflow-hidden bg-[#d5effd] flex-col items-start justify-between p-10">
+        <BrandScene className="absolute inset-0" priority />
+        <div className="absolute inset-0 bg-linear-to-b from-[#d5effd]/10 via-transparent to-[#13223d]/25" />
         {/* Content */}
-        <div className="relative z-10 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-            <img src="/soleria-logo.svg" alt="" className="w-5 h-5 object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-          </div>
-          <span className="text-white font-semibold text-lg tracking-tight">Soleria</span>
-        </div>
+        <BrandLockup
+          size={32}
+          priority
+          className="relative z-10"
+          textClassName="text-white text-lg"
+        />
 
         <div className="relative z-10">
           <p className="text-white/90 text-2xl font-semibold leading-snug mb-3">
@@ -206,12 +204,13 @@ function LoginForm() {
       {/* ── Right: form ── */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         {/* Mobile logo */}
-        <div className="flex lg:hidden flex-col items-center gap-2 mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-[var(--accent)] flex items-center justify-center shadow-lg">
-            <img src="/soleria-logo.svg" alt="Soleria" className="w-7 h-7 object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-          </div>
-          <span className="font-semibold text-xl text-(--text-primary) tracking-tight">Soleria</span>
-        </div>
+        <BrandLockup
+          size={48}
+          priority
+          align="center"
+          className="flex lg:hidden flex-col items-center gap-2 mb-8"
+          textClassName="text-xl text-(--text-primary)"
+        />
 
         <div className="w-full max-w-sm">
 

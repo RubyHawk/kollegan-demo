@@ -25,6 +25,7 @@ import {
   ShieldIcon,
   TrashIcon,
 } from '@shared/ui/icons';
+import { BrandMark } from '@shared/ui/brand';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -541,7 +542,7 @@ export default function PublicOfferPage() {
           {/* Left: title + recipient */}
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-              <FileTextIcon size={14} className="text-slate-500" />
+              <BrandMark size={18} alt="" />
             </div>
             <div className="min-w-0">
               <h1 className="truncate text-sm font-semibold leading-tight text-slate-900">{offer.title}</h1>
@@ -556,7 +557,7 @@ export default function PublicOfferPage() {
             <div className="hidden sm:flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
               <span className="text-sm font-bold tabular-nums text-slate-900">{fmtSEK(offer.totalIncVat)}</span>
               <span className="h-3.5 w-px bg-slate-300" />
-              <span className="text-[11px] text-slate-400">Giltig till {fmtDate(offer.validUntil)}</span>
+              <span className="text-[12px] text-slate-500">Giltig till {fmtDate(offer.validUntil)}</span>
             </div>
             {/* Mobile price pill */}
             <div className="flex sm:hidden items-center rounded-md bg-slate-900 px-2.5 py-1">
@@ -642,7 +643,8 @@ export default function PublicOfferPage() {
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-slate-900">Godkännande och underskrift</h2>
-                      <p className="text-[12px] text-slate-400">Underteckna för att bekräfta offerten</p>
+                      <p className="text-[13px] text-slate-500">Underteckna för att bekräfta offerten.</p>
+                      <p className="mt-1 text-[12px] text-slate-500">Vi sparar namn, datum och signatur tillsammans med offerten för tydlig uppföljning.</p>
                     </div>
                   </div>
                   <div className="shrink-0 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-right sm:px-4 sm:py-2">
@@ -884,13 +886,13 @@ export default function PublicOfferPage() {
 
         {/* Mobile validity strip */}
         <div className="flex sm:hidden items-center justify-center gap-1.5 mt-4 px-4">
-          <CalendarIcon size={11} className="text-slate-400" />
-          <p className="text-[11px] text-slate-400">Giltig till {fmtDate(offer.validUntil)}</p>
+          <CalendarIcon size={11} className="text-slate-500" />
+          <p className="text-[12px] text-slate-600">Giltig till {fmtDate(offer.validUntil)}</p>
         </div>
 
         {/* Footer */}
-        <p className="mt-6 px-4 text-center text-[11px] text-slate-300">
-          Elektronisk signering · {offer?.recipientEmail}
+        <p className="mt-6 px-4 text-center text-[12px] text-slate-500">
+          Soleria offertportal · {offer?.recipientEmail}
         </p>
         </div>
       </main>

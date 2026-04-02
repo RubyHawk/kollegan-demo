@@ -14,12 +14,12 @@
  */
 
 const BASE_URL = process.env.NEXTJS_PUBLIC_URL ?? 'http://localhost:3001';
-const PROBLEM_BASE = 'https://docs.kollegan.ai/problems';
+const PROBLEM_BASE = BRAND_PROBLEM_BASE;
 
 export const openApiSpec = {
   openapi: '3.1.0',
   info: {
-    title:       'Kollegan Agentic Platform — AI Tool API',
+    title:       `${BRAND_NAME} Agentic Platform — AI Tool API`,
     description: [
       'REST API for AI-driven automation, voice agents, and workflow orchestration.',
       '',
@@ -33,11 +33,11 @@ export const openApiSpec = {
       'Error responses include `retryable` and `retryAfter` to guide agent retry behaviour.',
       '',
       '## Versioning',
-      'The active API version is `2025-11-01`. Specify `Kollegan-Version: YYYY-MM-DD` to pin a version.',
+      'The active API version is `2025-11-01`. Specify `Soleria-Version: YYYY-MM-DD` to pin a version.',
       'The version used is echoed in every response `meta.version` field.',
     ].join('\n'),
     version: '2025-11-01',
-    contact: { name: 'Kollegan Platform Team' },
+    contact: { name: `${BRAND_NAME} Platform Team` },
   },
   servers: [
     { url: BASE_URL, description: 'Active deployment' },
@@ -175,7 +175,7 @@ export const openApiSpec = {
         headers: {
           'WWW-Authenticate': {
             schema: { type: 'string' },
-            description: 'RFC 9110 §15.5.2 REQUIRED. Authentication challenge. E.g. "Bearer realm=\\"api.kollegan.ai\\""',
+        description: `RFC 9110 §15.5.2 REQUIRED. Authentication challenge. E.g. "Bearer realm=\\"${BRAND_API_REALM}\\""`,
           },
         },
         content: { 'application/problem+json': { schema: { '$ref': '#/components/schemas/Problem' } } },
@@ -553,3 +553,4 @@ export const openApiSpec = {
     { name: 'Transcripts',  description: 'Call transcript lifecycle' },
   ],
 } as const;
+import { BRAND_API_REALM, BRAND_NAME, BRAND_PROBLEM_BASE } from '@shared/branding';

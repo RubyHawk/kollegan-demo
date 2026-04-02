@@ -1,7 +1,7 @@
 import { getSessionUser } from '@platform/auth/session';
 import { prisma } from '@platform/database/prisma';
 import DashboardView from './_components/DashboardView';
-import type { RecentOffer, MonthBucket } from './_components/DashboardView';
+import type { OfferActivityPoint, RecentOffer } from './_components/DashboardView';
 
 // ─── Swedish-timezone greeting ────────────────────────────────────────────────
 
@@ -53,13 +53,7 @@ function makeDateLabel() {
 // ─── Data layer ───────────────────────────────────────────────────────────────
 
 async function getDashboardData(orgId: string) {
-  // How far back for monthly chart
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-  sixMonthsAgo.setDate(1);
-  sixMonthsAgo.setHours(0, 0, 0, 0);
-
-  const [counts, recentRaw, valueRows, monthlyRaw] = await Promise.all([
+  const [counts, recentRaw, valueRows, activityRaw] = await Promise.all([
     prisma.offer.groupBy({
       by: ['status'],
       where: { organizationId: orgId, deletedAt: null },
@@ -84,7 +78,7 @@ async function getDashboardData(orgId: string) {
     }),
 
     prisma.offer.findMany({
-      where: { organizationId: orgId, deletedAt: null, createdAt: { gte: sixMonthsAgo } },
+      where: { organizationId: orgId, deletedAt: null },
       select: { createdAt: true, status: true },
     }),
   ]);
@@ -109,27 +103,6 @@ async function getDashboardData(orgId: string) {
     where: { organizationId: orgId, deletedAt: null, status: { in: ['sent', 'viewed'] }, validUntil: { lte: in7days } },
   });
 
-  // Build 6-month buckets
-  const now = new Date();
-  const monthlyData: MonthBucket[] = Array.from({ length: 6 }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-    return {
-      label: d.toLocaleDateString('sv-SE', { month: 'short', timeZone: 'Europe/Stockholm' }),
-      count: 0,
-      accepted: 0,
-    };
-  });
-
-  for (const o of monthlyRaw) {
-    const d         = new Date(o.createdAt);
-    const monthsAgo = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
-    const idx       = 5 - monthsAgo;
-    if (idx >= 0 && idx <= 5) {
-      monthlyData[idx].count++;
-      if (o.status === 'accepted') monthlyData[idx].accepted++;
-    }
-  }
-
   // Serialize for client (Decimal → number, Date → string)
   const recentOffers: RecentOffer[] = recentRaw.map(o => ({
     id:               o.id,
@@ -143,7 +116,12 @@ async function getDashboardData(orgId: string) {
     validUntil:       o.validUntil?.toISOString() ?? null,
   }));
 
-  return { countMap, total, recentOffers, acceptedValue, pipelineValue, acceptanceRate, expiringSoon, monthlyData };
+  const activityData: OfferActivityPoint[] = activityRaw.map((offer) => ({
+    createdAt: offer.createdAt.toISOString(),
+    status: offer.status,
+  }));
+
+  return { countMap, total, recentOffers, acceptedValue, pipelineValue, acceptanceRate, expiringSoon, activityData };
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

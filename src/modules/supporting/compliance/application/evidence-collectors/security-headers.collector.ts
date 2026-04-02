@@ -17,7 +17,7 @@ export async function securityHeadersCollector(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
   const targetUrl = `${appUrl}/api/health`;
 
-  let present: Record<string, string | null> = {};
+  const present: Record<string, string | null> = {};
   let fetchError: string | null = null;
 
   try {

@@ -10,6 +10,7 @@ import { generateSecret, verify as totpVerify, generateURI } from 'otplib';
 import qrcode from 'qrcode';
 import { prisma } from '@platform/database/prisma';
 import { logger } from '@platform/logging/logger';
+import { BRAND_NAME } from '@shared/branding';
 
 const TAG = 'MfaService';
 const BACKUP_CODE_COUNT = 10;
@@ -41,7 +42,7 @@ export async function generateTotpSetup(userId: string, userEmail: string): Prom
   });
 
   const otpAuthUrl = generateURI({
-    issuer: 'Kollegan',
+    issuer: BRAND_NAME,
     label: userEmail,
     secret,
   });

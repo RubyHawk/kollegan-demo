@@ -10,6 +10,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { cn } from '@shared/lib/utils';
 import type { OfferProduct } from '@modules/supporting/offers';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@shared/ui/dialog';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -29,6 +37,22 @@ const EMPTY_FORM: ProductForm = {
   name: '', description: '', unitPrice: '', vatRate: '0.25',
   unit: '', sku: '', category: '', imageUrl: '', isActive: true,
 };
+
+function formFromProduct(product: OfferProduct | null): ProductForm {
+  if (!product) return EMPTY_FORM;
+
+  return {
+    name:        product.name,
+    description: product.description ?? '',
+    unitPrice:   String(product.unitPrice),
+    vatRate:     String(product.vatRate),
+    unit:        product.unit ?? '',
+    sku:         product.sku ?? '',
+    category:    product.category ?? '',
+    imageUrl:    product.imageUrl ?? '',
+    isActive:    product.isActive,
+  };
+}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -155,23 +179,7 @@ function ProductModal({
   onSave:     (form: ProductForm) => void;
   saving:     boolean;
 }) {
-  const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
-
-  useEffect(() => {
-    if (open) {
-      setForm(product ? {
-        name:        product.name,
-        description: product.description ?? '',
-        unitPrice:   String(product.unitPrice),
-        vatRate:     String(product.vatRate),
-        unit:        product.unit ?? '',
-        sku:         product.sku ?? '',
-        category:    product.category ?? '',
-        imageUrl:    product.imageUrl ?? '',
-        isActive:    product.isActive,
-      } : EMPTY_FORM);
-    }
-  }, [open, product]);
+  const [form, setForm] = useState<ProductForm>(() => formFromProduct(product));
 
   if (!open) return null;
 
@@ -313,6 +321,7 @@ export default function ProductsPage() {
 
   const [modalOpen,    setModalOpen]    = useState(false);
   const [editProduct,  setEditProduct]  = useState<OfferProduct | null>(null);
+  const [deleteProduct, setDeleteProduct] = useState<OfferProduct | null>(null);
   const [saving,       setSaving]       = useState(false);
 
   // ── Load all products once ──────────────────────────────────────────────────
@@ -424,8 +433,8 @@ export default function ProductsPage() {
   }, [loadProducts]);
 
   const handleDelete = useCallback(async (p: OfferProduct) => {
-    if (!confirm(`Ta bort "${p.name}"?`)) return;
     await fetch(`/api/offers/products/${p.id}`, { method: 'DELETE' });
+    setDeleteProduct(null);
     void loadProducts();
   }, [loadProducts]);
 
@@ -627,25 +636,63 @@ export default function ProductsPage() {
               {filtered.map((p) => (
                 <ProductRow
                   key={p.id}
-                  product={p}
-                  onEdit={openEdit}
-                  onToggleActive={handleToggleActive}
-                  onDelete={handleDelete}
-                />
+                    product={p}
+                    onEdit={openEdit}
+                    onToggleActive={handleToggleActive}
+                    onDelete={setDeleteProduct}
+                  />
               ))}
             </div>
           )}
         </div>
       </div>
 
-      <ProductModal
-        open={modalOpen}
-        product={editProduct}
-        categories={categories}
-        onClose={closeModal}
-        onSave={handleSave}
-        saving={saving}
-      />
+      {modalOpen && (
+        <ProductModal
+          key={editProduct?.id ?? 'new-product'}
+          open={modalOpen}
+          product={editProduct}
+          categories={categories}
+          onClose={closeModal}
+          onSave={handleSave}
+          saving={saving}
+        />
+      )}
+
+      <Dialog open={Boolean(deleteProduct)} onOpenChange={(open) => { if (!open) setDeleteProduct(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ta bort produkt?</DialogTitle>
+            <DialogDescription>
+              Produkten tas bort från biblioteket och kan inte återställas automatiskt.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteProduct && (
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+              <p className="font-medium text-[var(--text-primary)]">{deleteProduct.name}</p>
+              {deleteProduct.category && <p className="mt-1">Kategori: {deleteProduct.category}</p>}
+            </div>
+          )}
+
+          <DialogFooter className="mt-2">
+            <button
+              type="button"
+              onClick={() => setDeleteProduct(null)}
+              className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)]"
+            >
+              Avbryt
+            </button>
+            <button
+              type="button"
+              onClick={() => { if (deleteProduct) void handleDelete(deleteProduct); }}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+            >
+              Ta bort
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

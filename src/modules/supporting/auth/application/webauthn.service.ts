@@ -20,12 +20,18 @@ import {
 } from '@simplewebauthn/server';
 import { logger } from '@platform/logging/logger';
 import { webAuthnRepository } from '../infrastructure/webauthn.repository';
+import { BRAND_DEFAULT_PUBLIC_ORIGIN, BRAND_NAME } from '@shared/branding';
 
 const TAG = 'WebAuthnService';
 
-const RP_ID   = 'kollegan.dev';
-const RP_NAME = 'Kollegan';
-const ORIGIN  = 'https://kollegan.dev';
+const ORIGIN = process.env.WEBAUTHN_ORIGIN
+  || process.env.APP_URL
+  || process.env.NEXT_PUBLIC_APP_URL
+  || (process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3000'
+    : BRAND_DEFAULT_PUBLIC_ORIGIN);
+const RP_ID = process.env.WEBAUTHN_RP_ID || new URL(ORIGIN).hostname;
+const RP_NAME = process.env.WEBAUTHN_RP_NAME || BRAND_NAME;
 
 const CHALLENGE_TTL_SEC = 300;
 

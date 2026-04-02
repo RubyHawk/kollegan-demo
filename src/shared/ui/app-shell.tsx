@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@shared/ui/sidebar';
 import { MenuIcon, ChevronRightIcon } from '@shared/ui/icons';
 import { SearchTrigger } from '@shared/ui/search-command';
+import { BrandLockup } from '@shared/ui/brand';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -66,11 +67,10 @@ export default function AppShell({ user, children }: Props) {
   const pathname    = usePathname();
   const router      = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed,  setCollapsed]  = useState(false);
-
-  useEffect(() => {
-    if (localStorage.getItem(LS_KEY) === 'true') setCollapsed(true);
-  }, []);
+  const [collapsed,  setCollapsed]  = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(LS_KEY) === 'true';
+  });
 
   function toggleCollapse() {
     const next = !collapsed;
@@ -157,7 +157,7 @@ export default function AppShell({ user, children }: Props) {
           >
             <MenuIcon size={18} />
           </button>
-          <span className="font-heading text-sm font-semibold text-[var(--text-primary)]">Soleria</span>
+          <BrandLockup size={22} className="gap-2" textClassName="font-heading text-sm text-[var(--text-primary)]" />
         </div>
 
         {/* Desktop topbar with breadcrumbs */}

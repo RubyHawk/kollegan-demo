@@ -1,27 +1,33 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { SunIcon, MoonIcon } from '@shared/ui/icons';
 
 export default function ThemeToggle({ className }: { className?: string }) {
-  const [dark, setDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const dark = useSyncExternalStore(
+    (onStoreChange) => {
+      if (typeof window === 'undefined') return () => {};
 
-  useEffect(() => {
-    setMounted(true);
-    setDark(document.documentElement.classList.contains('dark'));
-  }, []);
+      const observer = new MutationObserver(() => onStoreChange());
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
+
+      return () => observer.disconnect();
+    },
+    () => {
+      if (typeof window === 'undefined') return false;
+      return document.documentElement.classList.contains('dark');
+    },
+    () => false,
+  );
 
   const toggle = () => {
     const next = !dark;
-    setDark(next);
     document.documentElement.classList.toggle('dark', next);
     localStorage.setItem('theme', next ? 'dark' : 'light');
   };
-
-  if (!mounted) {
-    return <div className="w-9 h-9" />;
-  }
 
   return (
     <button

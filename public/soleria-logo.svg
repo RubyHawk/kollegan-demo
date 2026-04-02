@@ -1,18 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
-  <!-- Soleria placeholder logo: sun with circular window -->
-  <circle cx="60" cy="60" r="22" fill="#1a6fc4" stroke="#0d3d6e" stroke-width="3"/>
-  <!-- Cross/window panes -->
-  <line x1="60" y1="38" x2="60" y2="82" stroke="white" stroke-width="3" stroke-linecap="round"/>
-  <line x1="38" y1="60" x2="82" y2="60" stroke="white" stroke-width="3" stroke-linecap="round"/>
-  <!-- Outer ring -->
-  <circle cx="60" cy="60" r="28" stroke="#0d3d6e" stroke-width="4" fill="none"/>
-  <!-- Sun rays -->
-  <line x1="60" y1="16" x2="60" y2="24" stroke="#0d3d6e" stroke-width="3.5" stroke-linecap="round"/>
-  <line x1="60" y1="96" x2="60" y2="104" stroke="#0d3d6e" stroke-width="3.5" stroke-linecap="round"/>
-  <line x1="16" y1="60" x2="24" y2="60" stroke="#0d3d6e" stroke-width="3.5" stroke-linecap="round"/>
-  <line x1="96" y1="60" x2="104" y2="60" stroke="#0d3d6e" stroke-width="3.5" stroke-linecap="round"/>
-  <line x1="28.7" y1="28.7" x2="34.7" y2="34.7" stroke="#0d3d6e" stroke-width="3.5" stroke-linecap="round"/>
-  <line x1="85.3" y1="85.3" x2="91.3" y2="91.3" stroke="#0d3d6e" stroke-width="3.5" stroke-linecap="round"/>
-  <line x1="91.3" y1="28.7" x2="85.3" y2="34.7" stroke="#0d3d6e" stroke-width="3.5" stroke-linecap="round"/>
-  <line x1="34.7" y1="85.3" x2="28.7" y2="91.3" stroke="#0d3d6e" stroke-width="3.5" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="soleria-core" x1="40" y1="34" x2="88" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#28A6F4" />
+      <stop offset="1" stop-color="#1369C8" />
+    </linearGradient>
+    <linearGradient id="soleria-ring" x1="64" y1="24" x2="64" y2="104" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#13223D" />
+      <stop offset="1" stop-color="#0B1225" />
+    </linearGradient>
+  </defs>
+
+  <g stroke="url(#soleria-ring)" stroke-linecap="round" stroke-width="6">
+    <line x1="64" y1="10" x2="64" y2="22" />
+    <line x1="64" y1="106" x2="64" y2="118" />
+    <line x1="10" y1="64" x2="22" y2="64" />
+    <line x1="106" y1="64" x2="118" y2="64" />
+    <line x1="25.82" y1="25.82" x2="34.31" y2="34.31" />
+    <line x1="93.69" y1="93.69" x2="102.18" y2="102.18" />
+    <line x1="102.18" y1="25.82" x2="93.69" y2="34.31" />
+    <line x1="34.31" y1="93.69" x2="25.82" y2="102.18" />
+    <line x1="64" y1="20" x2="64" y2="26" />
+    <line x1="64" y1="102" x2="64" y2="108" />
+    <line x1="20" y1="64" x2="26" y2="64" />
+    <line x1="102" y1="64" x2="108" y2="64" />
+  </g>
+
+  <circle cx="64" cy="64" r="36" fill="#F7FBFF" stroke="url(#soleria-ring)" stroke-width="7" />
+  <circle cx="64" cy="64" r="28" fill="url(#soleria-core)" />
+
+  <g stroke="#F6F8FC" stroke-linecap="round" stroke-width="5">
+    <line x1="64" y1="38" x2="64" y2="90" />
+    <line x1="38" y1="64" x2="90" y2="64" />
+  </g>
 </svg>

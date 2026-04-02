@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * /templates
+ * /mallar
  *
  * Offer template list page.
  * - Lists all saved templates for the organization
@@ -216,8 +216,8 @@ export default function TemplatesPage() {
                       <span className="text-[var(--border)]">·</span>
                       {/* Edit */}
                       <button
-                        onClick={() => router.push(`/templates/${t.id}`)}
-                        onMouseEnter={() => router.prefetch(`/templates/${t.id}`)}
+                        onClick={() => router.push(`/mallar/${t.id}`)}
+                        onMouseEnter={() => router.prefetch(`/mallar/${t.id}`)}
                         className="text-xs text-[var(--accent)] hover:underline"
                       >
                         Redigera

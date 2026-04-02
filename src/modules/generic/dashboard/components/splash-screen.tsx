@@ -81,7 +81,7 @@ export default function SplashScreen({ onDone }: Props) {
           animate={{ opacity: 1, y: 0, transition: { ...CARD_SPRING, delay: 0.28 } }}
         >
           <h1 className="font-heading text-[1.75rem] font-bold leading-tight text-white">
-            Grand Hotel Kollegan
+            Grand Hotel Soleria
           </h1>
           <p className="mt-1.5 text-[13px] tracking-wide text-white/45">
             Storgatan 1, Stockholm

@@ -5,8 +5,6 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@shared/lib/utils';
 import { Icon } from './shared';
 
-// ─── Nav items ─────────────────────────────────────────────────────────────────
-
 interface NavItem {
   href: string;
   label: string;
@@ -36,6 +34,11 @@ const NAV_ITEMS: NavItem[] = [
     icon: <Icon path={<><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>} />,
   },
   {
+    href: '/installningar/anslutningar',
+    label: 'Anslutningar',
+    icon: <Icon path={<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>} />,
+  },
+  {
     href: '/installningar/integrationer',
     label: 'Integrationer',
     icon: <Icon path={<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>} />,
@@ -53,8 +56,6 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-// ─── Component ─────────────────────────────────────────────────────────────────
-
 export default function SettingsNav({ userRole }: { userRole: string }) {
   const pathname = usePathname();
 
@@ -62,7 +63,6 @@ export default function SettingsNav({ userRole }: { userRole: string }) {
 
   return (
     <>
-      {/* Desktop: vertical sidebar */}
       <nav className="hidden md:block w-48 shrink-0 pr-6">
         <div className="flex flex-col gap-0.5">
           {items.map((item) => {
@@ -88,7 +88,6 @@ export default function SettingsNav({ userRole }: { userRole: string }) {
         </div>
       </nav>
 
-      {/* Mobile: horizontal scrollable pills */}
       <nav className="md:hidden flex gap-1 overflow-x-auto scrollbar-none pb-4 -mx-1 px-1">
         {items.map((item) => {
           const active = pathname === item.href;

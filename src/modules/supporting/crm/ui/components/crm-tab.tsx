@@ -446,7 +446,7 @@ function CallLogTab({ activities }: { activities: ActivityEvent[] }) {
       <EmptyState
         icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>}
         title="Inga samtal loggade"
-        subtitle="Samtal med Kollegan visas här efter att de är avslutade."
+        subtitle="Samtal med Soleria visas här efter att de är avslutade."
       />
     );
   }
@@ -540,7 +540,7 @@ export default function CrmTab({ activities, onCountChange }: Props) {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h2 className="font-heading text-xl font-semibold text-[var(--text-primary)]">Kundregister</h2>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">Kundprofiler, bokningar och samtal via Kollegan</p>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">Kundprofiler, bokningar och samtal via Soleria</p>
         </div>
         <span className="text-xs font-medium text-purple-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-full px-3 py-1.5">
           {entries.length} {entries.length === 1 ? 'kund' : 'kunder'}

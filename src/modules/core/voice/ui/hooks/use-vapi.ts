@@ -36,7 +36,10 @@ export function useVapi(brand: VoiceBrand): UseVapiReturn {
 
   const vapiRef = useRef<Vapi | null>(null);
   const brandRef = useRef(brand);
-  brandRef.current = brand;
+
+  useEffect(() => {
+    brandRef.current = brand;
+  }, [brand]);
 
   /* ── Call duration timer ── */
   useEffect(() => {

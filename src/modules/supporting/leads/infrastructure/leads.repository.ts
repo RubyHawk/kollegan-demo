@@ -113,7 +113,7 @@ export const leadsRepository = {
   },
 
   async list(orgId: string, filter: ListLeadsFilter): Promise<Lead[]> {
-    const where: Record<string, unknown> = {
+    const where: NonNullable<Parameters<typeof prisma.lead.findMany>[0]>['where'] = {
       organizationId: orgId,
       deletedAt: null,
     };
@@ -121,16 +121,15 @@ export const leadsRepository = {
     if (filter.assignedTo) where.assignedTo = filter.assignedTo;
     if (filter.source)     where.source = filter.source;
     if (filter.search) {
-      (where as { OR?: unknown[] }).OR = [
+      where.OR = [
         { name:    { contains: filter.search, mode: 'insensitive' } },
         { email:   { contains: filter.search, mode: 'insensitive' } },
         { company: { contains: filter.search, mode: 'insensitive' } },
       ];
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows = await prisma.lead.findMany({
-      where: where as any,
+      where,
       orderBy: { createdAt: 'desc' },
       take:  filter.limit  ?? 50,
       skip:  filter.offset ?? 0,
@@ -177,11 +176,10 @@ export const leadsRepository = {
   },
 
   async count(orgId: string, filter: Omit<ListLeadsFilter, 'limit' | 'offset'>): Promise<number> {
-    const where: Record<string, unknown> = { organizationId: orgId, deletedAt: null };
+    const where: NonNullable<Parameters<typeof prisma.lead.count>[0]>['where'] = { organizationId: orgId, deletedAt: null };
     if (filter.status)     where.status = filter.status;
     if (filter.assignedTo) where.assignedTo = filter.assignedTo;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return prisma.lead.count({ where: where as any });
+    return prisma.lead.count({ where });
   },
 
   // ─── Activities ─────────────────────────────────────────────────────────────

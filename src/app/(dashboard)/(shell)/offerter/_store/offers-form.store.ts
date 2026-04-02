@@ -3,6 +3,7 @@
  */
 
 import { create } from 'zustand';
+import { arrayMove } from '@dnd-kit/sortable';
 import type {
   OfferForm,
   OfferProduct,
@@ -115,7 +116,7 @@ interface OffersFormState {
 
 // ─── Store ─────────────────────────────────────────────────────────────────────
 
-export const useOffersFormStore = create<OffersFormState>()((set, get) => ({
+export const useOffersFormStore = create<OffersFormState>()((set) => ({
   // Visibility
   showForm:       false,
   editingOfferId: null,
@@ -256,7 +257,6 @@ export const useOffersFormStore = create<OffersFormState>()((set, get) => ({
   }),
 
   reorderLines: (oldIdx, newIdx) => {
-    const { arrayMove } = require('@dnd-kit/sortable');
     set((s) => {
       const items = arrayMove(s.form.lineItems, oldIdx, newIdx);
       const mapping = arrayMove([...Array(s.form.lineItems.length).keys()], oldIdx, newIdx);

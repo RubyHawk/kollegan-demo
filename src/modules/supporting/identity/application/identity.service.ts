@@ -49,7 +49,7 @@ export const identityService = {
    */
   async getOrCreateDemoOrg(): Promise<Organization> {
     const org = await identityRepository.upsertOrg({
-      name: 'Grand Hotel Kollegan (Demo)',
+      name: 'Grand Hotel Soleria (Demo)',
       slug: 'demo',
       plan: 'demo',
     });

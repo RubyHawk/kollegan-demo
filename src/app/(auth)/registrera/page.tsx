@@ -2,15 +2,18 @@
 
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
+import { Input } from '@shared/ui/input';
+import { Button } from '@shared/ui/button';
+import { BrandLockup } from '@shared/ui/brand';
 
 export default function RegisterPage() {
-  const [email, setEmail]       = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
     setLoading(true);
     setError('');
 
@@ -23,13 +26,13 @@ export default function RegisterPage() {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? 'Something went wrong.');
+        setError(data.error ?? 'Registreringen gick inte att slutföra.');
         return;
       }
-      // Auth cookies are set by the server — go straight to the dashboard.
+
       window.location.href = '/';
     } catch {
-      setError('Network error. Please try again.');
+      setError('Nätverksfel. Försök igen.');
     } finally {
       setLoading(false);
     }
@@ -38,51 +41,66 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-(--page-bg) px-4">
       <div className="w-full max-w-sm">
+        <BrandLockup
+          size={64}
+          priority
+          align="center"
+          className="flex flex-col items-center gap-3 mb-8"
+          textClassName="font-heading text-2xl text-(--text-primary)"
+        />
+
         <div className="p-8 rounded-2xl border border-(--border) bg-(--surface-0) shadow-lg">
-          <h1 className="text-lg font-semibold text-(--text-primary) mb-6">Create account</h1>
+          <div className="mb-6 space-y-2">
+            <h1 className="text-lg font-semibold text-(--text-primary)">Skapa konto</h1>
+            <p className="text-sm text-(--text-secondary)">
+              Kom igång med offertverktyget och bjud in resten av teamet senare.
+            </p>
+          </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div>
-                <label className="block text-sm text-(--text-secondary) mb-1" htmlFor="email">Email</label>
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-(--border) bg-(--surface-1) text-(--text-primary) text-sm focus:outline-none focus:border-(--accent)"
-                />
-              </div>
+            <div>
+              <label className="block text-sm text-(--text-secondary) mb-1" htmlFor="email">
+                E-post
+              </label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
 
-              <div>
-                <label className="block text-sm text-(--text-secondary) mb-1" htmlFor="password">Password</label>
-                <input
-                  id="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-(--border) bg-(--surface-1) text-(--text-primary) text-sm focus:outline-none focus:border-(--accent)"
-                />
-              </div>
+            <div>
+              <label className="block text-sm text-(--text-secondary) mb-1" htmlFor="password">
+                Lösenord
+              </label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+              <p className="mt-1 text-xs text-(--text-muted)">Minst 8 tecken rekommenderas.</p>
+            </div>
 
-              {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && <p className="text-sm text-red-500">{error}</p>}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2 px-4 rounded-lg bg-(--accent) text-white text-sm font-medium hover:bg-(--accent-light) transition-colors disabled:opacity-60"
-              >
-                {loading ? 'Creating…' : 'Create account'}
-              </button>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Skapar konto…' : 'Skapa konto'}
+            </Button>
 
-              <Link href="/logga-in" className="text-sm text-(--text-muted) hover:text-(--text-secondary) text-center transition-colors">
-                Already have an account? Log in
-              </Link>
-            </form>
+            <Link
+              href="/logga-in"
+              className="text-sm text-(--text-muted) hover:text-(--text-secondary) text-center transition-colors"
+            >
+              Har du redan ett konto? Logga in
+            </Link>
+          </form>
         </div>
       </div>
     </div>

@@ -23,6 +23,8 @@ vi.mock('@platform/auth/vapi-auth', () => ({
 
 vi.mock('@platform/auth/jwt', () => ({
   verifyToken: vi.fn(),
+  isTokenBlacklisted: vi.fn(),
+  isUserBlacklisted: vi.fn(),
 }));
 
 vi.mock('@platform/cache/rate-limiter', () => ({
@@ -43,7 +45,12 @@ import { createHandler } from '@platform/api/handler';
 import { ok, created, paginated, noContent } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
 import { validateVapiAuth } from '@platform/auth/vapi-auth';
-import { verifyToken, type JWTPayload } from '@platform/auth/jwt';
+import {
+  verifyToken,
+  isTokenBlacklisted,
+  isUserBlacklisted,
+  type JWTPayload,
+} from '@platform/auth/jwt';
 import { checkRateLimit, type RateLimitResult } from '@platform/cache/rate-limiter';
 
 // ─── Test helpers ──────────────────────────────────────────────────────────────
@@ -92,6 +99,8 @@ beforeEach(() => {
   vi.mocked(verifyToken).mockResolvedValue(                     // JWT OK — minimal valid payload
     { sub: 'usr_test', role: 'receptionist', type: 'access' } as JWTPayload
   );
+  vi.mocked(isTokenBlacklisted).mockResolvedValue(false);
+  vi.mocked(isUserBlacklisted).mockResolvedValue(false);
   vi.mocked(checkRateLimit).mockResolvedValue({                 // not throttled
     allowed: true, remaining: 59, resetAt: Date.now() + 60_000,
   } satisfies RateLimitResult);

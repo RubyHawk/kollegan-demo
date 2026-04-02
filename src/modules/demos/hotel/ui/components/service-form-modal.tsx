@@ -344,7 +344,7 @@ export default function ServiceFormModal({ type, item, onSave, onClose }: Props)
               >
                 <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${isActive ? 'translate-x-5' : ''}`} />
               </div>
-              <span className="text-sm text-[var(--text-secondary)]">Aktiv (visas för Kollegan)</span>
+            <span className="text-sm text-[var(--text-secondary)]">Aktiv (visas för Soleria)</span>
             </label>
 
             {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}

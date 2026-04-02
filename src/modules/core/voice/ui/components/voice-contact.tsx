@@ -60,20 +60,20 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
   const [open, setOpen] = useState(false);
 
   /* ── Draggable-variant state ── */
-  const [draggablePos, setDraggablePos] = useState({ x: 0, y: 0 });
+  const [draggablePos, setDraggablePos] = useState(() => {
+    if (variant !== 'draggable' || typeof window === 'undefined') {
+      return { x: 0, y: 0 };
+    }
+
+    return {
+      x: Math.max(0, window.innerWidth - 448),
+      y: 80,
+    };
+  });
   const [draggableCollapsed, setDraggableCollapsed] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ mx: 0, my: 0, px: 0, py: 0 });
-
-  /* ── Initialise draggable position (client-side only) ── */
-  useEffect(() => {
-    if (variant !== 'draggable') return;
-    setDraggablePos({
-      x: Math.max(0, window.innerWidth - 448),
-      y: 80,
-    });
-  }, [variant]);
 
   /* ── Drag mouse listeners ── */
   useEffect(() => {
@@ -133,7 +133,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
           : mode === 'chat'
             ? 'Chatt'
             : isDark
-              ? `Receptionist — Grand Hotel Kollegan`
+              ? `Receptionist — Grand Hotel Soleria`
               : 'Receptionist';
 
   /* ── Helper: open chat mode ── */
@@ -158,7 +158,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
   /* ──────────────────────────────────────────
      Shared branded avatar badge
   ────────────────────────────────────────── */
-  const AvatarBadge = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) => {
+  const renderAvatarBadge = (size: 'sm' | 'md' | 'lg' = 'md') => {
     if (isDark) {
       const sizeMap = {
         sm: 'w-8 h-8',
@@ -202,7 +202,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
   };
 
   /* ── Status indicator dot ── */
-  const StatusDot = ({ size = 'md' }: { size?: 'sm' | 'md' }) => {
+  const renderStatusDot = (size: 'sm' | 'md' = 'md') => {
     const sizeClass = size === 'sm' ? 'w-2.5 h-2.5' : 'w-3 h-3';
     const borderColor = isDark ? 'border-navy-800' : 'border-[var(--surface)]';
     const borderWidth = size === 'sm' ? 'border-[1.5px]' : 'border-2';
@@ -220,7 +220,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
   };
 
   /* ── Hangup button (shared across variants) ── */
-  const HangupButton = ({ compact = false }: { compact?: boolean }) => {
+  const renderHangupButton = (compact = false) => {
     if (isDark) {
       return (
         <button
@@ -257,7 +257,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
   };
 
   /* ── Chat footer nav (back + "Ring istallet") ── */
-  const ChatFooterNav = ({ compact = false }: { compact?: boolean }) => {
+  const renderChatFooterNav = (compact = false) => {
     if (isDark) {
       return (
         <div className={`border-t border-navy-700 ${compact ? 'px-3' : 'px-4'} py-2 shrink-0 flex items-center gap-2`}>
@@ -310,7 +310,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
   };
 
   /* ── Call-ended footer ── */
-  const CallEndedFooter = ({ compact = false }: { compact?: boolean }) => {
+  const renderCallEndedFooter = (compact = false) => {
     if (isDark) {
       return (
         <div className={`border-t border-navy-700 ${compact ? 'px-3 py-2' : 'px-5 py-4'} shrink-0 text-center`}>
@@ -361,8 +361,8 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
           {/* Compact header */}
           <div className="bg-gradient-to-r from-navy-800 to-navy-900 px-3 py-2.5 flex items-center gap-2">
             <div className="relative">
-              <AvatarBadge size="sm" />
-              <StatusDot size="sm" />
+              {renderAvatarBadge('sm')}
+              {renderStatusDot('sm')}
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-cream-100 font-heading font-semibold text-xs">{brand.name}</h3>
@@ -440,12 +440,12 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
           {/* Call end button */}
           {mode === 'call' && callStatus === 'active' && (
             <div className="border-t border-navy-700 px-3 py-2 flex justify-center">
-              <HangupButton compact />
+              {renderHangupButton(true)}
             </div>
           )}
 
           {/* Call ended */}
-          {mode === 'call' && callStatus === 'ended' && <CallEndedFooter compact />}
+          {mode === 'call' && callStatus === 'ended' && renderCallEndedFooter(true)}
         </div>
       );
     }
@@ -456,8 +456,8 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
         {/* Header */}
         <div className="px-3 py-2.5 flex items-center gap-2.5 bg-[var(--surface)]">
           <div className="relative">
-            <AvatarBadge size="sm" />
-            <StatusDot size="sm" />
+            {renderAvatarBadge('sm')}
+            {renderStatusDot('sm')}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-heading text-xs font-semibold text-[var(--text-primary)] leading-none">{brand.name}</h3>
@@ -520,11 +520,11 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
 
         {mode === 'call' && callStatus === 'active' && (
           <div className="border-t border-[var(--border)] px-3 py-2 flex justify-center">
-            <HangupButton compact />
+            {renderHangupButton(true)}
           </div>
         )}
 
-        {mode === 'call' && callStatus === 'ended' && <CallEndedFooter compact />}
+        {mode === 'call' && callStatus === 'ended' && renderCallEndedFooter(true)}
       </div>
     );
   }
@@ -575,8 +575,8 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
 
             {/* Avatar badge */}
             <div className="relative shrink-0">
-              <AvatarBadge size={draggableCollapsed ? 'sm' : 'md'} />
-              <StatusDot size={draggableCollapsed ? 'sm' : 'md'} />
+                  {renderAvatarBadge(draggableCollapsed ? 'sm' : 'md')}
+                  {renderStatusDot(draggableCollapsed ? 'sm' : 'md')}
             </div>
 
             {/* Name + status — always truncated */}
@@ -674,7 +674,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
                     : 'bg-[var(--surface-alt)] border-[var(--border)]',
                 ].join(' ')}>
                   <div className="relative shrink-0">
-                    <AvatarBadge size="sm" />
+                        {renderAvatarBadge('sm')}
                     <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-[1.5px] border-[var(--surface)]" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -783,15 +783,15 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
               {/* End call */}
               {mode === 'call' && callStatus === 'active' && (
                 <div className="border-t border-[var(--border)] px-5 py-3 shrink-0 flex justify-center">
-                  <HangupButton />
+                  {renderHangupButton()}
                 </div>
               )}
 
               {/* Chat footer nav */}
-              {mode === 'chat' && <ChatFooterNav />}
+                {mode === 'chat' && renderChatFooterNav()}
 
               {/* Call ended */}
-              {mode === 'call' && callStatus === 'ended' && <CallEndedFooter />}
+                {mode === 'call' && callStatus === 'ended' && renderCallEndedFooter()}
             </>
           )}
         </div>
@@ -834,7 +834,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
             <div className="bg-navy-900 border border-navy-700 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 48px)' }}>
               <div className="bg-gradient-to-r from-navy-800 to-navy-900 border-b border-navy-700 px-5 py-4 flex items-center gap-3 shrink-0">
                 <div className="relative">
-                  <AvatarBadge size="md" />
+                  {renderAvatarBadge('md')}
                   <div className={['absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-navy-800', callStatus === 'active' ? 'bg-emerald-500' : 'bg-gold-500'].join(' ')} />
                 </div>
 
@@ -845,7 +845,7 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
                     {callStatus === 'active' && (isSpeaking ? 'Talar...' : 'Lyssnar...')}
                     {callStatus === 'ended' && 'Samtalet avslutat'}
                     {callStatus === 'idle' && mode === 'chat' && 'Chatt'}
-                    {callStatus === 'idle' && mode === 'idle' && `Receptionist — Grand Hotel Kollegan`}
+                    {callStatus === 'idle' && mode === 'idle' && `Receptionist — Grand Hotel Soleria`}
                   </p>
                 </div>
 
@@ -877,11 +877,11 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
                 <div className="px-5 py-6 space-y-4">
                   <div className="text-center">
                     <div className="mx-auto mb-3 maja-avatar-breathe">
-                      <AvatarBadge size="lg" />
+                      {renderAvatarBadge('lg')}
                     </div>
                     <h3 className="font-heading text-lg font-bold text-cream-100">Hej, jag &auml;r {brand.name}!</h3>
                     <p className="text-cream-400 text-xs mt-1 leading-relaxed">
-                      Receptionist p&aring; Grand Hotel Kollegan.<br />
+                      Receptionist p&aring; Grand Hotel Soleria.<br />
                       Hur vill du kontakta mig?
                     </p>
                   </div>
@@ -924,13 +924,13 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
 
               {mode === 'call' && callStatus === 'active' && (
                 <div className="border-t border-navy-700 px-5 py-4 shrink-0 flex justify-center">
-                  <HangupButton />
+                  {renderHangupButton()}
                 </div>
               )}
 
-              {mode === 'chat' && <ChatFooterNav />}
+              {mode === 'chat' && renderChatFooterNav()}
 
-              {mode === 'call' && callStatus === 'ended' && <CallEndedFooter />}
+              {mode === 'call' && callStatus === 'ended' && renderCallEndedFooter()}
             </div>
           </div>
         )}
@@ -971,8 +971,8 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
           >
             <div className="px-5 py-4 flex items-center gap-3 shrink-0 border-b border-[var(--border)]">
               <div className="relative">
-                <AvatarBadge size="md" />
-                <StatusDot size="md" />
+                {renderAvatarBadge('md')}
+                {renderStatusDot('md')}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-heading text-sm font-semibold text-[var(--text-primary)] leading-none">{brand.name}</h3>
@@ -1045,13 +1045,13 @@ export default function VoiceContact({ variant = 'floating', brand }: VoiceConta
 
             {mode === 'call' && callStatus === 'active' && (
               <div className="border-t border-[var(--border)] px-5 py-3 shrink-0 flex justify-center">
-                <HangupButton />
+                {renderHangupButton()}
               </div>
             )}
 
-            {mode === 'chat' && <ChatFooterNav />}
+            {mode === 'chat' && renderChatFooterNav()}
 
-            {mode === 'call' && callStatus === 'ended' && <CallEndedFooter />}
+            {mode === 'call' && callStatus === 'ended' && renderCallEndedFooter()}
           </div>
         </div>
       )}

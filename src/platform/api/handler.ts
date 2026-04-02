@@ -41,6 +41,7 @@ import { constantTimeEqual } from '@platform/security/sanitize';
 import { verifyToken, isTokenBlacklisted, isUserBlacklisted, type JWTPayload } from '@platform/auth/jwt';
 import { checkRateLimit } from '@platform/cache/rate-limiter';
 import { logger } from '@platform/logging/logger';
+import { BRAND_API_REALM } from '@shared/branding';
 import { ApiError, Errors, zodToIssues, type Problem } from './errors';
 import {
   isHandlerResult,
@@ -158,7 +159,7 @@ function generateRequestId(): string {
  *   ApiKey — de facto scheme used for shared-secret APIs
  */
 function wwwAuthChallenge(strategy: AuthStrategy): string {
-  const realm = 'api.kollegan.ai';
+  const realm = BRAND_API_REALM;
   switch (strategy) {
     case 'jwt':      return `Bearer realm="${realm}", charset="UTF-8"`;
     case 'vapi':     return `ApiKey realm="${realm}"`;
