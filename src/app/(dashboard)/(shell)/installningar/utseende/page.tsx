@@ -27,6 +27,8 @@ const MODE_OPTIONS: { id: ThemeMode; label: string; desc: string }[] = [
   { id: 'auto', label: 'Auto', desc: 'Följer enheten' },
 ];
 
+const DEFAULT_THEME = THEMES.find((item) => item.id === 'claude') ?? THEMES[0];
+
 function WorkspacePreview({
   theme,
   dark,
@@ -208,29 +210,42 @@ function WorkspacePreview({
 export default function UtseendePage() {
   const [theme, setTheme] = useState<ThemeMode>('auto');
   const [fontSize, setFontSize] = useState<FontSize>('medium');
-  const [selectedTheme, setSelectedTheme] = useState<string>('claude');
+  const [selectedTheme, setSelectedTheme] = useState<string>(DEFAULT_THEME.id);
   const [fontFamily, setFontFamily] = useState<string>('inter');
+  const [resolvedDark, setResolvedDark] = useState(false);
   const [pending, setPending] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     try {
       const storedTheme = localStorage.getItem('theme') as ThemeMode | null;
-      setTheme(storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'auto');
+      const nextTheme =
+        storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'auto'
+          ? storedTheme
+          : 'auto';
+      setTheme(nextTheme);
 
       const storedFontSize = localStorage.getItem('fontSize') as FontSize | null;
       if (storedFontSize) applyFontSize(storedFontSize);
 
       const storedAccent = localStorage.getItem('accentColor');
-      const matchedTheme = THEMES.find((item) => item.id === storedAccent);
-      if (matchedTheme) {
-        setSelectedTheme(matchedTheme.id);
-        const isDark = document.documentElement.classList.contains('dark');
-        const vars = isDark ? matchedTheme.dark : matchedTheme.light;
-        for (const [prop, value] of Object.entries(vars)) {
-          document.documentElement.style.setProperty(prop, value);
-        }
+      const matchedTheme = THEMES.find((item) => item.id === storedAccent) ?? DEFAULT_THEME;
+      setSelectedTheme(matchedTheme.id);
+
+      const isDark =
+        nextTheme === 'dark' ||
+        (nextTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      setResolvedDark(isDark);
+      document.documentElement.classList.toggle('dark', isDark);
+
+      const vars = isDark ? matchedTheme.dark : matchedTheme.light;
+      for (const [prop, value] of Object.entries(vars)) {
+        document.documentElement.style.setProperty(prop, value);
       }
+
+      localStorage.setItem('theme', nextTheme);
+      localStorage.setItem('accentColor', matchedTheme.id);
+      localStorage.setItem('themeData', JSON.stringify({ light: matchedTheme.light, dark: matchedTheme.dark }));
 
       const storedFont = localStorage.getItem('fontFamily');
       if (storedFont) {
@@ -262,16 +277,13 @@ export default function UtseendePage() {
   function applyTheme(nextTheme: ThemeMode) {
     setTheme(nextTheme);
     try {
-      let isDark: boolean;
-      if (nextTheme === 'auto') {
-        localStorage.removeItem('theme');
-        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      } else {
-        localStorage.setItem('theme', nextTheme);
-        isDark = nextTheme === 'dark';
-      }
+      const isDark: boolean =
+        nextTheme === 'dark' ||
+        (nextTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      localStorage.setItem('theme', nextTheme);
 
       document.documentElement.classList.toggle('dark', isDark);
+      setResolvedDark(isDark);
       reapplyThemeForMode(isDark);
     } catch {
       // ignore theme persistence errors
@@ -321,6 +333,8 @@ export default function UtseendePage() {
     setFontSize(nextSize);
     const scales: Record<FontSize, number> = { small: 0.875, medium: 1, large: 1.125 };
     const scale = scales[nextSize];
+    const scrollContainer = document.querySelector('main.flex-1.overflow-y-auto') as HTMLElement | null;
+    const scrollTop = scrollContainer?.scrollTop ?? window.scrollY;
     try {
       injectStyle('font-size-override', scale === 1 ? `
         .text-xs, .text-sm, .text-base, .text-lg, .text-xl, .text-2xl, .text-3xl {
@@ -339,6 +353,19 @@ export default function UtseendePage() {
         .text-3xl { font-size: ${(1.875 * scale).toFixed(4)}rem !important; line-height: ${(2.25 * scale).toFixed(4)}rem !important; }
       `);
       localStorage.setItem('fontSize', nextSize);
+      const restoreScroll = () => {
+        if (scrollContainer) {
+          scrollContainer.scrollTop = scrollTop;
+          return;
+        }
+        window.scrollTo(0, scrollTop);
+      };
+      window.requestAnimationFrame(() => {
+        restoreScroll();
+        window.requestAnimationFrame(restoreScroll);
+      });
+      window.setTimeout(restoreScroll, 120);
+      window.setTimeout(restoreScroll, 260);
     } catch {
       // ignore font-size persistence errors
     }
@@ -354,7 +381,7 @@ export default function UtseendePage() {
   }
 
   const activeTheme = useMemo(
-    () => THEMES.find((item) => item.id === selectedTheme) ?? THEMES[0],
+    () => THEMES.find((item) => item.id === selectedTheme) ?? DEFAULT_THEME,
     [selectedTheme],
   );
 
@@ -367,8 +394,6 @@ export default function UtseendePage() {
     () => FONT_SIZE_OPTIONS.find((item) => item.id === fontSize) ?? FONT_SIZE_OPTIONS[1],
     [fontSize],
   );
-
-  const previewIsDark = theme === 'dark' || (theme === 'auto' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -394,16 +419,24 @@ export default function UtseendePage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-[var(--surface-alt)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
-                {activeTheme.label}
-              </span>
-              <span className="rounded-full bg-[var(--surface-alt)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
-                {activeFont.label}
-              </span>
-              <span className="rounded-full bg-[var(--surface-alt)] px-3 py-1 text-xs font-medium text-[var(--text-secondary)]">
-                {activeFontSize.label}
-              </span>
+            <div className="grid gap-2 min-[440px]:grid-cols-3">
+              {[
+                { label: 'Accent', value: activeTheme.label },
+                { label: 'Typsnitt', value: activeFont.label },
+                { label: 'Textstorlek', value: activeFontSize.label },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 shadow-[0_8px_20px_rgba(0,0,0,0.03)]"
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    {item.label}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                    {item.value}
+                  </p>
+                </div>
+              ))}
             </div>
 
             <div className="grid gap-2.5 lg:grid-cols-2">
@@ -504,7 +537,7 @@ export default function UtseendePage() {
           <div className="xl:pt-11">
             <WorkspacePreview
               theme={activeTheme}
-              dark={previewIsDark}
+              dark={resolvedDark}
               fontLabel={activeFont.label}
               sizeLabel={activeFontSize.label}
             />
@@ -531,7 +564,7 @@ export default function UtseendePage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {THEMES.map((item, index) => {
               const active = item.id === selectedTheme;
               return (
@@ -543,44 +576,25 @@ export default function UtseendePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: index * 0.02, ease: 'easeOut' }}
                   className={cn(
-                    'relative rounded-[20px] border p-3 text-left transition-all',
+                    'relative rounded-[18px] border p-2.5 text-left transition-all',
                     active
                       ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_14px_28px_rgba(0,0,0,0.06)]'
                       : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
                   )}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{item.label}</p>
-                      <p className="mt-0.5 text-[11px] leading-4 text-[var(--text-muted)]">{item.desc}</p>
-                    </div>
-                    <div className="flex max-w-[64px] flex-wrap justify-end gap-1">
-                      {item.swatches.slice(0, 4).map((swatch) => (
-                        <span
-                          key={swatch}
-                          className="h-2.5 w-2.5 rounded-full border border-black/5 shrink-0"
-                          style={{ background: swatch }}
-                        />
-                      ))}
-                    </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold leading-5 text-[var(--text-primary)]">{item.label}</p>
+                    <p className="mt-0.5 text-[11px] leading-4 text-[var(--text-muted)]">{item.desc}</p>
                   </div>
 
-                  <div className="mt-2.5 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-2">
-                    <div className="flex items-center gap-1.5">
-                      {item.swatches.slice(0, 4).map((swatch) => (
-                        <span
-                          key={`${item.id}-${swatch}-bar`}
-                          className="h-4 flex-1 rounded-full"
-                          style={{ background: swatch }}
-                        />
-                      ))}
-                    </div>
-                    <div className="mt-1.5 h-2 rounded-full" style={{ background: item.light['--surface-2'] }}>
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: '62%', background: item.light['--accent'], opacity: 0.82 }}
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {item.swatches.slice(0, 4).map((swatch) => (
+                      <span
+                        key={`${item.id}-${swatch}-dot`}
+                        className="h-3.5 w-3.5 rounded-full border border-black/5 shrink-0"
+                        style={{ background: swatch }}
                       />
-                    </div>
+                    ))}
                   </div>
 
                   <AnimatePresence>
