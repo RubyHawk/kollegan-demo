@@ -774,7 +774,7 @@ export default function OffersPage() {
               <div className="hidden lg:flex flex-1 bg-slate-100 dark:bg-slate-900/60 overflow-auto flex-col items-center py-10 px-8 relative">
                 {/* Floating close button */}
                 <button onClick={closeWizard} title="Stäng (Esc)"
-                  className="absolute top-4 left-4 z-40 flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-sm text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 backdrop-blur-sm transition-colors">
+                  className="absolute right-4 top-4 z-40 flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 shadow-sm text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 backdrop-blur-sm transition-colors">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
@@ -1630,11 +1630,6 @@ export default function OffersPage() {
                           ) : (
                             <><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>{editingOfferId ? 'Uppdatera & skicka' : 'Spara & skicka'}</>
                           )}
-                        </button>
-                        <button onClick={closeWizard} className="shrink-0 p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-active)] rounded-lg transition-colors" title="Avbryt">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                          </svg>
                         </button>
                       </div>
                     </div>

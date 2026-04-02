@@ -88,7 +88,7 @@ export default function SettingsNav({ userRole }: { userRole: string }) {
         </div>
       </nav>
 
-      <nav className="md:hidden flex gap-1 overflow-x-auto scrollbar-none pb-4 -mx-1 px-1">
+      <nav className="grid grid-cols-2 gap-2 pb-4 sm:grid-cols-3 md:hidden">
         {items.map((item) => {
           const active = pathname === item.href;
           return (
@@ -96,13 +96,13 @@ export default function SettingsNav({ userRole }: { userRole: string }) {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0',
+                'flex min-h-[44px] items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-colors',
                 active
-                  ? 'bg-[var(--accent)]/10 text-[var(--accent)]'
-                  : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
+                  ? 'border-[color-mix(in_srgb,var(--accent)_24%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_12%,var(--surface-alt))] text-[var(--text-primary)]'
+                  : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
               )}
             >
-              <span className={cn('shrink-0', active ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]')}>
+              <span className={cn('shrink-0', active ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]')}>
                 {item.icon}
               </span>
               {item.label}
