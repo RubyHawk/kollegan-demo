@@ -12,6 +12,7 @@ export default async function SettingsPage() {
         email:     user.email,
         firstName: user.firstName ?? null,
         lastName:  user.lastName ?? null,
+        avatarUrl: user.avatarUrl ?? null,
         role:      user.role,
       }}
     />
