@@ -1,29 +1,31 @@
 /* ───── Light mode semantic tokens (OKLCH) ───── */
 :root {
-  --page-bg: oklch(0.96 0 0);
+  /* Soft off-white page background — avoids harsh pure-white glare */
+  --page-bg: oklch(0.977 0.003 250);
 
   /* Backward-compatible surface aliases */
   --surface: oklch(1.0 0 0);
-  --surface-alt: oklch(0.93 0 0);
-  --surface-hover: oklch(0.94 0 0);
+  --surface-alt: oklch(0.965 0.002 250);
+  --surface-hover: oklch(0.955 0.003 250);
 
   /* Surface layer system — 6 visually separable tones */
-  --surface-0: oklch(1.0 0 0); /* cards, dialogs */
-  --surface-1: oklch(0.96 0 0); /* page content areas */
-  --surface-2: oklch(0.93 0 0); /* sidebar, header bg */
-  --surface-3: oklch(0.90 0 0); /* alternate rows, code blocks */
-  --surface-active: oklch(0.91 0 0); /* pressed / selected */
+  --surface-0: oklch(1.0 0 0);         /* cards, dialogs */
+  --surface-1: oklch(0.977 0.003 250); /* page content areas */
+  --surface-2: oklch(0.968 0.003 250); /* sidebar, header bg */
+  --surface-3: oklch(0.950 0.003 250); /* alternate rows */
+  --surface-active: oklch(0.945 0.004 250); /* pressed / selected */
 
-  --border: oklch(0.78 0 0);
-  --border-light: oklch(0.86 0 0);
+  /* Softer borders — minimal visual noise */
+  --border: oklch(0.88 0.003 250);
+  --border-light: oklch(0.93 0.002 250);
   --text-primary: oklch(0.13 0 0);
   --text-secondary: oklch(0.38 0 0);
-  --text-muted: oklch(0.55 0 0);
-  --dot-color: oklch(0 0 0 / 0.06);
+  --text-muted: oklch(0.56 0 0);
+  --dot-color: oklch(0 0 0 / 0.05);
   --accent: oklch(0.44 0.19 250);
   --accent-light: oklch(0.51 0.19 250);
   --accent-subtle: oklch(0.44 0.19 250 / 0.08);
-  --accent-border: oklch(0.44 0.19 250 / 0.25);
+  --accent-border: oklch(0.44 0.19 250 / 0.22);
 
   /* Grid system */
   --grid-line-color: oklch(0 0 0 / 0.055);

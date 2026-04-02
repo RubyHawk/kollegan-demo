@@ -4,8 +4,8 @@ import { Providers } from './providers';
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: 'Kollegan',
-  description: 'Kollegan — AI-driven arbetsplattform',
+  title: 'Soleria',
+  description: 'Soleria — Offertsystem',
 };
 
 const themeScript = `
@@ -35,6 +35,7 @@ export default function RootLayout({
   return (
     <html lang="sv" suppressHydrationWarning className={cn("h-full", "overflow-hidden")}>
       <head>
+        <meta charSet="utf-8" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
