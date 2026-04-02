@@ -23,6 +23,12 @@ const PUBLIC_PREFIXES = [
   '/favicon',
 ];
 
+/** Known app routes on the offert subdomain that must NOT be treated as offer tokens */
+const APP_ROUTES = [
+  '/offers', '/templates', '/products', '/settings', '/login',
+  '/register', '/api/', '/_next/', '/favicon',
+];
+
 const OFFER_SUBDOMAIN = process.env.PUBLIC_OFFER_SUBDOMAIN ?? 'offert';
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
@@ -33,8 +39,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Only rewrite bare single-segment paths that are NOT known app routes.
   if (hostname.startsWith(`${OFFER_SUBDOMAIN}.`)) {
     const { pathname } = request.nextUrl;
-    const isAppRoute = PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
-    if (!isAppRoute && !pathname.startsWith('/offers/') && !pathname.startsWith('/_next')) {
+    const isAppRoute = APP_ROUTES.some((p) => pathname === p || pathname.startsWith(p + '/'));
+    if (!isAppRoute) {
       const token = pathname.slice(1);
       if (token && !token.includes('/')) {
         return NextResponse.rewrite(new URL(`/offers/public/${token}`, request.url));
