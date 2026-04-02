@@ -10,7 +10,6 @@ import { Errors } from '@platform/api/errors';
 import { verifyToken } from '@platform/auth/jwt';
 import {
   listProducts,
-  listProductCategories,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -51,15 +50,6 @@ export const handleListProducts = createHandler(
   },
 );
 
-export const handleListProductCategories = createHandler(
-  { auth: 'jwt', tag: 'OfferProducts:ListCategories', rateLimit: { max: 120, windowMs: 60_000 } },
-  async (ctx) => {
-    const { req } = ctx as { req: NextRequest };
-    const payload = await requireStaff(req);
-    const categories = await listProductCategories(payload.orgId!);
-    return ok({ categories });
-  },
-);
 
 // ── Create Product ────────────────────────────────────────────────────────────
 
@@ -71,6 +61,7 @@ const CreateBodySchema = z.object({
   unit:        z.string().max(50).optional(),
   sku:         z.string().max(100).optional(),
   category:    z.string().max(100).optional(),
+  categoryId:  z.string().uuid().optional().nullable(),
   imageUrl:    z.string().url().max(2000).optional(),
   isActive:    z.boolean().default(true),
   minQuantity: z.number().min(0).optional(),
@@ -91,6 +82,7 @@ export const handleCreateProduct = createHandler(
       unit:           body.unit,
       sku:            body.sku,
       category:       body.category,
+      categoryId:     body.categoryId ?? null,
       imageUrl:       body.imageUrl,
       isActive:       body.isActive,
       minQuantity:    body.minQuantity,
@@ -110,6 +102,7 @@ const UpdateBodySchema = z.object({
   unit:        z.string().max(50).optional(),
   sku:         z.string().max(100).optional(),
   category:    z.string().max(100).optional(),
+  categoryId:  z.string().uuid().optional().nullable(),
   imageUrl:    z.string().url().max(2000).optional().nullable(),
   isActive:    z.boolean().optional(),
   minQuantity: z.number().min(0).optional().nullable(),
@@ -124,6 +117,7 @@ export const handleUpdateProduct = createHandler(
     const payload = await requireStaff(req);
     const updated = await updateProduct(id, payload.orgId!, {
       ...body,
+      categoryId:  body.categoryId  !== undefined ? body.categoryId  : undefined,
       imageUrl:    body.imageUrl    ?? undefined,
       minQuantity: body.minQuantity ?? undefined,
       maxQuantity: body.maxQuantity ?? undefined,
@@ -140,12 +134,8 @@ export const handleDeleteProduct = createHandler(
   async (ctx) => {
     const { req } = ctx as { req: NextRequest };
     const id = extractId(req);
-    const payload = await verifyToken(extractToken(req));
-    if (!payload.orgId) throw Errors.forbidden('No organization context');
-    const roleNames = payload.roles?.length ? payload.roles : payload.role ? [payload.role] : [];
-    const isAdmin = roleNames.some((r) => ['super_admin', 'admin'].includes(r));
-    if (!isAdmin) throw Errors.forbidden('Product deletion requires admin role');
-    const deleted = await deleteProduct(id, payload.orgId);
+    const payload = await requireStaff(req);
+    const deleted = await deleteProduct(id, payload.orgId!);
     if (!deleted) throw Errors.notFound('Product not found');
     return ok(null);
   },

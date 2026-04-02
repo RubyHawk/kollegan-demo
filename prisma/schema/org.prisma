@@ -29,8 +29,9 @@ model Organization {
   portal        Portal?
   offers         Offer[]
   offerTemplates OfferTemplate[]
-  offerProducts  OfferProduct[]
-  companies      Company[]
+  offerProducts      OfferProduct[]
+  productCategories  ProductCategory[]
+  companies          Company[]
   conversations Conversation[]
   projects      Project[]
   announcements Announcement[]

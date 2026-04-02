@@ -63,6 +63,18 @@ export interface Offer {
   publicTokenExpiresAt?: string; // ISO — 30 days after sentAt
 }
 
+// ─── Product Category ─────────────────────────────────────────────────────────
+
+export interface ProductCategory {
+  id: string;
+  organizationId: string;
+  name: string;
+  parentId: string | null;      // null = main/top-level category
+  children?: ProductCategory[]; // populated when listing with tree
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Product / Service Library ────────────────────────────────────────────────
 
 export interface OfferProduct {
@@ -74,7 +86,8 @@ export interface OfferProduct {
   vatRate: number;      // 0.25 = 25%
   unit?: string;        // "st", "tim", "mån", etc.
   sku?: string;
-  category?: string;
+  category?: string;    // DEPRECATED: free-text, kept for data migration
+  categoryId?: string;  // FK → ProductCategory.id
   imageUrl?: string;
   isActive: boolean;
   minQuantity?: number;
