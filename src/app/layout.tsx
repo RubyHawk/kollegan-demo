@@ -4,6 +4,7 @@ import './globals.css';
 import { Providers } from './providers';
 import { cn } from "@/lib/utils";
 import { BRAND_MARK_PATH, BRAND_NAME, BRAND_TAGLINE } from '@shared/branding';
+import { THEMES } from './(dashboard)/(shell)/installningar/_components/theme-data';
 
 export const metadata: Metadata = {
   title: BRAND_NAME,
@@ -15,13 +16,30 @@ export const metadata: Metadata = {
   },
 };
 
+const defaultTheme = THEMES.find((theme) => theme.id === 'claude') ?? THEMES[0];
+const defaultThemeData = {
+  light: defaultTheme.light,
+  dark: defaultTheme.dark,
+};
+
 const themeScript = `
 (function() {
   try {
-    var theme = localStorage.getItem('theme');
-    var isDark = theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var theme = localStorage.getItem('theme') || 'auto';
+    if (!localStorage.getItem('theme')) localStorage.setItem('theme', 'auto');
+    var isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     if (isDark) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+
+    var accent = localStorage.getItem('accentColor');
+    if (!accent) localStorage.setItem('accentColor', 'claude');
+
+    var defaultData = ${JSON.stringify(defaultThemeData)};
     var td = localStorage.getItem('themeData');
+    if (!td) {
+      td = JSON.stringify(defaultData);
+      localStorage.setItem('themeData', td);
+    }
     if (td) {
       var data = JSON.parse(td);
       var vars = isDark ? data.dark : data.light;
