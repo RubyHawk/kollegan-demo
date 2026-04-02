@@ -468,7 +468,7 @@ export default function PublicOfferPage() {
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="flex min-h-[80vh] items-center justify-center px-6"
         >
-          <div className="w-full max-w-md rounded-xl bg-white p-10 text-center shadow-sm border border-slate-200/80">
+          <div className="w-full max-w-md rounded-2xl bg-white p-10 text-center shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_4px_rgba(0,0,0,0.06)] border border-slate-200/60">
             {state === 'accepted' ? (
               <SuccessCheckmark />
             ) : (
@@ -493,7 +493,7 @@ export default function PublicOfferPage() {
                 <button
                   onClick={() => void handleDownloadPdf()}
                   disabled={downloading}
-                  className="mt-6 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
+                  className="mt-6 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md active:scale-[0.97] disabled:opacity-50"
                 >
                   <FileTextIcon size={15} />
                   {downloading ? 'Laddar ner...' : 'Ladda ner som PDF'}
@@ -566,7 +566,7 @@ export default function PublicOfferPage() {
             <button
               onClick={() => void handleDownloadPdf()}
               disabled={downloading || !offer.generatedDocument}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 active:bg-slate-100 disabled:opacity-40"
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow active:scale-[0.97] disabled:opacity-40"
               title="Ladda ner som PDF"
             >
               {downloading ? (
@@ -606,7 +606,7 @@ export default function PublicOfferPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.04 }}
-            className="mb-5 overflow-hidden bg-white shadow-sm sm:rounded-xl sm:border sm:border-slate-200/80"
+            className="mb-5 overflow-hidden bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] sm:rounded-2xl sm:border sm:border-slate-200/60"
           >
             <iframe
               ref={iframeRef}
@@ -631,7 +631,7 @@ export default function PublicOfferPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm"
+              className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)]"
             >
               {/* Header */}
               <div className="border-b border-slate-100 px-5 py-4 sm:px-7 sm:py-5">
@@ -832,7 +832,7 @@ export default function PublicOfferPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm"
+              className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)]"
             >
               <div className="border-b border-slate-100 px-5 py-4 sm:px-7 sm:py-5">
                 <h2 className="text-base font-bold text-red-600">Avvisa offert</h2>

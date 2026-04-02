@@ -1,46 +1,47 @@
 /* ───── Dark mode semantic tokens (OKLCH) ───── */
 .dark {
-  --page-bg: oklch(0.17 0.008 250);
+  /* Deeper base — creates clear visual separation from cards */
+  --page-bg: oklch(0.13 0.010 250);
 
   /* Backward-compatible surface aliases */
-  --surface: oklch(0.22 0.007 250);
-  --surface-alt: oklch(0.24 0.007 250);
-  --surface-hover: oklch(0.31 0.006 250);
+  --surface: oklch(0.20 0.009 250);
+  --surface-alt: oklch(0.23 0.008 250);
+  --surface-hover: oklch(0.30 0.006 250);
 
-  /* Surface layer system — 6 visually separable tones */
-  --surface-0: oklch(0.23 0.007 250);
-  --surface-1: oklch(0.26 0.006 250);
-  --surface-2: oklch(0.28 0.005 250);
-  --surface-3: oklch(0.31 0.005 250);
-  --surface-active: oklch(0.35 0.005 250);
+  /* Surface layer system — 3-layer hierarchy (bg → card → active) */
+  --surface-0: oklch(0.20 0.009 250);   /* cards, dialogs   ↑ from bg by 0.07 */
+  --surface-1: oklch(0.24 0.007 250);   /* sidebars, insets */
+  --surface-2: oklch(0.27 0.006 250);   /* sub-areas        */
+  --surface-3: oklch(0.30 0.005 250);   /* alternate rows   */
+  --surface-active: oklch(0.34 0.005 250); /* pressed/selected */
 
-  --border: oklch(0.40 0.006 250);
-  --border-light: oklch(0.32 0.005 250);
+  --border: oklch(0.36 0.007 250);
+  --border-light: oklch(0.28 0.006 250);
   --text-primary: oklch(0.96 0 0);
   --text-secondary: oklch(0.83 0 0);
-  --text-muted: oklch(0.66 0 0);
-  --dot-color: oklch(0.55 0 0 / 0.12);
+  --text-muted: oklch(0.62 0 0);
+  --dot-color: oklch(0.55 0 0 / 0.10);
   --accent: oklch(0.73 0.15 85);
   --accent-light: oklch(0.80 0.14 90);
   --accent-subtle: oklch(0.73 0.15 85 / 0.13);
   --accent-border: oklch(0.73 0.15 85 / 0.28);
 
   /* Grid system */
-  --grid-line-color: oklch(1.0 0 0 / 0.04);
+  --grid-line-color: oklch(1.0 0 0 / 0.035);
   --grid-size: 28px;
 
   /* Offer status badge colors */
-  --status-draft-bg:      oklch(0.28 0.004 250);
-  --status-draft-text:    oklch(0.70 0 0);
-  --status-draft-border:  oklch(0.38 0.005 250);
-  --status-sent-bg:       oklch(0.30 0.05 250);
-  --status-sent-text:     oklch(0.78 0.13 250);
-  --status-viewed-bg:     oklch(0.28 0.05 300);
-  --status-viewed-text:   oklch(0.78 0.12 300);
-  --status-accepted-bg:   oklch(0.28 0.06 145);
-  --status-accepted-text: oklch(0.78 0.14 145);
-  --status-declined-bg:   oklch(0.28 0.06 25);
-  --status-declined-text: oklch(0.78 0.14 25);
-  --status-expired-bg:    oklch(0.28 0.06 70);
-  --status-expired-text:  oklch(0.78 0.14 70);
+  --status-draft-bg:      oklch(0.27 0.005 250);
+  --status-draft-text:    oklch(0.68 0 0);
+  --status-draft-border:  oklch(0.36 0.006 250);
+  --status-sent-bg:       oklch(0.22 0.05 250);
+  --status-sent-text:     oklch(0.75 0.14 250);
+  --status-viewed-bg:     oklch(0.22 0.05 300);
+  --status-viewed-text:   oklch(0.75 0.12 300);
+  --status-accepted-bg:   oklch(0.22 0.06 145);
+  --status-accepted-text: oklch(0.75 0.15 145);
+  --status-declined-bg:   oklch(0.22 0.06 25);
+  --status-declined-text: oklch(0.78 0.15 25);
+  --status-expired-bg:    oklch(0.22 0.06 70);
+  --status-expired-text:  oklch(0.78 0.15 70);
 }
