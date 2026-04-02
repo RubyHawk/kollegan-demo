@@ -123,20 +123,25 @@ async function downloadPdf(documentHtml: string, filename: string) {
     import('jspdf'),
   ]);
 
-  // Render the document HTML offscreen
+  // Container must be exactly 816px — the A4 pixel width the document is designed for.
+  // Any other width makes position:absolute fill-page images (width:816) overflow and get clipped.
   const container = document.createElement('div');
-  container.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;background:#fff;';
+  container.style.cssText = 'position:fixed;left:-9999px;top:0;width:816px;background:#fff;';
   container.innerHTML = documentHtml;
 
-  // Strip the doc-wrapper card styling for PDF
+  // Strip decorative card styling from doc-wrapper.
+  // New-format docs (with .page-content) carry their own padding inside each page-block;
+  // adding extra padding to doc-wrapper would shrink page-block below 816px and clip images.
   const wrapper = container.querySelector('.doc-wrapper') as HTMLElement | null;
+  const hasPageContent = !!container.querySelector('.page-content');
   if (wrapper) {
     wrapper.style.margin = '0';
-    wrapper.style.padding = '32px 40px';
     wrapper.style.border = 'none';
     wrapper.style.borderRadius = '0';
     wrapper.style.maxWidth = 'none';
     wrapper.style.boxShadow = 'none';
+    // Only add wrapper padding for legacy docs that don't have .page-content padding
+    wrapper.style.padding = hasPageContent ? '0' : '32px 40px';
   }
   // Hide signature fields in PDF
   container.querySelectorAll('[data-sig-field]').forEach((el) => {
@@ -145,46 +150,51 @@ async function downloadPdf(documentHtml: string, filename: string) {
 
   document.body.appendChild(container);
 
-  const canvas = await html2canvas(container, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: '#ffffff',
-  });
-
-  document.body.removeChild(container);
-
-  const imgData = canvas.toDataURL('image/png');
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const imgWidth = pageWidth - 20; // 10mm margin each side
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  const pageWidth  = pdf.internal.pageSize.getWidth();
+  const margin     = 0; // no margin — fill full A4 width for pixel-perfect output
+  const imgWidth   = pageWidth - margin * 2;
 
-  let y = 10;
-  if (imgHeight <= pageHeight - 20) {
-    pdf.addImage(imgData, 'PNG', 10, y, imgWidth, imgHeight);
+  // Render each .page-block as its own PDF page so fill-page images never split mid-image.
+  // Falls back to rendering the whole container when no page-blocks exist (legacy docs).
+  const pageBlocks = Array.from(container.querySelectorAll<HTMLElement>('.page-block'));
+
+  if (pageBlocks.length > 0) {
+    for (let i = 0; i < pageBlocks.length; i++) {
+      if (i > 0) pdf.addPage();
+      const blockCanvas = await html2canvas(pageBlocks[i], {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+      });
+      const imgH = (blockCanvas.height * imgWidth) / blockCanvas.width;
+      pdf.addImage(blockCanvas.toDataURL('image/png'), 'PNG', margin, 0, imgWidth, imgH);
+    }
   } else {
-    // Multi-page: slice the canvas
-    const pageContentHeight = pageHeight - 20;
-    const sliceHeight = Math.floor((pageContentHeight / imgHeight) * canvas.height);
-    let srcY = 0;
-    let page = 0;
+    // Legacy: single canvas capture + slice
+    const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    const pageHeight     = pdf.internal.pageSize.getHeight();
+    const imgTotalHeight = (canvas.height * imgWidth) / canvas.width;
 
-    while (srcY < canvas.height) {
-      if (page > 0) pdf.addPage();
-      const slice = document.createElement('canvas');
-      slice.width = canvas.width;
-      slice.height = Math.min(sliceHeight, canvas.height - srcY);
-      const sCtx = slice.getContext('2d')!;
-      sCtx.drawImage(canvas, 0, srcY, canvas.width, slice.height, 0, 0, canvas.width, slice.height);
-      const sliceData = slice.toDataURL('image/png');
-      const sliceImgH = (slice.height * imgWidth) / canvas.width;
-      pdf.addImage(sliceData, 'PNG', 10, 10, imgWidth, sliceImgH);
-      srcY += sliceHeight;
-      page++;
+    if (imgTotalHeight <= pageHeight) {
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, 0, imgWidth, imgTotalHeight);
+    } else {
+      const sliceHeight = Math.floor((pageHeight / imgTotalHeight) * canvas.height);
+      let srcY = 0; let page = 0;
+      while (srcY < canvas.height) {
+        if (page > 0) pdf.addPage();
+        const slice = document.createElement('canvas');
+        slice.width  = canvas.width;
+        slice.height = Math.min(sliceHeight, canvas.height - srcY);
+        slice.getContext('2d')!.drawImage(canvas, 0, srcY, canvas.width, slice.height, 0, 0, canvas.width, slice.height);
+        const sliceH = (slice.height * imgWidth) / canvas.width;
+        pdf.addImage(slice.toDataURL('image/png'), 'PNG', margin, 0, imgWidth, sliceH);
+        srcY += sliceHeight; page++;
+      }
     }
   }
 
+  document.body.removeChild(container);
   pdf.save(filename);
 }
 
@@ -248,12 +258,8 @@ export default function PublicOfferPage() {
       table { max-width: 100% !important; width: 100%; table-layout: fixed; }
       td, th { word-break: break-word; overflow-wrap: break-word; }
       pre, code { white-space: pre-wrap !important; word-break: break-word !important; overflow-x: hidden !important; }
-      .doc-wrapper { overflow-x: hidden !important; }
-      .page-block { overflow: visible !important; }
-      @media (max-width: 640px) {
-        .page-block > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
-        .page-content > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
-      }
+      /* Do NOT override .page-block overflow — it must stay hidden so each A4 page
+         clips its own fill-page images at the 816×1056 boundary.                  */
     `;
     if (doc.head) {
       doc.head.appendChild(responsiveStyle);
@@ -266,10 +272,13 @@ export default function PublicOfferPage() {
     const hasPageContent = !!doc.querySelector('.page-content');
     if (wrapper) {
       const isMobile = window.innerWidth < 640;
-      wrapper.style.margin = '0';
+      wrapper.style.margin = '0 auto';        // centre within iframe
       wrapper.style.border = 'none';
       wrapper.style.borderRadius = '0';
-      wrapper.style.maxWidth = 'none';
+      // Keep max-width at 816px — this is the A4 pixel width the document is built for.
+      // Setting it to 'none' widens .page-block beyond 816px so fill-page images
+      // (position:absolute; left:0; width:816px) no longer cover the full "page".
+      wrapper.style.maxWidth = '816px';
       wrapper.style.boxShadow = 'none';
       if (hasPageContent) {
         // New format: padding is on .page-content; leave doc-wrapper padding-free
