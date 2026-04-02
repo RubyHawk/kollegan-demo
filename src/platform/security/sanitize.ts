@@ -86,6 +86,12 @@ export function sanitizeUrl(url: string): string {
     return trimmed;
   }
 
+  // Allow root-relative asset URLs from the same origin, e.g. `/logo.svg`.
+  // This is needed for document/template images stored in `public/`.
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
+    return trimmed;
+  }
+
   // Allow safe data URIs (PNG and JPEG only)
   if (trimmed.startsWith('data:image/png;base64,') ||
       trimmed.startsWith('data:image/jpeg;base64,')) {
