@@ -1,206 +1,302 @@
-import { getSessionUser } from '@platform/auth/session';
 import Link from 'next/link';
+import { getSessionUser } from '@platform/auth/session';
+import { prisma } from '@platform/database/prisma';
 
-export default async function OverviewPage() {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmtSEK(amount: number) {
+  return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(amount);
+}
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short' });
+}
+
+function greeting(name: string | null) {
+  const h = new Date().getHours();
+  const prefix = h < 12 ? 'God morgon' : h < 18 ? 'God eftermiddag' : 'God kväll';
+  return name ? `${prefix}, ${name}` : prefix;
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  draft:    'Utkast',
+  sent:     'Skickad',
+  viewed:   'Visad',
+  accepted: 'Accepterad',
+  declined: 'Avvisad',
+  expired:  'Utgången',
+};
+
+const STATUS_STYLE: Record<string, string> = {
+  draft:    'bg-[var(--status-draft-bg)]    text-[var(--status-draft-text)]',
+  sent:     'bg-[var(--status-sent-bg)]     text-[var(--status-sent-text)]',
+  viewed:   'bg-[var(--status-viewed-bg)]   text-[var(--status-viewed-text)]',
+  accepted: 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted-text)]',
+  declined: 'bg-[var(--status-declined-bg)] text-[var(--status-declined-text)]',
+  expired:  'bg-[var(--status-expired-bg)]  text-[var(--status-expired-text)]',
+};
+
+// ─── Data fetching ────────────────────────────────────────────────────────────
+
+async function getDashboardData(orgId: string) {
+  const [counts, recentOffers, valueRows] = await Promise.all([
+    // Status counts
+    prisma.offer.groupBy({
+      by: ['status'],
+      where: { organizationId: orgId, deletedAt: null },
+      _count: { id: true },
+    }),
+
+    // Recent 8 offers
+    prisma.offer.findMany({
+      where: { organizationId: orgId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+      select: {
+        id: true, title: true, status: true, offerNumber: true,
+        recipientName: true, recipientCompany: true,
+        totalIncVat: true, createdAt: true, sentAt: true,
+        validUntil: true,
+      },
+    }),
+
+    // Value aggregates by status
+    prisma.offer.groupBy({
+      by: ['status'],
+      where: { organizationId: orgId, deletedAt: null },
+      _sum: { totalIncVat: true },
+    }),
+  ]);
+
+  const countMap: Record<string, number> = { draft: 0, sent: 0, viewed: 0, accepted: 0, declined: 0, expired: 0 };
+  let total = 0;
+  for (const r of counts) { countMap[r.status] = r._count.id; total += r._count.id; }
+
+  const valueMap: Record<string, number> = {};
+  for (const r of valueRows) { valueMap[r.status] = r._sum.totalIncVat ?? 0; }
+
+  const acceptedValue  = valueMap['accepted'] ?? 0;
+  const pipelineValue  = (valueMap['sent'] ?? 0) + (valueMap['viewed'] ?? 0);
+  const closedTotal    = (countMap['accepted'] ?? 0) + (countMap['declined'] ?? 0);
+  const acceptanceRate = closedTotal > 0 ? Math.round((countMap['accepted'] / closedTotal) * 100) : null;
+
+  // Offers expiring within 7 days (sent or viewed)
+  const in7days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const expiringSoon = await prisma.offer.count({
+    where: {
+      organizationId: orgId,
+      deletedAt: null,
+      status: { in: ['sent', 'viewed'] },
+      validUntil: { lte: in7days },
+    },
+  });
+
+  return { countMap, total, recentOffers, acceptedValue, pipelineValue, acceptanceRate, expiringSoon };
+}
+
+// ─── Stat card ────────────────────────────────────────────────────────────────
+
+function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: string }) {
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] p-5 flex flex-col gap-1 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">{label}</p>
+      <p className={`text-2xl font-bold tabular-nums ${accent ?? 'text-[var(--text-primary)]'}`}>{value}</p>
+      {sub && <p className="text-xs text-[var(--text-muted)]">{sub}</p>}
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default async function DashboardPage() {
   const user = await getSessionUser();
-  const role = user?.role ?? null;
+  if (!user) return null;
+
+  const orgId = await prisma.user
+    .findUnique({ where: { id: user.id }, select: { organizationId: true } })
+    .then(u => u?.organizationId ?? '');
+
+  if (!orgId) {
+    return (
+      <div className="px-8 py-10 text-sm text-[var(--text-muted)]">
+        Ingen organisation kopplad till ditt konto.
+      </div>
+    );
+  }
+
+  const {
+    countMap, total, recentOffers,
+    acceptedValue, pipelineValue, acceptanceRate, expiringSoon,
+  } = await getDashboardData(orgId);
+
+  const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || null;
 
   return (
-    <div className="px-8 py-10 max-w-5xl mx-auto space-y-10">
+    <div className="px-6 py-8 max-w-6xl mx-auto space-y-8">
 
-      {/* Header */}
-      <div>
-        <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)] mb-1">
-          Översikt
-        </h1>
-        <p className="text-sm text-[var(--text-muted)]">
-          Välkommen till Kollegan — din AI-drivna arbetsassistent.
-        </p>
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)]">
+            {greeting(displayName)}
+          </h1>
+          <p className="text-sm text-[var(--text-muted)] mt-0.5">
+            Här är en överblick över dina offerter.
+          </p>
+        </div>
+        <Link
+          href="/offerter/ny"
+          className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity shadow-sm"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Ny offert
+        </Link>
       </div>
 
-      {/* Quick Stats */}
-      <div>
-        <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-4">Snabbstatistik</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: 'Kunder',       value: '128', icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>), color: 'text-[var(--accent)] bg-[var(--accent)]/10' },
-            { label: 'Aktiva leads', value: '34',  icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>), color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' },
-            { label: 'Projekt',      value: '12',  icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>), color: 'text-violet-600 dark:text-violet-400 bg-violet-500/10' },
-            { label: 'Meddelanden', value: '7',   icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>), color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10' },
-          ].map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 min-h-[100px]">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{stat.label}</p>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${stat.color}`}>
-                  {stat.icon}
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums">{stat.value}</p>
-            </div>
-          ))}
-        </div>
+      {/* ── Stat cards ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Accepterat värde"
+          value={acceptedValue > 0 ? fmtSEK(acceptedValue) : '—'}
+          sub={countMap['accepted'] ? `${countMap['accepted']} accepterade` : 'Inga accepterade ännu'}
+          accent="text-[var(--status-accepted-text)]"
+        />
+        <StatCard
+          label="Pipeline"
+          value={pipelineValue > 0 ? fmtSEK(pipelineValue) : '—'}
+          sub={`${(countMap['sent'] ?? 0) + (countMap['viewed'] ?? 0)} aktiva offerter`}
+        />
+        <StatCard
+          label="Acceptansgrad"
+          value={acceptanceRate !== null ? `${acceptanceRate}%` : '—'}
+          sub={acceptanceRate !== null ? 'Av avslutade offerter' : 'Inga avslutade ännu'}
+          accent={acceptanceRate !== null && acceptanceRate >= 50 ? 'text-[var(--status-accepted-text)]' : undefined}
+        />
+        <StatCard
+          label="Utgår snart"
+          value={String(expiringSoon)}
+          sub="Inom 7 dagar"
+          accent={expiringSoon > 0 ? 'text-[var(--status-declined-text)]' : undefined}
+        />
       </div>
 
-      {/* Hero banner */}
-      <div className="relative rounded-3xl overflow-hidden border border-[var(--border)] bg-gradient-to-br from-[var(--accent)]/8 via-[var(--surface-alt)] to-[var(--surface-alt)]">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-[var(--accent)]/6 blur-3xl" />
-          <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-[var(--accent)]/4 blur-2xl" />
-        </div>
-        <div className="relative px-8 py-8 flex items-center gap-6">
-          <div className="w-14 h-14 rounded-2xl bg-[var(--accent)] flex items-center justify-center shrink-0 shadow-lg">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20" />
-              <path d="M12 8v4l3 3" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-[var(--accent)] uppercase tracking-widest mb-1">Live AI-demo</p>
-            <h2 className="font-heading text-lg font-semibold text-[var(--text-primary)] mb-1">
-              Grand Hotel Kollegan är redo
-            </h2>
-            <p className="text-sm text-[var(--text-muted)]">
-              Testa AI-receptionisten som svarar på samtal, hanterar bokningar och svarar på gästfrågor i realtid.
-            </p>
-          </div>
-          <Link
-            href="/demos/hotel"
-            className="ml-auto shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            Öppna demo
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
-            </svg>
-          </Link>
-        </div>
-      </div>
+      {/* ── Main content ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      {/* Quick nav cards */}
-      <div>
-        <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-4">Produkter</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Link
-            href="/crm"
-            className="group rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 hover:border-[var(--accent)]/40 hover:shadow-md transition-all duration-200"
-          >
-            <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center mb-4">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-[var(--text-primary)] mb-1 text-sm">CRM</h3>
-            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-              Hantera kunder, kontakter och ärendehistorik.
-            </p>
-            <div className="mt-4 text-xs text-[var(--accent)] font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              Öppna <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-            </div>
-          </Link>
-
-          <Link
-            href="/demos"
-            className="group rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 hover:border-amber-400/40 hover:shadow-md transition-all duration-200"
-          >
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mb-4">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600 dark:text-amber-400">
-                <path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
-                <path d="M9 9h1" /><path d="M14 9h1" /><path d="M9 13h1" /><path d="M14 13h1" />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-[var(--text-primary)] mb-1 text-sm">Demos</h3>
-            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-              Interaktiva AI-scenarier med live-simulerade miljöer.
-            </p>
-            <div className="mt-4 text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              Utforska <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-            </div>
-          </Link>
-
-          {role === 'admin' && (
-            <Link
-              href="/admin/compliance"
-              className="group rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 hover:border-emerald-400/40 hover:shadow-md transition-all duration-200"
-            >
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-4">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600 dark:text-emerald-400">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-[var(--text-primary)] mb-1 text-sm">Compliance</h3>
-              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                ISO 27001 kontroller, riskregister och policyer.
-              </p>
-              <div className="mt-4 text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                Hantera <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-              </div>
+        {/* Recent offers — takes 2/3 width */}
+        <div className="lg:col-span-2 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Senaste offerter</h2>
+            <Link href="/offerter" className="text-xs text-[var(--accent)] hover:underline font-medium">
+              Visa alla →
             </Link>
+          </div>
+
+          {recentOffers.length === 0 ? (
+            <div className="px-5 py-12 text-center text-sm text-[var(--text-muted)]">
+              Inga offerter ännu.{' '}
+              <Link href="/offerter/ny" className="text-[var(--accent)] hover:underline">Skapa din första →</Link>
+            </div>
+          ) : (
+            <div className="divide-y divide-[var(--border)]">
+              {recentOffers.map((offer) => (
+                <Link
+                  key={offer.id}
+                  href={`/offerter?id=${offer.id}`}
+                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-[var(--surface-hover)] transition-colors group"
+                >
+                  {/* Number */}
+                  <span className="text-xs font-mono text-[var(--text-muted)] w-10 shrink-0">
+                    {offer.offerNumber ? `#${offer.offerNumber}` : '—'}
+                  </span>
+
+                  {/* Title + recipient */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-primary)] truncate group-hover:text-[var(--accent)] transition-colors">
+                      {offer.title}
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)] truncate mt-0.5">
+                      {offer.recipientName}{offer.recipientCompany ? ` · ${offer.recipientCompany}` : ''}
+                    </p>
+                  </div>
+
+                  {/* Status badge */}
+                  <span className={`shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLE[offer.status] ?? ''}`}>
+                    {STATUS_LABEL[offer.status] ?? offer.status}
+                  </span>
+
+                  {/* Value */}
+                  <span className="shrink-0 text-sm font-semibold text-[var(--text-primary)] tabular-nums w-28 text-right">
+                    {fmtSEK(offer.totalIncVat)}
+                  </span>
+
+                  {/* Date */}
+                  <span className="shrink-0 text-xs text-[var(--text-muted)] w-12 text-right">
+                    {fmtDate(offer.createdAt.toString())}
+                  </span>
+                </Link>
+              ))}
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Feature highlights */}
-      <div>
-        <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-4">Vad Kollegan kan</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {[
-            {
-              icon: (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.84 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.77 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-                </svg>
-              ),
-              color: 'text-[var(--accent)] bg-[var(--accent)]/10',
-              title: 'Röstsamtal i realtid',
-              desc: 'Svarar på inkommande samtal, uppfattar avsikt och agerar direkt.',
-            },
-            {
-              icon: (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-              ),
-              color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
-              title: 'Bokningshantering',
-              desc: 'Låser rum, bekräftar bokningar och uppdaterar systemet automatiskt.',
-            },
-            {
-              icon: (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-              ),
-              color: 'text-violet-600 dark:text-violet-400 bg-violet-500/10',
-              title: 'CRM-integration',
-              desc: 'Sparar kontaktinformation och sammanfattar samtal i kundregistret.',
-            },
-            {
-              icon: (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                </svg>
-              ),
-              color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
-              title: 'Realtidsaktivitet',
-              desc: 'Alla händelser loggas och synkroniseras direkt i aktivitetsflödet.',
-            },
-          ].map((f) => (
-            <div key={f.title} className="flex items-start gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${f.color}`}>
-                {f.icon}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-[var(--text-primary)] mb-0.5">{f.title}</p>
-                <p className="text-xs text-[var(--text-muted)] leading-relaxed">{f.desc}</p>
-              </div>
+        {/* Right column */}
+        <div className="flex flex-col gap-4">
+
+          {/* Status breakdown */}
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Status</h2>
+            <div className="space-y-2.5">
+              {(['draft','sent','viewed','accepted','declined','expired'] as const).map((s) => {
+                const count = countMap[s] ?? 0;
+                const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
+                return (
+                  <div key={s}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_STYLE[s]}`}>
+                        {STATUS_LABEL[s]}
+                      </span>
+                      <span className="text-xs font-semibold text-[var(--text-primary)] tabular-nums">{count}</span>
+                    </div>
+                    <div className="h-1 rounded-full bg-[var(--surface-alt)] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[var(--accent)]/30 transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))}
+            <p className="text-xs text-[var(--text-muted)] mt-4">{total} offerter totalt</p>
+          </div>
+
+          {/* Quick actions */}
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Genvägar</h2>
+            <div className="flex flex-col gap-1.5">
+              {[
+                { href: '/offerter/ny', label: 'Ny offert',         icon: 'M12 5v14M5 12h14' },
+                { href: '/offerter',    label: 'Alla offerter',      icon: 'M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2' },
+                { href: '/mallar',      label: 'Mallar',             icon: 'M4 4h16v4H4zM4 12h16M4 16h16M4 20h10' },
+                { href: '/produkter',  label: 'Produktbibliotek',   icon: 'M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z' },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--text-muted)]">
+                    <path d={item.icon} />
+                  </svg>
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
         </div>
       </div>
 
