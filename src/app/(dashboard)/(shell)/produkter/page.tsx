@@ -330,7 +330,8 @@ function ProductModal({
             type="button"
             onClick={() => onSave(form)}
             disabled={saving || !form.name.trim()}
-            className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-light)] disabled:pointer-events-none disabled:opacity-50"
+            className="rounded-xl px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-95 disabled:pointer-events-none disabled:opacity-50 shadow-[0_12px_24px_rgba(0,0,0,0.12)]"
+            style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, #e06b45 80%), color-mix(in srgb, var(--accent) 8%, #a34729 92%))' }}
           >
             {saving ? 'Sparar…' : product ? 'Spara ändringar' : 'Skapa produkt'}
           </button>
@@ -560,7 +561,8 @@ export default function ProductsPage() {
             <button
               type="button"
               onClick={openCreate}
-              className="rounded-2xl bg-[var(--accent)] px-4 py-2.5 text-sm font-medium text-white transition-all hover:translate-y-[-1px] hover:bg-[var(--accent-light)]"
+              className="rounded-2xl px-4 py-2.5 text-sm font-medium text-white transition-all hover:translate-y-[-1px] hover:opacity-95 shadow-[0_14px_28px_rgba(0,0,0,0.14)]"
+              style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, #e06b45 80%), color-mix(in srgb, var(--accent) 8%, #a34729 92%))' }}
             >
               Ny produkt
             </button>
@@ -735,7 +737,8 @@ export default function ProductsPage() {
                     <button
                       type="button"
                       onClick={openCreate}
-                      className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-light)]"
+                      className="rounded-xl px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-95 shadow-[0_12px_24px_rgba(0,0,0,0.12)]"
+                      style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, #e06b45 80%), color-mix(in srgb, var(--accent) 8%, #a34729 92%))' }}
                     >
                       Ny produkt
                     </button>
@@ -776,7 +779,7 @@ export default function ProductsPage() {
       )}
 
       <Dialog open={Boolean(deleteProduct)} onOpenChange={(open) => { if (!open) setDeleteProduct(null); }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent mobileVariant="sheet" showMobileClose className="max-w-lg">
           <DialogHeader className="px-6 pt-6">
             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500/10 text-red-600 dark:text-red-400">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">

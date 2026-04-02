@@ -408,7 +408,7 @@ export default function CompaniesPage() {
       )}
 
       <Dialog open={Boolean(deleteCompany)} onOpenChange={(open) => { if (!open) setDeleteCompany(null); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent mobileVariant="sheet" showMobileClose className="max-w-md">
           <DialogHeader>
             <DialogTitle>Ta bort företag?</DialogTitle>
             <DialogDescription>

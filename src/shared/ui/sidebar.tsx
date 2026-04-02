@@ -44,6 +44,7 @@ import {
   ReceiptIcon,
   PackageIcon,
   HomeIcon,
+  CloseIcon,
 } from '@shared/ui/icons';
 import { SPRING_SNAPPY, SPRING_STANDARD, EASE_SPRING } from '@shared/lib/motion';
 import { cn } from '@shared/lib/utils';
@@ -553,9 +554,10 @@ function SectionGroup({
 
 interface SidebarHeaderProps {
   collapsed: boolean;
+  onMobileClose?: () => void;
 }
 
-function SidebarHeader({ collapsed }: SidebarHeaderProps) {
+function SidebarHeader({ collapsed, onMobileClose }: SidebarHeaderProps) {
   return (
     <div
       className={cn(
@@ -589,6 +591,17 @@ function SidebarHeader({ collapsed }: SidebarHeaderProps) {
           </motion.span>
         </AnimatePresence>
       )}
+
+      {onMobileClose ? (
+        <button
+          type="button"
+          onClick={onMobileClose}
+          aria-label="Stäng meny"
+          className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] md:hidden"
+        >
+          <CloseIcon size={16} />
+        </button>
+      ) : null}
 
     </div>
   );
@@ -917,8 +930,8 @@ export default function Sidebar({
         </button>
 
         {/* Sidebar panel */}
-        <aside className="h-full w-full flex flex-col glass-sidebar border-r border-[var(--border)] overflow-hidden">
-          <SidebarHeader collapsed={collapsed} />
+          <aside className="h-full w-full flex flex-col glass-sidebar border-r border-[var(--border)] overflow-hidden">
+          <SidebarHeader collapsed={collapsed} onMobileClose={onMobileClose} />
 
           {/* Scrollable nav */}
           <div

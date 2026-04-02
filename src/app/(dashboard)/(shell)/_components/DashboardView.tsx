@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { animate, motion, useMotionValue } from 'framer-motion';
 import Link from 'next/link';
+import { cn } from '@shared/lib/utils';
 
 export interface RecentOffer {
   id: string;
@@ -356,41 +357,39 @@ function KpiCard({
   sub,
   icon,
   tone,
+  className,
 }: {
   label: string;
   value: React.ReactNode;
   sub: string;
   icon: React.ReactNode;
   tone: string;
+  className?: string;
 }) {
   return (
-    <motion.div
-      variants={fadeUp}
-      className="rounded-[24px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-4 py-4 shadow-[0_12px_34px_rgba(0,0,0,0.06)]"
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10"
-          style={{
-            background: tone,
-            color: 'white',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12)',
-          }}
-        >
-          {icon}
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            {label}
-          </p>
-          <div className="mt-2 flex items-baseline gap-2 text-[var(--text-primary)]">
-            <p className="text-[24px] font-semibold tracking-tight leading-none tabular-nums">{value}</p>
-          </div>
-          <p className="mt-2 text-[13px] leading-5 text-[var(--text-secondary)]">{sub}</p>
-        </div>
+    <div className={cn('flex h-full items-start gap-3.5 rounded-[20px] px-3 py-3.5 sm:px-4', className)}>
+      <div
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+        style={{
+          background: tone,
+          color: 'white',
+        }}
+      >
+        {icon}
       </div>
-    </motion.div>
+
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          {label}
+        </p>
+        <div className="mt-1.5 flex items-baseline gap-2 text-[var(--text-primary)]">
+          <p className="text-[21px] font-semibold leading-none tracking-tight tabular-nums">{value}</p>
+        </div>
+        <p className="mt-1.5 text-[12px] leading-5 text-[var(--text-secondary)] sm:text-[13px]">
+          {sub}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -873,20 +872,20 @@ export default function DashboardView({
   const activePipeline = (countMap.sent ?? 0) + (countMap.viewed ?? 0);
 
   return (
-    <div className="mx-auto max-w-[1360px] px-4 py-7 sm:px-6 sm:py-8">
-      <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-6">
+    <div className="mx-auto max-w-[1360px] px-4 py-5 sm:px-6 sm:py-6">
+      <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-5">
         <motion.div
           variants={fadeUp}
-          className="overflow-hidden rounded-[30px] border border-[var(--border)] shadow-[0_24px_60px_rgba(0,0,0,0.12)]"
+          className="overflow-hidden rounded-[30px] border border-[var(--border)] shadow-[0_22px_56px_rgba(0,0,0,0.11)]"
           style={{
             background:
               'linear-gradient(145deg, color-mix(in srgb, var(--surface-0) 92%, var(--accent) 8%), var(--surface-0))',
           }}
         >
-          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="p-6 sm:p-7">
-              <div className="mb-4 flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-[var(--accent-border)] bg-[var(--accent-subtle)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+          <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="p-5 sm:p-6">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-[color-mix(in_srgb,var(--accent)_28%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_12%,var(--surface-0))] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-primary)]">
                   {dateLabel}
                 </span>
                 <span className="rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -897,32 +896,32 @@ export default function DashboardView({
               <h1 className="font-heading text-[30px] font-semibold tracking-tight text-[var(--text-primary)] sm:text-[36px]">
                 {greetingText}
               </h1>
-              <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[var(--text-secondary)] sm:text-base">
+              <p className="mt-2.5 max-w-2xl text-[15px] leading-7 text-[var(--text-secondary)] sm:text-base">
                 {greetingSub}
               </p>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:max-w-[560px]">
+              <div className="mt-5 grid gap-3 min-[520px]:grid-cols-2 xl:max-w-[620px]">
                 <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                     Aktiva just nu
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                  <p className="mt-1.5 text-lg font-semibold text-[var(--text-primary)]">
                     {activePipeline} offerter i rörelse
                   </p>
                 </div>
                 <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                     Total överblick
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                  <p className="mt-1.5 text-lg font-semibold text-[var(--text-primary)]">
                     {total} offerter i systemet
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,color-mix(in srgb, var(--surface-1) 88%, transparent),var(--surface-1))] p-6 lg:border-l lg:border-t-0 lg:p-7">
-              <div className="flex h-full flex-col justify-between gap-4">
+            <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,color-mix(in srgb, var(--surface-1) 88%, transparent),var(--surface-1))] p-5 xl:border-l xl:border-t-0 xl:p-5">
+              <div className="flex h-full flex-col gap-3">
                 <DashboardClock />
                 <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] px-4 py-4 shadow-[0_14px_34px_rgba(0,0,0,0.06)]">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
@@ -933,7 +932,8 @@ export default function DashboardView({
                   </p>
                   <Link
                     href="/offerter/ny"
-                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-95 active:scale-[0.98] shadow-[0_16px_34px_rgba(0,0,0,0.16)]"
+                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-95 active:scale-[0.98] shadow-[0_16px_34px_rgba(0,0,0,0.16)]"
+                    style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, #e06b45 80%), color-mix(in srgb, var(--accent) 8%, #a34729 92%))' }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 5v14M5 12h14" />
@@ -946,8 +946,13 @@ export default function DashboardView({
           </div>
         </motion.div>
 
-        <motion.div variants={stagger} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <motion.div
+          variants={fadeUp}
+          className="rounded-[26px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-3 py-2.5 shadow-[0_14px_34px_rgba(0,0,0,0.06)] sm:px-4"
+        >
+          <div className="grid gap-1.5 min-[460px]:grid-cols-2 xl:grid-cols-4">
           <KpiCard
+            className="min-w-0"
             label="Pipeline"
             value={pipelineValue > 0 ? <Counter to={pipelineValue} suffix=" kr" /> : <span className="text-[var(--text-muted)]">—</span>}
             sub={`${activePipeline} aktiva offert${activePipeline === 1 ? '' : 'er'}`}
@@ -960,6 +965,7 @@ export default function DashboardView({
           />
 
           <KpiCard
+            className="min-w-0"
             label="Accepterat värde"
             value={acceptedValue > 0 ? <Counter to={acceptedValue} suffix=" kr" /> : <span className="text-[var(--text-muted)]">—</span>}
             sub={countMap.accepted ? `${countMap.accepted} affär${countMap.accepted === 1 ? '' : 'er'} vunna` : 'Inga accepterade offerter ännu'}
@@ -972,8 +978,9 @@ export default function DashboardView({
           />
 
           <KpiCard
+            className="min-w-0"
             label="Vinstgrad"
-            value={acceptanceRate !== null ? <><Counter to={acceptanceRate} /><span className="ml-1 text-xl">%</span></> : <span className="text-[var(--text-muted)]">—</span>}
+            value={acceptanceRate !== null ? <><Counter to={acceptanceRate} /><span className="ml-1 text-lg">%</span></> : <span className="text-[var(--text-muted)]">—</span>}
             sub={acceptanceRate !== null ? 'Andel accepterade av avslutade offerter' : 'Visas när du har avslutade offerter'}
             tone="linear-gradient(135deg, #8a4f00, #d6851a)"
             icon={
@@ -984,6 +991,7 @@ export default function DashboardView({
           />
 
           <KpiCard
+            className="min-w-0"
             label="Utgår snart"
             value={<Counter to={expiringSoon} />}
             sub={expiringSoon > 0 ? `Offert${expiringSoon === 1 ? '' : 'er'} som löper ut inom 7 dagar` : 'Ingen offert behöver följas upp direkt'}
@@ -995,9 +1003,10 @@ export default function DashboardView({
               </svg>
             }
           />
+          </div>
         </motion.div>
 
-        <motion.div variants={stagger} className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,1fr)]">
+        <motion.div variants={stagger} className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.95fr)]">
           <motion.div
             variants={fadeUp}
             className="overflow-hidden rounded-[26px] border border-[var(--border)] bg-[var(--surface-0)] shadow-[0_18px_45px_rgba(0,0,0,0.09)]"
@@ -1019,7 +1028,7 @@ export default function DashboardView({
             </div>
 
             {recentOffers.length === 0 ? (
-              <motion.div variants={fadeIn} className="flex min-h-[420px] flex-col items-center justify-center px-8 py-14 text-center">
+              <motion.div variants={fadeIn} className="flex min-h-[280px] flex-col items-center justify-center px-6 py-8 text-center sm:px-8 sm:py-10">
                 <div className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-1),var(--surface-0))] px-8 py-8 shadow-[0_20px_50px_rgba(0,0,0,0.08)]">
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--accent-subtle)] text-[var(--accent)]">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -1034,7 +1043,11 @@ export default function DashboardView({
                     Skapa din första offert för att börja fylla översikten med verklig aktivitet och tydligare uppföljning.
                   </p>
 
-                  <Link href="/offerter/ny" className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-95 active:scale-[0.98]">
+                  <Link
+                    href="/offerter/ny"
+                    className="mt-6 inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-95 active:scale-[0.98] shadow-[0_14px_30px_rgba(0,0,0,0.14)]"
+                    style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, #e06b45 80%), color-mix(in srgb, var(--accent) 8%, #a34729 92%))' }}
+                  >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 5v14M5 12h14" />
                     </svg>

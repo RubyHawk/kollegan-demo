@@ -103,7 +103,7 @@ export function SearchTrigger() {
           if (!nextOpen) setQuery('');
         }}
       >
-        <DialogContent className="max-w-xl p-0">
+        <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-xl p-0">
           <DialogHeader className="border-b border-[var(--border)] px-5 pb-3 pt-5">
             <DialogTitle className="text-base text-[var(--text-primary)]">Snabbsök</DialogTitle>
             <DialogDescription>
