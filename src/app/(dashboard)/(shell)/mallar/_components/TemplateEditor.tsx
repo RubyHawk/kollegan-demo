@@ -45,7 +45,7 @@ import dynamic from 'next/dynamic';
 import { EditorCtx } from './editor-context';
 import { HFCtx } from './header-footer-context';
 import {
-  parseTemplateDoc, EMPTY_DOC, makeEmptyPage, genId,
+  parseTemplateDoc, EMPTY_DOC, makeEmptyPage, makeDocumentPage,
 } from './template-doc';
 import type { PageDoc } from './template-doc';
 import BlocksSidebar from './BlocksSidebar';
@@ -273,13 +273,24 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, headerPageOverride, footerPageOverride, flushPage]);
 
-  const addPage = useCallback((preset?: Partial<Pick<PageDoc, 'label' | 'body'>>) => {
+  const addPage = useCallback((preset?: Partial<PageDoc>) => {
     const curIdx   = activeIdxRef.current;
     const curPages = pagesRef.current;
 
     const flushed = flushPage(curIdx, curPages);
-    const newPage = makeEmptyPage(preset?.label ?? `Sida ${flushed.length + 1}`);
-    if (preset?.body) newPage.body = preset.body;
+    const basePage = preset?.kind === 'document'
+      ? makeDocumentPage(preset?.label ?? `Offertsida ${flushed.length + 1}`)
+      : makeEmptyPage(preset?.label ?? `Sida ${flushed.length + 1}`);
+    const newPage: PageDoc = {
+      ...basePage,
+      ...preset,
+      body: preset?.body ?? basePage.body,
+      header: preset?.header ?? basePage.header,
+      footer: preset?.footer ?? basePage.footer,
+      document: preset?.kind === 'document'
+        ? { ...basePage.document, ...(preset.document ?? {}) }
+        : preset?.document,
+    };
 
     const newPages  = [...flushed, newPage];
     const newIdx    = newPages.length - 1;
@@ -360,6 +371,29 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
     setActiveFooter((prev) => ({ ...prev, ...p }));
   }, []);
 
+  const patchActivePage = useCallback((patch: Partial<PageDoc>) => {
+    setPages((prev) => {
+      const updated = [...prev];
+      const current = updated[activeIdxRef.current];
+      if (!current) return prev;
+
+      const nextKind = patch.kind ?? current.kind ?? 'presentation';
+      const fallbackDoc = nextKind === 'document'
+        ? { ...makeDocumentPage(current.label).document }
+        : undefined;
+
+      updated[activeIdxRef.current] = {
+        ...current,
+        ...patch,
+        kind: nextKind,
+        document: nextKind === 'document'
+          ? { ...fallbackDoc, ...(current.document ?? {}), ...(patch.document ?? {}) }
+          : patch.document ?? current.document,
+      };
+      return updated;
+    });
+  }, []);
+
   // ── Document settings ─────────────────────────────────────────────────────
   const [docSettings, setDocSettings] = useState({ pageMargin: 'normal' as 'tight' | 'normal' | 'wide', defaultFont: 'Calibri' });
   const patchDocSettings = useCallback((p: Partial<typeof docSettings>) => {
@@ -420,6 +454,7 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
         removePage,
         renamePage,
         movePage,
+        patchActivePage,
         activeHeader,
         activeFooter,
         patchActiveHeader,

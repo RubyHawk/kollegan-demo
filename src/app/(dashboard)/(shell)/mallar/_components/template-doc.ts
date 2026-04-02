@@ -22,9 +22,26 @@ export interface HFSettings {
 export interface PageDoc {
   id:     string;
   label:  string;
+  kind?:  'presentation' | 'document';
   body:   object;  // TipTap JSON doc node
   header: { enabled: boolean; useDefault: boolean; content: object };
   footer: { enabled: boolean; useDefault: boolean; content: object };
+  document?: {
+    layout?: 'classic-offer';
+    backgroundImageSrc?: string;
+    backgroundOpacity?: number;
+    watermarkMode?: 'none' | 'top' | 'bottom' | 'full';
+    showLogo?: boolean;
+    showSenderDetails?: boolean;
+    showCustomerBlock?: boolean;
+    showIntro?: boolean;
+    showLineItems?: boolean;
+    showSummary?: boolean;
+    showNotes?: boolean;
+    showTerms?: boolean;
+    showFooter?: boolean;
+    summaryPlacement?: 'right' | 'below';
+  };
 }
 
 export interface TemplateDoc {
@@ -37,6 +54,19 @@ export interface TemplateDoc {
 // ─── Defaults ──────────────────────────────────────────────────────────────────
 
 export const EMPTY_DOC: object = { type: 'doc', content: [{ type: 'paragraph' }] };
+export const EMPTY_DOCUMENT_BODY: object = {
+  type: 'doc',
+  content: [
+    {
+      type: 'paragraph',
+      content: [{ type: 'text', text: 'Kort introduktion eller tilläggsinformation till kunden.' }],
+    },
+    {
+      type: 'paragraph',
+      content: [{ type: 'text', text: 'Lägg gärna juridiska villkor eller kompletterande anteckningar längre ned på sidan.' }],
+    },
+  ],
+};
 
 /** @legacy kept for backward compat — no longer used in the v3 doc format */
 export const DEFAULT_HF_SETTINGS: HFSettings = {
@@ -57,9 +87,37 @@ export function makeEmptyPage(label = 'Sida 1'): PageDoc {
   return {
     id:     genId(),
     label,
+    kind:   'presentation',
     body:   EMPTY_DOC,
     header: { enabled: false, useDefault: true,  content: EMPTY_DOC },
     footer: { enabled: false, useDefault: true,  content: EMPTY_DOC },
+  };
+}
+
+export function makeDocumentPage(label = 'Offertsida'): PageDoc {
+  return {
+    id: genId(),
+    label,
+    kind: 'document',
+    body: EMPTY_DOCUMENT_BODY,
+    header: { enabled: false, useDefault: true, content: EMPTY_DOC },
+    footer: { enabled: false, useDefault: true, content: EMPTY_DOC },
+    document: {
+      layout: 'classic-offer',
+      backgroundImageSrc: '/soleria-template/page-3-bg.png',
+      backgroundOpacity: 0.08,
+      watermarkMode: 'bottom',
+      showLogo: true,
+      showSenderDetails: true,
+      showCustomerBlock: true,
+      showIntro: true,
+      showLineItems: true,
+      showSummary: true,
+      showNotes: true,
+      showTerms: true,
+      showFooter: true,
+      summaryPlacement: 'right',
+    },
   };
 }
 
@@ -95,7 +153,17 @@ export function parseTemplateDoc(raw: string | undefined | null): TemplateDoc {
       const pages = (parsed.pages as PageDoc[] | undefined) ?? [makeEmptyPage()];
       return {
         _v:            3,
-        pages:         pages.length > 0 ? pages : [makeEmptyPage()],
+        pages:         (pages.length > 0 ? pages : [makeEmptyPage()]).map((page, idx) => ({
+          ...page,
+          kind: page.kind ?? 'presentation',
+          label: page.label ?? `Sida ${idx + 1}`,
+          document: page.kind === 'document'
+            ? {
+                ...makeDocumentPage(page.label ?? `Sida ${idx + 1}`).document,
+                ...(page.document ?? {}),
+              }
+            : page.document,
+        })),
         defaultHeader: (parsed.defaultHeader as object) ?? EMPTY_DOC,
         defaultFooter: (parsed.defaultFooter as object) ?? EMPTY_DOC,
       };
@@ -116,6 +184,7 @@ export function parseTemplateDoc(raw: string | undefined | null): TemplateDoc {
         pages: [{
           id:    genId(),
           label: 'Sida 1',
+          kind: 'presentation',
           body:  (parsed.body as object) ?? EMPTY_DOC,
           header: {
             enabled:    v2Settings.headerEnabled ?? false,
@@ -139,6 +208,7 @@ export function parseTemplateDoc(raw: string | undefined | null): TemplateDoc {
       pages: [{
         id:    genId(),
         label: 'Sida 1',
+        kind: 'presentation',
         body:  parsed as object,
         header: { enabled: false, useDefault: true, content: EMPTY_DOC },
         footer: { enabled: false, useDefault: true, content: EMPTY_DOC },
@@ -153,6 +223,7 @@ export function parseTemplateDoc(raw: string | undefined | null): TemplateDoc {
       pages: [{
         id:    genId(),
         label: 'Sida 1',
+        kind: 'presentation',
         body:  { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: raw }] }] },
         header: { enabled: false, useDefault: true, content: EMPTY_DOC },
         footer: { enabled: false, useDefault: true, content: EMPTY_DOC },

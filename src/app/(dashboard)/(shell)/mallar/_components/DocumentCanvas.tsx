@@ -33,6 +33,9 @@ const MARGIN_PRESETS = { tight: 64, normal: 96, wide: 128 } as const;
 export default function DocumentCanvas() {
   const editor = useTemplateEditor();
   const hf     = useHeaderFooter();
+  const activePage = hf?.pages[hf.activeIdx] ?? null;
+  const isDocumentPage = activePage?.kind === 'document';
+  const documentSettings = activePage?.document;
 
   // Track whether the editor body is empty to show the onboarding overlay
   const isEmpty = useSyncExternalStore(
@@ -134,6 +137,26 @@ export default function DocumentCanvas() {
               isolation: 'isolate',
             }}
           >
+            {isDocumentPage && (
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  opacity: documentSettings?.backgroundImageSrc ? (documentSettings?.backgroundOpacity ?? 0.08) : 0,
+                  backgroundImage: documentSettings?.backgroundImageSrc ? `url(${documentSettings.backgroundImageSrc})` : 'none',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition:
+                    documentSettings?.watermarkMode === 'top'
+                      ? 'center top'
+                      : documentSettings?.watermarkMode === 'full'
+                        ? 'center center'
+                        : 'center bottom',
+                  backgroundSize:
+                    documentSettings?.watermarkMode === 'full'
+                      ? '100% 100%'
+                      : '78% auto',
+                }}
+              />
+            )}
 
             {/* ── Header zone ───────────────────────────────────────────────── */}
             {activeHeader.enabled && headerEditor && (
@@ -152,6 +175,15 @@ export default function DocumentCanvas() {
               style={{ padding: `${H_PAD}px ${H_PAD}px` }}
               onClick={() => editor?.commands.focus()}
             >
+              {isDocumentPage && (
+                <DocumentPageGuide
+                  title={activePage?.label ?? 'Offertsida'}
+                  showLogo={documentSettings?.showLogo ?? true}
+                  showCustomer={documentSettings?.showCustomerBlock ?? true}
+                  showSummary={documentSettings?.showSummary ?? true}
+                  showFooter={documentSettings?.showFooter ?? true}
+                />
+              )}
               <EditorContent editor={editor} className="doc-editor" />
 
               {/* ── Onboarding overlay (shown when body is empty) ───────────── */}
@@ -209,7 +241,7 @@ export default function DocumentCanvas() {
           .doc-editor .ProseMirror {
             outline: none !important;
             border: none !important;
-            min-height: 720px;
+            min-height: ${isDocumentPage ? '360px' : '720px'};
             cursor: text;
             font-family: ${docFont}, Carlito, Arial, sans-serif;
             font-size: 13px;
@@ -396,6 +428,90 @@ export default function DocumentCanvas() {
 
 // ── Page Tab component ─────────────────────────────────────────────────────────
 
+function DocumentPageGuide({
+  title,
+  showLogo,
+  showCustomer,
+  showSummary,
+  showFooter,
+}: {
+  title: string;
+  showLogo: boolean;
+  showCustomer: boolean;
+  showSummary: boolean;
+  showFooter: boolean;
+}) {
+  return (
+    <div className="mb-8 rounded-[24px] border border-slate-200 bg-slate-50/80 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
+      <div className="mb-5 flex items-start justify-between gap-8">
+        <div className="min-w-0">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Strukturerad offertsida</p>
+          <div className="flex items-start gap-4">
+            {showLogo && <div className="mt-1 h-14 w-14 rounded-2xl border border-slate-200 bg-white shadow-sm" />}
+            <div className="space-y-2">
+              <div className="h-3 w-40 rounded-full bg-slate-300" />
+              <div className="h-2.5 w-48 rounded-full bg-slate-200" />
+              <div className="h-2.5 w-36 rounded-full bg-slate-200" />
+            </div>
+          </div>
+        </div>
+        <div className="min-w-[180px] space-y-3 text-right">
+          <p className="text-xl font-semibold text-slate-900">{title}</p>
+          <div className="space-y-2">
+            <div className="ml-auto h-2.5 w-28 rounded-full bg-slate-200" />
+            <div className="ml-auto h-2.5 w-32 rounded-full bg-slate-200" />
+            <div className="ml-auto h-2.5 w-24 rounded-full bg-slate-200" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-[1.2fr_0.8fr] gap-6">
+        <div className="space-y-4">
+          {showCustomer && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Kundblock</p>
+              <div className="space-y-2">
+                <div className="h-3 w-32 rounded-full bg-slate-300" />
+                <div className="h-2.5 w-44 rounded-full bg-slate-200" />
+                <div className="h-2.5 w-36 rounded-full bg-slate-200" />
+              </div>
+            </div>
+          )}
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/80 p-4">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Redigerbar textyta</p>
+            <p className="text-sm leading-6 text-slate-600">
+              Texten du skriver här används för tilläggsinformation, anteckningar och villkor.
+              Tabell, summering och footer ligger fast i dokumentlayouten.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {showSummary && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Summering</p>
+              <div className="space-y-2">
+                <div className="flex justify-between gap-4"><div className="h-2.5 w-24 rounded-full bg-slate-200" /><div className="h-2.5 w-16 rounded-full bg-slate-300" /></div>
+                <div className="flex justify-between gap-4"><div className="h-2.5 w-20 rounded-full bg-slate-200" /><div className="h-2.5 w-14 rounded-full bg-slate-200" /></div>
+                <div className="flex justify-between gap-4 border-t border-slate-100 pt-2"><div className="h-3 w-28 rounded-full bg-slate-300" /><div className="h-3 w-20 rounded-full bg-slate-400" /></div>
+              </div>
+            </div>
+          )}
+          {showFooter && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Footer</p>
+              <div className="space-y-2">
+                <div className="h-2.5 w-full rounded-full bg-slate-200" />
+                <div className="h-2.5 w-4/5 rounded-full bg-slate-200" />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PageTab({
   page, active, onActivate, onRename, onDelete,
 }: {
@@ -453,9 +569,21 @@ function PageTab({
           autoFocus
         />
       ) : (
-        <span className="overflow-hidden text-ellipsis whitespace-nowrap max-w-[120px] flex-1">
-          {page.label}
-        </span>
+        <>
+          <span className="overflow-hidden text-ellipsis whitespace-nowrap max-w-[120px] flex-1">
+            {page.label}
+          </span>
+          <span
+            className={cn(
+              'shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em]',
+              page.kind === 'document'
+                ? 'border-violet-200 bg-violet-50 text-violet-700'
+                : 'border-sky-200 bg-sky-50 text-sky-700',
+            )}
+          >
+            {page.kind === 'document' ? 'Dok' : 'Sida'}
+          </span>
+        </>
       )}
 
       {/* Delete button — shown on hover when deletion is allowed */}

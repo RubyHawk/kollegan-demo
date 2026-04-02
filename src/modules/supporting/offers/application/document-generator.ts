@@ -18,6 +18,7 @@
 
 import type { Offer, OfferLineItem } from '../domain/offer.entity';
 import { sanitizeUrl, escapeHtml as secureEscapeHtml } from '@platform/security/sanitize';
+import { BRAND_MARK_PATH, BRAND_NAME, BRAND_DEFAULT_PUBLIC_ORIGIN, BRAND_EMAIL_FALLBACK } from '@shared/branding';
 
 // ─── SEK formatter ─────────────────────────────────────────────────────────────
 
@@ -31,6 +32,32 @@ function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('sv-SE', {
     day: '2-digit', month: 'long', year: 'numeric',
   });
+}
+
+function fmtSEKPrecise(n: number): string {
+  return new Intl.NumberFormat('sv-SE', {
+    style: 'currency', currency: 'SEK', minimumFractionDigits: 2, maximumFractionDigits: 2,
+  }).format(n);
+}
+
+function percentLabel(rate: number): string {
+  return `${Math.round(rate * 100)}%`;
+}
+
+function buildOfferSummary(offer: Offer) {
+  const vatAmount = Math.max(0, offer.totalIncVat - offer.totalExVat);
+  const discountAmount = Math.round(offer.lineItems.reduce((sum, item) => {
+    const raw = item.quantity * item.unitPrice;
+    const discounted = raw * (1 - ((item.discount ?? 0) / 100));
+    return sum + Math.max(0, raw - discounted);
+  }, 0) * 100) / 100;
+  const hasVat = offer.lineItems.some((item) => item.vatRate > 0);
+  return {
+    vatAmount,
+    discountAmount,
+    hasVat,
+    totalLabel: hasVat ? 'Totalsumma inkl. moms' : 'Totalsumma exkl. moms',
+  };
 }
 
 // ─── TipTap JSON → HTML ─────────────────────────────────────────────────────────
@@ -204,11 +231,9 @@ function escapeHtml(s: string): string {
 // ─── Line items table ──────────────────────────────────────────────────────────
 
 function buildLineItemsTable(items: OfferLineItem[]): string {
-  const headerStyle = 'padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;background:#f8fafc;border-bottom:2px solid #e2e8f0;';
-  const cellStyle   = 'padding:8px 12px;font-size:13px;border-bottom:1px solid #e2e8f0;vertical-align:top;';
+  const headerStyle = 'padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#475569;background:#eef2f7;border-bottom:1px solid #d9e2ec;';
+  const cellStyle   = 'padding:10px 12px;font-size:13px;border-bottom:1px solid #e2e8f0;vertical-align:top;';
   const numStyle    = `${cellStyle}text-align:right;`;
-
-  const vatLabel = (r: number) => `${Math.round(r * 100)}%`;
   const discountLabel = (d?: number) => d ? `${d}%` : '-';
 
   const rows = items.map((item) => {
@@ -216,12 +241,14 @@ function buildLineItemsTable(items: OfferLineItem[]): string {
     const lineExVat = item.quantity * item.unitPrice * disc;
     return `
       <tr>
-        <td data-label="Beskrivning" style="${cellStyle}">${escapeHtml(item.description)}</td>
+        <td data-label="Beskrivning" style="${cellStyle}">
+          <div style="font-weight:600;color:#0f172a;margin-bottom:2px;">${escapeHtml(item.description)}</div>
+        </td>
         <td data-label="Antal"       style="${numStyle}">${item.quantity}</td>
-        <td data-label="&Aring;-pris" style="${numStyle}">${fmtSEK(item.unitPrice)}</td>
-        <td data-label="Moms"        style="${numStyle}">${vatLabel(item.vatRate)}</td>
+        <td data-label="&Agrave;-pris" style="${numStyle}">${fmtSEKPrecise(item.unitPrice)}</td>
         <td data-label="Rabatt"      style="${numStyle}">${discountLabel(item.discount)}</td>
-        <td data-label="Summa"       style="${numStyle};font-weight:600;">${fmtSEK(lineExVat)}</td>
+        <td data-label="Moms"        style="${numStyle}">${item.vatRate > 0 ? percentLabel(item.vatRate) : 'Ingen'}</td>
+        <td data-label="Belopp"      style="${numStyle};font-weight:600;">${fmtSEKPrecise(lineExVat)}</td>
       </tr>`;
   }).join('');
 
@@ -231,10 +258,10 @@ function buildLineItemsTable(items: OfferLineItem[]): string {
         <tr>
           <th style="${headerStyle}">Beskrivning</th>
           <th style="${headerStyle}text-align:right;">Antal</th>
-          <th style="${headerStyle}text-align:right;">&Aring;-pris</th>
-          <th style="${headerStyle}text-align:right;">Moms</th>
+          <th style="${headerStyle}text-align:right;">&Agrave;-pris</th>
           <th style="${headerStyle}text-align:right;">Rabatt</th>
-          <th style="${headerStyle}text-align:right;">Summa</th>
+          <th style="${headerStyle}text-align:right;">Moms</th>
+          <th style="${headerStyle}text-align:right;">Belopp</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -333,6 +360,156 @@ function containsFillPageImage(node: TipTapNode): boolean {
   return (node.content ?? []).some(containsFillPageImage);
 }
 
+interface V3PageDoc {
+  kind?: 'presentation' | 'document';
+  label?: string;
+  body:   TipTapNode;
+  header: { enabled: boolean; useDefault: boolean; content: TipTapNode };
+  footer: { enabled: boolean; useDefault: boolean; content: TipTapNode };
+  document?: {
+    backgroundImageSrc?: string;
+    backgroundOpacity?: number;
+    watermarkMode?: 'none' | 'top' | 'bottom' | 'full';
+    showLogo?: boolean;
+    showSenderDetails?: boolean;
+    showCustomerBlock?: boolean;
+    showIntro?: boolean;
+    showLineItems?: boolean;
+    showSummary?: boolean;
+    showNotes?: boolean;
+    showTerms?: boolean;
+    showFooter?: boolean;
+    summaryPlacement?: 'right' | 'below';
+  };
+}
+
+function renderDocumentSummary(offer: Offer, placement: 'right' | 'below'): string {
+  const summary = buildOfferSummary(offer);
+  const boxClass = placement === 'below' ? 'offer-summary offer-summary--below' : 'offer-summary';
+  const discountRow = summary.discountAmount > 0 ? `
+    <div class="offer-summary__row">
+      <span>Rabatt</span>
+      <strong>${fmtSEKPrecise(summary.discountAmount)}</strong>
+    </div>` : '';
+  const vatRow = summary.hasVat ? `
+    <div class="offer-summary__row">
+      <span>Moms</span>
+      <strong>${fmtSEKPrecise(summary.vatAmount)}</strong>
+    </div>` : '';
+
+  return `
+    <aside class="${boxClass}">
+      <div class="offer-summary__row">
+        <span>Delsumma</span>
+        <strong>${fmtSEKPrecise(offer.totalExVat)}</strong>
+      </div>
+      ${discountRow}
+      ${vatRow}
+      <div class="offer-summary__row offer-summary__row--total">
+        <span>${summary.totalLabel}</span>
+        <strong>${fmtSEKPrecise(summary.hasVat ? offer.totalIncVat : offer.totalExVat)}</strong>
+      </div>
+    </aside>`;
+}
+
+function renderStructuredDocumentPage(page: V3PageDoc, offer: Offer, replacements: Record<string, string>, pageIndex: number): string {
+  const settings = {
+    backgroundOpacity: 0.08,
+    watermarkMode: 'bottom',
+    showLogo: true,
+    showSenderDetails: true,
+    showCustomerBlock: true,
+    showIntro: true,
+    showLineItems: true,
+    showSummary: true,
+    showNotes: true,
+    showTerms: true,
+    showFooter: true,
+    summaryPlacement: 'right',
+    ...(page.document ?? {}),
+  };
+
+  const offerNumber = replacements['{{offerNumber}}'];
+  const senderName = BRAND_NAME;
+  const senderEmail = process.env.EMAIL_FROM || BRAND_EMAIL_FALLBACK;
+  const senderWebsite = BRAND_DEFAULT_PUBLIC_ORIGIN.replace(/^https?:\/\//, '');
+  const noteHtml = offer.notes ? `<section class="offer-section"><h3>Anteckningar</h3><p>${secureEscapeHtml(offer.notes)}</p></section>` : '';
+  const introHtml = nodeToHtml(page.body, replacements);
+  const tableHtml = buildLineItemsTable(offer.lineItems);
+  const summaryHtml = renderDocumentSummary(
+    offer,
+    (settings.summaryPlacement ?? 'right') as 'right' | 'below',
+  );
+  const backgroundStyle = settings.backgroundImageSrc
+    ? `style="--doc-bg:url('${sanitizeUrl(settings.backgroundImageSrc)}');--doc-bg-opacity:${settings.backgroundOpacity};--doc-bg-position:${
+        settings.watermarkMode === 'top' ? 'center top' : settings.watermarkMode === 'full' ? 'center center' : 'center bottom'
+      };--doc-bg-size:${settings.watermarkMode === 'full' ? '100% 100%' : '78% auto'};"`
+    : '';
+
+  return `
+    <div class="page-block page-block--document" ${backgroundStyle} data-page="${pageIndex + 1}">
+      <div class="page-content page-content--document">
+        <section class="offer-shell">
+          <header class="offer-shell__header">
+            <div class="offer-shell__sender">
+              ${settings.showLogo ? `<img class="offer-shell__logo" src="${sanitizeUrl(BRAND_MARK_PATH)}" alt="${escapeHtml(senderName)}" />` : ''}
+              ${settings.showSenderDetails ? `
+                <div class="offer-shell__sender-copy">
+                  <p class="offer-shell__sender-name">${escapeHtml(senderName)}</p>
+                  <p>${escapeHtml(senderEmail)}</p>
+                  <p>${escapeHtml(senderWebsite)}</p>
+                </div>` : ''}
+            </div>
+            <div class="offer-shell__meta">
+              <p class="offer-shell__title">Offert</p>
+              <dl>
+                <div><dt>Offertnummer</dt><dd>${offerNumber}</dd></div>
+                <div><dt>Offertdatum</dt><dd>${replacements['{{createdDate}}']}</dd></div>
+                <div><dt>Giltig till</dt><dd>${replacements['{{validUntil}}']}</dd></div>
+              </dl>
+            </div>
+          </header>
+
+          <section class="offer-shell__topline">
+            <div>
+              <h1>${escapeHtml(offer.title)}</h1>
+            </div>
+            ${settings.showCustomerBlock ? `
+              <div class="offer-shell__customer">
+                <p class="offer-shell__customer-name">${escapeHtml(offer.recipientCompany || offer.recipientName)}</p>
+                <p>${escapeHtml(offer.recipientName)}</p>
+                <p>${escapeHtml(offer.recipientEmail)}</p>
+              </div>` : ''}
+          </section>
+
+          ${settings.showIntro ? `<section class="offer-section offer-section--intro">${introHtml}</section>` : ''}
+
+          ${settings.showLineItems ? `
+            <section class="offer-section">
+              <div class="offer-table-header">
+                <h2>Produkter och tjänster</h2>
+              </div>
+              ${tableHtml}
+            </section>` : ''}
+
+          ${settings.showSummary ? summaryHtml : ''}
+          ${settings.showNotes ? noteHtml : ''}
+          ${settings.showTerms ? `
+            <section class="offer-section offer-section--terms">
+              <h3>Juridiska villkor</h3>
+              <p>Offerten gäller till angivet datum. Arbetet utförs enligt överenskommen omfattning och faktureras enligt summeringen ovan. Eventuella ändringar eller tillägg hanteras som separat tilläggsbeställning.</p>
+            </section>` : ''}
+          ${settings.showFooter ? `
+            <footer class="offer-shell__footer">
+              <div><strong>${escapeHtml(senderName)}</strong><span>${escapeHtml(senderWebsite)}</span></div>
+              <div><strong>Kontakt</strong><span>${escapeHtml(senderEmail)}</span></div>
+              <div><strong>Status</strong><span>${buildOfferSummary(offer).hasVat ? 'Inkl. moms' : 'Exkl. moms'}</span></div>
+            </footer>` : ''}
+        </section>
+      </div>
+    </div>`;
+}
+
 // ─── Main generator ────────────────────────────────────────────────────────────
 
 /**
@@ -420,19 +597,16 @@ export function generateDocument(templateContent: string, offer: Offer): string 
 
   // ─── Parse TipTap JSON (supports TemplateDoc v3, v2, and legacy v1) ─────────
 
-  // Inner helper: render a single page to its HTML string (header + body + footer)
-  interface V3PageDoc {
-    body:   TipTapNode;
-    header: { enabled: boolean; useDefault: boolean; content: TipTapNode };
-    footer: { enabled: boolean; useDefault: boolean; content: TipTapNode };
-  }
-
   function renderPage(
     page:          V3PageDoc,
     defaultHeader: TipTapNode,
     defaultFooter: TipTapNode,
     pageIndex:     number,
   ): string {
+    if (page.kind === 'document') {
+      return renderStructuredDocumentPage(page, offer, replacements, pageIndex);
+    }
+
     let pageHeaderHtml = '';
     let pageFooterHtml = '';
 
@@ -560,6 +734,46 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     .page-content { padding: 40px 48px; }
     /* Keep regular content above absolute background/overlay images on mixed pages. */
     .page-content > *:not(div[style*="position:absolute"]) { position: relative; z-index: 1; }
+    .page-block--document { background: #ffffff; }
+    .page-block--document::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: var(--doc-bg, none);
+      background-repeat: no-repeat;
+      background-position: var(--doc-bg-position, center bottom);
+      background-size: var(--doc-bg-size, 78% auto);
+      opacity: var(--doc-bg-opacity, 0.08);
+      pointer-events: none;
+    }
+    .page-content--document { position: relative; z-index: 1; min-height: 1056px; }
+    .offer-shell { min-height: 100%; display: flex; flex-direction: column; gap: 24px; color: #0f172a; }
+    .offer-shell__header, .offer-shell__topline { display: flex; justify-content: space-between; gap: 40px; }
+    .offer-shell__sender { display: flex; gap: 16px; align-items: flex-start; }
+    .offer-shell__logo { width: 54px; height: 54px; object-fit: contain; }
+    .offer-shell__sender-copy p, .offer-shell__meta dt, .offer-shell__meta dd, .offer-shell__customer p { margin: 0; }
+    .offer-shell__sender-name, .offer-shell__customer-name { font-weight: 700; }
+    .offer-shell__meta { min-width: 220px; text-align: right; }
+    .offer-shell__title { margin: 0 0 12px 0; font-size: 28px; font-weight: 700; }
+    .offer-shell__meta dl { margin: 0; display: grid; gap: 8px; }
+    .offer-shell__meta dl div { display: grid; gap: 2px; }
+    .offer-shell__meta dt { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; }
+    .offer-shell__meta dd { font-size: 13px; font-weight: 600; }
+    .offer-shell__topline { align-items: flex-start; padding-bottom: 18px; border-bottom: 1px solid #dbe4ee; }
+    .offer-shell__topline h1 { margin: 0; font-size: 22px; font-weight: 700; }
+    .offer-shell__customer { min-width: 220px; display: grid; gap: 3px; }
+    .offer-section { display: grid; gap: 10px; }
+    .offer-section h2, .offer-section h3 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #475569; }
+    .offer-section p { margin: 0; font-size: 13px; line-height: 1.7; color: #334155; }
+    .offer-table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .offer-summary { margin-left: auto; width: min(320px, 100%); border: 1px solid #dbe4ee; border-radius: 18px; background: rgba(248, 250, 252, 0.92); padding: 18px 20px; display: grid; gap: 12px; }
+    .offer-summary--below { width: 100%; margin-left: 0; }
+    .offer-summary__row { display: flex; justify-content: space-between; gap: 24px; font-size: 13px; color: #334155; }
+    .offer-summary__row strong { white-space: nowrap; }
+    .offer-summary__row--total { padding-top: 12px; border-top: 1px solid #dbe4ee; font-size: 15px; font-weight: 700; color: #0f172a; }
+    .offer-section--terms { margin-top: auto; }
+    .offer-shell__footer { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-top: 16px; border-top: 1px solid #dbe4ee; }
+    .offer-shell__footer div { display: grid; gap: 4px; font-size: 12px; color: #475569; }
     .doc-header { font-size: 12px; color: #64748b; margin-bottom: 0; }
     .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
     .doc-divider { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
@@ -572,6 +786,10 @@ export function generateDocument(templateContent: string, offer: Offer): string 
       .page-content { padding: 20px 16px; }
       .page-block { min-height: 0; overflow: visible; }
       .page-block > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
+      .offer-shell__header, .offer-shell__topline, .offer-shell__footer { grid-template-columns: 1fr; display: grid; }
+      .offer-shell__header, .offer-shell__topline { gap: 20px; }
+      .offer-shell__meta, .offer-shell__customer { min-width: 0; text-align: left; }
+      .offer-summary { width: 100%; }
       ${MOBILE_TABLE_CSS}
     }
     @media print {

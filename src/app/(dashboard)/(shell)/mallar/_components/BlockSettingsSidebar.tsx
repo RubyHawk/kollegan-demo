@@ -534,7 +534,8 @@ function PageSettings({ hf }: { hf: HFCtxValue }) {
   const page = hf.pages[hf.activeIdx];
   if (!page) return null;
 
-  const { activeHeader, activeFooter, patchActiveHeader, patchActiveFooter } = hf;
+  const { activeHeader, activeFooter, patchActiveHeader, patchActiveFooter, patchActivePage } = hf;
+  const document = page.document ?? {};
 
   return (
     <div className="border-t-2 border-[var(--border)]">
@@ -555,6 +556,123 @@ function PageSettings({ hf }: { hf: HFCtxValue }) {
             className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
           />
         </div>
+
+        <div>
+          <Label>Sidtyp</Label>
+          <div className="grid grid-cols-2 gap-1">
+            {[
+              { key: 'presentation', label: 'Presentation' },
+              { key: 'document', label: 'Offertsida' },
+            ].map((type) => (
+              <button
+                key={type.key}
+                type="button"
+                onClick={() => patchActivePage({
+                  kind: type.key as 'presentation' | 'document',
+                  document: type.key === 'document'
+                    ? {
+                        backgroundOpacity: 0.08,
+                        watermarkMode: 'bottom',
+                        showLogo: true,
+                        showSenderDetails: true,
+                        showCustomerBlock: true,
+                        showIntro: true,
+                        showLineItems: true,
+                        showSummary: true,
+                        showNotes: true,
+                        showTerms: true,
+                        showFooter: true,
+                        summaryPlacement: 'right',
+                        ...document,
+                      }
+                    : undefined,
+                })}
+                className={`rounded-md border px-2 py-1.5 text-[11px] font-medium transition-colors ${
+                  (page.kind ?? 'presentation') === type.key
+                    ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
+                    : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
+                }`}
+              >
+                {type.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {page.kind === 'document' && (
+          <>
+            <div className="h-px bg-[var(--border)]" />
+
+            <div className="space-y-3">
+              <div>
+                <Label>Bakgrund / watermark</Label>
+                <input
+                  type="text"
+                  value={document.backgroundImageSrc ?? ''}
+                  placeholder="/soleria-template/page-3-bg.png"
+                  onChange={(e) => patchActivePage({ document: { ...document, backgroundImageSrc: e.target.value } })}
+                  className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
+                />
+              </div>
+
+              <div>
+                <Label>Bakgrundsstyrka</Label>
+                <input
+                  type="range"
+                  min={0}
+                  max={0.2}
+                  step={0.01}
+                  value={document.backgroundOpacity ?? 0.08}
+                  onChange={(e) => patchActivePage({ document: { ...document, backgroundOpacity: Number(e.target.value) } })}
+                  className="w-full accent-[var(--accent)]"
+                />
+              </div>
+
+              <div>
+                <Label>Placering av watermark</Label>
+                <div className="grid grid-cols-3 gap-1">
+                  {[
+                    { key: 'top', label: 'Topp' },
+                    { key: 'bottom', label: 'Botten' },
+                    { key: 'full', label: 'Hel sida' },
+                  ].map((option) => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => patchActivePage({ document: { ...document, watermarkMode: option.key as 'top' | 'bottom' | 'full' } })}
+                      className={`rounded-md border px-2 py-1.5 text-[11px] font-medium transition-colors ${
+                        (document.watermarkMode ?? 'bottom') === option.key
+                          ? 'border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)]'
+                          : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  ['showLogo', 'Logo'],
+                  ['showCustomerBlock', 'Kundblock'],
+                  ['showSummary', 'Summering'],
+                  ['showFooter', 'Footer'],
+                ].map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(document[key as keyof typeof document] ?? true)}
+                      onChange={(e) => patchActivePage({ document: { ...document, [key]: e.target.checked } })}
+                      className="accent-[var(--accent)]"
+                    />
+                    <span className="text-xs">{label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="h-px bg-[var(--border)]" />
 

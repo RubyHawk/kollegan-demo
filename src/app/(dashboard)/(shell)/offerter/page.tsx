@@ -103,6 +103,23 @@ function computeTotals(items: LineItem[]) {
   };
 }
 
+function pricingSummary(items: LineItem[]) {
+  const totals = computeTotals(items);
+  const discount = Math.round(items.reduce((sum, item) => {
+    const raw = item.quantity * item.unitPrice;
+    const discounted = raw * (1 - (item.discount / 100));
+    return sum + Math.max(0, raw - discounted);
+  }, 0) * 100) / 100;
+  const hasVat = items.some((item) => item.description.trim() && item.quantity > 0 && item.vatRate > 0);
+  return {
+    ...totals,
+    discount,
+    hasVat,
+    totalLabel: hasVat ? 'Totalt inkl. moms' : 'Totalt exkl. moms',
+    vatLabel: hasVat ? 'Moms' : 'Ingen moms vald',
+  };
+}
+
 function publicUrl(token: string): string {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
   return `${base}/offerter/publik/${token}`;
@@ -180,7 +197,7 @@ export default function OffersPage() {
     previewDoc, fetchingDocId, tplPreview,
     contactSearch, contactResults, contactLoading,
     companyResults, companyLoading,
-    services, templates, productPickerRow, productSearch, showServiceLibrary, serviceForm, savingService,
+    services, templates, productPickerRow, productSearch,
     openLines, openCards, confirmedSections,
     setShowForm, setEditingOfferId, setWizardStep, setForm, setFieldErrors, setSaving, setDraftSaved,
     setLivePreviewHtml, setLivePreviewLoading, setPreviewDirty, setActiveField, setCachedTplContent,
@@ -188,7 +205,6 @@ export default function OffersPage() {
     setContactSearch, setContactResults, setContactLoading,
     setCompanyResults, setCompanyLoading,
     setServices, setTemplates, setProductPickerRow, setProductSearch,
-    setShowServiceLibrary, setServiceForm, setSavingService,
     setOpenLines, setOpenCards, setConfirmedSections,
     updateLine, addLine, removeLine, reorderLines, resetForm,
   } = useOffersFormStore();
@@ -566,34 +582,6 @@ export default function OffersPage() {
     setProductSearch('');
   }, []);
 
-  const saveService = useCallback(async () => {
-    if (!serviceForm.name.trim() || serviceForm.unitPrice < 0) return;
-    setSavingService(true);
-    try {
-      const res = await fetchWithRefresh('/api/offers/products', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name:        serviceForm.name,
-          description: serviceForm.description || undefined,
-          unitPrice:   serviceForm.unitPrice,
-          vatRate:     serviceForm.vatRate,
-          unit:        serviceForm.unit || undefined,
-        }),
-      });
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      setServiceForm({ name: '', description: '', unitPrice: 0, vatRate: 0.25, unit: '' });
-      await loadServices();
-    } catch { /* ignore */ } finally {
-      setSavingService(false);
-    }
-  }, [serviceForm, loadServices]);
-
-  const removeService = useCallback(async (id: string) => {
-    if (!confirm('Ta bort produkt?')) return;
-    await fetchWithRefresh(`/api/offers/products/${id}`, { method: 'DELETE' });
-    await loadServices();
-  }, [loadServices]);
-
   const filteredServices = useMemo(
     () => !productSearch.trim()
       ? services
@@ -686,7 +674,7 @@ export default function OffersPage() {
     showForm, wizardStep, cachedTplContent, scheduleLivePreview,
   ]);
 
-  const tots = useMemo(() => computeTotals(form.lineItems), [form.lineItems]);
+  const tots = useMemo(() => pricingSummary(form.lineItems), [form.lineItems]);
 
   // ── Drag-to-reorder line items ────────────────────────────────────────────────
   const dndSensors = useSensors(
@@ -1384,6 +1372,9 @@ export default function OffersPage() {
                             <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Rader</span>
                             {fieldErrors.lineItems && <span className="text-[10px] text-red-500">{fieldErrors.lineItems}</span>}
                           </div>
+                          <div className="px-4 pb-3 text-[11px] leading-5 text-[var(--text-muted)]">
+                            Välj befintliga produkter per rad och justera sedan pris, rabatt och moms direkt i offerten.
+                          </div>
                           <div className="border-t border-[var(--border)]/40">
                             <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleLineItemDragEnd}>
                               <SortableContext items={lineItemIds} strategy={verticalListSortingStrategy}>
@@ -1537,7 +1528,7 @@ export default function OffersPage() {
                           </div>
                         </div>
 
-                        {/* ── CARD 4: Produktbibliotek ── */}
+                        {/* Embedded product-library management intentionally removed from the offer wizard.
                         <div className="rounded-xl border border-[var(--border)] overflow-hidden">
                           <button type="button" onClick={() => setShowServiceLibrary((v) => !v)} className="w-full flex items-center justify-between px-4 py-3 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors bg-[var(--surface-alt)]">
                             <span className="flex items-center gap-2">
@@ -1600,6 +1591,7 @@ export default function OffersPage() {
                             </div>
                           )}
                         </div>
+                        */}
 
                       </div>
                     </div>
@@ -1611,13 +1603,19 @@ export default function OffersPage() {
                           <span className="text-xs text-[var(--text-muted)]">Summa ex. moms</span>
                           <span className="text-xs tabular-nums text-[var(--text-secondary)]">{fmtSEK(tots.exVat)}</span>
                         </div>
+                        {tots.discount > 0 && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-[var(--text-muted)]">Rabatt</span>
+                            <span className="text-xs tabular-nums text-[var(--text-muted)]">− {fmtSEK(tots.discount)}</span>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-[var(--text-muted)]">Moms</span>
-                          <span className="text-xs tabular-nums text-[var(--text-muted)]">{fmtSEK(tots.vat)}</span>
+                          <span className="text-xs text-[var(--text-muted)]">{tots.vatLabel}</span>
+                          <span className="text-xs tabular-nums text-[var(--text-muted)]">{tots.hasVat ? fmtSEK(tots.vat) : '—'}</span>
                         </div>
                         <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]/60">
-                          <span className="text-xs font-semibold text-[var(--text-primary)]">Totalt inkl. moms</span>
-                          <span className="text-sm font-semibold tabular-nums text-[var(--accent)]">{fmtSEK(tots.incVat)}</span>
+                          <span className="text-xs font-semibold text-[var(--text-primary)]">{tots.totalLabel}</span>
+                          <span className="text-sm font-semibold tabular-nums text-[var(--accent)]">{fmtSEK(tots.hasVat ? tots.incVat : tots.exVat)}</span>
                         </div>
                       </div>
                       <div className="px-4 pb-3 pt-1 flex items-center gap-2">
