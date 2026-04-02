@@ -1,0 +1,115 @@
+'use client';
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { cn } from '@shared/lib/utils';
+import { EASE_SPRING } from '@shared/lib/motion';
+import { SectionCard } from '../_components/shared';
+
+interface Integration {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  badge?: string;
+}
+
+const INTEGRATIONS: Integration[] = [
+  {
+    id: 'github', name: 'GitHub',
+    description: 'Synka repositories, issues och pull requests direkt i Soleria.',
+    icon: <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" className="text-[var(--text-primary)]"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>,
+  },
+  {
+    id: 'google', name: 'Google Workspace',
+    description: 'Importera kalender, kontakter och Drive-filer.',
+    badge: 'Populär',
+    icon: <svg viewBox="0 0 24 24" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>,
+  },
+  {
+    id: 'slack', name: 'Slack',
+    description: 'Skicka notiser och uppdateringar till dina Slack-kanaler.',
+    icon: <svg viewBox="0 0 24 24" width="20" height="20"><path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zm2.521-10.123a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52h-2.52zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zm10.122 2.521a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zm-1.268 0a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zm-2.523 10.122a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zm0-1.268a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" fill="#E01E5A"/></svg>,
+  },
+  {
+    id: 'notion', name: 'Notion',
+    description: 'Exportera rapporter och data direkt till Notion-sidor.',
+    icon: <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" className="text-[var(--text-primary)]"><path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z"/></svg>,
+  },
+  {
+    id: 'zapier', name: 'Zapier',
+    description: 'Automatisera arbetsflöden med tusentals andra appar.',
+    icon: <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12.003 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm-.065 5.52l2.19 3.815h4.373v2.338H14.13l-2.19 3.815-2.191-3.815H5.5V9.335h4.247zm-1.964 9.35l-.002.003-2.19 3.815H3.41v-2.34h3.123l2.19-3.813z" fill="#FF4A00"/></svg>,
+  },
+];
+
+export default function AnslutningarPage() {
+  const [connections, setConnections] = useState<Record<string, boolean>>({
+    github: false, google: false, slack: false, notion: false, zapier: false,
+  });
+  const [connecting, setConnecting] = useState<string | null>(null);
+
+  function toggle(id: string) {
+    if (connecting) return;
+    if (connections[id]) {
+      setConnections((prev) => ({ ...prev, [id]: false }));
+      return;
+    }
+    setConnecting(id);
+    setTimeout(() => {
+      setConnections((prev) => ({ ...prev, [id]: true }));
+      setConnecting(null);
+    }, 900);
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <SectionCard title="Integrationer" description="Anslut Soleria till de verktyg du redan använder.">
+        <div className="flex flex-col divide-y divide-[var(--border-light)]">
+          {INTEGRATIONS.map((integration, idx) => (
+            <motion.div
+              key={integration.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.18, delay: idx * 0.04, ease: EASE_SPRING }}
+              className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
+            >
+              <div className="w-10 h-10 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] flex items-center justify-center shrink-0">
+                {integration.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">{integration.name}</p>
+                  {integration.badge && (
+                    <span className="px-1.5 py-0.5 rounded-md bg-[var(--accent)]/10 text-[var(--accent)] text-[10px] font-semibold">{integration.badge}</span>
+                  )}
+                  {connections[integration.id] && (
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold">
+                      <span className="w-1 h-1 rounded-full bg-current" />Ansluten
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5 leading-relaxed">{integration.description}</p>
+              </div>
+              <button
+                onClick={() => toggle(integration.id)}
+                disabled={connecting === integration.id}
+                className={cn(
+                  'px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150 shrink-0',
+                  'focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40',
+                  connecting === integration.id
+                    ? 'border-[var(--border)] text-[var(--text-muted)] bg-[var(--surface-alt)] cursor-wait'
+                    : connections[integration.id]
+                    ? 'border-red-300/60 dark:border-red-700/40 text-red-500 hover:bg-red-500/5 hover:border-red-400/60'
+                    : 'border-[var(--accent)]/40 text-[var(--accent)] hover:bg-[var(--accent)]/5 hover:border-[var(--accent)]/60',
+                )}
+              >
+                {connecting === integration.id ? 'Ansluter…' : connections[integration.id] ? 'Koppla från' : 'Anslut'}
+              </button>
+            </motion.div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  );
+}

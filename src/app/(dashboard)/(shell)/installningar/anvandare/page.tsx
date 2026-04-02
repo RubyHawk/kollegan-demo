@@ -108,19 +108,11 @@ export default function UsersPage() {
   }, [load]);
 
   return (
-    <div className="px-8 py-10 max-w-5xl mx-auto">
+    <div>
 
       {/* Header */}
-      <div className="mb-8 flex items-start justify-between gap-4">
+      <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <a href="/installningar" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5" /><path d="m12 19-7-7 7-7" />
-              </svg>
-            </a>
-            <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)]">Användare</h1>
-          </div>
           <p className="text-sm text-[var(--text-muted)]">
             Hantera personal och deras åtkomst till systemet.
           </p>

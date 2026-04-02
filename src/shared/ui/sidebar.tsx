@@ -19,7 +19,7 @@
  *  Sidebar width: CSS transition (no Framer layout reflow)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -655,73 +655,157 @@ function SidebarFooter({
   onLogout,
   onMobileClose,
 }: SidebarFooterProps) {
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
   const displayName =
     [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+
+  const roleBadge: Record<string, string> = {
+    admin:        'Admin',
+    manager:      'Manager',
+    receptionist: 'Receptionist',
+  };
+
+  // Close on click outside
+  useEffect(() => {
+    if (!popoverOpen) return;
+    function onMouseDown(e: MouseEvent) {
+      if (
+        popoverRef.current && !popoverRef.current.contains(e.target as Node) &&
+        triggerRef.current && !triggerRef.current.contains(e.target as Node)
+      ) {
+        setPopoverOpen(false);
+      }
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setPopoverOpen(false);
+    }
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [popoverOpen]);
+
+  const popoverContent = (
+    <motion.div
+      ref={popoverRef}
+      initial={{ opacity: 0, scale: 0.95, y: 4 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, y: 4 }}
+      transition={{ duration: 0.15, ease: EASE_SPRING }}
+      className={cn(
+        'absolute z-50 w-56 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-lg shadow-black/8',
+        collapsed ? 'left-full ml-2 bottom-0' : 'bottom-full mb-2 left-0',
+      )}
+    >
+      {/* User info */}
+      <div className="px-4 pt-4 pb-3">
+        <div className="flex items-center gap-3">
+          {user.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={user.avatarUrl} alt={displayName} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/15 flex items-center justify-center shrink-0">
+              <span className="text-sm font-semibold text-[var(--accent)]">
+                {displayName.split(' ').map((w) => w?.[0]?.toUpperCase() ?? '').filter(Boolean).slice(0, 2).join('')}
+              </span>
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{displayName}</p>
+            <p className="text-xs text-[var(--text-muted)] truncate">{user.email}</p>
+          </div>
+        </div>
+        {user.role && (
+          <span className="mt-2 inline-flex items-center rounded-md bg-[var(--accent)]/10 px-2 py-0.5 text-[10px] font-semibold text-[var(--accent)]">
+            {roleBadge[user.role] ?? user.role}
+          </span>
+        )}
+      </div>
+
+      <div className="h-px bg-[var(--border)]" />
+
+      {/* Quick links */}
+      <div className="py-1.5 px-1.5">
+        <Link
+          href="/installningar/profil"
+          onClick={() => { setPopoverOpen(false); onMobileClose?.(); }}
+          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors"
+        >
+          <UserIcon size={14} className="shrink-0" />
+          Profil
+        </Link>
+        <Link
+          href="/installningar/utseende"
+          onClick={() => { setPopoverOpen(false); onMobileClose?.(); }}
+          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors"
+        >
+          <SettingsIcon size={14} className="shrink-0" />
+          Utseende
+        </Link>
+      </div>
+
+      <div className="h-px bg-[var(--border)]" />
+
+      {/* Logout */}
+      <div className="py-1.5 px-1.5">
+        <button
+          onClick={() => { setPopoverOpen(false); onLogout(); }}
+          className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[var(--text-secondary)] hover:bg-red-500/8 hover:text-red-500 transition-colors"
+        >
+          <LogOutIcon size={14} className="shrink-0" />
+          Logga ut
+        </button>
+      </div>
+    </motion.div>
+  );
 
   // ── Collapsed footer ──────────────────────────────────────────────────────
   if (collapsed) {
     return (
-      <div className="py-3 flex flex-col items-center gap-1.5 border-t border-[var(--border)]">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Link
-              href="/installningar"
-              onClick={onMobileClose}
-              className="w-9 h-9 rounded-lg hover:bg-[var(--surface-hover)] flex items-center justify-center transition-colors"
-            >
-              <AvatarBadge user={user} size="sm" />
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="right">{displayName}</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={onLogout}
-              aria-label="Log out"
-              className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/8 transition-all"
-            >
-              <LogOutIcon size={14} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">Logga ut</TooltipContent>
-        </Tooltip>
+      <div className="relative py-3 flex flex-col items-center gap-1.5 border-t border-[var(--border)]">
+        <button
+          ref={triggerRef}
+          onClick={() => setPopoverOpen((v) => !v)}
+          className="w-9 h-9 rounded-lg hover:bg-[var(--surface-hover)] flex items-center justify-center transition-colors"
+        >
+          <AvatarBadge user={user} size="sm" />
+        </button>
+        <AnimatePresence>{popoverOpen && popoverContent}</AnimatePresence>
       </div>
     );
   }
 
   // ── Expanded footer ────────────────────────────────────────────────────────
   return (
-    <div className="px-3 py-3 border-t border-[var(--border)] flex flex-col gap-2">
-      {/* User identity row */}
-      <Link
-        href="/installningar"
-        onClick={onMobileClose}
-        className="flex items-center gap-2.5 rounded-lg px-1 py-1 -mx-1 hover:bg-[var(--surface-hover)] transition-colors group"
+    <div className="relative px-3 py-3 border-t border-[var(--border)]">
+      <button
+        ref={triggerRef}
+        onClick={() => setPopoverOpen((v) => !v)}
+        className="w-full flex items-center gap-2.5 rounded-lg px-1 py-1 -mx-1 hover:bg-[var(--surface-hover)] transition-colors group"
       >
         <AvatarBadge user={user} size="md" />
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 text-left">
           <p className="text-[13px] font-medium text-[var(--text-primary)] truncate">
             {displayName}
           </p>
+          <p className="text-[11px] text-[var(--text-muted)] truncate">
+            {user.email}
+          </p>
         </div>
-        <SettingsIcon
+        <ChevronRightIcon
           size={13}
-          className="text-[var(--text-muted)] opacity-0 group-hover:opacity-60 transition-opacity shrink-0"
+          className={cn(
+            'text-[var(--text-muted)] transition-all shrink-0',
+            popoverOpen ? 'opacity-60 rotate-90' : 'opacity-0 group-hover:opacity-40',
+          )}
         />
-      </Link>
-
-      {/* Quick actions */}
-      <div className="flex items-center gap-1">
-        <button
-          onClick={onLogout}
-          aria-label="Logga ut"
-          className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/8 transition-all"
-        >
-          <LogOutIcon size={14} />
-        </button>
-      </div>
+      </button>
+      <AnimatePresence>{popoverOpen && popoverContent}</AnimatePresence>
     </div>
   );
 }
