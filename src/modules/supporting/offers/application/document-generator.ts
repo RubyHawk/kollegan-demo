@@ -81,8 +81,9 @@ function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): st
       const zIdx     = Number(a.zIndex ?? 0);
       const imgW     = a.width  ? Number(a.width)  : null;
       const imgH     = a.height ? Number(a.height) : null;
+      const fit      = String(a.fit ?? (imgH ? 'cover' : 'contain'));
       const widthStyle  = imgW ? `width:${imgW}px;max-width:100%;` : 'max-width:100%;';
-      const heightStyle = imgH ? `height:${imgH}px;object-fit:cover;` : 'height:auto;';
+      const heightStyle = imgH ? `height:${imgH}px;object-fit:${fit};` : 'height:auto;';
       const imgStyle = `display:block;${widthStyle}${heightStyle}border-radius:4px;`;
 
       if (imgPos === 'free') {
@@ -463,7 +464,12 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     // If a fill-page image (816×1056) exists, fix the block to exactly 1056px so
     // there is no empty white space below the image in the generated document.
     const fillPage = containsFillPageImage(page.body);
-    const blockStyle = fillPage ? ' style="height:1056px;overflow:hidden;"' : '';
+    const customPageHeight = Number(page.body.attrs?.pageHeight ?? 0);
+    const blockStyle = customPageHeight > 0
+      ? ` style="min-height:${customPageHeight}px;"`
+      : fillPage
+        ? ' style="height:1056px;overflow:hidden;"'
+        : '';
     return `<div class="page-block"${blockStyle} data-page="${pageIndex + 1}"><div class="page-content">${hdrSection}${bodyHtml}${ftrSection}</div></div>`;
   }
 
@@ -552,6 +558,8 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     /* page-content: carries the horizontal padding; position:static so absolute images */
     /* inside it still anchor to page-block (the nearest position:relative ancestor)    */
     .page-content { padding: 40px 48px; }
+    /* Keep regular content above absolute background/overlay images on mixed pages. */
+    .page-content > *:not(div[style*="position:absolute"]) { position: relative; z-index: 1; }
     .doc-header { font-size: 12px; color: #64748b; margin-bottom: 0; }
     .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
     .doc-divider { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }

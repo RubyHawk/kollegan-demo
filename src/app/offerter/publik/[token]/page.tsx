@@ -222,22 +222,46 @@ export default function PublicOfferPage() {
   const sigRef = useRef<SignatureCanvas>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+
+  // The app shell uses a globally locked viewport, but the public signing page
+  // needs normal document scrolling so the full offer can be reviewed.
+  useEffect(() => {
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyHeight = document.body.style.height;
+    const prevHtmlHeight = document.documentElement.style.height;
+
+    document.body.style.overflow = 'auto';
+    document.documentElement.style.overflow = 'auto';
+    document.body.style.height = 'auto';
+    document.documentElement.style.height = 'auto';
+
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.height = prevBodyHeight;
+      document.documentElement.style.height = prevHtmlHeight;
+    };
+  }, []);
 
   // ── Scroll progress ──────────────────────────────────────────────────────────
   useEffect(() => {
+    const scrollRoot = mainRef.current;
+    if (!scrollRoot) return;
+
     const handleScroll = () => {
-      const iframe = iframeRef.current;
-      if (!iframe) return;
-      const rect = iframe.getBoundingClientRect();
-      const iframeHeight = iframe.offsetHeight;
-      const viewportHeight = window.innerHeight;
-      const scrolled = -rect.top;
-      const total = iframeHeight - viewportHeight;
-      if (total <= 0) { setScrollProgress(100); return; }
-      setScrollProgress(Math.min(100, Math.max(0, Math.round((scrolled / total) * 100))));
+      const total = scrollRoot.scrollHeight - scrollRoot.clientHeight;
+      if (total <= 0) {
+        setScrollProgress(100);
+        return;
+      }
+      setScrollProgress(Math.min(100, Math.max(0, Math.round((scrollRoot.scrollTop / total) * 100))));
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    handleScroll();
+    scrollRoot.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollRoot.removeEventListener('scroll', handleScroll);
   }, []);
 
   // ── Iframe setup ─────────────────────────────────────────────────────────────
@@ -598,7 +622,7 @@ export default function PublicOfferPage() {
       </header>
 
       {/* ─── Content ─── */}
-      <main className="min-h-screen bg-slate-50 pb-16">
+      <main ref={mainRef} className="h-[calc(100dvh-57px)] overflow-y-auto bg-slate-50 pb-16">
         <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-8">
 
         {/* Document iframe */}
