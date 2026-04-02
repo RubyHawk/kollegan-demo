@@ -37,7 +37,7 @@ export default function BillingPage() {
               <span className="text-xs font-semibold text-[var(--accent)] uppercase tracking-widest">Nuvarande plan</span>
               <span className="rounded-full bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 text-[10px] font-semibold">Aktiv</span>
             </div>
-            <h2 className="font-heading text-xl font-bold text-[var(--text-primary)] mb-1">Kollegan Pro</h2>
+            <h2 className="font-heading text-xl font-bold text-[var(--text-primary)] mb-1">Soleria Pro</h2>
             <p className="text-sm text-[var(--text-muted)]">4 990 kr / månad · Faktureras månadsvis</p>
           </div>
           <button disabled className="shrink-0 px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm font-medium text-[var(--text-secondary)] opacity-50 cursor-not-allowed">

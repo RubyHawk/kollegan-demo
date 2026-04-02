@@ -157,7 +157,7 @@ export default function AppShell({ user, children }: Props) {
           >
             <MenuIcon size={18} />
           </button>
-          <span className="font-heading text-sm font-semibold text-[var(--text-primary)]">Kollegan</span>
+          <span className="font-heading text-sm font-semibold text-[var(--text-primary)]">Soleria</span>
         </div>
 
         {/* Desktop topbar with breadcrumbs */}
