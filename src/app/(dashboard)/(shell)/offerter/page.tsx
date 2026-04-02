@@ -816,7 +816,7 @@ export default function OffersPage() {
                         <p className="text-xs text-[var(--text-muted)] leading-relaxed">Mallen styr offertens utseende. Välj bland dina mallar i panelen till höger — förhandsvisningen uppdateras live.</p>
                       </div>
                       {templates.length === 0 && (
-                        <a href="/templates" target="_blank" rel="noreferrer" className="text-xs text-[var(--accent)] hover:underline font-medium">
+                        <a href="/mallar" target="_blank" rel="noreferrer" className="text-xs text-[var(--accent)] hover:underline font-medium">
                           Skapa din första mall →
                         </a>
                       )}
@@ -955,7 +955,7 @@ export default function OffersPage() {
                             <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">Inga mallar ännu</p>
                             <p className="text-xs text-[var(--text-muted)]">Skapa en offertmall innan du skapar en offert.</p>
                           </div>
-                          <a href="/templates" target="_blank" rel="noreferrer"
+                          <a href="/mallar" target="_blank" rel="noreferrer"
                             className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity">
                             Skapa mall
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1103,7 +1103,7 @@ export default function OffersPage() {
 
                       {/* Proceed footer */}
                       <div className="px-4 py-3 border-t border-[var(--border)] flex items-center justify-between gap-3">
-                        <a href="/templates" target="_blank" rel="noreferrer"
+                        <a href="/mallar" target="_blank" rel="noreferrer"
                           className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
                           Hantera mallar →
                         </a>

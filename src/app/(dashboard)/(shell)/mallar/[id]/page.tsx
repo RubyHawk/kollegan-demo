@@ -190,7 +190,7 @@ export default function TemplateEditorPage() {
       {/* ── Combined header: back · name · tabs · save ──────────────────────── */}
       <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border)] bg-[var(--surface)] min-h-0">
         {/* Back */}
-        <button onClick={() => router.push('/templates')}
+        <button onClick={() => router.push('/mallar')}
           className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-active)] transition-colors shrink-0">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"/>

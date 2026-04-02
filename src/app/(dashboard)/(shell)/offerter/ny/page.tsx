@@ -6,5 +6,5 @@ import { redirect } from 'next/navigation';
  * so the client can auto-trigger the wizard on mount.
  */
 export default function NewOfferRedirectPage() {
-  redirect('/offers?new=true');
+  redirect('/offerter?new=true');
 }
