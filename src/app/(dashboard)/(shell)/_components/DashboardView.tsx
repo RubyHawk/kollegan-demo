@@ -149,11 +149,11 @@ function formatMonthLabel(date: Date) {
 }
 
 function formatWeekLabel(date: Date) {
-  return `${formatShortDate(date)}–${formatShortDate(addDays(date, 6))}`;
+  return `${formatShortDate(date)}-${formatShortDate(addDays(date, 6))}`;
 }
 
 function formatRangeLabel(start: Date, end: Date) {
-  return `${formatLongDate(start)} – ${formatLongDate(end)}`;
+  return `${formatLongDate(start)} - ${formatLongDate(end)}`;
 }
 
 function clampDateRange(startValue: string, endValue: string) {
@@ -261,6 +261,19 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short' });
 }
 
+function buildLinePath(points: Array<{ x: number; y: number }>) {
+  if (points.length === 0) return '';
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+}
+
+function buildAreaPath(points: Array<{ x: number; y: number }>, baseline: number) {
+  if (points.length === 0) return '';
+  const first = points[0];
+  const last = points[points.length - 1];
+  return `${buildLinePath(points)} L ${last.x} ${baseline} L ${first.x} ${baseline} Z`;
+}
+
 function DashboardClock() {
   const [time, setTime] = useState('');
 
@@ -286,11 +299,11 @@ function DashboardClock() {
   }
 
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
+    <div className="rounded-[22px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-4 py-3 shadow-[0_12px_30px_rgba(0,0,0,0.08)]">
       <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--text-muted)]">
         Stockholm
       </p>
-      <p className="mt-1 font-mono text-[26px] font-semibold tracking-tight text-[var(--text-primary)] tabular-nums">
+      <p className="mt-1 font-mono text-[24px] font-semibold tracking-tight text-[var(--text-primary)] tabular-nums">
         {time}
       </p>
     </div>
@@ -353,23 +366,11 @@ function KpiCard({
   return (
     <motion.div
       variants={fadeUp}
-      className="rounded-[24px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-5 py-4 shadow-[0_14px_40px_rgba(0,0,0,0.08)]"
+      className="rounded-[24px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-4 py-4 shadow-[0_12px_34px_rgba(0,0,0,0.06)]"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            {label}
-          </p>
-          <div className="mt-3 flex items-baseline gap-2 text-[var(--text-primary)]">
-            <p className="text-[28px] font-semibold tracking-tight leading-none tabular-nums">
-              {value}
-            </p>
-          </div>
-          <p className="mt-2 text-sm leading-5 text-[var(--text-secondary)]">{sub}</p>
-        </div>
-
+      <div className="flex items-start gap-3">
         <div
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10"
           style={{
             background: tone,
             color: 'white',
@@ -377,6 +378,16 @@ function KpiCard({
           }}
         >
           {icon}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            {label}
+          </p>
+          <div className="mt-2 flex items-baseline gap-2 text-[var(--text-primary)]">
+            <p className="text-[24px] font-semibold tracking-tight leading-none tabular-nums">{value}</p>
+          </div>
+          <p className="mt-2 text-[13px] leading-5 text-[var(--text-secondary)]">{sub}</p>
         </div>
       </div>
     </motion.div>
@@ -416,10 +427,22 @@ function StatusDistributionCard({
     };
   });
 
+  const populatedRows = rows.filter((row) => row.count > 0);
+  const radius = 52;
+  const circumference = 2 * Math.PI * radius;
+  const donutRows = populatedRows.map((row) => {
+    const segment = circumference * (row.count / total);
+    return { ...row, segment };
+  });
+  const donutSegments = donutRows.map((row, index) => ({
+    ...row,
+    dashOffset: donutRows.slice(0, index).reduce((sum, entry) => sum + entry.segment, 0),
+  }));
+
   return (
     <motion.div
       variants={fadeUp}
-      className="rounded-[26px] border border-[var(--border)] bg-[var(--surface-0)] p-5 shadow-[0_14px_40px_rgba(0,0,0,0.08)]"
+      className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] p-5 shadow-[0_16px_42px_rgba(0,0,0,0.08)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -427,7 +450,7 @@ function StatusDistributionCard({
             Statusfördelning
           </h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            En tydlig översikt över var affärerna ligger just nu.
+            Hur pipeline och avslut ser ut just nu.
           </p>
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2 text-right">
@@ -446,27 +469,72 @@ function StatusDistributionCard({
           </p>
         </div>
       ) : (
-        <div className="mt-6 space-y-4">
-          <div className="flex h-3 overflow-hidden rounded-full bg-[var(--surface-2)]">
-            {rows
-              .filter((row) => row.count > 0)
-              .map((row) => (
-                <div
-                  key={row.status}
-                  style={{
-                    width: `${(row.count / total) * 100}%`,
-                    background: row.color,
-                  }}
-                  title={`${row.label}: ${row.count} st (${row.percent}%)`}
-                />
-              ))}
+        <div className="mt-6 grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+          <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-1)] px-4 py-5">
+            <div className="mx-auto flex w-full max-w-[180px] items-center justify-center">
+              <div className="relative">
+                <svg viewBox="0 0 132 132" className="h-[164px] w-[164px] -rotate-90">
+                  <circle
+                    cx="66"
+                    cy="66"
+                    r={radius}
+                    fill="none"
+                    stroke="color-mix(in srgb, var(--border) 80%, transparent)"
+                    strokeWidth="14"
+                  />
+                  {donutSegments.map((row) => (
+                    <circle
+                      key={row.status}
+                      cx="66"
+                      cy="66"
+                      r={radius}
+                      fill="none"
+                      stroke={row.color}
+                      strokeLinecap="round"
+                      strokeWidth="14"
+                      strokeDasharray={`${row.segment} ${circumference - row.segment}`}
+                      strokeDashoffset={-row.dashOffset}
+                    />
+                  ))}
+                </svg>
+
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    Totalt
+                  </span>
+                  <span className="mt-1 text-[34px] font-semibold leading-none tabular-nums text-[var(--text-primary)]">
+                    {total}
+                  </span>
+                  <span className="mt-1 text-xs text-[var(--text-secondary)]">offerter</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {rows
+                .filter((row) => row.count > 0)
+                .slice(0, 4)
+                .map((row) => (
+                  <div
+                    key={row.status}
+                    className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2"
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                      {row.label}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold tabular-nums text-[var(--text-primary)]">
+                      {row.percent}%
+                    </p>
+                  </div>
+                ))}
+            </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-3">
             {rows.map((row) => (
               <div
                 key={row.status}
-                className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-3"
+                className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2.5">
@@ -479,20 +547,27 @@ function StatusDistributionCard({
                       {row.label}
                     </span>
                   </div>
-                  <span className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">
-                    {row.count}
-                  </span>
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="tabular-nums text-[var(--text-secondary)]">{row.percent}%</span>
+                    <span className="font-semibold tabular-nums text-[var(--text-primary)]">
+                      {row.count}
+                    </span>
+                  </div>
                 </div>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${row.percent}%`,
-                      background: row.color,
-                    }}
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${row.percent}%` }}
+                    transition={{ duration: 0.45, ease: 'easeOut' }}
+                    className="h-full rounded-full"
+                    style={{ background: row.color }}
                   />
                 </div>
-                <p className="mt-2 text-xs text-[var(--text-muted)]">{row.percent}% av alla offerter</p>
+                <p className="mt-2 text-xs text-[var(--text-muted)]">
+                  {row.count === 0
+                    ? 'Ingen aktivitet ännu'
+                    : `${row.count} offert${row.count === 1 ? '' : 'er'} i denna status`}
+                </p>
               </div>
             ))}
           </div>
@@ -510,6 +585,22 @@ function TrendChart({
   empty: boolean;
 }) {
   const maxValue = Math.max(...data.map((bucket) => bucket.count), 1);
+  const width = 720;
+  const height = 260;
+  const paddingX = 18;
+  const paddingTop = 16;
+  const paddingBottom = 30;
+  const chartHeight = height - paddingTop - paddingBottom;
+  const baseline = height - paddingBottom;
+  const step = data.length > 1 ? (width - paddingX * 2) / (data.length - 1) : 0;
+  const totalPoints = data.map((bucket, index) => ({
+    x: paddingX + step * index,
+    y: baseline - (bucket.count / maxValue) * chartHeight,
+  }));
+  const acceptedPoints = data.map((bucket, index) => ({
+    x: paddingX + step * index,
+    y: baseline - (bucket.accepted / maxValue) * chartHeight,
+  }));
 
   if (empty) {
     return (
@@ -523,63 +614,110 @@ function TrendChart({
   }
 
   return (
-    <div className="rounded-[22px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-1),var(--surface-0))] p-4">
-      <div className="relative h-64">
-        <div className="pointer-events-none absolute inset-x-0 inset-y-0 grid grid-rows-4">
-          {[0, 1, 2, 3].map((index) => (
-            <div
-              key={index}
-              className="border-t border-dashed"
-              style={{ borderColor: 'color-mix(in srgb, var(--border) 70%, transparent)' }}
-            />
-          ))}
-        </div>
-
-        <div className="absolute inset-0 flex items-end gap-2 pt-3">
-          {data.map((bucket) => {
-            const totalHeight = Math.max((bucket.count / maxValue) * 100, bucket.count > 0 ? 8 : 2);
-            const acceptedHeight = Math.max((bucket.accepted / maxValue) * 100, bucket.accepted > 0 ? 6 : 0);
-
+    <div className="rounded-[24px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-1),var(--surface-0))] p-4">
+      <div className="overflow-hidden rounded-[20px] border border-[var(--border)] bg-[linear-gradient(180deg,color-mix(in srgb, var(--accent) 4%, var(--surface-0)),var(--surface-0))] p-3">
+        <svg viewBox={`0 0 ${width} ${height}`} className="h-[280px] w-full">
+          {[0, 1, 2, 3].map((index) => {
+            const y = paddingTop + (chartHeight / 3) * index;
             return (
-              <div key={bucket.longLabel} className="flex min-w-0 flex-1 flex-col items-center gap-2">
-                <div
-                  className="relative flex h-full w-full items-end justify-center"
-                  title={`${bucket.longLabel}: ${bucket.count} skapade, ${bucket.accepted} accepterade`}
-                >
-                  <div className="relative h-full w-full max-w-10">
-                    <div
-                      className="absolute inset-x-0 bottom-0 rounded-t-[10px] transition-all duration-500"
-                      style={{
-                        height: `${totalHeight}%`,
-                        background: 'color-mix(in srgb, var(--accent) 18%, transparent)',
-                      }}
-                    />
-                    <div
-                      className="absolute inset-x-[20%] bottom-0 rounded-t-[10px] bg-[var(--status-accepted-text)] transition-all duration-500 delay-75"
-                      style={{ height: `${acceptedHeight}%` }}
-                    />
-                  </div>
-                </div>
-                <span className="line-clamp-1 text-center text-[11px] font-medium text-[var(--text-muted)]">
-                  {bucket.label}
-                </span>
-              </div>
+              <line
+                key={index}
+                x1={0}
+                x2={width}
+                y1={y}
+                y2={y}
+                stroke="color-mix(in srgb, var(--border) 70%, transparent)"
+                strokeDasharray="5 7"
+              />
             );
           })}
-        </div>
+
+          <path
+            d={buildAreaPath(totalPoints, baseline)}
+            fill="color-mix(in srgb, var(--accent) 18%, transparent)"
+          />
+          <path
+            d={buildLinePath(totalPoints)}
+            fill="none"
+            stroke="var(--accent)"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d={buildLinePath(acceptedPoints)}
+            fill="none"
+            stroke="var(--status-accepted-text)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="7 8"
+          />
+
+          {data.map((bucket, index) => (
+            <g key={bucket.longLabel}>
+              <circle
+                cx={totalPoints[index].x}
+                cy={totalPoints[index].y}
+                r="4.5"
+                fill="var(--surface-0)"
+                stroke="var(--accent)"
+                strokeWidth="3"
+              />
+              {bucket.accepted > 0 ? (
+                <circle
+                  cx={acceptedPoints[index].x}
+                  cy={acceptedPoints[index].y}
+                  r="3.5"
+                  fill="var(--status-accepted-text)"
+                />
+              ) : null}
+            </g>
+          ))}
+        </svg>
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        {data.map((bucket) => (
+          <div
+            key={bucket.longLabel}
+            className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-3"
+            title={`${bucket.longLabel}: ${bucket.count} skapade, ${bucket.accepted} accepterade`}
+          >
+            <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              {bucket.label}
+            </p>
+            <div className="mt-2 flex items-end justify-between gap-3">
+              <div>
+                <p className="text-lg font-semibold tabular-nums text-[var(--text-primary)]">{bucket.count}</p>
+                <p className="text-xs text-[var(--text-secondary)]">{bucket.accepted} accepterade</p>
+              </div>
+              <div className="h-10 w-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                <motion.div
+                  initial={{ height: 0 }}
+                  animate={{
+                    height: `${Math.max((bucket.count / maxValue) * 100, bucket.count > 0 ? 12 : 0)}%`,
+                  }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                  className="mt-auto w-full rounded-full"
+                  style={{ background: 'var(--accent)' }}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-[var(--border)] pt-4">
         <div className="flex items-center gap-2">
-          <span
-            className="h-2.5 w-2.5 rounded-full"
-            style={{ background: 'color-mix(in srgb, var(--accent) 55%, transparent)' }}
-            aria-hidden="true"
-          />
+          <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" aria-hidden="true" />
           <span className="text-xs text-[var(--text-secondary)]">Skapade</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-[var(--status-accepted-text)]" aria-hidden="true" />
+          <span
+            className="h-2.5 w-2.5 rounded-full bg-[var(--status-accepted-text)]"
+            aria-hidden="true"
+          />
           <span className="text-xs text-[var(--text-secondary)]">Accepterade</span>
         </div>
       </div>
@@ -601,9 +739,9 @@ function RangeButton({
       type="button"
       onClick={onClick}
       className={[
-        'rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+        'rounded-full px-3.5 py-2 text-sm font-medium transition-all',
         active
-          ? 'bg-[var(--accent)] text-white shadow-[0_10px_24px_rgba(0,0,0,0.16)]'
+          ? 'bg-[var(--accent)] text-white shadow-[0_12px_24px_rgba(0,0,0,0.14)]'
           : 'bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]',
       ].join(' ')}
     >
@@ -626,7 +764,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
   return (
     <motion.div
       variants={fadeUp}
-      className="rounded-[26px] border border-[var(--border)] bg-[var(--surface-0)] p-5 shadow-[0_14px_40px_rgba(0,0,0,0.08)]"
+      className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] p-5 shadow-[0_16px_44px_rgba(0,0,0,0.08)]"
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -634,12 +772,10 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
             <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">
               Tidsöversikt
             </h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              {formatRangeLabel(start, end)}
-            </p>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">{formatRangeLabel(start, end)}</p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                 Skapade
@@ -650,7 +786,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
             </div>
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                Accepterade
+                Vunna
               </p>
               <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">
                 {acceptedTotal}
@@ -658,7 +794,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
             </div>
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                Andel
+                Vinstgrad
               </p>
               <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">
                 {successRate}%
@@ -741,14 +877,14 @@ export default function DashboardView({
       <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-6">
         <motion.div
           variants={fadeUp}
-          className="rounded-[30px] border border-[var(--border)] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.12)] sm:p-7"
+          className="overflow-hidden rounded-[30px] border border-[var(--border)] shadow-[0_24px_60px_rgba(0,0,0,0.12)]"
           style={{
             background:
-              'linear-gradient(145deg, color-mix(in srgb, var(--surface-0) 90%, var(--accent) 10%), var(--surface-0))',
+              'linear-gradient(145deg, color-mix(in srgb, var(--surface-0) 92%, var(--accent) 8%), var(--surface-0))',
           }}
         >
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
+          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <div className="p-6 sm:p-7">
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-[var(--accent-border)] bg-[var(--accent-subtle)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
                   {dateLabel}
@@ -765,18 +901,18 @@ export default function DashboardView({
                 {greetingSub}
               </p>
 
-              <div className="mt-5 flex flex-wrap gap-2.5">
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:max-w-[560px]">
+                <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                    Aktiva
+                    Aktiva just nu
                   </p>
                   <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
                     {activePipeline} offerter i rörelse
                   </p>
                 </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
+                <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                    Totalt
+                    Total överblick
                   </p>
                   <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
                     {total} offerter i systemet
@@ -785,17 +921,27 @@ export default function DashboardView({
               </div>
             </div>
 
-            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-end lg:flex-col lg:items-stretch">
-              <DashboardClock />
-              <Link
-                href="/offerter/ny"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-95 active:scale-[0.98] shadow-[0_16px_34px_rgba(0,0,0,0.16)]"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-                Ny offert
-              </Link>
+            <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,color-mix(in srgb, var(--surface-1) 88%, transparent),var(--surface-1))] p-6 lg:border-l lg:border-t-0 lg:p-7">
+              <div className="flex h-full flex-col justify-between gap-4">
+                <DashboardClock />
+                <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] px-4 py-4 shadow-[0_14px_34px_rgba(0,0,0,0.06)]">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    Fokus idag
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                    Håll koll på nya offerter, följ upp det som är visat och fånga upp sådant som snart löper ut.
+                  </p>
+                  <Link
+                    href="/offerter/ny"
+                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-95 active:scale-[0.98] shadow-[0_16px_34px_rgba(0,0,0,0.16)]"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Ny offert
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
