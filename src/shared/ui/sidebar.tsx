@@ -19,9 +19,10 @@
  *  Sidebar width: CSS transition (no Framer layout reflow)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { createPortal } from 'react-dom';
 import {
   motion,
   AnimatePresence,
@@ -552,10 +553,9 @@ function SectionGroup({
 
 interface SidebarHeaderProps {
   collapsed: boolean;
-  onToggleCollapse: () => void;
 }
 
-function SidebarHeader({ collapsed, onToggleCollapse }: SidebarHeaderProps) {
+function SidebarHeader({ collapsed }: SidebarHeaderProps) {
   return (
     <div
       className={cn(
@@ -640,73 +640,198 @@ function SidebarFooter({
   onLogout,
   onMobileClose,
 }: SidebarFooterProps) {
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [collapsedPopoverPosition, setCollapsedPopoverPosition] = useState<{ left: number; top: number } | null>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
   const displayName =
     [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+
+  const roleBadge: Record<string, string> = {
+    admin:        'Admin',
+    manager:      'Manager',
+    receptionist: 'Receptionist',
+  };
+
+  // Close on click outside
+  useEffect(() => {
+    if (!popoverOpen) return;
+    function onMouseDown(e: MouseEvent) {
+      if (
+        popoverRef.current && !popoverRef.current.contains(e.target as Node) &&
+        triggerRef.current && !triggerRef.current.contains(e.target as Node)
+      ) {
+        setPopoverOpen(false);
+      }
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setPopoverOpen(false);
+    }
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [popoverOpen]);
+
+  useEffect(() => {
+    if (!popoverOpen || !collapsed) return;
+
+    function updateCollapsedPopoverPosition() {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      setCollapsedPopoverPosition({
+        left: rect.right + 8,
+        top: rect.bottom,
+      });
+    }
+
+    updateCollapsedPopoverPosition();
+    window.addEventListener('resize', updateCollapsedPopoverPosition);
+    window.addEventListener('scroll', updateCollapsedPopoverPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updateCollapsedPopoverPosition);
+      window.removeEventListener('scroll', updateCollapsedPopoverPosition, true);
+    };
+  }, [collapsed, popoverOpen]);
+
+  const popoverPanel = (
+    <motion.div
+      ref={popoverRef}
+      initial={{ opacity: 0, scale: 0.95, y: 4 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, y: 4 }}
+      transition={{ duration: 0.15, ease: EASE_SPRING }}
+      className={cn(
+        'z-50 w-56 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-lg shadow-black/8',
+        collapsed ? 'max-w-[calc(100vw-1.5rem)]' : 'absolute bottom-full mb-2 left-0',
+      )}
+    >
+      {/* User info */}
+      <div className="px-4 pt-4 pb-3">
+        <div className="flex items-center gap-3">
+          {user.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={user.avatarUrl} alt={displayName} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/15 flex items-center justify-center shrink-0">
+              <span className="text-sm font-semibold text-[var(--accent)]">
+                {displayName.split(' ').map((w) => w?.[0]?.toUpperCase() ?? '').filter(Boolean).slice(0, 2).join('')}
+              </span>
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{displayName}</p>
+            <p className="text-xs text-[var(--text-muted)] truncate">{user.email}</p>
+          </div>
+        </div>
+        {user.role && (
+          <span className="mt-2 inline-flex items-center rounded-md bg-[var(--accent)]/10 px-2 py-0.5 text-[10px] font-semibold text-[var(--accent)]">
+            {roleBadge[user.role] ?? user.role}
+          </span>
+        )}
+      </div>
+
+      <div className="h-px bg-[var(--border)]" />
+
+      {/* Quick links */}
+      <div className="py-1.5 px-1.5">
+        <Link
+          href="/installningar/profil"
+          onClick={() => { setPopoverOpen(false); onMobileClose?.(); }}
+          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors"
+        >
+          <UserIcon size={14} className="shrink-0" />
+          Profil
+        </Link>
+        <Link
+          href="/installningar/utseende"
+          onClick={() => { setPopoverOpen(false); onMobileClose?.(); }}
+          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors"
+        >
+          <SettingsIcon size={14} className="shrink-0" />
+          Utseende
+        </Link>
+      </div>
+
+      <div className="h-px bg-[var(--border)]" />
+
+      {/* Logout */}
+      <div className="py-1.5 px-1.5">
+        <button
+          onClick={() => { setPopoverOpen(false); onLogout(); }}
+          className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[var(--text-secondary)] hover:bg-red-500/8 hover:text-red-500 transition-colors"
+        >
+          <LogOutIcon size={14} className="shrink-0" />
+          Logga ut
+        </button>
+      </div>
+    </motion.div>
+  );
+
+  const popoverContent =
+    collapsed && popoverOpen && collapsedPopoverPosition
+      ? createPortal(
+          <div
+            className="fixed z-[70] pointer-events-none"
+            style={{
+              left: collapsedPopoverPosition.left,
+              top: collapsedPopoverPosition.top,
+              transform: 'translateY(-100%)',
+            }}
+          >
+            <div className="pointer-events-auto">{popoverPanel}</div>
+          </div>,
+          document.body,
+        )
+      : popoverPanel;
 
   // ── Collapsed footer ──────────────────────────────────────────────────────
   if (collapsed) {
     return (
-      <div className="py-3 flex flex-col items-center gap-1.5 border-t border-[var(--border)]">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Link
-              href="/installningar"
-              onClick={onMobileClose}
-              className="w-9 h-9 rounded-lg hover:bg-[var(--surface-hover)] flex items-center justify-center transition-colors"
-            >
-              <AvatarBadge user={user} size="sm" />
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="right">{displayName}</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={onLogout}
-              aria-label="Log out"
-              className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/8 transition-all"
-            >
-              <LogOutIcon size={14} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">Logga ut</TooltipContent>
-        </Tooltip>
+      <div className="relative py-3 flex flex-col items-center gap-1.5 border-t border-[var(--border)]">
+        <button
+          ref={triggerRef}
+          onClick={() => setPopoverOpen((v) => !v)}
+          className="w-9 h-9 rounded-lg hover:bg-[var(--surface-hover)] flex items-center justify-center transition-colors"
+        >
+          <AvatarBadge user={user} size="sm" />
+        </button>
+        <AnimatePresence>{popoverOpen && popoverContent}</AnimatePresence>
       </div>
     );
   }
 
   // ── Expanded footer ────────────────────────────────────────────────────────
   return (
-    <div className="px-3 py-3 border-t border-[var(--border)] flex flex-col gap-2">
-      {/* User identity row */}
-      <Link
-        href="/installningar"
-        onClick={onMobileClose}
-        className="flex items-center gap-2.5 rounded-lg px-1 py-1 -mx-1 hover:bg-[var(--surface-hover)] transition-colors group"
+    <div className="relative px-3 py-3 border-t border-[var(--border)]">
+      <button
+        ref={triggerRef}
+        onClick={() => setPopoverOpen((v) => !v)}
+        className="w-full flex items-center gap-2.5 rounded-lg px-1 py-1 -mx-1 hover:bg-[var(--surface-hover)] transition-colors group"
       >
         <AvatarBadge user={user} size="md" />
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 text-left">
           <p className="text-[13px] font-medium text-[var(--text-primary)] truncate">
             {displayName}
           </p>
+          <p className="text-[11px] text-[var(--text-muted)] truncate">
+            {user.email}
+          </p>
         </div>
-        <SettingsIcon
+        <ChevronRightIcon
           size={13}
-          className="text-[var(--text-muted)] opacity-0 group-hover:opacity-60 transition-opacity shrink-0"
+          className={cn(
+            'text-[var(--text-muted)] transition-all shrink-0',
+            popoverOpen ? 'opacity-60 rotate-90' : 'opacity-0 group-hover:opacity-40',
+          )}
         />
-      </Link>
-
-      {/* Quick actions */}
-      <div className="flex items-center gap-1">
-        <button
-          onClick={onLogout}
-          aria-label="Logga ut"
-          className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/8 transition-all"
-        >
-          <LogOutIcon size={14} />
-        </button>
-      </div>
+      </button>
+      <AnimatePresence>{popoverOpen && popoverContent}</AnimatePresence>
     </div>
   );
 }
@@ -724,40 +849,15 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname      = usePathname();
   const reducedMotion = useReducedMotion() ?? false;
-  const [openDropdowns, setOpenDropdowns] = useState<string[]>([]);
-  const [mounted, setMounted]             = useState(false);
-
-  // Defer active-state computation to client to avoid SSR/client pathname mismatch
-  useEffect(() => { setMounted(true); }, []);
-
-  // Restore dropdown state from localStorage
-  useEffect(() => {
+  const [openDropdowns, setOpenDropdowns] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
     try {
       const stored = localStorage.getItem(LS_DROPDOWNS_KEY);
-      if (stored) setOpenDropdowns(JSON.parse(stored) as string[]);
-    } catch { /* ignore */ }
-  }, []);
-
-  // Auto-open dropdown if current route is a child
-  useEffect(() => {
-    const keysToOpen: string[] = [];
-    for (const section of NAV_CONFIG) {
-      for (const entry of section.items) {
-        if (
-          entry.type === 'dropdown' &&
-          entry.items.some(
-            (c) => pathname === c.href || pathname.startsWith(c.href + '/'),
-          )
-        ) {
-          keysToOpen.push(entry.key);
-        }
-      }
+      return stored ? (JSON.parse(stored) as string[]) : [];
+    } catch {
+      return [];
     }
-    if (keysToOpen.length > 0) {
-      setOpenDropdowns((prev) => Array.from(new Set([...prev, ...keysToOpen])));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  });
 
   function toggleDropdown(key: string) {
     setOpenDropdowns((prev) => {
@@ -773,6 +873,15 @@ export default function Sidebar({
   const visibleSections = NAV_CONFIG.filter(
     (s) => !s.adminOnly || user.role === 'admin',
   );
+  const routeOpenDropdowns = NAV_CONFIG.flatMap((section) =>
+    section.items.flatMap((entry) =>
+      entry.type === 'dropdown' &&
+      entry.items.some((c) => pathname === c.href || pathname.startsWith(c.href + '/'))
+        ? [entry.key]
+        : [],
+    ),
+  );
+  const activeOpenDropdowns = Array.from(new Set([...openDropdowns, ...routeOpenDropdowns]));
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -801,7 +910,7 @@ export default function Sidebar({
 
         {/* Sidebar panel */}
         <aside className="h-full w-full flex flex-col glass-sidebar border-r border-[var(--border)] overflow-hidden">
-          <SidebarHeader collapsed={collapsed} onToggleCollapse={onToggleCollapse} />
+          <SidebarHeader collapsed={collapsed} />
 
           {/* Scrollable nav */}
           <div
@@ -815,9 +924,9 @@ export default function Sidebar({
                 key={section.section}
                 section={section}
                 collapsed={collapsed}
-                openDropdowns={openDropdowns}
+                openDropdowns={activeOpenDropdowns}
                 onToggleDropdown={toggleDropdown}
-                pathname={mounted ? pathname : ''}
+                pathname={pathname}
                 userRole={user.role}
                 reducedMotion={reducedMotion}
                 onMobileClose={onMobileClose}

@@ -1,19 +1,19 @@
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@platform/auth/session';
-import ProfilClient from './profil-client';
+import SakerhetClient from './sakerhet-client';
 
-export default async function ProfilPage() {
+export default async function SakerhetPage() {
   const user = await getSessionUser();
   if (!user) redirect('/logga-in');
 
   return (
-    <ProfilClient
+    <SakerhetClient
       user={{
         email: user.email,
         firstName: user.firstName ?? null,
         lastName: user.lastName ?? null,
-        avatarUrl: user.avatarUrl ?? null,
         role: user.role,
+        mfaEnabled: user.mfaEnabled,
       }}
     />
   );
