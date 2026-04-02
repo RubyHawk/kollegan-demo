@@ -73,7 +73,7 @@ async function getDashboardData(orgId: string) {
       select: {
         id: true, title: true, status: true, offerNumber: true,
         recipientName: true, recipientCompany: true,
-        totalIncVat: true, createdAt: true, sentAt: true, validUntil: true,
+        totalIncVat: true, createdAt: true, validUntil: true,
       },
     }),
 
@@ -140,7 +140,6 @@ async function getDashboardData(orgId: string) {
     recipientCompany: o.recipientCompany,
     totalIncVat:      Number(o.totalIncVat ?? 0),
     createdAt:        o.createdAt.toISOString(),
-    sentAt:           o.sentAt?.toISOString() ?? null,
     validUntil:       o.validUntil?.toISOString() ?? null,
   }));
 

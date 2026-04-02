@@ -620,9 +620,17 @@ interface SidebarFooterProps {
 
 function AvatarBadge({ user, size }: { user: User; size: 'sm' | 'md' }) {
   const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
-  const initials = displayName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
-  const dim = size === 'md' ? 'w-7 h-7' : 'w-7 h-7';
-  const radius = size === 'md' ? 'rounded-md' : 'rounded-md';
+  // Null-safe initials: take first char of each word, upper-cased, max 2 letters
+  const initials = displayName
+    .split(' ')
+    .map((w) => w?.[0]?.toUpperCase() ?? '')
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('') || '?';
+  // md = expanded footer row (slightly larger); sm = collapsed icon slot
+  const dim    = size === 'md' ? 'w-8 h-8' : 'w-7 h-7';
+  const radius = size === 'md' ? 'rounded-lg' : 'rounded-md';
+  const text   = size === 'md' ? 'text-[11px]' : 'text-[10px]';
 
   if (user.avatarUrl) {
     return (
@@ -636,7 +644,7 @@ function AvatarBadge({ user, size }: { user: User; size: 'sm' | 'md' }) {
   }
   return (
     <div className={`${dim} ${radius} bg-[var(--accent)]/15 flex items-center justify-center shrink-0`}>
-      <span className="text-[10px] font-semibold text-[var(--accent)]">{initials}</span>
+      <span className={`${text} font-semibold text-[var(--accent)]`}>{initials}</span>
     </div>
   );
 }

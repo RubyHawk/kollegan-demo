@@ -380,7 +380,7 @@ export default function PublicOfferPage() {
   }, [sigMode, typedSig, sigFont]);
 
   const handleSign = useCallback(async () => {
-    if (!signerName.trim()) { setErrMsg('Ange ditt fullstandiga namn.'); return; }
+    if (!signerName.trim()) { setErrMsg('Ange ditt fullständiga namn.'); return; }
     const signatureImage = getSignatureImage();
     if (!signatureImage) { setErrMsg(sigMode === 'draw' ? 'Rita din namnteckning i rutan.' : 'Skriv din namnteckning.'); return; }
     setBusy(true); setErrMsg('');
@@ -390,8 +390,12 @@ export default function PublicOfferPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ signatureImage, signerName: signerName.trim() }),
       });
-      if (!res.ok) { const j = await res.json().catch(() => ({})) as { detail?: string }; throw new Error(j.detail ?? `Fel ${res.status}`); }
-      // Brief pause for the animation feel
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({})) as { detail?: string };
+        // Show the API detail if it's a user-actionable message, otherwise generic
+        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Signeringen misslyckades. Försök igen eller kontakta avsändaren.';
+        throw new Error(msg);
+      }
       await new Promise((r) => setTimeout(r, 600));
       setState('accepted');
     } catch (e) { setErrMsg((e as Error).message); setState('ready'); } finally { setBusy(false); }
@@ -404,7 +408,11 @@ export default function PublicOfferPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ comment: comment.trim() || undefined }),
       });
-      if (!res.ok) { const j = await res.json().catch(() => ({})) as { detail?: string }; throw new Error(j.detail ?? `Fel ${res.status}`); }
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({})) as { detail?: string };
+        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Avvisningen misslyckades. Försök igen.';
+        throw new Error(msg);
+      }
       setState('declined');
     } catch (e) { setErrMsg((e as Error).message); } finally { setBusy(false); }
   }, [token, comment]);
@@ -416,7 +424,7 @@ export default function PublicOfferPage() {
       const safeName = offer.title.replace(/[^a-zA-Z0-9\u00C0-\u024F ]/g, '').trim().replace(/\s+/g, '-');
       await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`);
     } catch {
-      setErrMsg('Kunde inte ladda ner PDF. Forsok igen.');
+      setErrMsg('Kunde inte ladda ner PDF. Försök igen.');
     } finally {
       setDownloading(false);
     }
@@ -444,8 +452,8 @@ export default function PublicOfferPage() {
   // Terminal status screens
   if (state === 'expired' || state === 'error' || state === 'accepted' || state === 'declined') {
     const configs = {
-      expired:  { icon: <ClockIcon size={40} className="text-slate-400" />, title: 'Lanken har gatt ut', sub: 'Kontakta avsandaren for att fa en ny lank till offerten.' },
-      error:    { icon: <XCircleIcon size={40} className="text-red-400" />, title: 'Offerten hittades inte', sub: errMsg || 'Kontrollera lanken och forsok igen.' },
+      expired:  { icon: <ClockIcon size={40} className="text-slate-400" />, title: 'Länken har gått ut', sub: 'Kontakta avsändaren för att få en ny länk till offerten.' },
+      error:    { icon: <XCircleIcon size={40} className="text-red-400" />, title: 'Offerten hittades inte', sub: 'Kontrollera länken och försök igen.' },
       accepted: { icon: null, title: 'Offert signerad', sub: 'Tack! Avsandaren har meddelats om din signering.' },
       declined: { icon: <XCircleIcon size={40} className="text-slate-400" />, title: 'Offert avvisad', sub: 'Avsandaren har meddelats.' },
     };
@@ -754,7 +762,7 @@ export default function PublicOfferPage() {
                           type="text"
                           value={typedSig}
                           onChange={(e) => setTypedSig(e.target.value)}
-                          placeholder="Skriv ditt namn har..."
+                          placeholder="Skriv ditt namn här..."
                           className="w-full border-none bg-transparent p-0 text-3xl text-slate-900 outline-none placeholder:text-slate-300"
                           style={{ fontFamily: selectedFont.family }}
                         />
@@ -848,15 +856,15 @@ export default function PublicOfferPage() {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
-                  placeholder="Beratta garna varfor..."
-                  className="w-full resize-y rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-[border-color,box-shadow] focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+                  placeholder="Berätta gärna varför..."
+                  className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-[border-color,box-shadow] focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
                 />
               </div>
-              <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4 sm:px-8">
+              <div className="flex items-center justify-end gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-4 sm:px-7">
                 <button
                   type="button"
                   onClick={() => { setState('ready'); setErrMsg(''); }}
-                  className="rounded-md border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
                 >
                   Avbryt
                 </button>

@@ -424,7 +424,7 @@ export default function DashboardView({
         <KpiCard
           label="Utgår snart"
           value={<Counter to={expiringSoon} />}
-          sub="Aktivt inom 7 dagar"
+          sub={expiringSoon > 0 ? `Offert${expiringSoon === 1 ? '' : 'er'} inom 7 dagar` : 'Ingenting på gång'}
           icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
           accent={expiringSoon > 0 ? 'var(--status-declined-text)' : undefined}
         />
@@ -446,7 +446,9 @@ export default function DashboardView({
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
             <div>
               <h2 className="text-sm font-semibold text-[var(--text-primary)]">Senaste offerter</h2>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">De {Math.min(recentOffers.length, 8)} senast skapade</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                {recentOffers.length === 0 ? 'Inga offerter skapade ännu' : `Senast skapade · ${recentOffers.length} visas`}
+              </p>
             </div>
             <Link href="/offerter" className="text-xs font-medium text-[var(--accent)] hover:underline flex items-center gap-1">
               Visa alla
