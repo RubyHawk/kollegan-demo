@@ -24,19 +24,28 @@ interface Props {
 // ─── Breadcrumb helpers ─────────────────────────────────────────────────────
 
 const SEG_LABELS: Record<string, string> = {
-  crm:          'CRM',
-  demos:        'Demos',
-  analytics:    'Analytics',
-  reports:      'Reports',
-  projects:     'Projects',
-  messages:     'Messages',
-  settings:     'Settings',
-  admin:        'Admin',
-  compliance:   'Compliance',
-  billing:      'Billing',
-  users:        'Users',
-  profile:      'Profile',
-  integrations: 'Integrations',
+  offerter:      'Offerter',
+  ny:            'Ny offert',
+  mallar:        'Mallar',
+  produkter:     'Produkter',
+  installningar: 'Inställningar',
+  anvandare:     'Användare',
+  profil:        'Profil',
+  fakturering:   'Fakturering',
+  integrationer: 'Integrationer',
+  'logga-in':    'Logga in',
+  crm:           'CRM',
+  demos:         'Demos',
+  analytics:     'Analys',
+  reports:       'Rapporter',
+  projects:      'Projekt',
+  messages:      'Meddelanden',
+  admin:         'Admin',
+  compliance:    'Efterlevnad',
+  billing:       'Fakturering',
+  users:         'Användare',
+  profile:       'Profil',
+  integrations:  'Integrationer',
 };
 
 function buildCrumbs(pathname: string) {
@@ -70,7 +79,7 @@ export default function AppShell({ user, children }: Props) {
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
+    router.push('/logga-in');
     router.refresh();
   }
 

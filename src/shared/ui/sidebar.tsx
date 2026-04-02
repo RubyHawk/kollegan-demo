@@ -100,31 +100,31 @@ const NAV_CONFIG: NavSection[] = [
     items: [
       {
         type: 'dropdown',
-        key: 'offers',
+        key: 'offerter',
         label: 'Offerter',
         icon: ReceiptIcon,
         items: [
-          { href: '/offers',     label: 'Alla offerter' },
-          { href: '/offers/new', label: 'Ny offert' },
+          { href: '/offerter',     label: 'Alla offerter' },
+          { href: '/offerter/ny',  label: 'Ny offert' },
         ],
       },
-      { type: 'link', href: '/templates', label: 'Mallar',         icon: FileTextIcon },
-      { type: 'link', href: '/products',  label: 'Produktbibliotek', icon: PackageIcon },
+      { type: 'link', href: '/mallar',    label: 'Mallar',           icon: FileTextIcon },
+      { type: 'link', href: '/produkter', label: 'Produktbibliotek', icon: PackageIcon },
     ],
   },
   {
     section: 'Admin',
     adminOnly: true,
     items: [
-      { type: 'link', href: '/settings/users', label: 'Användare', icon: UserIcon },
+      { type: 'link', href: '/installningar/anvandare', label: 'Användare', icon: UserIcon },
       {
         type: 'dropdown',
-        key: 'settings',
+        key: 'installningar',
         label: 'Inställningar',
         icon: SettingsIcon,
         items: [
-          { href: '/settings',         label: 'Allmänt' },
-          { href: '/settings/profile', label: 'Profil' },
+          { href: '/installningar',        label: 'Allmänt' },
+          { href: '/installningar/profil', label: 'Profil' },
         ],
       },
     ],
@@ -637,7 +637,7 @@ function SidebarFooter({
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
-              href="/settings"
+              href="/installningar"
               onClick={onMobileClose}
               className="w-9 h-9 rounded-lg hover:bg-[var(--surface-hover)] flex items-center justify-center transition-colors"
             >
@@ -670,7 +670,7 @@ function SidebarFooter({
     <div className="px-3 py-3 border-t border-[var(--border)] flex flex-col gap-2">
       {/* User identity row */}
       <Link
-        href="/settings"
+        href="/installningar"
         onClick={onMobileClose}
         className="flex items-center gap-2.5 rounded-lg px-1 py-1 -mx-1 hover:bg-[var(--surface-hover)] transition-colors group"
       >

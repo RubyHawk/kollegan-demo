@@ -4,7 +4,7 @@ import SettingsClient from './settings-ui';
 
 export default async function SettingsPage() {
   const user = await getSessionUser();
-  if (!user) redirect('/login');
+  if (!user) redirect('/logga-in');
 
   return (
     <SettingsClient

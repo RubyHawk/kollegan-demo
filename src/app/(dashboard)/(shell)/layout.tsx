@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 
 export default async function ShellLayout({ children }: { children: ReactNode }) {
   const user = await getSessionUser();
-  if (!user) redirect('/login');
+  if (!user) redirect('/logga-in');
 
   return <AppShell user={user}>{children}</AppShell>;
 }

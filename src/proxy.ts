@@ -7,8 +7,8 @@ const SECRET_KEY = new TextEncoder().encode(
 
 /** Paths that don't require authentication */
 const PUBLIC_PREFIXES = [
-  '/login',
-  '/register',
+  '/logga-in',
+  '/registrera',
   '/api/auth/',
   '/api/docs',
   '/api/demo/',
@@ -16,7 +16,7 @@ const PUBLIC_PREFIXES = [
   '/api/ai/',
   '/api/n8n/',
   // Public offer signing (no account required)
-  '/offers/public/',
+  '/offerter/publik/',
   '/api/offers/public/',
   // Next.js internals
   '/_next/',
@@ -25,8 +25,8 @@ const PUBLIC_PREFIXES = [
 
 /** Known app routes on the offert subdomain that must NOT be treated as offer tokens */
 const APP_ROUTES = [
-  '/offers', '/templates', '/products', '/settings', '/login',
-  '/register', '/api/', '/_next/', '/favicon',
+  '/offerter', '/mallar', '/produkter', '/installningar', '/logga-in',
+  '/registrera', '/api/', '/_next/', '/favicon',
 ];
 
 const OFFER_SUBDOMAIN = process.env.PUBLIC_OFFER_SUBDOMAIN ?? 'offert';
@@ -43,7 +43,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     if (!isAppRoute) {
       const token = pathname.slice(1);
       if (token && !token.includes('/')) {
-        return NextResponse.rewrite(new URL(`/offers/public/${token}`, request.url));
+        return NextResponse.rewrite(new URL(`/offerter/publik/${token}`, request.url));
       }
     }
     return NextResponse.next();
@@ -65,7 +65,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   );
 
   if (!at && !hasRefreshToken) {
-    const loginUrl = new URL('/login', request.url);
+    const loginUrl = new URL('/logga-in', request.url);
     if (pathname !== '/') loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -77,7 +77,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     } catch {
       // JWT expired or invalid. If a refresh token exists the client can recover.
       if (hasRefreshToken) return NextResponse.next();
-      const loginUrl = new URL('/login', request.url);
+      const loginUrl = new URL('/logga-in', request.url);
       if (pathname !== '/') loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }

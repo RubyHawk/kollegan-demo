@@ -17,7 +17,7 @@ export default function DemoGrid({ userRole }: Props) {
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
+    router.push('/logga-in');
     router.refresh();
   }
 
