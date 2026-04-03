@@ -43,6 +43,7 @@ import {
   FileTextIcon,
   ReceiptIcon,
   PackageIcon,
+  CompanyIcon,
   HomeIcon,
   CloseIcon,
 } from '@shared/ui/icons';
@@ -116,6 +117,7 @@ const NAV_CONFIG: NavSection[] = [
       },
       { type: 'link', href: '/mallar',    label: 'Mallar',           icon: FileTextIcon },
       { type: 'link', href: '/produkter', label: 'Produktbibliotek', icon: PackageIcon },
+      { type: 'link', href: '/installningar/foretag', label: 'Företag',          icon: CompanyIcon },
     ],
   },
   {

@@ -41,14 +41,18 @@ async function requireStaff(req: NextRequest) {
   return payload;
 }
 
+const ListQuerySchema = z.object({
+  companyId: z.string().uuid().optional(),
+});
+
 // ── List Templates ────────────────────────────────────────────────────────────
 
 export const handleListTemplates = createHandler(
-  { auth: 'jwt', tag: 'Templates:List', rateLimit: { max: 120, windowMs: 60_000 } },
+  { auth: 'jwt', tag: 'Templates:List', query: ListQuerySchema, rateLimit: { max: 120, windowMs: 60_000 } },
   async (ctx) => {
-    const { req } = ctx as { req: NextRequest };
+    const { req, query } = ctx as { req: NextRequest; query: z.infer<typeof ListQuerySchema> };
     const payload = await requireStaff(req);
-    const templates = await listTemplates(payload.orgId!);
+    const templates = await listTemplates(payload.orgId!, query.companyId);
     return ok(templates);
   },
 );
@@ -57,6 +61,7 @@ export const handleListTemplates = createHandler(
 
 const CreateTemplateSchema = z.object({
   name:              z.string().min(1).max(200),
+  companyId:         z.string().uuid().optional().nullable(),
   content:           z.string().min(2), // TipTap JSON string — at least '{}'
   emailSubject:      z.string().max(500).regex(/^[^\r\n]*$/, 'Subject must not contain newlines').optional(),
   emailBody:         z.string().max(50_000).optional(),
@@ -69,7 +74,15 @@ export const handleCreateTemplate = createHandler(
     const { body, req } = ctx as { body: z.infer<typeof CreateTemplateSchema>; req: NextRequest };
     const payload = await requireStaff(req);
     const template = await createTemplate(
-      { organizationId: payload.orgId!, name: body.name, content: body.content, emailSubject: body.emailSubject, emailBody: body.emailBody, emailHeaderConfig: body.emailHeaderConfig },
+      {
+        organizationId: payload.orgId!,
+        companyId: body.companyId ?? undefined,
+        name: body.name,
+        content: body.content,
+        emailSubject: body.emailSubject,
+        emailBody: body.emailBody,
+        emailHeaderConfig: body.emailHeaderConfig,
+      },
       payload.sub,
     );
     return created(template, `/api/templates/${template.id}`);
@@ -94,6 +107,7 @@ export const handleGetTemplate = createHandler(
 
 const UpdateTemplateSchema = z.object({
   name:              z.string().min(1).max(200).optional(),
+  companyId:         z.string().uuid().optional().nullable(),
   content:           z.string().min(2).optional(),
   emailSubject:      z.string().max(500).regex(/^[^\r\n]*$/, 'Subject must not contain newlines').optional(),
   emailBody:         z.string().max(50_000).optional(),
@@ -106,7 +120,14 @@ export const handleUpdateTemplate = createHandler(
     const { body, req } = ctx as { body: z.infer<typeof UpdateTemplateSchema>; req: NextRequest };
     const id      = extractId(req);
     const payload = await requireStaff(req);
-    const updated = await updateTemplate(id, payload.orgId!, { name: body.name, content: body.content, emailSubject: body.emailSubject, emailBody: body.emailBody, emailHeaderConfig: body.emailHeaderConfig });
+    const updated = await updateTemplate(id, payload.orgId!, {
+      name: body.name,
+      companyId: body.companyId ?? undefined,
+      content: body.content,
+      emailSubject: body.emailSubject,
+      emailBody: body.emailBody,
+      emailHeaderConfig: body.emailHeaderConfig,
+    });
     if (!updated) throw Errors.notFound('Template not found');
     return ok(updated);
   },

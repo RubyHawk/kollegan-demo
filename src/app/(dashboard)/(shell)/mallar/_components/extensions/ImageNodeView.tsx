@@ -64,6 +64,8 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     align,
     width,
     height:   imgHeight,
+    naturalWidth,
+    naturalHeight,
     float:    imgFloat,
     position: imgPosition,
     zIndex,
@@ -76,6 +78,8 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     align:    ImgAlign;
     width:    number | null;
     height:   number | null;
+    naturalWidth: number | null;
+    naturalHeight: number | null;
     float:    ImgFloat;
     position: ImgPosition;
     zIndex:   number;
@@ -604,6 +608,15 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
           src={src}
           alt={alt ?? ''}
           draggable={false}
+          onLoad={(event) => {
+            const target = event.currentTarget;
+            if (!target.naturalWidth || !target.naturalHeight) return;
+            if (naturalWidth === target.naturalWidth && naturalHeight === target.naturalHeight) return;
+            updateAttributes({
+              naturalWidth: target.naturalWidth,
+              naturalHeight: target.naturalHeight,
+            });
+          }}
           style={{
             display:    'block',
             width:      '100%',

@@ -223,9 +223,17 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
   const flushPage = useCallback((idx: number, currentPages: PageDoc[]): PageDoc[] => {
     if (!editor) return currentPages;
     const updated = [...currentPages];
+    const currentBody = (updated[idx]?.body as { attrs?: Record<string, unknown> } | undefined) ?? {};
+    const editorBody = editor.getJSON() as { attrs?: Record<string, unknown> };
     updated[idx] = {
       ...updated[idx],
-      body:   editor.getJSON(),
+      body: {
+        ...editorBody,
+        attrs: {
+          ...(currentBody.attrs ?? {}),
+          ...(editorBody.attrs ?? {}),
+        },
+      },
       header: {
         enabled:    activeHdrRef.current.enabled,
         useDefault: activeHdrRef.current.useDefault,

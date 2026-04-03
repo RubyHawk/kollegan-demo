@@ -8,11 +8,13 @@ import {
 
 export interface CreateCategoryInput {
   organizationId: string;
+  companyId?: string | null;
   name: string;
   parentId?: string | null;
 }
 
 export interface UpdateCategoryInput {
+  companyId?: string | null;
   name?: string;
   parentId?: string | null;
 }
@@ -20,6 +22,7 @@ export interface UpdateCategoryInput {
 type CategoryRow = {
   id: string;
   organizationId: string;
+  companyId?: string | null;
   name: string;
   parentId: string | null;
   createdAt: Date;
@@ -30,6 +33,7 @@ function mapCategory(row: CategoryRow): ProductCategory {
   return {
     id: row.id,
     organizationId: row.organizationId,
+    companyId: row.companyId ?? undefined,
     name: row.name,
     parentId: row.parentId,
     createdAt: row.createdAt.toISOString(),
@@ -40,6 +44,7 @@ function mapCategory(row: CategoryRow): ProductCategory {
 const CATEGORY_SELECT = {
   id: true,
   organizationId: true,
+  companyId: true,
   name: true,
   parentId: true,
   createdAt: true,
@@ -71,9 +76,14 @@ function isMissingProductCategoryIdColumn(error: unknown): error is Prisma.Prism
   return `${error.message.toLowerCase()} ${meta}`.includes('categoryid');
 }
 
-async function getCategorySelection(id: string, organizationId: string): Promise<CategorySelection | null> {
+async function getCategorySelection(id: string, organizationId: string, companyId?: string | null): Promise<CategorySelection | null> {
   const category = await prisma.productCategory.findFirst({
-    where: { id, organizationId, deletedAt: null },
+    where: {
+      id,
+      organizationId,
+      deletedAt: null,
+      ...(companyId ? { OR: [{ companyId }, { companyId: null }] } : {}),
+    },
     select: {
       id: true,
       name: true,
@@ -89,9 +99,14 @@ async function getCategorySelection(id: string, organizationId: string): Promise
   return category as CategorySelection | null;
 }
 
-async function ensureParentIsMainCategory(organizationId: string, parentId: string) {
+async function ensureParentIsMainCategory(organizationId: string, parentId: string, companyId?: string | null) {
   const parent = await prisma.productCategory.findFirst({
-    where: { id: parentId, organizationId, deletedAt: null },
+    where: {
+      id: parentId,
+      organizationId,
+      deletedAt: null,
+      ...(companyId ? { OR: [{ companyId }, { companyId: null }] } : {}),
+    },
     select: { id: true, parentId: true },
   });
 
@@ -109,14 +124,21 @@ function normalizeName(name: string) {
 }
 
 export const productCategoriesRepository = {
-  async list(orgId: string): Promise<ProductCategory[]> {
+  async list(orgId: string, companyId?: string): Promise<ProductCategory[]> {
     try {
       const rows = await prisma.productCategory.findMany({
-        where: { organizationId: orgId, deletedAt: null },
+        where: {
+          organizationId: orgId,
+          deletedAt: null,
+          ...(companyId ? { OR: [{ companyId }, { companyId: null }] } : {}),
+        },
         select: CATEGORY_SELECT,
-        orderBy: [{ parentId: 'asc' }, { name: 'asc' }],
+        orderBy: [{ companyId: 'desc' }, { parentId: 'asc' }, { name: 'asc' }],
       });
-      return rows.map((row) => mapCategory(row as CategoryRow));
+      return rows.map((row) => ({
+        ...mapCategory(row as CategoryRow),
+        companyId: (row as CategoryRow & { companyId?: string | null }).companyId ?? undefined,
+      }));
     } catch (error) {
       if (isMissingProductCategorySchemaError(error)) {
         return [];
@@ -129,27 +151,31 @@ export const productCategoriesRepository = {
     try {
       const name = normalizeName(input.name);
       if (input.parentId) {
-        await ensureParentIsMainCategory(input.organizationId, input.parentId);
+        await ensureParentIsMainCategory(input.organizationId, input.parentId, input.companyId);
       }
 
       const row = await prisma.productCategory.create({
         data: {
           organizationId: input.organizationId,
+          companyId: input.companyId ?? null,
           name,
           parentId: input.parentId ?? null,
         },
         select: CATEGORY_SELECT,
       });
 
-      return mapCategory(row as CategoryRow);
+      return {
+        ...mapCategory(row as CategoryRow),
+        companyId: (((row as unknown) as Record<string, unknown>).companyId as string | null) ?? undefined,
+      };
     } catch (error) {
       if (isLegacyCreatedByConstraintError(error)) {
         const id = randomUUID();
         const name = normalizeName(input.name);
 
         await prisma.$executeRaw`
-          INSERT INTO "off_product_categories" ("id", "organizationId", "name", "parentId", "createdBy", "createdAt", "updatedAt")
-          VALUES (${id}, ${input.organizationId}, ${name}, ${input.parentId ?? null}, ${'system'}, NOW(), NOW())
+          INSERT INTO "off_product_categories" ("id", "organizationId", "companyId", "name", "parentId", "createdBy", "createdAt", "updatedAt")
+          VALUES (${id}, ${input.organizationId}, ${input.companyId ?? null}, ${name}, ${input.parentId ?? null}, ${'system'}, NOW(), NOW())
         `;
 
         const fallbackRow = await prisma.productCategory.findFirst({
@@ -161,7 +187,10 @@ export const productCategoriesRepository = {
           throw new Error('CATEGORY_SCHEMA_UNAVAILABLE');
         }
 
-        return mapCategory(fallbackRow as CategoryRow);
+        return {
+          ...mapCategory(fallbackRow as CategoryRow),
+          companyId: (((fallbackRow as unknown) as Record<string, unknown>).companyId as string | null) ?? undefined,
+        };
       }
       if (isUniqueConstraintError(error)) {
         throw new Error('CATEGORY_EXISTS');
@@ -176,7 +205,12 @@ export const productCategoriesRepository = {
   async update(id: string, orgId: string, input: UpdateCategoryInput): Promise<ProductCategory | null> {
     try {
       const existing = await prisma.productCategory.findFirst({
-        where: { id, organizationId: orgId, deletedAt: null },
+        where: {
+          id,
+          organizationId: orgId,
+          deletedAt: null,
+          ...(input.companyId ? { OR: [{ companyId: input.companyId }, { companyId: null }] } : {}),
+        },
         select: { id: true, parentId: true },
       });
       if (!existing) return null;
@@ -186,19 +220,23 @@ export const productCategoriesRepository = {
       }
 
       if (input.parentId && input.parentId !== existing.parentId) {
-        await ensureParentIsMainCategory(orgId, input.parentId);
+        await ensureParentIsMainCategory(orgId, input.parentId, input.companyId);
       }
 
       const row = await prisma.productCategory.update({
         where: { id },
         data: {
           ...(input.name !== undefined ? { name: normalizeName(input.name) } : {}),
+          ...(input.companyId !== undefined ? { companyId: input.companyId ?? null } : {}),
           ...(input.parentId !== undefined ? { parentId: input.parentId } : {}),
         },
         select: CATEGORY_SELECT,
       });
 
-      return mapCategory(row as CategoryRow);
+      return {
+        ...mapCategory(row as CategoryRow),
+        companyId: (((row as unknown) as Record<string, unknown>).companyId as string | null) ?? undefined,
+      };
     } catch (error) {
       if (isUniqueConstraintError(error)) {
         throw new Error('CATEGORY_EXISTS');
@@ -270,7 +308,7 @@ export const productCategoriesRepository = {
     }
   },
 
-  async getResolvedLabel(organizationId: string, categoryId?: string | null, categoryLabel?: string | null) {
+  async getResolvedLabel(organizationId: string, categoryId?: string | null, categoryLabel?: string | null, companyId?: string | null) {
     if (!categoryId) {
       return {
         categoryId: null,
@@ -279,7 +317,7 @@ export const productCategoriesRepository = {
     }
 
     try {
-      const category = await getCategorySelection(categoryId, organizationId);
+      const category = await getCategorySelection(categoryId, organizationId, companyId);
       if (!category) {
         return {
           categoryId: null,

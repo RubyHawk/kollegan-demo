@@ -24,8 +24,8 @@ import {
   getDisplayUnitPrice,
   summarizeOfferPricing,
 } from '../domain/pricing';
+import type { OfferBrandingProfile } from './company-branding';
 import { sanitizeUrl, escapeHtml as secureEscapeHtml } from '@platform/security/sanitize';
-import { BRAND_MARK_PATH, BRAND_NAME, BRAND_DEFAULT_PUBLIC_ORIGIN, BRAND_EMAIL_FALLBACK } from '@shared/branding';
 
 // ─── SEK formatter ─────────────────────────────────────────────────────────────
 
@@ -429,7 +429,13 @@ function renderDocumentSummary(offer: Offer, placement: 'right' | 'below'): stri
     </aside>`;
 }
 
-function renderStructuredDocumentPage(page: V3PageDoc, offer: Offer, replacements: Record<string, string>, pageIndex: number): string {
+function renderStructuredDocumentPage(
+  page: V3PageDoc,
+  offer: Offer,
+  replacements: Record<string, string>,
+  pageIndex: number,
+  branding?: OfferBrandingProfile,
+): string {
   const settings = {
     backgroundOpacity: 0.08,
     watermarkMode: 'bottom',
@@ -447,9 +453,10 @@ function renderStructuredDocumentPage(page: V3PageDoc, offer: Offer, replacement
   };
 
   const offerNumber = replacements['{{offerNumber}}'];
-  const senderName = BRAND_NAME;
-  const senderEmail = process.env.EMAIL_FROM || BRAND_EMAIL_FALLBACK;
-  const senderWebsite = BRAND_DEFAULT_PUBLIC_ORIGIN.replace(/^https?:\/\//, '');
+  const senderName = branding?.senderName?.trim() || 'Avsändare';
+  const senderEmail = branding?.senderEmail?.trim() || '';
+  const senderWebsite = branding?.website?.trim()?.replace(/^https?:\/\//, '') || '';
+  const logoUrl = branding?.logoUrl?.trim() || '';
   const noteHtml = offer.notes ? `<section class="offer-section"><h3>Anteckningar</h3><p>${secureEscapeHtml(offer.notes)}</p></section>` : '';
   const introHtml = nodeToHtml(page.body, replacements);
   const tableHtml = buildLineItemsTable(offer.lineItems, offer.priceDisplayMode);
@@ -469,12 +476,12 @@ function renderStructuredDocumentPage(page: V3PageDoc, offer: Offer, replacement
         <section class="offer-shell">
           <header class="offer-shell__header">
             <div class="offer-shell__sender">
-              ${settings.showLogo ? `<img class="offer-shell__logo" src="${sanitizeUrl(BRAND_MARK_PATH)}" alt="${escapeHtml(senderName)}" />` : ''}
+              ${settings.showLogo && logoUrl ? `<img class="offer-shell__logo" src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(senderName)}" />` : ''}
               ${settings.showSenderDetails ? `
                 <div class="offer-shell__sender-copy">
                   <p class="offer-shell__sender-name">${escapeHtml(senderName)}</p>
-                  <p>${escapeHtml(senderEmail)}</p>
-                  <p>${escapeHtml(senderWebsite)}</p>
+                  ${senderEmail ? `<p>${escapeHtml(senderEmail)}</p>` : ''}
+                  ${senderWebsite ? `<p>${escapeHtml(senderWebsite)}</p>` : ''}
                 </div>` : ''}
             </div>
             <div class="offer-shell__meta">
@@ -518,8 +525,8 @@ function renderStructuredDocumentPage(page: V3PageDoc, offer: Offer, replacement
             </section>` : ''}
           ${settings.showFooter ? `
             <footer class="offer-shell__footer">
-              <div><strong>${escapeHtml(senderName)}</strong><span>${escapeHtml(senderWebsite)}</span></div>
-              <div><strong>Kontakt</strong><span>${escapeHtml(senderEmail)}</span></div>
+              <div><strong>${escapeHtml(senderName)}</strong><span>${escapeHtml(senderWebsite || '—')}</span></div>
+              <div><strong>Kontakt</strong><span>${escapeHtml(senderEmail || '—')}</span></div>
               <div><strong>Prisvisning</strong><span>${getDisplayModeLabel(buildOfferSummary(offer).hasVat, offer.priceDisplayMode)}</span></div>
             </footer>` : ''}
         </section>
@@ -533,11 +540,15 @@ function renderStructuredDocumentPage(page: V3PageDoc, offer: Offer, replacement
  * Generates a clean fallback HTML document from offer data alone (no template).
  * Used when an offer is sent without a linked template.
  */
-export function generateFallbackDocument(offer: Offer): string {
+export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingProfile): string {
   const pricing        = buildOfferSummary(offer);
   const offerNumberStr = offer.offerNumber
     ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
     : offer.id.slice(0, 8).toUpperCase();
+  const senderName = branding?.senderName?.trim() || 'Avsändare';
+  const senderEmail = branding?.senderEmail?.trim() || '';
+  const senderWebsite = branding?.website?.trim()?.replace(/^https?:\/\//, '') || '';
+  const logoUrl = branding?.logoUrl?.trim() || '';
 
   return `<!DOCTYPE html>
 <html lang="sv">
@@ -558,6 +569,21 @@ export function generateFallbackDocument(offer: Offer): string {
 </head>
 <body>
   <div class="doc-wrapper">
+    ${(logoUrl || senderName || senderEmail || senderWebsite) ? `
+    <div style="display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:28px;">
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        ${logoUrl ? `<img src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(senderName)}" style="width:54px;height:54px;object-fit:contain;border-radius:12px;"/>` : ''}
+        <div>
+          <p style="margin:0;font-weight:700;color:#0f172a;">${escapeHtml(senderName)}</p>
+          ${senderEmail ? `<p style="margin:4px 0 0 0;color:#64748b;">${escapeHtml(senderEmail)}</p>` : ''}
+          ${senderWebsite ? `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(senderWebsite)}</p>` : ''}
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <p style="margin:0;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Offert</p>
+        <p style="margin:8px 0 0 0;color:#0f172a;font-weight:700;">${escapeHtml(offerNumberStr)}</p>
+      </div>
+    </div>` : ''}
     <h1 style="font-size:1.8em;font-weight:700;margin:0 0 6px 0;">${escapeHtml(offer.title)}</h1>
     <p style="color:#64748b;font-size:13px;margin:0 0 32px 0;">Offert ${escapeHtml(offerNumberStr)} · Giltig till ${fmtDate(offer.validUntil)}</p>
 
@@ -603,7 +629,7 @@ export function generateFallbackDocument(offer: Offer): string {
  *
  * The result is stored as Offer.generatedDocument (immutable after send).
  */
-export function generateDocument(templateContent: string, offer: Offer): string {
+export function generateDocument(templateContent: string, offer: Offer, branding?: OfferBrandingProfile): string {
   // Build replacements map from the shared helper (already HTML-escaped),
   // then extend with the document-only HTML entries that have no email equivalent.
   const replacements: Record<string, string> = {
@@ -621,7 +647,7 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     pageIndex:     number,
   ): string {
     if (page.kind === 'document') {
-      return renderStructuredDocumentPage(page, offer, replacements, pageIndex);
+        return renderStructuredDocumentPage(page, offer, replacements, pageIndex, branding);
     }
 
     let pageHeaderHtml = '';

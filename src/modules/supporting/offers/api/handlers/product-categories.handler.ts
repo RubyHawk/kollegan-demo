@@ -56,16 +56,22 @@ function translateCategoryError(error: unknown): never {
 }
 
 export const handleListProductCategories = createHandler(
-  { auth: 'jwt', tag: 'ProductCategories:List', rateLimit: { max: 120, windowMs: 60_000 } },
+  {
+    auth: 'jwt',
+    tag: 'ProductCategories:List',
+    query: z.object({ companyId: z.string().uuid().optional() }),
+    rateLimit: { max: 120, windowMs: 60_000 },
+  },
   async (ctx) => {
-    const { req } = ctx as { req: NextRequest };
+    const { req, query } = ctx as { req: NextRequest; query: { companyId?: string } };
     const payload = await requireStaff(req);
-    const categories = await listProductCategoryTree(payload.orgId!);
+    const categories = await listProductCategoryTree(payload.orgId!, query.companyId);
     return ok({ categories });
   },
 );
 
 const CreateBodySchema = z.object({
+  companyId: z.string().uuid().optional().nullable(),
   name: z.string().trim().min(1).max(100),
   parentId: z.string().uuid().optional().nullable(),
 });
@@ -79,6 +85,7 @@ export const handleCreateProductCategory = createHandler(
     try {
       const category = await createProductCategory({
         organizationId: payload.orgId!,
+        companyId: body.companyId ?? undefined,
         name: body.name,
         parentId: body.parentId ?? null,
       });
@@ -90,6 +97,7 @@ export const handleCreateProductCategory = createHandler(
 );
 
 const UpdateBodySchema = z.object({
+  companyId: z.string().uuid().optional().nullable(),
   name: z.string().trim().min(1).max(100).optional(),
   parentId: z.string().uuid().optional().nullable(),
 });
@@ -102,7 +110,10 @@ export const handleUpdateProductCategory = createHandler(
     const payload = await requireStaff(req);
 
     try {
-      const updated = await updateProductCategory(id, payload.orgId!, body);
+      const updated = await updateProductCategory(id, payload.orgId!, {
+        ...body,
+        companyId: body.companyId ?? undefined,
+      });
       if (!updated) throw Errors.notFound('Category not found');
       return ok(updated);
     } catch (error) {

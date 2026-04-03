@@ -68,6 +68,7 @@ export interface Offer {
 export interface ProductCategory {
   id: string;
   organizationId: string;
+  companyId?: string;
   name: string;
   parentId: string | null;
   children?: ProductCategory[];
@@ -78,6 +79,7 @@ export interface ProductCategory {
 export interface OfferProduct {
   id: string;
   organizationId: string;
+  companyId?: string;
   name: string;
   description?: string;
   unitPrice: number;
@@ -101,9 +103,30 @@ export interface Company {
   orgNumber?: string;
   website?: string;
   logoUrl?: string;
+  senderEmail?: string;
+  senderName?: string;
+  emailHeaderConfig?: string;
   industry?: string;
   notes?: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CompanyMemberUser {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  avatarUrl?: string;
+}
+
+export interface CompanyMember {
+  id: string;
+  companyId: string;
+  userId: string;
+  role: 'staff' | 'admin';
+  createdAt: string;
+  grantedBy?: string;
+  user: CompanyMemberUser;
 }

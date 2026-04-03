@@ -33,6 +33,7 @@ const ListQuerySchema = z.object({
   search: z.string().max(100).optional(),
   category: z.string().max(100).optional(),
   isActive: z.enum(['true', 'false']).optional(),
+  companyId: z.string().uuid().optional(),
 });
 
 export const handleListProducts = createHandler(
@@ -41,13 +42,14 @@ export const handleListProducts = createHandler(
     const { query, req } = ctx as { query: z.infer<typeof ListQuerySchema>; req: NextRequest };
     const payload = await requireStaff(req);
     const isActive = query.isActive === 'true' ? true : query.isActive === 'false' ? false : undefined;
-    const products = await listProducts(payload.orgId!, query.search, query.category, isActive);
+    const products = await listProducts(payload.orgId!, query.search, query.category, isActive, query.companyId);
     return ok({ products });
   },
 );
 
 const CreateBodySchema = z.object({
   name: z.string().min(1).max(300),
+  companyId: z.string().uuid().optional().nullable(),
   description: z.string().max(1000).optional(),
   unitPrice: z.number().min(0),
   vatRate: z.number().min(0).max(1).default(0.25),
@@ -68,6 +70,7 @@ export const handleCreateProduct = createHandler(
     const payload = await requireStaff(req);
     const product = await createProduct({
       organizationId: payload.orgId!,
+      companyId: body.companyId ?? undefined,
       name: body.name,
       description: body.description,
       unitPrice: body.unitPrice,
@@ -87,6 +90,7 @@ export const handleCreateProduct = createHandler(
 
 const UpdateBodySchema = z.object({
   name: z.string().min(1).max(300).optional(),
+  companyId: z.string().uuid().optional().nullable(),
   description: z.string().max(1000).optional(),
   unitPrice: z.number().min(0).optional(),
   vatRate: z.number().min(0).max(1).optional(),
@@ -108,6 +112,7 @@ export const handleUpdateProduct = createHandler(
     const payload = await requireStaff(req);
     const updated = await updateProduct(id, payload.orgId!, {
       ...body,
+      companyId: body.companyId ?? undefined,
       categoryId: body.categoryId !== undefined ? body.categoryId : undefined,
       imageUrl: body.imageUrl ?? undefined,
       minQuantity: body.minQuantity ?? undefined,

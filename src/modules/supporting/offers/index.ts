@@ -4,7 +4,17 @@
  * Other modules ONLY import from this file.
  */
 
-export type { Offer, OfferLineItem, OfferStatus, OfferPriceDisplayMode, OfferProduct, ProductCategory, Company } from './domain/offer.entity';
+export type {
+  Offer,
+  OfferLineItem,
+  OfferStatus,
+  OfferPriceDisplayMode,
+  OfferProduct,
+  ProductCategory,
+  Company,
+  CompanyMember,
+  CompanyMemberUser,
+} from './domain/offer.entity';
 export type { OfferTemplate, PlaceholderKey } from './domain/template.entity';
 export { OFFER_PLACEHOLDERS } from './domain/template.entity';
 export {
@@ -127,6 +137,12 @@ export {
   handleUpdateCompany,
   handleDeleteCompany,
 } from './api/handlers/company.handler';
+
+export {
+  handleListCompanyMembers,
+  handleUpsertCompanyMember,
+  handleDeleteCompanyMember,
+} from './api/handlers/company-members.handler';
 
 export {
   handleGetPublicOffer,

@@ -15,8 +15,9 @@ export async function listProducts(
   search?: string,
   category?: string,
   isActive?: boolean,
+  companyId?: string,
 ): Promise<OfferProduct[]> {
-  return productsRepository.list(orgId, search, category, isActive);
+  return productsRepository.list(orgId, search, category, isActive, companyId);
 }
 
 export async function listProductCategories(orgId: string): Promise<string[]> {

@@ -67,6 +67,53 @@ export interface ReminderPayload {
   senderName?:    string;
 }
 
+export function buildSendToRecipientPayload(
+  offer: Offer,
+  publicUrl: string,
+  sender?: { senderEmail?: string; senderName?: string },
+): SendToRecipientPayload {
+  return {
+    offerId: offer.id,
+    offerTitle: offer.title,
+    recipientName: offer.recipientName,
+    recipientEmail: offer.recipientEmail,
+    publicUrl,
+    validUntil: offer.validUntil,
+    totalExVat: offer.totalExVat,
+    totalIncVat: offer.totalIncVat,
+    priceDisplayMode: offer.priceDisplayMode,
+    emailSubject: offer.emailSubject,
+    emailBody: offer.emailBody,
+    emailHeaderConfig: offer.emailHeaderConfig,
+    senderEmail: sender?.senderEmail,
+    senderName: sender?.senderName,
+  };
+}
+
+export function buildReminderPayload(
+  offer: Offer,
+  publicUrl: string,
+  sender?: { senderEmail?: string; senderName?: string },
+): ReminderPayload {
+  return {
+    offerId: offer.id,
+    offerTitle: offer.title,
+    recipientName: offer.recipientName,
+    recipientEmail: offer.recipientEmail,
+    publicUrl,
+    validUntil: offer.validUntil,
+    totalExVat: offer.totalExVat,
+    totalIncVat: offer.totalIncVat,
+    priceDisplayMode: offer.priceDisplayMode,
+    reminderCount: offer.reminderCount ?? 1,
+    emailSubject: offer.emailSubject,
+    emailBody: offer.emailBody,
+    emailHeaderConfig: offer.emailHeaderConfig,
+    senderEmail: sender?.senderEmail,
+    senderName: sender?.senderName,
+  };
+}
+
 // ─── Enqueue helpers ───────────────────────────────────────────────────────────
 
 /**
@@ -78,22 +125,7 @@ export async function enqueueOfferEmail(
   publicUrl: string,
   sender?: { senderEmail?: string; senderName?: string },
 ): Promise<void> {
-  const payload: SendToRecipientPayload = {
-    offerId:        offer.id,
-    offerTitle:     offer.title,
-    recipientName:  offer.recipientName,
-    recipientEmail: offer.recipientEmail,
-    publicUrl,
-    validUntil:     offer.validUntil,
-    totalExVat:     offer.totalExVat,
-    totalIncVat:    offer.totalIncVat,
-    priceDisplayMode: offer.priceDisplayMode,
-    emailSubject:      offer.emailSubject,
-    emailBody:         offer.emailBody,
-    emailHeaderConfig: offer.emailHeaderConfig,
-    senderEmail:       sender?.senderEmail,
-    senderName:        sender?.senderName,
-  };
+  const payload = buildSendToRecipientPayload(offer, publicUrl, sender);
   await jobQueue.add('offer.email.send_to_recipient', payload, { retries: 3 });
 }
 
@@ -106,23 +138,7 @@ export async function enqueueReminderEmail(
   publicUrl: string,
   sender?: { senderEmail?: string; senderName?: string },
 ): Promise<void> {
-  const payload: ReminderPayload = {
-    offerId:        offer.id,
-    offerTitle:     offer.title,
-    recipientName:  offer.recipientName,
-    recipientEmail: offer.recipientEmail,
-    publicUrl,
-    validUntil:     offer.validUntil,
-    totalExVat:     offer.totalExVat,
-    totalIncVat:    offer.totalIncVat,
-    priceDisplayMode: offer.priceDisplayMode,
-    reminderCount:  offer.reminderCount ?? 1,
-    emailSubject:      offer.emailSubject,
-    emailBody:         offer.emailBody,
-    emailHeaderConfig: offer.emailHeaderConfig,
-    senderEmail:       sender?.senderEmail,
-    senderName:        sender?.senderName,
-  };
+  const payload = buildReminderPayload(offer, publicUrl, sender);
   await jobQueue.add('offer.email.reminder', payload, { retries: 3 });
 }
 

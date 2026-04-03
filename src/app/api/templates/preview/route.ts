@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateDocument, generateFallbackDocument } from '@modules/supporting/offers/application/document-generator';
 import type { Offer } from '@modules/supporting/offers/domain/offer.entity';
+import { resolveOfferBranding } from '@modules/supporting/offers/application/company-branding';
 
 const PREVIEW_SENTINELS = {
   title: '__PREVIEW_TITLE__',
@@ -89,7 +90,18 @@ function decoratePreviewHtml(html: string): string {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json() as { content?: string; offer?: PartialOfferInput };
+    const body = await req.json() as {
+      content?: string;
+      branding?: {
+        name?: string;
+        website?: string;
+        logoUrl?: string;
+        senderEmail?: string;
+        senderName?: string;
+        emailHeaderConfig?: string;
+      };
+      offer?: PartialOfferInput;
+    };
 
     const partialItems = body.offer?.lineItems;
     const lineItems = partialItems && partialItems.length > 0
@@ -119,9 +131,24 @@ export async function POST(req: Request) {
       totalIncVat: Math.round((exVat + vatAmount) * 100) / 100,
     };
 
+    const company = body.branding ? {
+      id: 'preview-company',
+      organizationId: offer.organizationId,
+      name: body.branding.name ?? 'Offert',
+      website: body.branding.website,
+      logoUrl: body.branding.logoUrl,
+      senderEmail: body.branding.senderEmail,
+      senderName: body.branding.senderName,
+      emailHeaderConfig: body.branding.emailHeaderConfig,
+      createdBy: 'preview',
+      createdAt: offer.createdAt,
+      updatedAt: offer.createdAt,
+    } : null;
+    const branding = resolveOfferBranding(company, null);
+
     const html = body.content
-      ? generateDocument(body.content, offer)
-      : generateFallbackDocument(offer);
+      ? generateDocument(body.content, offer, branding)
+      : generateFallbackDocument(offer, branding);
 
     return NextResponse.json({ html: decoratePreviewHtml(html) });
   } catch (err) {
