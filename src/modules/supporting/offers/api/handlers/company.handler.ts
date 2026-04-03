@@ -26,6 +26,10 @@ async function requireStaff(req: NextRequest) {
   return payload;
 }
 
+function isOrgAdmin(payload: { roles: string[] }) {
+  return payload.roles.includes('admin') || payload.roles.includes('super_admin');
+}
+
 // ── List Companies ─────────────────────────────────────────────────────────────
 
 const ListQuerySchema = z.object({
@@ -37,7 +41,10 @@ export const handleListCompanies = createHandler(
   async (ctx) => {
     const { query, req } = ctx as { query: z.infer<typeof ListQuerySchema>; req: NextRequest };
     const payload = await requireStaff(req);
-    const companies = await companiesRepository.list(payload.orgId!, query.search);
+    const companies = await companiesRepository.list(payload.orgId!, query.search, {
+      userId: payload.sub,
+      restrictToMemberships: !isOrgAdmin(payload),
+    });
     return ok({ companies });
   },
 );
@@ -50,7 +57,10 @@ export const handleGetCompany = createHandler(
     const { req } = ctx as { req: NextRequest };
     const id = extractId(req);
     const payload = await requireStaff(req);
-    const company = await companiesRepository.getById(id, payload.orgId!);
+    const company = await companiesRepository.getById(id, payload.orgId!, {
+      userId: payload.sub,
+      restrictToMemberships: !isOrgAdmin(payload),
+    });
     if (!company) throw Errors.notFound('Company not found');
     return ok(company);
   },
@@ -63,6 +73,9 @@ const CreateBodySchema = z.object({
   orgNumber: z.string().max(20).optional(),
   website:   z.string().url().max(500).optional(),
   logoUrl:   z.string().url().max(2000).optional(),
+  senderEmail: z.string().email().max(254).optional(),
+  senderName: z.string().max(100).optional(),
+  emailHeaderConfig: z.string().max(10_000).optional(),
   industry:  z.string().max(100).optional(),
   notes:     z.string().max(2000).optional(),
 });
@@ -78,6 +91,9 @@ export const handleCreateCompany = createHandler(
       orgNumber: body.orgNumber,
       website:   body.website,
       logoUrl:   body.logoUrl,
+      senderEmail: body.senderEmail,
+      senderName: body.senderName,
+      emailHeaderConfig: body.emailHeaderConfig,
       industry:  body.industry,
       notes:     body.notes,
       createdBy: payload.sub,
@@ -93,6 +109,9 @@ const UpdateBodySchema = z.object({
   orgNumber: z.string().max(20).optional(),
   website:   z.string().url().max(500).optional().nullable(),
   logoUrl:   z.string().url().max(2000).optional().nullable(),
+  senderEmail: z.string().email().max(254).optional().nullable(),
+  senderName: z.string().max(100).optional().nullable(),
+  emailHeaderConfig: z.string().max(10_000).optional().nullable(),
   industry:  z.string().max(100).optional(),
   notes:     z.string().max(2000).optional(),
 });
@@ -107,6 +126,9 @@ export const handleUpdateCompany = createHandler(
       ...body,
       website: body.website ?? undefined,
       logoUrl: body.logoUrl ?? undefined,
+      senderEmail: body.senderEmail ?? undefined,
+      senderName: body.senderName ?? undefined,
+      emailHeaderConfig: body.emailHeaderConfig ?? undefined,
     });
     if (!updated) throw Errors.notFound('Company not found');
     return ok(updated);

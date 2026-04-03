@@ -19,6 +19,8 @@ import { useEffect, useCallback, useRef, useMemo } from 'react';
 import { fetchWithRefresh } from '@shared/lib/api-client';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@shared/lib/utils';
+import { useActiveCompany } from '@shared/hooks/use-active-company';
+import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
 import {
   DEFAULT_OFFER_PRICE_DISPLAY_MODE,
   formatVatRate,
@@ -165,6 +167,12 @@ function SortableRow({ id, children }: {
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function OffersPage() {
+  const {
+    companies,
+    selectedCompany,
+    selectedCompanyId,
+    setSelectedCompanyId,
+  } = useActiveCompany();
   // ── List store ─────────────────────────────────────────────────────────────
   const {
     allOffers, serverTotal, tabCounts, loading, error,
@@ -217,15 +225,18 @@ export default function OffersPage() {
       setShowForm(true);
       setEditingOfferId(null);
       resetForm();
+      setForm((current) => ({ ...current, companyId: selectedCompanyId || current.companyId }));
       setWizardStep(1);
       // Clean the URL so a refresh doesn't re-trigger
       window.history.replaceState(null, '', window.location.pathname);
     }
-  }, []);
+  }, [resetForm, selectedCompanyId, setEditingOfferId, setForm, setShowForm, setWizardStep]);
 
   // ── Load templates ────────────────────────────────────────────────────────────
   useEffect(() => {
-    void fetch('/api/templates')
+    const params = new URLSearchParams();
+    if (selectedCompanyId) params.set('companyId', selectedCompanyId);
+    void fetchWithRefresh(`/api/templates${params.toString() ? `?${params.toString()}` : ''}`)
       .then(async (r) => {
         if (r.ok) {
           const j = await r.json() as { data: OfferTemplate[] };
@@ -233,18 +244,29 @@ export default function OffersPage() {
         }
       })
       .catch(() => { /* templates unavailable — dropdown stays empty */ });
-  }, [setTemplates]);
+  }, [selectedCompanyId, setTemplates]);
 
   // ── Load products ─────────────────────────────────────────────────────────────
   const loadServices = useCallback(async () => {
-    const r = await fetchWithRefresh('/api/offers/products');
+    const params = new URLSearchParams();
+    if (selectedCompanyId) params.set('companyId', selectedCompanyId);
+    const r = await fetchWithRefresh(`/api/offers/products${params.toString() ? `?${params.toString()}` : ''}`);
     if (r.ok) {
       const j = await r.json() as { data: { products: OfferProduct[] } };
       setServices(j.data.products);
     }
-  }, [setServices]);
+  }, [selectedCompanyId, setServices]);
 
   useEffect(() => { void loadServices(); }, [loadServices]);
+
+  useEffect(() => {
+    if (!selectedCompanyId || editingOfferId) return;
+    setForm((current) => (
+      current.companyId === selectedCompanyId
+        ? current
+        : { ...current, companyId: current.companyId || selectedCompanyId }
+    ));
+  }, [editingOfferId, selectedCompanyId, setForm]);
 
   // ── Reload offers when filters change (store actions read their own state) ────
   useEffect(() => {
@@ -269,6 +291,9 @@ export default function OffersPage() {
 
   // ── Open edit form for an existing draft offer ────────────────────────────────
   const openEdit = useCallback((offer: Offer) => {
+    if (offer.companyId) {
+      setSelectedCompanyId(offer.companyId);
+    }
     setEditingOfferId(offer.id);
     setForm({
       templateId:       offer.templateId ?? '',
@@ -304,7 +329,11 @@ export default function OffersPage() {
           if (content) {
             const res = await fetchWithRefresh('/api/templates/preview', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ content, offer: { priceDisplayMode: offer.priceDisplayMode ?? DEFAULT_OFFER_PRICE_DISPLAY_MODE } }),
+              body: JSON.stringify({
+                content,
+                branding: selectedCompanyBranding,
+                offer: { priceDisplayMode: offer.priceDisplayMode ?? DEFAULT_OFFER_PRICE_DISPLAY_MODE },
+              }),
             });
             const j = await res.json() as { html?: string };
             setLivePreviewHtml(j.html ?? null);
@@ -319,7 +348,7 @@ export default function OffersPage() {
     setOpenLines(new Set([0]));
     setError(null);
     setShowForm(true);
-  }, []);
+  }, [setSelectedCompanyId]);
 
   // ── Create / update offer ──────────────────────────────────────────────────────
   const createOffer = useCallback(async () => {
@@ -435,7 +464,7 @@ export default function OffersPage() {
 
       const res = await fetchWithRefresh('/api/templates/preview', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, branding: selectedCompanyBranding }),
       });
       const j = await res.json() as { html?: string; detail?: string };
       if (!res.ok) throw new Error(j.detail ?? `Fel ${res.status}`);
@@ -545,6 +574,17 @@ export default function OffersPage() {
     }, 280);
   }, [setCompanyResults, setCompanyLoading]);
 
+  const selectedCompanyBranding = useMemo(() => (
+    selectedCompany ? {
+      name: selectedCompany.name,
+      website: selectedCompany.website,
+      logoUrl: selectedCompany.logoUrl,
+      senderEmail: selectedCompany.senderEmail,
+      senderName: selectedCompany.senderName,
+      emailHeaderConfig: selectedCompany.emailHeaderConfig,
+    } : undefined
+  ), [selectedCompany]);
+
   const pickContact = useCallback((c: ContactResult) => {
     setForm((f) => ({
       ...f,
@@ -571,7 +611,7 @@ export default function OffersPage() {
     });
     setProductPickerRow(null);
     setProductSearch('');
-  }, []);
+  }, [selectedCompanyBranding]);
 
   const filteredServices = useMemo(
     () => {
@@ -620,7 +660,7 @@ export default function OffersPage() {
       setCachedTplContent(content);
       const res = await fetchWithRefresh('/api/templates/preview', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, branding: selectedCompanyBranding }),
       });
       const j = await res.json() as { html?: string };
       setLivePreviewHtml(j.html ?? null);
@@ -646,6 +686,7 @@ export default function OffersPage() {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             content,
+            branding: selectedCompanyBranding,
             offer: {
               priceDisplayMode: currentForm.priceDisplayMode,
               title:            currentForm.title            || undefined,
@@ -664,7 +705,7 @@ export default function OffersPage() {
         setActiveField(null);
       }
     }, 1000);
-  }, []);
+  }, [selectedCompanyBranding]);
 
   // Re-render preview whenever form values change (step 2 only)
   useEffect(() => {
@@ -954,6 +995,23 @@ export default function OffersPage() {
 
                     {/* Template list — scrollable */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0">
+                      {companies.length > 0 && (
+                        <div className="mb-4">
+                          <CompanyScopeSelector
+                            companies={companies}
+                            selectedCompanyId={form.companyId || selectedCompanyId}
+                            onSelect={(companyId) => {
+                              setSelectedCompanyId(companyId);
+                              setForm((current) => ({ ...current, companyId, templateId: '' }));
+                              setLivePreviewHtml(null);
+                              setCachedTplContent(null);
+                            }}
+                            compact
+                            title="Säljande företag"
+                            description="Det här företaget styr mallar, produkter och branding i offerten."
+                          />
+                        </div>
+                      )}
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] px-1 mb-3">Mall</p>
                       {templates.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center gap-4 px-4">
@@ -1082,7 +1140,7 @@ export default function OffersPage() {
                         <div className="relative">
                           <input
                             value={form.recipientCompany}
-                            onChange={(e) => { setForm((f) => ({ ...f, recipientCompany: e.target.value, companyId: '' })); searchCompanies(e.target.value); }}
+                            onChange={(e) => { setForm((f) => ({ ...f, recipientCompany: e.target.value })); searchCompanies(e.target.value); }}
                             onFocus={() => { if (form.recipientCompany) searchCompanies(form.recipientCompany); }}
                             onBlur={() => setTimeout(() => setCompanyResults([]), 150)}
                             placeholder="Företag (valfri)"
@@ -1097,7 +1155,7 @@ export default function OffersPage() {
                                 </div>
                               ) : companyResults.map((co) => (
                                 <button key={co.id} type="button"
-                                  onMouseDown={(e) => { e.preventDefault(); setForm((f) => ({ ...f, recipientCompany: co.name, companyId: co.id })); setCompanyResults([]); }}
+                                  onMouseDown={(e) => { e.preventDefault(); setForm((f) => ({ ...f, recipientCompany: co.name })); setCompanyResults([]); }}
                                   className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
                                   <div className="w-6 h-6 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-[10px] font-semibold shrink-0">
                                     {co.name.charAt(0).toUpperCase()}
@@ -1270,7 +1328,7 @@ export default function OffersPage() {
                                     <input
                                       value={form.recipientCompany}
                                       onChange={(e) => {
-                                        setForm((f) => ({ ...f, recipientCompany: e.target.value, companyId: '' }));
+                                        setForm((f) => ({ ...f, recipientCompany: e.target.value }));
                                         searchCompanies(e.target.value);
                                       }}
                                       onFocus={() => { setActiveField('Mottagare'); if (form.recipientCompany) searchCompanies(form.recipientCompany); }}
@@ -1289,7 +1347,7 @@ export default function OffersPage() {
                                           </div>
                                         ) : companyResults.map((co) => (
                                           <button key={co.id} type="button"
-                                            onMouseDown={(e) => { e.preventDefault(); setForm((f) => ({ ...f, recipientCompany: co.name, companyId: co.id })); setCompanyResults([]); }}
+                                            onMouseDown={(e) => { e.preventDefault(); setForm((f) => ({ ...f, recipientCompany: co.name })); setCompanyResults([]); }}
                                             className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
                                             <div className="w-6 h-6 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-[10px] font-semibold shrink-0">
                                               {co.name.charAt(0).toUpperCase()}
