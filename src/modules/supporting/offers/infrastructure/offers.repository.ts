@@ -96,6 +96,7 @@ function mapOffer(r: Record<string, unknown>): Offer {
   const items = (r.lineItems as Record<string, unknown>[] | undefined) ?? [];
   return {
     id:                   r.id as string,
+    organizationId:       r.organizationId as string,
     title:                r.title as string,
     status:               r.status as Offer['status'],
     offerNumber:          (r.offerNumber as number | null) ?? undefined,

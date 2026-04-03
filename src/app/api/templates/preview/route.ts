@@ -24,6 +24,7 @@ const PREVIEW_GHOST_CSS = `<style data-preview-ghosts>
 
 const SAMPLE_OFFER: Offer = {
   id: 'offertnr0-preview',
+  organizationId: 'preview-org',
   title: PREVIEW_SENTINELS.title,
   status: 'draft',
   offerNumber: undefined,

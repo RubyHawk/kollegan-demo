@@ -20,6 +20,7 @@ import { ok } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
 import {
   viewOffer,
+  markOfferViewed,
   signOffer,
   declineOfferByToken,
 } from '../../application/offers.service';
@@ -72,10 +73,7 @@ export const handleGetPublicOffer = createHandler(
     const token   = extractToken(req);
     if (!token) throw Errors.notFound('Offer not found');
 
-    const ip        = getClientIp(req);
-    const userAgent = getUserAgent(req);
-
-    const offer = await viewOffer(token, ip, userAgent);
+    const offer = await viewOffer(token);
 
     if (!offer) {
       // Could be not found OR expired — check original to distinguish
@@ -88,6 +86,25 @@ export const handleGetPublicOffer = createHandler(
     }
 
     return ok(toPublicOffer(offer as unknown as Record<string, unknown>));
+  },
+);
+
+export const handleMarkPublicOfferViewed = createHandler(
+  { auth: 'none', tag: 'PublicOffer:View', rateLimit: { max: 20, windowMs: 60_000 } },
+  async (ctx) => {
+    const { req } = ctx as { req: NextRequest };
+    const token = extractToken(req);
+    if (!token) throw Errors.notFound('Offer not found');
+
+    const ip = getClientIp(req);
+    const userAgent = getUserAgent(req);
+    const offer = await markOfferViewed(token, ip, userAgent);
+
+    if (!offer) {
+      throw Errors.notFound('Offer not found or link has expired');
+    }
+
+    return ok({ status: offer.status, viewedAt: offer.viewedAt ?? null });
   },
 );
 

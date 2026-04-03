@@ -9,6 +9,13 @@ import { BrandLockup, BrandScene } from '@shared/ui/brand';
 type Step = 'credentials' | 'mfa';
 type MfaMethod = 'totp' | 'webauthn' | 'backup_code';
 
+function sanitizeRedirect(target: string | null): string {
+  if (!target) return '/';
+  if (!target.startsWith('/')) return '/';
+  if (target.startsWith('//')) return '/';
+  return target;
+}
+
 // ── Icons (inline SVG — no extra dep) ─────────────────────────────────────────
 
 function EyeIcon({ open }: { open: boolean }) {
@@ -51,7 +58,7 @@ function ShieldIcon() {
 
 function LoginForm() {
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') ?? '/';
+  const redirect = sanitizeRedirect(searchParams.get('redirect'));
 
   const [step,       setStep]       = useState<Step>('credentials');
   const [email,      setEmail]      = useState('');

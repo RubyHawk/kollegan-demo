@@ -2225,8 +2225,8 @@ export default function OffersPage() {
                   </div>
                 )}
                 <div className="flex justify-between gap-4 pt-2 border-t border-[var(--border)] font-semibold">
-                  <span className="text-[var(--text-secondary)]">{confirmSend.priceDisplayMode === 'inclusive' ? 'Totalsumma inkl. moms' : 'Totalsumma'}</span>
-                  <span className="text-[var(--text-primary)]">{fmtSEK(confirmSend.totalIncVat)}</span>
+                  <span className="text-[var(--text-secondary)]">{confirmSend.priceDisplayMode === 'inclusive' ? 'Totalsumma inkl. moms' : 'Totalsumma exkl. moms'}</span>
+                  <span className="text-[var(--text-primary)]">{fmtSEK(confirmSend.priceDisplayMode === 'inclusive' ? confirmSend.totalIncVat : confirmSend.totalExVat)}</span>
                 </div>
               </div>
             </div>
