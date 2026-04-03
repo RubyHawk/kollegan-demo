@@ -20,10 +20,30 @@ import { templatesRepository } from '../infrastructure/templates.repository';
 import { companiesRepository } from '../infrastructure/companies.repository';
 import { resolveOfferBranding } from './company-branding';
 import { dispatchOfferEmail, dispatchReminderEmail } from './offer-email-dispatch';
+import { prisma } from '@platform/database/prisma';
 
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
 
 const TAG = 'OffersService';
+
+async function getOfferResponsibleUser(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      email: true,
+      firstName: true,
+      lastName: true,
+    },
+  });
+
+  if (!user) return null;
+
+  const name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email;
+  return {
+    name,
+    email: user.email,
+  };
+}
 
 export async function createOffer(
   input: CreateOfferInput,
@@ -94,11 +114,12 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   let emailSubject: string | undefined = existing.emailSubject;
   let emailBody: string | undefined = existing.emailBody;
   let emailHeaderConfig: string | undefined = existing.emailHeaderConfig;
-  const [org, company] = await Promise.all([
+  const [org, company, responsible] = await Promise.all([
     identityService.getOrg(orgId),
     existing.companyId ? companiesRepository.getById(existing.companyId, orgId) : Promise.resolve(null),
+    getOfferResponsibleUser(existing.createdBy),
   ]);
-  const branding = resolveOfferBranding(company, org);
+  const branding = resolveOfferBranding(company, org, responsible);
 
   if (!emailHeaderConfig && branding.emailHeaderConfig) {
     emailHeaderConfig = branding.emailHeaderConfig;
@@ -477,7 +498,8 @@ export async function sendOfferReminder(id: string, orgId: string): Promise<Offe
     identityService.getOrg(orgId),
     existing.companyId ? companiesRepository.getById(existing.companyId, orgId) : Promise.resolve(null),
   ]);
-  const branding = resolveOfferBranding(company, org);
+  const responsible = await getOfferResponsibleUser(existing.createdBy);
+  const branding = resolveOfferBranding(company, org, responsible);
   const senderInfo = { senderEmail: branding.senderEmail, senderName: branding.senderName };
 
   const publicUrl = `${process.env.PUBLIC_OFFER_BASE_URL ?? `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/offerter/publik`}/${existing.publicToken}`;
