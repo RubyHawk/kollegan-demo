@@ -122,7 +122,35 @@ function SuccessCheckmark() {
 
 // ─── PDF Download ──────────────────────────────────────────────────────────────
 
-async function downloadPdf(documentHtml: string, filename: string) {
+interface SigData {
+  image: string;
+  name: string;
+  date: string;
+}
+
+function injectSignatureFields(container: HTMLElement, sig: SigData | null): void {
+  container.querySelectorAll<HTMLElement>('[data-sig-field]').forEach((el) => {
+    const field = el.getAttribute('data-sig-field');
+    if (!sig) { el.style.display = 'none'; return; }
+
+    el.style.border = 'none';
+    el.style.borderRadius = '0';
+    el.style.background = 'transparent';
+    el.style.padding = '4px 0';
+
+    if (field === 'signature') {
+      el.innerHTML = `<img src="${sig.image}" style="max-width:260px;max-height:80px;display:block;" />`;
+    } else if (field === 'name') {
+      el.innerHTML = `<span style="font-size:15px;color:#1e293b;font-weight:500;">${sig.name}</span>`;
+    } else if (field === 'date') {
+      el.innerHTML = `<span style="font-size:14px;color:#475569;">${sig.date}</span>`;
+    } else {
+      el.style.display = 'none';
+    }
+  });
+}
+
+async function downloadPdf(documentHtml: string, filename: string, sig: SigData | null = null) {
   const [html2canvas, { jsPDF }] = await Promise.all([
     import('html2canvas-pro').then((m) => m.default),
     import('jspdf'),
@@ -148,10 +176,8 @@ async function downloadPdf(documentHtml: string, filename: string) {
     // Only add wrapper padding for legacy docs that don't have .page-content padding
     wrapper.style.padding = hasPageContent ? '0' : '32px 40px';
   }
-  // Hide signature fields in PDF
-  container.querySelectorAll('[data-sig-field]').forEach((el) => {
-    (el as HTMLElement).style.display = 'none';
-  });
+  // Inject or hide signature fields
+  injectSignatureFields(container, sig);
 
   document.body.appendChild(container);
 
@@ -217,6 +243,8 @@ export default function PublicOfferPage() {
   const [downloading, setDownloading] = useState(false);
 
   const [signerName, setSignerName] = useState('');
+  const [capturedSignature, setCapturedSignature] = useState<string | null>(null);
+  const [capturedAt, setCapturedAt] = useState<string | null>(null);
   const [sigMode, setSigMode] = useState<SigMode>('type');
   const [sigFont, setSigFont] = useState<typeof SIG_FONTS[number]['id']>(SIG_FONTS[0].id);
   const [typedSig, setTypedSig] = useState('');
@@ -447,6 +475,8 @@ export default function PublicOfferPage() {
         throw new Error(msg);
       }
       await new Promise((r) => setTimeout(r, 600));
+      setCapturedSignature(signatureImage);
+      setCapturedAt(new Date().toISOString());
       setState('accepted');
     } catch (e) { setErrMsg((e as Error).message); setState('ready'); } finally { setBusy(false); }
   }, [token, signerName, getSignatureImage, sigMode]);
@@ -472,7 +502,16 @@ export default function PublicOfferPage() {
     setDownloading(true);
     try {
       const safeName = offer.title.replace(/[^a-zA-Z0-9\u00C0-\u024F ]/g, '').trim().replace(/\s+/g, '-');
-      await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`);
+      const sig: SigData | null = capturedSignature
+        ? {
+            image: capturedSignature,
+            name: signerName.trim(),
+            date: capturedAt
+              ? new Date(capturedAt).toLocaleDateString('sv-SE', { day: '2-digit', month: 'long', year: 'numeric' })
+              : todaySv(),
+          }
+        : null;
+      await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`, sig);
     } catch {
       setErrMsg('Kunde inte ladda ner PDF. Försök igen.');
     } finally {
