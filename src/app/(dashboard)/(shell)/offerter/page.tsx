@@ -424,7 +424,7 @@ export default function OffersPage() {
   }, [form, editingOfferId]);
 
   // ── Status actions (send / accept / decline / duplicate / remind) ────────────
-  const doAction = useCallback(async (id: string, action: 'send' | 'accept' | 'decline' | 'duplicate' | 'remind') => {
+  const doAction = useCallback(async (id: string, action: 'send' | 'decline' | 'duplicate' | 'remind') => {
     setActing(id);
     try {
       const res = await fetchWithRefresh(`/api/offers/${id}?action=${action}`, {
@@ -443,7 +443,8 @@ export default function OffersPage() {
   const deleteOffer = useCallback(async (id: string) => {
     setConfirmDeleteOffer(null);
     try {
-      await fetchWithRefresh(`/api/offers/${id}`, { method: 'DELETE' });
+      const res = await fetchWithRefresh(`/api/offers/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Fel ${res.status}`);
       await Promise.all([load(true), loadCounts()]);
     } catch (e) {
       setError((e as Error).message);
@@ -2139,15 +2140,6 @@ export default function OffersPage() {
                             title="Skicka påminnelse" aria-label="Skicka påminnelse" className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-amber-500 transition-colors disabled:opacity-40">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                            </svg>
-                          </button>
-                        )}
-                        {/* Accept */}
-                        {(offer.status === 'sent' || offer.status === 'viewed') && (
-                          <button type="button" onClick={() => void doAction(offer.id, 'accept')} disabled={acting === offer.id}
-                            title="Markera som accepterad" aria-label="Markera som accepterad" className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-emerald-500 transition-colors disabled:opacity-40">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12"/>
                             </svg>
                           </button>
                         )}

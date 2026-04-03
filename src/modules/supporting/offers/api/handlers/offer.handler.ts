@@ -18,7 +18,6 @@ import {
   countOffers,
   updateOffer,
   sendOffer,
-  acceptOffer,
   declineOffer,
   deleteOffer,
   duplicateOffer,
@@ -177,7 +176,7 @@ const PatchBodySchema = z.object({
 });
 
 const PatchQuerySchema = z.object({
-  action: z.enum(['send', 'accept', 'decline', 'duplicate', 'remind']).optional(),
+  action: z.enum(['send', 'decline', 'duplicate', 'remind']).optional(),
 });
 
 export const handleUpdateOffer = createHandler(
@@ -199,7 +198,6 @@ export const handleUpdateOffer = createHandler(
 
     let updated;
     if (query.action === 'send') updated = await sendOffer(id, payload.orgId!);
-    else if (query.action === 'accept') updated = await acceptOffer(id, payload.orgId!);
     else if (query.action === 'decline') updated = await declineOffer(id, payload.orgId!);
     else if (query.action === 'remind') updated = await sendOfferReminder(id, payload.orgId!);
     else {
@@ -229,11 +227,8 @@ export const handleDeleteOffer = createHandler(
   async (ctx) => {
     const { req } = ctx as { req: NextRequest };
     const id = extractId(req);
-    const payload = await verifyToken(extractToken(req));
-    if (!payload.orgId) throw Errors.forbidden('No organization context');
-    const isAdmin = payload.roles.some((r) => ['super_admin', 'admin'].includes(r));
-    if (!isAdmin) throw Errors.forbidden('Offer deletion requires admin role');
-    const deleted = await deleteOffer(id, payload.orgId);
+    const payload = await requireStaff(req);
+    const deleted = await deleteOffer(id, payload.orgId!);
     if (!deleted) throw Errors.notFound('Offer not found');
     return ok(null);
   },
