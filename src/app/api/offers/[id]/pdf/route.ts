@@ -55,7 +55,38 @@ export async function GET(
   }
 
   // Inject auto-print script + print-optimised overrides before </body>
+  const sigScript = offer.status === 'accepted' && offer.signatureImage ? `
+<script>
+  (function () {
+    var sig = {
+      image: ${JSON.stringify(offer.signatureImage)},
+      name:  ${JSON.stringify(offer.signerName ?? '')},
+      date:  ${JSON.stringify(offer.acceptedAt ? new Date(offer.acceptedAt.toString()).toLocaleDateString('sv-SE', { day: '2-digit', month: 'long', year: 'numeric' }) : '')}
+    };
+    document.querySelectorAll('[data-sig-field]').forEach(function (el) {
+      var field = el.getAttribute('data-sig-field');
+      el.style.border = 'none';
+      el.style.borderRadius = '0';
+      el.style.background = 'transparent';
+      el.style.padding = '4px 0';
+      if (field === 'signature') {
+        el.innerHTML = '<img src="' + sig.image + '" style="max-width:260px;max-height:80px;display:block;" />';
+      } else if (field === 'name') {
+        el.innerHTML = '<span style="font-size:15px;color:#1e293b;font-weight:500;">' + sig.name + '</span>';
+      } else if (field === 'date') {
+        el.innerHTML = '<span style="font-size:14px;color:#475569;">' + sig.date + '</span>';
+      } else {
+        el.style.display = 'none';
+      }
+    });
+  })();
+</script>` : `
+<script>
+  document.querySelectorAll('[data-sig-field]').forEach(function (el) { el.style.display = 'none'; });
+</script>`;
+
   const printScript = `
+${sigScript}
 <script>
   window.addEventListener('load', function () {
     // Small delay to let fonts and images settle
