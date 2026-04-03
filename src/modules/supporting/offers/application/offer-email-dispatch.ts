@@ -449,8 +449,16 @@ export async function dispatchCreatorNotification(payload: NotifyCreatorPayload)
       for (const r of recipients) {
         if (!r.tags.includes(tag)) continue;
         if (r.email === user.email) continue; // already sent above
-        await sendEmail({ from, to: r.email, subject, html });
-        logger.info(TAG, `Sent notification routing email (${payload.event}) to ${r.email}`, { offerId: payload.offerId });
+        try {
+          await sendEmail({ from, to: r.email, subject, html });
+          logger.info(TAG, `Sent notification routing email (${payload.event}) to ${r.email}`, { offerId: payload.offerId });
+        } catch (err) {
+          logger.warn(TAG, 'Failed to send notification routing email to recipient', {
+            err,
+            offerId: payload.offerId,
+            recipientEmail: r.email,
+          });
+        }
       }
     }
   } catch (err) {
