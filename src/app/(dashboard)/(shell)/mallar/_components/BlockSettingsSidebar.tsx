@@ -608,6 +608,7 @@ function PageSettings({ hf }: { hf: HFCtxValue }) {
                 type="button"
                 onClick={() => patchActivePage({
                   kind: type.key as 'presentation' | 'document',
+                  includeInCustomerPdf: type.key === 'document',
                   document: type.key === 'document'
                     ? {
                         backgroundOpacity: 0.08,
@@ -636,6 +637,36 @@ function PageSettings({ hf }: { hf: HFCtxValue }) {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold text-[var(--text-secondary)]">Kundens PDF</p>
+              <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+                Styr om just denna sida ska finnas med när kunden laddar ner PDF.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => patchActivePage({ includeInCustomerPdf: page.includeInCustomerPdf === false ? true : false })}
+              className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none ${
+                page.includeInCustomerPdf !== false ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
+              }`}
+              role="switch"
+              aria-checked={page.includeInCustomerPdf !== false}
+              aria-label="Inkludera sidan i kundens PDF"
+            >
+              <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                page.includeInCustomerPdf !== false ? 'translate-x-4' : 'translate-x-0'
+              }`} />
+            </button>
+          </div>
+          <p className="mt-2 text-[10px] text-[var(--text-muted)]">
+            {page.includeInCustomerPdf !== false
+              ? 'Den här sidan följer med i kundens nedladdning.'
+              : 'Den här sidan visas i mallen men döljs i kundens PDF.'}
+          </p>
         </div>
 
         {page.kind === 'document' && (

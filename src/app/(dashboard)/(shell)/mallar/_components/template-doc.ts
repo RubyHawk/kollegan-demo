@@ -23,6 +23,7 @@ export interface PageDoc {
   id:     string;
   label:  string;
   kind?:  'presentation' | 'document';
+  includeInCustomerPdf?: boolean;
   body:   object;  // TipTap JSON doc node
   header: { enabled: boolean; useDefault: boolean; content: object };
   footer: { enabled: boolean; useDefault: boolean; content: object };
@@ -88,6 +89,7 @@ export function makeEmptyPage(label = 'Sida 1'): PageDoc {
     id:     genId(),
     label,
     kind:   'presentation',
+    includeInCustomerPdf: false,
     body:   EMPTY_DOC,
     header: { enabled: false, useDefault: true,  content: EMPTY_DOC },
     footer: { enabled: false, useDefault: true,  content: EMPTY_DOC },
@@ -99,6 +101,7 @@ export function makeDocumentPage(label = 'Offertsida'): PageDoc {
     id: genId(),
     label,
     kind: 'document',
+    includeInCustomerPdf: true,
     body: EMPTY_DOCUMENT_BODY,
     header: { enabled: false, useDefault: true, content: EMPTY_DOC },
     footer: { enabled: false, useDefault: true, content: EMPTY_DOC },
@@ -156,6 +159,8 @@ export function parseTemplateDoc(raw: string | undefined | null): TemplateDoc {
           ...page,
           kind: page.kind ?? 'presentation',
           label: page.label ?? `Sida ${idx + 1}`,
+          includeInCustomerPdf:
+            page.includeInCustomerPdf ?? ((page.kind ?? 'presentation') === 'document'),
           document: page.kind === 'document'
             ? {
                 ...makeDocumentPage(page.label ?? `Sida ${idx + 1}`).document,
@@ -184,6 +189,7 @@ export function parseTemplateDoc(raw: string | undefined | null): TemplateDoc {
           id:    genId(),
           label: 'Sida 1',
           kind: 'presentation',
+          includeInCustomerPdf: false,
           body:  (parsed.body as object) ?? EMPTY_DOC,
           header: {
             enabled:    v2Settings.headerEnabled ?? false,
@@ -208,6 +214,7 @@ export function parseTemplateDoc(raw: string | undefined | null): TemplateDoc {
         id:    genId(),
         label: 'Sida 1',
         kind: 'presentation',
+        includeInCustomerPdf: false,
         body:  parsed as object,
         header: { enabled: false, useDefault: true, content: EMPTY_DOC },
         footer: { enabled: false, useDefault: true, content: EMPTY_DOC },
@@ -223,6 +230,7 @@ export function parseTemplateDoc(raw: string | undefined | null): TemplateDoc {
         id:    genId(),
         label: 'Sida 1',
         kind: 'presentation',
+        includeInCustomerPdf: false,
         body:  { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: raw }] }] },
         header: { enabled: false, useDefault: true, content: EMPTY_DOC },
         footer: { enabled: false, useDefault: true, content: EMPTY_DOC },
