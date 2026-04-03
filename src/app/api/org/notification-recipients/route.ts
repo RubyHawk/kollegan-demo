@@ -38,9 +38,12 @@ export const GET = createHandler(
     const org = await identityService.getOrg(payload.orgId);
     if (!org) throw Errors.notFound('Organization not found');
 
-    const recipients: NotificationRecipient[] = org.notificationRecipients
-      ? JSON.parse(org.notificationRecipients)
-      : [];
+    let recipients: NotificationRecipient[] = [];
+    try {
+      recipients = org.notificationRecipients ? JSON.parse(org.notificationRecipients) : [];
+    } catch {
+      recipients = [];
+    }
 
     return ok({ recipients });
   },
@@ -60,9 +63,12 @@ export const PUT = createHandler(
       JSON.stringify(body.recipients),
     );
 
-    const recipients: NotificationRecipient[] = org.notificationRecipients
-      ? JSON.parse(org.notificationRecipients)
-      : [];
+    let recipients: NotificationRecipient[] = [];
+    try {
+      recipients = org.notificationRecipients ? JSON.parse(org.notificationRecipients) : [];
+    } catch {
+      recipients = [];
+    }
 
     return ok({ recipients });
   },
