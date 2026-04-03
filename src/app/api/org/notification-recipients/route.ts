@@ -76,15 +76,19 @@ export const GET = createHandler(
     const { req } = ctx as { req: NextRequest };
     const payload = await verifyToken(extractToken(req));
     if (!payload.orgId) throw Errors.forbidden('No organization context');
-    if (!isStaffUser(payload)) throw Errors.forbidden('Only staff users can view notification routing');
 
-    const org = await identityService.getOrg(payload.orgId);
-    if (!org) throw Errors.notFound('Organization not found');
-
-    return ok({
-      recipients: parseRecipients(org.notificationRecipients),
-      canManage: canManageNotificationRouting(payload),
-    });
+    try {
+      const org = await identityService.getOrg(payload.orgId);
+      if (!org) throw Errors.notFound('Organization not found');
+      return ok({
+        recipients: parseRecipients(org.notificationRecipients),
+        canManage: canManageNotificationRouting(payload),
+      });
+    } catch (err) {
+      // DB column may not exist yet (migration pending) — return empty list
+      if (err && typeof err === 'object' && 'status' in err) throw err;
+      return ok({ recipients: [], canManage: canManageNotificationRouting(payload) });
+    }
   },
 );
 
@@ -99,14 +103,14 @@ export const PUT = createHandler(
       throw Errors.forbidden('Only organization admins can change notification routing');
     }
 
-    const org = await identityService.updateOrgNotificationRecipients(
-      payload.orgId,
-      JSON.stringify(body.recipients),
-    );
-
-    return ok({
-      recipients: parseRecipients(org.notificationRecipients),
-      canManage: true,
-    });
+    try {
+      const org = await identityService.updateOrgNotificationRecipients(
+        payload.orgId,
+        JSON.stringify(body.recipients),
+      );
+      return ok({ recipients: parseRecipients(org.notificationRecipients), canManage: true });
+    } catch {
+      throw Errors.internal('Kunde inte spara. Kör prisma migrate deploy på servern.');
+    }
   },
 );
