@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
+import type { HFCtxValue } from './header-footer-context';
 import { uploadTemplateImage } from './template-image-upload';
 
 type ActiveBlock = 'image' | 'table' | 'signatureBlock' | 'variable' | null;
@@ -81,7 +82,7 @@ export default function BlockSettingsSidebar() {
         </div>
       )}
 
-      {active === 'image'          && editor && <ImageSettings editor={editor} />}
+      {active === 'image'          && editor && <ImageSettings editor={editor} hf={hf} />}
       {active === 'table'          && editor && <TableSettings editor={editor} />}
       {active === 'signatureBlock' && editor && <SignatureSettings editor={editor} />}
       {active === 'variable'       && editor && <VariableInfo editor={editor} />}
@@ -129,7 +130,7 @@ function dispatchLayerSwap(editor: Editor, posA: number, posB: number): void {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ImageSettings({ editor }: { editor: Editor }) {
+function ImageSettings({ editor, hf }: { editor: Editor; hf: HFCtxValue | null }) {
   const attrs    = editor.getAttributes('image');
   const width    = (attrs.width    as number | undefined) ?? 0;
   const height   = (attrs.height   as number | null | undefined) ?? null;
@@ -155,8 +156,46 @@ function ImageSettings({ editor }: { editor: Editor }) {
     atTop         = myIdx >= layerTotal - 1;
   }
 
-  const set = (patch: Record<string, unknown>) =>
+  const syncPresentationPageHeight = (patch: Record<string, unknown>) => {
+    if (!hf) return;
+    const page = hf.pages[hf.activeIdx];
+    if (!page || page.kind !== 'presentation') return;
+
+    const merged = { ...attrs, ...patch };
+    const shouldSizePageToImage =
+      merged.position === 'free'
+      && (merged.wrapText ?? 'none') === 'none'
+      && Number(merged.posX ?? 0) === 0
+      && Number(merged.posY ?? 0) === 0
+      && Number(merged.width ?? 0) === 816;
+
+    const nextBody = {
+      ...(page.body as { attrs?: Record<string, unknown> }),
+      attrs: { ...(((page.body as { attrs?: Record<string, unknown> }).attrs) ?? {}) },
+    };
+
+    let nextPageHeight: number | null = null;
+    if (shouldSizePageToImage) {
+      if (merged.height != null && Number(merged.height) > 0) {
+        nextPageHeight = Number(merged.height);
+      } else if (Number(merged.naturalWidth ?? 0) > 0 && Number(merged.naturalHeight ?? 0) > 0) {
+        nextPageHeight = Math.round((Number(merged.width) / Number(merged.naturalWidth)) * Number(merged.naturalHeight));
+      }
+    }
+
+    if (nextPageHeight && Number.isFinite(nextPageHeight)) {
+      nextBody.attrs.pageHeight = nextPageHeight;
+    } else {
+      delete nextBody.attrs.pageHeight;
+    }
+
+    hf.patchActivePage({ body: nextBody as object });
+  };
+
+  const set = (patch: Record<string, unknown>) => {
     editor.chain().focus().updateAttributes('image', patch).run();
+    syncPresentationPageHeight(patch);
+  };
 
   const bringForward = () => {
     const stack = buildFreeImageStack(editor);
@@ -310,7 +349,7 @@ function ImageSettings({ editor }: { editor: Editor }) {
               Textyta
             </button>
             <button type="button" style={{ ...quickBtnStyle, color: '#0078d4', borderColor: '#c0d8f0' }}
-              onClick={() => set({ posX: 0, posY: 0, width: 816, height: 1056 })}
+              onClick={() => set({ posX: 0, posY: 0, width: 816, height: 1056, wrapText: 'none' })}
               title="Sträck bilden till hela sidan (816×1056 px)">
               Fyll sida
             </button>
@@ -528,8 +567,6 @@ function PlaceholderReference() {
 }
 
 // ── Page settings panel ────────────────────────────────────────────────────────
-
-import type { HFCtxValue } from './header-footer-context';
 
 function PageSettings({ hf }: { hf: HFCtxValue }) {
   const bgUploadRef = useRef<HTMLInputElement>(null);

@@ -36,7 +36,9 @@ export default function DocumentCanvas() {
   const activePage = hf?.pages[hf.activeIdx] ?? null;
   const isDocumentPage = activePage?.kind === 'document';
   const documentSettings = activePage?.document;
-
+  const pageHeight = Number(
+    ((activePage?.body as { attrs?: { pageHeight?: number } } | undefined)?.attrs?.pageHeight ?? 0),
+  );
   const isEmpty = useSyncExternalStore(
     (onStoreChange) => {
       if (!editor) return () => {};
@@ -127,7 +129,7 @@ export default function DocumentCanvas() {
             style={{
               width:     816,
               minWidth:  816,
-              minHeight: 1056,
+              minHeight: pageHeight > 0 ? pageHeight : 1056,
               boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
               // Free-positioned images are absolutely placed relative to this div.
               // isolation:isolate creates a stacking context so their z-index values
@@ -186,7 +188,7 @@ export default function DocumentCanvas() {
               <EditorContent editor={editor} className="doc-editor" />
 
               {/* ── Onboarding overlay (shown when body is empty) ───────────── */}
-              {isEmpty && editor && (
+              {false && isEmpty && editor && (
                 <div
                   className="absolute inset-0 flex items-center justify-center pointer-events-none"
                   style={{ padding: `${H_PAD}px ${H_PAD}px` }}
@@ -203,7 +205,7 @@ export default function DocumentCanvas() {
                           title={preset.tooltip}
                           onClick={(e) => {
                             e.stopPropagation();
-                            editor.chain().focus().insertContentAt(0, preset.nodes).run();
+                            editor?.chain().focus().insertContentAt(0, preset.nodes).run();
                           }}
                           className="flex flex-col items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-4 text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-subtle)] transition-all duration-150 shadow-sm"
                         >
@@ -240,7 +242,7 @@ export default function DocumentCanvas() {
           .doc-editor .ProseMirror {
             outline: none !important;
             border: none !important;
-            min-height: ${isDocumentPage ? '360px' : '720px'};
+            min-height: ${isDocumentPage ? '360px' : pageHeight > 0 ? `${Math.max(120, pageHeight)}px` : '720px'};
             cursor: text;
             font-family: ${docFont}, Carlito, Arial, sans-serif;
             font-size: 13px;
