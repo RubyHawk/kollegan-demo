@@ -8,6 +8,7 @@
 model OfferTemplate {
   id             String    @id @default(uuid())
   organizationId String
+  companyId      String?
   name           String
   content        String    // TipTap JSON stored as serialized string
   emailSubject      String?   // Custom email subject (supports {{placeholder}} variables)
@@ -19,9 +20,10 @@ model OfferTemplate {
   deletedAt      DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id])
+  company      Company?     @relation(fields: [companyId], references: [id])
   offers       Offer[]
 
-  @@index([organizationId, createdAt])
+  @@index([organizationId, companyId, createdAt])
   @@index([deletedAt])
   @@map("off_templates")
 }
@@ -120,12 +122,14 @@ model OfferLineItem {
 model ProductCategory {
   id             String    @id @default(uuid())
   organizationId String
+  companyId      String?
   name           String
   parentId       String?   // null = main/top-level category; set = subcategory
 
   parent         ProductCategory?  @relation("CategoryTree", fields: [parentId], references: [id])
   children       ProductCategory[] @relation("CategoryTree")
   products       OfferProduct[]
+  company        Company?          @relation(fields: [companyId], references: [id])
 
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -133,8 +137,8 @@ model ProductCategory {
 
   organization   Organization @relation(fields: [organizationId], references: [id])
 
-  @@unique([organizationId, parentId, name])
-  @@index([organizationId, parentId])
+  @@unique([organizationId, companyId, parentId, name])
+  @@index([organizationId, companyId, parentId])
   @@index([deletedAt])
   @@map("off_product_categories")
 }
@@ -145,6 +149,7 @@ model ProductCategory {
 model OfferProduct {
   id             String    @id @default(uuid())
   organizationId String
+  companyId      String?
   name           String
   description    String?
   unitPrice      Float
@@ -164,10 +169,11 @@ model OfferProduct {
 
   organization     Organization     @relation(fields: [organizationId], references: [id])
   productCategory  ProductCategory? @relation(fields: [categoryId], references: [id])
+  company          Company?         @relation(fields: [companyId], references: [id])
 
-  @@index([organizationId, categoryId])
-  @@index([organizationId, category])
-  @@index([organizationId, isActive, name])
+  @@index([organizationId, companyId, categoryId])
+  @@index([organizationId, companyId, category])
+  @@index([organizationId, companyId, isActive, name])
   @@index([organizationId, createdAt])
   @@index([deletedAt])
   @@map("off_products")
@@ -185,6 +191,9 @@ model Company {
   orgNumber      String?   // Swedish org number, e.g. "556677-8899"
   website        String?
   logoUrl        String?
+  senderEmail    String?
+  senderName     String?
+  emailHeaderConfig String?
   industry       String?
   notes          String?
   createdBy      String    // User.id
@@ -194,8 +203,29 @@ model Company {
 
   organization   Organization @relation(fields: [organizationId], references: [id])
   offers         Offer[]
+  templates      OfferTemplate[]
+  products       OfferProduct[]
+  productCategories ProductCategory[]
+  members        CompanyMember[]
 
   @@index([organizationId, name])
   @@index([deletedAt])
   @@map("off_companies")
+}
+
+model CompanyMember {
+  id        String   @id @default(uuid())
+  companyId  String
+  userId     String
+  role       String   @default("staff") // staff | admin
+  createdAt  DateTime @default(now())
+  grantedBy  String?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId])
+  @@index([userId])
+  @@index([companyId, role])
+  @@map("off_company_members")
 }

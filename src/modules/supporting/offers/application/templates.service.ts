@@ -23,8 +23,8 @@ export async function getTemplate(id: string, orgId: string): Promise<OfferTempl
   return templatesRepository.findById(id, orgId);
 }
 
-export async function listTemplates(orgId: string): Promise<OfferTemplate[]> {
-  return templatesRepository.list(orgId);
+export async function listTemplates(orgId: string, companyId?: string): Promise<OfferTemplate[]> {
+  return templatesRepository.list(orgId, companyId);
 }
 
 export async function updateTemplate(

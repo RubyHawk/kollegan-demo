@@ -34,6 +34,7 @@ model User {
   passwordResets      PasswordReset[]
   auditLogs           AuditLog[]          @relation("ActorLogs")
   webAuthnCredentials WebAuthnCredential[]
+  companyMemberships  CompanyMember[]
 
   @@index([email])
   @@index([organizationId])

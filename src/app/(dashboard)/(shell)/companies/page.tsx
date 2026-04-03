@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@shared/lib/utils';
 import type { Company } from '@modules/supporting/offers';
+import { fetchWithRefresh } from '@shared/lib/api-client';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@shared/ui/dialog';
+import {
+  CompanyMembersDialog,
+  type AssignableUserRecord,
+  type CompanyMemberRecord,
+} from './_components/company-members-dialog';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -25,12 +31,15 @@ interface CompanyForm {
   name:      string;
   orgNumber: string;
   website:   string;
+  logoUrl:   string;
+  senderEmail: string;
+  senderName: string;
   industry:  string;
   notes:     string;
 }
 
 const EMPTY_FORM: CompanyForm = {
-  name: '', orgNumber: '', website: '', industry: '', notes: '',
+  name: '', orgNumber: '', website: '', logoUrl: '', senderEmail: '', senderName: '', industry: '', notes: '',
 };
 
 function formFromCompany(company: Company | null): CompanyForm {
@@ -40,6 +49,9 @@ function formFromCompany(company: Company | null): CompanyForm {
     name:      company.name,
     orgNumber: company.orgNumber ?? '',
     website:   company.website ?? '',
+    logoUrl:   company.logoUrl ?? '',
+    senderEmail: company.senderEmail ?? '',
+    senderName: company.senderName ?? '',
     industry:  company.industry ?? '',
     notes:     company.notes ?? '',
   };
@@ -57,10 +69,12 @@ function CompanyRow({
   company,
   onEdit,
   onDelete,
+  onMembers,
 }: {
   company:  Company;
   onEdit:   (c: Company) => void;
   onDelete: (c: Company) => void;
+  onMembers: (c: Company) => void;
 }) {
   return (
     <div className="flex items-center gap-4 px-4 py-3 hover:bg-[var(--surface-alt)] transition-colors">
@@ -108,6 +122,15 @@ function CompanyRow({
 
       {/* Actions */}
       <div className="shrink-0 flex items-center gap-1">
+        <button
+          onClick={() => onMembers(company)}
+          className="p-1.5 rounded hover:bg-[var(--surface-active)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+          title="Hantera användare"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </button>
         <button
           onClick={() => onEdit(company)}
           className="p-1.5 rounded hover:bg-[var(--surface-active)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
@@ -196,6 +219,22 @@ function CompanyModal({
           </div>
 
           <div>
+            <label className={labelCls}>Logo-URL</label>
+            <input type="url" value={form.logoUrl} onChange={set('logoUrl')} placeholder="https://…/logo.png" className={inputCls} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Avsändarnamn</label>
+              <input value={form.senderName} onChange={set('senderName')} placeholder="Soleria" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Avsändarmejl</label>
+              <input type="email" value={form.senderEmail} onChange={set('senderEmail')} placeholder="no-reply@…" className={inputCls} />
+            </div>
+          </div>
+
+          <div>
             <label className={labelCls}>Anteckningar</label>
             <textarea
               value={form.notes}
@@ -235,6 +274,11 @@ export default function CompaniesPage() {
   const [modalOpen,   setModalOpen]   = useState(false);
   const [editCompany, setEditCompany] = useState<Company | null>(null);
   const [deleteCompany, setDeleteCompany] = useState<Company | null>(null);
+  const [membersCompany, setMembersCompany] = useState<Company | null>(null);
+  const [members, setMembers] = useState<CompanyMemberRecord[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<AssignableUserRecord[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [memberSaving, setMemberSaving] = useState(false);
   const [saving,      setSaving]      = useState(false);
 
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -245,7 +289,7 @@ export default function CompaniesPage() {
     try {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
-      const res = await fetch(`/api/companies?${params}`);
+      const res = await fetchWithRefresh(`/api/companies?${params}`);
       if (!res.ok) throw new Error('Kunde inte hämta företag');
       const json = await res.json() as { data: { companies: Company[] } };
       setCompanies(json.data.companies);
@@ -271,15 +315,18 @@ export default function CompaniesPage() {
         name:      form.name.trim(),
         orgNumber: form.orgNumber.trim()  || undefined,
         website:   form.website.trim()    || undefined,
+        logoUrl:   form.logoUrl.trim()    || undefined,
+        senderEmail: form.senderEmail.trim() || undefined,
+        senderName: form.senderName.trim() || undefined,
         industry:  form.industry.trim()   || undefined,
         notes:     form.notes.trim()      || undefined,
       };
 
       const res = editCompany
-        ? await fetch(`/api/companies/${editCompany.id}`, {
+        ? await fetchWithRefresh(`/api/companies/${editCompany.id}`, {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
           })
-        : await fetch('/api/companies', {
+        : await fetchWithRefresh('/api/companies', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
           });
 
@@ -293,8 +340,64 @@ export default function CompaniesPage() {
     }
   }, [editCompany, load]);
 
+  const loadMembers = useCallback(async (company: Company) => {
+    setMembersCompany(company);
+    setMembersLoading(true);
+    setError(null);
+    try {
+      const res = await fetchWithRefresh(`/api/companies/${company.id}/members`);
+      if (!res.ok) throw new Error('Kunde inte hämta användarkopplingar');
+      const json = await res.json() as {
+        data: {
+          members: CompanyMemberRecord[];
+          availableUsers: AssignableUserRecord[];
+        };
+      };
+      setMembers(json.data.members);
+      setAvailableUsers(json.data.availableUsers);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setMembersLoading(false);
+    }
+  }, []);
+
+  const handleAddMember = useCallback(async (userId: string, role: 'staff' | 'admin') => {
+    if (!membersCompany) return;
+    setMemberSaving(true);
+    try {
+      const res = await fetchWithRefresh(`/api/companies/${membersCompany.id}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, role }),
+      });
+      if (!res.ok) throw new Error('Kunde inte koppla användaren till företaget');
+      await loadMembers(membersCompany);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setMemberSaving(false);
+    }
+  }, [loadMembers, membersCompany]);
+
+  const handleRemoveMember = useCallback(async (userId: string) => {
+    if (!membersCompany) return;
+    setMemberSaving(true);
+    try {
+      const res = await fetchWithRefresh(`/api/companies/${membersCompany.id}/members?userId=${encodeURIComponent(userId)}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Kunde inte ta bort användarkopplingen');
+      await loadMembers(membersCompany);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setMemberSaving(false);
+    }
+  }, [loadMembers, membersCompany]);
+
   const handleDelete = useCallback(async (c: Company) => {
-    const res = await fetch(`/api/companies/${c.id}`, { method: 'DELETE' });
+    const res = await fetchWithRefresh(`/api/companies/${c.id}`, { method: 'DELETE' });
     if (!res.ok) { setError('Kunde inte ta bort företaget'); return; }
     setDeleteCompany(null);
     void load();
@@ -385,14 +488,15 @@ export default function CompaniesPage() {
         {!loading && companies.length > 0 && (
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-0)] divide-y divide-[var(--border)] overflow-hidden">
             {companies.map((c) => (
-              <CompanyRow
-                key={c.id}
-                company={c}
-                onEdit={openEdit}
-                onDelete={setDeleteCompany}
-              />
-            ))}
-          </div>
+                <CompanyRow
+                  key={c.id}
+                  company={c}
+                  onEdit={openEdit}
+                  onDelete={setDeleteCompany}
+                  onMembers={(company) => { void loadMembers(company); }}
+                />
+              ))}
+            </div>
         )}
       </div>
 
@@ -404,6 +508,20 @@ export default function CompaniesPage() {
           onClose={closeModal}
           onSave={handleSave}
           saving={saving}
+        />
+      )}
+
+      {membersCompany && (
+        <CompanyMembersDialog
+          open={Boolean(membersCompany)}
+          companyName={membersCompany.name}
+          members={members}
+          availableUsers={availableUsers}
+          loading={membersLoading}
+          saving={memberSaving}
+          onOpenChange={(open) => { if (!open) setMembersCompany(null); }}
+          onAddMember={handleAddMember}
+          onRemoveMember={handleRemoveMember}
         />
       )}
 

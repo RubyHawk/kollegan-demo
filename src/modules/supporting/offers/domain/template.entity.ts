@@ -24,6 +24,7 @@
 export interface OfferTemplate {
   id:             string;
   organizationId: string;
+  companyId?:     string;
   name:           string;
   content:        string; // TipTap JSON serialized as string
   emailSubject?:      string; // Custom email subject (supports {{placeholder}} variables)

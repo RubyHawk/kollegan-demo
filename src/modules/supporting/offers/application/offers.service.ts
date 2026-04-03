@@ -13,6 +13,8 @@ import { enqueueOfferEmail, enqueueCreatorNotification, enqueueReminderEmail } f
 import { identityService } from '@modules/supporting/identity';
 import { generateDocument, generateFallbackDocument, interpolateEmailText } from './document-generator';
 import { templatesRepository } from '../infrastructure/templates.repository';
+import { companiesRepository } from '../infrastructure/companies.repository';
+import { resolveOfferBranding } from './company-branding';
 
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
 
@@ -87,12 +89,21 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   let emailSubject: string | undefined = existing.emailSubject;
   let emailBody: string | undefined = existing.emailBody;
   let emailHeaderConfig: string | undefined = existing.emailHeaderConfig;
+  const [org, company] = await Promise.all([
+    identityService.getOrg(orgId),
+    existing.companyId ? companiesRepository.getById(existing.companyId, orgId) : Promise.resolve(null),
+  ]);
+  const branding = resolveOfferBranding(company, org);
+
+  if (!emailHeaderConfig && branding.emailHeaderConfig) {
+    emailHeaderConfig = branding.emailHeaderConfig;
+  }
 
   if (!existing.generatedDocument) {
     if (existing.templateId) {
       const template = await templatesRepository.findById(existing.templateId, orgId);
       if (template) {
-        generatedDocument = generateDocument(template.content, sendSnapshot);
+        generatedDocument = generateDocument(template.content, sendSnapshot, branding);
         if (!emailSubject && template.emailSubject) emailSubject = template.emailSubject;
         if (!emailBody && template.emailBody) emailBody = template.emailBody;
         if (!emailHeaderConfig && template.emailHeaderConfig) emailHeaderConfig = template.emailHeaderConfig;
@@ -100,7 +111,7 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
     }
 
     if (!generatedDocument) {
-      generatedDocument = generateFallbackDocument(sendSnapshot);
+      generatedDocument = generateFallbackDocument(sendSnapshot, branding);
     }
   }
 
@@ -131,8 +142,7 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
     },
   });
 
-  const org = await identityService.getOrg(orgId);
-  const sender = org ? { senderEmail: org.senderEmail, senderName: org.senderName } : undefined;
+  const sender = { senderEmail: branding.senderEmail, senderName: branding.senderName };
 
   const appUrl = process.env.PUBLIC_OFFER_BASE_URL
     ? `${process.env.PUBLIC_OFFER_BASE_URL}`
@@ -419,6 +429,7 @@ export async function duplicateOffer(
     validityDays: existing.validityDays,
     leadId: existing.leadId,
     customerId: existing.customerId,
+    companyId: existing.companyId,
     templateId: existing.templateId,
     emailSubject: existing.emailSubject,
     emailBody: existing.emailBody,
@@ -456,8 +467,12 @@ export async function sendOfferReminder(id: string, orgId: string): Promise<Offe
   });
   if (!updated) return null;
 
-  const org = await identityService.getOrg(orgId);
-  const senderInfo = org ? { senderEmail: org.senderEmail, senderName: org.senderName } : undefined;
+  const [org, company] = await Promise.all([
+    identityService.getOrg(orgId),
+    existing.companyId ? companiesRepository.getById(existing.companyId, orgId) : Promise.resolve(null),
+  ]);
+  const branding = resolveOfferBranding(company, org);
+  const senderInfo = { senderEmail: branding.senderEmail, senderName: branding.senderName };
 
   const appUrl = process.env.PUBLIC_OFFER_BASE_URL
     ? `${process.env.PUBLIC_OFFER_BASE_URL}`

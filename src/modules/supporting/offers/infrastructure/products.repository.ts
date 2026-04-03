@@ -8,6 +8,7 @@ import { productCategoriesRepository } from './product-categories.repository';
 
 export interface CreateProductInput {
   organizationId: string;
+  companyId?: string | null;
   name: string;
   description?: string;
   unitPrice: number;
@@ -24,6 +25,7 @@ export interface CreateProductInput {
 }
 
 export interface UpdateProductInput {
+  companyId?: string | null;
   name?: string;
   description?: string;
   unitPrice?: number;
@@ -58,6 +60,7 @@ function mapProduct(record: ProductRecord): OfferProduct {
   return {
     id: record.id as string,
     organizationId: record.organizationId as string,
+    companyId: (record.companyId as string | null) ?? undefined,
     name: record.name as string,
     description: (record.description as string | null) ?? undefined,
     unitPrice: record.unitPrice as number,
@@ -78,6 +81,7 @@ function mapProduct(record: ProductRecord): OfferProduct {
 const PRODUCT_SELECT = {
   id: true,
   organizationId: true,
+  companyId: true,
   name: true,
   description: true,
   unitPrice: true,
@@ -109,6 +113,7 @@ const PRODUCT_SELECT = {
 const LEGACY_PRODUCT_SELECT = {
   id: true,
   organizationId: true,
+  companyId: true,
   name: true,
   description: true,
   unitPrice: true,
@@ -125,11 +130,13 @@ const LEGACY_PRODUCT_SELECT = {
 } satisfies Prisma.OfferProductSelect;
 
 export const productsRepository = {
-  async list(orgId: string, search?: string, category?: string, isActive?: boolean): Promise<OfferProduct[]> {
+  async list(orgId: string, search?: string, category?: string, isActive?: boolean, companyId?: string): Promise<OfferProduct[]> {
+    const companyScope = companyId ? { OR: [{ companyId }, { companyId: null }] } : {};
     const args = {
       where: {
         organizationId: orgId,
         deletedAt: null,
+        ...companyScope,
         ...(isActive !== undefined ? { isActive } : {}),
         ...(category ? { category } : {}),
         ...(search ? {
@@ -141,7 +148,7 @@ export const productsRepository = {
           ],
         } : {}),
       },
-      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+      orderBy: [{ companyId: 'desc' }, { category: 'asc' }, { name: 'asc' }],
     } satisfies Pick<Prisma.OfferProductFindManyArgs, 'where' | 'orderBy'>;
 
     try {
@@ -175,10 +182,12 @@ export const productsRepository = {
       input.organizationId,
       input.categoryId,
       input.category,
+      input.companyId,
     );
 
     const baseData = {
       organizationId: input.organizationId,
+      companyId: input.companyId ?? null,
       name: input.name,
       description: input.description ?? null,
       unitPrice: input.unitPrice,
@@ -221,11 +230,12 @@ export const productsRepository = {
 
     const categorySelection =
       input.categoryId !== undefined || input.category !== undefined
-        ? await productCategoriesRepository.getResolvedLabel(orgId, input.categoryId, input.category)
+        ? await productCategoriesRepository.getResolvedLabel(orgId, input.categoryId, input.category, input.companyId)
         : null;
 
     const baseData = {
       ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.companyId !== undefined ? { companyId: input.companyId ?? null } : {}),
       ...(input.description !== undefined ? { description: input.description } : {}),
       ...(input.unitPrice !== undefined ? { unitPrice: input.unitPrice } : {}),
       ...(input.vatRate !== undefined ? { vatRate: input.vatRate } : {}),

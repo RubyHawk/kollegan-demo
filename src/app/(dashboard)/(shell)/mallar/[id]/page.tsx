@@ -7,10 +7,12 @@
  * Tabs: "Offert" (offer WYSIWYG) | "E-post" (email WYSIWYG)
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { fetchWithRefresh } from '@shared/lib/api-client';
+import { useActiveCompany } from '@shared/hooks/use-active-company';
+import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
 import type { TemplateEditorHandle } from '../_components/TemplateEditor';
 import type { EmailEditorHandle } from '../_components/EmailEditor';
 import { normalizeTemplateImages } from '../_components/template-image-upload';
@@ -21,6 +23,7 @@ const EmailEditor    = dynamic(() => import('../_components/EmailEditor'),    { 
 
 interface OfferTemplate {
   id: string;
+  companyId?: string;
   name: string;
   content: string;
   emailSubject?:      string;
@@ -46,7 +49,14 @@ async function readJsonResponse<T>(res: Response): Promise<T> {
 export default function TemplateEditorPage() {
   const router   = useRouter();
   const params   = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const isNew    = params.id === 'new' || params.id === 'ny';
+  const {
+    companies,
+    selectedCompany,
+    selectedCompanyId,
+    setSelectedCompanyId,
+  } = useActiveCompany();
 
   const [activeTab,         setActiveTab]         = useState<Tab>('offer');
   const [emailMounted,      setEmailMounted]      = useState(false); // lazy-mount on first visit
@@ -69,6 +79,16 @@ export default function TemplateEditorPage() {
   const emailEditorRef = useRef<EmailEditorHandle | null>(null);
   const initialContentRef = useRef<string | undefined>(undefined);
   const draftKey = `template-draft-${params.id ?? 'new'}`;
+  const selectedCompanyBranding = useMemo(() => (
+    selectedCompany ? {
+      name: selectedCompany.name,
+      website: selectedCompany.website,
+      logoUrl: selectedCompany.logoUrl,
+      senderEmail: selectedCompany.senderEmail,
+      senderName: selectedCompany.senderName,
+      emailHeaderConfig: selectedCompany.emailHeaderConfig,
+    } : undefined
+  ), [selectedCompany]);
 
   // ── Load existing template ─────────────────────────────────────────────────
   useEffect(() => {
@@ -80,6 +100,9 @@ export default function TemplateEditorPage() {
         if (!res.ok) throw new Error(`Hittade inte mallen (${res.status})`);
         const json = await readJsonResponse<{ data: OfferTemplate }>(res);
         setName(json.data.name);
+        if (json.data.companyId) {
+          setSelectedCompanyId(json.data.companyId);
+        }
         setInitEmailSubject(json.data.emailSubject ?? '');
         setInitEmailBody(json.data.emailBody ?? '');
         setInitEmailHdrCfg(json.data.emailHeaderConfig ?? '');
@@ -91,7 +114,15 @@ export default function TemplateEditorPage() {
         setLoading(false);
       }
     })();
-  }, [isNew, params.id]);
+  }, [isNew, params.id, setSelectedCompanyId]);
+
+  useEffect(() => {
+    if (!isNew) return;
+    const companyIdFromUrl = searchParams.get('companyId');
+    if (companyIdFromUrl) {
+      setSelectedCompanyId(companyIdFromUrl);
+    }
+  }, [isNew, searchParams, setSelectedCompanyId]);
 
   // ── Check for unsaved draft in localStorage after load ────────────────────
   useEffect(() => {
@@ -133,6 +164,7 @@ export default function TemplateEditorPage() {
     try {
       const payload: Record<string, unknown> = {
         name: name.trim(),
+        companyId: selectedCompanyId || undefined,
         content,
         ...(emailSubject      ? { emailSubject }      : {}),
         ...(emailBody         ? { emailBody }         : {}),
@@ -171,7 +203,7 @@ export default function TemplateEditorPage() {
     } finally {
       setSaving(false);
     }
-  }, [draftKey, initEmailBody, initEmailHdrCfg, initEmailSubject, isNew, name, params.id, router]);
+  }, [draftKey, initEmailBody, initEmailHdrCfg, initEmailSubject, isNew, name, params.id, router, selectedCompanyId]);
 
   // ── Preview ────────────────────────────────────────────────────────────────
   const openPreview = useCallback(async () => {
@@ -182,7 +214,10 @@ export default function TemplateEditorPage() {
       if (json) editorRef.current?.setContent(json);
       const res = await fetchWithRefresh('/api/templates/preview', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: json ? JSON.stringify(json) : undefined }),
+        body: JSON.stringify({
+          content: json ? JSON.stringify(json) : undefined,
+          branding: selectedCompanyBranding,
+        }),
       });
       const j = await readJsonResponse<{ html?: string; detail?: string }>(res);
       if (!res.ok) throw new Error(j.detail ?? `Fel ${res.status}`);
@@ -191,7 +226,7 @@ export default function TemplateEditorPage() {
       setError((e as Error).message);
       setPreviewing(false);
     }
-  }, []);
+  }, [selectedCompanyBranding]);
 
   // Ctrl+S shortcut
   useEffect(() => {
@@ -313,6 +348,19 @@ export default function TemplateEditorPage() {
               Ignorera
             </button>
           </div>
+        </div>
+      )}
+
+      {!loading && companies.length > 0 && (
+        <div className="shrink-0 border-b border-[var(--border)] bg-[var(--surface-alt)] px-3 py-3">
+          <CompanyScopeSelector
+            companies={companies}
+            selectedCompanyId={selectedCompanyId}
+            onSelect={setSelectedCompanyId}
+            compact
+            title="Företag för mallen"
+            description="Mallen, dess branding och förhandsvisning kopplas till det här företaget."
+          />
         </div>
       )}
 

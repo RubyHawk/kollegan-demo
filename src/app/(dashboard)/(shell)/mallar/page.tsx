@@ -10,15 +10,18 @@
  * - Edit / Delete with styled confirmation modal
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@shared/lib/utils';
 import { fetchWithRefresh } from '@shared/lib/api-client';
+import { useActiveCompany } from '@shared/hooks/use-active-company';
+import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 interface OfferTemplate {
   id:        string;
+  companyId?: string;
   name:      string;
   content?:  string;
   createdAt: string;
@@ -35,6 +38,13 @@ function fmtDate(iso: string) {
 
 export default function TemplatesPage() {
   const router = useRouter();
+  const {
+    companies,
+    selectedCompany,
+    selectedCompanyId,
+    setSelectedCompanyId,
+    loading: companiesLoading,
+  } = useActiveCompany();
 
   const [templates,      setTemplates]      = useState<OfferTemplate[]>([]);
   const [loading,        setLoading]        = useState(true);
@@ -45,11 +55,24 @@ export default function TemplatesPage() {
   const [previewHtml,    setPreviewHtml]    = useState<string | null>(null);
   const [previewing,     setPreviewing]     = useState<string | null>(null); // template id being fetched
 
+  const selectedCompanyBranding = useMemo(() => (
+    selectedCompany ? {
+      name: selectedCompany.name,
+      website: selectedCompany.website,
+      logoUrl: selectedCompany.logoUrl,
+      senderEmail: selectedCompany.senderEmail,
+      senderName: selectedCompany.senderName,
+      emailHeaderConfig: selectedCompany.emailHeaderConfig,
+    } : undefined
+  ), [selectedCompany]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetchWithRefresh('/api/templates');
+      const params = new URLSearchParams();
+      if (selectedCompanyId) params.set('companyId', selectedCompanyId);
+      const res = await fetchWithRefresh(`/api/templates?${params.toString()}`);
       if (!res.ok) throw new Error(`Fel ${res.status}`);
       const json = await res.json() as { data: OfferTemplate[] };
       setTemplates(json.data);
@@ -58,7 +81,7 @@ export default function TemplatesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedCompanyId]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -78,7 +101,10 @@ export default function TemplatesPage() {
 
       const res = await fetchWithRefresh('/api/templates/preview', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: templateContent }),
+        body: JSON.stringify({
+          content: templateContent,
+          branding: selectedCompanyBranding,
+        }),
       });
       const j = await res.json() as { html?: string; detail?: string };
       if (!res.ok) throw new Error(j.detail ?? `Fel ${res.status}`);
@@ -87,7 +113,7 @@ export default function TemplatesPage() {
       setError((e as Error).message);
       setPreviewing(null);
     }
-  }, []);
+  }, [selectedCompanyBranding]);
 
   // ── Duplicate ────────────────────────────────────────────────────────────────
   const handleDuplicate = useCallback(async (t: OfferTemplate) => {
@@ -95,7 +121,11 @@ export default function TemplatesPage() {
     try {
       const res = await fetchWithRefresh('/api/templates', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: `Kopia av ${t.name}`, content: t.content }),
+        body: JSON.stringify({
+          name: `Kopia av ${t.name}`,
+          companyId: (t.companyId ?? selectedCompanyId) || undefined,
+          content: t.content,
+        }),
       });
       if (!res.ok) throw new Error(`Fel ${res.status}`);
       await load();
@@ -104,7 +134,7 @@ export default function TemplatesPage() {
     } finally {
       setDuplicating(null);
     }
-  }, [load]);
+  }, [load, selectedCompanyId]);
 
   // ── Delete ───────────────────────────────────────────────────────────────────
   const handleDelete = useCallback(async (id: string) => {
@@ -133,8 +163,8 @@ export default function TemplatesPage() {
           </p>
         </div>
         <button
-          onClick={() => router.push('/mallar/ny')}
-          onMouseEnter={() => router.prefetch('/mallar/ny')}
+          onClick={() => router.push(selectedCompanyId ? `/mallar/ny?companyId=${selectedCompanyId}` : '/mallar/ny')}
+          onMouseEnter={() => router.prefetch(selectedCompanyId ? `/mallar/ny?companyId=${selectedCompanyId}` : '/mallar/ny')}
           className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity shrink-0"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -143,6 +173,18 @@ export default function TemplatesPage() {
           Ny mall
         </button>
       </div>
+
+      {!companiesLoading && companies.length > 0 && (
+        <div className="mb-6">
+          <CompanyScopeSelector
+            companies={companies}
+            selectedCompanyId={selectedCompanyId}
+            onSelect={setSelectedCompanyId}
+            compact
+            description="Du ser nu mallar för det företag som är aktivt. Det styr också vilken branding som blir default i offertflödet."
+          />
+        </div>
+      )}
 
       {/* Error banner */}
       {error && (
@@ -226,8 +268,8 @@ export default function TemplatesPage() {
                       <span className="text-[var(--border)]">·</span>
                       {/* Edit */}
                       <button
-                        onClick={() => router.push(`/mallar/${t.id}`)}
-                        onMouseEnter={() => router.prefetch(`/mallar/${t.id}`)}
+                        onClick={() => router.push(t.companyId ? `/mallar/${t.id}?companyId=${t.companyId}` : `/mallar/${t.id}`)}
+                        onMouseEnter={() => router.prefetch(t.companyId ? `/mallar/${t.id}?companyId=${t.companyId}` : `/mallar/${t.id}`)}
                         className="text-xs text-[var(--accent)] hover:underline"
                       >
                         Redigera
@@ -268,7 +310,7 @@ export default function TemplatesPage() {
                         <p className="text-xs text-[var(--text-muted)]">Skapa din första offertmall för att snabba upp ditt arbetsflöde.</p>
                       </div>
                       <button
-                        onClick={() => router.push('/mallar/ny')}
+                        onClick={() => router.push(selectedCompanyId ? `/mallar/ny?companyId=${selectedCompanyId}` : '/mallar/ny')}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all shadow-md"
                         style={{ boxShadow: '0 4px 12px var(--accent-subtle)' }}
                       >

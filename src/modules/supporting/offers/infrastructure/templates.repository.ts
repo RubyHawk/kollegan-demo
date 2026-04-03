@@ -5,6 +5,7 @@ import type { OfferTemplate } from '../domain/template.entity';
 
 export interface CreateTemplateInput {
   organizationId:     string;
+  companyId?:         string | null;
   name:               string;
   content:            string; // TipTap JSON string
   emailSubject?:      string;
@@ -14,6 +15,7 @@ export interface CreateTemplateInput {
 }
 
 export interface UpdateTemplateInput {
+  companyId?:         string | null;
   name?:              string;
   content?:           string;
   emailSubject?:      string;
@@ -27,6 +29,7 @@ function mapTemplate(r: Record<string, unknown>): OfferTemplate {
   return {
     id:             r.id as string,
     organizationId: r.organizationId as string,
+    companyId:      (r.companyId as string | null | undefined) ?? undefined,
     name:           r.name as string,
     content:        (r.content as string | null | undefined) ?? '',
     emailSubject:      (r.emailSubject as string | null | undefined) ?? undefined,
@@ -40,7 +43,7 @@ function mapTemplate(r: Record<string, unknown>): OfferTemplate {
 
 // Full select — used for get-by-id, create, update (includes the potentially large content)
 const TEMPLATE_SELECT_FULL = {
-  id: true, organizationId: true, name: true, content: true,
+  id: true, organizationId: true, companyId: true, name: true, content: true,
   emailSubject: true, emailBody: true, emailHeaderConfig: true,
   createdBy: true, createdAt: true, updatedAt: true,
 };
@@ -48,7 +51,7 @@ const TEMPLATE_SELECT_FULL = {
 // List select — omits content so the list response stays small even when templates have
 // large base64-embedded images. The offers page dropdown only needs id + name.
 const TEMPLATE_SELECT_LIST = {
-  id: true, organizationId: true, name: true,
+  id: true, organizationId: true, companyId: true, name: true,
   emailSubject: true, emailBody: true, emailHeaderConfig: true,
   createdBy: true, createdAt: true, updatedAt: true,
 };
@@ -61,6 +64,7 @@ export const templatesRepository = {
     const row = await prisma.offerTemplate.create({
       data: {
         organizationId: input.organizationId,
+        companyId:      input.companyId ?? null,
         name:           input.name,
         content:        input.content,
         emailSubject:      input.emailSubject ?? null,
@@ -82,11 +86,14 @@ export const templatesRepository = {
     return mapTemplate(row as unknown as Record<string, unknown>);
   },
 
-  async list(orgId: string): Promise<OfferTemplate[]> {
+  async list(orgId: string, companyId?: string): Promise<OfferTemplate[]> {
+    const companyScope = companyId
+      ? { OR: [{ companyId }, { companyId: null }] }
+      : {};
     const rows = await prisma.offerTemplate.findMany({
-      where:   { organizationId: orgId, deletedAt: null },
+      where:   { organizationId: orgId, deletedAt: null, ...companyScope },
       select:  TEMPLATE_SELECT_LIST,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ companyId: 'desc' }, { createdAt: 'desc' }],
     });
     return rows.map((r: unknown) => mapTemplate(r as Record<string, unknown>));
   },
@@ -101,6 +108,7 @@ export const templatesRepository = {
       where: { id },
       data: {
         ...(input.name         !== undefined ? { name: input.name }               : {}),
+        ...(input.companyId    !== undefined ? { companyId: input.companyId ?? null } : {}),
         ...(input.content      !== undefined ? { content: input.content }         : {}),
         ...(input.emailSubject      !== undefined ? { emailSubject:      input.emailSubject      ?? null } : {}),
         ...(input.emailBody         !== undefined ? { emailBody:         input.emailBody         ?? null } : {}),

@@ -7,9 +7,9 @@ export type { CreateCategoryInput, UpdateCategoryInput };
 
 const TAG = 'ProductCategoriesService';
 
-/** Flat list of all org categories. Caller builds the tree client-side. */
-export async function listProductCategoryTree(orgId: string): Promise<ProductCategory[]> {
-  return productCategoriesRepository.list(orgId);
+/** Flat list of all categories for the current org/company. Caller builds the tree client-side. */
+export async function listProductCategoryTree(orgId: string, companyId?: string): Promise<ProductCategory[]> {
+  return productCategoriesRepository.list(orgId, companyId);
 }
 
 export async function createProductCategory(

@@ -12,6 +12,8 @@ import {
 } from '@phosphor-icons/react';
 import type { OfferProduct, ProductCategory } from '@modules/supporting/offers';
 import { Button } from '@shared/ui/button';
+import { useActiveCompany } from '@shared/hooks/use-active-company';
+import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +47,11 @@ type CategoryEnvelope = { data: { categories: ProductCategory[] } };
 type CategoryFilterKey = '' | 'uncategorized' | `main:${string}` | `sub:${string}` | `legacy:${string}`;
 
 export function ProductsPageClient() {
+  const {
+    companies,
+    selectedCompanyId,
+    setSelectedCompanyId,
+  } = useActiveCompany();
   const [products, setProducts] = useState<OfferProduct[]>([]);
   const [rawCategories, setRawCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,17 +71,21 @@ export function ProductsPageClient() {
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
 
   const loadProducts = useCallback(async () => {
-    const response = await fetchWithRefresh('/api/offers/products');
+    const params = new URLSearchParams();
+    if (selectedCompanyId) params.set('companyId', selectedCompanyId);
+    const response = await fetchWithRefresh(`/api/offers/products${params.toString() ? `?${params.toString()}` : ''}`);
     if (!response.ok) {
       throw new Error(await readApiError(response, 'Kunde inte hämta produkter'));
     }
 
     const json = await response.json() as ProductEnvelope;
     setProducts(json.data.products);
-  }, []);
+  }, [selectedCompanyId]);
 
   const loadCategories = useCallback(async () => {
-    const response = await fetchWithRefresh('/api/offers/products/categories');
+    const params = new URLSearchParams();
+    if (selectedCompanyId) params.set('companyId', selectedCompanyId);
+    const response = await fetchWithRefresh(`/api/offers/products/categories${params.toString() ? `?${params.toString()}` : ''}`);
     if (response.status === 503) {
       setCategorySupport('unavailable');
       setCategorySupportMessage(await readApiError(response, 'Produktkategorier är inte redo ännu.'));
@@ -90,7 +101,7 @@ export function ProductsPageClient() {
     setCategorySupport('available');
     setCategorySupportMessage(null);
     setRawCategories(json.data.categories);
-  }, []);
+  }, [selectedCompanyId]);
 
   const reloadAll = useCallback(async () => {
     setLoading(true);
@@ -244,7 +255,10 @@ export function ProductsPageClient() {
       const response = await fetchWithRefresh('/api/offers/products/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          companyId: selectedCompanyId || undefined,
+        }),
       });
 
       if (!response.ok) {
@@ -257,7 +271,7 @@ export function ProductsPageClient() {
     } finally {
       setCategorySaving(false);
     }
-  }, [loadCategories]);
+  }, [loadCategories, selectedCompanyId]);
 
   const handleDeleteCategory = useCallback(async (categoryId: string) => {
     setDeletingCategoryId(categoryId);
@@ -291,6 +305,7 @@ export function ProductsPageClient() {
 
       const payload = {
         name: form.name.trim(),
+        companyId: selectedCompanyId || undefined,
         description: form.description.trim() || undefined,
         unitPrice: parseFloat(form.unitPrice) || 0,
         vatRate: parseFloat(form.vatRate) || 0.25,
@@ -328,7 +343,7 @@ export function ProductsPageClient() {
     } finally {
       setSaving(false);
     }
-  }, [categoryById, editingProduct, loadProducts]);
+  }, [categoryById, editingProduct, loadProducts, selectedCompanyId]);
 
   const handleToggleActive = useCallback(async (product: OfferProduct) => {
     setError(null);
@@ -336,7 +351,7 @@ export function ProductsPageClient() {
       const response = await fetchWithRefresh(`/api/offers/products/${product.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isActive: !product.isActive }),
+        body: JSON.stringify({ isActive: !product.isActive, companyId: selectedCompanyId || undefined }),
       });
 
       if (!response.ok) {
@@ -349,7 +364,7 @@ export function ProductsPageClient() {
     } catch (err) {
       setError((err as Error).message);
     }
-  }, []);
+  }, [selectedCompanyId]);
 
   const handleDeleteProduct = useCallback(async (product: OfferProduct) => {
     setDeletingId(product.id);
@@ -410,6 +425,17 @@ export function ProductsPageClient() {
                   <div className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">{totalVisible}</div>
                 </div>
               </div>
+
+              {companies.length > 0 && (
+                <CompanyScopeSelector
+                  companies={companies}
+                  selectedCompanyId={selectedCompanyId}
+                  onSelect={setSelectedCompanyId}
+                  compact
+                  title="Företagets bibliotek"
+                  description="Byt företag för att se rätt produktbibliotek, kategorier och sortering."
+                />
+              )}
             </div>
 
             <aside className="border-l border-[var(--border)] bg-[var(--surface-alt)] px-6 py-6">
