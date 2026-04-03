@@ -5,6 +5,7 @@ import { ok } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
 import { verifyToken } from '@platform/auth/jwt';
 import {
+  createCompanyMemberAccount,
   listCompanyMembers,
   removeCompanyMember,
   upsertCompanyMember,
@@ -56,10 +57,22 @@ export const handleListCompanyMembers = createHandler(
   },
 );
 
-const UpsertBodySchema = z.object({
+const ExistingMemberSchema = z.object({
+  mode: z.literal('existing').optional(),
   userId: z.string().uuid(),
   role: z.enum(['staff', 'admin']).default('staff'),
 });
+
+const CreateAccountSchema = z.object({
+  mode: z.literal('create'),
+  email: z.string().email(),
+  password: z.string().min(8).max(128),
+  firstName: z.string().max(100).optional(),
+  lastName: z.string().max(100).optional(),
+  role: z.enum(['staff', 'admin']).default('admin'),
+});
+
+const UpsertBodySchema = z.union([ExistingMemberSchema, CreateAccountSchema]);
 
 export const handleUpsertCompanyMember = createHandler(
   { auth: 'jwt', tag: 'CompanyMembers:Upsert', body: UpsertBodySchema, rateLimit: { max: 60, windowMs: 60_000 } },
@@ -68,7 +81,27 @@ export const handleUpsertCompanyMember = createHandler(
     const payload = await requireStaff(req);
     const companyId = extractCompanyId(req);
     await requireCompanyAdmin(companyId, payload);
-    const member = await upsertCompanyMember(companyId, payload.orgId!, body.userId, body.role, payload.sub);
+    let member;
+    try {
+      member = 'userId' in body
+        ? await upsertCompanyMember(companyId, payload.orgId!, body.userId, body.role, payload.sub)
+        : await createCompanyMemberAccount(companyId, payload.orgId!, {
+            email: body.email,
+            password: body.password,
+            firstName: body.firstName,
+            lastName: body.lastName,
+            role: body.role,
+          }, payload.sub);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'UNKNOWN';
+      if (code === 'EMAIL_ALREADY_EXISTS') {
+        throw Errors.badRequest('Det finns redan ett konto med den här e-postadressen. Koppla det befintliga kontot i stället.');
+      }
+      if (code === 'DEFAULT_ROLE_MISSING') {
+        throw Errors.badRequest('Standardrollen för nya användare saknas. Lägg till rollen "user" innan du skapar nya konton.');
+      }
+      throw error;
+    }
     return ok(member);
   },
 );

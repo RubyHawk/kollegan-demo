@@ -9,6 +9,7 @@ import { ok, created } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
 import { verifyToken } from '@platform/auth/jwt';
 import { companiesRepository } from '../../infrastructure/companies.repository';
+import { upsertCompanyMember } from '../../application/company-members.service';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -28,6 +29,14 @@ async function requireStaff(req: NextRequest) {
 
 function isOrgAdmin(payload: { roles: string[] }) {
   return payload.roles.includes('admin') || payload.roles.includes('super_admin');
+}
+
+async function requireCompanyAdmin(companyId: string, payload: Awaited<ReturnType<typeof requireStaff>>) {
+  if (isOrgAdmin(payload)) return;
+  const membership = await companiesRepository.getMember(companyId, payload.sub);
+  if (!membership || membership.role !== 'admin') {
+    throw Errors.forbidden('Du behöver vara företagsadmin för att hantera det här företaget');
+  }
 }
 
 // ── List Companies ─────────────────────────────────────────────────────────────
@@ -98,6 +107,7 @@ export const handleCreateCompany = createHandler(
       notes:     body.notes,
       createdBy: payload.sub,
     });
+    await upsertCompanyMember(company.id, payload.orgId!, payload.sub, 'admin', payload.sub);
     return created(company, `/api/companies/${company.id}`);
   },
 );
@@ -122,6 +132,7 @@ export const handleUpdateCompany = createHandler(
     const { body, req } = ctx as { body: z.infer<typeof UpdateBodySchema>; req: NextRequest };
     const id = extractId(req);
     const payload = await requireStaff(req);
+    await requireCompanyAdmin(id, payload);
     const updated = await companiesRepository.update(id, payload.orgId!, {
       ...body,
       website: body.website ?? undefined,
@@ -143,6 +154,7 @@ export const handleDeleteCompany = createHandler(
     const { req } = ctx as { req: NextRequest };
     const id = extractId(req);
     const payload = await requireStaff(req);
+    await requireCompanyAdmin(id, payload);
     const deleted = await companiesRepository.delete(id, payload.orgId!);
     if (!deleted) throw Errors.notFound('Company not found');
     return ok(null);
