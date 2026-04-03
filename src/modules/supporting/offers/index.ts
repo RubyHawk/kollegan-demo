@@ -5,7 +5,7 @@
  */
 
 // Domain types
-export type { Offer, OfferLineItem, OfferStatus, OfferProduct, Company } from './domain/offer.entity';
+export type { Offer, OfferLineItem, OfferStatus, OfferProduct, ProductCategory, Company } from './domain/offer.entity';
 export type { OfferTemplate, PlaceholderKey }      from './domain/template.entity';
 export { OFFER_PLACEHOLDERS }                       from './domain/template.entity';
 
@@ -38,8 +38,12 @@ export {
   createProduct,
   updateProduct,
   deleteProduct,
+  createProductCategory,
+  updateProductCategory,
+  deleteProductCategory,
 } from './application/products.service';
 export type { CreateProductInput, UpdateProductInput } from './infrastructure/products.repository';
+export type { CreateProductCategoryInput, UpdateProductCategoryInput } from './application/products.service';
 
 // Application use cases — templates
 export {
@@ -98,6 +102,9 @@ export {
 export {
   handleListProducts,
   handleListProductCategories,
+  handleCreateProductCategory,
+  handleUpdateProductCategory,
+  handleDeleteProductCategory,
   handleCreateProduct,
   handleUpdateProduct,
   handleDeleteProduct,

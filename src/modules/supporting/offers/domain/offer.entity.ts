@@ -75,12 +75,23 @@ export interface OfferProduct {
   unit?: string;        // "st", "tim", "mån", etc.
   sku?: string;
   category?: string;
+  categoryId?: string;
   imageUrl?: string;
   isActive: boolean;
   minQuantity?: number;
   maxQuantity?: number;
   createdBy: string;
   createdAt: string;
+}
+
+export interface ProductCategory {
+  id: string;
+  organizationId: string;
+  name: string;
+  parentId?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ─── Company (brand / selling entity) ────────────────────────────────────────
