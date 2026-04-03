@@ -435,6 +435,7 @@ export function CompaniesPageClient() {
       </section>
 
       <CompanyModal
+        key={editCompany?.id ?? (modalOpen ? 'new-company' : 'closed')}
         open={modalOpen}
         company={editCompany}
         onClose={closeModal}
