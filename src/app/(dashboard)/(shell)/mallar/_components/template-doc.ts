@@ -23,6 +23,7 @@ export interface PageDoc {
   id:     string;
   label:  string;
   kind?:  'presentation' | 'document';
+  includeInCustomerPdf?: boolean;   // default true — false hides page from customer PDF download
   body:   object;  // TipTap JSON doc node
   header: { enabled: boolean; useDefault: boolean; content: object };
   footer: { enabled: boolean; useDefault: boolean; content: object };

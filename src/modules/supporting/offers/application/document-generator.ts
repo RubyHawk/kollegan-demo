@@ -380,6 +380,7 @@ function isImageOnlyPresentationPage(node: TipTapNode): boolean {
 interface V3PageDoc {
   kind?: 'presentation' | 'document';
   label?: string;
+  includeInCustomerPdf?: boolean;
   body:   TipTapNode;
   header: { enabled: boolean; useDefault: boolean; content: TipTapNode };
   footer: { enabled: boolean; useDefault: boolean; content: TipTapNode };
@@ -472,7 +473,7 @@ function renderStructuredDocumentPage(
     : '';
 
   return `
-    <div class="page-block page-block--document" ${backgroundStyle} data-page="${pageIndex + 1}">
+    <div class="page-block page-block--document" ${backgroundStyle} data-page="${pageIndex + 1}"${page.includeInCustomerPdf === false ? ' data-customer-pdf="false"' : ''}>
       <div class="page-content page-content--document">
         <section class="offer-shell">
           <header class="offer-shell__header">
@@ -691,7 +692,8 @@ export function generateDocument(templateContent: string, offer: Offer, branding
       : fillPage
         ? ' style="height:1056px;overflow:hidden;"'
         : '';
-    return `<div class="page-block"${blockStyle} data-page="${pageIndex + 1}"><div class="page-content${edgeToEdge ? ' page-content--edge-to-edge' : ''}">${hdrSection}${bodyHtml}${ftrSection}</div></div>`;
+    const customerPdfAttr = page.includeInCustomerPdf === false ? ' data-customer-pdf="false"' : '';
+    return `<div class="page-block"${blockStyle}${customerPdfAttr} data-page="${pageIndex + 1}"><div class="page-content${edgeToEdge ? ' page-content--edge-to-edge' : ''}">${hdrSection}${bodyHtml}${ftrSection}</div></div>`;
   }
 
   let bodyHtml = '';

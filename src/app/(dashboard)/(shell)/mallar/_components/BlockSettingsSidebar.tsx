@@ -638,6 +638,28 @@ function PageSettings({ hf }: { hf: HFCtxValue }) {
           </div>
         </div>
 
+        {/* PDF visibility toggle — shown for all page types */}
+        <div className="h-px bg-[var(--border)]" />
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <p className="text-[11px] font-semibold text-[var(--text-secondary)]">Inkludera i kund-PDF</p>
+            <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Av = sidan syns ej i kundens nedladdning</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => patchActivePage({ includeInCustomerPdf: page.includeInCustomerPdf === false ? true : false })}
+            className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none ${
+              page.includeInCustomerPdf !== false ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
+            }`}
+            role="switch"
+            aria-checked={page.includeInCustomerPdf !== false}
+          >
+            <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+              page.includeInCustomerPdf !== false ? 'translate-x-4' : 'translate-x-0'
+            }`} />
+          </button>
+        </div>
+
         {page.kind === 'document' && (
           <>
             <div className="h-px bg-[var(--border)]" />

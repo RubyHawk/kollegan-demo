@@ -232,7 +232,8 @@ async function downloadPdf(documentHtml: string, filename: string, signature?: S
 
   // Render each .page-block as its own PDF page so fill-page images never split mid-image.
   // Falls back to rendering the whole container when no page-blocks exist (legacy docs).
-  const pageBlocks = Array.from(container.querySelectorAll<HTMLElement>('.page-block'));
+  // Only include pages marked for customer PDF (data-customer-pdf="false" excludes a page)
+  const pageBlocks = Array.from(container.querySelectorAll<HTMLElement>('.page-block:not([data-customer-pdf="false"])'));
 
   if (pageBlocks.length > 0) {
     for (let i = 0; i < pageBlocks.length; i++) {
