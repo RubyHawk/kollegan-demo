@@ -453,8 +453,9 @@ function renderStructuredDocumentPage(
   };
 
   const offerNumber = replacements['{{offerNumber}}'];
-  const senderName = branding?.senderName?.trim() || 'Avsändare';
-  const senderEmail = branding?.senderEmail?.trim() || '';
+  const companyName = branding?.companyName?.trim() || branding?.senderName?.trim() || 'Avsändare';
+  const responsibleName = branding?.responsibleName?.trim() || branding?.senderName?.trim() || '';
+  const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '';
   const senderWebsite = branding?.website?.trim()?.replace(/^https?:\/\//, '') || '';
   const logoUrl = branding?.logoUrl?.trim() || '';
   const noteHtml = offer.notes ? `<section class="offer-section"><h3>Anteckningar</h3><p>${secureEscapeHtml(offer.notes)}</p></section>` : '';
@@ -476,12 +477,12 @@ function renderStructuredDocumentPage(
         <section class="offer-shell">
           <header class="offer-shell__header">
             <div class="offer-shell__sender">
-              ${settings.showLogo && logoUrl ? `<img class="offer-shell__logo" src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(senderName)}" />` : ''}
+              ${settings.showLogo && logoUrl ? `<img class="offer-shell__logo" src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(companyName)}" />` : ''}
               ${settings.showSenderDetails ? `
                 <div class="offer-shell__sender-copy">
-                  <p class="offer-shell__sender-name">${escapeHtml(senderName)}</p>
-                  ${senderEmail ? `<p>${escapeHtml(senderEmail)}</p>` : ''}
-                  ${senderWebsite ? `<p>${escapeHtml(senderWebsite)}</p>` : ''}
+                  <p class="offer-shell__sender-name">${escapeHtml(companyName)}</p>
+                  ${responsibleName ? `<p><strong>Ansvarig:</strong> ${escapeHtml(responsibleName)}</p>` : ''}
+                  ${responsibleEmail ? `<p>${escapeHtml(responsibleEmail)}</p>` : ''}
                 </div>` : ''}
             </div>
             <div class="offer-shell__meta">
@@ -525,8 +526,9 @@ function renderStructuredDocumentPage(
             </section>` : ''}
           ${settings.showFooter ? `
             <footer class="offer-shell__footer">
-              <div><strong>${escapeHtml(senderName)}</strong><span>${escapeHtml(senderWebsite || '—')}</span></div>
-              <div><strong>Kontakt</strong><span>${escapeHtml(senderEmail || '—')}</span></div>
+              <div><strong>${escapeHtml(companyName)}</strong><span>${escapeHtml(senderWebsite || '—')}</span></div>
+              <div><strong>Ansvarig</strong><span>${escapeHtml(responsibleName || responsibleEmail || '—')}</span></div>
+              <div><strong>Kontakt</strong><span>${escapeHtml(responsibleEmail || '—')}</span></div>
               <div><strong>Prisvisning</strong><span>${getDisplayModeLabel(buildOfferSummary(offer).hasVat, offer.priceDisplayMode)}</span></div>
             </footer>` : ''}
         </section>
@@ -545,8 +547,9 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
   const offerNumberStr = offer.offerNumber
     ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
     : offer.id.slice(0, 8).toUpperCase();
-  const senderName = branding?.senderName?.trim() || 'Avsändare';
-  const senderEmail = branding?.senderEmail?.trim() || '';
+  const companyName = branding?.companyName?.trim() || branding?.senderName?.trim() || 'Avsändare';
+  const responsibleName = branding?.responsibleName?.trim() || branding?.senderName?.trim() || '';
+  const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '';
   const senderWebsite = branding?.website?.trim()?.replace(/^https?:\/\//, '') || '';
   const logoUrl = branding?.logoUrl?.trim() || '';
 
@@ -569,14 +572,14 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
 </head>
 <body>
   <div class="doc-wrapper">
-    ${(logoUrl || senderName || senderEmail || senderWebsite) ? `
+    ${(logoUrl || companyName || responsibleName || responsibleEmail || senderWebsite) ? `
     <div style="display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:28px;">
       <div style="display:flex;gap:14px;align-items:flex-start;">
-        ${logoUrl ? `<img src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(senderName)}" style="width:54px;height:54px;object-fit:contain;border-radius:12px;"/>` : ''}
+        ${logoUrl ? `<img src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(companyName)}" style="width:54px;height:54px;object-fit:contain;border-radius:12px;"/>` : ''}
         <div>
-          <p style="margin:0;font-weight:700;color:#0f172a;">${escapeHtml(senderName)}</p>
-          ${senderEmail ? `<p style="margin:4px 0 0 0;color:#64748b;">${escapeHtml(senderEmail)}</p>` : ''}
-          ${senderWebsite ? `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(senderWebsite)}</p>` : ''}
+          <p style="margin:0;font-weight:700;color:#0f172a;">${escapeHtml(companyName)}</p>
+          ${responsibleName ? `<p style="margin:4px 0 0 0;color:#64748b;"><strong>Ansvarig:</strong> ${escapeHtml(responsibleName)}</p>` : ''}
+          ${responsibleEmail ? `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(responsibleEmail)}</p>` : ''}
         </div>
       </div>
       <div style="text-align:right;">
@@ -855,3 +858,5 @@ export function generateDocument(templateContent: string, offer: Offer, branding
 </body>
 </html>`;
 }
+
+
