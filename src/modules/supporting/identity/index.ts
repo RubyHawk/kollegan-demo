@@ -15,4 +15,9 @@ export type {
   OrgPlan,
   MemberRole,
   CreateOrgInput,
+  ActiveNotificationTag,
+  NotificationRecipient,
+  NotificationTag,
+  NotificationTagDefinition,
+  NotificationTagScope,
 } from './domain/organization.entity';

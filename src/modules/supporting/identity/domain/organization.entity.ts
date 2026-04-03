@@ -8,14 +8,13 @@
 
 export type OrgPlan = 'dev' | 'demo' | 'starter' | 'growth' | 'enterprise';
 
-/** Notification event tags. Extend as new features are added. */
-export type NotificationTag = 'offer_signed' | 'offer_declined';
-
-export interface NotificationRecipient {
-  id: string;           // client-generated uuid — used as React key + delete target
-  email: string;
-  tags: NotificationTag[];
-}
+export type {
+  ActiveNotificationTag,
+  NotificationRecipient,
+  NotificationTag,
+  NotificationTagDefinition,
+  NotificationTagScope,
+} from './notification-routing';
 
 export interface Organization {
   id: string;
