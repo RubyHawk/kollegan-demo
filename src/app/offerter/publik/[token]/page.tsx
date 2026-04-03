@@ -48,6 +48,7 @@ interface PublicOffer {
   generatedDocument?: string;
   publicToken: string;
   publicTokenExpiresAt?: string;
+  viewedAt?: string;
 }
 
 type PageState = 'loading' | 'ready' | 'declining' | 'signing' | 'accepted' | 'declined' | 'expired' | 'error';
@@ -395,6 +396,27 @@ export default function PublicOfferPage() {
       } catch (e) { setErrMsg((e as Error).message); setState('error'); }
     })();
   }, [token]);
+
+  useEffect(() => {
+    if (!token || !offer) return;
+    if (offer.status !== 'sent' || offer.viewedAt) return;
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void fetch(`/api/offers/public/${token}/view`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+      }).catch(() => {
+        // Best effort only; the document should still remain usable if this fails.
+      });
+    }, 1200);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [offer, token]);
 
   // ── Actions ──────────────────────────────────────────────────────────────────
   const getSignatureImage = useCallback((): string | null => {

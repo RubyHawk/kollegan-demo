@@ -29,6 +29,7 @@ export {
   updateOffer,
   sendOffer,
   viewOffer,
+  markOfferViewed,
   signOffer,
   declineOfferByToken,
   acceptOffer,
@@ -129,6 +130,7 @@ export {
 
 export {
   handleGetPublicOffer,
+  handleMarkPublicOfferViewed,
   handleSignPublicOffer,
   handleDeclinePublicOffer,
 } from './api/handlers/public-offer.handler';

@@ -132,7 +132,14 @@ export const productsRepository = {
         deletedAt: null,
         ...(isActive !== undefined ? { isActive } : {}),
         ...(category ? { category } : {}),
-        ...(search ? { name: { contains: search, mode: 'insensitive' as const } } : {}),
+        ...(search ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { description: { contains: search, mode: 'insensitive' as const } },
+            { unit: { contains: search, mode: 'insensitive' as const } },
+            { category: { contains: search, mode: 'insensitive' as const } },
+          ],
+        } : {}),
       },
       orderBy: [{ category: 'asc' }, { name: 'asc' }],
     } satisfies Pick<Prisma.OfferProductFindManyArgs, 'where' | 'orderBy'>;

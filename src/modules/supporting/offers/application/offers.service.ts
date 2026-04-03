@@ -10,7 +10,7 @@ import {
   OFFER_DECLINED,
 } from '../events/offer.events';
 import { enqueueOfferEmail, enqueueCreatorNotification, enqueueReminderEmail } from './offer-email';
-import { identityService } from '@modules/supporting/identity/application/identity.service';
+import { identityService } from '@modules/supporting/identity';
 import { generateDocument, generateFallbackDocument, interpolateEmailText } from './document-generator';
 import { templatesRepository } from '../infrastructure/templates.repository';
 
@@ -148,6 +148,19 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
 
 export async function viewOffer(
   publicToken: string,
+): Promise<Offer | null> {
+  const existing = await offersRepository.findByPublicToken(publicToken);
+  if (!existing) return null;
+
+  if (existing.publicTokenExpiresAt && new Date(existing.publicTokenExpiresAt) < new Date()) {
+    return null;
+  }
+
+  return existing;
+}
+
+export async function markOfferViewed(
+  publicToken: string,
   ip: string,
   userAgent: string,
 ): Promise<Offer | null> {
@@ -209,7 +222,7 @@ export async function signOffer(
 
   eventBus.publish({
     type: OFFER_ACCEPTED,
-    orgId: '',
+    orgId: final.organizationId,
     occurredAt: new Date().toISOString(),
     payload: {
       offerId: final.id,
@@ -220,7 +233,7 @@ export async function signOffer(
 
   if (final.leadId) {
     const { updateLead } = await import('@modules/supporting/leads');
-    await updateLead(final.leadId, '', { status: 'won' }, 'system').catch((err: unknown) =>
+    await updateLead(final.leadId, final.organizationId, { status: 'won' }, 'system').catch((err: unknown) =>
       logger.warn(TAG, 'Failed to auto-update lead on offer signature', { err })
     );
   }
@@ -270,7 +283,7 @@ export async function declineOfferByToken(
 
   eventBus.publish({
     type: OFFER_DECLINED,
-    orgId: '',
+    orgId: final.organizationId,
     occurredAt: new Date().toISOString(),
     payload: { offerId: final.id },
   });

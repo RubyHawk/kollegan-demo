@@ -28,6 +28,7 @@ export interface OfferLineItem {
 
 export interface Offer {
   id: string;
+  organizationId: string;
   title: string;
   status: OfferStatus;
   offerNumber?: number;
