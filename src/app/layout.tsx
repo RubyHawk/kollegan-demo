@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
 };
 
-const defaultTheme = THEMES.find((theme) => theme.id === 'claude') ?? THEMES[0];
+const defaultTheme = THEMES.find((theme) => theme.id === 'soleria') ?? THEMES[0];
 const defaultThemeData = {
   light: defaultTheme.light,
   dark: defaultTheme.dark,
@@ -25,14 +25,14 @@ const defaultThemeData = {
 const themeScript = `
 (function() {
   try {
-    var theme = localStorage.getItem('theme') || 'auto';
-    if (!localStorage.getItem('theme')) localStorage.setItem('theme', 'auto');
+    var theme = localStorage.getItem('theme') || 'light';
+    if (!localStorage.getItem('theme')) localStorage.setItem('theme', 'light');
     var isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     if (isDark) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
 
     var accent = localStorage.getItem('accentColor');
-    if (!accent) localStorage.setItem('accentColor', 'claude');
+    if (!accent) localStorage.setItem('accentColor', 'soleria');
 
     var defaultData = ${JSON.stringify(defaultThemeData)};
     var td = localStorage.getItem('themeData');
