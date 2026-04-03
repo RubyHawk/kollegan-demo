@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Buildings, Plus, Trash } from '@phosphor-icons/react';
+import React, { useMemo, useState } from 'react';
+import { Buildings, CaretDown, Plus, Trash } from '@phosphor-icons/react';
 import {
   Dialog,
   DialogContent,
@@ -54,6 +54,24 @@ interface CompanyMembersDialogProps {
   onAddMember: (userId: string, role: 'staff' | 'admin') => Promise<void>;
   onCreateMemberAccount: (form: NewCompanyAccountForm) => Promise<void>;
   onRemoveMember: (userId: string) => Promise<void>;
+}
+
+function StyledSelect({ className, children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { className?: string }) {
+  return (
+    <div className={`relative ${className ?? ''}`}>
+      <select
+        {...props}
+        className="h-12 w-full appearance-none rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] pl-4 pr-10 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)]"
+      >
+        {children}
+      </select>
+      <CaretDown
+        size={14}
+        weight="bold"
+        className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+      />
+    </div>
+  );
 }
 
 function formatUserName(user: { firstName?: string | null; lastName?: string | null; email: string }) {
@@ -134,27 +152,19 @@ export function CompanyMembersDialog({
 
             {mode === 'existing' ? (
               <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
-                <select
-                  value={userId}
-                  onChange={(event) => setUserId(event.target.value)}
-                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-                >
+                <StyledSelect value={userId} onChange={(event) => setUserId(event.target.value)}>
                   <option value="">Välj användare</option>
                   {selectableUsers.map((user) => (
                     <option key={user.id} value={user.id}>
                       {formatUserName(user as AssignableUserRecord)}
                     </option>
                   ))}
-                </select>
+                </StyledSelect>
 
-                <select
-                  value={role}
-                  onChange={(event) => setRole(event.target.value as 'staff' | 'admin')}
-                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-                >
+                <StyledSelect value={role} onChange={(event) => setRole(event.target.value as 'staff' | 'admin')}>
                   <option value="staff">Företagsstaff</option>
                   <option value="admin">Företagsadmin</option>
-                </select>
+                </StyledSelect>
 
                 <button
                   type="button"
@@ -199,14 +209,10 @@ export function CompanyMembersDialog({
                   placeholder="Tillfälligt lösenord"
                   className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
                 />
-                <select
-                  value={newAccount.role}
-                  onChange={(event) => setNewAccount((current) => ({ ...current, role: event.target.value as 'staff' | 'admin' }))}
-                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-                >
+                <StyledSelect value={newAccount.role} onChange={(event) => setNewAccount((current) => ({ ...current, role: event.target.value as 'staff' | 'admin' }))}>
                   <option value="staff">Företagsstaff</option>
                   <option value="admin">Företagsadmin</option>
-                </select>
+                </StyledSelect>
                 <button
                   type="button"
                   disabled={!canCreateAccount || saving}
