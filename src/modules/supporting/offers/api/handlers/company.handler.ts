@@ -31,6 +31,24 @@ function isOrgAdmin(payload: { roles: string[] }) {
   return payload.roles.includes('admin') || payload.roles.includes('super_admin');
 }
 
+function isValidCompanyLogoValue(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+
+  return (
+    /^https?:\/\/\S+$/i.test(trimmed) ||
+    /^\/(?!\/)\S+$/.test(trimmed) ||
+    /^data:image\/(?:png|jpeg|jpg|webp|avif|gif);base64,[A-Za-z0-9+/=]+$/i.test(trimmed)
+  );
+}
+
+const CompanyLogoSchema = z
+  .string()
+  .max(3_000_000)
+  .refine((value) => isValidCompanyLogoValue(value), {
+    message: 'Loggan måste vara en bildlänk, en intern sökväg eller uppladdad bilddata.',
+  });
+
 async function requireCompanyAdmin(companyId: string, payload: Awaited<ReturnType<typeof requireStaff>>) {
   if (isOrgAdmin(payload)) return;
   const membership = await companiesRepository.getMember(companyId, payload.sub);
@@ -81,7 +99,7 @@ const CreateBodySchema = z.object({
   name:      z.string().min(1).max(300),
   orgNumber: z.string().max(20).optional(),
   website:   z.string().url().max(500).optional(),
-  logoUrl:   z.string().url().max(2000).optional(),
+  logoUrl:   CompanyLogoSchema.optional(),
   senderEmail: z.string().email().max(254).optional(),
   senderName: z.string().max(100).optional(),
   emailHeaderConfig: z.string().max(10_000).optional(),
@@ -118,7 +136,7 @@ const UpdateBodySchema = z.object({
   name:      z.string().min(1).max(300).optional(),
   orgNumber: z.string().max(20).optional(),
   website:   z.string().url().max(500).optional().nullable(),
-  logoUrl:   z.string().url().max(2000).optional().nullable(),
+  logoUrl:   CompanyLogoSchema.optional().nullable(),
   senderEmail: z.string().email().max(254).optional().nullable(),
   senderName: z.string().max(100).optional().nullable(),
   emailHeaderConfig: z.string().max(10_000).optional().nullable(),

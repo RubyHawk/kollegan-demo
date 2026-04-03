@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { cn } from '@shared/lib/utils';
 import type { Company } from '@modules/supporting/offers';
+import { CompanyLogoUpload } from './company-logo-upload';
 
 export interface CompanyForm {
   name: string;
@@ -102,7 +103,7 @@ export function CompanyModal({
             </div>
             <div>
               <label className={labelCls}>Bransch</label>
-              <input value={form.industry} onChange={set('industry')} placeholder="Solfilm, el, konsulting…" className={inputCls} />
+              <input value={form.industry} onChange={set('industry')} placeholder="Solfilm, el, konsulting..." className={inputCls} />
             </div>
           </div>
 
@@ -112,8 +113,11 @@ export function CompanyModal({
           </div>
 
           <div>
-            <label className={labelCls}>Logo-URL</label>
-            <input type="url" value={form.logoUrl} onChange={set('logoUrl')} placeholder="https://…/logo.png" className={inputCls} />
+            <label className={labelCls}>Logga</label>
+            <CompanyLogoUpload
+              value={form.logoUrl}
+              onChange={(logoUrl) => setForm((current) => ({ ...current, logoUrl }))}
+            />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -133,7 +137,7 @@ export function CompanyModal({
               value={form.notes}
               onChange={set('notes')}
               rows={3}
-              placeholder="Intern information om företaget, branding eller arbetsflöde…"
+              placeholder="Intern information om företaget, branding eller arbetsflöde..."
               className={cn(inputCls, 'resize-none')}
             />
           </div>
@@ -153,7 +157,7 @@ export function CompanyModal({
             disabled={saving || !form.name.trim()}
             className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-light)] disabled:pointer-events-none disabled:opacity-50"
           >
-            {saving ? 'Sparar…' : company ? 'Spara ändringar' : 'Skapa företag'}
+            {saving ? 'Sparar...' : company ? 'Spara ändringar' : 'Skapa företag'}
           </button>
         </div>
       </div>
