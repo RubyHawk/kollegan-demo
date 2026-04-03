@@ -35,6 +35,14 @@ export interface AssignableUserRecord {
   avatarUrl?: string | null;
 }
 
+export interface NewCompanyAccountForm {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: 'staff' | 'admin';
+}
+
 interface CompanyMembersDialogProps {
   open: boolean;
   companyName: string;
@@ -44,6 +52,7 @@ interface CompanyMembersDialogProps {
   saving: boolean;
   onOpenChange: (open: boolean) => void;
   onAddMember: (userId: string, role: 'staff' | 'admin') => Promise<void>;
+  onCreateMemberAccount: (form: NewCompanyAccountForm) => Promise<void>;
   onRemoveMember: (userId: string) => Promise<void>;
 }
 
@@ -61,15 +70,26 @@ export function CompanyMembersDialog({
   saving,
   onOpenChange,
   onAddMember,
+  onCreateMemberAccount,
   onRemoveMember,
 }: CompanyMembersDialogProps) {
+  const [mode, setMode] = useState<'existing' | 'create'>('existing');
   const [userId, setUserId] = useState('');
   const [role, setRole] = useState<'staff' | 'admin'>('staff');
+  const [newAccount, setNewAccount] = useState<NewCompanyAccountForm>({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    role: 'admin',
+  });
 
   const selectableUsers = useMemo(() => {
     const existing = new Set(members.map((member) => member.userId));
     return availableUsers.filter((user) => !existing.has(user.id));
   }, [availableUsers, members]);
+
+  const canCreateAccount = newAccount.email.trim().length > 0 && newAccount.password.trim().length >= 8;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -77,7 +97,7 @@ export function CompanyMembersDialog({
         <DialogHeader>
           <DialogTitle>Koppla användare till {companyName}</DialogTitle>
           <DialogDescription>
-            De här användarna kan arbeta med företagets mallar, produkter och branding. Företagsadmin får även hantera kopplingar.
+            De här användarna kan arbeta med företagets mallar, produkter och branding. Företagsadmin får även hantera kopplingar och skapa nya konton för sitt företag.
           </DialogDescription>
         </DialogHeader>
 
@@ -90,49 +110,123 @@ export function CompanyMembersDialog({
               <div>
                 <p className="text-sm font-semibold text-[var(--text-primary)]">Ny koppling</p>
                 <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
-                  Välj en användare och om personen bara ska arbeta i företaget eller även administrera kopplingarna.
+                  Koppla ett befintligt konto eller skapa ett nytt staff-konto direkt för företaget.
                 </p>
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
-              <select
-                value={userId}
-                onChange={(event) => setUserId(event.target.value)}
-                className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-              >
-                <option value="">Välj användare</option>
-                {selectableUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {formatUserName(user as AssignableUserRecord)}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={role}
-                onChange={(event) => setRole(event.target.value as 'staff' | 'admin')}
-                className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-              >
-                <option value="staff">Företagsstaff</option>
-                <option value="admin">Företagsadmin</option>
-              </select>
-
+            <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
-                disabled={!userId || saving}
-                onClick={async () => {
-                  if (!userId) return;
-                  await onAddMember(userId, role);
-                  setUserId('');
-                  setRole('staff');
-                }}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-95 disabled:pointer-events-none disabled:opacity-50"
+                onClick={() => setMode('existing')}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${mode === 'existing' ? 'bg-[var(--accent)] text-white' : 'border border-[var(--border)] bg-[var(--surface-0)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]'}`}
               >
-                <Plus size={16} weight="bold" />
-                Lägg till
+                Koppla befintligt konto
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('create')}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${mode === 'create' ? 'bg-[var(--accent)] text-white' : 'border border-[var(--border)] bg-[var(--surface-0)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]'}`}
+              >
+                Skapa nytt konto
               </button>
             </div>
+
+            {mode === 'existing' ? (
+              <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
+                <select
+                  value={userId}
+                  onChange={(event) => setUserId(event.target.value)}
+                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                >
+                  <option value="">Välj användare</option>
+                  {selectableUsers.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {formatUserName(user as AssignableUserRecord)}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={role}
+                  onChange={(event) => setRole(event.target.value as 'staff' | 'admin')}
+                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                >
+                  <option value="staff">Företagsstaff</option>
+                  <option value="admin">Företagsadmin</option>
+                </select>
+
+                <button
+                  type="button"
+                  disabled={!userId || saving}
+                  onClick={async () => {
+                    if (!userId) return;
+                    await onAddMember(userId, role);
+                    setUserId('');
+                    setRole('staff');
+                  }}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-95 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <Plus size={16} weight="bold" />
+                  Lägg till
+                </button>
+              </div>
+            ) : (
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <input
+                  value={newAccount.firstName}
+                  onChange={(event) => setNewAccount((current) => ({ ...current, firstName: event.target.value }))}
+                  placeholder="Förnamn"
+                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                />
+                <input
+                  value={newAccount.lastName}
+                  onChange={(event) => setNewAccount((current) => ({ ...current, lastName: event.target.value }))}
+                  placeholder="Efternamn"
+                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                />
+                <input
+                  type="email"
+                  value={newAccount.email}
+                  onChange={(event) => setNewAccount((current) => ({ ...current, email: event.target.value }))}
+                  placeholder="namn@foretag.se"
+                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none md:col-span-2"
+                />
+                <input
+                  type="password"
+                  value={newAccount.password}
+                  onChange={(event) => setNewAccount((current) => ({ ...current, password: event.target.value }))}
+                  placeholder="Tillfälligt lösenord"
+                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                />
+                <select
+                  value={newAccount.role}
+                  onChange={(event) => setNewAccount((current) => ({ ...current, role: event.target.value as 'staff' | 'admin' }))}
+                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                >
+                  <option value="staff">Företagsstaff</option>
+                  <option value="admin">Företagsadmin</option>
+                </select>
+                <button
+                  type="button"
+                  disabled={!canCreateAccount || saving}
+                  onClick={async () => {
+                    await onCreateMemberAccount(newAccount);
+                    setNewAccount({
+                      email: '',
+                      password: '',
+                      firstName: '',
+                      lastName: '',
+                      role: 'admin',
+                    });
+                  }}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-95 disabled:pointer-events-none disabled:opacity-50 md:col-span-2"
+                >
+                  <Plus size={16} weight="bold" />
+                  Skapa konto och koppla
+                </button>
+              </div>
+            )}
           </section>
 
           <section className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)]">
@@ -141,7 +235,7 @@ export function CompanyMembersDialog({
             </div>
 
             {loading ? (
-              <div className="px-4 py-8 text-sm text-[var(--text-muted)]">Laddar kopplingar…</div>
+              <div className="px-4 py-8 text-sm text-[var(--text-muted)]">Laddar kopplingar...</div>
             ) : members.length === 0 ? (
               <div className="px-4 py-8 text-sm text-[var(--text-muted)]">
                 Inga användare är kopplade ännu. Lägg till minst en ansvarig användare för att göra företaget aktivt i flödet.

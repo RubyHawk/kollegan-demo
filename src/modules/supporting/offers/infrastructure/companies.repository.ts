@@ -117,8 +117,9 @@ export const companiesRepository = {
         select: { companyId: true },
       });
 
-      if (memberships.length > 0) {
-        allowedCompanyIds = memberships.map((membership) => membership.companyId);
+      allowedCompanyIds = memberships.map((membership) => membership.companyId);
+      if (allowedCompanyIds.length === 0) {
+        return [];
       }
     }
 
@@ -147,8 +148,9 @@ export const companiesRepository = {
         select: { companyId: true },
       });
 
-      if (memberships.length > 0) {
-        allowedCompanyIds = memberships.map((membership) => membership.companyId);
+      allowedCompanyIds = memberships.map((membership) => membership.companyId);
+      if (allowedCompanyIds.length === 0) {
+        return null;
       }
     }
 

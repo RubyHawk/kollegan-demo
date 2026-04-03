@@ -23,6 +23,7 @@ import {
   CompanyMembersDialog,
   type AssignableUserRecord,
   type CompanyMemberRecord,
+  type NewCompanyAccountForm,
 } from './_components/company-members-dialog';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -380,6 +381,34 @@ export default function CompaniesPage() {
     }
   }, [loadMembers, membersCompany]);
 
+  const handleCreateMemberAccount = useCallback(async (form: NewCompanyAccountForm) => {
+    if (!membersCompany) return;
+    setMemberSaving(true);
+    try {
+      const res = await fetchWithRefresh(`/api/companies/${membersCompany.id}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'create',
+          email: form.email.trim(),
+          password: form.password,
+          firstName: form.firstName.trim() || undefined,
+          lastName: form.lastName.trim() || undefined,
+          role: form.role,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || 'Kunde inte skapa kontot');
+      }
+      await loadMembers(membersCompany);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setMemberSaving(false);
+    }
+  }, [loadMembers, membersCompany]);
+
   const handleRemoveMember = useCallback(async (userId: string) => {
     if (!membersCompany) return;
     setMemberSaving(true);
@@ -521,6 +550,7 @@ export default function CompaniesPage() {
           saving={memberSaving}
           onOpenChange={(open) => { if (!open) setMembersCompany(null); }}
           onAddMember={handleAddMember}
+          onCreateMemberAccount={handleCreateMemberAccount}
           onRemoveMember={handleRemoveMember}
         />
       )}
