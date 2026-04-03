@@ -326,6 +326,12 @@ export default function PublicOfferPage() {
     [capturedAt, capturedSignature, offer, signerName],
   );
 
+  useEffect(() => {
+    if (sigMode !== 'type') {
+      setSigMode('type');
+    }
+  }, [sigMode]);
+
   // The app shell uses a globally locked viewport, but the public signing page
   // needs normal document scrolling so the full offer can be reviewed.
   useEffect(() => {
@@ -867,22 +873,8 @@ export default function PublicOfferPage() {
                     <EditIcon size={13} />
                     Signatur
                   </label>
-                  {/* Segmented control */}
-                  <div className="flex rounded-md bg-slate-100 p-0.5">
-                    {(['type', 'draw'] as const).map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setSigMode(m)}
-                        className={`rounded-[5px] px-3.5 py-1 text-xs font-semibold transition-all ${
-                          sigMode === m
-                            ? 'bg-white text-slate-900 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                      >
-                        {m === 'type' ? 'Skriv' : 'Rita'}
-                      </button>
-                    ))}
+                  <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                    Skriv
                   </div>
                 </div>
 
