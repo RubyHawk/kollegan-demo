@@ -20,7 +20,7 @@ import { fetchWithRefresh } from '@shared/lib/api-client';
 interface OfferTemplate {
   id:        string;
   name:      string;
-  content:   string;
+  content?:  string;
   createdAt: string;
   updatedAt: string;
 }
@@ -67,9 +67,18 @@ export default function TemplatesPage() {
     setPreviewing(t.id);
     setPreviewHtml(null);
     try {
+      const templateContent = t.content ?? await (async () => {
+        const templateRes = await fetchWithRefresh(`/api/templates/${t.id}`);
+        const templateJson = await templateRes.json().catch(() => ({})) as { data?: OfferTemplate; detail?: string };
+        if (!templateRes.ok || !templateJson.data?.content) {
+          throw new Error(templateJson.detail ?? `Kunde inte ladda mallens innehåll (${templateRes.status})`);
+        }
+        return templateJson.data.content;
+      })();
+
       const res = await fetchWithRefresh('/api/templates/preview', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: t.content }),
+        body: JSON.stringify({ content: templateContent }),
       });
       const j = await res.json() as { html?: string; detail?: string };
       if (!res.ok) throw new Error(j.detail ?? `Fel ${res.status}`);
