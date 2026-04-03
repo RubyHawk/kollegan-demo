@@ -18,6 +18,10 @@ model Organization {
   senderName  String? // e.g. "Acme AB" — display name in the From header
   emailHeaderConfig String? // JSON config for default visual email header
 
+  // Notification routing — JSON array of NotificationRecipient objects
+  // [{ "id": "uuid", "email": "...", "tags": ["offer_signed", "offer_declined"] }]
+  notificationRecipients String? @default("[]")
+
   // Back-relations — defined in their respective schema files
   customers   Customer[]
   bookings    HotelBooking[]

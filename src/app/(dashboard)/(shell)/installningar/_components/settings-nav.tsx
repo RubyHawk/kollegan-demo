@@ -72,6 +72,11 @@ const NAV_SECTIONS: NavSection[] = [
         icon: <Icon path={<><rect x="2" y="2" width="9" height="9" rx="1.5"/><rect x="13" y="2" width="9" height="9" rx="1.5"/><rect x="2" y="13" width="9" height="9" rx="1.5"/><rect x="13" y="13" width="9" height="9" rx="1.5"/></>} />,
       },
       {
+        href: '/installningar/notifieringar',
+        label: 'Notifieringar',
+        icon: <Icon path={<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>} />,
+      },
+      {
         href: '/installningar/fakturering',
         label: 'Fakturering',
         icon: <Icon path={<><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></>} />,

@@ -32,20 +32,21 @@ export interface SendToRecipientPayload {
 }
 
 export interface NotifyCreatorPayload {
-  offerId:        string;
-  offerTitle:     string;
-  offerNumber?:   number;
-  createdBy:      string; // User.id — handler resolves email from DB
-  event:          'signed' | 'declined';
-  recipientName:  string;
-  recipientEmail: string;
-  totalExVat:     number;
-  totalIncVat:    number;
+  offerId:          string;
+  offerTitle:       string;
+  offerNumber?:     number;
+  organizationId:   string; // used to look up notification routing recipients
+  createdBy:        string; // User.id — handler resolves email from DB
+  event:            'signed' | 'declined';
+  recipientName:    string;
+  recipientEmail:   string;
+  totalExVat:       number;
+  totalIncVat:      number;
   priceDisplayMode: Offer['priceDisplayMode'];
-  acceptedAt?:    string;
-  comment?:       string;
-  senderEmail?:   string;
-  senderName?:    string;
+  acceptedAt?:      string;
+  comment?:         string;
+  senderEmail?:     string;
+  senderName?:      string;
 }
 
 export interface ReminderPayload {
@@ -138,6 +139,7 @@ export async function enqueueCreatorNotification(
     offerId:          offer.id,
     offerTitle:       offer.title,
     offerNumber:      offer.offerNumber,
+    organizationId:   offer.organizationId,
     createdBy:        offer.createdBy,
     event,
     recipientName:    offer.recipientName,

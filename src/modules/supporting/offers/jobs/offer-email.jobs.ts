@@ -361,21 +361,45 @@ export function registerOfferEmailJobs(): void {
     async (job) => {
       const p = job.payload;
 
-      // Resolve creator email from database
+      const subject = p.event === 'signed'
+        ? `Offert signerad: ${p.offerTitle}`
+        : `Offert avvisad: ${p.offerTitle}`;
+
+      const html = notifyCreatorHtml(p);
+      const from = fromAddress(p.senderEmail, p.senderName);
+
+      // 1. Send to the offer creator
       const user = await prisma.user.findUnique({
         where:  { id: p.createdBy },
         select: { email: true },
       });
-      if (!user?.email) {
-        logger.warn(TAG, `Creator email not found for User ${p.createdBy} — skipping`);
-        return;
+      if (user?.email) {
+        await sendEmail({ from, to: user.email, subject, html });
+        logger.info(TAG, `Sent creator notification (${p.event}) to ${user.email}`, { offerId: p.offerId });
+      } else {
+        logger.warn(TAG, `Creator email not found for User ${p.createdBy}`, { offerId: p.offerId });
       }
 
-      const subject = p.event === 'signed'
-        ? `Offert signerad: ${p.offerTitle}`
-        : `Offert avvisad: ${p.offerTitle}`;
-      await sendEmail({ from: fromAddress(p.senderEmail, p.senderName), to: user.email, subject, html: notifyCreatorHtml(p) });
-      logger.info(TAG, `Sent creator notification (${p.event}) to ${user.email}`, { offerId: p.offerId });
+      // 2. Fan out to additional notification routing recipients
+      const tag = p.event === 'signed' ? 'offer_signed' : 'offer_declined';
+      try {
+        const org = await prisma.organization.findUnique({
+          where:  { id: p.organizationId },
+          select: { notificationRecipients: true },
+        });
+        if (org?.notificationRecipients) {
+          const recipients: Array<{ id: string; email: string; tags: string[] }> =
+            JSON.parse(org.notificationRecipients);
+          for (const r of recipients) {
+            if (!r.tags.includes(tag)) continue;
+            if (r.email === user?.email) continue; // already sent above
+            await sendEmail({ from, to: r.email, subject, html });
+            logger.info(TAG, `Sent notification routing email (${p.event}) to ${r.email}`, { offerId: p.offerId });
+          }
+        }
+      } catch (err) {
+        logger.warn(TAG, 'Failed to send to notification routing recipients', { err, offerId: p.offerId });
+      }
     },
   );
 

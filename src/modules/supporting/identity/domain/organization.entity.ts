@@ -8,6 +8,15 @@
 
 export type OrgPlan = 'dev' | 'demo' | 'starter' | 'growth' | 'enterprise';
 
+/** Notification event tags. Extend as new features are added. */
+export type NotificationTag = 'offer_signed' | 'offer_declined';
+
+export interface NotificationRecipient {
+  id: string;           // client-generated uuid — used as React key + delete target
+  email: string;
+  tags: NotificationTag[];
+}
+
 export interface Organization {
   id: string;
   name: string;
@@ -22,6 +31,8 @@ export interface Organization {
   senderName?: string;
   /** JSON config for default visual email header */
   emailHeaderConfig?: string;
+  /** Serialised NotificationRecipient[] — who gets which notification emails */
+  notificationRecipients?: string;
 }
 
 export type MemberRole = 'owner' | 'admin' | 'member' | 'viewer';
