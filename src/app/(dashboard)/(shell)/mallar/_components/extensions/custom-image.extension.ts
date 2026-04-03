@@ -57,6 +57,24 @@ export const CustomImage = Image.extend({
         renderHTML: (attrs) => attrs.height != null ? { 'data-height': String(attrs.height) } : {},
       },
 
+      naturalWidth: {
+        default: null,
+        parseHTML: (el) => {
+          const v = (el as HTMLElement).getAttribute('data-natural-width');
+          return v ? Number(v) : null;
+        },
+        renderHTML: (attrs) => attrs.naturalWidth != null ? { 'data-natural-width': String(attrs.naturalWidth) } : {},
+      },
+
+      naturalHeight: {
+        default: null,
+        parseHTML: (el) => {
+          const v = (el as HTMLElement).getAttribute('data-natural-height');
+          return v ? Number(v) : null;
+        },
+        renderHTML: (attrs) => attrs.naturalHeight != null ? { 'data-natural-height': String(attrs.naturalHeight) } : {},
+      },
+
       // ── Text-wrap mode ────────────────────────────────────────────────────
       float: {
         default: null,
