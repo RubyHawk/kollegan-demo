@@ -114,6 +114,30 @@ export function buildReminderPayload(
   };
 }
 
+export function buildCreatorNotificationPayload(
+  offer: Offer,
+  event: 'signed' | 'declined',
+  extra?: { comment?: string; senderEmail?: string; senderName?: string },
+): NotifyCreatorPayload {
+  return {
+    offerId: offer.id,
+    offerTitle: offer.title,
+    offerNumber: offer.offerNumber,
+    organizationId: offer.organizationId,
+    createdBy: offer.createdBy,
+    event,
+    recipientName: offer.recipientName,
+    recipientEmail: offer.recipientEmail,
+    totalExVat: offer.totalExVat,
+    totalIncVat: offer.totalIncVat,
+    priceDisplayMode: offer.priceDisplayMode,
+    acceptedAt: offer.acceptedAt,
+    comment: extra?.comment,
+    senderEmail: extra?.senderEmail,
+    senderName: extra?.senderName,
+  };
+}
+
 // ─── Enqueue helpers ───────────────────────────────────────────────────────────
 
 /**
@@ -151,22 +175,6 @@ export async function enqueueCreatorNotification(
   event: 'signed' | 'declined',
   extra?: { comment?: string; senderEmail?: string; senderName?: string },
 ): Promise<void> {
-  const payload: NotifyCreatorPayload = {
-    offerId:          offer.id,
-    offerTitle:       offer.title,
-    offerNumber:      offer.offerNumber,
-    organizationId:   offer.organizationId,
-    createdBy:        offer.createdBy,
-    event,
-    recipientName:    offer.recipientName,
-    recipientEmail:   offer.recipientEmail,
-    totalExVat:       offer.totalExVat,
-    totalIncVat:      offer.totalIncVat,
-    priceDisplayMode: offer.priceDisplayMode,
-    acceptedAt:       offer.acceptedAt,
-    comment:          extra?.comment,
-    senderEmail:      extra?.senderEmail,
-    senderName:       extra?.senderName,
-  };
+  const payload = buildCreatorNotificationPayload(offer, event, extra);
   await jobQueue.add('offer.email.notify_creator', payload, { retries: 3 });
 }
