@@ -20,59 +20,66 @@ export interface OfferLineItem {
   id: string;
   description: string;
   quantity: number;
-  unitPrice: number;   // SEK
-  vatRate: number;     // 0.25 = 25%
-  discount?: number;   // percentage 0–100
+  unitPrice: number;
+  vatRate: number;
+  discount?: number;
 }
 
 export interface Offer {
   id: string;
   title: string;
   status: OfferStatus;
-  offerNumber?: number;          // sequential per org, assigned on first send
+  offerNumber?: number;
   recipientName: string;
   recipientEmail: string;
   recipientCompany?: string;
   lineItems: OfferLineItem[];
   notes?: string;
-  validUntil: string;       // ISO date (recomputed as sentAt + validityDays when sent)
-  validityDays: number;     // preset window: 7 | 14 | 30 | 60 | 90
-  createdBy: string;        // StaffUser.id
+  validUntil: string;
+  validityDays: number;
+  createdBy: string;
   createdAt: string;
   sentAt?: string;
   viewedAt?: string;
   acceptedAt?: string;
   declinedAt?: string;
-  reminderSentAt?: string;       // ISO — last reminder timestamp
-  reminderCount: number;         // how many reminders have been sent
-  leadId?: string;          // Link to Leads module
-  customerId?: string;      // Link to CRM module
-  companyId?: string;       // Link to Company entity
+  reminderSentAt?: string;
+  reminderCount: number;
+  leadId?: string;
+  customerId?: string;
+  companyId?: string;
   totalExVat: number;
   totalIncVat: number;
-  // Template & document fields
   templateId?: string;
-  generatedDocument?: string;    // immutable HTML snapshot (set at send time)
-  emailSubject?: string;         // custom email subject (snapshot, set at send time)
-  emailBody?: string;            // custom email body HTML (snapshot, set at send time)
-  emailHeaderConfig?: string;    // JSON config for visual email header
-  signatureImage?: string;       // data URL of the recipient's e-signature
-  signerName?: string;           // name typed by the signer at signing time
-  signatureMethod: string;       // "canvas" (SES) | "bankid" (AdES) — future
-  publicToken: string;           // UUID used as the signing URL token
-  publicTokenExpiresAt?: string; // ISO — 30 days after sentAt
+  generatedDocument?: string;
+  emailSubject?: string;
+  emailBody?: string;
+  emailHeaderConfig?: string;
+  signatureImage?: string;
+  signerName?: string;
+  signatureMethod: string;
+  publicToken: string;
+  publicTokenExpiresAt?: string;
 }
 
-// ─── Product / Service Library ────────────────────────────────────────────────
+export interface ProductCategory {
+  id: string;
+  organizationId: string;
+  name: string;
+  parentId: string | null;
+  children?: ProductCategory[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface OfferProduct {
   id: string;
   organizationId: string;
   name: string;
   description?: string;
-  unitPrice: number;    // SEK, ex VAT
-  vatRate: number;      // 0.25 = 25%
-  unit?: string;        // "st", "tim", "mån", etc.
+  unitPrice: number;
+  vatRate: number;
+  unit?: string;
   sku?: string;
   category?: string;
   categoryId?: string;
@@ -83,18 +90,6 @@ export interface OfferProduct {
   createdBy: string;
   createdAt: string;
 }
-
-export interface ProductCategory {
-  id: string;
-  organizationId: string;
-  name: string;
-  parentId?: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// ─── Company (brand / selling entity) ────────────────────────────────────────
 
 export interface Company {
   id: string;

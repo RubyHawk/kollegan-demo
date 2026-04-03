@@ -4,12 +4,10 @@
  * Other modules ONLY import from this file.
  */
 
-// Domain types
 export type { Offer, OfferLineItem, OfferStatus, OfferProduct, ProductCategory, Company } from './domain/offer.entity';
-export type { OfferTemplate, PlaceholderKey }      from './domain/template.entity';
-export { OFFER_PLACEHOLDERS }                       from './domain/template.entity';
+export type { OfferTemplate, PlaceholderKey } from './domain/template.entity';
+export { OFFER_PLACEHOLDERS } from './domain/template.entity';
 
-// Application use cases — offers
 export {
   createOffer,
   getOffer,
@@ -31,21 +29,22 @@ export {
 export type { BulkSendResult } from './application/offers.service';
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter } from './application/offers.service';
 
-// Application use cases — products
 export {
   listProducts,
-  listProductCategories,
   createProduct,
   updateProduct,
   deleteProduct,
+} from './application/products.service';
+export type { CreateProductInput, UpdateProductInput } from './infrastructure/products.repository';
+
+export {
+  listProductCategoryTree,
   createProductCategory,
   updateProductCategory,
   deleteProductCategory,
-} from './application/products.service';
-export type { CreateProductInput, UpdateProductInput } from './infrastructure/products.repository';
-export type { CreateProductCategoryInput, UpdateProductCategoryInput } from './application/products.service';
+} from './application/product-categories.service';
+export type { CreateCategoryInput, UpdateCategoryInput } from './infrastructure/product-categories.repository';
 
-// Application use cases — templates
 export {
   createTemplate,
   getTemplate,
@@ -54,10 +53,8 @@ export {
   deleteTemplate,
 } from './application/templates.service';
 
-// Document generator (server-side only)
 export { generateDocument } from './application/document-generator';
 
-// Domain events
 export {
   OFFER_CREATED,
   OFFER_SENT,
@@ -74,10 +71,8 @@ export type {
   OfferDeclinedEvent,
 } from './events/offer.events';
 
-// Job registration — call once at app startup
 export { registerOfferEmailJobs } from './jobs/offer-email.jobs';
 
-// ── API Handlers — offers ─────────────────────────────────────────────────────
 export {
   handleListOffers,
   handleCountOffers,
@@ -89,7 +84,6 @@ export {
   handleBulkSendOffers,
 } from './api/handlers/offer.handler';
 
-// ── API Handlers — templates ──────────────────────────────────────────────────
 export {
   handleListTemplates,
   handleCreateTemplate,
@@ -98,19 +92,20 @@ export {
   handleDeleteTemplate,
 } from './api/handlers/template.handler';
 
-// ── API Handlers — products ────────────────────────────────────────────────────
 export {
   handleListProducts,
-  handleListProductCategories,
-  handleCreateProductCategory,
-  handleUpdateProductCategory,
-  handleDeleteProductCategory,
   handleCreateProduct,
   handleUpdateProduct,
   handleDeleteProduct,
 } from './api/handlers/product.handler';
 
-// ── API Handlers — companies ───────────────────────────────────────────────────
+export {
+  handleListProductCategories,
+  handleCreateProductCategory,
+  handleUpdateProductCategory,
+  handleDeleteProductCategory,
+} from './api/handlers/product-categories.handler';
+
 export {
   handleListCompanies,
   handleGetCompany,
@@ -119,7 +114,6 @@ export {
   handleDeleteCompany,
 } from './api/handlers/company.handler';
 
-// ── API Handlers — public signing flow ────────────────────────────────────────
 export {
   handleGetPublicOffer,
   handleSignPublicOffer,

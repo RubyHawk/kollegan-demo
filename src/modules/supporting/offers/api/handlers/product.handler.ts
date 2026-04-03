@@ -10,13 +10,9 @@ import { Errors } from '@platform/api/errors';
 import { verifyToken } from '@platform/auth/jwt';
 import {
   listProducts,
-  listProductCategories,
   createProduct,
   updateProduct,
   deleteProduct,
-  createProductCategory,
-  updateProductCategory,
-  deleteProductCategory,
 } from '../../application/products.service';
 
 function extractToken(req: NextRequest): string {
@@ -29,36 +25,8 @@ function extractId(req: NextRequest): string {
 
 async function requireStaff(req: NextRequest) {
   const payload = await verifyToken(extractToken(req));
-  if (!payload.orgId) {
-    throw Errors.forbidden('No organization context');
-  }
+  if (!payload.orgId) throw Errors.forbidden('No organization context');
   return payload;
-}
-
-function translateCategoryError(error: unknown): never {
-  const message = error instanceof Error ? error.message : String(error);
-
-  if (message === 'CATEGORY_SCHEMA_UNAVAILABLE') {
-    throw Errors.unavailable('Produktkategorier är inte tillgängliga förrän databasen har uppdaterats.');
-  }
-
-  if (message === 'PARENT_NOT_FOUND') {
-    throw Errors.notFound('Parent category');
-  }
-
-  if (message === 'PARENT_NOT_MAIN') {
-    throw Errors.conflict('En underkategori kan bara kopplas till en huvudkategori.');
-  }
-
-  if (message === 'CATEGORY_EXISTS') {
-    throw Errors.conflict('Det finns redan en kategori med samma namn på den här nivån.');
-  }
-
-  if (message === 'CATEGORY_HAS_CHILDREN') {
-    throw Errors.conflict('Ta bort eller flytta underkategorierna innan du raderar huvudkategorin.');
-  }
-
-  throw error instanceof Error ? error : Errors.internal();
 }
 
 const ListQuerySchema = z.object({
@@ -75,91 +43,6 @@ export const handleListProducts = createHandler(
     const isActive = query.isActive === 'true' ? true : query.isActive === 'false' ? false : undefined;
     const products = await listProducts(payload.orgId!, query.search, query.category, isActive);
     return ok({ products });
-  },
-);
-
-const CategoryBodySchema = z.object({
-  name: z.string().trim().min(1).max(100),
-  parentId: z.string().uuid().optional().nullable(),
-});
-
-const UpdateCategoryBodySchema = z.object({
-  name: z.string().trim().min(1).max(100).optional(),
-  parentId: z.string().uuid().optional().nullable(),
-});
-
-export const handleListProductCategories = createHandler(
-  { auth: 'jwt', tag: 'OfferProducts:ListCategories', rateLimit: { max: 120, windowMs: 60_000 } },
-  async (ctx) => {
-    const { req } = ctx as { req: NextRequest };
-    const payload = await requireStaff(req);
-    const categories = await listProductCategories(payload.orgId!);
-    return ok({ categories });
-  },
-);
-
-export const handleCreateProductCategory = createHandler(
-  { auth: 'jwt', tag: 'OfferProducts:CreateCategory', body: CategoryBodySchema, rateLimit: { max: 60, windowMs: 60_000 } },
-  async (ctx) => {
-    const { body, req } = ctx as { body: z.infer<typeof CategoryBodySchema>; req: NextRequest };
-    const payload = await requireStaff(req);
-
-    try {
-      const category = await createProductCategory(
-        {
-          organizationId: payload.orgId!,
-          name: body.name,
-          parentId: body.parentId ?? undefined,
-        },
-        payload.sub,
-      );
-      return created(category, `/api/offers/products/categories/${category.id}`);
-    } catch (error) {
-      translateCategoryError(error);
-    }
-  },
-);
-
-export const handleUpdateProductCategory = createHandler(
-  { auth: 'jwt', tag: 'OfferProducts:UpdateCategory', body: UpdateCategoryBodySchema, rateLimit: { max: 60, windowMs: 60_000 } },
-  async (ctx) => {
-    const { body, req } = ctx as { body: z.infer<typeof UpdateCategoryBodySchema>; req: NextRequest };
-    const payload = await requireStaff(req);
-    const id = extractId(req);
-
-    try {
-      const updated = await updateProductCategory(id, payload.orgId!, {
-        ...(body.name !== undefined ? { name: body.name } : {}),
-        ...(body.parentId !== undefined ? { parentId: body.parentId } : {}),
-      });
-
-      if (!updated) {
-        throw Errors.notFound('Product category');
-      }
-
-      return ok(updated);
-    } catch (error) {
-      translateCategoryError(error);
-    }
-  },
-);
-
-export const handleDeleteProductCategory = createHandler(
-  { auth: 'jwt', tag: 'OfferProducts:DeleteCategory', rateLimit: { max: 30, windowMs: 60_000 } },
-  async (ctx) => {
-    const { req } = ctx as { req: NextRequest };
-    const payload = await requireStaff(req);
-    const id = extractId(req);
-
-    try {
-      const deleted = await deleteProductCategory(id, payload.orgId!);
-      if (!deleted) {
-        throw Errors.notFound('Product category');
-      }
-      return ok(null);
-    } catch (error) {
-      translateCategoryError(error);
-    }
   },
 );
 
@@ -192,7 +75,7 @@ export const handleCreateProduct = createHandler(
       unit: body.unit,
       sku: body.sku,
       category: body.category,
-      categoryId: body.categoryId ?? undefined,
+      categoryId: body.categoryId ?? null,
       imageUrl: body.imageUrl,
       isActive: body.isActive,
       minQuantity: body.minQuantity,
@@ -225,14 +108,12 @@ export const handleUpdateProduct = createHandler(
     const payload = await requireStaff(req);
     const updated = await updateProduct(id, payload.orgId!, {
       ...body,
-      categoryId: body.categoryId ?? undefined,
+      categoryId: body.categoryId !== undefined ? body.categoryId : undefined,
       imageUrl: body.imageUrl ?? undefined,
       minQuantity: body.minQuantity ?? undefined,
       maxQuantity: body.maxQuantity ?? undefined,
     });
-    if (!updated) {
-      throw Errors.notFound('Product');
-    }
+    if (!updated) throw Errors.notFound('Product not found');
     return ok(updated);
   },
 );
@@ -244,9 +125,7 @@ export const handleDeleteProduct = createHandler(
     const id = extractId(req);
     const payload = await requireStaff(req);
     const deleted = await deleteProduct(id, payload.orgId!);
-    if (!deleted) {
-      throw Errors.notFound('Product');
-    }
+    if (!deleted) throw Errors.notFound('Product not found');
     return ok(null);
   },
 );

@@ -112,6 +112,32 @@ model OfferLineItem {
   @@map("off_line_items")
 }
 
+// ─── Product Category ─────────────────────────────────────────────────────────
+// Two-level category tree: main categories (parentId = null) → subcategories.
+// Products link to a leaf category (subcategory or standalone main category).
+
+model ProductCategory {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  parentId       String?   // null = main/top-level category; set = subcategory
+
+  parent         ProductCategory?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children       ProductCategory[] @relation("CategoryTree")
+  products       OfferProduct[]
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, parentId, name])
+  @@index([organizationId, parentId])
+  @@index([deletedAt])
+  @@map("off_product_categories")
+}
+
 // ─── Product / Service Library ────────────────────────────────────────────────
 // Reusable line-item presets for fast offer creation.
 
@@ -124,8 +150,8 @@ model OfferProduct {
   vatRate        Float     @default(0.25)  // 0.25 = 25%
   unit           String?                   // "st", "tim", "mån", etc.
   sku            String?                   // internal product code
-  category       String?                   // free-text grouping label
-  categoryId     String?
+  category       String?                   // DEPRECATED: free-text label, kept for data migration
+  categoryId     String?                   // FK → off_product_categories
   imageUrl       String?                   // CDN URL for product thumbnail
   isActive       Boolean   @default(true)  // soft toggle — hides from pickers without deletion
   minQuantity    Float?                    // optional floor for qty in offer picker
@@ -135,35 +161,15 @@ model OfferProduct {
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  categoryNode ProductCategory? @relation("OfferProductCategory", fields: [categoryId], references: [id], onDelete: SetNull)
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  productCategory  ProductCategory? @relation(fields: [categoryId], references: [id])
 
-  @@index([organizationId, category])
   @@index([organizationId, categoryId])
+  @@index([organizationId, category])
   @@index([organizationId, isActive, name])
   @@index([organizationId, createdAt])
   @@index([deletedAt])
   @@map("off_products")
-}
-
-model ProductCategory {
-  id             String    @id @default(uuid())
-  organizationId String
-  name           String
-  parentId       String?
-  createdBy      String
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  deletedAt      DateTime?
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-  parent       ProductCategory?  @relation("ProductCategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children     ProductCategory[] @relation("ProductCategoryTree")
-  products     OfferProduct[]    @relation("OfferProductCategory")
-
-  @@index([organizationId, parentId, name])
-  @@index([deletedAt])
-  @@map("off_product_categories")
 }
 
 // ─── Company ──────────────────────────────────────────────────────────────────
