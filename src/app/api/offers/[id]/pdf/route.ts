@@ -27,6 +27,91 @@ function slugify(s: string): string {
     .slice(0, 60);
 }
 
+function buildSignatureHydrationScript(offer: {
+  signatureImage?: string | null;
+  signerName?: string | null;
+  acceptedAt?: string | Date | null;
+}): string {
+  const acceptedDate = offer.acceptedAt
+    ? new Date(offer.acceptedAt.toString()).toLocaleDateString('sv-SE', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      })
+    : '';
+
+  return `
+<script>
+  (function () {
+    var sig = {
+      image: ${JSON.stringify(offer.signatureImage ?? '')},
+      name: ${JSON.stringify(offer.signerName ?? '')},
+      date: ${JSON.stringify(acceptedDate)}
+    };
+    if (!sig.image && !sig.name && !sig.date) return;
+    document.querySelectorAll('[data-sig-field]').forEach(function (el) {
+      var field = el.getAttribute('data-sig-field');
+      if (!field) return;
+
+      while (el.firstChild) {
+        el.removeChild(el.firstChild);
+      }
+
+      el.style.border = 'none';
+      el.style.borderRadius = '0';
+      el.style.background = 'transparent';
+      el.style.padding = '4px 0';
+      el.style.minHeight = '0';
+      el.style.display = 'block';
+
+      if (field === 'signature') {
+        if (!sig.image) {
+          el.style.display = 'none';
+          return;
+        }
+        var img = document.createElement('img');
+        img.src = sig.image;
+        img.alt = 'Signatur';
+        img.style.maxWidth = '260px';
+        img.style.maxHeight = '80px';
+        img.style.display = 'block';
+        el.appendChild(img);
+        return;
+      }
+
+      if (field === 'name') {
+        if (!sig.name) {
+          el.style.display = 'none';
+          return;
+        }
+        var nameSpan = document.createElement('span');
+        nameSpan.textContent = sig.name;
+        nameSpan.style.fontSize = '15px';
+        nameSpan.style.color = '#1e293b';
+        nameSpan.style.fontWeight = '500';
+        el.appendChild(nameSpan);
+        return;
+      }
+
+      if (field === 'date') {
+        if (!sig.date) {
+          el.style.display = 'none';
+          return;
+        }
+        var dateSpan = document.createElement('span');
+        dateSpan.textContent = sig.date;
+        dateSpan.style.fontSize = '14px';
+        dateSpan.style.color = '#475569';
+        el.appendChild(dateSpan);
+        return;
+      }
+
+      el.style.display = 'none';
+    });
+  })();
+</script>`;
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -62,6 +147,7 @@ export async function GET(
     setTimeout(function () { window.print(); }, 300);
   });
 </script>`;
+  const signatureScript = buildSignatureHydrationScript(offer);
 
   const printStyles = `
 <style>
@@ -73,7 +159,7 @@ export async function GET(
 
   const html = offer.generatedDocument
     .replace('</head>', `${printStyles}\n</head>`)
-    .replace('</body>', `${printScript}\n</body>`);
+    .replace('</body>', `${signatureScript}\n${printScript}\n</body>`);
 
   const filename = `offert-${slugify(offer.title)}.pdf`;
 

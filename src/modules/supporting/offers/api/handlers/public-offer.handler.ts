@@ -54,6 +54,7 @@ const PUBLIC_OFFER_FIELDS = [
   'id', 'title', 'status', 'recipientName', 'recipientEmail', 'recipientCompany',
   'priceDisplayMode', 'totalExVat', 'totalIncVat', 'validUntil', 'notes', 'generatedDocument',
   'publicToken', 'publicTokenExpiresAt', 'lineItems', 'sentAt', 'acceptedAt', 'declinedAt', 'signerName',
+  'signatureImage',
 ] as const;
 
 type PublicOffer = Record<(typeof PUBLIC_OFFER_FIELDS)[number], unknown>;
