@@ -1,605 +1,201 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Bell, Plus, Trash, WarningCircle, CheckCircle } from '@phosphor-icons/react';
 import { cn } from '@shared/lib/utils';
-import { SectionCard, Input, Icon } from '../_components/shared';
 import type { NotificationRecipient } from '@modules/supporting/identity/domain/organization.entity';
 import {
   ACTIVE_NOTIFICATION_DEFINITIONS,
   ACTIVE_NOTIFICATION_TAGS,
-  NOTIFICATION_SCOPE_DESCRIPTIONS,
-  NOTIFICATION_SCOPE_LABELS,
-  NOTIFICATION_TAG_SCOPES,
-  NOTIFICATION_TAG_REGISTRY,
-  PLANNED_NOTIFICATION_DEFINITIONS,
   type ActiveNotificationTag,
-  type NotificationTagDefinition,
-  type NotificationTagScope,
 } from '@modules/supporting/identity/domain/notification-routing';
 
-type RouteState = {
-  recipients?: NotificationRecipient[];
-  canManage?: boolean;
+const TONE_PILL: Record<string, string> = {
+  emerald: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40',
+  red:     'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/40',
 };
 
-const TONE_CLASSES: Record<NotificationTagDefinition['tone'], string> = {
-  emerald: 'border-emerald-500/25 bg-emerald-500/8 text-emerald-300',
-  red: 'border-rose-500/25 bg-rose-500/8 text-rose-300',
-  blue: 'border-sky-500/25 bg-sky-500/8 text-sky-300',
-  amber: 'border-amber-500/25 bg-amber-500/8 text-amber-300',
-  violet: 'border-violet-500/25 bg-violet-500/8 text-violet-300',
+const TONE_ACTIVE: Record<string, string> = {
+  emerald: 'bg-emerald-500 text-white border-emerald-500',
+  red:     'bg-red-500 text-white border-red-500',
 };
-
-const SCOPE_ACCENT_CLASSES: Record<NotificationTagScope, string> = {
-  offerter: 'from-[var(--accent)]/18 via-[var(--accent)]/7 to-transparent',
-  crm: 'from-sky-500/16 via-sky-500/7 to-transparent',
-  kalender: 'from-violet-500/16 via-violet-500/7 to-transparent',
-  ekonomi: 'from-amber-500/16 via-amber-500/7 to-transparent',
-};
-
-function groupDefinitionsByScope(definitions: NotificationTagDefinition[]) {
-  return NOTIFICATION_TAG_SCOPES
-    .map((scope) => ({
-      scope,
-      items: definitions.filter((definition) => definition.scope === scope),
-    }))
-    .filter((group) => group.items.length > 0);
-}
-
-function MetricChip({
-  label,
-  value,
-  tone = 'default',
-}: {
-  label: string;
-  value: string;
-  tone?: 'default' | 'accent';
-}) {
-  return (
-    <div
-      className={cn(
-        'rounded-2xl border px-4 py-3',
-        tone === 'accent'
-          ? 'border-[var(--accent)]/30 bg-[var(--accent)]/10'
-          : 'border-[var(--border)] bg-[var(--surface-1)]/65',
-      )}
-    >
-      <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)]">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{value}</div>
-    </div>
-  );
-}
-
-function EventBadge({ definition }: { definition: NotificationTagDefinition }) {
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-medium',
-        TONE_CLASSES[definition.tone],
-      )}
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {definition.label}
-    </span>
-  );
-}
-
-function EventCard({
-  definition,
-  selected = false,
-  disabled = false,
-  onToggle,
-}: {
-  definition: NotificationTagDefinition;
-  selected?: boolean;
-  disabled?: boolean;
-  onToggle?: () => void;
-}) {
-  const interactive = !!onToggle && !disabled;
-
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      disabled={!interactive}
-      className={cn(
-        'group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200',
-        'focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/35',
-        interactive
-          ? 'hover:-translate-y-0.5 hover:border-[var(--accent)]/30 hover:bg-[var(--surface-1)]'
-          : 'cursor-default',
-        selected
-          ? 'border-[var(--accent)]/40 bg-[var(--accent)]/10 shadow-[0_12px_34px_-24px_var(--accent)]'
-          : 'border-[var(--border)] bg-[var(--surface-0)]',
-        disabled && 'opacity-75',
-      )}
-    >
-      <div className={cn('absolute inset-0 bg-gradient-to-br opacity-90', SCOPE_ACCENT_CLASSES[definition.scope])} />
-      <div className="relative flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={cn('inline-flex rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]', TONE_CLASSES[definition.tone])}>
-              {NOTIFICATION_SCOPE_LABELS[definition.scope]}
-            </span>
-            {definition.availability === 'planned' && (
-              <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                Kommer senare
-              </span>
-            )}
-          </div>
-          <div className="mt-3 text-sm font-semibold text-[var(--text-primary)]">{definition.label}</div>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{definition.description}</p>
-        </div>
-
-        {definition.availability === 'active' && (
-          <span
-            className={cn(
-              'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[var(--text-primary)] transition-all',
-              selected
-                ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
-                : 'border-[var(--border)] bg-[var(--surface-0)]',
-            )}
-          >
-            {selected && <Icon path={<polyline points="20 6 9 17 4 12" />} size={12} />}
-          </span>
-        )}
-      </div>
-    </button>
-  );
-}
-
-function RecipientRow({
-  recipient,
-  canManage,
-  onRemove,
-  onRemoveTag,
-}: {
-  recipient: NotificationRecipient;
-  canManage: boolean;
-  onRemove: () => void;
-  onRemoveTag: (tag: ActiveNotificationTag) => void;
-}) {
-  return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-sm font-semibold text-[var(--text-primary)]">{recipient.email}</div>
-          <div className="mt-1 text-xs text-[var(--text-muted)]">
-            Får de händelser som är markerade nedan.
-          </div>
-        </div>
-
-        {canManage && (
-          <button
-            type="button"
-            onClick={onRemove}
-            className="inline-flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/8 px-3 py-2 text-xs font-medium text-rose-300 transition-colors hover:bg-rose-500/12"
-          >
-            <Icon path={<><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></>} size={14} />
-            Ta bort
-          </button>
-        )}
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {recipient.tags.map((tag) => {
-          const definition = NOTIFICATION_TAG_REGISTRY[tag];
-
-          return (
-            <span
-              key={tag}
-              className={cn(
-                'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-medium',
-                TONE_CLASSES[definition.tone],
-              )}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-current" />
-              {definition.label}
-              {canManage && (
-                <button
-                  type="button"
-                  onClick={() => onRemoveTag(tag)}
-                  className="ml-0.5 rounded-full opacity-70 transition-opacity hover:opacity-100"
-                  aria-label={`Ta bort ${definition.label}`}
-                >
-                  <Icon path={<><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>} size={10} />
-                </button>
-              )}
-            </span>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 export default function NotifieringarPage() {
   const [recipients, setRecipients] = useState<NotificationRecipient[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [canManage, setCanManage] = useState(false);
-  const [pageError, setPageError] = useState('');
-  const [addError, setAddError] = useState('');
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState('');
+  const [saving, setSaving]         = useState(false);
+  const [saved, setSaved]           = useState(false);
+
   const [newEmail, setNewEmail] = useState('');
-  const [newTags, setNewTags] = useState<ActiveNotificationTag[]>([]);
-
-  const activeGroups = useMemo(
-    () => groupDefinitionsByScope(ACTIVE_NOTIFICATION_DEFINITIONS),
-    [],
-  );
-  const plannedGroups = useMemo(
-    () => groupDefinitionsByScope(PLANNED_NOTIFICATION_DEFINITIONS),
-    [],
-  );
-
-  const totalAssignments = useMemo(
-    () => recipients.reduce((sum, recipient) => sum + recipient.tags.length, 0),
-    [recipients],
-  );
+  const [newTags, setNewTags]   = useState<ActiveNotificationTag[]>([]);
+  const [addError, setAddError] = useState('');
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      setPageError('');
-
-      try {
-        const response = await fetch('/api/org/notification-recipients', { cache: 'no-store' });
-        if (!response.ok) {
-          throw new Error('load_failed');
-        }
-
-        const data = await response.json() as RouteState;
-        if (cancelled) return;
-
-        setRecipients(data.recipients ?? []);
-        setCanManage(Boolean(data.canManage));
-      } catch {
-        if (cancelled) return;
-        setPageError('Det gick inte att ladda notifieringsrouting just nu.');
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
+    fetch('/api/org/notification-recipients')
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
+      .then((d) => setRecipients(d.recipients ?? []))
+      .catch(() => setError('Kunde inte hämta notifieringsinställningar. Försök ladda om sidan.'))
+      .finally(() => setLoading(false));
   }, []);
 
   async function persist(next: NotificationRecipient[]) {
     setSaving(true);
     setSaved(false);
-    setPageError('');
-
     try {
-      const response = await fetch('/api/org/notification-recipients', {
+      const res = await fetch('/api/org/notification-recipients', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ recipients: next }),
       });
-
-      if (!response.ok) {
-        throw new Error('save_failed');
-      }
-
-      const data = await response.json() as RouteState;
-      setRecipients(data.recipients ?? next);
-      setCanManage(Boolean(data.canManage));
+      if (!res.ok) throw new Error();
+      setRecipients(next);
       setSaved(true);
-      setTimeout(() => setSaved(false), 2200);
+      setTimeout(() => setSaved(false), 2500);
     } catch {
-      setPageError('Det gick inte att spara andringarna. Prova igen.');
+      setError('Kunde inte spara. Försök igen.');
     } finally {
       setSaving(false);
     }
   }
 
-  function toggleNewTag(tag: ActiveNotificationTag) {
-    setNewTags((current) => (
-      current.includes(tag)
-        ? current.filter((value) => value !== tag)
-        : [...current, tag]
-    ));
-  }
-
   function addRecipient() {
     setAddError('');
-
     const email = newEmail.trim().toLowerCase();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setAddError('Ange en giltig e-postadress.');
       return;
     }
-
     if (newTags.length === 0) {
-      setAddError('Valj minst en aktiv handelse att koppla adressen till.');
+      setAddError('Välj minst en händelsetyp.');
       return;
     }
-
-    if (recipients.some((recipient) => recipient.email === email)) {
-      setAddError('Den e-postadressen finns redan i listan.');
+    if (recipients.some((r) => r.email === email)) {
+      setAddError('Adressen finns redan i listan.');
       return;
     }
-
-    const next: NotificationRecipient[] = [
-      ...recipients,
-      {
-        id: crypto.randomUUID(),
-        email,
-        tags: newTags,
-      },
-    ];
-
+    void persist([...recipients, { id: crypto.randomUUID(), email, tags: newTags }]);
     setNewEmail('');
     setNewTags([]);
-    void persist(next);
   }
 
-  function removeRecipient(id: string) {
-    void persist(recipients.filter((recipient) => recipient.id !== id));
+  function remove(id: string) {
+    void persist(recipients.filter((r) => r.id !== id));
   }
 
-  function removeTag(recipientId: string, tag: ActiveNotificationTag) {
-    const next = recipients
-      .map((recipient) => {
-        if (recipient.id !== recipientId) return recipient;
-        return {
-          ...recipient,
-          tags: recipient.tags.filter((value) => value !== tag),
-        };
-      })
-      .filter((recipient) => recipient.tags.length > 0);
-
-    void persist(next);
-  }
+  if (loading) return <p className="text-sm text-[var(--text-muted)]">Laddar…</p>;
 
   return (
-    <div className="space-y-5">
-      <section className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">
-        <SectionCard title="Notifieringsrouting" description="Styr vilka extra adresser som ska fa interna systemmejl nar viktiga handelser intraffar.">
-          <div className="relative overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface-1)]/80 p-5">
-            <div className="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top_left,var(--accent)_0%,transparent_60%)] opacity-14" />
-            <div className="relative">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-[var(--accent)]/25 bg-[var(--accent)]/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[var(--accent)]">
-                  Organisation
-                </span>
-                <span className="rounded-full border border-[var(--border)] bg-[var(--surface-0)] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  E-poststyrning
-                </span>
-              </div>
+    <div className="flex flex-col gap-4">
 
-              <div className="mt-4 max-w-2xl">
-                <h2 className="text-xl font-semibold text-[var(--text-primary)]">
-                  Det ar har du tilldelar extra mottagare till organisationens handelser.
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                  Varje adress kan prenumerera pa en eller flera aktiva handelser. Nar en handelse triggas
-                  skickas notisen hit utöver den vanliga ansvariga anvandaren.
-                </p>
-              </div>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <MetricChip label="Aktiva handelser" value={String(ACTIVE_NOTIFICATION_TAGS.length)} tone="accent" />
-                <MetricChip label="Mottagare" value={String(recipients.length)} />
-                <MetricChip label="Tilldelningar" value={String(totalAssignments)} />
-              </div>
-
-              <div className="mt-5 grid gap-3 lg:grid-cols-3">
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)]/90 p-4">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Var fungerar det?</div>
-                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                    Detta galler hela organisationens notifieringar. Det ar inte per anvandare eller per offert.
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)]/90 p-4">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Var tilldelar jag?</div>
-                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                    Langre ner pa sidan lagger du till en adress och markerar vilka handelser den ska fa.
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)]/90 p-4">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Vem far andra?</div>
-                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                    Organisationsadmins kan justera routingen. Ovrig staff kan se vad som ar kopplat.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Atkomst" description="Tydlig rollgrans for vem som bara kan lasa och vem som faktiskt kan uppdatera routingen.">
-          <div className="space-y-3">
-            <div className={cn(
-              'rounded-2xl border p-4',
-              canManage
-                ? 'border-emerald-500/25 bg-emerald-500/8'
-                : 'border-[var(--border)] bg-[var(--surface-1)]/70',
-            )}>
-              <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
-                <span className={cn(
-                  'inline-flex h-8 w-8 items-center justify-center rounded-full border',
-                  canManage
-                    ? 'border-emerald-500/25 bg-emerald-500/12 text-emerald-300'
-                    : 'border-[var(--border)] bg-[var(--surface-0)] text-[var(--text-muted)]',
-                )}>
-                  <Icon path={canManage ? <polyline points="20 6 9 17 4 12" /> : <path d="M12 17v.01" />} size={14} />
-                </span>
-                {canManage ? 'Du kan uppdatera routing' : 'Laslage'}
-              </div>
-              <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                {canManage
-                  ? 'Du har organisationsadmin-behorighet och kan lagga till, ta bort och tilldela mottagare.'
-                  : 'Du kan se vilka adresser och handelser som ar kopplade, men andringar kravs admin-behorighet.'}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)]/70 p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Nuvarande scope</div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {ACTIVE_NOTIFICATION_DEFINITIONS.map((definition) => (
-                  <EventBadge key={definition.tag} definition={definition} />
-                ))}
-              </div>
-            </div>
-          </div>
-        </SectionCard>
-      </section>
-
-      <SectionCard title="Aktiva handelser" description="Detta ar de handelser som kan kopplas direkt idag. Nya kategorier kan laggas till utan att bygga om sjalva routingsidan.">
-        <div className="space-y-4">
-          {activeGroups.map(({ scope, items }) => (
-            <div key={scope} className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)]/55 p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="text-sm font-semibold text-[var(--text-primary)]">{NOTIFICATION_SCOPE_LABELS[scope]}</div>
-                  <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{NOTIFICATION_SCOPE_DESCRIPTIONS[scope]}</p>
-                </div>
-                <span className="rounded-full border border-[var(--border)] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  {items.length} aktiv{items.length === 1 ? '' : 'a'}
-                </span>
-              </div>
-
-              <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                {items.map((definition) => (
-                  <EventCard key={definition.tag} definition={definition} />
-                ))}
-              </div>
-            </div>
-          ))}
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-2.5 text-sm text-red-600 dark:text-red-400">
+          <WarningCircle size={15} weight="fill" className="shrink-0" />
+          {error}
+          <button onClick={() => setError('')} className="ml-auto opacity-60 hover:opacity-100">✕</button>
         </div>
-      </SectionCard>
+      )}
 
-      <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-        <SectionCard title="Tilldela mottagare" description="Lagg till en adress och markera vilka aktiva handelser den ska fa e-post for.">
-          <div className="space-y-5">
-            {!canManage && (
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)]/80 p-4 text-sm leading-6 text-[var(--text-secondary)]">
-                Du ar i laslage. Be en organisationsadmin att lagga till eller justera mottagare har.
-              </div>
-            )}
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] overflow-hidden">
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                Extra mottagare
-              </label>
-              <Input
-                value={newEmail}
-                onChange={canManage ? setNewEmail : undefined}
-                placeholder="namn@foretag.se"
-                type="email"
-                readOnly={!canManage}
-              />
-              <p className="text-xs leading-5 text-[var(--text-muted)]">
-                Denna adress far organisationens interna notifieringar utöver ansvarig anvandare.
-              </p>
-            </div>
+        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-[var(--border-light)]">
+          <Bell size={14} weight="duotone" className="text-[var(--accent)]" />
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Extra mottagare</p>
+          <span className="ml-auto text-xs text-[var(--text-muted)]">
+            {recipients.length === 0 ? 'Inga tillagda' : `${recipients.length} st`}
+          </span>
+        </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  Aktiva handelser att koppla
-                </label>
-                <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
-                  Valj en eller flera handelser. Du kan alltid finjustera eller ta bort kopplingen senare.
-                </p>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                {ACTIVE_NOTIFICATION_DEFINITIONS.map((definition) => (
-                  <EventCard
-                    key={definition.tag}
-                    definition={definition}
-                    selected={newTags.includes(definition.tag)}
-                    disabled={!canManage}
-                    onToggle={canManage ? () => toggleNewTag(definition.tag) : undefined}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {addError && (
-              <div className="rounded-2xl border border-rose-500/20 bg-rose-500/8 px-4 py-3 text-sm text-rose-300">
-                {addError}
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={addRecipient}
-                disabled={!canManage || saving}
-                className={cn(
-                  'inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition-all duration-150',
-                  'focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/35',
-                  canManage && !saving
-                    ? 'border-[var(--accent)] bg-[var(--accent)] text-white hover:bg-[var(--accent-light)] hover:border-[var(--accent-light)]'
-                    : 'cursor-not-allowed border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-muted)]',
-                )}
-              >
-                <Icon path={<><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>} size={14} />
-                {saving ? 'Sparar...' : 'Lagg till mottagare'}
-              </button>
-
-              <span className="text-xs text-[var(--text-muted)]">
-                Nya handelser dyker upp har automatiskt nar systemet byggs ut.
-              </span>
-            </div>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Nuvarande mottagare" description="Sa ser routingen ut just nu for organisationen.">
-          {loading ? (
-            <p className="text-sm text-[var(--text-muted)]">Laddar notifieringsrouting...</p>
-          ) : recipients.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-1)]/60 px-5 py-10 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-0)] text-[var(--text-muted)]">
-                <Icon path={<><path d="M4 4h16v16H4z" /><path d="M22 6l-10 7L2 6" /></>} size={18} />
-              </div>
-              <div className="mt-4 text-sm font-semibold text-[var(--text-primary)]">Inga extra mottagare anlagda an.</div>
-              <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
-                Nar du lagger till en adress hamnar den har tillsammans med sina kopplade handelser.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {recipients.map((recipient) => (
-                <RecipientRow
-                  key={recipient.id}
-                  recipient={recipient}
-                  canManage={canManage}
-                  onRemove={() => removeRecipient(recipient.id)}
-                  onRemoveTag={(tag) => removeTag(recipient.id, tag)}
-                />
+        {recipients.length > 0 && (
+          <div className="divide-y divide-[var(--border-light)]">
+            <AnimatePresence initial={false}>
+              {recipients.map((r) => (
+                <motion.div
+                  key={r.id}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.14 }}
+                  className="flex items-center gap-3 px-5 py-2.5 overflow-hidden"
+                >
+                  <p className="flex-1 min-w-0 truncate text-sm text-[var(--text-primary)]">{r.email}</p>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {(r.tags as ActiveNotificationTag[]).map((tag) => {
+                      const def = ACTIVE_NOTIFICATION_DEFINITIONS.find((d) => d.tag === tag);
+                      if (!def) return null;
+                      return (
+                        <span key={tag} className={cn('px-2 py-0.5 rounded-full text-[11px] font-medium border', TONE_PILL[def.tone])}>
+                          {def.label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => remove(r.id)}
+                    disabled={saving}
+                    className="shrink-0 p-1 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-40"
+                    aria-label="Ta bort"
+                  >
+                    <Trash size={13} weight="bold" />
+                  </button>
+                </motion.div>
               ))}
-            </div>
-          )}
-        </SectionCard>
-      </div>
+            </AnimatePresence>
+          </div>
+        )}
 
-      <SectionCard title="Kommande notifieringsytor" description="Dessa event ar inte live an, men registret ar redan forberett sa att sidan kan vaxa utan en ny redesign.">
-        <div className="space-y-4">
-          {plannedGroups.map(({ scope, items }) => (
-            <div key={scope} className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)]/45 p-4">
-              <div className="text-sm font-semibold text-[var(--text-primary)]">{NOTIFICATION_SCOPE_LABELS[scope]}</div>
-              <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{NOTIFICATION_SCOPE_DESCRIPTIONS[scope]}</p>
-              <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                {items.map((definition) => (
-                  <EventCard key={definition.tag} definition={definition} disabled />
-                ))}
-              </div>
+        <div className={cn('px-5 py-4', recipients.length > 0 && 'border-t border-[var(--border-light)]')}>
+          <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-3">Lägg till mottagare</p>
+          <div className="flex flex-col gap-2.5">
+            <input
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addRecipient()}
+              placeholder="namn@foretag.se"
+              className="w-full px-3 py-2 rounded-xl text-sm border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)] focus:border-[var(--accent)]"
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {ACTIVE_NOTIFICATION_TAGS.map((tag) => {
+                const def = ACTIVE_NOTIFICATION_DEFINITIONS.find((d) => d.tag === tag)!;
+                const active = newTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setNewTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag])}
+                    className={cn(
+                      'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+                      active ? TONE_ACTIVE[def.tone] : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]',
+                    )}
+                  >
+                    {def.label}
+                  </button>
+                );
+              })}
             </div>
-          ))}
+            {addError && <p className="text-xs text-red-500">{addError}</p>}
+            <button
+              onClick={addRecipient}
+              disabled={saving}
+              className="self-start inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold bg-[var(--accent)] text-white hover:bg-[var(--accent-light)] transition-colors disabled:opacity-50"
+            >
+              <Plus size={13} weight="bold" />
+              Lägg till
+            </button>
+          </div>
         </div>
-      </SectionCard>
+
+        <div className="px-5 py-3 border-t border-[var(--border-light)] bg-[var(--surface-alt)]">
+          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+            Dessa adresser får e-post vid markerade händelser — utöver offertens skapare som alltid notifieras.
+          </p>
+        </div>
+      </div>
 
       <AnimatePresence>
         {saved && (
@@ -607,26 +203,14 @@ export default function NotifieringarPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-2xl border border-emerald-500/25 bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white shadow-lg"
+            className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-medium shadow-lg"
           >
-            <Icon path={<polyline points="20 6 9 17 4 12" />} size={14} />
+            <CheckCircle size={15} weight="fill" />
             Sparat
           </motion.div>
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {pageError && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            className="fixed bottom-6 left-1/2 z-40 w-[min(560px,calc(100vw-2rem))] -translate-x-1/2 rounded-2xl border border-rose-500/25 bg-rose-500/95 px-4 py-3 text-sm text-white shadow-lg"
-          >
-            {pageError}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
