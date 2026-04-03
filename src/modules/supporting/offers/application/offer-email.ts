@@ -21,7 +21,9 @@ export interface SendToRecipientPayload {
   recipientEmail:string;
   publicUrl:     string;
   validUntil:    string;
+  totalExVat:    number;
   totalIncVat:   number;
+  priceDisplayMode: Offer['priceDisplayMode'];
   emailSubject?: string;  // custom email subject (already interpolated)
   emailBody?:    string;  // custom email body HTML (already interpolated)
   emailHeaderConfig?: string; // JSON config for visual email header
@@ -47,7 +49,9 @@ export interface ReminderPayload {
   recipientEmail: string;
   publicUrl:      string;
   validUntil:     string;
+  totalExVat:     number;
   totalIncVat:    number;
+  priceDisplayMode: Offer['priceDisplayMode'];
   reminderCount:  number;
   emailSubject?:  string;  // custom email subject (already interpolated)
   emailBody?:     string;  // custom email body HTML (already interpolated)
@@ -74,7 +78,9 @@ export async function enqueueOfferEmail(
     recipientEmail: offer.recipientEmail,
     publicUrl,
     validUntil:     offer.validUntil,
+    totalExVat:     offer.totalExVat,
     totalIncVat:    offer.totalIncVat,
+    priceDisplayMode: offer.priceDisplayMode,
     emailSubject:      offer.emailSubject,
     emailBody:         offer.emailBody,
     emailHeaderConfig: offer.emailHeaderConfig,
@@ -100,7 +106,9 @@ export async function enqueueReminderEmail(
     recipientEmail: offer.recipientEmail,
     publicUrl,
     validUntil:     offer.validUntil,
+    totalExVat:     offer.totalExVat,
     totalIncVat:    offer.totalIncVat,
+    priceDisplayMode: offer.priceDisplayMode,
     reminderCount:  offer.reminderCount ?? 1,
     emailSubject:      offer.emailSubject,
     emailBody:         offer.emailBody,

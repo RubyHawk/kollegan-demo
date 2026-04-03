@@ -4,9 +4,22 @@
  * Other modules ONLY import from this file.
  */
 
-export type { Offer, OfferLineItem, OfferStatus, OfferProduct, ProductCategory, Company } from './domain/offer.entity';
+export type { Offer, OfferLineItem, OfferStatus, OfferPriceDisplayMode, OfferProduct, ProductCategory, Company } from './domain/offer.entity';
 export type { OfferTemplate, PlaceholderKey } from './domain/template.entity';
 export { OFFER_PLACEHOLDERS } from './domain/template.entity';
+export {
+  DEFAULT_OFFER_PRICE_DISPLAY_MODE,
+  formatVatRate,
+  fromDisplayUnitPrice,
+  getDisplayLineTotal,
+  getDisplayModeLabel,
+  getDisplayUnitPrice,
+  getLineExVat,
+  getLineIncVat,
+  getLineVatAmount,
+  summarizeOfferPricing,
+} from './domain/pricing';
+export type { OfferPricingSummary } from './domain/pricing';
 
 export {
   createOffer,

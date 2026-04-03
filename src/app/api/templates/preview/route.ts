@@ -10,6 +10,7 @@ const SAMPLE_OFFER: Offer = {
   title:            'Hotellprojekt Q2 2026',
   status:           'draft',
   offerNumber:      42,
+  priceDisplayMode: 'exclusive',
   recipientName:    'Anna Lindström',
   recipientEmail:   'anna@lindstrom-hotell.se',
   recipientCompany: 'Lindström Hotell AB',
@@ -31,6 +32,7 @@ const SAMPLE_OFFER: Offer = {
 
 interface PartialOfferInput {
   title?:            string;
+  priceDisplayMode?: 'exclusive' | 'inclusive';
   recipientName?:    string;
   recipientEmail?:   string;
   recipientCompany?: string;
@@ -66,6 +68,7 @@ export async function POST(req: Request) {
     const offer: Offer = {
       ...SAMPLE_OFFER,
       ...(body.offer?.title            ? { title:            body.offer.title            } : {}),
+      ...(body.offer?.priceDisplayMode ? { priceDisplayMode: body.offer.priceDisplayMode } : {}),
       ...(body.offer?.recipientName    ? { recipientName:    body.offer.recipientName    } : {}),
       ...(body.offer?.recipientEmail   ? { recipientEmail:   body.offer.recipientEmail   } : {}),
       ...(body.offer?.recipientCompany != null ? { recipientCompany: body.offer.recipientCompany } : {}),

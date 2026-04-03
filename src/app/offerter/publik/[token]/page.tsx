@@ -26,6 +26,7 @@ import {
   TrashIcon,
 } from '@shared/ui/icons';
 import { BrandMark } from '@shared/ui/brand';
+import { summarizeOfferPricing } from '@modules/supporting/offers/domain/pricing';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -35,11 +36,13 @@ interface PublicOffer {
   id: string;
   title: string;
   status: OfferStatus;
+  priceDisplayMode: 'exclusive' | 'inclusive';
   recipientName: string;
   recipientEmail: string;
   recipientCompany?: string;
   totalExVat: number;
   totalIncVat: number;
+  lineItems: Array<{ quantity: number; unitPrice: number; vatRate: number; discount?: number }>;
   validUntil: string;
   notes?: string;
   generatedDocument?: string;
@@ -551,6 +554,7 @@ export default function PublicOfferPage() {
 
   if (!offer) return null;
   const isDecline = state === 'declining';
+  const pricing = summarizeOfferPricing(offer.lineItems, offer.priceDisplayMode);
 
   return (
     <motion.div
@@ -579,13 +583,13 @@ export default function PublicOfferPage() {
           {/* Right: price + PDF */}
           <div className="flex shrink-0 items-center gap-2">
             <div className="hidden sm:flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
-              <span className="text-sm font-bold tabular-nums text-slate-900">{fmtSEK(offer.totalIncVat)}</span>
+              <span className="text-sm font-bold tabular-nums text-slate-900">{fmtSEK(pricing.totalAmount)}</span>
               <span className="h-3.5 w-px bg-slate-300" />
-              <span className="text-[12px] text-slate-500">Giltig till {fmtDate(offer.validUntil)}</span>
+              <span className="text-[12px] text-slate-500">{pricing.displayModeLabel} · Giltig till {fmtDate(offer.validUntil)}</span>
             </div>
             {/* Mobile price pill */}
             <div className="flex sm:hidden items-center rounded-md bg-slate-900 px-2.5 py-1">
-              <span className="text-xs font-bold tabular-nums text-white">{fmtSEK(offer.totalIncVat)}</span>
+              <span className="text-xs font-bold tabular-nums text-white">{fmtSEK(pricing.totalAmount)}</span>
             </div>
             {/* PDF download */}
             <button
@@ -672,8 +676,8 @@ export default function PublicOfferPage() {
                     </div>
                   </div>
                   <div className="shrink-0 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-right sm:px-4 sm:py-2">
-                    <p className="text-sm font-bold tabular-nums text-emerald-700 sm:text-base">{fmtSEK(offer.totalIncVat)}</p>
-                    <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-500">inkl. moms</p>
+                    <p className="text-sm font-bold tabular-nums text-emerald-700 sm:text-base">{fmtSEK(pricing.totalAmount)}</p>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-500">{pricing.displayModeLabel}</p>
                   </div>
                 </div>
               </div>

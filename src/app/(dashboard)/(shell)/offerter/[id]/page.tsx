@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getSessionUser } from '@platform/auth/session';
 import { prisma } from '@platform/database/prisma';
 import { getOffer } from '@modules/supporting/offers/application/offers.service';
+import { summarizeOfferPricing } from '@modules/supporting/offers/domain/pricing';
 
 function fmtDate(iso?: string) {
   if (!iso) return '—';
@@ -52,6 +53,7 @@ export default async function OfferDetailsPage({
     offer.status === 'sent' || offer.status === 'viewed' || offer.status === 'accepted'
       ? `/offerter/publik/${offer.publicToken}`
       : null;
+  const pricing = summarizeOfferPricing(offer.lineItems, offer.priceDisplayMode);
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
@@ -118,9 +120,9 @@ export default async function OfferDetailsPage({
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Värde</p>
-            <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{fmtSEK(offer.totalIncVat)}</p>
+            <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{fmtSEK(pricing.totalAmount)}</p>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Exkl. moms {fmtSEK(offer.totalExVat)}
+              {pricing.displayModeLabel}
             </p>
           </div>
 
@@ -191,7 +193,11 @@ export default async function OfferDetailsPage({
                       <td className="px-4 py-3 text-[var(--text-primary)]">{item.description}</td>
                       <td className="px-4 py-3 text-right text-[var(--text-secondary)]">{item.quantity}</td>
                       <td className="px-4 py-3 text-right font-medium text-[var(--text-primary)]">
-                        {fmtSEK(item.quantity * item.unitPrice * (1 - ((item.discount ?? 0) / 100)))}
+                        {fmtSEK(
+                          offer.priceDisplayMode === 'inclusive'
+                            ? item.quantity * item.unitPrice * (1 - ((item.discount ?? 0) / 100)) * (1 + item.vatRate)
+                            : item.quantity * item.unitPrice * (1 - ((item.discount ?? 0) / 100)),
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -31,6 +31,7 @@ model Offer {
   organizationId   String
   title            String
   status           String    @default("draft") // draft | sent | viewed | accepted | declined | expired
+  priceDisplayMode String    @default("exclusive") // exclusive | inclusive
   recipientName    String
   recipientEmail   String
   recipientCompany String?

@@ -101,6 +101,7 @@ const VALID_VALIDITY_DAYS = [7, 14, 30, 60, 90] as const;
 
 const CreateBodySchema = z.object({
   title: z.string().min(1).max(300),
+  priceDisplayMode: z.enum(['exclusive', 'inclusive']).default('exclusive'),
   recipientName: z.string().min(1).max(200),
   recipientEmail: z.string().email(),
   recipientCompany: z.string().max(200).optional(),
@@ -128,6 +129,7 @@ export const handleCreateOffer = createHandler(
     const offer = await createOffer({
       organizationId: payload.orgId!,
       createdBy:      payload.sub,
+      priceDisplayMode: body.priceDisplayMode,
       title: body.title, recipientName: body.recipientName,
       recipientEmail: body.recipientEmail, recipientCompany: body.recipientCompany,
       notes: body.notes, validUntil: placeholderValidUntil, validityDays: body.validityDays,
@@ -159,6 +161,7 @@ export const handleGetOffer = createHandler(
 
 const PatchBodySchema = z.object({
   title: z.string().min(1).max(300).optional(),
+  priceDisplayMode: z.enum(['exclusive', 'inclusive']).optional(),
   recipientName: z.string().min(1).max(200).optional(),
   recipientEmail: z.string().email().optional(),
   recipientCompany: z.string().max(200).optional(),
@@ -205,7 +208,7 @@ export const handleUpdateOffer = createHandler(
         ? new Date(Date.now() + body.validityDays * 24 * 60 * 60 * 1000)
         : undefined;
       updated = await updateOffer(id, payload.orgId!, {
-        title: body.title, recipientName: body.recipientName,
+        title: body.title, priceDisplayMode: body.priceDisplayMode, recipientName: body.recipientName,
         recipientEmail: body.recipientEmail, recipientCompany: body.recipientCompany,
         notes: body.notes, validUntil: newValidUntil, validityDays: body.validityDays,
         companyId: body.companyId,

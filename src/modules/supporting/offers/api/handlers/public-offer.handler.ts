@@ -51,7 +51,7 @@ function getUserAgent(req: NextRequest): string {
 // Fields safe to expose to unauthenticated recipients (omit internal fields)
 const PUBLIC_OFFER_FIELDS = [
   'id', 'title', 'status', 'recipientName', 'recipientEmail', 'recipientCompany',
-  'totalExVat', 'totalIncVat', 'validUntil', 'notes', 'generatedDocument',
+  'priceDisplayMode', 'totalExVat', 'totalIncVat', 'validUntil', 'notes', 'generatedDocument',
   'publicToken', 'publicTokenExpiresAt', 'lineItems', 'sentAt', 'acceptedAt', 'declinedAt', 'signerName',
 ] as const;
 

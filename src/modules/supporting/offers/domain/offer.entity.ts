@@ -15,6 +15,7 @@
  */
 
 export type OfferStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
+export type OfferPriceDisplayMode = 'exclusive' | 'inclusive';
 
 export interface OfferLineItem {
   id: string;
@@ -30,6 +31,7 @@ export interface Offer {
   title: string;
   status: OfferStatus;
   offerNumber?: number;
+  priceDisplayMode: OfferPriceDisplayMode;
   recipientName: string;
   recipientEmail: string;
   recipientCompany?: string;

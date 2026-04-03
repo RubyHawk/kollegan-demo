@@ -11,9 +11,10 @@
  *   - Nothing: placeholder reference card
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
+import { uploadTemplateImage } from './template-image-upload';
 
 type ActiveBlock = 'image' | 'table' | 'signatureBlock' | 'variable' | null;
 
@@ -531,6 +532,7 @@ function PlaceholderReference() {
 import type { HFCtxValue } from './header-footer-context';
 
 function PageSettings({ hf }: { hf: HFCtxValue }) {
+  const bgUploadRef = useRef<HTMLInputElement>(null);
   const page = hf.pages[hf.activeIdx];
   if (!page) return null;
 
@@ -606,13 +608,50 @@ function PageSettings({ hf }: { hf: HFCtxValue }) {
             <div className="space-y-3">
               <div>
                 <Label>Bakgrund / watermark</Label>
-                <input
-                  type="text"
-                  value={document.backgroundImageSrc ?? ''}
-                  placeholder="/soleria-template/page-3-bg.png"
-                  onChange={(e) => patchActivePage({ document: { ...document, backgroundImageSrc: e.target.value } })}
-                  className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
-                />
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={document.backgroundImageSrc ?? ''}
+                    placeholder="/soleria-template/page-3-bg.png"
+                    onChange={(e) => patchActivePage({ document: { ...document, backgroundImageSrc: e.target.value } })}
+                    className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => bgUploadRef.current?.click()}
+                      className="flex-1 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                    >
+                      Ladda upp bild
+                    </button>
+                    {document.backgroundImageSrc && (
+                      <button
+                        type="button"
+                        onClick={() => patchActivePage({ document: { ...document, backgroundImageSrc: '' } })}
+                        className="rounded-md border border-[var(--border)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:border-red-300 hover:text-red-500"
+                      >
+                        Rensa
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    ref={bgUploadRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = '';
+                      if (!file) return;
+                      try {
+                        const src = await uploadTemplateImage(file);
+                        patchActivePage({ document: { ...document, backgroundImageSrc: src } });
+                      } catch (error) {
+                        window.alert(error instanceof Error ? error.message : 'Kunde inte ladda upp bakgrunden.');
+                      }
+                    }}
+                  />
+                </div>
               </div>
 
               <div>

@@ -62,7 +62,10 @@ export function sanitizeEmailHtml(html: string): string {
         const src = attribs.src ?? '';
         if (src.startsWith('data:') &&
             !src.startsWith('data:image/png;base64,') &&
-            !src.startsWith('data:image/jpeg;base64,')) {
+            !src.startsWith('data:image/jpeg;base64,') &&
+            !src.startsWith('data:image/webp;base64,') &&
+            !src.startsWith('data:image/avif;base64,') &&
+            !src.startsWith('data:image/gif;base64,')) {
           return { tagName, attribs: { ...attribs, src: '' } };
         }
         return { tagName, attribs };
@@ -92,9 +95,12 @@ export function sanitizeUrl(url: string): string {
     return trimmed;
   }
 
-  // Allow safe data URIs (PNG and JPEG only)
+  // Allow safe image data URIs for the formats supported by template uploads
   if (trimmed.startsWith('data:image/png;base64,') ||
-      trimmed.startsWith('data:image/jpeg;base64,')) {
+      trimmed.startsWith('data:image/jpeg;base64,') ||
+      trimmed.startsWith('data:image/webp;base64,') ||
+      trimmed.startsWith('data:image/avif;base64,') ||
+      trimmed.startsWith('data:image/gif;base64,')) {
     return trimmed;
   }
 
