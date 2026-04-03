@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Plus, Trash, WarningCircle, CheckCircle } from '@phosphor-icons/react';
+import { Bell, CheckCircle, Plus, Trash, WarningCircle } from '@phosphor-icons/react';
 import { cn } from '@shared/lib/utils';
+import { fetchWithRefresh } from '@shared/lib/api-client';
 import type { NotificationRecipient } from '@modules/supporting/identity/domain/organization.entity';
 import {
   ACTIVE_NOTIFICATION_DEFINITIONS,
@@ -12,17 +13,30 @@ import {
 } from '@modules/supporting/identity/domain/notification-routing';
 
 const TONE_PILL: Record<string, string> = {
-  emerald: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40',
-  red: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/40',
+  emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/20 dark:text-emerald-400',
+  red: 'border-red-200 bg-red-50 text-red-600 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400',
 };
 
 const TONE_ACTIVE: Record<string, string> = {
-  emerald: 'bg-emerald-500 text-white border-emerald-500',
-  red: 'bg-red-500 text-white border-red-500',
+  emerald: 'border-emerald-500 bg-emerald-500 text-white',
+  red: 'border-red-500 bg-red-500 text-white',
 };
+
+interface NotificationRecipientsResponse {
+  recipients?: NotificationRecipient[];
+  canManage?: boolean;
+}
+
+function unwrapEnvelope<T>(payload: unknown): T {
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    return (payload as { data: T }).data;
+  }
+  return payload as T;
+}
 
 export default function NotifieringarPage() {
   const [recipients, setRecipients] = useState<NotificationRecipient[]>([]);
+  const [canManage, setCanManage] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -33,13 +47,28 @@ export default function NotifieringarPage() {
   const [addError, setAddError] = useState('');
 
   useEffect(() => {
-    fetch('/api/org/notification-recipients')
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json();
+    fetchWithRefresh('/api/org/notification-recipients')
+      .then(async (response) => {
+        if (!response.ok) {
+          const problem = await response
+            .json()
+            .catch(() => ({ detail: '' })) as { detail?: string };
+          throw new Error(problem.detail || 'Kunde inte hämta notifieringsinställningarna.');
+        }
+        return response.json();
       })
-      .then((d) => setRecipients(d.recipients ?? []))
-      .catch(() => setError('Kunde inte hamta notifieringsinstallningarna. Forsok ladda om sidan.'))
+      .then((payload) => {
+        const data = unwrapEnvelope<NotificationRecipientsResponse>(payload);
+        setRecipients(data.recipients ?? []);
+        setCanManage(Boolean(data.canManage ?? true));
+      })
+      .catch((fetchError) =>
+        setError(
+          fetchError instanceof Error
+            ? fetchError.message
+            : 'Kunde inte hämta notifieringsinställningarna. Försök ladda om sidan.',
+        ),
+      )
       .finally(() => setLoading(false));
   }, []);
 
@@ -47,25 +76,29 @@ export default function NotifieringarPage() {
     setSaving(true);
     setSaved(false);
     setError('');
+
     try {
-      const response = await fetch('/api/org/notification-recipients', {
+      const response = await fetchWithRefresh('/api/org/notification-recipients', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ recipients: next }),
       });
 
       if (!response.ok) {
-        const data = await response.json().catch(() => ({})) as { detail?: string };
-        throw new Error(data.detail || 'Kunde inte spara. Forsok igen.');
+        const problem = await response
+          .json()
+          .catch(() => ({ detail: '' })) as { detail?: string };
+        throw new Error(problem.detail || 'Kunde inte spara. Försök igen.');
       }
 
-      const data = await response.json() as { recipients?: NotificationRecipient[] };
+      const payload = await response.json();
+      const data = unwrapEnvelope<NotificationRecipientsResponse>(payload);
       setRecipients(data.recipients ?? next);
+      setCanManage(Boolean(data.canManage ?? true));
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (saveError) {
-      const message = saveError instanceof Error ? saveError.message : 'Kunde inte spara. Forsok igen.';
-      setError(message);
+      setError(saveError instanceof Error ? saveError.message : 'Kunde inte spara. Försök igen.');
     } finally {
       setSaving(false);
     }
@@ -73,29 +106,33 @@ export default function NotifieringarPage() {
 
   function addRecipient() {
     setAddError('');
+
     const email = newEmail.trim().toLowerCase();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setAddError('Ange en giltig e-postadress.');
       return;
     }
     if (newTags.length === 0) {
-      setAddError('Valj minst en handelsetyp.');
+      setAddError('Välj minst en händelsetyp.');
       return;
     }
-    if (recipients.some((r) => r.email === email)) {
+    if (recipients.some((recipient) => recipient.email === email)) {
       setAddError('Adressen finns redan i listan.');
       return;
     }
+
     void persist([...recipients, { id: crypto.randomUUID(), email, tags: newTags }]);
     setNewEmail('');
     setNewTags([]);
   }
 
   function remove(id: string) {
-    void persist(recipients.filter((r) => r.id !== id));
+    void persist(recipients.filter((recipient) => recipient.id !== id));
   }
 
-  if (loading) return <p className="text-sm text-[var(--text-muted)]">Laddar...</p>;
+  if (loading) {
+    return <p className="text-sm text-[var(--text-muted)]">Laddar notifieringskopplingar...</p>;
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -107,120 +144,159 @@ export default function NotifieringarPage() {
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-semibold text-[var(--text-primary)]">Interna notifieringsmottagare</h2>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--text-muted)]">
-              Lag till valfria e-postadresser som ska fa interna notiser nar en offert accepteras eller avvisas.
-              Adressen behover inte vara kopplad till ett konto i systemet.
+              Lägg till valfria e-postadresser som ska få interna notiser när en offert accepteras eller avvisas.
+              Adressen behöver inte vara kopplad till ett konto i systemet.
             </p>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-2.5 text-sm text-red-600 dark:text-red-400">
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400">
           <WarningCircle size={15} weight="fill" className="shrink-0" />
           {error}
-          <button onClick={() => setError('')} className="ml-auto opacity-60 hover:opacity-100" type="button">x</button>
+          <button type="button" onClick={() => setError('')} className="ml-auto opacity-60 hover:opacity-100">
+            x
+          </button>
         </div>
       )}
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] overflow-hidden">
-        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-[var(--border-light)]">
+      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-0)]">
+        <div className="flex items-center gap-2 border-b border-[var(--border-light)] px-5 py-3.5">
           <Bell size={14} weight="duotone" className="text-[var(--accent)]" />
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Extra mottagare</p>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Aktiva kopplingar</p>
           <span className="ml-auto text-xs text-[var(--text-muted)]">
-            {recipients.length === 0 ? 'Inga tillagda' : `${recipients.length} st`}
+            {recipients.length === 0 ? 'Inga tillagda' : `${recipients.length} kopplingar`}
           </span>
         </div>
 
-        {recipients.length > 0 && (
+        {recipients.length > 0 ? (
           <div className="divide-y divide-[var(--border-light)]">
             <AnimatePresence initial={false}>
-              {recipients.map((r) => (
+              {recipients.map((recipient) => (
                 <motion.div
-                  key={r.id}
+                  key={recipient.id}
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.14 }}
-                  className="flex items-center gap-3 px-5 py-2.5 overflow-hidden"
+                  className="overflow-hidden px-5 py-3"
                 >
-                  <p className="flex-1 min-w-0 truncate text-sm text-[var(--text-primary)]">{r.email}</p>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {(r.tags as ActiveNotificationTag[]).map((tag) => {
-                      const def = ACTIVE_NOTIFICATION_DEFINITIONS.find((d) => d.tag === tag);
-                      if (!def) return null;
-                      return (
-                        <span key={tag} className={cn('px-2 py-0.5 rounded-full text-[11px] font-medium border', TONE_PILL[def.tone])}>
-                          {def.label}
-                        </span>
-                      );
-                    })}
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-[var(--text-primary)]">{recipient.email}</p>
+                      <p className="mt-1 text-xs text-[var(--text-muted)]">
+                        Får notifieringar för markerade händelser utan att behöva ha ett konto i systemet.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {(recipient.tags as ActiveNotificationTag[]).map((tag) => {
+                        const definition = ACTIVE_NOTIFICATION_DEFINITIONS.find((item) => item.tag === tag);
+                        if (!definition) return null;
+
+                        return (
+                          <span
+                            key={tag}
+                            className={cn('rounded-full border px-2 py-0.5 text-[11px] font-medium', TONE_PILL[definition.tone])}
+                          >
+                            {definition.label}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => remove(recipient.id)}
+                      disabled={saving || !canManage}
+                      className="shrink-0 rounded-lg p-1 text-[var(--text-muted)] transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-40 dark:hover:bg-red-900/20"
+                      aria-label="Ta bort koppling"
+                    >
+                      <Trash size={13} weight="bold" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => remove(r.id)}
-                    disabled={saving}
-                    className="shrink-0 p-1 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-40"
-                    aria-label="Ta bort"
-                    type="button"
-                  >
-                    <Trash size={13} weight="bold" />
-                  </button>
                 </motion.div>
               ))}
             </AnimatePresence>
           </div>
+        ) : (
+          <div className="px-5 py-5 text-sm text-[var(--text-muted)]">
+            Inga extra mottagare är tillagda ännu. Offertens ansvariga användare notifieras alltid separat.
+          </div>
         )}
 
         <div className={cn('px-5 py-4', recipients.length > 0 && 'border-t border-[var(--border-light)]')}>
-          <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-3">Lagg till mottagare</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Lägg till mottagare</p>
+
           <div className="flex flex-col gap-2.5">
             <input
               type="email"
               value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addRecipient()}
+              onChange={(event) => setNewEmail(event.target.value)}
+              onKeyDown={(event) => event.key === 'Enter' && addRecipient()}
               placeholder="namn@foretag.se"
-              className="w-full px-3 py-2 rounded-xl text-sm border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)] focus:border-[var(--accent)]"
+              disabled={!canManage}
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)] disabled:cursor-not-allowed disabled:opacity-60"
             />
-            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-              Den här adressen får organisationens interna notifieringar utöver ansvarig användare. Inget konto krävs.
+
+            <p className="text-xs leading-relaxed text-[var(--text-muted)]">
+              Den här adressen får organisationens interna notifieringar utöver offertens ansvariga användare. Inget konto krävs.
             </p>
+
             <div className="flex flex-wrap gap-1.5">
               {ACTIVE_NOTIFICATION_TAGS.map((tag) => {
-                const def = ACTIVE_NOTIFICATION_DEFINITIONS.find((d) => d.tag === tag);
-                if (!def) return null;
+                const definition = ACTIVE_NOTIFICATION_DEFINITIONS.find((item) => item.tag === tag);
+                if (!definition) return null;
+
                 const active = newTags.includes(tag);
                 return (
                   <button
                     key={tag}
                     type="button"
-                    onClick={() => setNewTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag])}
+                    onClick={() =>
+                      setNewTags((current) =>
+                        current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag],
+                      )
+                    }
+                    disabled={!canManage}
                     className={cn(
-                      'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
-                      active ? TONE_ACTIVE[def.tone] : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]',
+                      'rounded-full border px-2.5 py-1 text-xs font-medium transition-all',
+                      active
+                        ? TONE_ACTIVE[definition.tone]
+                        : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]',
+                      !canManage && 'cursor-not-allowed opacity-50',
                     )}
                   >
-                    {def.label}
+                    {definition.label}
                   </button>
                 );
               })}
             </div>
+
             {addError && <p className="text-xs text-red-500">{addError}</p>}
+
             <button
-              onClick={addRecipient}
-              disabled={saving}
-              className="self-start inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold bg-[var(--accent)] text-white hover:bg-[var(--accent-light)] transition-colors disabled:opacity-50"
               type="button"
+              onClick={addRecipient}
+              disabled={saving || !canManage}
+              className="inline-flex self-start rounded-xl bg-[var(--accent)] px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-light)] disabled:opacity-50"
             >
-              <Plus size={13} weight="bold" />
-              Lagg till
+              <span className="inline-flex items-center gap-1.5">
+                <Plus size={13} weight="bold" />
+                Lägg till
+              </span>
             </button>
           </div>
         </div>
 
-        <div className="px-5 py-3 border-t border-[var(--border-light)] bg-[var(--surface-alt)]">
-          <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-            Dessa adresser far e-post vid markerade handelser utover offertens skapare som alltid notifieras.
+        <div className="border-t border-[var(--border-light)] bg-[var(--surface-alt)] px-5 py-3">
+          <p className="text-xs leading-relaxed text-[var(--text-muted)]">
+            Dessa adresser får e-post vid markerade händelser utöver offertens ansvariga användare som alltid notifieras.
           </p>
+          {!canManage && (
+            <p className="mt-2 text-xs text-[var(--text-muted)]">
+              Du kan se organisationens kopplingar här, men bara staff kan ändra dem.
+            </p>
+          )}
         </div>
       </div>
 
@@ -230,7 +306,7 @@ export default function NotifieringarPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-medium shadow-lg"
+            className="fixed bottom-6 right-6 flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white shadow-lg"
           >
             <CheckCircle size={15} weight="fill" />
             Sparat
