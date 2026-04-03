@@ -32,14 +32,20 @@ export interface SendToRecipientPayload {
 }
 
 export interface NotifyCreatorPayload {
-  offerId:      string;
-  offerTitle:   string;
-  createdBy:    string; // User.id — handler resolves email from DB
-  event:        'signed' | 'declined';
-  recipientName:string;
-  comment?:     string;
-  senderEmail?: string;
-  senderName?:  string;
+  offerId:        string;
+  offerTitle:     string;
+  offerNumber?:   number;
+  createdBy:      string; // User.id — handler resolves email from DB
+  event:          'signed' | 'declined';
+  recipientName:  string;
+  recipientEmail: string;
+  totalExVat:     number;
+  totalIncVat:    number;
+  priceDisplayMode: Offer['priceDisplayMode'];
+  acceptedAt?:    string;
+  comment?:       string;
+  senderEmail?:   string;
+  senderName?:    string;
 }
 
 export interface ReminderPayload {
@@ -129,14 +135,20 @@ export async function enqueueCreatorNotification(
   extra?: { comment?: string; senderEmail?: string; senderName?: string },
 ): Promise<void> {
   const payload: NotifyCreatorPayload = {
-    offerId:       offer.id,
-    offerTitle:    offer.title,
-    createdBy:     offer.createdBy,
+    offerId:          offer.id,
+    offerTitle:       offer.title,
+    offerNumber:      offer.offerNumber,
+    createdBy:        offer.createdBy,
     event,
-    recipientName: offer.recipientName,
-    comment:       extra?.comment,
-    senderEmail:   extra?.senderEmail,
-    senderName:    extra?.senderName,
+    recipientName:    offer.recipientName,
+    recipientEmail:   offer.recipientEmail,
+    totalExVat:       offer.totalExVat,
+    totalIncVat:      offer.totalIncVat,
+    priceDisplayMode: offer.priceDisplayMode,
+    acceptedAt:       offer.acceptedAt,
+    comment:          extra?.comment,
+    senderEmail:      extra?.senderEmail,
+    senderName:       extra?.senderName,
   };
   await jobQueue.add('offer.email.notify_creator', payload, { retries: 3 });
 }

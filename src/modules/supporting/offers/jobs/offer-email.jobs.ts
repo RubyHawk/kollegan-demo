@@ -243,12 +243,41 @@ function sendToRecipientHtml(p: SendToRecipientPayload): string {
 
 function notifyCreatorHtml(p: NotifyCreatorPayload): string {
   if (p.event === 'signed') {
+    const pricing = emailPricing(p);
+    const offerRef = p.offerNumber ? `#${p.offerNumber}` : p.offerTitle;
+    const signedAt = p.acceptedAt ? fmtDate(p.acceptedAt) : '';
     return `
-      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
-        <h2 style="margin:0 0 8px 0;font-size:22px;">Offert signerad ✅</h2>
-        <p style="color:#64748b;margin:0 0 24px 0;">Din offert har signerats!</p>
-        <p style="margin:0 0 8px 0;"><strong>${p.offerTitle}</strong> har accepterats och signerats av <strong>${p.recipientName}</strong>.</p>
-        <p style="font-size:13px;color:#64748b;margin:16px 0 0 0;">Logga in på plattformen för att se signaturen och ladda ner dokumentet.</p>
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;background:#f8fafc;">
+        <div style="background:#0f172a;padding:28px 24px;text-align:center;">
+          <h1 style="margin:0;font-size:20px;font-weight:700;color:#ffffff;">Offert signerad ✅</h1>
+          <p style="margin:6px 0 0;font-size:13px;color:#94a3b8;">En kund har accepterat din offert</p>
+        </div>
+        <div style="padding:32px 24px;">
+          <div style="background:#ffffff;border-radius:10px;padding:28px 24px;border:1px solid #e2e8f0;">
+            <p style="margin:0 0 20px;font-size:15px;color:#1e293b;"><strong>${escapeHtml(p.offerTitle)}</strong> har accepterats och signerats.</p>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:10px 0;color:#64748b;">Offert</td>
+                <td style="padding:10px 0;text-align:right;color:#1e293b;font-weight:600;">${escapeHtml(offerRef)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:10px 0;color:#64748b;">Kund</td>
+                <td style="padding:10px 0;text-align:right;color:#1e293b;">${escapeHtml(p.recipientName)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:10px 0;color:#64748b;">E-post</td>
+                <td style="padding:10px 0;text-align:right;color:#1e293b;">${escapeHtml(p.recipientEmail)}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:10px 0;color:#64748b;">Belopp</td>
+                <td style="padding:10px 0;text-align:right;color:#1e293b;font-weight:700;font-size:16px;">${fmtSEK(pricing.amount)}</td>
+              </tr>
+              <tr><td style="padding:4px 0 10px;color:#94a3b8;font-size:12px;">Prisvisning</td><td style="padding:4px 0 10px;text-align:right;color:#94a3b8;font-size:12px;">${pricing.detail}</td></tr>
+              ${signedAt ? `<tr><td style="padding:10px 0;color:#64748b;">Signerades</td><td style="padding:10px 0;text-align:right;color:#1e293b;">${signedAt}</td></tr>` : ''}
+            </table>
+          </div>
+          <p style="font-size:13px;color:#64748b;margin:20px 0 0;text-align:center;">Logga in på plattformen för att se signaturen och ladda ner dokumentet.</p>
+        </div>
       </div>`;
   }
   return `
