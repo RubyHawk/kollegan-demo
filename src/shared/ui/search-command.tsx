@@ -25,7 +25,7 @@ const COMMAND_ITEMS: CommandItem[] = [
   { href: '/offerter/ny', label: 'Ny offert', description: 'Skapa en ny offert direkt', keywords: ['ny', 'offert', 'create'] },
   { href: '/mallar', label: 'Mallar', description: 'Hantera offermallar och innehåll', keywords: ['mallar', 'templates'] },
   { href: '/produkter', label: 'Produkter', description: 'Uppdatera produkter och tjänster', keywords: ['produkter', 'services', 'produktbibliotek'] },
-  { href: '/companies', label: 'Företag', description: 'Se bolagsuppgifter och säljande enheter', keywords: ['foretag', 'bolag', 'companies'] },
+  { href: '/installningar/foretag', label: 'Företag', description: 'Se bolagsuppgifter, medlemmar och branding per företag', keywords: ['foretag', 'bolag', 'companies', 'branding'] },
   { href: '/installningar', label: 'Inställningar', description: 'Anpassa system och utseende', keywords: ['installningar', 'settings'] },
   { href: '/installningar/profil', label: 'Profil', description: 'Uppdatera konto och kontaktuppgifter', keywords: ['profil', 'konto', 'account'] },
 ];
