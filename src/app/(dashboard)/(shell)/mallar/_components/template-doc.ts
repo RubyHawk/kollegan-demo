@@ -104,7 +104,6 @@ export function makeDocumentPage(label = 'Offertsida'): PageDoc {
     footer: { enabled: false, useDefault: true, content: EMPTY_DOC },
     document: {
       layout: 'classic-offer',
-      backgroundImageSrc: '/soleria-template/page-3-bg.png',
       backgroundOpacity: 0.08,
       watermarkMode: 'bottom',
       showLogo: true,

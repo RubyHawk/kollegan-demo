@@ -612,7 +612,7 @@ function PageSettings({ hf }: { hf: HFCtxValue }) {
                   <input
                     type="text"
                     value={document.backgroundImageSrc ?? ''}
-                    placeholder="/soleria-template/page-3-bg.png"
+                    placeholder="Klistra in bild-URL eller ladda upp en bakgrund"
                     onChange={(e) => patchActivePage({ document: { ...document, backgroundImageSrc: e.target.value } })}
                     className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
                   />

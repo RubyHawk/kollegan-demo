@@ -119,11 +119,8 @@ export const handleDeleteTemplate = createHandler(
   async (ctx) => {
     const { req } = ctx as { req: NextRequest };
     const id      = extractId(req);
-    const payload = await verifyToken(extractToken(req));
-    if (!payload.orgId) throw Errors.forbidden('No organization context');
-    const isAdmin = payload.roles.some((r) => ['super_admin', 'admin'].includes(r));
-    if (!isAdmin) throw Errors.forbidden('Template deletion requires admin role');
-    const deleted = await deleteTemplate(id, payload.orgId);
+    const payload = await requireStaff(req);
+    const deleted = await deleteTemplate(id, payload.orgId!);
     if (!deleted) throw Errors.notFound('Template not found');
     return ok(null);
   },
