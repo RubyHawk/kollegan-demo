@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter, Cormorant_Garamond, JetBrains_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 import { Providers } from './providers';
 import { cn } from "@/lib/utils";
@@ -52,23 +52,26 @@ const themeScript = `
 })();
 `;
 
-const inter = Inter({
-  subsets: ['latin'],
+const inter = localFont({
+  src: '../../public/fonts/inter-variable.woff2',
   variable: '--font-inter',
   display: 'swap',
 });
 
-const cormorant = Cormorant_Garamond({
-  subsets: ['latin'],
+const cormorant = localFont({
+  src: [
+    { path: '../../public/fonts/cormorant-garamond-400.woff2', weight: '400', style: 'normal' },
+    { path: '../../public/fonts/cormorant-garamond-500.woff2', weight: '500', style: 'normal' },
+    { path: '../../public/fonts/cormorant-garamond-600.woff2', weight: '600', style: 'normal' },
+    { path: '../../public/fonts/cormorant-garamond-700.woff2', weight: '700', style: 'normal' },
+  ],
   variable: '--font-cormorant',
-  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
+const jetbrainsMono = localFont({
+  src: '../../public/fonts/jetbrains-mono-variable.woff2',
   variable: '--font-mono',
-  weight: ['400', '500', '600'],
   display: 'swap',
 });
 

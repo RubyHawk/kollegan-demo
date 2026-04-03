@@ -11,6 +11,11 @@ const primaryOrigin = allowedOrigins[0] ?? 'https://app.kollegan.ai';
 const nextConfig: NextConfig = {
   // instrumentation.ts is enabled by default in Next.js 15+
 
+  experimental: {
+    // Required in environments where outbound TLS uses system certs (CI, containers)
+    turbopackUseSystemTlsCerts: true,
+  },
+
   async headers() {
     return [
       // ── SSE — disable Nginx buffering ───────────────────────────────────────
