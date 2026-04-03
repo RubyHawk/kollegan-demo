@@ -27,7 +27,7 @@ const MODE_OPTIONS: { id: ThemeMode; label: string; desc: string }[] = [
   { id: 'auto', label: 'Auto', desc: 'Följer enheten' },
 ];
 
-const DEFAULT_THEME = THEMES.find((item) => item.id === 'claude') ?? THEMES[0];
+const DEFAULT_THEME = THEMES.find((item) => item.id === 'soleria') ?? THEMES[0];
 
 function WorkspacePreview({
   theme,
@@ -222,7 +222,7 @@ export default function UtseendePage() {
       const nextTheme =
         storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'auto'
           ? storedTheme
-          : 'auto';
+          : 'light';
       setTheme(nextTheme);
 
       const storedFontSize = localStorage.getItem('fontSize') as FontSize | null;
