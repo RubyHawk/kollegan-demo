@@ -4,21 +4,19 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, Plus, Trash, WarningCircle, CheckCircle } from '@phosphor-icons/react';
 import { cn } from '@shared/lib/utils';
-import type { NotificationTag, NotificationRecipient } from '@modules/supporting/identity/domain/organization.entity';
+import type { NotificationRecipient } from '@modules/supporting/identity/domain/organization.entity';
+import {
+  ACTIVE_NOTIFICATION_DEFINITIONS,
+  ACTIVE_NOTIFICATION_TAGS,
+  type ActiveNotificationTag,
+} from '@modules/supporting/identity/domain/notification-routing';
 
-const TAG_DEFS: Record<NotificationTag, { label: string; color: string }> = {
-  offer_signed:   { label: 'Offert signerad', color: 'emerald' },
-  offer_declined: { label: 'Offert avvisad',  color: 'red'     },
-};
-
-const ALL_TAGS = Object.keys(TAG_DEFS) as NotificationTag[];
-
-const TAG_COLORS: Record<string, string> = {
+const TONE_PILL: Record<string, string> = {
   emerald: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40',
   red:     'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/40',
 };
 
-const TAG_ACTIVE: Record<string, string> = {
+const TONE_ACTIVE: Record<string, string> = {
   emerald: 'bg-emerald-500 text-white border-emerald-500',
   red:     'bg-red-500 text-white border-red-500',
 };
@@ -31,13 +29,13 @@ export default function NotifieringarPage() {
   const [saved, setSaved]           = useState(false);
 
   const [newEmail, setNewEmail] = useState('');
-  const [newTags, setNewTags]   = useState<NotificationTag[]>([]);
+  const [newTags, setNewTags]   = useState<ActiveNotificationTag[]>([]);
   const [addError, setAddError] = useState('');
 
   useEffect(() => {
     fetch('/api/org/notification-recipients')
       .then((r) => {
-        if (!r.ok) throw new Error('api_error');
+        if (!r.ok) throw new Error();
         return r.json();
       })
       .then((d) => setRecipients(d.recipients ?? []))
@@ -80,36 +78,30 @@ export default function NotifieringarPage() {
       setAddError('Adressen finns redan i listan.');
       return;
     }
-    const next = [...recipients, { id: crypto.randomUUID(), email, tags: newTags }];
+    void persist([...recipients, { id: crypto.randomUUID(), email, tags: newTags }]);
     setNewEmail('');
     setNewTags([]);
-    void persist(next);
   }
 
   function remove(id: string) {
     void persist(recipients.filter((r) => r.id !== id));
   }
 
-  if (loading) {
-    return <p className="text-sm text-[var(--text-muted)]">Laddar…</p>;
-  }
+  if (loading) return <p className="text-sm text-[var(--text-muted)]">Laddar…</p>;
 
   return (
     <div className="flex flex-col gap-4">
 
-      {/* Error banner */}
       {error && (
         <div className="flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-2.5 text-sm text-red-600 dark:text-red-400">
           <WarningCircle size={15} weight="fill" className="shrink-0" />
           {error}
-          <button onClick={() => setError('')} className="ml-auto text-red-400 hover:text-red-600">✕</button>
+          <button onClick={() => setError('')} className="ml-auto opacity-60 hover:opacity-100">✕</button>
         </div>
       )}
 
-      {/* Recipients list + add form */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] overflow-hidden">
 
-        {/* Header */}
         <div className="flex items-center gap-2 px-5 py-3.5 border-b border-[var(--border-light)]">
           <Bell size={14} weight="duotone" className="text-[var(--accent)]" />
           <p className="text-sm font-semibold text-[var(--text-primary)]">Extra mottagare</p>
@@ -118,7 +110,6 @@ export default function NotifieringarPage() {
           </span>
         </div>
 
-        {/* List */}
         {recipients.length > 0 && (
           <div className="divide-y divide-[var(--border-light)]">
             <AnimatePresence initial={false}>
@@ -133,14 +124,15 @@ export default function NotifieringarPage() {
                 >
                   <p className="flex-1 min-w-0 truncate text-sm text-[var(--text-primary)]">{r.email}</p>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {(r.tags as NotificationTag[]).map((tag) => (
-                      <span
-                        key={tag}
-                        className={cn('px-2 py-0.5 rounded-full text-[11px] font-medium border', TAG_COLORS[TAG_DEFS[tag].color])}
-                      >
-                        {TAG_DEFS[tag].label}
-                      </span>
-                    ))}
+                    {(r.tags as ActiveNotificationTag[]).map((tag) => {
+                      const def = ACTIVE_NOTIFICATION_DEFINITIONS.find((d) => d.tag === tag);
+                      if (!def) return null;
+                      return (
+                        <span key={tag} className={cn('px-2 py-0.5 rounded-full text-[11px] font-medium border', TONE_PILL[def.tone])}>
+                          {def.label}
+                        </span>
+                      );
+                    })}
                   </div>
                   <button
                     onClick={() => remove(r.id)}
@@ -156,10 +148,8 @@ export default function NotifieringarPage() {
           </div>
         )}
 
-        {/* Add form */}
         <div className={cn('px-5 py-4', recipients.length > 0 && 'border-t border-[var(--border-light)]')}>
           <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-3">Lägg till mottagare</p>
-
           <div className="flex flex-col gap-2.5">
             <input
               type="email"
@@ -169,10 +159,9 @@ export default function NotifieringarPage() {
               placeholder="namn@foretag.se"
               className="w-full px-3 py-2 rounded-xl text-sm border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)] focus:border-[var(--accent)]"
             />
-
             <div className="flex flex-wrap gap-1.5">
-              {ALL_TAGS.map((tag) => {
-                const def = TAG_DEFS[tag];
+              {ACTIVE_NOTIFICATION_TAGS.map((tag) => {
+                const def = ACTIVE_NOTIFICATION_DEFINITIONS.find((d) => d.tag === tag)!;
                 const active = newTags.includes(tag);
                 return (
                   <button
@@ -181,7 +170,7 @@ export default function NotifieringarPage() {
                     onClick={() => setNewTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag])}
                     className={cn(
                       'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
-                      active ? TAG_ACTIVE[def.color] : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]',
+                      active ? TONE_ACTIVE[def.tone] : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]',
                     )}
                   >
                     {def.label}
@@ -189,11 +178,7 @@ export default function NotifieringarPage() {
                 );
               })}
             </div>
-
-            {addError && (
-              <p className="text-xs text-red-500">{addError}</p>
-            )}
-
+            {addError && <p className="text-xs text-red-500">{addError}</p>}
             <button
               onClick={addRecipient}
               disabled={saving}
@@ -205,7 +190,6 @@ export default function NotifieringarPage() {
           </div>
         </div>
 
-        {/* Description */}
         <div className="px-5 py-3 border-t border-[var(--border-light)] bg-[var(--surface-alt)]">
           <p className="text-xs text-[var(--text-muted)] leading-relaxed">
             Dessa adresser får e-post vid markerade händelser — utöver offertens skapare som alltid notifieras.
@@ -213,7 +197,6 @@ export default function NotifieringarPage() {
         </div>
       </div>
 
-      {/* Saved toast */}
       <AnimatePresence>
         {saved && (
           <motion.div

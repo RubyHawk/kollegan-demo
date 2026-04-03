@@ -10,7 +10,7 @@
  * - jsPDF + html2canvas for PDF download
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import SignatureCanvas from 'react-signature-canvas';
@@ -49,6 +49,9 @@ interface PublicOffer {
   publicToken: string;
   publicTokenExpiresAt?: string;
   viewedAt?: string;
+  acceptedAt?: string;
+  signerName?: string;
+  signatureImage?: string;
 }
 
 type PageState = 'loading' | 'ready' | 'declining' | 'signing' | 'accepted' | 'declined' | 'expired' | 'error';
@@ -82,6 +85,76 @@ function textToSignatureImage(text: string, fontFamily: string): string {
   ctx.textBaseline = 'middle';
   ctx.fillText(text, 24, 75);
   return canvas.toDataURL('image/png');
+}
+
+type SignatureFields = {
+  image?: string;
+  name?: string;
+  date?: string;
+};
+
+function applySignatureFields(root: ParentNode, signature?: SignatureFields) {
+  root.querySelectorAll('[data-sig-field]').forEach((el) => {
+    const field = el.getAttribute('data-sig-field');
+    const container = el as HTMLElement;
+
+    if (!signature?.image && !signature?.name && !signature?.date) {
+      container.style.display = 'none';
+      return;
+    }
+
+    container.replaceChildren();
+    container.style.border = 'none';
+    container.style.borderRadius = '0';
+    container.style.background = 'transparent';
+    container.style.padding = '4px 0';
+    container.style.minHeight = '0';
+    container.style.display = 'block';
+
+    if (field === 'signature') {
+      if (!signature.image) {
+        container.style.display = 'none';
+        return;
+      }
+      const img = document.createElement('img');
+      img.src = signature.image;
+      img.alt = 'Signatur';
+      img.style.maxWidth = '260px';
+      img.style.maxHeight = '80px';
+      img.style.display = 'block';
+      container.appendChild(img);
+      return;
+    }
+
+    if (field === 'name') {
+      if (!signature.name) {
+        container.style.display = 'none';
+        return;
+      }
+      const name = document.createElement('span');
+      name.textContent = signature.name;
+      name.style.fontSize = '15px';
+      name.style.color = '#1e293b';
+      name.style.fontWeight = '500';
+      container.appendChild(name);
+      return;
+    }
+
+    if (field === 'date') {
+      if (!signature.date) {
+        container.style.display = 'none';
+        return;
+      }
+      const date = document.createElement('span');
+      date.textContent = signature.date;
+      date.style.fontSize = '14px';
+      date.style.color = '#475569';
+      container.appendChild(date);
+      return;
+    }
+
+    container.style.display = 'none';
+  });
 }
 
 // ─── Animated checkmark (drawn with SVG path animation) ────────────────────────
@@ -122,35 +195,7 @@ function SuccessCheckmark() {
 
 // ─── PDF Download ──────────────────────────────────────────────────────────────
 
-interface SigData {
-  image: string;
-  name: string;
-  date: string;
-}
-
-function injectSignatureFields(container: HTMLElement, sig: SigData | null): void {
-  container.querySelectorAll<HTMLElement>('[data-sig-field]').forEach((el) => {
-    const field = el.getAttribute('data-sig-field');
-    if (!sig) { el.style.display = 'none'; return; }
-
-    el.style.border = 'none';
-    el.style.borderRadius = '0';
-    el.style.background = 'transparent';
-    el.style.padding = '4px 0';
-
-    if (field === 'signature') {
-      el.innerHTML = `<img src="${sig.image}" style="max-width:260px;max-height:80px;display:block;" />`;
-    } else if (field === 'name') {
-      el.innerHTML = `<span style="font-size:15px;color:#1e293b;font-weight:500;">${sig.name}</span>`;
-    } else if (field === 'date') {
-      el.innerHTML = `<span style="font-size:14px;color:#475569;">${sig.date}</span>`;
-    } else {
-      el.style.display = 'none';
-    }
-  });
-}
-
-async function downloadPdf(documentHtml: string, filename: string, sig: SigData | null = null) {
+async function downloadPdf(documentHtml: string, filename: string, signature?: SignatureFields) {
   const [html2canvas, { jsPDF }] = await Promise.all([
     import('html2canvas-pro').then((m) => m.default),
     import('jspdf'),
@@ -176,8 +221,7 @@ async function downloadPdf(documentHtml: string, filename: string, sig: SigData 
     // Only add wrapper padding for legacy docs that don't have .page-content padding
     wrapper.style.padding = hasPageContent ? '0' : '32px 40px';
   }
-  // Inject or hide signature fields
-  injectSignatureFields(container, sig);
+  applySignatureFields(container, signature);
 
   document.body.appendChild(container);
 
@@ -255,6 +299,32 @@ export default function PublicOfferPage() {
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const mainRef = useRef<HTMLElement>(null);
+  const signatureFields = useMemo(
+    () => {
+      if (offer?.status === 'accepted') {
+        return {
+          image: offer.signatureImage ?? capturedSignature ?? undefined,
+          name: offer.signerName ?? (signerName.trim() || undefined),
+          date: offer.acceptedAt
+            ? fmtDate(offer.acceptedAt)
+            : capturedAt
+              ? fmtDate(capturedAt)
+              : undefined,
+        };
+      }
+
+      if (capturedSignature) {
+        return {
+          image: capturedSignature,
+          name: signerName.trim() || undefined,
+          date: capturedAt ? fmtDate(capturedAt) : todaySv(),
+        };
+      }
+
+      return undefined;
+    },
+    [capturedAt, capturedSignature, offer, signerName],
+  );
 
   // The app shell uses a globally locked viewport, but the public signing page
   // needs normal document scrolling so the full offer can be reviewed.
@@ -333,10 +403,7 @@ export default function PublicOfferPage() {
     doc.body.style.padding = '0';
     doc.body.style.overflow = 'hidden';
 
-    // Hide template signature blocks
-    doc.querySelectorAll('[data-sig-field]').forEach((el) => {
-      (el as HTMLElement).style.display = 'none';
-    });
+    applySignatureFields(doc, signatureFields);
 
     // ── Viewport scaling ───────────────────────────────────────────────────────
     // The document is authored at 816 px. On narrower viewports we scale the
@@ -376,7 +443,7 @@ export default function PublicOfferPage() {
       resize();
     }
     new MutationObserver(resize).observe(doc.body, { childList: true, subtree: true, attributes: true });
-  }, []);
+  }, [signatureFields]);
 
   // ── Draw canvas resize ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -474,6 +541,14 @@ export default function PublicOfferPage() {
         const msg = j.detail && j.detail.length < 120 ? j.detail : 'Signeringen misslyckades. Försök igen eller kontakta avsändaren.';
         throw new Error(msg);
       }
+      const acceptedAt = new Date().toISOString();
+      setOffer((current) => current ? ({
+        ...current,
+        status: 'accepted',
+        acceptedAt,
+        signerName: signerName.trim(),
+        signatureImage,
+      }) : current);
       await new Promise((r) => setTimeout(r, 600));
       setCapturedSignature(signatureImage);
       setCapturedAt(new Date().toISOString());
@@ -502,16 +577,7 @@ export default function PublicOfferPage() {
     setDownloading(true);
     try {
       const safeName = offer.title.replace(/[^a-zA-Z0-9\u00C0-\u024F ]/g, '').trim().replace(/\s+/g, '-');
-      const sig: SigData | null = capturedSignature
-        ? {
-            image: capturedSignature,
-            name: signerName.trim(),
-            date: capturedAt
-              ? new Date(capturedAt).toLocaleDateString('sv-SE', { day: '2-digit', month: 'long', year: 'numeric' })
-              : todaySv(),
-          }
-        : null;
-      await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`, sig);
+      await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`, signatureFields);
     } catch {
       setErrMsg('Kunde inte ladda ner PDF. Försök igen.');
     } finally {

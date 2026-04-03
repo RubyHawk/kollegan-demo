@@ -3,6 +3,7 @@ import { prisma } from '@platform/database/prisma';
 import { logger } from '@platform/logging/logger';
 import { sanitizeEmailHtml, escapeHtml } from '@platform/security/sanitize';
 import { BRAND_EMAIL_FALLBACK, BRAND_NAME, BRAND_TAGLINE } from '@shared/branding';
+import type { ActiveNotificationTag } from '@modules/supporting/identity';
 import { getDisplayModeLabel } from '../domain/pricing';
 import type {
   NotifyCreatorPayload,
@@ -437,7 +438,7 @@ export async function dispatchCreatorNotification(payload: NotifyCreatorPayload)
   logger.info(TAG, `Sent creator notification (${payload.event}) to ${user.email}`, { offerId: payload.offerId });
 
   // Fan out to additional notification routing recipients
-  const tag = payload.event === 'signed' ? 'offer_signed' : 'offer_declined';
+  const tag: ActiveNotificationTag = payload.event === 'signed' ? 'offer_signed' : 'offer_declined';
   try {
     const org = await prisma.organization.findUnique({
       where:  { id: payload.organizationId },
@@ -449,8 +450,16 @@ export async function dispatchCreatorNotification(payload: NotifyCreatorPayload)
       for (const r of recipients) {
         if (!r.tags.includes(tag)) continue;
         if (r.email === user.email) continue; // already sent above
-        await sendEmail({ from, to: r.email, subject, html });
-        logger.info(TAG, `Sent notification routing email (${payload.event}) to ${r.email}`, { offerId: payload.offerId });
+        try {
+          await sendEmail({ from, to: r.email, subject, html });
+          logger.info(TAG, `Sent notification routing email (${payload.event}) to ${r.email}`, { offerId: payload.offerId });
+        } catch (err) {
+          logger.warn(TAG, 'Failed to send notification routing email to recipient', {
+            err,
+            offerId: payload.offerId,
+            recipientEmail: r.email,
+          });
+        }
       }
     }
   } catch (err) {
