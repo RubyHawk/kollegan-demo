@@ -1,5 +1,10 @@
 import { Prisma, prisma } from '@platform/database/prisma';
 import type { OfferProduct } from '../domain/offer.entity';
+import {
+  buildStructuredCategoryLabel,
+  isMissingProductCategorySchemaError,
+} from './product-categories.shared';
+import { productCategoriesRepository } from './product-categories.repository';
 
 export interface CreateProductInput {
   organizationId: string;
@@ -33,24 +38,40 @@ export interface UpdateProductInput {
   maxQuantity?: number;
 }
 
-function mapProduct(r: Record<string, unknown>): OfferProduct {
+type ProductCategoryRelation = {
+  id: string;
+  name: string;
+  parentId: string | null;
+  parent: { name: string } | null;
+} | null;
+
+type ProductRecord = Record<string, unknown> & {
+  productCategory?: ProductCategoryRelation;
+};
+
+function mapProduct(record: ProductRecord): OfferProduct {
+  const relation = record.productCategory ?? null;
+  const categoryLabel = relation
+    ? buildStructuredCategoryLabel(relation)
+    : ((record.category as string | null) ?? undefined);
+
   return {
-    id: r.id as string,
-    organizationId: r.organizationId as string,
-    name: r.name as string,
-    description: (r.description as string | null) ?? undefined,
-    unitPrice: r.unitPrice as number,
-    vatRate: r.vatRate as number,
-    unit: (r.unit as string | null) ?? undefined,
-    sku: (r.sku as string | null) ?? undefined,
-    category: (r.category as string | null) ?? undefined,
-    categoryId: (r.categoryId as string | null) ?? undefined,
-    imageUrl: (r.imageUrl as string | null) ?? undefined,
-    isActive: (r.isActive as boolean) ?? true,
-    minQuantity: (r.minQuantity as number | null) ?? undefined,
-    maxQuantity: (r.maxQuantity as number | null) ?? undefined,
-    createdBy: r.createdBy as string,
-    createdAt: (r.createdAt as Date).toISOString(),
+    id: record.id as string,
+    organizationId: record.organizationId as string,
+    name: record.name as string,
+    description: (record.description as string | null) ?? undefined,
+    unitPrice: record.unitPrice as number,
+    vatRate: record.vatRate as number,
+    unit: (record.unit as string | null) ?? undefined,
+    sku: (record.sku as string | null) ?? undefined,
+    category: categoryLabel,
+    categoryId: (relation?.id ?? (record.categoryId as string | null)) ?? undefined,
+    imageUrl: (record.imageUrl as string | null) ?? undefined,
+    isActive: (record.isActive as boolean) ?? true,
+    minQuantity: (record.minQuantity as number | null) ?? undefined,
+    maxQuantity: (record.maxQuantity as number | null) ?? undefined,
+    createdBy: record.createdBy as string,
+    createdAt: (record.createdAt as Date).toISOString(),
   };
 }
 
@@ -71,6 +92,18 @@ const PRODUCT_SELECT = {
   maxQuantity: true,
   createdBy: true,
   createdAt: true,
+  productCategory: {
+    select: {
+      id: true,
+      name: true,
+      parentId: true,
+      parent: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  },
 } satisfies Prisma.OfferProductSelect;
 
 const LEGACY_PRODUCT_SELECT = {
@@ -91,17 +124,6 @@ const LEGACY_PRODUCT_SELECT = {
   createdAt: true,
 } satisfies Prisma.OfferProductSelect;
 
-function getPrismaErrorText(error: Prisma.PrismaClientKnownRequestError) {
-  const meta = error.meta ? JSON.stringify(error.meta).toLowerCase() : '';
-  return `${error.message.toLowerCase()} ${meta}`;
-}
-
-function isMissingProductCategoryIdColumn(error: unknown): error is Prisma.PrismaClientKnownRequestError {
-  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false;
-  if (error.code !== 'P2022') return false;
-  return getPrismaErrorText(error).includes('categoryid');
-}
-
 export const productsRepository = {
   async list(orgId: string, search?: string, category?: string, isActive?: boolean): Promise<OfferProduct[]> {
     const args = {
@@ -120,14 +142,14 @@ export const productsRepository = {
         ...args,
         select: PRODUCT_SELECT,
       });
-      return rows.map((row) => mapProduct(row as unknown as Record<string, unknown>));
+      return rows.map((row) => mapProduct(row as ProductRecord));
     } catch (error) {
-      if (!isMissingProductCategoryIdColumn(error)) throw error;
+      if (!isMissingProductCategorySchemaError(error)) throw error;
       const rows = await prisma.offerProduct.findMany({
         ...args,
         select: LEGACY_PRODUCT_SELECT,
       });
-      return rows.map((row) => mapProduct(row as unknown as Record<string, unknown>));
+      return rows.map((row) => mapProduct(row as ProductRecord));
     }
   },
 
@@ -142,6 +164,12 @@ export const productsRepository = {
   },
 
   async create(input: CreateProductInput): Promise<OfferProduct> {
+    const categorySelection = await productCategoriesRepository.getResolvedLabel(
+      input.organizationId,
+      input.categoryId,
+      input.category,
+    );
+
     const baseData = {
       organizationId: input.organizationId,
       name: input.name,
@@ -150,7 +178,7 @@ export const productsRepository = {
       vatRate: input.vatRate ?? 0.25,
       unit: input.unit ?? null,
       sku: input.sku ?? null,
-      category: input.category ?? null,
+      category: categorySelection.category,
       imageUrl: input.imageUrl ?? null,
       isActive: input.isActive ?? true,
       minQuantity: input.minQuantity ?? null,
@@ -162,18 +190,18 @@ export const productsRepository = {
       const row = await prisma.offerProduct.create({
         data: {
           ...baseData,
-          categoryId: input.categoryId ?? null,
+          categoryId: categorySelection.categoryId,
         },
         select: PRODUCT_SELECT,
       });
-      return mapProduct(row as unknown as Record<string, unknown>);
+      return mapProduct(row as ProductRecord);
     } catch (error) {
-      if (!isMissingProductCategoryIdColumn(error)) throw error;
+      if (!isMissingProductCategorySchemaError(error)) throw error;
       const row = await prisma.offerProduct.create({
         data: baseData,
         select: LEGACY_PRODUCT_SELECT,
       });
-      return mapProduct(row as unknown as Record<string, unknown>);
+      return mapProduct(row as ProductRecord);
     }
   },
 
@@ -184,6 +212,11 @@ export const productsRepository = {
     });
     if (!existing) return null;
 
+    const categorySelection =
+      input.categoryId !== undefined || input.category !== undefined
+        ? await productCategoriesRepository.getResolvedLabel(orgId, input.categoryId, input.category)
+        : null;
+
     const baseData = {
       ...(input.name !== undefined ? { name: input.name } : {}),
       ...(input.description !== undefined ? { description: input.description } : {}),
@@ -191,11 +224,11 @@ export const productsRepository = {
       ...(input.vatRate !== undefined ? { vatRate: input.vatRate } : {}),
       ...(input.unit !== undefined ? { unit: input.unit } : {}),
       ...(input.sku !== undefined ? { sku: input.sku } : {}),
-      ...(input.category !== undefined ? { category: input.category } : {}),
       ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
       ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
       ...(input.minQuantity !== undefined ? { minQuantity: input.minQuantity } : {}),
       ...(input.maxQuantity !== undefined ? { maxQuantity: input.maxQuantity } : {}),
+      ...(categorySelection ? { category: categorySelection.category } : {}),
     } satisfies Omit<Prisma.OfferProductUncheckedUpdateInput, 'categoryId'>;
 
     try {
@@ -203,19 +236,19 @@ export const productsRepository = {
         where: { id },
         data: {
           ...baseData,
-          ...(input.categoryId !== undefined ? { categoryId: input.categoryId } : {}),
+          ...(categorySelection ? { categoryId: categorySelection.categoryId } : {}),
         },
         select: PRODUCT_SELECT,
       });
-      return mapProduct(row as unknown as Record<string, unknown>);
+      return mapProduct(row as ProductRecord);
     } catch (error) {
-      if (!isMissingProductCategoryIdColumn(error)) throw error;
+      if (!isMissingProductCategorySchemaError(error)) throw error;
       const row = await prisma.offerProduct.update({
         where: { id },
         data: baseData,
         select: LEGACY_PRODUCT_SELECT,
       });
-      return mapProduct(row as unknown as Record<string, unknown>);
+      return mapProduct(row as ProductRecord);
     }
   },
 
@@ -225,6 +258,7 @@ export const productsRepository = {
       select: { id: true },
     });
     if (!existing) return false;
+
     await prisma.offerProduct.update({
       where: { id },
       data: { deletedAt: new Date() },

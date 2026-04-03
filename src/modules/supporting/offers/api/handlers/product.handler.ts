@@ -15,8 +15,6 @@ import {
   deleteProduct,
 } from '../../application/products.service';
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 function extractToken(req: NextRequest): string {
   return req.headers.get('authorization')?.slice(7) ?? req.cookies.get('at')?.value ?? '';
 }
@@ -31,10 +29,8 @@ async function requireStaff(req: NextRequest) {
   return payload;
 }
 
-// ── List Products ─────────────────────────────────────────────────────────────
-
 const ListQuerySchema = z.object({
-  search:   z.string().max(100).optional(),
+  search: z.string().max(100).optional(),
   category: z.string().max(100).optional(),
   isActive: z.enum(['true', 'false']).optional(),
 });
@@ -50,20 +46,17 @@ export const handleListProducts = createHandler(
   },
 );
 
-
-// ── Create Product ────────────────────────────────────────────────────────────
-
 const CreateBodySchema = z.object({
-  name:        z.string().min(1).max(300),
+  name: z.string().min(1).max(300),
   description: z.string().max(1000).optional(),
-  unitPrice:   z.number().min(0),
-  vatRate:     z.number().min(0).max(1).default(0.25),
-  unit:        z.string().max(50).optional(),
-  sku:         z.string().max(100).optional(),
-  category:    z.string().max(100).optional(),
-  categoryId:  z.string().uuid().optional().nullable(),
-  imageUrl:    z.string().url().max(2000).optional(),
-  isActive:    z.boolean().default(true),
+  unitPrice: z.number().min(0),
+  vatRate: z.number().min(0).max(1).default(0.25),
+  unit: z.string().max(50).optional(),
+  sku: z.string().max(100).optional(),
+  category: z.string().max(100).optional(),
+  categoryId: z.string().uuid().optional().nullable(),
+  imageUrl: z.string().url().max(2000).optional(),
+  isActive: z.boolean().default(true),
   minQuantity: z.number().min(0).optional(),
   maxQuantity: z.number().min(0).optional(),
 });
@@ -75,36 +68,34 @@ export const handleCreateProduct = createHandler(
     const payload = await requireStaff(req);
     const product = await createProduct({
       organizationId: payload.orgId!,
-      name:           body.name,
-      description:    body.description,
-      unitPrice:      body.unitPrice,
-      vatRate:        body.vatRate,
-      unit:           body.unit,
-      sku:            body.sku,
-      category:       body.category,
-      categoryId:     body.categoryId ?? null,
-      imageUrl:       body.imageUrl,
-      isActive:       body.isActive,
-      minQuantity:    body.minQuantity,
-      maxQuantity:    body.maxQuantity,
+      name: body.name,
+      description: body.description,
+      unitPrice: body.unitPrice,
+      vatRate: body.vatRate,
+      unit: body.unit,
+      sku: body.sku,
+      category: body.category,
+      categoryId: body.categoryId ?? null,
+      imageUrl: body.imageUrl,
+      isActive: body.isActive,
+      minQuantity: body.minQuantity,
+      maxQuantity: body.maxQuantity,
     }, payload.sub);
     return created(product, `/api/offers/products/${product.id}`);
   },
 );
 
-// ── Update Product ────────────────────────────────────────────────────────────
-
 const UpdateBodySchema = z.object({
-  name:        z.string().min(1).max(300).optional(),
+  name: z.string().min(1).max(300).optional(),
   description: z.string().max(1000).optional(),
-  unitPrice:   z.number().min(0).optional(),
-  vatRate:     z.number().min(0).max(1).optional(),
-  unit:        z.string().max(50).optional(),
-  sku:         z.string().max(100).optional(),
-  category:    z.string().max(100).optional(),
-  categoryId:  z.string().uuid().optional().nullable(),
-  imageUrl:    z.string().url().max(2000).optional().nullable(),
-  isActive:    z.boolean().optional(),
+  unitPrice: z.number().min(0).optional(),
+  vatRate: z.number().min(0).max(1).optional(),
+  unit: z.string().max(50).optional(),
+  sku: z.string().max(100).optional(),
+  category: z.string().max(100).optional(),
+  categoryId: z.string().uuid().optional().nullable(),
+  imageUrl: z.string().url().max(2000).optional().nullable(),
+  isActive: z.boolean().optional(),
   minQuantity: z.number().min(0).optional().nullable(),
   maxQuantity: z.number().min(0).optional().nullable(),
 });
@@ -117,8 +108,8 @@ export const handleUpdateProduct = createHandler(
     const payload = await requireStaff(req);
     const updated = await updateProduct(id, payload.orgId!, {
       ...body,
-      categoryId:  body.categoryId  !== undefined ? body.categoryId  : undefined,
-      imageUrl:    body.imageUrl    ?? undefined,
+      categoryId: body.categoryId !== undefined ? body.categoryId : undefined,
+      imageUrl: body.imageUrl ?? undefined,
       minQuantity: body.minQuantity ?? undefined,
       maxQuantity: body.maxQuantity ?? undefined,
     });
@@ -126,8 +117,6 @@ export const handleUpdateProduct = createHandler(
     return ok(updated);
   },
 );
-
-// ── Delete Product ────────────────────────────────────────────────────────────
 
 export const handleDeleteProduct = createHandler(
   { auth: 'jwt', tag: 'OfferProducts:Delete', rateLimit: { max: 30, windowMs: 60_000 } },

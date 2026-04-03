@@ -1,0 +1,3 @@
+-- Reconciliation migration kept to preserve local migration history from the
+-- earlier product-category branch. The canonical schema change now lives in
+-- 20260402000001_add_product_categories, so this follow-up is intentionally a no-op.

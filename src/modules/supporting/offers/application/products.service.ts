@@ -1,6 +1,6 @@
-import { logger }             from '@platform/logging/logger';
+import { logger } from '@platform/logging/logger';
 import { productsRepository } from '../infrastructure/products.repository';
-import type { OfferProduct }  from '../domain/offer.entity';
+import type { OfferProduct } from '../domain/offer.entity';
 import type {
   CreateProductInput,
   UpdateProductInput,

@@ -1,11 +1,5 @@
 /**
  * Product Category API handlers.
- *
- * Routes:
- *   GET    /api/offers/products/categories       → list all (flat, client builds tree)
- *   POST   /api/offers/products/categories       → create category
- *   PATCH  /api/offers/products/categories/[id]  → update category
- *   DELETE /api/offers/products/categories/[id]  → soft-delete category
  */
 
 import { z } from 'zod';
@@ -21,8 +15,6 @@ import {
   deleteProductCategory,
 } from '../../application/product-categories.service';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 function extractToken(req: NextRequest): string {
   return req.headers.get('authorization')?.slice(7) ?? req.cookies.get('at')?.value ?? '';
 }
@@ -37,7 +29,31 @@ async function requireStaff(req: NextRequest) {
   return payload;
 }
 
-// ── List ──────────────────────────────────────────────────────────────────────
+function translateCategoryError(error: unknown): never {
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (message === 'CATEGORY_SCHEMA_UNAVAILABLE') {
+    throw Errors.unavailable('Produktkategorier är inte tillgängliga förrän databasen har uppdaterats.');
+  }
+
+  if (message === 'PARENT_NOT_FOUND') {
+    throw Errors.notFound('Parent category');
+  }
+
+  if (message === 'PARENT_NOT_MAIN') {
+    throw Errors.conflict('En underkategori kan bara kopplas till en huvudkategori.');
+  }
+
+  if (message === 'CATEGORY_EXISTS') {
+    throw Errors.conflict('Det finns redan en kategori med samma namn på den här nivån.');
+  }
+
+  if (message === 'CATEGORY_HAS_CHILDREN') {
+    throw Errors.conflict('Ta bort eller flytta underkategorierna innan du raderar huvudkategorin.');
+  }
+
+  throw error instanceof Error ? error : Errors.internal();
+}
 
 export const handleListProductCategories = createHandler(
   { auth: 'jwt', tag: 'ProductCategories:List', rateLimit: { max: 120, windowMs: 60_000 } },
@@ -49,10 +65,8 @@ export const handleListProductCategories = createHandler(
   },
 );
 
-// ── Create ────────────────────────────────────────────────────────────────────
-
 const CreateBodySchema = z.object({
-  name:     z.string().min(1).max(100),
+  name: z.string().trim().min(1).max(100),
   parentId: z.string().uuid().optional().nullable(),
 });
 
@@ -61,19 +75,22 @@ export const handleCreateProductCategory = createHandler(
   async (ctx) => {
     const { body, req } = ctx as { body: z.infer<typeof CreateBodySchema>; req: NextRequest };
     const payload = await requireStaff(req);
-    const cat = await createProductCategory({
-      organizationId: payload.orgId!,
-      name:           body.name,
-      parentId:       body.parentId ?? null,
-    });
-    return created(cat, `/api/offers/products/categories/${cat.id}`);
+
+    try {
+      const category = await createProductCategory({
+        organizationId: payload.orgId!,
+        name: body.name,
+        parentId: body.parentId ?? null,
+      });
+      return created(category, `/api/offers/products/categories/${category.id}`);
+    } catch (error) {
+      translateCategoryError(error);
+    }
   },
 );
 
-// ── Update ────────────────────────────────────────────────────────────────────
-
 const UpdateBodySchema = z.object({
-  name:     z.string().min(1).max(100).optional(),
+  name: z.string().trim().min(1).max(100).optional(),
   parentId: z.string().uuid().optional().nullable(),
 });
 
@@ -83,13 +100,16 @@ export const handleUpdateProductCategory = createHandler(
     const { body, req } = ctx as { body: z.infer<typeof UpdateBodySchema>; req: NextRequest };
     const id = extractId(req);
     const payload = await requireStaff(req);
-    const updated = await updateProductCategory(id, payload.orgId!, body);
-    if (!updated) throw Errors.notFound('Category not found');
-    return ok(updated);
+
+    try {
+      const updated = await updateProductCategory(id, payload.orgId!, body);
+      if (!updated) throw Errors.notFound('Category not found');
+      return ok(updated);
+    } catch (error) {
+      translateCategoryError(error);
+    }
   },
 );
-
-// ── Delete ────────────────────────────────────────────────────────────────────
 
 export const handleDeleteProductCategory = createHandler(
   { auth: 'jwt', tag: 'ProductCategories:Delete', rateLimit: { max: 30, windowMs: 60_000 } },
@@ -97,8 +117,13 @@ export const handleDeleteProductCategory = createHandler(
     const { req } = ctx as { req: NextRequest };
     const id = extractId(req);
     const payload = await requireStaff(req);
-    const deleted = await deleteProductCategory(id, payload.orgId!);
-    if (!deleted) throw Errors.notFound('Category not found');
-    return ok(null);
+
+    try {
+      const deleted = await deleteProductCategory(id, payload.orgId!);
+      if (!deleted) throw Errors.notFound('Category not found');
+      return ok(null);
+    } catch (error) {
+      translateCategoryError(error);
+    }
   },
 );
