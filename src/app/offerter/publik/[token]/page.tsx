@@ -287,6 +287,8 @@ export default function PublicOfferPage() {
   const [downloading, setDownloading] = useState(false);
 
   const [signerName, setSignerName] = useState('');
+  const [capturedSignature, setCapturedSignature] = useState<string | null>(null);
+  const [capturedAt, setCapturedAt] = useState<string | null>(null);
   const [sigMode, setSigMode] = useState<SigMode>('type');
   const [sigFont, setSigFont] = useState<typeof SIG_FONTS[number]['id']>(SIG_FONTS[0].id);
   const [typedSig, setTypedSig] = useState('');
@@ -298,14 +300,30 @@ export default function PublicOfferPage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const signatureFields = useMemo(
-    () => offer?.status === 'accepted'
-      ? {
-          image: offer.signatureImage,
-          name: offer.signerName,
-          date: offer.acceptedAt ? fmtDate(offer.acceptedAt) : '',
-        }
-      : undefined,
-    [offer],
+    () => {
+      if (offer?.status === 'accepted') {
+        return {
+          image: offer.signatureImage ?? capturedSignature ?? undefined,
+          name: offer.signerName ?? (signerName.trim() || undefined),
+          date: offer.acceptedAt
+            ? fmtDate(offer.acceptedAt)
+            : capturedAt
+              ? fmtDate(capturedAt)
+              : undefined,
+        };
+      }
+
+      if (capturedSignature) {
+        return {
+          image: capturedSignature,
+          name: signerName.trim() || undefined,
+          date: capturedAt ? fmtDate(capturedAt) : todaySv(),
+        };
+      }
+
+      return undefined;
+    },
+    [capturedAt, capturedSignature, offer, signerName],
   );
 
   // The app shell uses a globally locked viewport, but the public signing page
@@ -532,6 +550,8 @@ export default function PublicOfferPage() {
         signatureImage,
       }) : current);
       await new Promise((r) => setTimeout(r, 600));
+      setCapturedSignature(signatureImage);
+      setCapturedAt(new Date().toISOString());
       setState('accepted');
     } catch (e) { setErrMsg((e as Error).message); setState('ready'); } finally { setBusy(false); }
   }, [token, signerName, getSignatureImage, sigMode]);
@@ -557,7 +577,7 @@ export default function PublicOfferPage() {
     setDownloading(true);
     try {
       const safeName = offer.title.replace(/[^a-zA-Z0-9\u00C0-\u024F ]/g, '').trim().replace(/\s+/g, '-');
-        await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`, signatureFields);
+      await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`, signatureFields);
     } catch {
       setErrMsg('Kunde inte ladda ner PDF. Försök igen.');
     } finally {

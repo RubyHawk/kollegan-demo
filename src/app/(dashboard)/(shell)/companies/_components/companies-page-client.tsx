@@ -165,7 +165,7 @@ export function CompaniesPageClient() {
       setMemberSaving(true);
       try {
         const response = await fetchWithRefresh(`/api/companies/${membersCompany.id}/members`, {
-          method: 'POST',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId, role }),
         });
@@ -186,7 +186,7 @@ export function CompaniesPageClient() {
       setMemberSaving(true);
       try {
         const response = await fetchWithRefresh(`/api/companies/${membersCompany.id}/members`, {
-          method: 'POST',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             mode: 'create',
