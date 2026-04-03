@@ -9,12 +9,17 @@ import {
   OFFER_ACCEPTED,
   OFFER_DECLINED,
 } from '../events/offer.events';
-import { enqueueOfferEmail, enqueueCreatorNotification, enqueueReminderEmail } from './offer-email';
+import {
+  buildReminderPayload,
+  buildSendToRecipientPayload,
+  enqueueCreatorNotification,
+} from './offer-email';
 import { identityService } from '@modules/supporting/identity';
 import { generateDocument, generateFallbackDocument, interpolateEmailText } from './document-generator';
 import { templatesRepository } from '../infrastructure/templates.repository';
 import { companiesRepository } from '../infrastructure/companies.repository';
 import { resolveOfferBranding } from './company-branding';
+import { dispatchOfferEmail, dispatchReminderEmail } from './offer-email-dispatch';
 
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
 
@@ -118,6 +123,23 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   const interpolatedSubject = emailSubject ? interpolateEmailText(emailSubject, sendSnapshot) : undefined;
   const interpolatedBody = emailBody ? interpolateEmailText(emailBody, sendSnapshot) : undefined;
 
+  const publicUrl = `${process.env.PUBLIC_OFFER_BASE_URL ?? `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/offerter/publik`}/${existing.publicToken}`;
+  const sender = { senderEmail: branding.senderEmail, senderName: branding.senderName };
+
+  await dispatchOfferEmail(
+    buildSendToRecipientPayload(
+      {
+        ...sendSnapshot,
+        generatedDocument,
+        emailSubject: interpolatedSubject,
+        emailBody: interpolatedBody,
+        emailHeaderConfig,
+      },
+      publicUrl,
+      sender,
+    ),
+  );
+
   const updated = await offersRepository.update(id, orgId, {
     status: 'sent',
     sentAt,
@@ -141,16 +163,6 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
       totalIncVat: updated.totalIncVat,
     },
   });
-
-  const sender = { senderEmail: branding.senderEmail, senderName: branding.senderName };
-
-  const appUrl = process.env.PUBLIC_OFFER_BASE_URL
-    ? `${process.env.PUBLIC_OFFER_BASE_URL}`
-    : `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/offerter/publik`;
-  const publicUrl = `${appUrl}/${updated.publicToken}`;
-  enqueueOfferEmail(updated, publicUrl, sender).catch((err: unknown) =>
-    logger.warn(TAG, 'Failed to enqueue offer email', { err })
-  );
 
   logger.info(TAG, `Offer sent: ${id}`, { recipientEmail: updated.recipientEmail });
   return updated;
@@ -461,12 +473,6 @@ export async function sendOfferReminder(id: string, orgId: string): Promise<Offe
     }
   }
 
-  const updated = await offersRepository.update(id, orgId, {
-    reminderSentAt: new Date(),
-    reminderCount: (existing.reminderCount ?? 0) + 1,
-  });
-  if (!updated) return null;
-
   const [org, company] = await Promise.all([
     identityService.getOrg(orgId),
     existing.companyId ? companiesRepository.getById(existing.companyId, orgId) : Promise.resolve(null),
@@ -474,13 +480,22 @@ export async function sendOfferReminder(id: string, orgId: string): Promise<Offe
   const branding = resolveOfferBranding(company, org);
   const senderInfo = { senderEmail: branding.senderEmail, senderName: branding.senderName };
 
-  const appUrl = process.env.PUBLIC_OFFER_BASE_URL
-    ? `${process.env.PUBLIC_OFFER_BASE_URL}`
-    : `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/offerter/publik`;
-  const publicUrl = `${appUrl}/${updated.publicToken}`;
-  await enqueueReminderEmail(updated, publicUrl, senderInfo).catch((err: unknown) =>
-    logger.warn(TAG, 'Failed to enqueue reminder email', { err })
+  const publicUrl = `${process.env.PUBLIC_OFFER_BASE_URL ?? `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/offerter/publik`}/${existing.publicToken}`;
+  const reminderPayload = buildReminderPayload(
+    {
+      ...existing,
+      reminderCount: (existing.reminderCount ?? 0) + 1,
+    },
+    publicUrl,
+    senderInfo,
   );
+  await dispatchReminderEmail(reminderPayload);
+
+  const updated = await offersRepository.update(id, orgId, {
+    reminderSentAt: new Date(),
+    reminderCount: reminderPayload.reminderCount,
+  });
+  if (!updated) return null;
 
   logger.info(TAG, `Reminder sent for offer: ${id}`, { reminderCount: updated.reminderCount });
   return updated;
