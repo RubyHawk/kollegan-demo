@@ -231,10 +231,16 @@ async function downloadPdf(documentHtml: string, filename: string, signature?: S
   const imgWidth   = pageWidth - margin * 2;
 
   // Render each .page-block as its own PDF page so fill-page images never split mid-image.
-  // Falls back to rendering the whole container when no page-blocks exist (legacy docs).
-  const pageBlocks = Array.from(container.querySelectorAll<HTMLElement>('.page-block'));
+  // Legacy docs without page-blocks still fall back to rendering the whole container.
+  const allPageBlocks = Array.from(container.querySelectorAll<HTMLElement>('.page-block'));
 
-  if (pageBlocks.length > 0) {
+  if (allPageBlocks.length > 0) {
+    const pageBlocks = allPageBlocks.filter((block) => block.getAttribute('data-customer-pdf') !== 'false');
+    if (pageBlocks.length === 0) {
+      document.body.removeChild(container);
+      throw new Error('Mallen har inga sidor markerade för kundens PDF.');
+    }
+
     for (let i = 0; i < pageBlocks.length; i++) {
       if (i > 0) pdf.addPage();
       const blockCanvas = await html2canvas(pageBlocks[i], {

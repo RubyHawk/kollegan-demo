@@ -10,16 +10,16 @@ import {
   OFFER_DECLINED,
 } from '../events/offer.events';
 import {
+  buildCreatorNotificationPayload,
   buildReminderPayload,
   buildSendToRecipientPayload,
-  enqueueCreatorNotification,
 } from './offer-email';
 import { identityService } from '@modules/supporting/identity';
 import { generateDocument, generateFallbackDocument, interpolateEmailText } from './document-generator';
 import { templatesRepository } from '../infrastructure/templates.repository';
 import { companiesRepository } from '../infrastructure/companies.repository';
 import { resolveOfferBranding } from './company-branding';
-import { dispatchOfferEmail, dispatchReminderEmail } from './offer-email-dispatch';
+import { dispatchCreatorNotification, dispatchOfferEmail, dispatchReminderEmail } from './offer-email-dispatch';
 import { prisma } from '@platform/database/prisma';
 
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
@@ -281,8 +281,14 @@ export async function signOffer(
     );
   }
 
-  await enqueueCreatorNotification(final, 'signed').catch((err: unknown) =>
-    logger.warn(TAG, 'Failed to enqueue creator notification', { err })
+  const org = await identityService.getOrg(final.organizationId).catch(() => null);
+  await dispatchCreatorNotification(
+    buildCreatorNotificationPayload(final, 'signed', {
+      senderEmail: org?.senderEmail,
+      senderName: org?.senderName,
+    }),
+  ).catch((err: unknown) =>
+    logger.warn(TAG, 'Failed to send creator notification', { err })
   );
 
   void import('@modules/supporting/audit').then(({ log }) =>
@@ -331,8 +337,15 @@ export async function declineOfferByToken(
     payload: { offerId: final.id },
   });
 
-  await enqueueCreatorNotification(final, 'declined', { comment }).catch((err: unknown) =>
-    logger.warn(TAG, 'Failed to enqueue decline notification', { err })
+  const org = await identityService.getOrg(final.organizationId).catch(() => null);
+  await dispatchCreatorNotification(
+    buildCreatorNotificationPayload(final, 'declined', {
+      comment,
+      senderEmail: org?.senderEmail,
+      senderName: org?.senderName,
+    }),
+  ).catch((err: unknown) =>
+    logger.warn(TAG, 'Failed to send decline notification', { err })
   );
 
   void import('@modules/supporting/audit').then(({ log }) =>
