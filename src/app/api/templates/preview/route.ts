@@ -2,90 +2,127 @@ import { NextResponse } from 'next/server';
 import { generateDocument, generateFallbackDocument } from '@modules/supporting/offers/application/document-generator';
 import type { Offer } from '@modules/supporting/offers/domain/offer.entity';
 
-// ── Sample offer used for template preview ────────────────────────────────────
-// Swedish B2B demo data — realistic but fictitious.
+const PREVIEW_SENTINELS = {
+  title: '__PREVIEW_TITLE__',
+  recipientName: '__PREVIEW_RECIPIENT_NAME__',
+  recipientEmail: '__PREVIEW_RECIPIENT_EMAIL__',
+  recipientCompany: '__PREVIEW_RECIPIENT_COMPANY__',
+} as const;
+
+const PREVIEW_GHOST_CSS = `<style data-preview-ghosts>
+  .preview-ghost {
+    display:inline-flex;align-items:center;min-height:1.05em;border-radius:999px;
+    background:linear-gradient(90deg, rgba(148,163,184,0.14), rgba(148,163,184,0.22), rgba(148,163,184,0.14));
+    background-size:220% 100%;color:rgba(71,85,105,0.72);font-weight:500;letter-spacing:0.01em;
+    animation:preview-ghost-shimmer 2.1s ease-in-out infinite;
+    box-decoration-break:clone;-webkit-box-decoration-break:clone;
+  }
+  .preview-ghost--text,.preview-ghost--email{padding:0.16em 0.58em;}
+  .preview-ghost--title{display:inline-flex;min-width:11ch;padding:0.08em 0.48em;border-radius:14px;}
+  @keyframes preview-ghost-shimmer {0%{background-position:200% 0;}100%{background-position:-20% 0;}}
+</style>`;
 
 const SAMPLE_OFFER: Offer = {
-  id:               'preview-000',
-  title:            'Hotellprojekt Q2 2026',
-  status:           'draft',
-  offerNumber:      42,
+  id: 'offertnr0-preview',
+  title: PREVIEW_SENTINELS.title,
+  status: 'draft',
+  offerNumber: undefined,
   priceDisplayMode: 'exclusive',
-  recipientName:    'Anna Lindström',
-  recipientEmail:   'anna@lindstrom-hotell.se',
-  recipientCompany: 'Lindström Hotell AB',
-  notes:            'Exklusive resekostnader. Betalning 30 dagar netto.',
-  validUntil:       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-  totalExVat:       85000,
-  totalIncVat:      106250,
-  createdAt:        new Date().toISOString(),
-  publicToken:      'preview-token',
-  reminderCount:    0,
-  validityDays:     30,
-  createdBy:        'preview',
-  signatureMethod:  'canvas',
-  lineItems: [
-    { id: 'li-1', description: 'Konsulttjänst — projektledning', quantity: 10, unitPrice: 5000, vatRate: 0.25, discount: 0 },
-    { id: 'li-2', description: 'Systemintegration',              quantity: 1,  unitPrice: 35000, vatRate: 0.25, discount: 0 },
-  ],
+  recipientName: PREVIEW_SENTINELS.recipientName,
+  recipientEmail: PREVIEW_SENTINELS.recipientEmail,
+  recipientCompany: PREVIEW_SENTINELS.recipientCompany,
+  notes: '',
+  validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  totalExVat: 0,
+  totalIncVat: 0,
+  createdAt: new Date().toISOString(),
+  publicToken: 'preview-token',
+  reminderCount: 0,
+  validityDays: 30,
+  createdBy: 'preview',
+  signatureMethod: 'canvas',
+  lineItems: [],
 };
 
 interface PartialOfferInput {
-  title?:            string;
+  title?: string;
   priceDisplayMode?: 'exclusive' | 'inclusive';
-  recipientName?:    string;
-  recipientEmail?:   string;
+  recipientName?: string;
+  recipientEmail?: string;
   recipientCompany?: string;
-  notes?:            string;
+  notes?: string;
   lineItems?: Array<{
     description: string;
-    quantity:    number;
-    unitPrice:   number;
-    vatRate:     number;
-    discount:    number;
+    quantity: number;
+    unitPrice: number;
+    vatRate: number;
+    discount: number;
   }>;
+}
+
+function decoratePreviewHtml(html: string): string {
+  const withCss = html.includes('data-preview-ghosts')
+    ? html
+    : html.includes('</head>')
+      ? html.replace('</head>', `${PREVIEW_GHOST_CSS}</head>`)
+      : `${PREVIEW_GHOST_CSS}${html}`;
+
+  return withCss
+    .replaceAll(
+      PREVIEW_SENTINELS.title,
+      '<span class="preview-ghost preview-ghost--title">Offerttitel</span>',
+    )
+    .replaceAll(
+      PREVIEW_SENTINELS.recipientName,
+      '<span class="preview-ghost preview-ghost--text">Kundnamn</span>',
+    )
+    .replaceAll(
+      PREVIEW_SENTINELS.recipientEmail,
+      '<span class="preview-ghost preview-ghost--email">kund@epost.se</span>',
+    )
+    .replaceAll(
+      PREVIEW_SENTINELS.recipientCompany,
+      '<span class="preview-ghost preview-ghost--text">Kundföretag</span>',
+    );
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json() as { content?: string; offer?: PartialOfferInput };
 
-    // Merge incoming partial offer data with sample defaults
     const partialItems = body.offer?.lineItems;
     const lineItems = partialItems && partialItems.length > 0
       ? partialItems.map((li, i) => ({ id: `li-${i}`, ...li }))
-      : SAMPLE_OFFER.lineItems;
+      : [];
 
-    // Compute totals from line items
-    let exVat = 0, vatAmt = 0;
+    let exVat = 0;
+    let vatAmount = 0;
+
     for (const li of lineItems) {
-      const disc = 1 - ((li.discount ?? 0) / 100);
-      const line = li.quantity * li.unitPrice * disc;
-      exVat  += line;
-      vatAmt += line * li.vatRate;
+      const discountMultiplier = 1 - ((li.discount ?? 0) / 100);
+      const line = li.quantity * li.unitPrice * discountMultiplier;
+      exVat += line;
+      vatAmount += line * li.vatRate;
     }
 
     const offer: Offer = {
       ...SAMPLE_OFFER,
-      ...(body.offer?.title            ? { title:            body.offer.title            } : {}),
+      ...(body.offer?.title ? { title: body.offer.title } : {}),
       ...(body.offer?.priceDisplayMode ? { priceDisplayMode: body.offer.priceDisplayMode } : {}),
-      ...(body.offer?.recipientName    ? { recipientName:    body.offer.recipientName    } : {}),
-      ...(body.offer?.recipientEmail   ? { recipientEmail:   body.offer.recipientEmail   } : {}),
+      ...(body.offer?.recipientName ? { recipientName: body.offer.recipientName } : {}),
+      ...(body.offer?.recipientEmail ? { recipientEmail: body.offer.recipientEmail } : {}),
       ...(body.offer?.recipientCompany != null ? { recipientCompany: body.offer.recipientCompany } : {}),
-      ...(body.offer?.notes != null    ? { notes:            body.offer.notes            } : {}),
+      ...(body.offer?.notes != null ? { notes: body.offer.notes } : {}),
       lineItems,
-      totalExVat:  Math.round(exVat  * 100) / 100,
-      totalIncVat: Math.round((exVat + vatAmt) * 100) / 100,
+      totalExVat: Math.round(exVat * 100) / 100,
+      totalIncVat: Math.round((exVat + vatAmount) * 100) / 100,
     };
 
-    let html: string;
-    if (body.content) {
-      html = generateDocument(body.content, offer);
-    } else {
-      html = generateFallbackDocument(offer);
-    }
+    const html = body.content
+      ? generateDocument(body.content, offer)
+      : generateFallbackDocument(offer);
 
-    return NextResponse.json({ html });
+    return NextResponse.json({ html: decoratePreviewHtml(html) });
   } catch (err) {
     return NextResponse.json(
       { detail: err instanceof Error ? err.message : 'Preview error' },

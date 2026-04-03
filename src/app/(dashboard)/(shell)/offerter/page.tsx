@@ -96,6 +96,14 @@ function fmtSEK(n: number) {
   return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(n);
 }
 
+function normalizeSearchValue(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
 function pricingSummary(items: LineItem[], mode: OfferPriceDisplayMode) {
   const validItems = items.filter((item) => item.description.trim() && item.quantity > 0);
   return summarizeOfferPricing(validItems, mode);
@@ -566,9 +574,19 @@ export default function OffersPage() {
   }, []);
 
   const filteredServices = useMemo(
-    () => !productSearch.trim()
-      ? services
-      : services.filter((p) => p.name.toLowerCase().includes(productSearch.toLowerCase())),
+    () => {
+      const query = normalizeSearchValue(productSearch);
+      if (!query) return services;
+
+      return services.filter((p) => {
+        const haystack = normalizeSearchValue([
+          p.name,
+          p.description ?? '',
+          p.unit ?? '',
+        ].join(' '));
+        return haystack.includes(query);
+      });
+    },
     [services, productSearch],
   );
 
@@ -1238,12 +1256,12 @@ export default function OffersPage() {
                                   <div className="grid grid-cols-2 gap-2">
                                     <div>
                                       <label className="block text-[10px] font-medium text-[var(--text-secondary)] mb-1">Namn *</label>
-                                      <input value={form.recipientName} onChange={(e) => { setForm((f) => ({ ...f, recipientName: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientName: '' })); }} onBlur={(e) => { const v = e.target.value.trim(); if (!v) setFieldErrors((fe) => ({ ...fe, recipientName: 'Obligatoriskt' })); else if (v.length < 2) setFieldErrors((fe) => ({ ...fe, recipientName: 'Minst 2 tecken' })); }} onFocus={() => setActiveField('Mottagare')} placeholder="Anna Lindström" className={`w-full rounded-lg border px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientName ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                                      <input value={form.recipientName} onChange={(e) => { setForm((f) => ({ ...f, recipientName: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientName: '' })); }} onBlur={(e) => { const v = e.target.value.trim(); if (!v) setFieldErrors((fe) => ({ ...fe, recipientName: 'Obligatoriskt' })); else if (v.length < 2) setFieldErrors((fe) => ({ ...fe, recipientName: 'Minst 2 tecken' })); }} onFocus={() => setActiveField('Mottagare')} placeholder="Namn" className={`w-full rounded-lg border px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientName ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                                       {fieldErrors.recipientName && <p className="text-[10px] text-red-500 mt-0.5">{fieldErrors.recipientName}</p>}
                                     </div>
                                     <div>
                                       <label className="block text-[10px] font-medium text-[var(--text-secondary)] mb-1">E-post *</label>
-                                      <input type="email" value={form.recipientEmail} onChange={(e) => { setForm((f) => ({ ...f, recipientEmail: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientEmail: '' })); }} onBlur={(e) => { const v = e.target.value.trim(); if (!v) setFieldErrors((fe) => ({ ...fe, recipientEmail: 'Obligatoriskt' })); else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) setFieldErrors((fe) => ({ ...fe, recipientEmail: 'Ogiltig e-postadress' })); }} onFocus={() => setActiveField('E-post')} placeholder="anna@example.com" className={`w-full rounded-lg border px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientEmail ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                                      <input type="email" value={form.recipientEmail} onChange={(e) => { setForm((f) => ({ ...f, recipientEmail: e.target.value })); setFieldErrors((fe) => ({ ...fe, recipientEmail: '' })); }} onBlur={(e) => { const v = e.target.value.trim(); if (!v) setFieldErrors((fe) => ({ ...fe, recipientEmail: 'Obligatoriskt' })); else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) setFieldErrors((fe) => ({ ...fe, recipientEmail: 'Ogiltig e-postadress' })); }} onFocus={() => setActiveField('E-post')} placeholder="namn@foretag.se" className={`w-full rounded-lg border px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all bg-[var(--surface-alt)] ${fieldErrors.recipientEmail ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
                                       {fieldErrors.recipientEmail && <p className="text-[10px] text-red-500 mt-0.5">{fieldErrors.recipientEmail}</p>}
                                     </div>
                                   </div>
@@ -1257,7 +1275,7 @@ export default function OffersPage() {
                                       }}
                                       onFocus={() => { setActiveField('Mottagare'); if (form.recipientCompany) searchCompanies(form.recipientCompany); }}
                                       onBlur={() => setTimeout(() => setCompanyResults([]), 150)}
-                                      placeholder="Lindström AB"
+                                      placeholder="Företag"
                                       className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
                                     />
                                     {(companyResults.length > 0 || companyLoading) && (
@@ -1448,22 +1466,32 @@ export default function OffersPage() {
                                     </motion.div>
                                   ) : (
                                     <motion.div key="expanded" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className={cn('px-3 py-3 space-y-2.5 group/row', idx > 0 && 'border-t border-[var(--border)]/40')}>
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-start gap-2">
                                         {grip}
                                         <span className="shrink-0 w-5 h-5 rounded-md bg-[var(--surface-alt)] text-[var(--text-secondary)] text-[10px] font-semibold flex items-center justify-center tabular-nums select-none border border-[var(--border)]">
                                           {idx + 1}
                                         </span>
-                                        <div className="flex-1 relative">
-                                          <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} onFocus={() => setActiveField('Rad ' + (idx + 1))} placeholder="Tjänst eller produkt" className={`w-full rounded-lg border bg-[var(--surface-alt)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all ${services.length > 0 ? 'pr-8' : ''} ${fieldErrors[`line_${idx}_description`] ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                                        <div className="flex-1 space-y-1.5">
+                                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                            <div className="flex-1 relative">
+                                              <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} onFocus={() => setActiveField('Rad ' + (idx + 1))} placeholder="Tjänst eller produkt" className={`w-full rounded-lg border bg-[var(--surface-alt)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all ${fieldErrors[`line_${idx}_description`] ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                                            </div>
+                                            {services.length > 0 && (
+                                              <button
+                                                type="button"
+                                                onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }}
+                                                className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-all hover:border-[var(--accent)]/45 hover:bg-[var(--surface)] hover:text-[var(--text-primary)]"
+                                                title="Välj från produktbibliotek"
+                                              >
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                                                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                                                </svg>
+                                                {productPickerRow === idx ? 'Stäng' : item.description.trim() ? 'Byt produkt' : 'Välj produkt'}
+                                              </button>
+                                            )}
+                                          </div>
                                           {fieldErrors[`line_${idx}_description`] && (
                                             <p className="text-[10px] text-red-500 mt-0.5">{fieldErrors[`line_${idx}_description`]}</p>
-                                          )}
-                                          {services.length > 0 && (
-                                            <button type="button" onClick={() => { setProductPickerRow(productPickerRow === idx ? null : idx); setProductSearch(''); }} title="Välj från produktbibliotek" className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
-                                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
-                                              </svg>
-                                            </button>
                                           )}
                                         </div>
                                         <button type="button" onClick={() => removeLine(idx)} className={cn('shrink-0 rounded-lg p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all', form.lineItems.length > 1 ? 'opacity-0 group-hover/row:opacity-100' : 'invisible')}>
@@ -1479,12 +1507,15 @@ export default function OffersPage() {
                                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--text-muted)]">
                                                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                                               </svg>
-                                              <input autoFocus value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="Sök produkt…" className="flex-1 bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none"/>
+                                              <input autoFocus value={productSearch} onChange={(e) => setProductSearch(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setProductPickerRow(null); }} placeholder="Sök namn, beskrivning eller enhet..." className="flex-1 bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none"/>
                                               <kbd className="shrink-0 text-[10px] text-[var(--text-muted)] border border-[var(--border)] rounded px-1 py-0.5">Esc</kbd>
                                             </div>
                                             <div className="max-h-72 overflow-y-auto divide-y divide-[var(--border)]/50">
                                               {filteredServices.length === 0 ? (
-                                                <div className="px-4 py-6 text-center text-xs text-[var(--text-muted)]">Inga produkter hittades</div>
+                                                <div className="px-4 py-6 text-center">
+                                                  <p className="text-xs font-medium text-[var(--text-secondary)]">Inga produkter hittades</p>
+                                                  <p className="mt-1 text-[10px] text-[var(--text-muted)]">Prova att söka på namn, beskrivning eller enhet.</p>
+                                                </div>
                                               ) : filteredServices.map((p) => (
                                                 <button key={p.id} type="button" onClick={() => pickProduct(idx, p)}
                                                   className="w-full text-left px-4 py-3 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3">
@@ -1500,6 +1531,20 @@ export default function OffersPage() {
                                                 </button>
                                               ))}
                                             </div>
+                                            {services.length > 0 && (
+                                              <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-[10px] text-[var(--text-muted)]">
+                                                <span>{filteredServices.length} av {services.length} produkter</span>
+                                                {productSearch.trim() && (
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => setProductSearch('')}
+                                                    className="rounded px-1.5 py-0.5 text-[10px] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface)]"
+                                                  >
+                                                    Rensa sökning
+                                                  </button>
+                                                )}
+                                              </div>
+                                            )}
                                           </div>
                                         </div>
                                       )}
@@ -1558,11 +1603,11 @@ export default function OffersPage() {
                             </DndContext>
                           </div>
                           <div className="border-t border-[var(--border)]/40 p-2">
-                            <button type="button" onClick={addLine} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-[var(--border)] text-xs text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <button type="button" onClick={addLine} className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--border)] px-4 py-3 text-sm font-medium text-[var(--text-secondary)] hover:border-[var(--accent)] hover:bg-[var(--surface-alt)] hover:text-[var(--accent)] transition-colors">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                               </svg>
-                              Lägg till rad
+                              Lägg till produkt eller tjänst
                             </button>
                           </div>
                         </div>
