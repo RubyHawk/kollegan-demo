@@ -397,6 +397,7 @@ export async function duplicateOffer(
     organizationId: orgId,
     createdBy: actorId,
     title: `${existing.title} (kopia)`,
+    priceDisplayMode: existing.priceDisplayMode,
     recipientName: existing.recipientName,
     recipientEmail: existing.recipientEmail,
     recipientCompany: existing.recipientCompany,

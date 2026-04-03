@@ -30,6 +30,19 @@ interface OfferTemplate {
 
 type Tab = 'offer' | 'email';
 
+async function readJsonResponse<T>(res: Response): Promise<T> {
+  const raw = await res.text();
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    throw new Error(
+      raw.startsWith('<')
+        ? 'Servern returnerade HTML i stället för JSON. Kontrollera att du fortfarande är inloggad och att API:t svarar korrekt.'
+        : 'Kunde inte tolka svaret från servern.',
+    );
+  }
+}
+
 export default function TemplateEditorPage() {
   const router   = useRouter();
   const params   = useParams<{ id: string }>();
@@ -65,7 +78,7 @@ export default function TemplateEditorPage() {
       try {
         const res = await fetchWithRefresh(`/api/templates/${params.id}`);
         if (!res.ok) throw new Error(`Hittade inte mallen (${res.status})`);
-        const json = await res.json() as { data: OfferTemplate };
+        const json = await readJsonResponse<{ data: OfferTemplate }>(res);
         setName(json.data.name);
         setInitEmailSubject(json.data.emailSubject ?? '');
         setInitEmailBody(json.data.emailBody ?? '');
@@ -139,11 +152,11 @@ export default function TemplateEditorPage() {
         });
       }
       if (!res.ok) {
-        const j = await res.json().catch(() => ({})) as { detail?: string };
-        throw new Error(j.detail ?? `Fel ${res.status}`);
+        const j = await readJsonResponse<{ detail?: string } | null>(res).catch(() => null);
+        throw new Error(j?.detail ?? `Fel ${res.status}`);
       }
       if (isNew) {
-        const j = await res.json() as { data: OfferTemplate };
+        const j = await readJsonResponse<{ data: OfferTemplate }>(res);
         try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
         router.replace(`/mallar/${j.data.id}`);
       } else {
@@ -171,7 +184,7 @@ export default function TemplateEditorPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: json ? JSON.stringify(json) : undefined }),
       });
-      const j = await res.json() as { html?: string; detail?: string };
+      const j = await readJsonResponse<{ html?: string; detail?: string }>(res);
       if (!res.ok) throw new Error(j.detail ?? `Fel ${res.status}`);
       setPreviewHtml(j.html ?? '');
     } catch (e) {
@@ -340,7 +353,7 @@ export default function TemplateEditorPage() {
       {previewing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           onClick={() => { setPreviewing(false); setPreviewHtml(null); }}>
-          <div className="relative w-full max-w-4xl max-h-[90vh] bg-[var(--surface-0)] rounded-xl shadow-2xl overflow-hidden flex flex-col border border-[var(--border)]"
+          <div className="relative flex h-[92vh] w-[min(96vw,1320px)] max-w-[1320px] min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] shadow-2xl"
             onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)] bg-[var(--surface-alt)] shrink-0">
@@ -369,7 +382,7 @@ export default function TemplateEditorPage() {
             ) : (
               <iframe
                 srcDoc={previewHtml}
-                className="flex-1 w-full border-0"
+                className="flex-1 h-full w-full rounded-xl border-0 bg-white shadow-sm"
                 sandbox="allow-same-origin"
                 title="Förhandsvisning av offertdokument"
               />

@@ -17,6 +17,13 @@
  */
 
 import type { Offer, OfferLineItem } from '../domain/offer.entity';
+import {
+  formatVatRate,
+  getDisplayLineTotal,
+  getDisplayModeLabel,
+  getDisplayUnitPrice,
+  summarizeOfferPricing,
+} from '../domain/pricing';
 import { sanitizeUrl, escapeHtml as secureEscapeHtml } from '@platform/security/sanitize';
 import { BRAND_MARK_PATH, BRAND_NAME, BRAND_DEFAULT_PUBLIC_ORIGIN, BRAND_EMAIL_FALLBACK } from '@shared/branding';
 
@@ -40,24 +47,8 @@ function fmtSEKPrecise(n: number): string {
   }).format(n);
 }
 
-function percentLabel(rate: number): string {
-  return `${Math.round(rate * 100)}%`;
-}
-
 function buildOfferSummary(offer: Offer) {
-  const vatAmount = Math.max(0, offer.totalIncVat - offer.totalExVat);
-  const discountAmount = Math.round(offer.lineItems.reduce((sum, item) => {
-    const raw = item.quantity * item.unitPrice;
-    const discounted = raw * (1 - ((item.discount ?? 0) / 100));
-    return sum + Math.max(0, raw - discounted);
-  }, 0) * 100) / 100;
-  const hasVat = offer.lineItems.some((item) => item.vatRate > 0);
-  return {
-    vatAmount,
-    discountAmount,
-    hasVat,
-    totalLabel: hasVat ? 'Totalsumma inkl. moms' : 'Totalsumma exkl. moms',
-  };
+  return summarizeOfferPricing(offer.lineItems, offer.priceDisplayMode);
 }
 
 // ─── TipTap JSON → HTML ─────────────────────────────────────────────────────────
@@ -230,25 +221,27 @@ function escapeHtml(s: string): string {
 
 // ─── Line items table ──────────────────────────────────────────────────────────
 
-function buildLineItemsTable(items: OfferLineItem[]): string {
+function buildLineItemsTable(items: OfferLineItem[], mode: Offer['priceDisplayMode']): string {
+  const pricing = summarizeOfferPricing(items, mode);
+  const showVatColumn = pricing.hasVat;
   const headerStyle = 'padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#475569;background:#eef2f7;border-bottom:1px solid #d9e2ec;';
   const cellStyle   = 'padding:10px 12px;font-size:13px;border-bottom:1px solid #e2e8f0;vertical-align:top;';
   const numStyle    = `${cellStyle}text-align:right;`;
   const discountLabel = (d?: number) => d ? `${d}%` : '-';
 
   const rows = items.map((item) => {
-    const disc      = 1 - ((item.discount ?? 0) / 100);
-    const lineExVat = item.quantity * item.unitPrice * disc;
+    const displayUnitPrice = getDisplayUnitPrice(item, mode);
+    const displayLineTotal = getDisplayLineTotal(item, mode);
     return `
       <tr>
         <td data-label="Beskrivning" style="${cellStyle}">
           <div style="font-weight:600;color:#0f172a;margin-bottom:2px;">${escapeHtml(item.description)}</div>
         </td>
         <td data-label="Antal"       style="${numStyle}">${item.quantity}</td>
-        <td data-label="&Agrave;-pris" style="${numStyle}">${fmtSEKPrecise(item.unitPrice)}</td>
+        <td data-label="&Agrave;-pris" style="${numStyle}">${fmtSEKPrecise(displayUnitPrice)}</td>
         <td data-label="Rabatt"      style="${numStyle}">${discountLabel(item.discount)}</td>
-        <td data-label="Moms"        style="${numStyle}">${item.vatRate > 0 ? percentLabel(item.vatRate) : 'Ingen'}</td>
-        <td data-label="Belopp"      style="${numStyle};font-weight:600;">${fmtSEKPrecise(lineExVat)}</td>
+        ${showVatColumn ? `<td data-label="Moms" style="${numStyle}">${formatVatRate(item.vatRate)}</td>` : ''}
+        <td data-label="Belopp"      style="${numStyle};font-weight:600;">${fmtSEKPrecise(displayLineTotal)}</td>
       </tr>`;
   }).join('');
 
@@ -260,7 +253,7 @@ function buildLineItemsTable(items: OfferLineItem[]): string {
           <th style="${headerStyle}text-align:right;">Antal</th>
           <th style="${headerStyle}text-align:right;">&Agrave;-pris</th>
           <th style="${headerStyle}text-align:right;">Rabatt</th>
-          <th style="${headerStyle}text-align:right;">Moms</th>
+          ${showVatColumn ? `<th style="${headerStyle}text-align:right;">Moms</th>` : ''}
           <th style="${headerStyle}text-align:right;">Belopp</th>
         </tr>
       </thead>
@@ -360,6 +353,30 @@ function containsFillPageImage(node: TipTapNode): boolean {
   return (node.content ?? []).some(containsFillPageImage);
 }
 
+function isImageOnlyPresentationPage(node: TipTapNode): boolean {
+  const content = node.content ?? [];
+  let hasImage = false;
+
+  for (const child of content) {
+    if (child.type === 'image') {
+      hasImage = true;
+      continue;
+    }
+
+    if (child.type === 'paragraph') {
+      const text = (child.content ?? [])
+        .map((entry) => entry.type === 'text' ? String(entry.text ?? '') : '')
+        .join('')
+        .trim();
+      if (!text) continue;
+    }
+
+    return false;
+  }
+
+  return hasImage;
+}
+
 interface V3PageDoc {
   kind?: 'presentation' | 'document';
   label?: string;
@@ -393,21 +410,21 @@ function renderDocumentSummary(offer: Offer, placement: 'right' | 'below'): stri
     </div>` : '';
   const vatRow = summary.hasVat ? `
     <div class="offer-summary__row">
-      <span>Moms</span>
+      <span>${summary.vatLabel}</span>
       <strong>${fmtSEKPrecise(summary.vatAmount)}</strong>
     </div>` : '';
 
   return `
     <aside class="${boxClass}">
       <div class="offer-summary__row">
-        <span>Delsumma</span>
+        <span>${summary.subtotalLabel}</span>
         <strong>${fmtSEKPrecise(offer.totalExVat)}</strong>
       </div>
       ${discountRow}
       ${vatRow}
       <div class="offer-summary__row offer-summary__row--total">
         <span>${summary.totalLabel}</span>
-        <strong>${fmtSEKPrecise(summary.hasVat ? offer.totalIncVat : offer.totalExVat)}</strong>
+        <strong>${fmtSEKPrecise(summary.totalAmount)}</strong>
       </div>
     </aside>`;
 }
@@ -435,7 +452,7 @@ function renderStructuredDocumentPage(page: V3PageDoc, offer: Offer, replacement
   const senderWebsite = BRAND_DEFAULT_PUBLIC_ORIGIN.replace(/^https?:\/\//, '');
   const noteHtml = offer.notes ? `<section class="offer-section"><h3>Anteckningar</h3><p>${secureEscapeHtml(offer.notes)}</p></section>` : '';
   const introHtml = nodeToHtml(page.body, replacements);
-  const tableHtml = buildLineItemsTable(offer.lineItems);
+  const tableHtml = buildLineItemsTable(offer.lineItems, offer.priceDisplayMode);
   const summaryHtml = renderDocumentSummary(
     offer,
     (settings.summaryPlacement ?? 'right') as 'right' | 'below',
@@ -503,7 +520,7 @@ function renderStructuredDocumentPage(page: V3PageDoc, offer: Offer, replacement
             <footer class="offer-shell__footer">
               <div><strong>${escapeHtml(senderName)}</strong><span>${escapeHtml(senderWebsite)}</span></div>
               <div><strong>Kontakt</strong><span>${escapeHtml(senderEmail)}</span></div>
-              <div><strong>Status</strong><span>${buildOfferSummary(offer).hasVat ? 'Inkl. moms' : 'Exkl. moms'}</span></div>
+              <div><strong>Prisvisning</strong><span>${getDisplayModeLabel(buildOfferSummary(offer).hasVat, offer.priceDisplayMode)}</span></div>
             </footer>` : ''}
         </section>
       </div>
@@ -517,7 +534,7 @@ function renderStructuredDocumentPage(page: V3PageDoc, offer: Offer, replacement
  * Used when an offer is sent without a linked template.
  */
 export function generateFallbackDocument(offer: Offer): string {
-  const vatAmount      = offer.totalIncVat - offer.totalExVat;
+  const pricing        = buildOfferSummary(offer);
   const offerNumberStr = offer.offerNumber
     ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
     : offer.id.slice(0, 8).toUpperCase();
@@ -551,20 +568,20 @@ export function generateFallbackDocument(offer: Offer): string {
 
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 24px 0;"/>
 
-    ${buildLineItemsTable(offer.lineItems)}
+    ${buildLineItemsTable(offer.lineItems, offer.priceDisplayMode)}
 
     <table class="totals" style="width:100%;border-collapse:collapse;margin-top:8px;">
       <tr>
-        <td style="text-align:right;padding:4px 12px;font-size:13px;color:#64748b;">Totalt exkl. moms</td>
+        <td style="text-align:right;padding:4px 12px;font-size:13px;color:#64748b;">${pricing.subtotalLabel}</td>
         <td style="text-align:right;padding:4px 12px;font-size:13px;font-weight:600;white-space:nowrap;">${fmtSEK(offer.totalExVat)}</td>
       </tr>
+      ${pricing.hasVat ? `<tr>
+        <td style="text-align:right;padding:4px 12px;font-size:13px;color:#64748b;">${pricing.vatLabel}</td>
+        <td style="text-align:right;padding:4px 12px;font-size:13px;white-space:nowrap;">${fmtSEK(pricing.vatAmount)}</td>
+      </tr>` : ''}
       <tr>
-        <td style="text-align:right;padding:4px 12px;font-size:13px;color:#64748b;">Moms</td>
-        <td style="text-align:right;padding:4px 12px;font-size:13px;white-space:nowrap;">${fmtSEK(vatAmount)}</td>
-      </tr>
-      <tr>
-        <td style="text-align:right;padding:8px 12px;font-size:15px;font-weight:700;border-top:2px solid #e2e8f0;">Totalt inkl. moms</td>
-        <td style="text-align:right;padding:8px 12px;font-size:15px;font-weight:700;border-top:2px solid #e2e8f0;white-space:nowrap;">${fmtSEK(offer.totalIncVat)}</td>
+        <td style="text-align:right;padding:8px 12px;font-size:15px;font-weight:700;border-top:2px solid #e2e8f0;">${pricing.totalLabel}</td>
+        <td style="text-align:right;padding:8px 12px;font-size:15px;font-weight:700;border-top:2px solid #e2e8f0;white-space:nowrap;">${fmtSEK(pricing.totalAmount)}</td>
       </tr>
     </table>
 
@@ -591,7 +608,7 @@ export function generateDocument(templateContent: string, offer: Offer): string 
   // then extend with the document-only HTML entries that have no email equivalent.
   const replacements: Record<string, string> = {
     ...buildReplacements(offer),
-    '{{lineItems}}': buildLineItemsTable(offer.lineItems),
+    '{{lineItems}}': buildLineItemsTable(offer.lineItems, offer.priceDisplayMode),
     '{{signature}}': SIGNATURE_FIELD_HTML,
   };
 
@@ -638,13 +655,14 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     // If a fill-page image (816×1056) exists, fix the block to exactly 1056px so
     // there is no empty white space below the image in the generated document.
     const fillPage = containsFillPageImage(page.body);
+    const edgeToEdge = isImageOnlyPresentationPage(page.body);
     const customPageHeight = Number(page.body.attrs?.pageHeight ?? 0);
     const blockStyle = customPageHeight > 0
       ? ` style="min-height:${customPageHeight}px;"`
       : fillPage
         ? ' style="height:1056px;overflow:hidden;"'
         : '';
-    return `<div class="page-block"${blockStyle} data-page="${pageIndex + 1}"><div class="page-content">${hdrSection}${bodyHtml}${ftrSection}</div></div>`;
+    return `<div class="page-block"${blockStyle} data-page="${pageIndex + 1}"><div class="page-content${edgeToEdge ? ' page-content--edge-to-edge' : ''}">${hdrSection}${bodyHtml}${ftrSection}</div></div>`;
   }
 
   let bodyHtml = '';
@@ -732,6 +750,7 @@ export function generateDocument(templateContent: string, offer: Offer): string 
     /* page-content: carries the horizontal padding; position:static so absolute images */
     /* inside it still anchor to page-block (the nearest position:relative ancestor)    */
     .page-content { padding: 40px 48px; }
+    .page-content--edge-to-edge { padding: 0; }
     /* Keep regular content above absolute background/overlay images on mixed pages. */
     .page-content > *:not(div[style*="position:absolute"]) { position: relative; z-index: 1; }
     .page-block--document { background: #ffffff; }

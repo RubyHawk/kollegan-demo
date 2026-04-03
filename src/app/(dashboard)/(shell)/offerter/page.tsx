@@ -20,6 +20,15 @@ import { fetchWithRefresh } from '@shared/lib/api-client';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@shared/lib/utils';
 import {
+  DEFAULT_OFFER_PRICE_DISPLAY_MODE,
+  formatVatRate,
+  fromDisplayUnitPrice,
+  getDisplayLineTotal,
+  getDisplayModeLabel,
+  getDisplayUnitPrice,
+  summarizeOfferPricing,
+} from '@modules/supporting/offers/domain/pricing';
+import {
   DndContext,
   closestCenter,
   KeyboardSensor,
@@ -37,7 +46,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useOffersListStore, PAGE_SIZE } from './_store/offers-list.store';
 import { useOffersFormStore } from './_store/offers-form.store';
-import type { OfferStatus, LineItem, Offer, OfferTemplate, OfferProduct, ContactResult, CompanyResult } from './_store/types';
+import type { OfferStatus, OfferPriceDisplayMode, LineItem, Offer, OfferTemplate, OfferProduct, ContactResult, CompanyResult } from './_store/types';
 import { EMPTY_LINE, EMPTY_FORM } from './_store/types';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -87,37 +96,9 @@ function fmtSEK(n: number) {
   return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(n);
 }
 
-function computeTotals(items: LineItem[]) {
-  let exVat = 0; let vatAmt = 0;
-  for (const item of items) {
-    if (!item.description || item.quantity <= 0 || item.unitPrice < 0) continue;
-    const disc = 1 - (item.discount / 100);
-    const line = item.quantity * item.unitPrice * disc;
-    exVat  += line;
-    vatAmt += line * item.vatRate;
-  }
-  return {
-    exVat:  Math.round(exVat * 100)  / 100,
-    vat:    Math.round(vatAmt * 100) / 100,
-    incVat: Math.round((exVat + vatAmt) * 100) / 100,
-  };
-}
-
-function pricingSummary(items: LineItem[]) {
-  const totals = computeTotals(items);
-  const discount = Math.round(items.reduce((sum, item) => {
-    const raw = item.quantity * item.unitPrice;
-    const discounted = raw * (1 - (item.discount / 100));
-    return sum + Math.max(0, raw - discounted);
-  }, 0) * 100) / 100;
-  const hasVat = items.some((item) => item.description.trim() && item.quantity > 0 && item.vatRate > 0);
-  return {
-    ...totals,
-    discount,
-    hasVat,
-    totalLabel: hasVat ? 'Totalt inkl. moms' : 'Totalt exkl. moms',
-    vatLabel: hasVat ? 'Moms' : 'Ingen moms vald',
-  };
+function pricingSummary(items: LineItem[], mode: OfferPriceDisplayMode) {
+  const validItems = items.filter((item) => item.description.trim() && item.quantity > 0);
+  return summarizeOfferPricing(validItems, mode);
 }
 
 function publicUrl(token: string): string {
@@ -283,6 +264,7 @@ export default function OffersPage() {
     setEditingOfferId(offer.id);
     setForm({
       templateId:       offer.templateId ?? '',
+      priceDisplayMode: offer.priceDisplayMode ?? DEFAULT_OFFER_PRICE_DISPLAY_MODE,
       contactId:        '',
       companyId:        offer.companyId ?? '',
       title:            offer.title,
@@ -314,7 +296,7 @@ export default function OffersPage() {
           if (content) {
             const res = await fetchWithRefresh('/api/templates/preview', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ content }),
+              body: JSON.stringify({ content, offer: { priceDisplayMode: offer.priceDisplayMode ?? DEFAULT_OFFER_PRICE_DISPLAY_MODE } }),
             });
             const j = await res.json() as { html?: string };
             setLivePreviewHtml(j.html ?? null);
@@ -361,6 +343,7 @@ export default function OffersPage() {
     try {
       const body: Record<string, unknown> = {
         title:            form.title,
+        priceDisplayMode: form.priceDisplayMode,
         recipientName:    form.recipientName,
         recipientEmail:   form.recipientEmail,
         recipientCompany: form.recipientCompany || undefined,
@@ -646,6 +629,7 @@ export default function OffersPage() {
           body: JSON.stringify({
             content,
             offer: {
+              priceDisplayMode: currentForm.priceDisplayMode,
               title:            currentForm.title            || undefined,
               recipientName:    currentForm.recipientName    || undefined,
               recipientEmail:   currentForm.recipientEmail   || undefined,
@@ -670,11 +654,14 @@ export default function OffersPage() {
     scheduleLivePreview(form, cachedTplContent);
   }, [
     form.title, form.recipientName, form.recipientEmail,
-    form.recipientCompany, form.notes, form.lineItems,
+    form.recipientCompany, form.notes, form.lineItems, form.priceDisplayMode,
     showForm, wizardStep, cachedTplContent, scheduleLivePreview,
   ]);
 
-  const tots = useMemo(() => pricingSummary(form.lineItems), [form.lineItems]);
+  const tots = useMemo(
+    () => pricingSummary(form.lineItems, form.priceDisplayMode),
+    [form.lineItems, form.priceDisplayMode],
+  );
 
   // ── Drag-to-reorder line items ────────────────────────────────────────────────
   const dndSensors = useSensors(
@@ -685,6 +672,25 @@ export default function OffersPage() {
     () => form.lineItems.map((item, idx) => item.id ?? `new-${idx}`),
     [form.lineItems],
   );
+
+  const setLineUnitPriceFromDisplay = useCallback((idx: number, displayValue: number) => {
+    const item = form.lineItems[idx];
+    if (!item) return;
+    updateLine(idx, 'unitPrice', fromDisplayUnitPrice(displayValue, item.vatRate, form.priceDisplayMode));
+  }, [form.lineItems, form.priceDisplayMode, updateLine]);
+
+  const setLineVatRate = useCallback((idx: number, nextRate: number) => {
+    const item = form.lineItems[idx];
+    if (!item) return;
+    if (form.priceDisplayMode === 'inclusive') {
+      const currentDisplayUnitPrice = getDisplayUnitPrice(item, form.priceDisplayMode);
+      updateLine(idx, 'vatRate', nextRate);
+      updateLine(idx, 'unitPrice', fromDisplayUnitPrice(currentDisplayUnitPrice, nextRate, form.priceDisplayMode));
+      return;
+    }
+    updateLine(idx, 'vatRate', nextRate);
+  }, [form.lineItems, form.priceDisplayMode, updateLine]);
+
   function handleLineItemDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -1342,6 +1348,35 @@ export default function OffersPage() {
                                       ))}
                                     </div>
                                   </div>
+                                  <div>
+                                    <div className="mb-1 flex items-center justify-between gap-2">
+                                      <label className="block text-[10px] font-medium text-[var(--text-secondary)]">Priser visas som</label>
+                                      <span className="text-[10px] text-[var(--text-muted)]">
+                                        {getDisplayModeLabel(tots.hasVat, form.priceDisplayMode)}
+                                      </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] p-1">
+                                      {([
+                                        { id: 'exclusive', label: 'Exkl. moms', hint: 'Radpriser visas utan moms' },
+                                        { id: 'inclusive', label: 'Inkl. moms', hint: 'Radpriser visar totalpris' },
+                                      ] as const).map((option) => (
+                                        <button
+                                          key={option.id}
+                                          type="button"
+                                          onClick={() => setForm((f) => ({ ...f, priceDisplayMode: option.id }))}
+                                          className={cn(
+                                            'rounded-md border px-3 py-2 text-left transition-all',
+                                            form.priceDisplayMode === option.id
+                                              ? 'border-[var(--accent)] bg-[var(--surface)] shadow-sm'
+                                              : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border)] hover:bg-[var(--surface)]/70',
+                                          )}
+                                        >
+                                          <p className="text-[11px] font-semibold text-[var(--text-primary)]">{option.label}</p>
+                                          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">{option.hint}</p>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
                                   <details className="rounded-lg border border-[var(--border)]/60 overflow-hidden group">
                                     <summary className="px-3 py-2 text-[10px] font-medium text-[var(--text-secondary)] cursor-pointer bg-[var(--surface-alt)] list-none flex items-center justify-between hover:bg-[var(--surface-active)] transition-colors select-none">
                                       <span>Anteckningar{form.notes ? ' · ifyllt' : ' (frivilligt)'}</span>
@@ -1379,8 +1414,8 @@ export default function OffersPage() {
                             <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleLineItemDragEnd}>
                               <SortableContext items={lineItemIds} strategy={verticalListSortingStrategy}>
                             {form.lineItems.map((item, idx) => {
-                              const disc = 1 - (item.discount / 100);
-                              const lineExVat = item.quantity * item.unitPrice * disc;
+                              const displayUnitPrice = getDisplayUnitPrice(item, form.priceDisplayMode);
+                              const displayLineTotal = getDisplayLineTotal(item, form.priceDisplayMode);
                               const lineComplete = item.description.trim().length > 0 && item.quantity > 0;
                               const isOpen = openLines.has(idx);
                               return (
@@ -1396,10 +1431,10 @@ export default function OffersPage() {
                                       <div className="flex-1 min-w-0">
                                         <p className="text-xs font-medium text-[var(--text-primary)] truncate">{item.description}</p>
                                         <p className="text-[10px] text-[var(--text-muted)] mt-0.5 tabular-nums">
-                                          {item.quantity} × {fmtSEK(item.unitPrice)}{item.discount > 0 ? ` − ${item.discount}%` : ''} · {Math.round(item.vatRate * 100)}% moms
+                                          {item.quantity} × {fmtSEK(displayUnitPrice)}{item.discount > 0 ? ` − ${item.discount}%` : ''} · {formatVatRate(item.vatRate)}
                                         </p>
                                       </div>
-                                      <p className="text-xs font-semibold text-[var(--text-primary)] tabular-nums shrink-0">{fmtSEK(lineExVat)}</p>
+                                      <p className="text-xs font-semibold text-[var(--text-primary)] tabular-nums shrink-0">{fmtSEK(displayLineTotal)}</p>
                                       <button type="button" title="Redigera" onClick={() => setOpenLines((s) => { const n = new Set(s); n.add(idx); return n; })} className="shrink-0 p-1.5 rounded text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--surface)] transition-colors opacity-0 group-hover/row:opacity-100">
                                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -1458,7 +1493,9 @@ export default function OffersPage() {
                                                   </div>
                                                   <div className="flex-1 min-w-0">
                                                     <p className="text-xs font-medium text-[var(--text-primary)] truncate">{p.name}</p>
-                                                    <p className="text-[10px] text-[var(--text-muted)]">{fmtSEK(p.unitPrice)}{p.unit ? ` / ${p.unit}` : ''} · {Math.round(p.vatRate * 100)}% moms</p>
+                                                    <p className="text-[10px] text-[var(--text-muted)]">
+                                                      {fmtSEK(getDisplayUnitPrice(p, form.priceDisplayMode))}{p.unit ? ` / ${p.unit}` : ''} · {formatVatRate(p.vatRate)}
+                                                    </p>
                                                   </div>
                                                 </button>
                                               ))}
@@ -1476,20 +1513,22 @@ export default function OffersPage() {
                                         </div>
                                         <span className="pb-2 text-[var(--text-muted)] text-xs shrink-0 select-none">×</span>
                                         <div className="flex-1 min-w-0">
-                                          <label className="block text-[10px] text-[var(--text-muted)] mb-1">Á-pris (SEK)</label>
-                                          <input type="number" min={0} value={item.unitPrice} onChange={(e) => updateLine(idx, 'unitPrice', parseFloat(e.target.value) || 0)} onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} setActiveField('Rad ' + (idx + 1)); }} className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                                          <label className="block text-[10px] text-[var(--text-muted)] mb-1">
+                                            Á-pris ({form.priceDisplayMode === 'inclusive' ? 'inkl. moms' : 'exkl. moms'})
+                                          </label>
+                                          <input type="number" min={0} value={displayUnitPrice} onChange={(e) => setLineUnitPriceFromDisplay(idx, parseFloat(e.target.value) || 0)} onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} setActiveField('Rad ' + (idx + 1)); }} className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
                                         </div>
                                         <span className="pb-2 text-[var(--text-muted)] text-xs shrink-0 select-none">=</span>
                                         <div className="shrink-0 text-right min-w-[60px] pb-1.5">
                                           <p className="text-[10px] text-[var(--text-muted)] mb-1">Summa</p>
-                                          <p className="text-xs font-semibold text-[var(--text-primary)] tabular-nums">{fmtSEK(lineExVat)}</p>
+                                          <p className="text-xs font-semibold text-[var(--text-primary)] tabular-nums">{fmtSEK(displayLineTotal)}</p>
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-[10px] text-[var(--text-muted)] shrink-0">Moms:</span>
                                         <div className="flex gap-0.5 rounded-md border border-[var(--border)] bg-[var(--surface-alt)] p-0.5">
                                           {([0, 0.06, 0.12, 0.25] as const).map((rate) => (
-                                            <button key={rate} type="button" onClick={() => updateLine(idx, 'vatRate', rate)} className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition-all ${item.vatRate === rate ? 'bg-[var(--surface)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>
+                                            <button key={rate} type="button" onClick={() => setLineVatRate(idx, rate)} className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition-all ${item.vatRate === rate ? 'bg-[var(--surface)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}>
                                               {Math.round(rate * 100)}%
                                             </button>
                                           ))}
@@ -1600,22 +1639,27 @@ export default function OffersPage() {
                     <div className="shrink-0 border-t border-[var(--border)] bg-[var(--surface)]">
                       <div className="px-4 py-3 space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-[var(--text-muted)]">Summa ex. moms</span>
+                          <span className="text-xs text-[var(--text-muted)]">{tots.subtotalLabel}</span>
                           <span className="text-xs tabular-nums text-[var(--text-secondary)]">{fmtSEK(tots.exVat)}</span>
                         </div>
-                        {tots.discount > 0 && (
+                        {tots.discountAmount > 0 && (
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-[var(--text-muted)]">Rabatt</span>
-                            <span className="text-xs tabular-nums text-[var(--text-muted)]">− {fmtSEK(tots.discount)}</span>
+                            <span className="text-xs tabular-nums text-[var(--text-muted)]">− {fmtSEK(tots.discountAmount)}</span>
                           </div>
                         )}
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-[var(--text-muted)]">{tots.vatLabel}</span>
-                          <span className="text-xs tabular-nums text-[var(--text-muted)]">{tots.hasVat ? fmtSEK(tots.vat) : '—'}</span>
-                        </div>
+                        {tots.hasVat && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-[var(--text-muted)]">{tots.vatLabel}</span>
+                            <span className="text-xs tabular-nums text-[var(--text-muted)]">{fmtSEK(tots.vatAmount)}</span>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]/60">
                           <span className="text-xs font-semibold text-[var(--text-primary)]">{tots.totalLabel}</span>
-                          <span className="text-sm font-semibold tabular-nums text-[var(--accent)]">{fmtSEK(tots.hasVat ? tots.incVat : tots.exVat)}</span>
+                          <span className="text-sm font-semibold tabular-nums text-[var(--accent)]">{fmtSEK(tots.totalAmount)}</span>
+                        </div>
+                        <div className="text-right text-[10px] font-medium uppercase tracking-wide text-[var(--text-muted)]">
+                          {tots.displayModeLabel}
                         </div>
                       </div>
                       <div className="px-4 pb-3 pt-1 flex items-center gap-2">
@@ -2136,7 +2180,7 @@ export default function OffersPage() {
                   </div>
                 )}
                 <div className="flex justify-between gap-4 pt-2 border-t border-[var(--border)] font-semibold">
-                  <span className="text-[var(--text-secondary)]">Totalt inkl. moms</span>
+                  <span className="text-[var(--text-secondary)]">{confirmSend.priceDisplayMode === 'inclusive' ? 'Totalsumma inkl. moms' : 'Totalsumma'}</span>
                   <span className="text-[var(--text-primary)]">{fmtSEK(confirmSend.totalIncVat)}</span>
                 </div>
               </div>

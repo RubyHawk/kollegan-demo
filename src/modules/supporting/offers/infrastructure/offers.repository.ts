@@ -1,11 +1,13 @@
 import { prisma, Prisma } from '@platform/database/prisma';
 import type { Offer, OfferLineItem } from '../domain/offer.entity';
+import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '../domain/pricing';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 export interface CreateOfferInput {
   organizationId:   string;
   title:            string;
+  priceDisplayMode?: 'exclusive' | 'inclusive';
   recipientName:    string;
   recipientEmail:   string;
   recipientCompany?: string;
@@ -33,6 +35,7 @@ export interface CreateOfferInput {
 
 export interface UpdateOfferInput {
   title?:                string;
+  priceDisplayMode?:     'exclusive' | 'inclusive';
   recipientName?:        string;
   recipientEmail?:       string;
   recipientCompany?:     string;
@@ -96,6 +99,7 @@ function mapOffer(r: Record<string, unknown>): Offer {
     title:                r.title as string,
     status:               r.status as Offer['status'],
     offerNumber:          (r.offerNumber as number | null) ?? undefined,
+    priceDisplayMode:     (r.priceDisplayMode as Offer['priceDisplayMode'] | null) ?? DEFAULT_OFFER_PRICE_DISPLAY_MODE,
     recipientName:        r.recipientName as string,
     recipientEmail:       r.recipientEmail as string,
     recipientCompany:     (r.recipientCompany as string | null) ?? undefined,
@@ -158,6 +162,7 @@ const LINE_ITEM_SELECT = {
 const OFFER_SELECT = {
   id: true, organizationId: true, title: true, status: true,
   offerNumber: true,
+  priceDisplayMode: true,
   recipientName: true, recipientEmail: true, recipientCompany: true,
   notes: true, validUntil: true, validityDays: true, createdBy: true,
   totalExVat: true, totalIncVat: true,
@@ -175,6 +180,7 @@ const OFFER_SELECT = {
 const OFFER_LIST_SELECT = {
   id: true, organizationId: true, title: true, status: true,
   offerNumber: true,
+  priceDisplayMode: true,
   recipientName: true, recipientEmail: true, recipientCompany: true,
   notes: true, validUntil: true, validityDays: true, createdBy: true,
   totalExVat: true, totalIncVat: true,
@@ -196,6 +202,7 @@ export const offersRepository = {
     const data = {
         organizationId:    input.organizationId,
         title:             input.title,
+        priceDisplayMode:  input.priceDisplayMode ?? DEFAULT_OFFER_PRICE_DISPLAY_MODE,
         recipientName:     input.recipientName,
         recipientEmail:    input.recipientEmail,
         recipientCompany:  input.recipientCompany ?? null,
@@ -320,6 +327,7 @@ export const offersRepository = {
 
     const updateData = {
         ...(input.title            !== undefined ? { title: input.title }                       : {}),
+        ...(input.priceDisplayMode !== undefined ? { priceDisplayMode: input.priceDisplayMode } : {}),
         ...(input.recipientName    !== undefined ? { recipientName: input.recipientName }       : {}),
         ...(input.recipientEmail   !== undefined ? { recipientEmail: input.recipientEmail }     : {}),
         ...(input.recipientCompany !== undefined ? { recipientCompany: input.recipientCompany } : {}),

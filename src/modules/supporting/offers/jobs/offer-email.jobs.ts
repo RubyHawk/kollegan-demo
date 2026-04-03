@@ -14,6 +14,7 @@ import { prisma }     from '@platform/database/prisma';
 import { logger }     from '@platform/logging/logger';
 import { sanitizeEmailHtml, escapeHtml } from '@platform/security/sanitize';
 import { BRAND_EMAIL_FALLBACK, BRAND_NAME, BRAND_TAGLINE } from '@shared/branding';
+import { getDisplayModeLabel } from '../domain/pricing';
 import type {
   SendToRecipientPayload,
   NotifyCreatorPayload,
@@ -40,6 +41,15 @@ function replaceMailbox(from: string, mailbox: string): string {
 
   const displayName = match[1].trim();
   return displayName ? `${displayName} <${mailbox}>` : mailbox;
+}
+
+function emailPricing(p: Pick<SendToRecipientPayload, 'priceDisplayMode' | 'totalExVat' | 'totalIncVat'>) {
+  const hasVat = Math.abs(p.totalIncVat - p.totalExVat) > 0.009;
+  return {
+    amount: hasVat ? p.totalIncVat : p.totalExVat,
+    label: hasVat ? 'Totalsumma' : 'Totalsumma',
+    detail: getDisplayModeLabel(hasVat, p.priceDisplayMode),
+  };
 }
 
 function isUnverifiedDomainError(error: unknown): boolean {
@@ -186,6 +196,7 @@ function sendToRecipientHtml(p: SendToRecipientPayload): string {
   const d = parseDesignConfig(p.emailHeaderConfig);
   const b = d?.body ?? DESIGN_DEFAULTS.body;
   const c = d?.cta ?? DESIGN_DEFAULTS.cta;
+  const pricing = emailPricing(p);
 
   const headerHtml = renderHeader((d ?? DESIGN_DEFAULTS).header);
   const footerHtml = renderFooter((d ?? DESIGN_DEFAULTS).footer);
@@ -218,7 +229,8 @@ function sendToRecipientHtml(p: SendToRecipientPayload): string {
           <p style="color:${b.mutedColor};margin:0 0 24px 0;">Hej ${p.recipientName},</p>
           <p style="margin:0 0 16px 0;color:${b.textColor};">Du har tagit emot en offert: <strong>${p.offerTitle}</strong></p>
           <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-            <tr><td style="padding:8px 0;color:${b.mutedColor};font-size:14px;">Totalt inkl. moms</td><td style="padding:8px 0;font-weight:700;text-align:right;color:${b.textColor};">${fmtSEK(p.totalIncVat)}</td></tr>
+            <tr><td style="padding:8px 0;color:${b.mutedColor};font-size:14px;">${pricing.label}</td><td style="padding:8px 0;font-weight:700;text-align:right;color:${b.textColor};">${fmtSEK(pricing.amount)}</td></tr>
+            <tr><td style="padding:0 0 8px 0;color:${b.mutedColor};font-size:12px;">Prisvisning</td><td style="padding:0 0 8px 0;text-align:right;color:${b.mutedColor};font-size:12px;">${pricing.detail}</td></tr>
             <tr><td style="padding:8px 0;color:${b.mutedColor};font-size:14px;">Giltig till</td><td style="padding:8px 0;text-align:right;color:${b.textColor};">${fmtDate(p.validUntil)}</td></tr>
           </table>
           <div style="text-align:center;">${ctaHtml}</div>
@@ -252,6 +264,7 @@ function reminderHtml(p: ReminderPayload): string {
   const d = parseDesignConfig(p.emailHeaderConfig);
   const b = d?.body ?? DESIGN_DEFAULTS.body;
   const c = d?.cta ?? DESIGN_DEFAULTS.cta;
+  const pricing = emailPricing(p);
 
   const headerHtml = renderHeader((d ?? DESIGN_DEFAULTS).header);
   const footerHtml = renderFooter((d ?? DESIGN_DEFAULTS).footer);
@@ -282,7 +295,8 @@ function reminderHtml(p: ReminderPayload): string {
           <p style="color:${b.mutedColor};margin:0 0 24px 0;">Hej ${p.recipientName},</p>
           <p style="margin:0 0 16px 0;color:${b.textColor};">Vi vill påminna om en offert som väntar på ditt svar: <strong>${p.offerTitle}</strong></p>
           <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-            <tr><td style="padding:8px 0;color:${b.mutedColor};font-size:14px;">Totalt inkl. moms</td><td style="padding:8px 0;font-weight:700;text-align:right;color:${b.textColor};">${fmtSEK(p.totalIncVat)}</td></tr>
+            <tr><td style="padding:8px 0;color:${b.mutedColor};font-size:14px;">${pricing.label}</td><td style="padding:8px 0;font-weight:700;text-align:right;color:${b.textColor};">${fmtSEK(pricing.amount)}</td></tr>
+            <tr><td style="padding:0 0 8px 0;color:${b.mutedColor};font-size:12px;">Prisvisning</td><td style="padding:0 0 8px 0;text-align:right;color:${b.mutedColor};font-size:12px;">${pricing.detail}</td></tr>
             <tr><td style="padding:8px 0;color:${b.mutedColor};font-size:14px;">Giltig till</td><td style="padding:8px 0;text-align:right;color:${b.textColor};">${fmtDate(p.validUntil)}</td></tr>
           </table>
           <div style="text-align:center;">${ctaHtml}</div>

@@ -4,6 +4,7 @@
  */
 
 export type OfferStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
+export type OfferPriceDisplayMode = 'exclusive' | 'inclusive';
 
 export interface LineItem {
   id?:         string;
@@ -18,6 +19,7 @@ export interface Offer {
   id:                   string;
   organizationId:       string;
   offerNumber:          number | null;
+  priceDisplayMode:     OfferPriceDisplayMode;
   title:                string;
   status:               OfferStatus;
   recipientName:        string;
@@ -76,6 +78,7 @@ export interface BulkResult { sent: number; failed: number }
 
 export interface OfferForm {
   templateId:       string;
+  priceDisplayMode: OfferPriceDisplayMode;
   contactId:        string;
   companyId:        string;
   title:            string;
@@ -98,7 +101,7 @@ export interface ServiceForm {
 export const EMPTY_LINE: LineItem = { description: '', quantity: 1, unitPrice: 0, vatRate: 0.25, discount: 0 };
 
 export const EMPTY_FORM: OfferForm = {
-  templateId: '', contactId: '', companyId: '', title: '', recipientName: '',
+  templateId: '', priceDisplayMode: 'exclusive', contactId: '', companyId: '', title: '', recipientName: '',
   recipientEmail: '', recipientCompany: '', notes: '',
   validityDays: 30, lineItems: [{ ...EMPTY_LINE }],
 };

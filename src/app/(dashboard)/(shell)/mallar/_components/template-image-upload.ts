@@ -64,6 +64,17 @@ export async function uploadTemplateImage(file: File): Promise<string> {
 export async function normalizeTemplateImages<T>(value: T): Promise<T> {
   const cache = new Map<string, string>();
 
+  async function normalizeImageUrl(src: string): Promise<string> {
+    if (!src.startsWith('data:image/')) return src;
+
+    let uploadedUrl = cache.get(src);
+    if (!uploadedUrl) {
+      uploadedUrl = await uploadTemplateImage(dataUrlToFile(src));
+      cache.set(src, uploadedUrl);
+    }
+    return uploadedUrl;
+  }
+
   async function walk(node: unknown): Promise<unknown> {
     if (Array.isArray(node)) {
       return Promise.all(node.map(walk));
@@ -85,15 +96,16 @@ export async function normalizeTemplateImages<T>(value: T): Promise<T> {
       ) {
         const attrs = { ...(rawValue as Record<string, unknown>) };
         const src = attrs.src as string;
-        if (src.startsWith('data:image/')) {
-          let uploadedUrl = cache.get(src);
-          if (!uploadedUrl) {
-            uploadedUrl = await uploadTemplateImage(dataUrlToFile(src));
-            cache.set(src, uploadedUrl);
-          }
-          attrs.src = uploadedUrl;
-        }
+        attrs.src = await normalizeImageUrl(src);
         cloned[key] = attrs;
+        continue;
+      }
+
+      if (
+        key === 'backgroundImageSrc' &&
+        typeof rawValue === 'string'
+      ) {
+        cloned[key] = await normalizeImageUrl(rawValue);
         continue;
       }
 
