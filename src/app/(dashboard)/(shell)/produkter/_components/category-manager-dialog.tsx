@@ -52,14 +52,14 @@ export function CategoryManagerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-4xl">
-        <DialogHeader className="px-6 pt-6 pr-16">
+        <DialogHeader className="border-b border-[var(--border)] px-6 pb-5 pt-6 pr-16">
           <DialogTitle>Strukturera biblioteket med huvud- och underkategorier</DialogTitle>
           <DialogDescription>
             Huvudkategorier är bara ordning och navigation. Produkter och tjänster kopplas sedan till en vald underkategori.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 px-6 pb-3 pt-2">
+        <div className="max-h-[min(72dvh,760px)] space-y-5 overflow-y-auto px-6 pb-3 pt-6">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -205,7 +205,7 @@ export function CategoryManagerDialog({
           </div>
         </div>
 
-        <DialogFooter className="px-6 pb-6 pt-2">
+        <DialogFooter className="border-t border-[var(--border)] px-6 pb-6 pt-4">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Stäng
           </Button>

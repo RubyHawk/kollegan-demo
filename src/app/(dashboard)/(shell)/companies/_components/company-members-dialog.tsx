@@ -112,14 +112,14 @@ export function CompanyMembersDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-3xl">
-        <DialogHeader>
+        <DialogHeader className="border-b border-[var(--border)] pr-16">
           <DialogTitle>Koppla användare till {companyName}</DialogTitle>
           <DialogDescription>
             De här användarna kan arbeta med företagets mallar, produkter och branding. Företagsadmin får även hantera kopplingar och skapa nya konton för sitt företag.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5">
+        <div className="max-h-[min(72dvh,760px)] space-y-5 overflow-y-auto px-6 py-6">
           <section className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
             <div className="flex items-start gap-3">
               <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] text-[var(--accent)]">
