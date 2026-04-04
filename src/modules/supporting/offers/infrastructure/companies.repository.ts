@@ -98,37 +98,36 @@ const COMPANY_SELECT_LEGACY = {
 };
 
 function isMissingAddressColumnError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
   return (
-    message.includes('P2022') ||
-    message.includes('Unknown field `addressLine1`') ||
-    message.includes('Unknown field `addressLine2`') ||
-    message.includes('Unknown field `postalCode`') ||
-    message.includes('Unknown field `city`') ||
-    message.includes('Unknown field `region`') ||
-    message.includes('Unknown field `country`') ||
-    message.includes('Unknown argument `addressLine1`') ||
-    message.includes('Unknown argument `addressLine2`') ||
-    message.includes('Unknown argument `postalCode`') ||
-    message.includes('Unknown argument `city`') ||
-    message.includes('Unknown argument `region`') ||
-    message.includes('Unknown argument `country`') ||
+    message.includes('p2022') ||
+    message.includes('unknown field `addressline1`') ||
+    message.includes('unknown field `addressline2`') ||
+    message.includes('unknown field `postalcode`') ||
+    message.includes('unknown field `city`') ||
+    message.includes('unknown field `region`') ||
+    message.includes('unknown field `country`') ||
+    message.includes('unknown argument `addressline1`') ||
+    message.includes('unknown argument `addressline2`') ||
+    message.includes('unknown argument `postalcode`') ||
+    message.includes('unknown argument `city`') ||
+    message.includes('unknown argument `region`') ||
+    message.includes('unknown argument `country`') ||
     (
       message.includes('does not exist') &&
-      ['addressLine1', 'addressLine2', 'postalCode', 'city', 'region', 'country'].some((field) => message.includes(field))
+      ['addressline1', 'addressline2', 'postalcode', 'city', 'region', 'country'].some((field) => message.includes(field))
     )
   );
 }
 
 function isMissingCompanyMembershipError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
   return (
-    message.includes('P2021') ||
-    message.includes('P2022') ||
+    message.includes('p2021') ||
+    message.includes('p2022') ||
     message.includes('off_company_members') ||
-    message.includes('companyMember') ||
-    message.includes('CompanyMember') ||
-    message.includes('Unknown table') ||
+    message.includes('companymember') ||
+    message.includes('unknown table') ||
     message.includes('does not exist')
   );
 }
