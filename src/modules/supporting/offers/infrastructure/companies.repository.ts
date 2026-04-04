@@ -88,6 +88,40 @@ const COMPANY_SELECT = {
   createdBy: true, createdAt: true, updatedAt: true,
 };
 
+const COMPANY_SELECT_LEGACY = {
+  id: true, organizationId: true, name: true, orgNumber: true,
+  website: true, logoUrl: true, senderEmail: true, senderName: true, emailHeaderConfig: true, industry: true, notes: true,
+  createdBy: true, createdAt: true, updatedAt: true,
+};
+
+function isMissingAddressColumnError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes('P2022') ||
+    message.includes('Unknown field `addressLine1`') ||
+    message.includes('Unknown field `addressLine2`') ||
+    message.includes('Unknown field `postalCode`') ||
+    message.includes('Unknown field `city`') ||
+    message.includes('Unknown field `region`') ||
+    message.includes('Unknown field `country`') ||
+    (
+      message.includes('does not exist') &&
+      ['addressLine1', 'addressLine2', 'postalCode', 'city', 'region', 'country'].some((field) => message.includes(field))
+    )
+  );
+}
+
+async function withCompanySelectFallback<T>(primary: () => Promise<T>, fallback: () => Promise<T>): Promise<T> {
+  try {
+    return await primary();
+  } catch (error) {
+    if (!isMissingAddressColumnError(error)) {
+      throw error;
+    }
+    return fallback();
+  }
+}
+
 function mapCompanyMember(row: {
   id: string;
   companyId: string;
@@ -142,16 +176,24 @@ export const companiesRepository = {
       }
     }
 
-    const rows = await prisma.company.findMany({
-      where: {
-        organizationId: orgId,
-        deletedAt: null,
-        ...(allowedCompanyIds ? { id: { in: allowedCompanyIds } } : {}),
-        ...(search ? { name: { contains: search, mode: 'insensitive' as const } } : {}),
-      },
-      select: COMPANY_SELECT,
-      orderBy: { name: 'asc' },
-    });
+    const where = {
+      organizationId: orgId,
+      deletedAt: null,
+      ...(allowedCompanyIds ? { id: { in: allowedCompanyIds } } : {}),
+      ...(search ? { name: { contains: search, mode: 'insensitive' as const } } : {}),
+    };
+    const rows = await withCompanySelectFallback(
+      () => prisma.company.findMany({
+        where,
+        select: COMPANY_SELECT,
+        orderBy: { name: 'asc' },
+      }),
+      () => prisma.company.findMany({
+        where,
+        select: COMPANY_SELECT_LEGACY,
+        orderBy: { name: 'asc' },
+      }),
+    );
     return rows.map((r: unknown) => mapCompany(r as Record<string, unknown>));
   },
 
@@ -173,15 +215,22 @@ export const companiesRepository = {
       }
     }
 
-    const row = await prisma.company.findFirst({
-      where: {
-        id,
-        organizationId: orgId,
-        deletedAt: null,
-        ...(allowedCompanyIds ? { id: { in: allowedCompanyIds } } : {}),
-      },
-      select: COMPANY_SELECT,
-    });
+    const where = {
+      id,
+      organizationId: orgId,
+      deletedAt: null,
+      ...(allowedCompanyIds ? { id: { in: allowedCompanyIds } } : {}),
+    };
+    const row = await withCompanySelectFallback(
+      () => prisma.company.findFirst({
+        where,
+        select: COMPANY_SELECT,
+      }),
+      () => prisma.company.findFirst({
+        where,
+        select: COMPANY_SELECT_LEGACY,
+      }),
+    );
     return row ? mapCompany(row as unknown as Record<string, unknown>) : null;
   },
 
@@ -206,10 +255,30 @@ export const companiesRepository = {
       createdBy:      input.createdBy,
     } as Parameters<typeof prisma.company.create>[0]['data'];
 
-    const row = await prisma.company.create({
-      data,
-      select: COMPANY_SELECT,
-    });
+    const legacyData = {
+      organizationId: input.organizationId,
+      name: input.name,
+      orgNumber: input.orgNumber ?? null,
+      website: input.website ?? null,
+      logoUrl: input.logoUrl ?? null,
+      senderEmail: input.senderEmail ?? null,
+      senderName: input.senderName ?? null,
+      emailHeaderConfig: input.emailHeaderConfig ?? null,
+      industry: input.industry ?? null,
+      notes: input.notes ?? null,
+      createdBy: input.createdBy,
+    } as Parameters<typeof prisma.company.create>[0]['data'];
+
+    const row = await withCompanySelectFallback(
+      () => prisma.company.create({
+        data,
+        select: COMPANY_SELECT,
+      }),
+      () => prisma.company.create({
+        data: legacyData,
+        select: COMPANY_SELECT_LEGACY,
+      }),
+    );
     return mapCompany(row as unknown as Record<string, unknown>);
   },
 
@@ -234,11 +303,30 @@ export const companiesRepository = {
       ...(input.notes     !== undefined ? { notes: input.notes }         : {}),
     } as Parameters<typeof prisma.company.update>[0]['data'];
 
-    const row = await prisma.company.update({
-      where: { id },
-      data,
-      select: COMPANY_SELECT,
-    });
+    const legacyData = {
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.orgNumber !== undefined ? { orgNumber: input.orgNumber } : {}),
+      ...(input.website !== undefined ? { website: input.website } : {}),
+      ...(input.logoUrl !== undefined ? { logoUrl: input.logoUrl } : {}),
+      ...(input.senderEmail !== undefined ? { senderEmail: input.senderEmail } : {}),
+      ...(input.senderName !== undefined ? { senderName: input.senderName } : {}),
+      ...(input.emailHeaderConfig !== undefined ? { emailHeaderConfig: input.emailHeaderConfig } : {}),
+      ...(input.industry !== undefined ? { industry: input.industry } : {}),
+      ...(input.notes !== undefined ? { notes: input.notes } : {}),
+    } as Parameters<typeof prisma.company.update>[0]['data'];
+
+    const row = await withCompanySelectFallback(
+      () => prisma.company.update({
+        where: { id },
+        data,
+        select: COMPANY_SELECT,
+      }),
+      () => prisma.company.update({
+        where: { id },
+        data: legacyData,
+        select: COMPANY_SELECT_LEGACY,
+      }),
+    );
     return mapCompany(row as unknown as Record<string, unknown>);
   },
 
