@@ -43,9 +43,15 @@ import { NodeViewWrapper } from '@tiptap/react';
 import type { NodeViewProps } from '@tiptap/react';
 import { useRef, useCallback, useState, useLayoutEffect } from 'react';
 import type { CSSProperties } from 'react';
+import { useHeaderFooter } from '../header-footer-context';
+import {
+  PRESENTATION_PAGE_HEIGHT,
+  PRESENTATION_PAGE_WIDTH,
+  syncPresentationPageHeightForActivePage,
+} from '../presentation-page-height';
 
 const MIN_W = 80;
-const MAX_W = 816;
+const MAX_W = PRESENTATION_PAGE_WIDTH;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -59,6 +65,7 @@ interface StackItem { pos: number; zIndex: number }
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function ImageNodeView({ node, updateAttributes, selected, editor, getPos }: NodeViewProps) {
+  const hf = useHeaderFooter();
   const {
     src, alt,
     align,
@@ -91,6 +98,10 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
   const isFree        = imgPosition === 'free';
   const isFreeWrapped = isFree && (wrapText === 'left' || wrapText === 'right');
   const isFloating    = !isFree && (imgFloat === 'left' || imgFloat === 'right');
+  const applyImagePatch = useCallback((patch: Record<string, unknown>) => {
+    updateAttributes(patch);
+    syncPresentationPageHeightForActivePage(hf, editor?.getJSON() as object | undefined);
+  }, [editor, hf, updateAttributes]);
 
   // ── ProseMirror → page-canvas offset correction ──────────────────────────────
   //
@@ -233,7 +244,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
       };
 
       const onUp = () => {
-        if (resizeRef.current) updateAttributes({ width: resizeRef.current.latestW });
+        if (resizeRef.current) applyImagePatch({ width: resizeRef.current.latestW });
         resizeRef.current = null;
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
@@ -242,7 +253,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     },
-    [width, updateAttributes, isFree],
+    [applyImagePatch, width, isFree],
   );
 
   // ── Free-mode drag to reposition ─────────────────────────────────────────────
@@ -292,7 +303,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
 
       const onUp = () => {
         if (dragging) {
-          updateAttributes({ posX: latestX, posY: latestY });
+          applyImagePatch({ posX: latestX, posY: latestY });
         }
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
@@ -302,20 +313,20 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
       document.addEventListener('mouseup', onUp);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isFree, isFreeWrapped, wrapText, posX, posY, width, updateAttributes, getPos, editor, pmOffset],
+    [applyImagePatch, isFree, isFreeWrapped, wrapText, posX, posY, width, getPos, editor, pmOffset],
   );
 
   // ── Command helpers ───────────────────────────────────────────────────────────
 
   const setFloat = (f: ImgFloat) =>
-    editor?.chain().focus().updateAttributes('image', {
+    applyImagePatch({
       float: f,
       position: 'inline',
       ...(f === null ? { align: 'left' } : {}),
-    }).run();
+    });
 
   const setAlign = (a: ImgAlign) =>
-    editor?.chain().focus().updateAttributes('image', { align: a }).run();
+    applyImagePatch({ align: a });
 
   /** Switch to free mode — snaps to the image's current visual position and
    *  places it on top of any existing free images. */
@@ -338,19 +349,19 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
         maxZ = Math.max(maxZ, n.attrs.zIndex ?? 0);
       }
     });
-    editor?.chain().focus().updateAttributes('image', {
+    applyImagePatch({
       position: 'free', float: null, posX: px, posY: py,
       zIndex: Math.max(0, maxZ + 1),
-    }).run();
+    });
   };
 
   const toInline = () =>
-    editor?.chain().focus().updateAttributes('image', {
+    applyImagePatch({
       position: 'inline', float: null, align: 'left', wrapText: 'none',
-    }).run();
+    });
 
   const setWrapText = (w: ImgWrapText) =>
-    editor?.chain().focus().updateAttributes('image', { wrapText: w }).run();
+    applyImagePatch({ wrapText: w });
 
   /** Explicit selection — safety net for free-mode images after drag or deselect. */
   const selectSelf = () => {
@@ -512,7 +523,17 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
             {isFree && (
               <>
                 <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
-                <ImgBtn active={false} tooltip="Fyll hela sidan (816×1056 px)" onClick={() => updateAttributes({ posX: 0, posY: 0, width: 816, height: 1056 })}>
+                <ImgBtn
+                  active={false}
+                  tooltip={`Fyll hela sidan (${PRESENTATION_PAGE_WIDTH}×${PRESENTATION_PAGE_HEIGHT} px)`}
+                  onClick={() => applyImagePatch({
+                    posX: 0,
+                    posY: 0,
+                    width: PRESENTATION_PAGE_WIDTH,
+                    height: PRESENTATION_PAGE_HEIGHT,
+                    wrapText: 'none',
+                  })}
+                >
                   <FillPageIcon />
                 </ImgBtn>
               </>
@@ -553,7 +574,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
                 <ImgBtn
                   active={(zIndex ?? 0) < 0}
                   tooltip={(zIndex ?? 0) < 0 ? 'Bakgrundsbild — klicka för att flytta framåt' : 'Använd som bakgrundsbild (bakom text)'}
-                  onClick={() => updateAttributes({ zIndex: (zIndex ?? 0) < 0 ? 1 : -1 })}
+                  onClick={() => applyImagePatch({ zIndex: (zIndex ?? 0) < 0 ? 1 : -1 })}
                 >
                   {/* Simple "image behind lines" icon */}
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -612,7 +633,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
             const target = event.currentTarget;
             if (!target.naturalWidth || !target.naturalHeight) return;
             if (naturalWidth === target.naturalWidth && naturalHeight === target.naturalHeight) return;
-            updateAttributes({
+            applyImagePatch({
               naturalWidth: target.naturalWidth,
               naturalHeight: target.naturalHeight,
             });

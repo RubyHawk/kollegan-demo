@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import type { HFCtxValue } from './header-footer-context';
+import { PRESENTATION_PAGE_HEIGHT, PRESENTATION_PAGE_WIDTH, syncPresentationPageHeightForActivePage } from './presentation-page-height';
 import { uploadTemplateImage } from './template-image-upload';
 
 type ActiveBlock = 'image' | 'table' | 'signatureBlock' | 'variable' | null;
@@ -156,45 +157,9 @@ function ImageSettings({ editor, hf }: { editor: Editor; hf: HFCtxValue | null }
     atTop         = myIdx >= layerTotal - 1;
   }
 
-  const syncPresentationPageHeight = (patch: Record<string, unknown>) => {
-    if (!hf) return;
-    const page = hf.pages[hf.activeIdx];
-    if (!page || page.kind !== 'presentation') return;
-
-    const merged = { ...attrs, ...patch };
-    const shouldSizePageToImage =
-      merged.position === 'free'
-      && (merged.wrapText ?? 'none') === 'none'
-      && Number(merged.posX ?? 0) === 0
-      && Number(merged.posY ?? 0) === 0
-      && Number(merged.width ?? 0) === 816;
-
-    const nextBody = {
-      ...(page.body as { attrs?: Record<string, unknown> }),
-      attrs: { ...(((page.body as { attrs?: Record<string, unknown> }).attrs) ?? {}) },
-    };
-
-    let nextPageHeight: number | null = null;
-    if (shouldSizePageToImage) {
-      if (merged.height != null && Number(merged.height) > 0) {
-        nextPageHeight = Number(merged.height);
-      } else if (Number(merged.naturalWidth ?? 0) > 0 && Number(merged.naturalHeight ?? 0) > 0) {
-        nextPageHeight = Math.round((Number(merged.width) / Number(merged.naturalWidth)) * Number(merged.naturalHeight));
-      }
-    }
-
-    if (nextPageHeight && Number.isFinite(nextPageHeight)) {
-      nextBody.attrs.pageHeight = nextPageHeight;
-    } else {
-      delete nextBody.attrs.pageHeight;
-    }
-
-    hf.patchActivePage({ body: nextBody as object });
-  };
-
   const set = (patch: Record<string, unknown>) => {
     editor.chain().focus().updateAttributes('image', patch).run();
-    syncPresentationPageHeight(patch);
+    syncPresentationPageHeightForActivePage(hf, editor.getJSON() as object);
   };
 
   const bringForward = () => {
@@ -349,8 +314,8 @@ function ImageSettings({ editor, hf }: { editor: Editor; hf: HFCtxValue | null }
               Textyta
             </button>
             <button type="button" style={{ ...quickBtnStyle, color: '#0078d4', borderColor: '#c0d8f0' }}
-              onClick={() => set({ posX: 0, posY: 0, width: 816, height: 1056, wrapText: 'none' })}
-              title="Sträck bilden till hela sidan (816×1056 px)">
+              onClick={() => set({ posX: 0, posY: 0, width: PRESENTATION_PAGE_WIDTH, height: PRESENTATION_PAGE_HEIGHT, wrapText: 'none' })}
+              title={`Sträck bilden till hela sidan (${PRESENTATION_PAGE_WIDTH}×${PRESENTATION_PAGE_HEIGHT} px)`}>
               Fyll sida
             </button>
           </div>

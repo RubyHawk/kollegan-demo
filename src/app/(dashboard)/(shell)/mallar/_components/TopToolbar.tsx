@@ -9,6 +9,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
+import { insertTemplateImageIntoEditor } from './template-image-insert';
 import { cn } from '@shared/lib/utils';
 import {
   ArrowUUpLeft, ArrowUUpRight,
@@ -184,7 +185,7 @@ export default function TopToolbar() {
   function handleImageFile(file: File) {
     const reader = new FileReader();
     reader.onload = (e) => {
-      editor!.chain().focus().setImage({ src: e.target?.result as string }).run();
+      insertTemplateImageIntoEditor(editor!, e.target?.result as string);
     };
     reader.readAsDataURL(file);
   }

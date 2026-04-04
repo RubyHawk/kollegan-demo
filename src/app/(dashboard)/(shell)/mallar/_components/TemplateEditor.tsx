@@ -38,6 +38,7 @@ import { SignatureBlockNode } from './extensions/signature-block.extension';
 import { DragHandleExtension } from './extensions/drag-handle.extension';
 import { FontSize } from './extensions/font-size.extension';
 import { LineHeight } from './extensions/line-height.extension';
+import { normalizePresentationPages } from './presentation-page-height';
 import { TextIndent } from './extensions/indent.extension';
 import type { EditorView } from '@tiptap/pm/view';
 
@@ -45,6 +46,7 @@ import dynamic from 'next/dynamic';
 import { EditorCtx } from './editor-context';
 import { HFCtx } from './header-footer-context';
 import { uploadTemplateImage } from './template-image-upload';
+import { insertTemplateImageIntoView } from './template-image-insert';
 import {
   parseTemplateDoc, EMPTY_DOC, makeEmptyPage, makeDocumentPage,
 } from './template-doc';
@@ -89,10 +91,7 @@ interface Props {
 async function insertImageFile(view: EditorView, file: File) {
   try {
     const src = await uploadTemplateImage(file);
-    const node = view.state.schema.nodes['image']?.create({ src });
-    if (!node) return;
-    const tr = view.state.tr.replaceSelectionWith(node);
-    view.dispatch(tr);
+    insertTemplateImageIntoView(view, src);
   } catch (error) {
     window.alert(error instanceof Error ? error.message : 'Kunde inte ladda upp bilden.');
   }
@@ -417,7 +416,7 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
     editorRef.current = {
       getJSON() {
         // Flush current page into a local copy and serialize as v3
-        const allPages = flushPage(activeIdxRef.current, pagesRef.current);
+        const allPages = normalizePresentationPages(flushPage(activeIdxRef.current, pagesRef.current));
         return {
           _v:           3,
           pages:        allPages,

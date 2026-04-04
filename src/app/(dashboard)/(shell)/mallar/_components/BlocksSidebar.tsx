@@ -14,6 +14,7 @@ import { useRef, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import { uploadTemplateImage } from './template-image-upload';
+import { insertTemplateImageIntoEditor } from './template-image-insert';
 import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
 import {
   File, FileText, Star, CheckSquare, Tag, Buildings, Scales,
@@ -376,7 +377,7 @@ export default function BlocksSidebar() {
   async function insertImage(file: File) {
     try {
       const src = await uploadTemplateImage(file);
-      editor!.chain().focus().setImage({ src }).run();
+      insertTemplateImageIntoEditor(editor!, src);
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Kunde inte ladda upp bilden.');
     }
