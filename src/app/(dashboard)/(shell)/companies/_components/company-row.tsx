@@ -17,7 +17,7 @@ function companyAddress(company: Company) {
   return [company.addressLine1, company.addressLine2, [company.postalCode, company.city].filter(Boolean).join(' '), company.region, company.country]
     .map((part) => part?.trim())
     .filter(Boolean)
-    .join(' • ');
+    .join(' · ');
 }
 
 interface CompanyRowProps {
@@ -41,7 +41,7 @@ export function CompanyRow({
 }: CompanyRowProps) {
   return (
     <div className="border-b border-[var(--border)] last:border-b-0">
-      <div className="flex flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-1 items-start gap-4">
           {company.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element

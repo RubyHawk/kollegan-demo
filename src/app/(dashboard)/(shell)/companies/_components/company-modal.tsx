@@ -75,7 +75,7 @@ export function CompanyModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-10 max-h-[90dvh] w-full overflow-y-auto border border-[var(--border)] bg-[var(--surface-0)] shadow-xl sm:max-w-lg sm:rounded-3xl">
+      <div className="relative z-10 max-h-[90dvh] w-full overflow-y-auto border border-[var(--border)] bg-[var(--surface-0)] shadow-xl sm:max-w-2xl sm:rounded-3xl">
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             {company ? 'Redigera företag' : 'Nytt företag'}
@@ -93,22 +93,31 @@ export function CompanyModal({
         </div>
 
         <div className="space-y-4 px-5 py-4">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+            <p className="font-medium text-[var(--text-primary)]">Företagets identitet i offertflödet</p>
+            <p className="mt-1 leading-6">
+              Namn, adress och logga används i dokument, mallar och produktscope. Du kan börja med bara namn
+              och komplettera resten senare.
+            </p>
+          </div>
+
           <div>
             <label className={labelCls}>Namn *</label>
             <input value={form.name} onChange={set('name')} placeholder="Soleria AB" className={inputCls} />
           </div>
 
-          <div>
-            <label className={labelCls}>Adressrad 1</label>
-            <input value={form.addressLine1} onChange={set('addressLine1')} placeholder="Radiatorvägen 3" className={inputCls} />
-          </div>
-
-          <div>
-            <label className={labelCls}>Adressrad 2</label>
-            <input value={form.addressLine2} onChange={set('addressLine2')} placeholder="702 27 Örebro" className={inputCls} />
-          </div>
-
           <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className={labelCls}>Adressrad 1</label>
+              <input value={form.addressLine1} onChange={set('addressLine1')} placeholder="Radiatorvägen 3" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Adressrad 2</label>
+              <input value={form.addressLine2} onChange={set('addressLine2')} placeholder="702 27 Örebro" className={inputCls} />
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
             <div>
               <label className={labelCls}>Postnummer</label>
               <input value={form.postalCode} onChange={set('postalCode')} placeholder="702 27" className={inputCls} />
@@ -117,22 +126,21 @@ export function CompanyModal({
               <label className={labelCls}>Stad</label>
               <input value={form.city} onChange={set('city')} placeholder="Örebro" className={inputCls} />
             </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className={labelCls}>Län / region</label>
               <input value={form.region} onChange={set('region')} placeholder="Örebro län" className={inputCls} />
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
+            <div>
+              <label className={labelCls}>Webbplats</label>
+              <input type="url" value={form.website} onChange={set('website')} placeholder="soleria.se" className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Land</label>
               <input value={form.country} onChange={set('country')} placeholder="Sverige" className={inputCls} />
             </div>
-          </div>
-
-          <div>
-            <label className={labelCls}>Webbplats</label>
-            <input type="url" value={form.website} onChange={set('website')} placeholder="https://example.se" className={inputCls} />
           </div>
 
           <div>
@@ -146,7 +154,7 @@ export function CompanyModal({
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
             <p className="font-medium text-[var(--text-primary)]">Avsändare i offerten</p>
             <p className="mt-1 leading-6">
-              Företagsnamn och adress hämtas härifrån. Ansvarig person hämtas från användarens konto,
+              Företagsnamn, adress och logga hämtas härifrån. Ansvarig person hämtas från användarens konto,
               och avsändarmejl för utskick styrs i organisationens e-postinställningar.
             </p>
           </div>

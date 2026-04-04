@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Buildings, EnvelopeSimple, FileText, Globe, Package, Palette, Users } from '@phosphor-icons/react';
+import { ArrowSquareOut, Buildings, FileText, Globe, Package, Palette, Users } from '@phosphor-icons/react';
 import type { Company } from '@modules/supporting/offers';
 import { fetchWithRefresh } from '@shared/lib/api-client';
 import {
@@ -109,11 +109,11 @@ export function CompanyOverviewDialog({
         if (!templatesRes.ok) throw new Error(`Kunde inte hämta mallar (${templatesRes.status})`);
         if (!productsRes.ok) throw new Error(`Kunde inte hämta produkter (${productsRes.status})`);
 
-        const membersJson = await membersRes.json() as {
+        const membersJson = (await membersRes.json()) as {
           data: { members: MemberSummary[] };
         };
-        const templatesJson = await templatesRes.json() as { data?: TemplateSummary[] };
-        const productsJson = await productsRes.json() as { data?: { products?: ProductSummary[] } };
+        const templatesJson = (await templatesRes.json()) as { data?: TemplateSummary[] };
+        const productsJson = (await productsRes.json()) as { data?: { products?: ProductSummary[] } };
 
         if (cancelled) return;
 
@@ -161,7 +161,7 @@ export function CompanyOverviewDialog({
         </DialogHeader>
 
         <div className="space-y-5">
-          <section className="rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] overflow-hidden">
+          <section className="overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)]">
             <div className="grid gap-0 lg:grid-cols-[1.3fr_0.9fr]">
               <div className="border-b border-[var(--border)] p-5 lg:border-b-0 lg:border-r">
                 <div className="flex items-start gap-4">
@@ -213,7 +213,7 @@ export function CompanyOverviewDialog({
                       <span className="text-xs font-semibold uppercase tracking-[0.16em]">Kontakt</span>
                     </div>
                     <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">{company.website?.replace(/^https?:\/\//, '') || 'Ingen webbplats'}</p>
-                    <p className="mt-1 text-xs text-[var(--text-muted)]">Logo och webbadress används i mallar och mejl.</p>
+                    <p className="mt-1 text-xs text-[var(--text-muted)]">Logga och webbadress används i mallar och mejl.</p>
                   </div>
                 </div>
               </div>
@@ -363,7 +363,7 @@ export function CompanyOverviewDialog({
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
                 >
-                  <EnvelopeSimple size={15} weight="duotone" />
+                  <ArrowSquareOut size={15} weight="duotone" />
                   Besök webbplats
                 </Link>
               )}

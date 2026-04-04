@@ -101,7 +101,7 @@ export function CompanyLogoUpload({ value, onChange }: CompanyLogoUploadProps) {
           }
         }}
         className={cn(
-          'group flex min-h-[164px] cursor-pointer flex-col items-center justify-center rounded-[28px] border border-dashed bg-[var(--surface)] px-4 py-5 text-center transition-colors',
+          'group flex min-h-[152px] cursor-pointer flex-col items-center justify-center rounded-[24px] border border-dashed bg-[var(--surface)] px-4 py-5 text-center transition-colors',
           dragging
             ? 'border-[var(--accent)] bg-[var(--accent)]/6'
             : 'border-[var(--border)] hover:border-[var(--accent)]/45 hover:bg-[var(--surface-alt)]',
@@ -117,9 +117,7 @@ export function CompanyLogoUpload({ value, onChange }: CompanyLogoUploadProps) {
             />
             <div className="space-y-1">
               <p className="text-sm font-medium text-[var(--text-primary)]">Loggan är redo att sparas</p>
-              <p className="text-xs text-[var(--text-muted)]">
-                Klicka eller droppa en ny bild för att byta ut den.
-              </p>
+              <p className="text-xs text-[var(--text-muted)]">Klicka eller droppa en ny bild för att byta ut den.</p>
             </div>
           </div>
         ) : (
