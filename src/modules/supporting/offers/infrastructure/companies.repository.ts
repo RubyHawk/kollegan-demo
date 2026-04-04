@@ -7,6 +7,12 @@ export interface CreateCompanyInput {
   organizationId: string;
   name:           string;
   orgNumber?:     string;
+  addressLine1?:  string;
+  addressLine2?:  string;
+  postalCode?:    string;
+  city?:          string;
+  region?:        string;
+  country?:       string;
   website?:       string;
   logoUrl?:       string;
   senderEmail?:   string;
@@ -20,6 +26,12 @@ export interface CreateCompanyInput {
 export interface UpdateCompanyInput {
   name?:      string;
   orgNumber?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  postalCode?: string;
+  city?: string;
+  region?: string;
+  country?: string;
   website?:   string;
   logoUrl?:   string;
   senderEmail?: string;
@@ -50,6 +62,12 @@ function mapCompany(r: Record<string, unknown>): Company {
     organizationId: r.organizationId as string,
     name:           r.name as string,
     orgNumber:      (r.orgNumber as string | null) ?? undefined,
+    addressLine1:   (r.addressLine1 as string | null) ?? undefined,
+    addressLine2:   (r.addressLine2 as string | null) ?? undefined,
+    postalCode:     (r.postalCode as string | null) ?? undefined,
+    city:           (r.city as string | null) ?? undefined,
+    region:         (r.region as string | null) ?? undefined,
+    country:        (r.country as string | null) ?? undefined,
     website:        (r.website as string | null) ?? undefined,
     logoUrl:        (r.logoUrl as string | null) ?? undefined,
     senderEmail:    (r.senderEmail as string | null) ?? undefined,
@@ -65,6 +83,7 @@ function mapCompany(r: Record<string, unknown>): Company {
 
 const COMPANY_SELECT = {
   id: true, organizationId: true, name: true, orgNumber: true,
+  addressLine1: true, addressLine2: true, postalCode: true, city: true, region: true, country: true,
   website: true, logoUrl: true, senderEmail: true, senderName: true, emailHeaderConfig: true, industry: true, notes: true,
   createdBy: true, createdAt: true, updatedAt: true,
 };
@@ -167,20 +186,28 @@ export const companiesRepository = {
   },
 
   async create(input: CreateCompanyInput): Promise<Company> {
+    const data = {
+      organizationId: input.organizationId,
+      name:           input.name,
+      orgNumber:      input.orgNumber ?? null,
+      addressLine1:   input.addressLine1 ?? null,
+      addressLine2:   input.addressLine2 ?? null,
+      postalCode:     input.postalCode ?? null,
+      city:           input.city ?? null,
+      region:         input.region ?? null,
+      country:        input.country ?? null,
+      website:        input.website ?? null,
+      logoUrl:        input.logoUrl ?? null,
+      senderEmail:    input.senderEmail ?? null,
+      senderName:     input.senderName ?? null,
+      emailHeaderConfig: input.emailHeaderConfig ?? null,
+      industry:       input.industry ?? null,
+      notes:          input.notes ?? null,
+      createdBy:      input.createdBy,
+    } as Parameters<typeof prisma.company.create>[0]['data'];
+
     const row = await prisma.company.create({
-      data: {
-        organizationId: input.organizationId,
-        name:           input.name,
-        orgNumber:      input.orgNumber ?? null,
-        website:        input.website ?? null,
-        logoUrl:        input.logoUrl ?? null,
-        senderEmail:    input.senderEmail ?? null,
-        senderName:     input.senderName ?? null,
-        emailHeaderConfig: input.emailHeaderConfig ?? null,
-        industry:       input.industry ?? null,
-        notes:          input.notes ?? null,
-        createdBy:      input.createdBy,
-      },
+      data,
       select: COMPANY_SELECT,
     });
     return mapCompany(row as unknown as Record<string, unknown>);
@@ -189,19 +216,27 @@ export const companiesRepository = {
   async update(id: string, orgId: string, input: UpdateCompanyInput): Promise<Company | null> {
     const existing = await prisma.company.findFirst({ where: { id, organizationId: orgId, deletedAt: null } });
     if (!existing) return null;
+    const data = {
+      ...(input.name      !== undefined ? { name: input.name }           : {}),
+      ...(input.orgNumber !== undefined ? { orgNumber: input.orgNumber } : {}),
+      ...(input.addressLine1 !== undefined ? { addressLine1: input.addressLine1 } : {}),
+      ...(input.addressLine2 !== undefined ? { addressLine2: input.addressLine2 } : {}),
+      ...(input.postalCode !== undefined ? { postalCode: input.postalCode } : {}),
+      ...(input.city !== undefined ? { city: input.city } : {}),
+      ...(input.region !== undefined ? { region: input.region } : {}),
+      ...(input.country !== undefined ? { country: input.country } : {}),
+      ...(input.website   !== undefined ? { website: input.website }     : {}),
+      ...(input.logoUrl   !== undefined ? { logoUrl: input.logoUrl }     : {}),
+      ...(input.senderEmail !== undefined ? { senderEmail: input.senderEmail } : {}),
+      ...(input.senderName !== undefined ? { senderName: input.senderName } : {}),
+      ...(input.emailHeaderConfig !== undefined ? { emailHeaderConfig: input.emailHeaderConfig } : {}),
+      ...(input.industry  !== undefined ? { industry: input.industry }   : {}),
+      ...(input.notes     !== undefined ? { notes: input.notes }         : {}),
+    } as Parameters<typeof prisma.company.update>[0]['data'];
+
     const row = await prisma.company.update({
       where: { id },
-      data: {
-        ...(input.name      !== undefined ? { name: input.name }           : {}),
-        ...(input.orgNumber !== undefined ? { orgNumber: input.orgNumber } : {}),
-        ...(input.website   !== undefined ? { website: input.website }     : {}),
-        ...(input.logoUrl   !== undefined ? { logoUrl: input.logoUrl }     : {}),
-        ...(input.senderEmail !== undefined ? { senderEmail: input.senderEmail } : {}),
-        ...(input.senderName !== undefined ? { senderName: input.senderName } : {}),
-        ...(input.emailHeaderConfig !== undefined ? { emailHeaderConfig: input.emailHeaderConfig } : {}),
-        ...(input.industry  !== undefined ? { industry: input.industry }   : {}),
-        ...(input.notes     !== undefined ? { notes: input.notes }         : {}),
-      },
+      data,
       select: COMPANY_SELECT,
     });
     return mapCompany(row as unknown as Record<string, unknown>);

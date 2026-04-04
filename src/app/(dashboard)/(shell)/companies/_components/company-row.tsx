@@ -13,6 +13,13 @@ function initials(name: string) {
     .toUpperCase();
 }
 
+function companyAddress(company: Company) {
+  return [company.addressLine1, company.addressLine2, [company.postalCode, company.city].filter(Boolean).join(' '), company.region, company.country]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(' • ');
+}
+
 interface CompanyRowProps {
   company: Company;
   active: boolean;
@@ -57,23 +64,12 @@ export function CompanyRow({
                   Aktivt företag
                 </span>
               )}
-              {company.orgNumber && (
-                <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1 text-[10px] font-mono text-[var(--text-muted)]">
-                  {company.orgNumber}
-                </span>
-              )}
             </div>
 
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-muted)]">
-              {company.senderName && <span>{company.senderName}</span>}
-              {company.senderEmail && <span>{company.senderEmail}</span>}
-              {company.industry && <span>{company.industry}</span>}
+              {companyAddress(company) && <span>{companyAddress(company)}</span>}
               {company.website && <span>{company.website.replace(/^https?:\/\//, '')}</span>}
             </div>
-
-            {company.notes && (
-              <p className="mt-2 line-clamp-2 text-sm leading-6 text-[var(--text-secondary)]">{company.notes}</p>
-            )}
           </div>
         </div>
 

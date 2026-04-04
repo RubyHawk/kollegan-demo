@@ -68,6 +68,18 @@ function getDisplayName(user: MemberSummary['user']) {
   return full || user.email;
 }
 
+function getCompanyAddress(company: Company) {
+  return [
+    company.addressLine1,
+    company.addressLine2,
+    [company.postalCode, company.city].filter(Boolean).join(' '),
+    company.region,
+    company.country,
+  ]
+    .map((part) => part?.trim())
+    .filter(Boolean);
+}
+
 export function CompanyOverviewDialog({
   open,
   company,
@@ -131,10 +143,12 @@ export function CompanyOverviewDialog({
 
   const brandingReady = useMemo(() => {
     if (!company) return false;
-    return Boolean(company.logoUrl || company.senderName || company.senderEmail || company.website);
+    return Boolean(company.logoUrl || company.website || getCompanyAddress(company).length > 0);
   }, [company]);
 
   if (!company) return null;
+
+  const addressLines = getCompanyAddress(company);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -168,14 +182,16 @@ export function CompanyOverviewDialog({
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Aktivt företagskort</p>
                     <h2 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">{company.name}</h2>
                     <div className="mt-2 flex flex-wrap gap-2 text-xs text-[var(--text-muted)]">
-                      {company.orgNumber && <span className="rounded-full border border-[var(--border)] px-2.5 py-1">{company.orgNumber}</span>}
-                      {company.industry && <span className="rounded-full border border-[var(--border)] px-2.5 py-1">{company.industry}</span>}
                       <span className={`rounded-full border px-2.5 py-1 ${brandingReady ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300' : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300'}`}>
                         {brandingReady ? 'Branding redo' : 'Branding saknas delvis'}
                       </span>
                     </div>
-                    {company.notes && (
-                      <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">{company.notes}</p>
+                    {addressLines.length > 0 && (
+                      <div className="mt-4 space-y-1 text-sm leading-6 text-[var(--text-secondary)]">
+                        {addressLines.map((line) => (
+                          <p key={line}>{line}</p>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -186,9 +202,9 @@ export function CompanyOverviewDialog({
                   <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
                     <div className="flex items-center gap-2 text-[var(--text-muted)]">
                       <Palette size={16} weight="duotone" />
-                      <span className="text-xs font-semibold uppercase tracking-[0.16em]">Branding</span>
+                      <span className="text-xs font-semibold uppercase tracking-[0.16em]">Offerttoppen</span>
                     </div>
-                    <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">{company.senderName || company.name}</p>
+                    <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">{company.name}</p>
                     <p className="mt-1 text-xs text-[var(--text-muted)]">{company.senderEmail || 'Avsändarmejl saknas'}</p>
                   </div>
                   <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">

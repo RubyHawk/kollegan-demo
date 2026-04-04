@@ -7,6 +7,12 @@ export interface ActiveCompanyOption {
   id: string;
   name: string;
   orgNumber?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  postalCode?: string;
+  city?: string;
+  region?: string;
+  country?: string;
   logoUrl?: string;
   website?: string;
   senderEmail?: string;
