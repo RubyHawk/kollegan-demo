@@ -52,7 +52,7 @@ const CompanyLogoSchema = z
 function normalizeWebsiteValue(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return trimmed;
-  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  return /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
 const WebsiteSchema = z
