@@ -10,6 +10,8 @@
  * document-generator.ts also reads this format server-side.
  */
 
+import { normalizePresentationPages } from './presentation-page-height';
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 /** @legacy kept for backward compat — used internally during v2 migration */
@@ -155,7 +157,7 @@ export function parseTemplateDoc(raw: string | undefined | null): TemplateDoc {
       const pages = (parsed.pages as PageDoc[] | undefined) ?? [makeEmptyPage()];
       return {
         _v:            3,
-        pages:         (pages.length > 0 ? pages : [makeEmptyPage()]).map((page, idx) => ({
+        pages:         normalizePresentationPages((pages.length > 0 ? pages : [makeEmptyPage()]).map((page, idx) => ({
           ...page,
           kind: page.kind ?? 'presentation',
           label: page.label ?? `Sida ${idx + 1}`,
@@ -167,7 +169,7 @@ export function parseTemplateDoc(raw: string | undefined | null): TemplateDoc {
                 ...(page.document ?? {}),
               }
             : page.document,
-        })),
+        }))),
         defaultHeader: (parsed.defaultHeader as object) ?? EMPTY_DOC,
         defaultFooter: (parsed.defaultFooter as object) ?? EMPTY_DOC,
       };
