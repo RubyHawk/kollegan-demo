@@ -92,10 +92,7 @@ export const handleListCompanies = createHandler(
   async (ctx) => {
     const { query, req } = ctx as { query: z.infer<typeof ListQuerySchema>; req: NextRequest };
     const payload = await requireStaff(req);
-    const companies = await companiesRepository.list(payload.orgId!, query.search, {
-      userId: payload.sub,
-      restrictToMemberships: !isOrgAdmin(payload),
-    });
+    const companies = await companiesRepository.list(payload.orgId!, query.search);
     return ok({ companies });
   },
 );
@@ -108,10 +105,7 @@ export const handleGetCompany = createHandler(
     const { req } = ctx as { req: NextRequest };
     const id = extractId(req);
     const payload = await requireStaff(req);
-    const company = await companiesRepository.getById(id, payload.orgId!, {
-      userId: payload.sub,
-      restrictToMemberships: !isOrgAdmin(payload),
-    });
+    const company = await companiesRepository.getById(id, payload.orgId!);
     if (!company) throw Errors.notFound('Company not found');
     return ok(company);
   },
