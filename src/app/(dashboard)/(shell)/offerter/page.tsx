@@ -50,6 +50,8 @@ import { useOffersListStore, PAGE_SIZE } from './_store/offers-list.store';
 import { useOffersFormStore } from './_store/offers-form.store';
 import type { OfferStatus, OfferPriceDisplayMode, LineItem, Offer, OfferTemplate, OfferProduct, ContactResult, CompanyResult } from './_store/types';
 import { EMPTY_LINE, EMPTY_FORM } from './_store/types';
+import { OfferTemplateCard } from './_components/offer-template-card';
+import { OfferTemplatePreviewModal } from './_components/offer-template-preview-modal';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -452,13 +454,24 @@ export default function OffersPage() {
   }, []);
 
   // ── Template preview (from offer form) ────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const openTemplatePreview = useCallback(async () => {
-    if (!form.templateId) return;
+  const selectedCompanyBranding = useMemo(() => (
+    selectedCompany ? {
+      name: selectedCompany.name,
+      website: selectedCompany.website,
+      logoUrl: selectedCompany.logoUrl,
+      senderEmail: selectedCompany.senderEmail,
+      senderName: selectedCompany.senderName,
+      emailHeaderConfig: selectedCompany.emailHeaderConfig,
+    } : undefined
+  ), [selectedCompany]);
+
+  const openTemplatePreview = useCallback(async (templateId?: string) => {
+    const activeTemplateId = templateId ?? form.templateId;
+    if (!activeTemplateId) return;
     setTplPreview({ loading: true, html: null });
     try {
       // Fetch full template (list response omits content for performance)
-      const tplRes = await fetchWithRefresh(`/api/templates/${form.templateId}`);
+      const tplRes = await fetchWithRefresh(`/api/templates/${activeTemplateId}`);
       if (!tplRes.ok) throw new Error(`Kunde inte hämta mall (${tplRes.status})`);
       const tplData = await tplRes.json() as { data?: { content?: string } };
       const content = tplData.data?.content;
@@ -473,7 +486,7 @@ export default function OffersPage() {
     } catch {
       setTplPreview(null);
     }
-  }, [form.templateId]);
+  }, [form.templateId, selectedCompanyBranding, setTplPreview]);
 
   // ── Fetch & open generated document preview on-demand ─────────────────────────
   // generatedDocument is excluded from the list payload (too large); fetch by ID.
@@ -575,17 +588,6 @@ export default function OffersPage() {
     }, 280);
   }, [setCompanyResults, setCompanyLoading]);
 
-  const selectedCompanyBranding = useMemo(() => (
-    selectedCompany ? {
-      name: selectedCompany.name,
-      website: selectedCompany.website,
-      logoUrl: selectedCompany.logoUrl,
-      senderEmail: selectedCompany.senderEmail,
-      senderName: selectedCompany.senderName,
-      emailHeaderConfig: selectedCompany.emailHeaderConfig,
-    } : undefined
-  ), [selectedCompany]);
-
   const pickContact = useCallback((c: ContactResult) => {
     setForm((f) => ({
       ...f,
@@ -629,6 +631,16 @@ export default function OffersPage() {
       });
     },
     [services, productSearch],
+  );
+
+  const selectedTemplate = useMemo(
+    () => templates.find((template) => template.id === form.templateId) ?? null,
+    [templates, form.templateId],
+  );
+
+  const previewLooksImageLed = useMemo(
+    () => Boolean(livePreviewHtml && /<img[\s>]/i.test(livePreviewHtml)),
+    [livePreviewHtml],
   );
 
   // ── Wizard helpers ────────────────────────────────────────────────────────────
@@ -855,17 +867,85 @@ export default function OffersPage() {
                   {!livePreviewHtml && !livePreviewLoading && (
                     <motion.div key="preview-empty"
                       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="flex flex-col items-center justify-center h-full text-center gap-5 max-w-xs mx-auto">
-                      <div className="w-20 h-20 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm">
-                        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300 dark:text-slate-600">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                          <polyline points="14 2 14 8 20 8"/>
-                          <line x1="16" y1="13" x2="8" y2="13"/>
-                          <line x1="16" y1="17" x2="8" y2="17"/>
-                          <polyline points="10 9 9 9 8 9"/>
-                        </svg>
-                      </div>
-                      <div>
+                      className="flex h-full w-full items-center justify-center">
+                      <div className="relative w-full max-w-4xl">
+                        <div className="absolute inset-0 rounded-[40px] bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.95),_rgba(240,244,250,0.88)_45%,_rgba(226,232,240,0.74)_100%)]" />
+                        <div className="relative overflow-hidden rounded-[36px] border border-white/70 bg-white/55 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur">
+                          <div className="flex items-start justify-between gap-8">
+                            <div className="max-w-xl">
+                              <div className="mb-4 flex items-center gap-2">
+                                <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                                  Preview
+                                </span>
+                                {selectedCompany && (
+                                  <span className="rounded-full border border-[var(--accent)]/20 bg-[var(--accent)]/8 px-3 py-1 text-[11px] font-medium text-[var(--accent)]">
+                                    {selectedCompany.name}
+                                  </span>
+                                )}
+                              </div>
+                              <h3 className="text-3xl font-semibold leading-tight text-slate-900">
+                                Välj en mall som sätter tonen för offerten.
+                              </h3>
+                              <p className="mt-3 max-w-lg text-sm leading-7 text-slate-600">
+                                Den stora ytan här ska kännas som ett dokumentbord, inte som en tom buggy ruta.
+                                När du väljer en mall laddar vi direkt kundens faktiska offertutseende här till vänster.
+                              </p>
+                            </div>
+                            <div className="hidden xl:flex rounded-3xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+                              <div className="w-[240px] rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.07)]">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="h-2 w-2 rounded-full bg-[var(--accent)]/70" />
+                                  <span className="h-2 w-2 rounded-full bg-[var(--accent)]/35" />
+                                  <span className="h-2 w-2 rounded-full bg-[var(--accent)]/18" />
+                                </div>
+                                <div className="mt-4 h-10 rounded-2xl bg-[var(--accent)]/12" />
+                                <div className="mt-3 space-y-2">
+                                  <div className="h-2 rounded-full bg-slate-200" />
+                                  <div className="h-2 w-4/5 rounded-full bg-slate-200/80" />
+                                  <div className="h-24 rounded-[20px] bg-slate-100" />
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="h-9 rounded-xl bg-slate-100" />
+                                    <div className="h-9 rounded-xl bg-[var(--accent)]/10" />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-8 grid gap-4 md:grid-cols-3">
+                            <div className="rounded-3xl border border-slate-200 bg-white/82 p-5">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">1. Välj mall</p>
+                              <p className="mt-2 text-sm font-semibold text-slate-900">Struktur först</p>
+                              <p className="mt-1 text-xs leading-6 text-slate-600">
+                                Välj en mall till höger. Bildmallar och dokumentmallar ska kännas tydliga redan innan du går vidare.
+                              </p>
+                            </div>
+                            <div className="rounded-3xl border border-slate-200 bg-white/82 p-5">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">2. Mottagare</p>
+                              <p className="mt-2 text-sm font-semibold text-slate-900">Fyll bara det viktiga</p>
+                              <p className="mt-1 text-xs leading-6 text-slate-600">
+                                När mottagaren är ifylld går du vidare utan att hela ytan känns tom eller halvfärdig.
+                              </p>
+                            </div>
+                            <div className="rounded-3xl border border-slate-200 bg-white/82 p-5">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">3. Livepreview</p>
+                              <p className="mt-2 text-sm font-semibold text-slate-900">Se dokumentet växa fram</p>
+                              <p className="mt-1 text-xs leading-6 text-slate-600">
+                                Förhandsvisningen uppdateras direkt så att vänstersidan känns avsiktlig och användbar från start.
+                              </p>
+                            </div>
+                          </div>
+                          {templates.length === 0 && (
+                            <div className="mt-8">
+                              <a href="/mallar" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90">
+                                Skapa din första mall
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <line x1="7" y1="17" x2="17" y2="7"/>
+                                  <polyline points="7 7 17 7 17 17"/>
+                                </svg>
+                              </a>
+                            </div>
+                          )}
+                          <div className="hidden">
                         <p className="text-sm font-semibold text-[var(--text-primary)] mb-1.5">Välj en mall för att se förhandsvisning</p>
                         <p className="text-xs text-[var(--text-muted)] leading-relaxed">Mallen styr offertens utseende. Välj bland dina mallar i panelen till höger — förhandsvisningen uppdateras live.</p>
                       </div>
@@ -874,6 +954,8 @@ export default function OffersPage() {
                           Skapa din första mall →
                         </a>
                       )}
+                          </div>
+                      </div>
                     </motion.div>
                   )}
                   {livePreviewLoading && !livePreviewHtml && (
@@ -889,7 +971,50 @@ export default function OffersPage() {
                   {livePreviewHtml && (
                     <motion.div key="preview-iframe"
                       initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                      className="relative w-full max-w-3xl">
+                      className="relative w-full max-w-4xl">
+                      <div className="mb-4 flex items-center justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 shadow-sm">
+                              Livepreview
+                            </span>
+                            {previewLooksImageLed && (
+                              <span className="rounded-full border border-[var(--accent)]/20 bg-[var(--accent)]/8 px-3 py-1 text-[11px] font-medium text-[var(--accent)] shadow-sm">
+                                Bildmall
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-2 text-sm font-semibold text-slate-900">
+                            {selectedTemplate?.name ?? 'Vald mall'}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Det här är den faktiska kundvyn som uppdateras medan du fyller i offerten.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void openTemplatePreview()}
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:text-[var(--accent)]"
+                        >
+                          Öppna stort
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="7" y1="17" x2="17" y2="7"/>
+                            <polyline points="7 7 17 7 17 17"/>
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="rounded-[32px] border border-white/70 bg-white/50 p-5 shadow-[0_28px_80px_rgba(15,23,42,0.08)] backdrop-blur">
+                        <div className="mb-4 flex items-center justify-between text-[11px] text-slate-500">
+                          <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-[var(--accent)]/70" />
+                            <span className="h-2 w-2 rounded-full bg-[var(--accent)]/35" />
+                            <span className="h-2 w-2 rounded-full bg-[var(--accent)]/18" />
+                          </div>
+                          <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 font-medium">
+                            Dokumentyta
+                          </span>
+                        </div>
+                        <div className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.10)]">
                       {(livePreviewLoading || previewDirty) && (
                         <div className={`absolute inset-0 z-10 rounded-xl transition-all ${livePreviewLoading ? 'bg-slate-100/60 dark:bg-slate-900/60 backdrop-blur-[2px]' : 'bg-slate-100/20 dark:bg-slate-900/20'}`}>
                           {livePreviewLoading && (
@@ -905,7 +1030,7 @@ export default function OffersPage() {
                         ref={previewIframeRef}
                         srcDoc={livePreviewHtml}
                         title="Live-förhandsvisning"
-                        className="w-full rounded-xl shadow-2xl"
+                        className="w-full"
                         style={{ border: 'none', height: '200px', display: 'block', overflow: 'hidden' }}
                         sandbox="allow-same-origin"
                         scrolling="no"
@@ -969,6 +1094,8 @@ export default function OffersPage() {
                           }
                         }}
                       />
+                        </div>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1036,35 +1163,13 @@ export default function OffersPage() {
                         </div>
                       ) : (
                         templates.map((t) => (
-                          <button key={t.id} type="button" onClick={() => void selectTemplate(t.id)}
-                            className={cn(
-                              'w-full text-left rounded-xl border p-3.5 transition-all flex items-center gap-3 group',
-                              form.templateId === t.id
-                                ? 'border-[var(--accent)] bg-[var(--accent)]/5 shadow-sm'
-                                : 'border-[var(--border)] bg-[var(--surface-alt)] hover:border-[var(--accent)]/50 hover:shadow-sm',
-                            )}>
-                            <div className={cn(
-                              'shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-colors',
-                              form.templateId === t.id
-                                ? 'bg-[var(--accent)] text-white'
-                                : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] group-hover:border-[var(--accent)]/40 group-hover:text-[var(--accent)]',
-                            )}>
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                <polyline points="14 2 14 8 20 8"/>
-                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                <line x1="16" y1="17" x2="8" y2="17"/>
-                              </svg>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={cn('text-sm font-semibold truncate transition-colors', form.templateId === t.id ? 'text-[var(--accent)]' : 'text-[var(--text-primary)] group-hover:text-[var(--accent)]')}>{t.name}</p>
-                            </div>
-                            {form.templateId === t.id && (
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-[var(--accent)]">
-                                <polyline points="20 6 9 17 4 12"/>
-                              </svg>
-                            )}
-                          </button>
+                          <OfferTemplateCard
+                            key={t.id}
+                            template={t}
+                            selected={form.templateId === t.id}
+                            onSelect={() => void selectTemplate(t.id)}
+                            onPreview={() => void openTemplatePreview(t.id)}
+                          />
                         ))
                       )}
                     </div>
@@ -2300,7 +2405,13 @@ export default function OffersPage() {
       )}
 
       {/* Template preview modal */}
-      {tplPreview && (
+      <OfferTemplatePreviewModal
+        open={Boolean(tplPreview)}
+        html={tplPreview?.html ?? null}
+        loading={tplPreview?.loading ?? false}
+        onClose={() => setTplPreview(null)}
+      />
+      {false && tplPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setTplPreview(null)}>
           <div className="relative w-full max-w-4xl max-h-[90vh] bg-[var(--surface-0)] rounded-xl shadow-2xl overflow-hidden flex flex-col border border-[var(--border)]"
             onClick={(e) => e.stopPropagation()}>
@@ -2313,10 +2424,10 @@ export default function OffersPage() {
               </button>
             </div>
             <div className="flex-1 overflow-auto relative">
-              {tplPreview.loading ? (
+              {tplPreview?.loading ? (
                 <div className="flex items-center justify-center h-64 text-[var(--text-muted)] text-sm">Laddar förhandsvisning…</div>
               ) : (
-                <iframe srcDoc={tplPreview.html ?? ''} title="Mallförhandsvisning" className="w-full h-full min-h-[70vh] border-0"/>
+                <iframe srcDoc={tplPreview?.html ?? ''} title="Mallförhandsvisning" className="w-full h-full min-h-[70vh] border-0"/>
               )}
             </div>
           </div>
