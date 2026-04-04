@@ -189,6 +189,12 @@ model Company {
   organizationId String
   name           String
   orgNumber      String?   // Swedish org number, e.g. "556677-8899"
+  addressLine1   String?
+  addressLine2   String?
+  postalCode     String?
+  city           String?
+  region         String?
+  country        String?
   website        String?
   logoUrl        String?
   senderEmail    String?

@@ -118,13 +118,14 @@ export function CompaniesPageClient() {
       try {
         const body = {
           name: form.name.trim(),
-          orgNumber: form.orgNumber.trim() || undefined,
+          addressLine1: form.addressLine1.trim() || undefined,
+          addressLine2: form.addressLine2.trim() || undefined,
+          postalCode: form.postalCode.trim() || undefined,
+          city: form.city.trim() || undefined,
+          region: form.region.trim() || undefined,
+          country: form.country.trim() || undefined,
           website: form.website.trim() || undefined,
           logoUrl: form.logoUrl.trim() || undefined,
-          senderEmail: form.senderEmail.trim() || undefined,
-          senderName: form.senderName.trim() || undefined,
-          industry: form.industry.trim() || undefined,
-          notes: form.notes.trim() || undefined,
         };
 
         const response = editCompany
@@ -495,7 +496,7 @@ export function CompaniesPageClient() {
           {deleteCompany && (
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-secondary)]">
               <p className="font-medium text-[var(--text-primary)]">{deleteCompany.name}</p>
-              {deleteCompany.orgNumber && <p className="mt-1">Org.nr: {deleteCompany.orgNumber}</p>}
+              {deleteCompany.website && <p className="mt-1">{deleteCompany.website.replace(/^https?:\/\//, '')}</p>}
             </div>
           )}
 

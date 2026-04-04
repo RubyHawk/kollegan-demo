@@ -9,6 +9,7 @@ export interface OfferBrandingProfile {
   emailHeaderConfig?: string;
   responsibleName?: string;
   responsibleEmail?: string;
+  addressLines?: string[];
 }
 
 export function resolveOfferBranding(
@@ -20,6 +21,15 @@ export function resolveOfferBranding(
   const senderName = company?.senderName?.trim() || companyName || org?.senderName?.trim() || org?.name?.trim() || 'Offert';
   const responsibleName = responsible?.name?.trim() || undefined;
   const responsibleEmail = responsible?.email?.trim() || undefined;
+  const addressLines = [
+    company?.addressLine1,
+    company?.addressLine2,
+    [company?.postalCode, company?.city].filter(Boolean).join(' '),
+    company?.region,
+    company?.country,
+  ]
+    .map((part) => part?.trim())
+    .filter(Boolean) as string[];
 
   return {
     companyName,
@@ -30,5 +40,6 @@ export function resolveOfferBranding(
     emailHeaderConfig: company?.emailHeaderConfig?.trim() || org?.emailHeaderConfig?.trim(),
     responsibleName,
     responsibleEmail,
+    addressLines,
   };
 }

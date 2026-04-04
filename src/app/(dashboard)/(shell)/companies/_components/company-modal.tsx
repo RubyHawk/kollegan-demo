@@ -1,30 +1,31 @@
 'use client';
 
 import { useState } from 'react';
-import { cn } from '@shared/lib/utils';
 import type { Company } from '@modules/supporting/offers';
 import { CompanyLogoUpload } from './company-logo-upload';
 
 export interface CompanyForm {
   name: string;
-  orgNumber: string;
+  addressLine1: string;
+  addressLine2: string;
+  postalCode: string;
+  city: string;
+  region: string;
+  country: string;
   website: string;
   logoUrl: string;
-  senderEmail: string;
-  senderName: string;
-  industry: string;
-  notes: string;
 }
 
 export const EMPTY_COMPANY_FORM: CompanyForm = {
   name: '',
-  orgNumber: '',
+  addressLine1: '',
+  addressLine2: '',
+  postalCode: '',
+  city: '',
+  region: '',
+  country: 'Sverige',
   website: '',
   logoUrl: '',
-  senderEmail: '',
-  senderName: '',
-  industry: '',
-  notes: '',
 };
 
 export function formFromCompany(company: Company | null): CompanyForm {
@@ -32,13 +33,14 @@ export function formFromCompany(company: Company | null): CompanyForm {
 
   return {
     name: company.name,
-    orgNumber: company.orgNumber ?? '',
+    addressLine1: company.addressLine1 ?? '',
+    addressLine2: company.addressLine2 ?? '',
+    postalCode: company.postalCode ?? '',
+    city: company.city ?? '',
+    region: company.region ?? '',
+    country: company.country ?? 'Sverige',
     website: company.website ?? '',
     logoUrl: company.logoUrl ?? '',
-    senderEmail: company.senderEmail ?? '',
-    senderName: company.senderName ?? '',
-    industry: company.industry ?? '',
-    notes: company.notes ?? '',
   };
 }
 
@@ -96,14 +98,35 @@ export function CompanyModal({
             <input value={form.name} onChange={set('name')} placeholder="Soleria AB" className={inputCls} />
           </div>
 
+          <div>
+            <label className={labelCls}>Adressrad 1</label>
+            <input value={form.addressLine1} onChange={set('addressLine1')} placeholder="Radiatorvägen 3" className={inputCls} />
+          </div>
+
+          <div>
+            <label className={labelCls}>Adressrad 2</label>
+            <input value={form.addressLine2} onChange={set('addressLine2')} placeholder="702 27 Örebro" className={inputCls} />
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className={labelCls}>Organisationsnummer</label>
-              <input value={form.orgNumber} onChange={set('orgNumber')} placeholder="556677-8899" className={inputCls} />
+              <label className={labelCls}>Postnummer</label>
+              <input value={form.postalCode} onChange={set('postalCode')} placeholder="702 27" className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Bransch</label>
-              <input value={form.industry} onChange={set('industry')} placeholder="Solfilm, el, konsulting..." className={inputCls} />
+              <label className={labelCls}>Stad</label>
+              <input value={form.city} onChange={set('city')} placeholder="Örebro" className={inputCls} />
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className={labelCls}>Län / region</label>
+              <input value={form.region} onChange={set('region')} placeholder="Örebro län" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Land</label>
+              <input value={form.country} onChange={set('country')} placeholder="Sverige" className={inputCls} />
             </div>
           </div>
 
@@ -120,26 +143,12 @@ export function CompanyModal({
             />
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className={labelCls}>Avsändarnamn</label>
-              <input value={form.senderName} onChange={set('senderName')} placeholder="Soleria" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Avsändarmejl</label>
-              <input type="email" value={form.senderEmail} onChange={set('senderEmail')} placeholder="no-reply@offert.soleria.se" className={inputCls} />
-            </div>
-          </div>
-
-          <div>
-            <label className={labelCls}>Anteckningar</label>
-            <textarea
-              value={form.notes}
-              onChange={set('notes')}
-              rows={3}
-              placeholder="Intern information om företaget, branding eller arbetsflöde..."
-              className={cn(inputCls, 'resize-none')}
-            />
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+            <p className="font-medium text-[var(--text-primary)]">Avsändare i offerten</p>
+            <p className="mt-1 leading-6">
+              Företagsnamn och adress hämtas härifrån. Ansvarig person hämtas från användarens konto,
+              och avsändarmejl för utskick styrs i organisationens e-postinställningar.
+            </p>
           </div>
         </div>
 

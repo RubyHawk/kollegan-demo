@@ -51,6 +51,31 @@ function buildOfferSummary(offer: Offer) {
   return summarizeOfferPricing(offer.lineItems, offer.priceDisplayMode);
 }
 
+function formatOfferStatus(status: Offer['status']): string {
+  const labels: Record<Offer['status'], string> = {
+    draft: 'Utkast',
+    sent: 'Skickad',
+    viewed: 'Visad',
+    accepted: 'Accepterad',
+    declined: 'Avvisad',
+    expired: 'Utgången',
+  };
+  return labels[status] ?? 'Offert';
+}
+
+function splitLineItemDescription(description: string): { title: string; detail?: string } {
+  const value = description.trim();
+  const separator = value.includes(' — ') ? ' — ' : value.includes(' - ') ? ' - ' : '';
+  if (!separator) return { title: value };
+
+  const [title, ...rest] = value.split(separator);
+  const detail = rest.join(separator).trim();
+  return {
+    title: title.trim(),
+    detail: detail || undefined,
+  };
+}
+
 // ─── TipTap JSON → HTML ─────────────────────────────────────────────────────────
 
 interface TipTapNode {
@@ -224,22 +249,24 @@ function escapeHtml(s: string): string {
 function buildLineItemsTable(items: OfferLineItem[], mode: Offer['priceDisplayMode']): string {
   const pricing = summarizeOfferPricing(items, mode);
   const showVatColumn = pricing.hasVat;
+  const showDiscountColumn = items.some((item) => (item.discount ?? 0) > 0);
   const headerStyle = 'padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#475569;background:#eef2f7;border-bottom:1px solid #d9e2ec;';
   const cellStyle   = 'padding:10px 12px;font-size:13px;border-bottom:1px solid #e2e8f0;vertical-align:top;';
   const numStyle    = `${cellStyle}text-align:right;`;
-  const discountLabel = (d?: number) => d ? `${d}%` : '-';
 
   const rows = items.map((item) => {
     const displayUnitPrice = getDisplayUnitPrice(item, mode);
     const displayLineTotal = getDisplayLineTotal(item, mode);
+    const description = splitLineItemDescription(item.description);
     return `
       <tr>
         <td data-label="Beskrivning" style="${cellStyle}">
-          <div style="font-weight:600;color:#0f172a;margin-bottom:2px;">${escapeHtml(item.description)}</div>
+          <div style="font-weight:600;color:#0f172a;margin-bottom:${description.detail ? '4px' : '0'};">${escapeHtml(description.title)}</div>
+          ${description.detail ? `<div style="font-size:12px;line-height:1.45;color:#64748b;">${escapeHtml(description.detail)}</div>` : ''}
         </td>
         <td data-label="Antal"       style="${numStyle}">${item.quantity}</td>
         <td data-label="&Agrave;-pris" style="${numStyle}">${fmtSEKPrecise(displayUnitPrice)}</td>
-        <td data-label="Rabatt"      style="${numStyle}">${discountLabel(item.discount)}</td>
+        ${showDiscountColumn ? `<td data-label="Rabatt" style="${numStyle}">${item.discount ? `${item.discount}%` : '—'}</td>` : ''}
         ${showVatColumn ? `<td data-label="Moms" style="${numStyle}">${formatVatRate(item.vatRate)}</td>` : ''}
         <td data-label="Belopp"      style="${numStyle};font-weight:600;">${fmtSEKPrecise(displayLineTotal)}</td>
       </tr>`;
@@ -252,7 +279,7 @@ function buildLineItemsTable(items: OfferLineItem[], mode: Offer['priceDisplayMo
           <th style="${headerStyle}">Beskrivning</th>
           <th style="${headerStyle}text-align:right;">Antal</th>
           <th style="${headerStyle}text-align:right;">&Agrave;-pris</th>
-          <th style="${headerStyle}text-align:right;">Rabatt</th>
+          ${showDiscountColumn ? `<th style="${headerStyle}text-align:right;">Rabatt</th>` : ''}
           ${showVatColumn ? `<th style="${headerStyle}text-align:right;">Moms</th>` : ''}
           <th style="${headerStyle}text-align:right;">Belopp</th>
         </tr>
@@ -459,6 +486,16 @@ function renderStructuredDocumentPage(
   const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '';
   const senderWebsite = branding?.website?.trim()?.replace(/^https?:\/\//, '') || '';
   const logoUrl = branding?.logoUrl?.trim() || '';
+  const addressLines = branding?.addressLines ?? [];
+  const senderDetailsHtml = [
+    `<p class="offer-shell__sender-name">${escapeHtml(companyName)}</p>`,
+    ...addressLines.map((line) => `<p>${escapeHtml(line)}</p>`),
+    responsibleName ? `<p><strong>Ansvarig:</strong> ${escapeHtml(responsibleName)}</p>` : '',
+    responsibleEmail ? `<p><strong>Kontakt:</strong> ${escapeHtml(responsibleEmail)}</p>` : '',
+    senderWebsite ? `<p>${escapeHtml(senderWebsite)}</p>` : '',
+  ]
+    .filter(Boolean)
+    .join('');
   const noteHtml = offer.notes ? `<section class="offer-section"><h3>Anteckningar</h3><p>${secureEscapeHtml(offer.notes)}</p></section>` : '';
   const introHtml = nodeToHtml(page.body, replacements);
   const tableHtml = buildLineItemsTable(offer.lineItems, offer.priceDisplayMode);
@@ -481,9 +518,7 @@ function renderStructuredDocumentPage(
               ${settings.showLogo && logoUrl ? `<img class="offer-shell__logo" src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(companyName)}" />` : ''}
               ${settings.showSenderDetails ? `
                 <div class="offer-shell__sender-copy">
-                  <p class="offer-shell__sender-name">${escapeHtml(companyName)}</p>
-                  ${responsibleName ? `<p><strong>Ansvarig:</strong> ${escapeHtml(responsibleName)}</p>` : ''}
-                  ${responsibleEmail ? `<p>${escapeHtml(responsibleEmail)}</p>` : ''}
+                  ${senderDetailsHtml}
                 </div>` : ''}
             </div>
             <div class="offer-shell__meta">
@@ -554,6 +589,17 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
   const senderWebsite = branding?.website?.trim()?.replace(/^https?:\/\//, '') || '';
   const logoUrl = branding?.logoUrl?.trim() || '';
 
+  const fallbackAddressLines = branding?.addressLines ?? [];
+  const senderBlockHtml = [
+    `<p style="margin:0;font-weight:700;color:#0f172a;">${escapeHtml(companyName)}</p>`,
+    ...fallbackAddressLines.map((line) => `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(line)}</p>`),
+    responsibleName ? `<p style="margin:4px 0 0 0;color:#64748b;"><strong>Ansvarig:</strong> ${escapeHtml(responsibleName)}</p>` : '',
+    responsibleEmail ? `<p style="margin:2px 0 0 0;color:#64748b;"><strong>Kontakt:</strong> ${escapeHtml(responsibleEmail)}</p>` : '',
+    senderWebsite ? `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(senderWebsite)}</p>` : '',
+  ]
+    .filter(Boolean)
+    .join('');
+
   return `<!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -573,15 +619,11 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
 </head>
 <body>
   <div class="doc-wrapper">
-    ${(logoUrl || companyName || responsibleName || responsibleEmail || senderWebsite) ? `
+    ${(logoUrl || companyName || responsibleName || responsibleEmail || senderWebsite || fallbackAddressLines.length > 0) ? `
     <div style="display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:28px;">
       <div style="display:flex;gap:14px;align-items:flex-start;">
         ${logoUrl ? `<img src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(companyName)}" style="width:54px;height:54px;object-fit:contain;border-radius:12px;"/>` : ''}
-        <div>
-          <p style="margin:0;font-weight:700;color:#0f172a;">${escapeHtml(companyName)}</p>
-          ${responsibleName ? `<p style="margin:4px 0 0 0;color:#64748b;"><strong>Ansvarig:</strong> ${escapeHtml(responsibleName)}</p>` : ''}
-          ${responsibleEmail ? `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(responsibleEmail)}</p>` : ''}
-        </div>
+        <div>${senderBlockHtml}</div>
       </div>
       <div style="text-align:right;">
         <p style="margin:0;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Offert</p>
