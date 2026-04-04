@@ -104,6 +104,12 @@ function isMissingAddressColumnError(error: unknown): boolean {
     message.includes('Unknown field `city`') ||
     message.includes('Unknown field `region`') ||
     message.includes('Unknown field `country`') ||
+    message.includes('Unknown argument `addressLine1`') ||
+    message.includes('Unknown argument `addressLine2`') ||
+    message.includes('Unknown argument `postalCode`') ||
+    message.includes('Unknown argument `city`') ||
+    message.includes('Unknown argument `region`') ||
+    message.includes('Unknown argument `country`') ||
     (
       message.includes('does not exist') &&
       ['addressLine1', 'addressLine2', 'postalCode', 'city', 'region', 'country'].some((field) => message.includes(field))
