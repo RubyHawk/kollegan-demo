@@ -49,6 +49,30 @@ const CompanyLogoSchema = z
     message: 'Loggan måste vara en bildlänk, en intern sökväg eller uppladdad bilddata.',
   });
 
+function normalizeWebsiteValue(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+const WebsiteSchema = z
+  .string()
+  .max(500)
+  .transform((value) => normalizeWebsiteValue(value))
+  .refine((value) => z.string().url().safeParse(value).success, {
+    message: 'Webbplatsen måste vara en giltig adress, till exempel soleria.se eller https://soleria.se.',
+  });
+
+const OptionalWebsiteSchema = z.preprocess(
+  (value) => (typeof value === 'string' && !value.trim() ? undefined : value),
+  WebsiteSchema.optional(),
+);
+
+const NullableWebsiteSchema = z.preprocess(
+  (value) => (typeof value === 'string' && !value.trim() ? null : value),
+  WebsiteSchema.nullable().optional(),
+);
+
 async function requireCompanyAdmin(companyId: string, payload: Awaited<ReturnType<typeof requireStaff>>) {
   if (isOrgAdmin(payload)) return;
   const membership = await companiesRepository.getMember(companyId, payload.sub);
@@ -104,7 +128,7 @@ const CreateBodySchema = z.object({
   city: z.string().max(100).optional(),
   region: z.string().max(100).optional(),
   country: z.string().max(100).optional(),
-  website:   z.string().url().max(500).optional(),
+  website:   OptionalWebsiteSchema,
   logoUrl:   CompanyLogoSchema.optional(),
   senderEmail: z.string().email().max(254).optional(),
   senderName: z.string().max(100).optional(),
@@ -153,7 +177,7 @@ const UpdateBodySchema = z.object({
   city: z.string().max(100).optional().nullable(),
   region: z.string().max(100).optional().nullable(),
   country: z.string().max(100).optional().nullable(),
-  website:   z.string().url().max(500).optional().nullable(),
+  website:   NullableWebsiteSchema,
   logoUrl:   CompanyLogoSchema.optional().nullable(),
   senderEmail: z.string().email().max(254).optional().nullable(),
   senderName: z.string().max(100).optional().nullable(),

@@ -71,6 +71,15 @@ export function CompaniesPageClient() {
     }
   }, [search]);
 
+  const readApiProblem = useCallback(async (response: Response, fallback: string) => {
+    try {
+      const payload = (await response.json()) as { detail?: string; title?: string };
+      return payload.detail || payload.title || fallback;
+    } catch {
+      return fallback;
+    }
+  }, []);
+
   useEffect(() => {
     void load();
   }, [load]);
@@ -140,7 +149,9 @@ export function CompaniesPageClient() {
               body: JSON.stringify(body),
             });
 
-        if (!response.ok) throw new Error('Kunde inte spara företaget');
+        if (!response.ok) {
+          throw new Error(await readApiProblem(response, 'Kunde inte spara företaget'));
+        }
 
         const payload = (await response.json()) as { data: Company };
         const savedCompany = payload.data;
@@ -157,7 +168,7 @@ export function CompaniesPageClient() {
         setSaving(false);
       }
     },
-    [editCompany, load, reloadScopedCompanies, selectedCompanyId, setSelectedCompanyId],
+    [editCompany, load, readApiProblem, reloadScopedCompanies, selectedCompanyId, setSelectedCompanyId],
   );
 
   const handleAddMember = useCallback(
