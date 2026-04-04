@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
@@ -52,7 +52,7 @@ export function CategoryManagerDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-4xl">
-        <DialogHeader className="px-6 pt-6">
+        <DialogHeader className="px-6 pt-6 pr-16">
           <DialogTitle>Strukturera biblioteket med huvud- och underkategorier</DialogTitle>
           <DialogDescription>
             Huvudkategorier är bara ordning och navigation. Produkter och tjänster kopplas sedan till en vald underkategori.
@@ -60,7 +60,7 @@ export function CategoryManagerDialog({
         </DialogHeader>
 
         <div className="space-y-5 px-6 pb-3 pt-2">
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 <Folders size={14} />
@@ -214,3 +214,4 @@ export function CategoryManagerDialog({
     </Dialog>
   );
 }
+

@@ -2,9 +2,9 @@
 
 import { motion } from 'framer-motion';
 import { PencilSimple, Power, Trash } from '@phosphor-icons/react';
+import { cn } from '@shared/lib/utils';
 import type { ProductRowProps } from './product-library.types';
 import { formatSek, productInitials } from './product-library.utils';
-import { cn } from '@shared/lib/utils';
 
 function ProductThumbnail({
   imageUrl,
@@ -51,7 +51,7 @@ export function ProductRow({
         !product.isActive && 'opacity-65',
       )}
     >
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex min-w-0 gap-3">
           <ProductThumbnail imageUrl={product.imageUrl} name={product.name} />
 
@@ -93,17 +93,22 @@ export function ProductRow({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 md:justify-end">
-          <div className="min-w-[132px] rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2 text-left md:text-right">
+        <div className="flex flex-col gap-3 lg:min-w-[280px] lg:items-end">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2 text-left lg:min-w-[168px] lg:justify-end lg:text-right">
+            <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--text-muted)] lg:hidden">
+              Pris
+            </div>
             <div className="text-sm font-semibold text-[var(--text-primary)]">{formatSek(product.unitPrice)}</div>
-            <div className="mt-0.5 text-xs text-[var(--text-muted)]">{product.unit ? `per ${product.unit}` : 'Engångspris'}</div>
+            <div className="mt-0.5 text-xs text-[var(--text-muted)]">
+              {product.unit ? `per ${product.unit}` : 'Engångspris'}
+            </div>
           </div>
 
-          <div className="flex items-center gap-1 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] p-1">
+          <div className="grid grid-cols-1 gap-1 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] p-1 sm:grid-cols-3 lg:flex lg:flex-wrap lg:justify-end">
             <button
               type="button"
               onClick={() => onEdit(product)}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
             >
               <PencilSimple size={14} weight="bold" />
               Redigera
@@ -111,7 +116,7 @@ export function ProductRow({
             <button
               type="button"
               onClick={() => onToggleActive(product)}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
             >
               <Power size={14} weight="bold" />
               {product.isActive ? 'Inaktivera' : 'Aktivera'}
@@ -120,7 +125,7 @@ export function ProductRow({
               type="button"
               disabled={deleting}
               onClick={() => onDelete(product)}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30 disabled:cursor-wait disabled:opacity-50"
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30 disabled:cursor-wait disabled:opacity-50"
             >
               <Trash size={14} weight="bold" />
               {deleting ? 'Tar bort…' : 'Ta bort'}

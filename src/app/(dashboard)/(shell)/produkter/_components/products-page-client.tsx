@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -49,8 +49,11 @@ type CategoryFilterKey = '' | 'uncategorized' | `main:${string}` | `sub:${string
 export function ProductsPageClient() {
   const {
     companies,
+    selectedCompany,
     selectedCompanyId,
     setSelectedCompanyId,
+    loading: companyLoading,
+    error: companyError,
   } = useActiveCompany();
   const [products, setProducts] = useState<OfferProduct[]>([]);
   const [rawCategories, setRawCategories] = useState<ProductCategory[]>([]);
@@ -59,6 +62,7 @@ export function ProductsPageClient() {
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterKey>('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<OfferProduct | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<OfferProduct | null>(null);
@@ -145,6 +149,7 @@ export function ProductsPageClient() {
           product.name,
           product.description,
           product.sku,
+          product.unit,
           meta?.label,
           meta?.mainCategoryName,
           meta?.subCategoryName,
@@ -232,6 +237,7 @@ export function ProductsPageClient() {
 
   const totalVisible = filteredProducts.length;
   const activeCount = products.filter((product) => product.isActive).length;
+  const uncategorizedCount = products.filter((product) => !productMetas.get(product.id)?.label).length;
 
   const openCreate = () => {
     setEditingProduct(null);
@@ -393,36 +399,160 @@ export function ProductsPageClient() {
   const activeMainFilterId = categoryFilter.startsWith('main:') ? categoryFilter.slice(5) : '';
   const hasActiveFilters = Boolean(search || categoryFilter || showInactive);
 
+  const filterPanel = (
+    <div className="space-y-4">
+      <label className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-3 text-sm text-[var(--text-secondary)]">
+        Visa inaktiva
+        <input
+          type="checkbox"
+          checked={showInactive}
+          onChange={(event) => setShowInactive(event.target.checked)}
+          className="rounded border-[var(--border)]"
+        />
+      </label>
+
+      <div>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Snabbfilter</p>
+        <div className="space-y-1.5">
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('')}
+            className={cn(
+              'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm transition-colors',
+              !categoryFilter ? 'bg-[var(--accent)]/10 text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
+            )}
+          >
+            <span>Alla produkter</span>
+            <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 text-xs">{products.length}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('uncategorized')}
+            className={cn(
+              'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm transition-colors',
+              categoryFilter === 'uncategorized' ? 'bg-[var(--accent)]/10 text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
+            )}
+          >
+            <span>Okategoriserade</span>
+            <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 text-xs">{uncategorizedCount}</span>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Hierarki</p>
+          <button
+            type="button"
+            onClick={() => setCategoryManagerOpen(true)}
+            className="text-xs font-medium text-[var(--accent)]"
+          >
+            Hantera
+          </button>
+        </div>
+        <div className="space-y-2">
+          {categoryTree.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[var(--border)] px-4 py-5 text-sm text-[var(--text-muted)]">
+              {categorySupport === 'available'
+                ? 'Skapa första huvudkategorin för att börja strukturera biblioteket.'
+                : categorySupportMessage ?? 'Kategorier aktiveras när databasen är uppdaterad.'}
+            </div>
+          ) : (
+            categoryTree.map((node) => (
+              <div key={node.main.id} className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-2">
+                <button
+                  type="button"
+                  onClick={() => setCategoryFilter(`main:${node.main.id}`)}
+                  className={cn(
+                    'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm transition-colors',
+                    activeMainFilterId === node.main.id ? 'bg-[var(--surface-0)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)]',
+                  )}
+                >
+                  <span className="font-medium">{node.main.name}</span>
+                  <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 text-xs">
+                    {mainCounts.get(node.main.id) ?? 0}
+                  </span>
+                </button>
+                {node.children.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-2 px-2 pb-2">
+                    {node.children.map((child) => (
+                      <button
+                        key={child.id}
+                        type="button"
+                        onClick={() => setCategoryFilter(`sub:${child.id}`)}
+                        className={cn(
+                          'rounded-full px-2.5 py-1 text-xs transition-colors',
+                          categoryFilter === `sub:${child.id}`
+                            ? 'bg-[var(--accent)] text-white'
+                            : 'bg-[var(--surface-0)] text-[var(--text-secondary)] hover:bg-[var(--surface)]',
+                        )}
+                      >
+                        {child.name} • {subCounts.get(child.id) ?? 0}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {legacyCategoryLabels.length > 0 && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Äldre fria etiketter</p>
+          <div className="flex flex-wrap gap-2">
+            {legacyCategoryLabels.map((label) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setCategoryFilter(`legacy:${label}`)}
+                className={cn(
+                  'rounded-full border px-3 py-1.5 text-xs transition-colors',
+                  categoryFilter === `legacy:${label}`
+                    ? 'border-[var(--accent)] bg-[var(--accent)]/8 text-[var(--accent)]'
+                    : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
+                )}
+              >
+                {label} • {legacyCounts.get(label) ?? 0}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="space-y-6">
         <section className="overflow-hidden rounded-[32px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm">
-          <div className="grid gap-0 lg:grid-cols-[minmax(0,1.2fr)_330px]">
-            <div className="space-y-6 px-6 py-6">
+          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-4 px-5 py-5 sm:px-6 sm:py-6">
               <div className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Produktbibliotek
               </div>
               <div>
                 <h1 className="max-w-3xl text-3xl font-semibold tracking-tight text-[var(--text-primary)] md:text-4xl">
-                  Bygg ett lugnare bibliotek med riktiga huvudkategorier och underkategorier.
+                  Håll biblioteket snabbt, tydligt och lätt att lita på.
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">
-                  Biblioteket ska hjälpa säljaren välja snabbt, inte tvinga fram manuellt städarbete mitt i offertflödet.
+                  Produkter ska gå att hitta på några sekunder, filtrera utan friktion och kännas trygga att lägga in i offerten direkt.
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Produkter</div>
-                  <div className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">{products.length}</div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-3 sm:p-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] sm:text-xs">Produkter</div>
+                  <div className="mt-2 text-xl font-semibold text-[var(--text-primary)] sm:mt-3 sm:text-2xl">{products.length}</div>
                 </div>
-                <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Aktiva nu</div>
-                  <div className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">{activeCount}</div>
+                <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-3 sm:p-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] sm:text-xs">Aktiva nu</div>
+                  <div className="mt-2 text-xl font-semibold text-[var(--text-primary)] sm:mt-3 sm:text-2xl">{activeCount}</div>
                 </div>
-                <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Visas just nu</div>
-                  <div className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">{totalVisible}</div>
+                <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-3 sm:p-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] sm:text-xs">Visas nu</div>
+                  <div className="mt-2 text-xl font-semibold text-[var(--text-primary)] sm:mt-3 sm:text-2xl">{totalVisible}</div>
                 </div>
               </div>
 
@@ -433,16 +563,30 @@ export function ProductsPageClient() {
                   onSelect={setSelectedCompanyId}
                   compact
                   title="Företagets bibliotek"
-                  description="Byt företag för att se rätt produktbibliotek, kategorier och sortering."
+                  description="Byt företag för att se rätt produkter och kategorier."
                 />
+              )}
+
+              {companyLoading && (
+                <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-muted)]">
+                  Läser in företagets bibliotek…
+                </div>
+              )}
+
+              {companyError && (
+                <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+                  {companyError}
+                </div>
               )}
             </div>
 
-            <aside className="border-l border-[var(--border)] bg-[var(--surface-alt)] px-6 py-6">
-              <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-5 shadow-sm">
+            <aside className="border-t border-[var(--border)] bg-[var(--surface-alt)] px-5 py-5 sm:px-6 sm:py-6 lg:border-l lg:border-t-0">
+              <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-4 sm:p-5 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Fokus just nu</p>
                 <p className="mt-4 text-sm leading-7 text-[var(--text-secondary)]">
-                  Lägg produkter i rätt huvudkategori först, och koppla sedan underkategorier så offertskapandet blir snabbt och självinstruerande.
+                  {selectedCompany
+                    ? `${selectedCompany.name} är valt just nu. Strukturera huvudkategorierna först och lägg sedan produkterna i rätt underkategori.`
+                    : 'Börja med huvudkategorierna först och koppla sedan produkterna till rätt underkategori.'}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
                   <Button type="button" onClick={openCreate} className="rounded-2xl">
@@ -472,152 +616,17 @@ export function ProductsPageClient() {
           )}
         </AnimatePresence>
 
-        <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className="h-fit rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-sm xl:sticky xl:top-6">
+        <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
+          <aside className="hidden h-fit rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-sm xl:block xl:sticky xl:top-6">
             <div className="mb-4">
               <p className="text-sm font-semibold text-[var(--text-primary)]">Filter och struktur</p>
               <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">Filtrera på hierarki, fria etiketter och status utan att tappa överblicken.</p>
             </div>
-
-            <div className="space-y-3">
-              <label className="relative block">
-                <MagnifyingGlass size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-                <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Sök namn, SKU eller kategori"
-                  className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
-                />
-              </label>
-
-              <label className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-3 text-sm text-[var(--text-secondary)]">
-                Visa inaktiva
-                <input
-                  type="checkbox"
-                  checked={showInactive}
-                  onChange={(event) => setShowInactive(event.target.checked)}
-                  className="rounded border-[var(--border)]"
-                />
-              </label>
-            </div>
-
-            <div className="mt-5 space-y-4">
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Snabbfilter</p>
-                <div className="space-y-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setCategoryFilter('')}
-                    className={cn(
-                      'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm transition-colors',
-                      !categoryFilter ? 'bg-[var(--accent)]/10 text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
-                    )}
-                  >
-                    <span>Alla produkter</span>
-                    <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 text-xs">{products.length}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCategoryFilter('uncategorized')}
-                    className={cn(
-                      'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm transition-colors',
-                      categoryFilter === 'uncategorized' ? 'bg-[var(--accent)]/10 text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
-                    )}
-                  >
-                    <span>Okategoriserade</span>
-                    <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 text-xs">
-                      {products.filter((product) => !productMetas.get(product.id)?.label).length}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Hierarki</p>
-                  <button
-                    type="button"
-                    onClick={() => setCategoryManagerOpen(true)}
-                    className="text-xs font-medium text-[var(--accent)]"
-                  >
-                    Hantera
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {categoryTree.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-[var(--border)] px-4 py-5 text-sm text-[var(--text-muted)]">
-                      {categorySupport === 'available'
-                        ? 'Skapa första huvudkategorin för att börja strukturera biblioteket.'
-                        : categorySupportMessage ?? 'Kategorier aktiveras när databasen är uppdaterad.'}
-                    </div>
-                  ) : (
-                    categoryTree.map((node) => (
-                      <div key={node.main.id} className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-2">
-                        <button
-                          type="button"
-                          onClick={() => setCategoryFilter(`main:${node.main.id}`)}
-                          className={cn(
-                            'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm transition-colors',
-                            activeMainFilterId === node.main.id ? 'bg-[var(--surface-0)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)]',
-                          )}
-                        >
-                          <span className="font-medium">{node.main.name}</span>
-                          <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 text-xs">
-                            {mainCounts.get(node.main.id) ?? 0}
-                          </span>
-                        </button>
-                        {node.children.length > 0 && (
-                          <div className="mt-1 flex flex-wrap gap-2 px-2 pb-2">
-                            {node.children.map((child) => (
-                              <button
-                                key={child.id}
-                                type="button"
-                                onClick={() => setCategoryFilter(`sub:${child.id}`)}
-                                className={cn(
-                                  'rounded-full px-2.5 py-1 text-xs transition-colors',
-                                  categoryFilter === `sub:${child.id}`
-                                    ? 'bg-[var(--accent)] text-white'
-                                    : 'bg-[var(--surface-0)] text-[var(--text-secondary)] hover:bg-[var(--surface)]',
-                                )}
-                              >
-                                {child.name} · {subCounts.get(child.id) ?? 0}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {legacyCategoryLabels.length > 0 && (
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Äldre fria etiketter</p>
-                  <div className="flex flex-wrap gap-2">
-                    {legacyCategoryLabels.map((label) => (
-                      <button
-                        key={label}
-                        type="button"
-                        onClick={() => setCategoryFilter(`legacy:${label}`)}
-                        className={cn(
-                          'rounded-full border px-3 py-1.5 text-xs transition-colors',
-                          categoryFilter === `legacy:${label}`
-                            ? 'border-[var(--accent)] bg-[var(--accent)]/8 text-[var(--accent)]'
-                            : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
-                        )}
-                      >
-                        {label} · {legacyCounts.get(label) ?? 0}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            {filterPanel}
           </aside>
 
-          <section className="overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm">
-            <div className="border-b border-[var(--border)] px-5 py-4">
+          <section className="order-1 overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm xl:order-2">
+            <div className="border-b border-[var(--border)] px-4 py-4 sm:px-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-base font-semibold text-[var(--text-primary)]">Bibliotek</p>
@@ -626,6 +635,19 @@ export function ProductsPageClient() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <Button type="button" onClick={openCreate} className="rounded-2xl md:hidden">
+                    <Plus size={16} weight="bold" />
+                    Ny produkt
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setCategoryManagerOpen(true)}
+                    className="rounded-2xl md:hidden"
+                  >
+                    <Folders size={16} weight="bold" />
+                    Kategorier
+                  </Button>
                   {hasActiveFilters && (
                     <Button
                       type="button"
@@ -647,9 +669,45 @@ export function ProductsPageClient() {
                   </Button>
                 </div>
               </div>
+
+              <div className="mt-4 flex flex-col gap-3 lg:flex-row">
+                <label className="relative block flex-1">
+                  <MagnifyingGlass size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                  <input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Sök namn, beskrivning, SKU, enhet eller kategori"
+                    className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+                  />
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setFiltersOpen((current) => !current)}
+                  className="rounded-2xl xl:hidden"
+                >
+                  {filtersOpen ? 'Dölj filter' : 'Visa filter'}
+                </Button>
+              </div>
+
+              <AnimatePresence initial={false}>
+                {filtersOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                    className="overflow-hidden xl:hidden"
+                  >
+                    <div className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
+                      {filterPanel}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            <div className="min-h-[460px] px-5 py-5">
+            <div className="min-h-[420px] px-4 py-4 sm:px-5 sm:py-5">
               {loading ? (
                 <div className="space-y-3">
                   {[1, 2, 3, 4].map((item) => (
@@ -777,3 +835,12 @@ export function ProductsPageClient() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
