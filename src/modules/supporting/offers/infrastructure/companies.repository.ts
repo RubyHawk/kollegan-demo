@@ -300,7 +300,7 @@ export const companiesRepository = {
 
   async listAssignableUsers(orgId: string) {
     return prisma.user.findMany({
-      where: { organizationId: orgId, deletedAt: null, userType: 'staff', isActive: true },
+      where: { organizationId: orgId, deletedAt: null, isActive: true },
       orderBy: [{ firstName: 'asc' }, { email: 'asc' }],
       select: {
         id: true,
@@ -322,7 +322,7 @@ export const companiesRepository = {
     }
 
     const user = await prisma.user.findFirst({
-      where: { id: input.userId, organizationId: input.organizationId, deletedAt: null, userType: 'staff' },
+      where: { id: input.userId, organizationId: input.organizationId, deletedAt: null, isActive: true },
       select: { id: true },
     });
     if (!user) {
