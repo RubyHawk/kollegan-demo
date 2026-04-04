@@ -228,9 +228,10 @@ export function CompaniesPageClient() {
       if (!membersCompany) return;
       setMemberSaving(true);
       try {
-        const response = await fetchWithRefresh(`/api/companies/${membersCompany.id}/members?userId=${encodeURIComponent(userId)}`, {
-          method: 'DELETE',
-        });
+        const response = await fetchWithRefresh(
+          `/api/companies/${membersCompany.id}/members?userId=${encodeURIComponent(userId)}`,
+          { method: 'DELETE' },
+        );
         if (!response.ok) throw new Error('Kunde inte ta bort användarkopplingen');
         await loadMembers(membersCompany);
       } catch (err) {
@@ -287,10 +288,11 @@ export function CompaniesPageClient() {
               Företag
             </span>
             <h2 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight text-[var(--text-primary)]">
-              Samla branding, mallar, produkter och medlemmar per företag.
+              Håll branding, mallar, produkter och medlemmar samlade per företag.
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">
-              Varje företag styr sin egen avsändare, sin egen logotyp och vilka mallar och produkter som ska dyka upp i offertflödet.
+              Varje företag styr sitt eget offertuttryck. Välj aktivt företag för att byta vilka mallar,
+              produkter och kontaktuppgifter som används i resten av flödet.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-3">
@@ -387,7 +389,7 @@ export function CompaniesPageClient() {
                 if (searchDebounce.current) clearTimeout(searchDebounce.current);
                 searchDebounce.current = setTimeout(() => setSearch(value), 300);
               }}
-              placeholder="Sök företag…"
+              placeholder="Sök företag..."
               className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--accent)] focus:outline-none md:w-60"
             />
           </div>
@@ -414,7 +416,7 @@ export function CompaniesPageClient() {
                 <Buildings size={24} weight="duotone" />
               </div>
               <p className="text-sm font-medium text-[var(--text-secondary)]">Inga företag hittades</p>
-              <p className="mt-1 text-xs text-[var(--text-muted)]">Skapa ditt första företag för att börja styra branding och scopes.</p>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">Skapa ditt första företag för att börja styra branding och scope.</p>
               <button
                 type="button"
                 onClick={openCreate}
