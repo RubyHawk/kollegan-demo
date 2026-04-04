@@ -76,6 +76,11 @@ function splitLineItemDescription(description: string): { title: string; detail?
   };
 }
 
+function resolveFreeImageRenderZIndex(zIndex: number): number {
+  if (zIndex < 0) return 0;
+  return 20 + zIndex;
+}
+
 // ─── TipTap JSON → HTML ─────────────────────────────────────────────────────────
 
 interface TipTapNode {
@@ -135,11 +140,11 @@ function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): st
           const ml = wrapText === 'left'  ? `margin-left:${posX}px;`                                              : '';
           const mr = wrapText === 'right' ? `margin-right:${Math.max(0, 816 - posX - (imgW ?? 200))}px;`          : '';
           const mt = posY > 0 ? `margin-top:${posY}px;` : '';
-          return `<div style="float:${wrapText};${ml}${mr}${mt}margin-bottom:8px;line-height:0;"><img src="${src}" alt="${alt}" title="${title}" style="${imgStyle}" /></div>`;
+          return `<div style="float:${wrapText};${ml}${mr}${mt}margin-bottom:8px;line-height:0;position:relative;z-index:${resolveFreeImageRenderZIndex(zIdx)};"><img src="${src}" alt="${alt}" title="${title}" style="${imgStyle}" /></div>`;
         }
         // Pure overlay (absolute)
         const w = imgW ? `${imgW}px` : '200px';
-        return `<div style="position:absolute;left:${posX}px;top:${posY}px;width:${w};z-index:${zIdx};line-height:0;"><img src="${src}" alt="${alt}" title="${title}" style="${imgStyle}" /></div>`;
+        return `<div style="position:absolute;left:${posX}px;top:${posY}px;width:${w};z-index:${resolveFreeImageRenderZIndex(zIdx)};line-height:0;"><img src="${src}" alt="${alt}" title="${title}" style="${imgStyle}" /></div>`;
       }
 
       // Inline/float modes
@@ -825,7 +830,7 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     .page-content { padding: 40px 48px; }
     .page-content--edge-to-edge { padding: 0; }
     /* Keep regular content above absolute background/overlay images on mixed pages. */
-    .page-content > *:not(div[style*="position:absolute"]) { position: relative; z-index: 1; }
+    .page-content > *:not(div[style*="position:absolute"]) { position: relative; z-index: 10; }
     .page-block--document { background: #ffffff; }
     .page-block--document::before {
       content: '';
