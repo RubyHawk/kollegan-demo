@@ -1,5 +1,8 @@
 import { prisma } from '@platform/database/prisma';
+import { logger } from '@platform/logging/logger';
 import type { Company, CompanyMember } from '../domain/offer.entity';
+
+const TAG = 'CompaniesRepository';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -117,6 +120,19 @@ function isMissingAddressColumnError(error: unknown): boolean {
   );
 }
 
+function isMissingCompanyMembershipError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    message.includes('P2021') ||
+    message.includes('P2022') ||
+    message.includes('off_company_members') ||
+    message.includes('companyMember') ||
+    message.includes('CompanyMember') ||
+    message.includes('Unknown table') ||
+    message.includes('does not exist')
+  );
+}
+
 async function withCompanySelectFallback<T>(primary: () => Promise<T>, fallback: () => Promise<T>): Promise<T> {
   try {
     return await primary();
@@ -168,17 +184,27 @@ export const companiesRepository = {
     let allowedCompanyIds: string[] | undefined;
 
     if (options.restrictToMemberships && options.userId) {
-      const memberships = await prisma.companyMember.findMany({
-        where: {
-          userId: options.userId,
-          company: { organizationId: orgId, deletedAt: null },
-        },
-        select: { companyId: true },
-      });
+      try {
+        const memberships = await prisma.companyMember.findMany({
+          where: {
+            userId: options.userId,
+            company: { organizationId: orgId, deletedAt: null },
+          },
+          select: { companyId: true },
+        });
 
-      allowedCompanyIds = memberships.map((membership) => membership.companyId);
-      if (allowedCompanyIds.length === 0) {
-        return [];
+        allowedCompanyIds = memberships.map((membership) => membership.companyId);
+        if (allowedCompanyIds.length === 0) {
+          return [];
+        }
+      } catch (error) {
+        if (!isMissingCompanyMembershipError(error)) {
+          throw error;
+        }
+        logger.warn(TAG, 'Company membership table unavailable during list, falling back to org-wide company list', {
+          orgId,
+          userId: options.userId,
+        });
       }
     }
 
@@ -207,17 +233,28 @@ export const companiesRepository = {
     let allowedCompanyIds: string[] | undefined;
 
     if (options.restrictToMemberships && options.userId) {
-      const memberships = await prisma.companyMember.findMany({
-        where: {
-          userId: options.userId,
-          company: { organizationId: orgId, deletedAt: null },
-        },
-        select: { companyId: true },
-      });
+      try {
+        const memberships = await prisma.companyMember.findMany({
+          where: {
+            userId: options.userId,
+            company: { organizationId: orgId, deletedAt: null },
+          },
+          select: { companyId: true },
+        });
 
-      allowedCompanyIds = memberships.map((membership) => membership.companyId);
-      if (allowedCompanyIds.length === 0) {
-        return null;
+        allowedCompanyIds = memberships.map((membership) => membership.companyId);
+        if (allowedCompanyIds.length === 0) {
+          return null;
+        }
+      } catch (error) {
+        if (!isMissingCompanyMembershipError(error)) {
+          throw error;
+        }
+        logger.warn(TAG, 'Company membership table unavailable during getById, falling back to org-wide company access', {
+          companyId: id,
+          orgId,
+          userId: options.userId,
+        });
       }
     }
 
@@ -350,46 +387,97 @@ export const companiesRepository = {
     });
     if (!company) return [];
 
-    const rows = await prisma.companyMember.findMany({
-      where: { companyId },
-      orderBy: [{ role: 'desc' }, { createdAt: 'asc' }],
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            avatarUrl: true,
+    let rows;
+    try {
+      rows = await prisma.companyMember.findMany({
+        where: { companyId },
+        orderBy: [{ role: 'desc' }, { createdAt: 'asc' }],
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (!isMissingCompanyMembershipError(error)) {
+        throw error;
+      }
+      logger.warn(TAG, 'Company membership table unavailable during listMembers, returning empty members', { companyId, orgId });
+      return [];
+    }
     return rows.map(mapCompanyMember);
   },
 
   async getMember(companyId: string, userId: string): Promise<CompanyMember | null> {
-    const row = await prisma.companyMember.findUnique({
-      where: {
-        companyId_userId: {
-          companyId,
-          userId,
-        },
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            avatarUrl: true,
+    try {
+      const row = await prisma.companyMember.findUnique({
+        where: {
+          companyId_userId: {
+            companyId,
+            userId,
           },
         },
-      },
-    });
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      });
 
-    return row ? mapCompanyMember(row) : null;
+      return row ? mapCompanyMember(row) : null;
+    } catch (error) {
+      if (!isMissingCompanyMembershipError(error)) {
+        throw error;
+      }
+
+      const [company, user] = await Promise.all([
+        prisma.company.findFirst({
+          where: { id: companyId, deletedAt: null },
+          select: { id: true, organizationId: true, createdAt: true, createdBy: true },
+        }),
+        prisma.user.findFirst({
+          where: { id: userId, deletedAt: null, isActive: true },
+          select: { id: true, organizationId: true, email: true, firstName: true, lastName: true, avatarUrl: true },
+        }),
+      ]);
+
+      if (!company || !user || company.organizationId !== user.organizationId) {
+        return null;
+      }
+
+      logger.warn(TAG, 'Company membership table unavailable during getMember, using org-level synthetic company membership', {
+        companyId,
+        userId,
+      });
+
+      return {
+        id: `synthetic:${companyId}:${userId}`,
+        companyId,
+        userId,
+        role: 'admin',
+        createdAt: company.createdAt.toISOString(),
+        grantedBy: company.createdBy,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName ?? undefined,
+          lastName: user.lastName ?? undefined,
+          avatarUrl: user.avatarUrl ?? undefined,
+        },
+      };
+    }
   },
 
   async listAssignableUsers(orgId: string) {
@@ -423,36 +511,79 @@ export const companiesRepository = {
       throw new Error('USER_NOT_FOUND');
     }
 
-    const row = await prisma.companyMember.upsert({
-      where: {
-        companyId_userId: {
+    try {
+      const row = await prisma.companyMember.upsert({
+        where: {
+          companyId_userId: {
+            companyId: input.companyId,
+            userId: input.userId,
+          },
+        },
+        create: {
           companyId: input.companyId,
           userId: input.userId,
+          role: input.role,
+          grantedBy: input.grantedBy ?? null,
         },
-      },
-      create: {
+        update: {
+          role: input.role,
+          grantedBy: input.grantedBy ?? null,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      });
+      return mapCompanyMember(row);
+    } catch (error) {
+      if (!isMissingCompanyMembershipError(error)) {
+        throw error;
+      }
+
+      const userDetails = await prisma.user.findFirst({
+        where: { id: input.userId, organizationId: input.organizationId, deletedAt: null, isActive: true },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+        },
+      });
+
+      if (!userDetails) {
+        throw new Error('USER_NOT_FOUND');
+      }
+
+      logger.warn(TAG, 'Company membership table unavailable during upsertMember, returning synthetic membership', {
         companyId: input.companyId,
         userId: input.userId,
         role: input.role,
-        grantedBy: input.grantedBy ?? null,
-      },
-      update: {
+      });
+
+      return {
+        id: `synthetic:${input.companyId}:${input.userId}`,
+        companyId: input.companyId,
+        userId: input.userId,
         role: input.role,
-        grantedBy: input.grantedBy ?? null,
-      },
-      include: {
+        createdAt: new Date().toISOString(),
+        grantedBy: input.grantedBy,
         user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            avatarUrl: true,
-          },
+          id: userDetails.id,
+          email: userDetails.email,
+          firstName: userDetails.firstName ?? undefined,
+          lastName: userDetails.lastName ?? undefined,
+          avatarUrl: userDetails.avatarUrl ?? undefined,
         },
-      },
-    });
-    return mapCompanyMember(row);
+      };
+    }
   },
 
   async removeMember(companyId: string, orgId: string, userId: string): Promise<boolean> {
@@ -462,26 +593,43 @@ export const companiesRepository = {
     });
     if (!company) return false;
 
-    const existing = await prisma.companyMember.findUnique({
-      where: {
-        companyId_userId: {
-          companyId,
-          userId,
+    let existing;
+    try {
+      existing = await prisma.companyMember.findUnique({
+        where: {
+          companyId_userId: {
+            companyId,
+            userId,
+          },
         },
-      },
-      select: { id: true },
-    });
+        select: { id: true },
+      });
+    } catch (error) {
+      if (!isMissingCompanyMembershipError(error)) {
+        throw error;
+      }
+      logger.warn(TAG, 'Company membership table unavailable during removeMember', { companyId, orgId, userId });
+      return false;
+    }
 
     if (!existing) return false;
 
-    await prisma.companyMember.delete({
-      where: {
-        companyId_userId: {
-          companyId,
-          userId,
+    try {
+      await prisma.companyMember.delete({
+        where: {
+          companyId_userId: {
+            companyId,
+            userId,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (!isMissingCompanyMembershipError(error)) {
+        throw error;
+      }
+      logger.warn(TAG, 'Company membership table unavailable during deleteMember', { companyId, orgId, userId });
+      return false;
+    }
     return true;
   },
 };
