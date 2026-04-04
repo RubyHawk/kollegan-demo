@@ -792,7 +792,7 @@ export function ProductsPageClient() {
 
       <Dialog open={Boolean(deleteProduct)} onOpenChange={(open) => { if (!open) setDeleteProduct(null); }}>
         <DialogContent mobileVariant="sheet" showMobileClose className="max-w-lg">
-          <DialogHeader className="px-6 pt-6">
+          <DialogHeader className="pr-16">
             <DialogTitle>Ta bort produkt?</DialogTitle>
             <DialogDescription>
               Produkten försvinner från biblioteket och visas inte längre i offertflödet.
@@ -813,7 +813,7 @@ export function ProductsPageClient() {
             </div>
           )}
 
-          <DialogFooter className="gap-2 px-6 pb-6 pt-4">
+          <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={() => setDeleteProduct(null)}>
               Avbryt
             </Button>

@@ -153,14 +153,14 @@ export function CompanyOverviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-5xl">
-        <DialogHeader>
+        <DialogHeader className="border-b border-[var(--border)] pr-16">
           <DialogTitle>Företagsöversikt</DialogTitle>
           <DialogDescription>
             Se branding, kopplade medlemmar, mallar och produkter för {company.name}. Allt här styr hur företaget beter sig i offertflödet.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5">
+        <div className="max-h-[min(72dvh,760px)] space-y-5 overflow-y-auto px-6 py-6">
           <section className="overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)]">
             <div className="grid gap-0 lg:grid-cols-[1.3fr_0.9fr]">
               <div className="border-b border-[var(--border)] p-5 lg:border-b-0 lg:border-r">

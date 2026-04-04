@@ -304,7 +304,7 @@ export function ProductModal({
             </aside>
           </div>
 
-          <DialogFooter className="gap-2 border-t border-[var(--border)] px-6 py-4">
+          <DialogFooter className="gap-2 border-t border-[var(--border)] px-6 pb-6 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Avbryt
             </Button>

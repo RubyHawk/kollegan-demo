@@ -499,7 +499,7 @@ export function CompaniesPageClient() {
         }}
       >
         <DialogContent mobileVariant="sheet" showMobileClose className="max-w-md">
-          <DialogHeader>
+          <DialogHeader className="pr-16">
             <DialogTitle>Ta bort företag?</DialogTitle>
             <DialogDescription>
               Företaget tas bort från registret och kan inte återställas automatiskt.
@@ -507,7 +507,7 @@ export function CompaniesPageClient() {
           </DialogHeader>
 
           {deleteCompany && (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+            <div className="mx-6 rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-secondary)]">
               <p className="font-medium text-[var(--text-primary)]">{deleteCompany.name}</p>
               {deleteCompany.website && <p className="mt-1">{deleteCompany.website.replace(/^https?:\/\//, '')}</p>}
             </div>
@@ -517,14 +517,14 @@ export function CompaniesPageClient() {
             <button
               type="button"
               onClick={() => setDeleteCompany(null)}
-              className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)]"
+              className="min-w-[120px] rounded-xl border border-[var(--border)] px-4 py-3 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)]"
             >
               Avbryt
             </button>
             <button
               type="button"
               onClick={() => deleteCompany && void handleDelete(deleteCompany)}
-              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-95"
+              className="min-w-[120px] rounded-xl bg-red-600 px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-95"
             >
               Ta bort
             </button>

@@ -2,6 +2,14 @@
 
 import { useState } from 'react';
 import type { Company } from '@modules/supporting/offers';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@shared/ui/dialog';
 import { CompanyLogoUpload } from './company-logo-upload';
 
 export interface CompanyForm {
@@ -61,106 +69,96 @@ export function CompanyModal({
 }: CompanyModalProps) {
   const [form, setForm] = useState<CompanyForm>(() => formFromCompany(company));
 
-  if (!open) return null;
-
   const set =
     (key: keyof CompanyForm) =>
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((current) => ({ ...current, [key]: event.target.value }));
 
   const inputCls =
-    'w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--accent)] focus:outline-none';
-  const labelCls = 'mb-1 block text-xs font-medium text-[var(--text-secondary)]';
+    'w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--accent)] focus:outline-none';
+  const labelCls = 'mb-1.5 block text-xs font-medium text-[var(--text-secondary)]';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-10 max-h-[90dvh] w-full overflow-y-auto border border-[var(--border)] bg-[var(--surface-0)] shadow-xl sm:max-w-2xl sm:rounded-3xl">
-        <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+    <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
+      <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-3xl">
+        <DialogHeader className="border-b border-[var(--border)] px-6 pb-5 pt-6 pr-16">
+          <DialogTitle className="text-xl text-[var(--text-primary)]">
             {company ? 'Redigera företag' : 'Nytt företag'}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full p-1 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-active)]"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
+          </DialogTitle>
+          <DialogDescription className="max-w-2xl leading-6">
+            Namn, adress och logga styr hur företaget visas i dokument, mallar och produktscope. Du kan börja med bara namn och komplettera resten senare.
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="space-y-4 px-5 py-4">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
-            <p className="font-medium text-[var(--text-primary)]">Företagets identitet i offertflödet</p>
-            <p className="mt-1 leading-6">
-              Namn, adress och logga används i dokument, mallar och produktscope. Du kan börja med bara namn
-              och komplettera resten senare.
-            </p>
-          </div>
+        <div className="max-h-[min(72dvh,760px)] overflow-y-auto px-6 py-6">
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+              <p className="font-medium text-[var(--text-primary)]">Företagets identitet i offertflödet</p>
+              <p className="mt-1 leading-6">
+                Företagsnamn, adress och logga används i dokument och mallar. Du kan skapa företaget med bara namn och fylla på resten efteråt.
+              </p>
+            </div>
 
-          <div>
-            <label className={labelCls}>Namn *</label>
-            <input value={form.name} onChange={set('name')} placeholder="Soleria AB" className={inputCls} />
-          </div>
+            <div>
+              <label className={labelCls}>Namn *</label>
+              <input value={form.name} onChange={set('name')} placeholder="Soleria AB" className={inputCls} />
+            </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className={labelCls}>Adressrad 1</label>
-              <input value={form.addressLine1} onChange={set('addressLine1')} placeholder="Radiatorvägen 3" className={inputCls} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className={labelCls}>Adressrad 1</label>
+                <input value={form.addressLine1} onChange={set('addressLine1')} placeholder="Radiatorvägen 3" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Adressrad 2</label>
+                <input value={form.addressLine2} onChange={set('addressLine2')} placeholder="Lokal 2 eller våning" className={inputCls} />
+              </div>
             </div>
-            <div>
-              <label className={labelCls}>Adressrad 2</label>
-              <input value={form.addressLine2} onChange={set('addressLine2')} placeholder="702 27 Örebro" className={inputCls} />
-            </div>
-          </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <label className={labelCls}>Postnummer</label>
-              <input value={form.postalCode} onChange={set('postalCode')} placeholder="702 27" className={inputCls} />
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div>
+                <label className={labelCls}>Postnummer</label>
+                <input value={form.postalCode} onChange={set('postalCode')} placeholder="702 27" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Stad</label>
+                <input value={form.city} onChange={set('city')} placeholder="Örebro" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Län / region</label>
+                <input value={form.region} onChange={set('region')} placeholder="Örebro län" className={inputCls} />
+              </div>
             </div>
-            <div>
-              <label className={labelCls}>Stad</label>
-              <input value={form.city} onChange={set('city')} placeholder="Örebro" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Län / region</label>
-              <input value={form.region} onChange={set('region')} placeholder="Örebro län" className={inputCls} />
-            </div>
-          </div>
 
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
-            <div>
-              <label className={labelCls}>Webbplats</label>
-              <input type="url" value={form.website} onChange={set('website')} placeholder="soleria.se" className={inputCls} />
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
+              <div>
+                <label className={labelCls}>Webbplats</label>
+                <input type="url" value={form.website} onChange={set('website')} placeholder="soleria.se" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Land</label>
+                <input value={form.country} onChange={set('country')} placeholder="Sverige" className={inputCls} />
+              </div>
             </div>
+
             <div>
-              <label className={labelCls}>Land</label>
-              <input value={form.country} onChange={set('country')} placeholder="Sverige" className={inputCls} />
+              <label className={labelCls}>Logga</label>
+              <CompanyLogoUpload
+                value={form.logoUrl}
+                onChange={(logoUrl) => setForm((current) => ({ ...current, logoUrl }))}
+              />
             </div>
-          </div>
 
-          <div>
-            <label className={labelCls}>Logga</label>
-            <CompanyLogoUpload
-              value={form.logoUrl}
-              onChange={(logoUrl) => setForm((current) => ({ ...current, logoUrl }))}
-            />
-          </div>
-
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
-            <p className="font-medium text-[var(--text-primary)]">Avsändare i offerten</p>
-            <p className="mt-1 leading-6">
-              Företagsnamn, adress och logga hämtas härifrån. Ansvarig person hämtas från användarens konto,
-              och avsändarmejl för utskick styrs i organisationens e-postinställningar.
-            </p>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+              <p className="font-medium text-[var(--text-primary)]">Avsändare i offerten</p>
+              <p className="mt-1 leading-6">
+                Företagsnamn, adress och logga hämtas härifrån. Ansvarig person hämtas från användarens konto, och avsändarmejl för utskick styrs i organisationens e-postinställningar.
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-[var(--border)] px-5 py-4">
+        <DialogFooter className="gap-2 border-t border-[var(--border)] px-6 pb-6 pt-4">
           <button
             type="button"
             onClick={onClose}
@@ -176,8 +174,8 @@ export function CompanyModal({
           >
             {saving ? 'Sparar...' : company ? 'Spara ändringar' : 'Skapa företag'}
           </button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
