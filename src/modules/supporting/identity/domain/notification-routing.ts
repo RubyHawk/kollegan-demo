@@ -1,4 +1,4 @@
-export const ACTIVE_NOTIFICATION_TAGS = [
+﻿export const ACTIVE_NOTIFICATION_TAGS = [
   'offer_signed',
   'offer_declined',
 ] as const;
@@ -59,8 +59,8 @@ export const NOTIFICATION_SCOPE_LABELS: Record<NotificationTagScope, string> = {
 };
 
 export const NOTIFICATION_SCOPE_DESCRIPTIONS: Record<NotificationTagScope, string> = {
-  offerter: 'Utskicks- och signeringshändelser i offertflodet.',
-  crm: 'Kunddialog och leadansvar nar CRM-funktioner byggs ut.',
+  offerter: 'Utskicks- och signeringshändelser i offertflödet.',
+  crm: 'Kunddialog och leadansvar när CRM-funktioner byggs ut.',
   kalender: 'Bokningar, bekräftelser och framtida tidshändelser.',
   ekonomi: 'Fakturor, betalningar och andra ekonomiska notiser.',
 };
@@ -69,7 +69,7 @@ export const NOTIFICATION_TAG_REGISTRY: Record<NotificationTag, NotificationTagD
   offer_signed: {
     tag: 'offer_signed',
     label: 'Offert signerad',
-    description: 'Nar en kund accepterar och signerar en offert.',
+    description: 'När en kund accepterar och signerar en offert.',
     scope: 'offerter',
     availability: 'active',
     tone: 'emerald',
@@ -77,7 +77,7 @@ export const NOTIFICATION_TAG_REGISTRY: Record<NotificationTag, NotificationTagD
   offer_declined: {
     tag: 'offer_declined',
     label: 'Offert avvisad',
-    description: 'Nar en kund tackar nej eller avvisar en offert.',
+    description: 'När en kund tackar nej eller avvisar en offert.',
     scope: 'offerter',
     availability: 'active',
     tone: 'red',
@@ -85,7 +85,7 @@ export const NOTIFICATION_TAG_REGISTRY: Record<NotificationTag, NotificationTagD
   offer_sent: {
     tag: 'offer_sent',
     label: 'Offert skickad',
-    description: 'Nar en offert skickas ut till mottagaren.',
+    description: 'När en offert skickas ut till mottagaren.',
     scope: 'offerter',
     availability: 'planned',
     tone: 'blue',
@@ -93,15 +93,15 @@ export const NOTIFICATION_TAG_REGISTRY: Record<NotificationTag, NotificationTagD
   offer_viewed: {
     tag: 'offer_viewed',
     label: 'Offert visad',
-    description: 'Nar mottagaren oppnar den publika offerten.',
+    description: 'När mottagaren öppnar den publika offerten.',
     scope: 'offerter',
     availability: 'planned',
     tone: 'blue',
   },
   offer_expiring: {
     tag: 'offer_expiring',
-    label: 'Offert utgar snart',
-    description: 'Nar en offert narmar sig sitt sista giltighetsdatum.',
+    label: 'Offert utgår snart',
+    description: 'När en offert närmar sig sitt sista giltighetsdatum.',
     scope: 'offerter',
     availability: 'planned',
     tone: 'amber',
@@ -109,23 +109,23 @@ export const NOTIFICATION_TAG_REGISTRY: Record<NotificationTag, NotificationTagD
   lead_assigned: {
     tag: 'lead_assigned',
     label: 'Lead tilldelad',
-    description: 'Nar ett nytt lead tilldelas en ansvarig anvandare.',
+    description: 'När ett nytt lead tilldelas en ansvarig användare.',
     scope: 'crm',
     availability: 'planned',
     tone: 'violet',
   },
   meeting_booked: {
     tag: 'meeting_booked',
-    label: 'Mote bokat',
-    description: 'Nar ett nytt mote bokas eller bekraftas.',
+    label: 'Möte bokat',
+    description: 'När ett nytt möte bokas eller bekräftas.',
     scope: 'kalender',
     availability: 'planned',
     tone: 'blue',
   },
   invoice_due: {
     tag: 'invoice_due',
-    label: 'Faktura forfaller',
-    description: 'Nar en faktura narmar sig forfallodatum.',
+    label: 'Faktura förfaller',
+    description: 'När en faktura närmar sig förfallodatum.',
     scope: 'ekonomi',
     availability: 'planned',
     tone: 'amber',
@@ -133,7 +133,7 @@ export const NOTIFICATION_TAG_REGISTRY: Record<NotificationTag, NotificationTagD
   invoice_paid: {
     tag: 'invoice_paid',
     label: 'Faktura betald',
-    description: 'Nar en kundbetalning registreras och stangs.',
+    description: 'När en kundbetalning registreras och stängs.',
     scope: 'ekonomi',
     availability: 'planned',
     tone: 'emerald',
