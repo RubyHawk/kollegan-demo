@@ -193,6 +193,38 @@ function SuccessCheckmark() {
   );
 }
 
+function DeclineMark() {
+  return (
+    <motion.div
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 220, damping: 18, delay: 0.08 }}
+      className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-50 shadow-[0_0_0_10px_rgba(254,226,226,0.55)]"
+    >
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+        <motion.circle
+          cx="20" cy="20" r="18"
+          stroke="#dc2626"
+          strokeWidth="2"
+          fill="none"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.45, delay: 0.12 }}
+        />
+        <motion.path
+          d="M14 14l12 12M26 14L14 26"
+          stroke="#dc2626"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.35, delay: 0.42 }}
+        />
+      </svg>
+    </motion.div>
+  );
+}
+
 // ─── PDF Download ──────────────────────────────────────────────────────────────
 
 async function downloadPdf(documentHtml: string, filename: string, signature?: SignatureFields) {
@@ -300,6 +332,7 @@ export default function PublicOfferPage() {
   const [typedSig, setTypedSig] = useState('');
 
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [documentReady, setDocumentReady] = useState(false);
 
   const sigRef = useRef<SignatureCanvas>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
@@ -337,6 +370,10 @@ export default function PublicOfferPage() {
       setSigMode('type');
     }
   }, [sigMode]);
+
+  useEffect(() => {
+    setDocumentReady(false);
+  }, [offer?.generatedDocument]);
 
   // The app shell uses a globally locked viewport, but the public signing page
   // needs normal document scrolling so the full offer can be reviewed.
@@ -450,6 +487,7 @@ export default function PublicOfferPage() {
           ? Math.max(Math.ceil(naturalH * scale), Math.ceil(renderedH))
           : Math.max(naturalH, Math.ceil(renderedH));
         iframe.style.height = `${targetHeight}px`;
+        setDocumentReady(true);
       });
     };
     resize();
@@ -580,7 +618,7 @@ export default function PublicOfferPage() {
       if (!res.ok) {
         const j = await res.json().catch(() => ({})) as { detail?: string };
         // Show the API detail if it's a user-actionable message, otherwise generic
-        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Signeringen misslyckades. Försök igen eller kontakta avsändaren.';
+        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Signeringen misslyckades. Försök igen.';
         throw new Error(msg);
       }
       const acceptedAt = new Date().toISOString();
@@ -607,7 +645,7 @@ export default function PublicOfferPage() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({})) as { detail?: string };
-        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Avvisningen misslyckades. F�rs�k igen.';
+        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Avvisningen misslyckades. F?rs?k igen.';
         throw new Error(msg);
       }
       setState('declined');
@@ -621,7 +659,7 @@ export default function PublicOfferPage() {
       const safeName = offer.title.replace(/[^a-zA-Z0-9\u00C0-\u024F ]/g, '').trim().replace(/\s+/g, '-');
       await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`, signatureFields);
     } catch {
-      setErrMsg('Kunde inte ladda ner PDF. F�rs�k igen.');
+      setErrMsg('Kunde inte ladda ner PDF. F?rs?k igen.');
     } finally {
       setDownloading(false);
     }
@@ -649,12 +687,13 @@ export default function PublicOfferPage() {
   // Terminal status screens
   if (state === 'expired' || state === 'error' || state === 'accepted' || state === 'declined') {
     const configs = {
-      expired:  { icon: <ClockIcon size={40} className="text-slate-400" />, title: 'L�nken har g�tt ut', sub: 'Kontakta avs�ndaren f�r att f� en ny l�nk till offerten.' },
-      error:    { icon: <XCircleIcon size={40} className="text-red-400" />, title: 'Offerten hittades inte', sub: 'Kontrollera l�nken och f�rs�k igen.' },
-      accepted: { icon: null, title: 'Offert signerad', sub: 'Tack! Avs�ndaren har meddelats om din signering.' },
-      declined: { icon: <XCircleIcon size={40} className="text-slate-400" />, title: 'Offert avvisad', sub: 'Avs�ndaren har meddelats.' },
+      expired:  { icon: <ClockIcon size={40} className="text-slate-400" />, title: 'L?nken har g?tt ut', sub: 'Kontakta ansvarig kontakt f?r att f? en ny l?nk till offerten.' },
+      error:    { icon: <XCircleIcon size={40} className="text-red-400" />, title: 'Offerten hittades inte', sub: 'Kontrollera l?nken och f?rs?k igen.' },
+      accepted: { icon: null, title: 'Offert signerad', sub: 'Tack! Din underskrift ?r registrerad och ansvarig kontakt har nu f?tt besked.' },
+      declined: { icon: null, title: 'Offert avvisad', sub: 'Din avvisning ?r registrerad och ansvarig kontakt har nu f?tt besked.' },
     };
     const cfg = configs[state];
+    const isDeclinedState = state === 'declined';
 
     return (
       <AnimatePresence mode="wait">
@@ -665,21 +704,23 @@ export default function PublicOfferPage() {
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="flex min-h-[80vh] items-center justify-center px-6"
         >
-          <div className="w-full max-w-md rounded-2xl bg-white p-10 text-center shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_4px_rgba(0,0,0,0.06)] border border-slate-200/60">
+          <div className={`w-full max-w-md rounded-2xl border p-10 text-center shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_4px_rgba(0,0,0,0.06)] ${isDeclinedState ? 'border-red-200/80 bg-gradient-to-b from-red-50/90 to-white' : 'border-slate-200/60 bg-white'}`}>
             {state === 'accepted' ? (
               <SuccessCheckmark />
+            ) : state === 'declined' ? (
+              <DeclineMark />
             ) : (
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 15 }}
-                className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50"
+                className={`mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full ${isDeclinedState ? 'bg-red-50' : 'bg-slate-50'}`}
               >
                 {cfg.icon}
               </motion.div>
             )}
-            <h1 className="mb-2 text-xl font-bold text-slate-900">{cfg.title}</h1>
-            <p className="text-sm leading-relaxed text-slate-500">{cfg.sub}</p>
+            <h1 className={`mb-2 text-xl font-bold ${isDeclinedState ? 'text-red-700' : 'text-slate-900'}`}>{cfg.title}</h1>
+            <p className={`text-sm leading-relaxed ${isDeclinedState ? 'text-red-700/80' : 'text-slate-500'}`}>{cfg.sub}</p>
 
             {state === 'accepted' && offer?.generatedDocument && (
               <motion.div
@@ -821,8 +862,13 @@ export default function PublicOfferPage() {
 
         {/* ─── Signing card ─── */}
         <div className="px-4 sm:px-0">
+        {offer.generatedDocument && !documentReady && (
+          <div className="mb-4 flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white px-4 py-3 text-sm text-slate-500 shadow-[0_2px_12px_rgba(0,0,0,0.05)]">
+            Anpassar offerten f?r din sk?rm...
+          </div>
+        )}
         <AnimatePresence mode="wait">
-          {!isDecline ? (
+          {(!offer.generatedDocument || documentReady) && (!isDecline ? (
             <motion.section
               key="sign"
               initial={{ opacity: 0, y: 8 }}
@@ -839,9 +885,9 @@ export default function PublicOfferPage() {
                       <ShieldIcon size={14} className="text-white" />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-slate-900">Godkännande och underskrift</h2>
-                      <p className="text-[13px] text-slate-500">Underteckna för att bekräfta offerten.</p>
-                      <p className="mt-1 text-[12px] text-slate-500">Vi sparar namn, datum och signatur tillsammans med offerten för tydlig uppföljning.</p>
+                      <h2 className="text-sm font-bold text-slate-900">Godk?nnande och underskrift</h2>
+                      <p className="text-[13px] text-slate-500">Underteckna f?r att bekr?fta offerten.</p>
+                      <p className="mt-1 text-[12px] text-slate-500">Vi sparar namn, datum och signatur tillsammans med offerten f?r tydlig uppf?ljning.</p>
                     </div>
                   </div>
                   <div className="shrink-0 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-right sm:px-4 sm:py-2">
@@ -876,7 +922,7 @@ export default function PublicOfferPage() {
                   <div>
                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
                       <UserIcon size={12} />
-                      Fullständigt namn
+                      Fullst?ndigt namn
                     </label>
                     <input
                       type="text"
@@ -947,7 +993,7 @@ export default function PublicOfferPage() {
                           type="text"
                           value={typedSig}
                           onChange={(e) => setTypedSig(e.target.value)}
-                          placeholder="Skriv ditt namn här..."
+                          placeholder="Skriv ditt namn h?r..."
                           className="w-full border-none bg-transparent p-0 text-3xl text-slate-900 outline-none placeholder:text-slate-300"
                           style={{ fontFamily: selectedFont.family }}
                         />
@@ -1005,7 +1051,7 @@ export default function PublicOfferPage() {
                   className="flex items-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50"
                 >
                   <CheckCircleIcon size={15} />
-                  {busy ? 'Signerar…' : 'Signera offert'}
+                  {busy ? 'Signerar...' : 'Signera offert'}
                 </button>
               </div>
             </motion.section>
@@ -1013,15 +1059,22 @@ export default function PublicOfferPage() {
             /* ─── Decline mode ─── */
             <motion.section
               key="decline"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)]"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden rounded-2xl border border-red-200/70 bg-gradient-to-b from-red-50/75 to-white shadow-[0_2px_12px_rgba(0,0,0,0.07)]"
             >
-              <div className="border-b border-slate-100 px-5 py-4 sm:px-7 sm:py-5">
-                <h2 className="text-base font-bold text-red-600">Avvisa offert</h2>
-                <p className="mt-0.5 text-[13px] text-slate-500">Avsändaren kommer att meddelas om ditt beslut.</p>
+              <div className="border-b border-red-100 px-5 py-4 sm:px-7 sm:py-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                    <XCircleIcon size={18} />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-red-700">Avvisa offert</h2>
+                    <p className="mt-0.5 text-[13px] text-red-700/75">Vi skickar besked direkt till ansvarig kontakt n?r du bekr?ftar avvisningen.</p>
+                  </div>
+                </div>
               </div>
               <div className="px-5 py-5 sm:px-7">
                 <AnimatePresence>
@@ -1041,7 +1094,7 @@ export default function PublicOfferPage() {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
-                  placeholder="Berätta gärna varför..."
+                  placeholder="Ber?tta g?rna varf?r..."
                   className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-[border-color,box-shadow] focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
                 />
               </div>
@@ -1059,11 +1112,11 @@ export default function PublicOfferPage() {
                   disabled={busy}
                   className="rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:bg-red-700 disabled:opacity-50"
                 >
-                  {busy ? 'Avvisar…' : 'Bekräfta avvisning'}
+                  {busy ? 'Avvisar...' : 'Bekr?fta avvisning'}
                 </button>
               </div>
             </motion.section>
-          )}
+          ))}
         </AnimatePresence>
         </div>
 

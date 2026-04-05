@@ -51,40 +51,40 @@ export function CategoryManagerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-4xl">
-        <DialogHeader className="border-b border-[var(--border)] px-6 pb-5 pt-6 pr-16">
+      <DialogContent mobileVariant="fullscreen" showMobileClose className="w-[min(100vw-1rem,1040px)] sm:max-w-[1040px]">
+        <DialogHeader className="border-b border-[var(--border)] px-5 pb-4 pt-5 pr-16">
           <DialogTitle>Strukturera biblioteket med huvud- och underkategorier</DialogTitle>
           <DialogDescription>
             Huvudkategorier är bara ordning och navigation. Produkter och tjänster kopplas sedan till en vald underkategori.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[min(72dvh,760px)] space-y-5 overflow-y-auto px-6 pb-3 pt-6">
+        <div className="max-h-[min(78dvh,820px)] space-y-4 overflow-y-auto px-5 pb-2 pt-5">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
+            <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] p-3.5">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 <Folders size={14} />
                 Huvudkategorier
               </div>
-              <div className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">{categories.length}</div>
+              <div className="mt-2.5 text-xl font-semibold text-[var(--text-primary)]">{categories.length}</div>
             </div>
-            <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
+            <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] p-3.5">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 <StackSimple size={14} />
                 Underkategorier
               </div>
-              <div className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">{totalSubcategories}</div>
+              <div className="mt-2.5 text-xl font-semibold text-[var(--text-primary)]">{totalSubcategories}</div>
             </div>
-            <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
+            <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] p-3.5">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Status</div>
-              <div className="mt-3 text-sm font-medium text-[var(--text-primary)]">
+              <div className="mt-2.5 text-sm font-medium text-[var(--text-primary)]">
                 {supportState === 'available' ? 'Redo för struktur' : 'Väntar på databasuppdatering'}
               </div>
               {supportMessage && <p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">{supportMessage}</p>}
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-4">
+          <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] p-3.5">
             <div className="flex flex-col gap-3 md:flex-row md:items-end">
               <div className="flex-1">
                 <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Ny huvudkategori</label>
@@ -104,7 +104,7 @@ export function CategoryManagerDialog({
                   setMainName('');
                 }}
                 disabled={supportState !== 'available' || saving || !mainName.trim()}
-                className="h-12 rounded-2xl px-4"
+                className="h-10 rounded-xl px-4"
               >
                 <Plus size={16} weight="bold" />
                 Lägg till huvudkategori
@@ -119,7 +119,7 @@ export function CategoryManagerDialog({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.18, delay: index * 0.03, ease: 'easeOut' }}
-                className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-4"
+                className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] p-3.5"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -132,7 +132,7 @@ export function CategoryManagerDialog({
                     type="button"
                     onClick={() => void onDeleteCategory(node.main.id)}
                     disabled={supportState !== 'available' || deletingId === node.main.id || node.children.length > 0}
-                    className="inline-flex h-10 items-center gap-1.5 rounded-2xl border border-[var(--border)] px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-red-950/30"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-red-950/30"
                     title={node.children.length > 0 ? 'Ta bort underkategorierna först' : 'Ta bort huvudkategori'}
                   >
                     <Trash size={14} weight="bold" />
@@ -142,14 +142,14 @@ export function CategoryManagerDialog({
 
                 <div className="mt-4 space-y-2">
                   {node.children.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-[var(--border)] px-4 py-5 text-sm text-[var(--text-muted)]">
+                    <div className="rounded-xl border border-dashed border-[var(--border)] px-4 py-4 text-sm text-[var(--text-muted)]">
                       Inga underkategorier ännu. Lägg till en eller flera för att göra produktvalet tydligare i offertflödet.
                     </div>
                   ) : (
                     node.children.map((child) => (
                       <div
                         key={child.id}
-                        className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-3"
+                        className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2.5"
                       >
                         <div>
                           <p className="text-sm font-medium text-[var(--text-primary)]">{child.name}</p>
@@ -161,7 +161,7 @@ export function CategoryManagerDialog({
                           type="button"
                           onClick={() => void onDeleteCategory(child.id)}
                           disabled={supportState !== 'available' || deletingId === child.id}
-                          className="inline-flex h-10 items-center gap-1.5 rounded-2xl border border-[var(--border)] px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-red-950/30"
+                          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-red-950/30"
                         >
                           <Trash size={14} weight="bold" />
                           {deletingId === child.id ? 'Tar bort…' : 'Ta bort'}
@@ -194,7 +194,7 @@ export function CategoryManagerDialog({
                       setSubNames((current) => ({ ...current, [node.main.id]: '' }));
                     }}
                     disabled={supportState !== 'available' || saving || !(subNames[node.main.id] ?? '').trim()}
-                    className="h-12 rounded-2xl px-4"
+                    className="h-10 rounded-xl px-4"
                   >
                     <Plus size={16} weight="bold" />
                     Lägg till
@@ -205,7 +205,7 @@ export function CategoryManagerDialog({
           </div>
         </div>
 
-        <DialogFooter className="border-t border-[var(--border)] px-6 pb-6 pt-4">
+        <DialogFooter className="border-t border-[var(--border)] px-5 pb-5 pt-3">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Stäng
           </Button>

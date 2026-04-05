@@ -526,33 +526,33 @@ export function ProductsPageClient() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="space-y-6">
-        <section className="overflow-hidden rounded-[32px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm">
-          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="space-y-4 px-5 py-5 sm:px-6 sm:py-6">
+        <section className="overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm">
+          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <div className="space-y-3.5 px-5 py-5 sm:px-6 sm:py-5">
               <div className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Produktbibliotek
               </div>
               <div>
-                <h1 className="max-w-3xl text-3xl font-semibold tracking-tight text-[var(--text-primary)] md:text-4xl">
+                <h1 className="max-w-3xl text-2xl font-semibold tracking-tight text-[var(--text-primary)] md:text-[2rem]">
                   Håll biblioteket snabbt, tydligt och lätt att lita på.
                 </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
                   Produkter ska gå att hitta på några sekunder, filtrera utan friktion och kännas trygga att lägga in i offerten direkt.
                 </p>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-3 sm:p-4">
+              <div className="grid max-w-xl grid-cols-3 gap-2">
+                <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-alt)] p-2.5 sm:p-3">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] sm:text-xs">Produkter</div>
-                  <div className="mt-2 text-xl font-semibold text-[var(--text-primary)] sm:mt-3 sm:text-2xl">{products.length}</div>
+                  <div className="mt-1.5 text-lg font-semibold text-[var(--text-primary)] sm:text-xl">{products.length}</div>
                 </div>
-                <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-3 sm:p-4">
+                <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-alt)] p-2.5 sm:p-3">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] sm:text-xs">Aktiva nu</div>
-                  <div className="mt-2 text-xl font-semibold text-[var(--text-primary)] sm:mt-3 sm:text-2xl">{activeCount}</div>
+                  <div className="mt-1.5 text-lg font-semibold text-[var(--text-primary)] sm:text-xl">{activeCount}</div>
                 </div>
-                <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-3 sm:p-4">
+                <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-alt)] p-2.5 sm:p-3">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] sm:text-xs">Visas nu</div>
-                  <div className="mt-2 text-xl font-semibold text-[var(--text-primary)] sm:mt-3 sm:text-2xl">{totalVisible}</div>
+                  <div className="mt-1.5 text-lg font-semibold text-[var(--text-primary)] sm:text-xl">{totalVisible}</div>
                 </div>
               </div>
 
@@ -568,32 +568,32 @@ export function ProductsPageClient() {
               )}
 
               {companyLoading && (
-                <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-muted)]">
+                <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-muted)]">
                   Läser in företagets bibliotek…
                 </div>
               )}
 
               {companyError && (
-                <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+                <div className="rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
                   {companyError}
                 </div>
               )}
             </div>
 
-            <aside className="border-t border-[var(--border)] bg-[var(--surface-alt)] px-5 py-5 sm:px-6 sm:py-6 lg:border-l lg:border-t-0">
-              <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-4 sm:p-5 shadow-sm">
+            <aside className="border-t border-[var(--border)] bg-[var(--surface-alt)] px-5 py-5 sm:px-6 sm:py-5 lg:border-l lg:border-t-0">
+              <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Fokus just nu</p>
-                <p className="mt-4 text-sm leading-7 text-[var(--text-secondary)]">
+                <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
                   {selectedCompany
                     ? `${selectedCompany.name} är valt just nu. Strukturera huvudkategorierna först och lägg sedan produkterna i rätt underkategori.`
                     : 'Börja med huvudkategorierna först och koppla sedan produkterna till rätt underkategori.'}
                 </p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <Button type="button" onClick={openCreate} className="rounded-2xl">
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button type="button" onClick={openCreate} className="h-10 rounded-xl px-3.5">
                     <Plus size={16} weight="bold" />
                     Ny produkt
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => setCategoryManagerOpen(true)} className="rounded-2xl">
+                  <Button type="button" variant="outline" onClick={() => setCategoryManagerOpen(true)} className="h-10 rounded-xl px-3.5">
                     <Folders size={16} weight="bold" />
                     Hantera kategorier
                   </Button>
@@ -617,7 +617,7 @@ export function ProductsPageClient() {
         </AnimatePresence>
 
         <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className="hidden h-fit rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-sm xl:block xl:sticky xl:top-6">
+          <aside className="hidden h-fit rounded-[26px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-sm xl:block xl:sticky xl:top-6">
             <div className="mb-4">
               <p className="text-sm font-semibold text-[var(--text-primary)]">Filter och struktur</p>
               <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">Filtrera på hierarki, fria etiketter och status utan att tappa överblicken.</p>
@@ -635,7 +635,7 @@ export function ProductsPageClient() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" onClick={openCreate} className="rounded-2xl md:hidden">
+                  <Button type="button" onClick={openCreate} className="h-10 rounded-xl px-3.5 md:hidden">
                     <Plus size={16} weight="bold" />
                     Ny produkt
                   </Button>
@@ -643,7 +643,7 @@ export function ProductsPageClient() {
                     type="button"
                     variant="outline"
                     onClick={() => setCategoryManagerOpen(true)}
-                    className="rounded-2xl md:hidden"
+                    className="h-10 rounded-xl px-3.5 md:hidden"
                   >
                     <Folders size={16} weight="bold" />
                     Kategorier
@@ -657,13 +657,13 @@ export function ProductsPageClient() {
                         setCategoryFilter('');
                         setShowInactive(false);
                       }}
-                      className="rounded-2xl"
+                      className="h-10 rounded-xl px-3.5"
                     >
                       <ArrowsClockwise size={16} weight="bold" />
                       Rensa
                     </Button>
                   )}
-                  <Button type="button" variant="outline" onClick={() => void reloadAll()} className="rounded-2xl">
+                  <Button type="button" variant="outline" onClick={() => void reloadAll()} className="h-10 rounded-xl px-3.5">
                     <ArrowsClockwise size={16} weight="bold" />
                     Ladda om
                   </Button>
@@ -699,7 +699,7 @@ export function ProductsPageClient() {
                     transition={{ duration: 0.18, ease: 'easeOut' }}
                     className="overflow-hidden xl:hidden"
                   >
-                    <div className="mt-4 rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
+                    <div className="mt-4 rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
                       {filterPanel}
                     </div>
                   </motion.div>
@@ -715,7 +715,7 @@ export function ProductsPageClient() {
                   ))}
                 </div>
               ) : filteredProducts.length === 0 ? (
-                <motion.div initial={{ opacity: 0, scale: 0.985 }} animate={{ opacity: 1, scale: 1 }} className="flex min-h-[360px] flex-col items-center justify-center rounded-[28px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-6 text-center">
+                  <motion.div initial={{ opacity: 0, scale: 0.985 }} animate={{ opacity: 1, scale: 1 }} className="flex min-h-[360px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-6 text-center">
                   <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[24px] bg-[var(--surface-0)] text-[var(--text-muted)]">
                     {hasActiveFilters ? <Sparkle size={24} weight="duotone" /> : <FolderOpen size={24} weight="duotone" />}
                   </div>
@@ -728,11 +728,11 @@ export function ProductsPageClient() {
                       : 'Börja med de vanligaste tjänsterna och ge dem en tydlig struktur så att offertsidan känns självklar för alla som jobbar i den.'}
                   </p>
                   <div className="mt-5 flex flex-wrap justify-center gap-2">
-                    <Button type="button" onClick={openCreate} className="rounded-2xl">
+                    <Button type="button" onClick={openCreate} className="h-10 rounded-xl px-3.5">
                       <Plus size={16} weight="bold" />
                       Ny produkt
                     </Button>
-                    <Button type="button" variant="outline" onClick={() => setCategoryManagerOpen(true)} className="rounded-2xl">
+                    <Button type="button" variant="outline" onClick={() => setCategoryManagerOpen(true)} className="h-10 rounded-xl px-3.5">
                       <Folders size={16} weight="bold" />
                       Hantera kategorier
                     </Button>
@@ -791,7 +791,7 @@ export function ProductsPageClient() {
       />
 
       <Dialog open={Boolean(deleteProduct)} onOpenChange={(open) => { if (!open) setDeleteProduct(null); }}>
-        <DialogContent mobileVariant="sheet" showMobileClose className="max-w-lg">
+        <DialogContent mobileVariant="sheet" showMobileClose className="sm:max-w-xl">
           <DialogHeader className="pr-16">
             <DialogTitle>Ta bort produkt?</DialogTitle>
             <DialogDescription>
@@ -800,7 +800,7 @@ export function ProductsPageClient() {
           </DialogHeader>
 
           {deleteProduct && (
-            <div className="mx-6 rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
+            <div className="mx-5 rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] p-3.5">
               <p className="text-sm font-semibold text-[var(--text-primary)]">{deleteProduct.name}</p>
               <div className="mt-2 flex flex-wrap gap-2 text-xs text-[var(--text-muted)]">
                 {productMetas.get(deleteProduct.id)?.label && (

@@ -21,10 +21,10 @@ export function OfferTemplatePreviewModal({
       onClick={onClose}
     >
       <div
-        className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] shadow-[0_32px_90px_rgba(0,0,0,0.34)]"
+        className="relative flex max-h-[94vh] w-full max-w-[1180px] flex-col overflow-hidden rounded-[26px] border border-[var(--border)] bg-[var(--surface-0)] shadow-[0_32px_90px_rgba(0,0,0,0.34)]"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] bg-[var(--surface-alt)] px-6 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] bg-[var(--surface-alt)] px-5 py-3.5">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted)]">
               Mallpreview
@@ -56,9 +56,9 @@ export function OfferTemplatePreviewModal({
           </button>
         </div>
 
-        <div className="relative flex-1 overflow-auto bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.96),_rgba(236,240,248,0.9)_48%,_rgba(226,232,240,0.88)_100%)] p-6">
-          <div className="mx-auto w-full max-w-5xl rounded-[32px] border border-white/70 bg-white/55 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.08)] backdrop-blur">
-            <div className="mb-4 flex items-center justify-between gap-4 text-[11px] text-slate-500">
+        <div className="relative flex-1 overflow-auto bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.96),_rgba(236,240,248,0.9)_48%,_rgba(226,232,240,0.88)_100%)] p-5">
+          <div className="mx-auto w-full max-w-[1040px] rounded-[28px] border border-white/70 bg-white/55 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.08)] backdrop-blur">
+            <div className="mb-3 flex items-center justify-between gap-4 text-[11px] text-slate-500">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[var(--accent)]/70" />
                 <span className="h-2 w-2 rounded-full bg-[var(--accent)]/35" />
@@ -69,7 +69,7 @@ export function OfferTemplatePreviewModal({
               </span>
             </div>
 
-            <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
+            <div className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
               {loading ? (
                 <div className="flex h-64 items-center justify-center gap-2 text-sm text-[var(--text-muted)]">
                   <svg
@@ -91,7 +91,7 @@ export function OfferTemplatePreviewModal({
                 <iframe
                   srcDoc={html ?? ''}
                   title="Mallförhandsvisning"
-                  className="min-h-[72vh] w-full border-0 bg-white"
+                  className="min-h-[74vh] w-full border-0 bg-white"
                 />
               )}
             </div>

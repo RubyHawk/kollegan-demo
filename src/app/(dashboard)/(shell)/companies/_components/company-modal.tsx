@@ -78,13 +78,13 @@ export function CompanyModal({
       setForm((current) => ({ ...current, [key]: event.target.value }));
 
   const inputCls =
-    'w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--accent)] focus:outline-none';
+    'w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--accent)] focus:outline-none';
   const labelCls = 'mb-1.5 block text-xs font-medium text-[var(--text-secondary)]';
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-      <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-5xl">
-        <DialogHeader className="border-b border-[var(--border)] px-6 pb-5 pt-6 pr-16">
+      <DialogContent mobileVariant="fullscreen" showMobileClose className="w-[min(100vw-1rem,1180px)] sm:max-w-[1180px]">
+        <DialogHeader className="border-b border-[var(--border)] px-5 pb-4 pt-5 pr-16">
           <DialogTitle className="text-xl text-[var(--text-primary)]">
             {company ? 'Redigera företag' : 'Nytt företag'}
           </DialogTitle>
@@ -93,9 +93,9 @@ export function CompanyModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[min(80dvh,920px)] overflow-y-auto px-6 py-6">
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+        <div className="max-h-[min(84dvh,920px)] overflow-y-auto px-5 py-5">
+          <div className="space-y-3.5">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
               <p className="font-medium text-[var(--text-primary)]">Företagets identitet i offertflödet</p>
               <p className="mt-1 leading-6">
                 Företagsnamn, adress och logga används i dokument och mallar. Du kan skapa företaget med bara namn och fylla på resten efteråt.
@@ -158,7 +158,7 @@ export function CompanyModal({
               />
             </div>
 
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
               <p className="font-medium text-[var(--text-primary)]">Avsändare i offerten</p>
               <p className="mt-1 leading-6">
                 Företagsnamn, adress och logga hämtas härifrån. Ansvarig person hämtas från användarens konto, och avsändarmejl för utskick styrs i organisationens e-postinställningar.
@@ -167,7 +167,7 @@ export function CompanyModal({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 border-t border-[var(--border)] px-6 pb-6 pt-4">
+        <DialogFooter className="gap-2 border-t border-[var(--border)] px-5 pb-5 pt-3">
           <button
             type="button"
             onClick={onClose}
