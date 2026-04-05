@@ -2379,9 +2379,10 @@ export default function OffersPage() {
                     <span className="text-[var(--text-primary)] text-right">{confirmSend.recipientCompany}</span>
                   </div>
                 )}
-                <div className="flex justify-between gap-4 pt-2 border-t border-[var(--border)] font-semibold">
-                  <span className="text-[var(--text-secondary)]">{confirmSend.priceDisplayMode === 'inclusive' ? 'Totalsumma inkl. moms' : 'Totalsumma exkl. moms'}</span>
-                  <span className="text-[var(--text-primary)]">{fmtSEK(confirmSend.priceDisplayMode === 'inclusive' ? confirmSend.totalIncVat : confirmSend.totalExVat)}</span>
+                <div className="pt-2 border-t border-[var(--border)]">
+                  <p className="text-[12px] leading-5 text-[var(--text-muted)]">
+                    Mottagaren får ett mejl med en knapp till den säkra offertvyn där pris, villkor och signering visas.
+                  </p>
                 </div>
               </div>
             </div>

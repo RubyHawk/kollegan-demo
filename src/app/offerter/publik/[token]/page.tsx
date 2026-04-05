@@ -384,6 +384,7 @@ export default function PublicOfferPage() {
     if (!iframe) return;
     const doc = iframe.contentDocument;
     if (!doc) return;
+    const disposers: Array<() => void> = [];
 
     // Inject base styles inside the iframe
     const responsiveStyle = doc.createElement('style');
@@ -435,12 +436,25 @@ export default function PublicOfferPage() {
       iframe.style.height = 'auto';
       requestAnimationFrame(() => {
         if (!doc.documentElement) return;
-        // Natural layout height × scale = the height the iframe must show
-        const naturalH = doc.documentElement.scrollHeight;
-        iframe.style.height = `${Math.ceil(naturalH * scale)}px`;
+        const naturalH = Math.max(
+          doc.documentElement.scrollHeight,
+          doc.body?.scrollHeight ?? 0,
+          wrapper?.scrollHeight ?? 0,
+        );
+        const renderedH = Math.max(
+          doc.documentElement.getBoundingClientRect().height,
+          doc.body?.getBoundingClientRect().height ?? 0,
+          wrapper?.getBoundingClientRect().height ?? 0,
+        );
+        const targetHeight = scale < 1
+          ? Math.max(Math.ceil(naturalH * scale), Math.ceil(renderedH))
+          : Math.max(naturalH, Math.ceil(renderedH));
+        iframe.style.height = `${targetHeight}px`;
       });
     };
     resize();
+    window.setTimeout(resize, 120);
+    window.setTimeout(resize, 420);
 
     // Re-measure once all images have loaded
     const images = doc.querySelectorAll('img');
@@ -454,7 +468,23 @@ export default function PublicOfferPage() {
     } else {
       resize();
     }
-    new MutationObserver(resize).observe(doc.body, { childList: true, subtree: true, attributes: true });
+    const mutationObserver = new MutationObserver(resize);
+    mutationObserver.observe(doc.body, { childList: true, subtree: true, attributes: true });
+    disposers.push(() => mutationObserver.disconnect());
+
+    if ('ResizeObserver' in window && wrapper) {
+      const resizeObserver = new ResizeObserver(() => resize());
+      resizeObserver.observe(wrapper);
+      disposers.push(() => resizeObserver.disconnect());
+    }
+
+    const handleViewportResize = () => resize();
+    window.addEventListener('resize', handleViewportResize);
+    disposers.push(() => window.removeEventListener('resize', handleViewportResize));
+
+    return () => {
+      disposers.forEach((dispose) => dispose());
+    };
   }, [signatureFields]);
 
   // ── Draw canvas resize ───────────────────────────────────────────────────────
@@ -577,7 +607,7 @@ export default function PublicOfferPage() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({})) as { detail?: string };
-        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Avvisningen misslyckades. Försök igen.';
+        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Avvisningen misslyckades. F�rs�k igen.';
         throw new Error(msg);
       }
       setState('declined');
@@ -591,7 +621,7 @@ export default function PublicOfferPage() {
       const safeName = offer.title.replace(/[^a-zA-Z0-9\u00C0-\u024F ]/g, '').trim().replace(/\s+/g, '-');
       await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`, signatureFields);
     } catch {
-      setErrMsg('Kunde inte ladda ner PDF. Försök igen.');
+      setErrMsg('Kunde inte ladda ner PDF. F�rs�k igen.');
     } finally {
       setDownloading(false);
     }
@@ -619,10 +649,10 @@ export default function PublicOfferPage() {
   // Terminal status screens
   if (state === 'expired' || state === 'error' || state === 'accepted' || state === 'declined') {
     const configs = {
-      expired:  { icon: <ClockIcon size={40} className="text-slate-400" />, title: 'Länken har gått ut', sub: 'Kontakta avsändaren för att få en ny länk till offerten.' },
-      error:    { icon: <XCircleIcon size={40} className="text-red-400" />, title: 'Offerten hittades inte', sub: 'Kontrollera länken och försök igen.' },
-      accepted: { icon: null, title: 'Offert signerad', sub: 'Tack! Avsandaren har meddelats om din signering.' },
-      declined: { icon: <XCircleIcon size={40} className="text-slate-400" />, title: 'Offert avvisad', sub: 'Avsandaren har meddelats.' },
+      expired:  { icon: <ClockIcon size={40} className="text-slate-400" />, title: 'L�nken har g�tt ut', sub: 'Kontakta avs�ndaren f�r att f� en ny l�nk till offerten.' },
+      error:    { icon: <XCircleIcon size={40} className="text-red-400" />, title: 'Offerten hittades inte', sub: 'Kontrollera l�nken och f�rs�k igen.' },
+      accepted: { icon: null, title: 'Offert signerad', sub: 'Tack! Avs�ndaren har meddelats om din signering.' },
+      declined: { icon: <XCircleIcon size={40} className="text-slate-400" />, title: 'Offert avvisad', sub: 'Avs�ndaren har meddelats.' },
     };
     const cfg = configs[state];
 
