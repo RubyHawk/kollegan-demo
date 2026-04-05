@@ -28,6 +28,21 @@ interface ProductModalProps {
   onOpenCategoryManager: () => void;
 }
 
+function MetaCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2.5">
+      <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--text-muted)]">{label}</div>
+      <div className="mt-1.5 text-sm font-medium text-[var(--text-primary)]">{value}</div>
+    </div>
+  );
+}
+
 export function ProductModal({
   open,
   product,
@@ -62,7 +77,7 @@ export function ProductModal({
   }, [categoryById, form.categoryMode, form.customCategory, form.mainCategoryId, form.subCategoryId]);
 
   const inputClass =
-    'w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--accent)] focus:outline-none';
+    'w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--accent)] focus:outline-none';
   const labelClass = 'mb-1.5 block text-xs font-medium text-[var(--text-secondary)]';
 
   const setField =
@@ -73,24 +88,29 @@ export function ProductModal({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-      <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-6xl">
+      <DialogContent
+        mobileVariant="fullscreen"
+        showMobileClose
+        className="w-[min(100vw-1rem,1120px)] sm:max-w-[1120px]"
+      >
         <div className="flex h-full min-h-0 flex-col">
-          <DialogHeader className="border-b border-[var(--border)] px-6 pb-5 pt-6 pr-16">
+          <DialogHeader className="border-b border-[var(--border)] px-5 pb-4 pt-5 pr-16">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
               Produktredigering
             </div>
-            <DialogTitle className="mt-2 text-xl text-[var(--text-primary)]">
+            <DialogTitle className="mt-1.5 text-xl text-[var(--text-primary)]">
               {product ? 'Redigera produkt eller tjänst' : 'Skapa produkt eller tjänst'}
             </DialogTitle>
-            <DialogDescription className="mt-2 max-w-2xl leading-6">
-              Bygg biblioteket så att säljaren snabbt hittar rätt produkt och slipper administrera detaljer mitt i offertflödet.
+            <DialogDescription className="mt-1.5 max-w-2xl leading-6">
+              Håll formuläret kompakt nog för vardagsarbete. Säljaren ska kunna justera namn, pris och kategori utan att
+              drunkna i stora block.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="min-h-0 overflow-y-auto px-6 py-6">
-              <div className="space-y-6">
-                <section className="grid gap-4 md:grid-cols-2">
+          <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="min-h-0 overflow-y-auto px-5 py-5">
+              <div className="space-y-4">
+                <section className="grid gap-3 md:grid-cols-2">
                   <div className="md:col-span-2">
                     <label className={labelClass}>Namn</label>
                     <input value={form.name} onChange={setField('name')} placeholder="Soleria SL 22 + X" className={inputClass} />
@@ -101,7 +121,7 @@ export function ProductModal({
                     <textarea
                       value={form.description}
                       onChange={setField('description')}
-                      rows={4}
+                      rows={3}
                       placeholder="Kort beskrivning av vad kunden faktiskt köper."
                       className={`${inputClass} resize-none`}
                     />
@@ -138,7 +158,7 @@ export function ProductModal({
                   </div>
                 </section>
 
-                <section className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
+                <section className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-3.5">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <p className="text-sm font-semibold text-[var(--text-primary)]">Kategorisering</p>
@@ -146,7 +166,7 @@ export function ProductModal({
                         Välj helst huvudkategori och underkategori. Fri etikett finns kvar för specialfall och äldre poster.
                       </p>
                     </div>
-                    <Button type="button" variant="outline" onClick={onOpenCategoryManager} className="self-start rounded-2xl">
+                    <Button type="button" variant="outline" onClick={onOpenCategoryManager} className="h-10 self-start rounded-xl px-3">
                       <FolderOpen size={15} weight="bold" />
                       Hantera kategorier
                     </Button>
@@ -156,7 +176,7 @@ export function ProductModal({
                     <button
                       type="button"
                       onClick={() => setForm((current) => ({ ...current, categoryMode: 'hierarchy', customCategory: '' }))}
-                      className={`rounded-[24px] border px-4 py-4 text-left transition-colors ${
+                      className={`rounded-[20px] border px-3.5 py-3.5 text-left transition-colors ${
                         form.categoryMode === 'hierarchy'
                           ? 'border-[var(--accent)] bg-[var(--accent)]/8'
                           : 'border-[var(--border)] bg-[var(--surface-0)]'
@@ -166,7 +186,7 @@ export function ProductModal({
                         <StackSimple size={16} weight="bold" />
                         Huvudkategori + underkategori
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
+                      <p className="mt-1.5 text-sm leading-6 text-[var(--text-muted)]">
                         Bäst när biblioteket ska växa utan att bli rörigt.
                       </p>
                     </button>
@@ -181,7 +201,7 @@ export function ProductModal({
                           subCategoryId: '',
                         }))
                       }
-                      className={`rounded-[24px] border px-4 py-4 text-left transition-colors ${
+                      className={`rounded-[20px] border px-3.5 py-3.5 text-left transition-colors ${
                         form.categoryMode === 'custom'
                           ? 'border-[var(--accent)] bg-[var(--accent)]/8'
                           : 'border-[var(--border)] bg-[var(--surface-0)]'
@@ -191,14 +211,14 @@ export function ProductModal({
                         <Sparkle size={16} weight="bold" />
                         Fri etikett
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
+                      <p className="mt-1.5 text-sm leading-6 text-[var(--text-muted)]">
                         Använd när produkten ännu inte passar in i den gemensamma strukturen.
                       </p>
                     </button>
                   </div>
 
                   {form.categoryMode === 'hierarchy' ? (
-                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
                       <div>
                         <label className={labelClass}>Huvudkategori</label>
                         <select
@@ -240,7 +260,7 @@ export function ProductModal({
                       </div>
 
                       {categorySupportMessage && (
-                        <div className="md:col-span-2 rounded-2xl border border-dashed border-[var(--border)] px-4 py-3 text-sm text-[var(--text-muted)]">
+                        <div className="md:col-span-2 rounded-xl border border-dashed border-[var(--border)] px-3 py-2.5 text-sm text-[var(--text-muted)]">
                           {categorySupportMessage}
                         </div>
                       )}
@@ -258,7 +278,7 @@ export function ProductModal({
                   )}
                 </section>
 
-                <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
+                <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-3.5">
                   <label className="flex items-center gap-3 text-sm text-[var(--text-secondary)]">
                     <input
                       type="checkbox"
@@ -272,39 +292,27 @@ export function ProductModal({
               </div>
             </div>
 
-            <aside className="border-t border-[var(--border)] bg-[var(--surface-alt)] px-6 py-6 lg:border-l lg:border-t-0">
-              <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-5 shadow-sm">
+            <aside className="border-t border-[var(--border)] bg-[var(--surface-alt)] px-5 py-5 lg:border-l lg:border-t-0">
+              <div className="sticky top-0 rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Förhandskänsla</p>
-                <h3 className="mt-3 text-lg font-semibold text-[var(--text-primary)]">{form.name.trim() || 'Ny produkt'}</h3>
+                <h3 className="mt-2.5 text-lg font-semibold text-[var(--text-primary)]">{form.name.trim() || 'Ny produkt'}</h3>
                 <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
                   {form.description.trim() || 'Beskrivningen hjälper säljaren förstå vad som faktiskt ska läggas till i offerten.'}
                 </p>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3">
-                    <div className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--text-muted)]">Kategori</div>
-                    <div className="mt-2 text-sm font-medium text-[var(--text-primary)]">{previewLabel}</div>
-                  </div>
-
-                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3">
-                    <div className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--text-muted)]">Pris</div>
-                    <div className="mt-2 text-sm font-medium text-[var(--text-primary)]">
-                      {form.unitPrice ? `${form.unitPrice} kr exkl. moms` : 'Sätt ett pris'}
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3">
-                    <div className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--text-muted)]">Moms och enhet</div>
-                    <div className="mt-2 text-sm font-medium text-[var(--text-primary)]">
-                      {form.unit || 'Ingen enhet'} • {Number(form.vatRate) * 100}%
-                    </div>
-                  </div>
+                <div className="mt-4 space-y-2.5">
+                  <MetaCard label="Kategori" value={previewLabel} />
+                  <MetaCard label="Pris" value={form.unitPrice ? `${form.unitPrice} kr exkl. moms` : 'Sätt ett pris'} />
+                  <MetaCard
+                    label="Moms och enhet"
+                    value={`${form.unit || 'Ingen enhet'} • ${Number(form.vatRate) * 100}%`}
+                  />
                 </div>
               </div>
             </aside>
           </div>
 
-          <DialogFooter className="gap-2 border-t border-[var(--border)] px-6 pb-6 pt-4">
+          <DialogFooter className="gap-2 border-t border-[var(--border)] px-5 pb-5 pt-3">
             <Button type="button" variant="outline" onClick={onClose}>
               Avbryt
             </Button>

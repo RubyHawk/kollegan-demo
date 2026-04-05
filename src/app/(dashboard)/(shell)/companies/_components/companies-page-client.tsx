@@ -499,7 +499,7 @@ export function CompaniesPageClient() {
           if (!open) setDeleteCompany(null);
         }}
       >
-        <DialogContent mobileVariant="sheet" showMobileClose className="max-w-md">
+        <DialogContent mobileVariant="sheet" showMobileClose className="sm:max-w-xl">
           <DialogHeader className="pr-16">
             <DialogTitle>Ta bort företag?</DialogTitle>
             <DialogDescription>
@@ -508,7 +508,7 @@ export function CompaniesPageClient() {
           </DialogHeader>
 
           {deleteCompany && (
-            <div className="mx-6 rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+            <div className="mx-5 rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-secondary)]">
               <p className="font-medium text-[var(--text-primary)]">{deleteCompany.name}</p>
               {deleteCompany.website && <p className="mt-1">{deleteCompany.website.replace(/^https?:\/\//, '')}</p>}
             </div>
@@ -518,14 +518,14 @@ export function CompaniesPageClient() {
             <button
               type="button"
               onClick={() => setDeleteCompany(null)}
-              className="min-w-[120px] rounded-xl border border-[var(--border)] px-4 py-3 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)]"
+              className="min-w-[120px] rounded-xl border border-[var(--border)] px-4 py-2.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)]"
             >
               Avbryt
             </button>
             <button
               type="button"
               onClick={() => deleteCompany && void handleDelete(deleteCompany)}
-              className="min-w-[120px] rounded-xl bg-red-600 px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-95"
+              className="min-w-[120px] rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-95"
             >
               Ta bort
             </button>

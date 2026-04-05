@@ -47,39 +47,39 @@ export function ProductRow({
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
       className={cn(
-        'group relative overflow-hidden rounded-[24px] border border-[var(--border)] bg-[var(--surface)]/92 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all duration-200 hover:border-[color:color-mix(in_srgb,var(--accent)_18%,var(--border))] hover:shadow-[0_18px_36px_rgba(15,23,42,0.08)]',
+        'group relative overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--surface)]/92 p-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all duration-200 hover:border-[color:color-mix(in_srgb,var(--accent)_18%,var(--border))] hover:shadow-[0_18px_36px_rgba(15,23,42,0.08)]',
         !product.isActive && 'opacity-65',
       )}
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex min-w-0 gap-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex min-w-0 gap-3">
           <ProductThumbnail imageUrl={product.imageUrl} name={product.name} />
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="truncate text-sm font-semibold text-[var(--text-primary)]">{product.name}</h3>
               {meta?.mainCategoryName && (
-                <span className="rounded-full border border-[var(--border)] bg-[var(--surface-0)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-secondary)]">
+                <span className="rounded-full border border-[var(--border)] bg-[var(--surface-0)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">
                   {meta.mainCategoryName}
                 </span>
               )}
               {meta?.subCategoryName && (
-                <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--accent)]">
+                <span className="rounded-full bg-[var(--accent)]/10 px-2 py-0.5 text-[11px] font-medium text-[var(--accent)]">
                   {meta.subCategoryName}
                 </span>
               )}
               {!meta?.isStructured && meta?.label && (
-                <span className="rounded-full border border-dashed border-[var(--border)] px-2.5 py-1 text-[11px] text-[var(--text-muted)]">
+                <span className="rounded-full border border-dashed border-[var(--border)] px-2 py-0.5 text-[11px] text-[var(--text-muted)]">
                   {meta.label}
                 </span>
               )}
               {product.sku && (
-                <span className="rounded-full bg-[var(--surface-3)] px-2.5 py-1 font-mono text-[10px] text-[var(--text-muted)]">
+                <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 font-mono text-[10px] text-[var(--text-muted)]">
                   {product.sku}
                 </span>
               )}
               {!product.isActive && (
-                <span className="rounded-full bg-amber-500/12 px-2.5 py-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                <span className="rounded-full bg-amber-500/12 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
                   Inaktiv
                 </span>
               )}
@@ -93,8 +93,8 @@ export function ProductRow({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 lg:min-w-[280px] lg:items-end">
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2 text-left lg:min-w-[168px] lg:justify-end lg:text-right">
+          <div className="flex flex-col gap-2.5 lg:min-w-[260px] lg:items-end">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2 text-left lg:min-w-[168px] lg:justify-end lg:text-right">
             <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--text-muted)] lg:hidden">
               Pris
             </div>
@@ -104,11 +104,11 @@ export function ProductRow({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-1 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] p-1 sm:grid-cols-3 lg:flex lg:flex-wrap lg:justify-end">
+          <div className="grid grid-cols-1 gap-1 rounded-xl border border-[var(--border)] bg-[var(--surface-0)] p-1 sm:grid-cols-3 lg:flex lg:flex-wrap lg:justify-end">
             <button
               type="button"
               onClick={() => onEdit(product)}
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
             >
               <PencilSimple size={14} weight="bold" />
               Redigera
@@ -116,7 +116,7 @@ export function ProductRow({
             <button
               type="button"
               onClick={() => onToggleActive(product)}
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
             >
               <Power size={14} weight="bold" />
               {product.isActive ? 'Inaktivera' : 'Aktivera'}
@@ -125,7 +125,7 @@ export function ProductRow({
               type="button"
               disabled={deleting}
               onClick={() => onDelete(product)}
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30 disabled:cursor-wait disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30 disabled:cursor-wait disabled:opacity-50"
             >
               <Trash size={14} weight="bold" />
               {deleting ? 'Tar bort…' : 'Ta bort'}
