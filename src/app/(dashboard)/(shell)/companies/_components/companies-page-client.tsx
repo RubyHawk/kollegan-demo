@@ -127,6 +127,7 @@ export function CompaniesPageClient() {
       try {
         const body = {
           name: form.name.trim(),
+          orgNumber: form.orgNumber.trim() || undefined,
           addressLine1: form.addressLine1.trim() || undefined,
           addressLine2: form.addressLine2.trim() || undefined,
           postalCode: form.postalCode.trim() || undefined,

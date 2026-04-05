@@ -14,6 +14,7 @@ import { CompanyLogoUpload } from './company-logo-upload';
 
 export interface CompanyForm {
   name: string;
+  orgNumber: string;
   addressLine1: string;
   addressLine2: string;
   postalCode: string;
@@ -26,6 +27,7 @@ export interface CompanyForm {
 
 export const EMPTY_COMPANY_FORM: CompanyForm = {
   name: '',
+  orgNumber: '',
   addressLine1: '',
   addressLine2: '',
   postalCode: '',
@@ -41,6 +43,7 @@ export function formFromCompany(company: Company | null): CompanyForm {
 
   return {
     name: company.name,
+    orgNumber: company.orgNumber ?? '',
     addressLine1: company.addressLine1 ?? '',
     addressLine2: company.addressLine2 ?? '',
     postalCode: company.postalCode ?? '',
@@ -80,7 +83,7 @@ export function CompanyModal({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-      <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-3xl">
+      <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-5xl">
         <DialogHeader className="border-b border-[var(--border)] px-6 pb-5 pt-6 pr-16">
           <DialogTitle className="text-xl text-[var(--text-primary)]">
             {company ? 'Redigera företag' : 'Nytt företag'}
@@ -90,7 +93,7 @@ export function CompanyModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[min(72dvh,760px)] overflow-y-auto px-6 py-6">
+        <div className="max-h-[min(80dvh,920px)] overflow-y-auto px-6 py-6">
           <div className="space-y-4">
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text-secondary)]">
               <p className="font-medium text-[var(--text-primary)]">Företagets identitet i offertflödet</p>
@@ -99,9 +102,15 @@ export function CompanyModal({
               </p>
             </div>
 
-            <div>
-              <label className={labelCls}>Namn *</label>
-              <input value={form.name} onChange={set('name')} placeholder="Soleria AB" className={inputCls} />
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1.7fr)_minmax(220px,0.8fr)]">
+              <div>
+                <label className={labelCls}>Namn *</label>
+                <input value={form.name} onChange={set('name')} placeholder="Soleria AB" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Organisationsnummer</label>
+                <input value={form.orgNumber} onChange={set('orgNumber')} placeholder="556677-8899" className={inputCls} />
+              </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
