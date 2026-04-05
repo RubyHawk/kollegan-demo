@@ -487,7 +487,7 @@ export default function PublicOfferPage() {
           ? Math.max(Math.ceil(naturalH * scale), Math.ceil(renderedH))
           : Math.max(naturalH, Math.ceil(renderedH));
         iframe.style.height = `${targetHeight}px`;
-        setDocumentReady(targetHeight > 160);
+        setDocumentReady(true);
       });
     };
     resize();
@@ -618,7 +618,7 @@ export default function PublicOfferPage() {
       if (!res.ok) {
         const j = await res.json().catch(() => ({})) as { detail?: string };
         // Show the API detail if it's a user-actionable message, otherwise generic
-        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Avvisningen misslyckades. F?rs?k igen.';
+        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Signeringen misslyckades. Försök igen.';
         throw new Error(msg);
       }
       const acceptedAt = new Date().toISOString();
