@@ -776,12 +776,12 @@ export default function PublicOfferPage() {
     if (!offer?.generatedDocument) return;
     setDownloading(true);
     try {
-      const safeName = offer.title.replace(/[^a-zA-Z0-9\u00C0-\u024F ]/g, '').trim().replace(/\s+/g, '-');
-      await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`, signatureFields);
+      const url = `/api/offers/public/${token}/pdf`;
+      window.open(url, '_blank', 'noopener,noreferrer');
     } catch {
       setErrMsg('Kunde inte ladda ner PDF. Försök igen.');
     } finally {
-      setDownloading(false);
+      window.setTimeout(() => setDownloading(false), 250);
     }
   };
 
