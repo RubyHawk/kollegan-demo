@@ -253,92 +253,6 @@ function DeclineMark() {
   );
 }
 
-// ─── PDF Download ──────────────────────────────────────────────────────────────
-
-async function downloadPdf(documentHtml: string, filename: string, signature?: SignatureFields) {
-  const [html2canvas, { jsPDF }] = await Promise.all([
-    import('html2canvas-pro').then((m) => m.default),
-    import('jspdf'),
-  ]);
-
-  // Container must be exactly 816px — the A4 pixel width the document is designed for.
-  // Any other width makes position:absolute fill-page images (width:816) overflow and get clipped.
-  const container = document.createElement('div');
-  container.style.cssText = 'position:fixed;left:-9999px;top:0;width:816px;background:#fff;';
-  container.innerHTML = documentHtml;
-
-  // Strip decorative card styling from doc-wrapper.
-  // New-format docs (with .page-content) carry their own padding inside each page-block;
-  // adding extra padding to doc-wrapper would shrink page-block below 816px and clip images.
-  const wrapper = container.querySelector('.doc-wrapper') as HTMLElement | null;
-  const hasPageContent = !!container.querySelector('.page-content');
-  if (wrapper) {
-    wrapper.style.margin = '0';
-    wrapper.style.border = 'none';
-    wrapper.style.borderRadius = '0';
-    wrapper.style.maxWidth = 'none';
-    wrapper.style.boxShadow = 'none';
-    // Only add wrapper padding for legacy docs that don't have .page-content padding
-    wrapper.style.padding = hasPageContent ? '0' : '32px 40px';
-  }
-  applySignatureFields(container, signature);
-
-  document.body.appendChild(container);
-
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageWidth  = pdf.internal.pageSize.getWidth();
-  const margin     = 0; // no margin — fill full A4 width for pixel-perfect output
-  const imgWidth   = pageWidth - margin * 2;
-
-  // Render each .page-block as its own PDF page so fill-page images never split mid-image.
-  // Legacy docs without page-blocks still fall back to rendering the whole container.
-  const allPageBlocks = Array.from(container.querySelectorAll<HTMLElement>('.page-block'));
-
-  if (allPageBlocks.length > 0) {
-    const pageBlocks = allPageBlocks.filter((block) => block.getAttribute('data-customer-pdf') !== 'false');
-    if (pageBlocks.length === 0) {
-      document.body.removeChild(container);
-      throw new Error('Mallen har inga sidor markerade för kundens PDF.');
-    }
-
-    for (let i = 0; i < pageBlocks.length; i++) {
-      if (i > 0) pdf.addPage();
-      const blockCanvas = await html2canvas(pageBlocks[i], {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-      });
-      const imgH = (blockCanvas.height * imgWidth) / blockCanvas.width;
-      pdf.addImage(blockCanvas.toDataURL('image/png'), 'PNG', margin, 0, imgWidth, imgH);
-    }
-  } else {
-    // Legacy: single canvas capture + slice
-    const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-    const pageHeight     = pdf.internal.pageSize.getHeight();
-    const imgTotalHeight = (canvas.height * imgWidth) / canvas.width;
-
-    if (imgTotalHeight <= pageHeight) {
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, 0, imgWidth, imgTotalHeight);
-    } else {
-      const sliceHeight = Math.floor((pageHeight / imgTotalHeight) * canvas.height);
-      let srcY = 0; let page = 0;
-      while (srcY < canvas.height) {
-        if (page > 0) pdf.addPage();
-        const slice = document.createElement('canvas');
-        slice.width  = canvas.width;
-        slice.height = Math.min(sliceHeight, canvas.height - srcY);
-        slice.getContext('2d')!.drawImage(canvas, 0, srcY, canvas.width, slice.height, 0, 0, canvas.width, slice.height);
-        const sliceH = (slice.height * imgWidth) / canvas.width;
-        pdf.addImage(slice.toDataURL('image/png'), 'PNG', margin, 0, imgWidth, sliceH);
-        srcY += sliceHeight; page++;
-      }
-    }
-  }
-
-  document.body.removeChild(container);
-  pdf.save(filename);
-}
-
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function PublicOfferPage() {
@@ -361,11 +275,14 @@ export default function PublicOfferPage() {
 
   const [scrollProgress, setScrollProgress] = useState(0);
   const [documentReady, setDocumentReady] = useState(false);
+  const [offerSectionOffset, setOfferSectionOffset] = useState(0);
+  const [promoPageCount, setPromoPageCount] = useState(0);
 
   const sigRef = useRef<SignatureCanvas>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const mainRef = useRef<HTMLElement>(null);
+  const documentSectionRef = useRef<HTMLElement>(null);
   const signatureFields = useMemo(
     () => {
       if (offer?.status === 'accepted') {
@@ -401,6 +318,8 @@ export default function PublicOfferPage() {
 
   useEffect(() => {
     setDocumentReady(false);
+    setOfferSectionOffset(0);
+    setPromoPageCount(0);
   }, [offer?.generatedDocument]);
 
   // The app shell uses a globally locked viewport, but the public signing page
@@ -479,31 +398,100 @@ export default function PublicOfferPage() {
       .offer-shell__customer { min-width: 0 !important; display: grid !important; gap: 2px !important; padding-left: 12px !important; border-left: 1px solid #e2e8f0 !important; font-size: 12px !important; color: #475569 !important; }
       .offer-section { gap: 8px !important; }
       .offer-section p { font-size: 12px !important; line-height: 1.65 !important; }
-      .offer-summary { width: min(268px, 100%) !important; border: 1px solid #dbe4ee !important; border-radius: 16px !important; background: #fbfcfe !important; padding: 0 !important; gap: 0 !important; overflow: hidden !important; }
-      .offer-summary__row { font-size: 12px !important; padding: 10px 14px !important; border-bottom: 1px solid #e8eef5 !important; }
-      .offer-summary__row--total { padding: 12px 14px !important; border-top: none !important; border-bottom: none !important; background: #0f172a !important; color: #f8fafc !important; font-size: 13px !important; }
-      .offer-summary__row--total strong { color: #ffffff !important; font-size: 16px !important; }
+      .line-items { width: 100% !important; border-collapse: separate !important; border-spacing: 0 !important; border: 1px solid #dbe4ee !important; border-radius: 18px !important; overflow: hidden !important; background: #ffffff !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important; }
+      .line-items thead th { padding: 12px 16px !important; background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%) !important; border-bottom: 1px solid #dbe4ee !important; color: #64748b !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; }
+      .line-items tbody td { padding: 15px 16px !important; border-bottom: 1px solid #eef2f7 !important; font-size: 13px !important; color: #334155 !important; vertical-align: top !important; }
+      .line-items tbody tr:last-child td { border-bottom: none !important; }
+      .line-items tbody td[data-label="Beskrivning"] { width: 44% !important; }
+      .line-items tbody td[data-label="Belopp"] { font-weight: 700 !important; color: #0f172a !important; }
+      .totals { width: min(280px, 100%) !important; margin-left: auto !important; border-collapse: separate !important; border-spacing: 0 !important; border: 1px solid #dbe4ee !important; border-radius: 14px !important; overflow: hidden !important; background: #ffffff !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important; }
+      .totals tbody, .totals { display: table !important; }
+      .totals tr { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; align-items: baseline !important; }
+      .totals td { padding: 8px 14px !important; border: none !important; font-size: 12px !important; color: #475569 !important; white-space: nowrap !important; }
+      .totals tr:last-child td { padding: 12px 14px !important; border-top: 1px solid #e8eef5 !important; background: #f8fafc !important; font-size: 14px !important; font-weight: 700 !important; color: #0f172a !important; }
+      .totals tr:last-child td:last-child { font-size: 17px !important; }
+      .offer-summary { width: min(240px, 100%) !important; border: 1px solid #dbe4ee !important; border-radius: 14px !important; background: #ffffff !important; padding: 8px 0 !important; gap: 0 !important; overflow: hidden !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important; }
+      .offer-summary--below { width: min(360px, 100%) !important; margin-left: auto !important; }
+      .offer-summary__row { font-size: 12px !important; padding: 7px 14px !important; border-bottom: none !important; color: #475569 !important; align-items: baseline !important; }
+      .offer-summary__row strong { color: #0f172a !important; }
+      .offer-summary__row--total { margin-top: 6px !important; padding: 11px 14px 10px !important; border-top: 1px solid #e8eef5 !important; border-bottom: none !important; background: #f8fafc !important; color: #0f172a !important; font-size: 13px !important; }
+      .offer-summary__row--total strong { color: #0f172a !important; font-size: 17px !important; }
       .offer-shell__footer { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; padding-top: 14px !important; }
       .offer-shell__footer div { font-size: 12px !important; }
-      .line-items tbody { display: grid !important; gap: 10px !important; }
-      .line-items tr { display: grid !important; gap: 0 !important; background: #ffffff !important; border-radius: 16px !important; border: 1px solid #dbe4ee !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important; overflow: hidden !important; }
-      .line-items td { display: grid !important; grid-template-columns: 84px minmax(0, 1fr) !important; align-items: start !important; gap: 10px !important; padding: 9px 14px !important; border-bottom: 1px solid #eef2f7 !important; font-size: 13px !important; text-align: left !important; color: #0f172a !important; }
-      .line-items td:last-child { border-bottom: none !important; }
-      .line-items td[data-label="Beskrivning"] { grid-template-columns: minmax(0, 1fr) !important; gap: 6px !important; padding: 14px !important; background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%) !important; }
-      .line-items td[data-label="Beskrivning"]::before { content: "Produkt eller tj\\00e4nst" !important; margin-bottom: 2px !important; }
-      .line-items td[data-label="Belopp"] { margin: 8px 14px 14px !important; padding: 10px 12px !important; border: 1px solid #dbe4ee !important; border-radius: 12px !important; background: #f8fafc !important; font-weight: 700 !important; }
-      .line-items td[data-label="Belopp"]::before { color: #64748b !important; }
-      .line-items td::before { content: attr(data-label) !important; color: #94a3b8 !important; font-size: 10px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.06em !important; padding-top: 2px !important; }
-      .line-item__title { font-size: 16px !important; line-height: 1.3 !important; font-weight: 700 !important; }
-      .line-item__detail { font-size: 12px !important; line-height: 1.5 !important; max-width: 32ch !important; color: #64748b !important; }
+      .offer-items { display: grid !important; gap: 12px !important; }
+      .offer-items__table { display: block !important; border: 1px solid #dbe4ee !important; border-radius: 18px !important; background: #ffffff !important; overflow: hidden !important; }
+      .offer-items__head, .offer-item-row { display: grid !important; grid-template-columns: var(--offer-columns) !important; align-items: start !important; }
+      .offer-items__head { gap: 14px !important; padding: 11px 16px !important; background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%) !important; border-bottom: 1px solid #dbe4ee !important; color: #64748b !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; }
+      .offer-item-row { gap: 14px !important; padding: 16px !important; border-bottom: 1px solid #eef2f7 !important; }
+      .offer-item-row:last-child { border-bottom: none !important; }
+      .offer-item-row__product { display: grid !important; gap: 5px !important; min-width: 0 !important; }
+      .offer-item-row__title { font-size: 15px !important; line-height: 1.35 !important; font-weight: 700 !important; color: #0f172a !important; }
+      .offer-item-row__detail { font-size: 12px !important; line-height: 1.55 !important; color: #64748b !important; }
+      .offer-item-row__value { text-align: right !important; font-size: 13px !important; line-height: 1.45 !important; color: #334155 !important; }
+      .offer-item-row__value--strong { font-weight: 700 !important; color: #0f172a !important; }
+      .offer-items__cards { display: none !important; }
+      .offer-item-card { border: 1px solid #dbe4ee !important; border-radius: 18px !important; background: #ffffff !important; overflow: hidden !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important; }
+      .offer-item-card__top { display: grid !important; gap: 6px !important; padding: 15px 16px 14px !important; background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%) !important; border-bottom: 1px solid #eef2f7 !important; }
+      .offer-item-card__eyebrow { font-size: 10px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; color: #94a3b8 !important; }
+      .offer-item-card__title { font-size: 16px !important; line-height: 1.3 !important; font-weight: 700 !important; color: #0f172a !important; }
+      .offer-item-card__detail { font-size: 12px !important; line-height: 1.55 !important; color: #64748b !important; }
+      .offer-item-card__grid { display: grid !important; gap: 0 !important; margin: 0 !important; }
+      .offer-item-card__metric { display: flex !important; justify-content: space-between !important; gap: 16px !important; padding: 11px 16px !important; border-bottom: 1px solid #eef2f7 !important; }
+      .offer-item-card__metric:last-child { border-bottom: none !important; }
+      .offer-item-card__metric dt, .offer-item-card__metric dd { margin: 0 !important; }
+      .offer-item-card__metric dt { font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; color: #94a3b8 !important; }
+      .offer-item-card__metric dd { text-align: right !important; font-size: 13px !important; font-weight: 600 !important; color: #0f172a !important; }
+      .offer-item-card__metric--total { background: #f8fafc !important; }
+      html.offer-mobile .offer-shell__header, html.offer-mobile .offer-shell__topline { grid-template-columns: minmax(0, 1fr) 160px !important; gap: 12px !important; }
+      html.offer-mobile .offer-shell__meta { justify-items: end !important; text-align: right !important; }
+      html.offer-mobile .offer-shell__meta dt, html.offer-mobile .offer-shell__meta dd { font-size: 11px !important; }
+      html.offer-mobile .offer-shell__customer { padding-left: 10px !important; }
+      html.offer-mobile .offer-items__table { display: none !important; }
+      html.offer-mobile .offer-items__cards { display: grid !important; gap: 12px !important; }
+      html.offer-mobile .line-items { display: block !important; width: 100% !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; background: transparent !important; }
+      html.offer-mobile .line-items thead { display: none !important; }
+      html.offer-mobile .line-items tbody { display: grid !important; gap: 12px !important; }
+      html.offer-mobile .line-items tr { display: grid !important; gap: 0 !important; background: #ffffff !important; border: 1px solid #dbe4ee !important; border-radius: 18px !important; overflow: hidden !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important; }
+      html.offer-mobile .line-items td { display: flex !important; justify-content: space-between !important; align-items: baseline !important; gap: 14px !important; padding: 11px 16px !important; border-bottom: 1px solid #eef2f7 !important; font-size: 13px !important; text-align: left !important; color: #0f172a !important; }
+      html.offer-mobile .line-items td::before { content: attr(data-label) !important; color: #94a3b8 !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; }
+      html.offer-mobile .line-items td[data-label="Beskrivning"] { display: block !important; width: auto !important; padding: 16px !important; background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%) !important; }
+      html.offer-mobile .line-items td[data-label="Beskrivning"]::before { content: "Produkt eller tjänst" !important; display: block !important; margin-bottom: 6px !important; }
+      html.offer-mobile .line-items td[data-label="Belopp"] { background: #f8fafc !important; font-weight: 700 !important; }
+      html.offer-mobile .line-items tr:last-child td { border-bottom: none !important; }
+      html.offer-mobile .totals { display: block !important; width: 100% !important; border-radius: 14px !important; }
+      html.offer-mobile .totals tbody { display: block !important; }
+      html.offer-mobile .totals tr { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; }
+      html.offer-mobile .totals td { font-size: 12px !important; padding: 8px 12px !important; white-space: normal !important; }
+      html.offer-mobile .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
+      html.offer-mobile .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 8px 0 !important; }
+      html.offer-mobile .offer-summary--below { width: 100% !important; }
+      html.offer-mobile .offer-summary__row { font-size: 12px !important; padding: 8px 12px !important; }
+      html.offer-mobile .offer-summary__row--total { font-size: 14px !important; padding: 12px !important; }
       @media (max-width: 640px) {
         .offer-shell__header, .offer-shell__topline { grid-template-columns: minmax(0, 1fr) 160px !important; gap: 12px !important; }
         .offer-shell__meta { justify-items: end !important; text-align: right !important; }
         .offer-shell__meta dt, .offer-shell__meta dd { font-size: 11px !important; }
         .offer-shell__customer { padding-left: 10px !important; }
+        .offer-items__table { display: none !important; }
+        .offer-items__cards { display: grid !important; gap: 12px !important; }
+        .line-items { display: block !important; width: 100% !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; background: transparent !important; }
+        .line-items thead { display: none !important; }
+        .line-items tbody { display: grid !important; gap: 12px !important; }
+        .line-items tr { display: grid !important; gap: 0 !important; background: #ffffff !important; border: 1px solid #dbe4ee !important; border-radius: 18px !important; overflow: hidden !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important; }
+        .line-items td { display: flex !important; justify-content: space-between !important; align-items: baseline !important; gap: 14px !important; padding: 11px 16px !important; border-bottom: 1px solid #eef2f7 !important; font-size: 13px !important; text-align: left !important; color: #0f172a !important; }
+        .line-items td::before { content: attr(data-label) !important; color: #94a3b8 !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; }
+        .line-items td[data-label="Beskrivning"] { display: block !important; width: auto !important; padding: 16px !important; background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%) !important; }
+        .line-items td[data-label="Beskrivning"]::before { content: "Produkt eller tjänst" !important; display: block !important; margin-bottom: 6px !important; }
+        .line-items td[data-label="Belopp"] { background: #f8fafc !important; font-weight: 700 !important; }
+        .line-items tr:last-child td { border-bottom: none !important; }
+        .totals { display: block !important; width: 100% !important; border-radius: 14px !important; }
+        .totals tbody { display: block !important; }
+        .totals tr { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; }
+        .totals td { font-size: 12px !important; padding: 8px 12px !important; white-space: normal !important; }
         .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
-        .offer-summary { width: 100% !important; border-radius: 14px !important; }
-        .offer-summary__row { font-size: 12px !important; padding: 10px 12px !important; }
+        .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 8px 0 !important; }
+        .offer-summary--below { width: 100% !important; }
+        .offer-summary__row { font-size: 12px !important; padding: 8px 12px !important; }
         .offer-summary__row--total { font-size: 14px !important; padding: 12px !important; }
       }
     `;
@@ -529,9 +517,15 @@ export default function PublicOfferPage() {
 
     applySignatureFields(doc, signatureFields);
 
+    const pageBlocks = Array.from(doc.querySelectorAll<HTMLElement>('.page-block'));
+    const firstDocumentPage = doc.querySelector<HTMLElement>('.page-block--document') ?? pageBlocks[0] ?? null;
+    const firstDocumentIndex = firstDocumentPage ? pageBlocks.indexOf(firstDocumentPage) : 0;
+    setPromoPageCount(Math.max(0, firstDocumentIndex));
+
     doc.querySelectorAll<HTMLElement>('.offer-section--intro').forEach((section) => {
       const text = section.textContent?.replace(/\u00a0/g, ' ').trim() ?? '';
-      if (!text) section.remove();
+      const hasVisualContent = !!section.querySelector('img, table, hr, ul, ol, blockquote');
+      if (!text && !hasVisualContent) section.remove();
     });
 
     const senderCopy = doc.querySelector<HTMLElement>('.offer-shell__sender-copy');
@@ -567,6 +561,151 @@ export default function PublicOfferPage() {
       if (normalized !== value) node.nodeValue = normalized;
     }
 
+    doc.querySelectorAll<HTMLTableElement>('table.line-items').forEach((table) => {
+      if (table.dataset.enhanced === 'true' || table.closest('.offer-items')) return;
+
+      const headers = Array.from(table.querySelectorAll('thead th')).map((header) => (
+        header.textContent?.replace(/\u00a0/g, ' ').trim() ?? ''
+      ));
+      const rows = Array.from(table.querySelectorAll('tbody tr'));
+      if (headers.length === 0 || rows.length === 0) return;
+
+      const gridTemplate = [
+        'minmax(0, 1.85fr)',
+        '72px',
+        '112px',
+        ...(headers.some((label) => label.toLocaleLowerCase('sv-SE').includes('rabatt')) ? ['92px'] : []),
+        ...(headers.some((label) => label.toLocaleLowerCase('sv-SE').includes('moms')) ? ['92px'] : []),
+        '116px',
+      ].join(' ');
+
+      const wrapperEl = doc.createElement('div');
+      wrapperEl.className = 'offer-items';
+
+      const tableShell = doc.createElement('div');
+      tableShell.className = 'offer-items__table';
+
+      const headEl = doc.createElement('div');
+      headEl.className = 'offer-items__head';
+      headEl.style.setProperty('--offer-columns', gridTemplate);
+      headers.forEach((label) => {
+        const cell = doc.createElement('span');
+        cell.textContent = label;
+        headEl.appendChild(cell);
+      });
+      tableShell.appendChild(headEl);
+
+      const bodyEl = doc.createElement('div');
+      bodyEl.className = 'offer-items__body';
+
+      const cardsEl = doc.createElement('div');
+      cardsEl.className = 'offer-items__cards';
+
+      rows.forEach((row) => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        if (cells.length === 0) return;
+
+        const descriptionCell = cells[0];
+        const descriptionBlocks = Array.from(descriptionCell.children) as HTMLElement[];
+        const titleHtml = descriptionBlocks[0]?.innerHTML?.trim() || descriptionCell.innerHTML.trim();
+        const detailHtml = descriptionBlocks.slice(1).map((block) => block.innerHTML.trim()).filter(Boolean).join('');
+
+        const desktopRow = doc.createElement('article');
+        desktopRow.className = 'offer-item-row';
+        desktopRow.style.setProperty('--offer-columns', gridTemplate);
+
+        const desktopProduct = doc.createElement('div');
+        desktopProduct.className = 'offer-item-row__product';
+        const desktopTitle = doc.createElement('div');
+        desktopTitle.className = 'offer-item-row__title';
+        desktopTitle.innerHTML = titleHtml;
+        desktopProduct.appendChild(desktopTitle);
+        if (detailHtml) {
+          const desktopDetail = doc.createElement('div');
+          desktopDetail.className = 'offer-item-row__detail';
+          desktopDetail.innerHTML = detailHtml;
+          desktopProduct.appendChild(desktopDetail);
+        }
+        desktopRow.appendChild(desktopProduct);
+
+        const cardEl = doc.createElement('article');
+        cardEl.className = 'offer-item-card';
+        const cardTop = doc.createElement('div');
+        cardTop.className = 'offer-item-card__top';
+        const cardEyebrow = doc.createElement('div');
+        cardEyebrow.className = 'offer-item-card__eyebrow';
+        cardEyebrow.textContent = 'Produkt eller tjänst';
+        const cardTitle = doc.createElement('div');
+        cardTitle.className = 'offer-item-card__title';
+        cardTitle.innerHTML = titleHtml;
+        cardTop.appendChild(cardEyebrow);
+        cardTop.appendChild(cardTitle);
+        if (detailHtml) {
+          const cardDetail = doc.createElement('div');
+          cardDetail.className = 'offer-item-card__detail';
+          cardDetail.innerHTML = detailHtml;
+          cardTop.appendChild(cardDetail);
+        }
+        cardEl.appendChild(cardTop);
+
+        const cardGrid = doc.createElement('dl');
+        cardGrid.className = 'offer-item-card__grid';
+
+        headers.slice(1).forEach((label, index) => {
+          const cell = cells[index + 1];
+          if (!cell) return;
+          const desktopValue = doc.createElement('div');
+          desktopValue.className = `offer-item-row__value${label.toLocaleLowerCase('sv-SE').includes('belopp') ? ' offer-item-row__value--strong' : ''}`;
+          desktopValue.innerHTML = cell.innerHTML.trim();
+          desktopRow.appendChild(desktopValue);
+
+          const metric = doc.createElement('div');
+          metric.className = `offer-item-card__metric${label.toLocaleLowerCase('sv-SE').includes('belopp') ? ' offer-item-card__metric--total' : ''}`;
+          const dt = doc.createElement('dt');
+          dt.textContent = label;
+          const dd = doc.createElement('dd');
+          dd.innerHTML = cell.innerHTML.trim();
+          metric.appendChild(dt);
+          metric.appendChild(dd);
+          cardGrid.appendChild(metric);
+        });
+
+        bodyEl.appendChild(desktopRow);
+        cardEl.appendChild(cardGrid);
+        cardsEl.appendChild(cardEl);
+      });
+
+      tableShell.appendChild(bodyEl);
+      wrapperEl.appendChild(tableShell);
+      wrapperEl.appendChild(cardsEl);
+      table.replaceWith(wrapperEl);
+    });
+
+    doc.querySelectorAll<HTMLTableElement>('table.totals').forEach((table) => {
+      if (table.dataset.enhanced === 'true' || table.closest('.offer-summary')) return;
+      const rows = Array.from(table.querySelectorAll('tr'));
+      if (rows.length === 0) return;
+
+      const summaryEl = doc.createElement('aside');
+      summaryEl.className = 'offer-summary offer-summary--below';
+
+      rows.forEach((row, index) => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        if (cells.length < 2) return;
+        const line = doc.createElement('div');
+        line.className = `offer-summary__row${index === rows.length - 1 ? ' offer-summary__row--total' : ''}`;
+        const label = doc.createElement('span');
+        label.textContent = cells[0].textContent?.replace(/\u00a0/g, ' ').trim() ?? '';
+        const value = doc.createElement('strong');
+        value.innerHTML = cells[1].innerHTML.trim();
+        line.appendChild(label);
+        line.appendChild(value);
+        summaryEl.appendChild(line);
+      });
+
+      table.replaceWith(summaryEl);
+    });
+
     const legacyMetaTitle = doc.querySelector<HTMLElement>('.offer-shell__title');
     if (legacyMetaTitle && offer) {
       legacyMetaTitle.textContent = getStatusLabel(offer.status);
@@ -581,11 +720,18 @@ export default function PublicOfferPage() {
     const DOC_WIDTH = 816;
     const containerW = iframe.getBoundingClientRect().width || window.innerWidth;
     const scale = Math.min(1, containerW / DOC_WIDTH);
+    const isCompactDocument = containerW < 700;
+    doc.documentElement.classList.toggle('offer-mobile', isCompactDocument);
     if (scale < 1 && doc.documentElement) {
       doc.documentElement.style.width = `${DOC_WIDTH}px`;
       doc.documentElement.style.transformOrigin = 'top left';
       doc.documentElement.style.transform = `scale(${scale})`;
       doc.documentElement.style.overflowX = 'hidden';
+    } else if (doc.documentElement) {
+      doc.documentElement.style.width = '';
+      doc.documentElement.style.transformOrigin = '';
+      doc.documentElement.style.transform = '';
+      doc.documentElement.style.overflowX = '';
     }
 
     const resize = () => {
@@ -607,6 +753,9 @@ export default function PublicOfferPage() {
           ? Math.max(Math.ceil(naturalH * scale), Math.ceil(renderedH))
           : Math.max(naturalH, Math.ceil(renderedH));
         iframe.style.height = `${targetHeight}px`;
+        const rawOfferOffset = firstDocumentPage?.offsetTop ?? 0;
+        const scaledOfferOffset = scale < 1 ? rawOfferOffset * scale : rawOfferOffset;
+        setOfferSectionOffset(Math.max(0, Math.round(scaledOfferOffset)));
         setDocumentReady(true);
       });
     };
@@ -643,7 +792,7 @@ export default function PublicOfferPage() {
     return () => {
       disposers.forEach((dispose) => dispose());
     };
-  }, [signatureFields]);
+  }, [offer, signatureFields]);
 
   // ── Draw canvas resize ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -784,6 +933,14 @@ export default function PublicOfferPage() {
       window.setTimeout(() => setDownloading(false), 250);
     }
   };
+
+  const handleJumpToOffer = useCallback(() => {
+    const scrollRoot = mainRef.current;
+    const documentSection = documentSectionRef.current;
+    if (!scrollRoot || !documentSection) return;
+    const targetTop = Math.max(0, documentSection.offsetTop + offerSectionOffset - 12);
+    scrollRoot.scrollTo({ top: targetTop, behavior: 'smooth' });
+  }, [offerSectionOffset]);
 
   // ─── Derived state ───────────────────────────────────────────────────────────
   const selectedFont = SIG_FONTS.find((f) => f.id === sigFont) ?? SIG_FONTS[0];
@@ -956,9 +1113,37 @@ export default function PublicOfferPage() {
       <main ref={mainRef} className="h-[calc(100dvh-57px)] overflow-y-auto bg-slate-50 pb-16">
         <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-8">
 
+        {offer.generatedDocument && documentReady && promoPageCount > 0 && (
+          <div className="px-4 pb-4 pt-4 sm:px-0 sm:pt-0">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.24 }}
+              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200/70 bg-white px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.05)]"
+            >
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  Snabbare till offerten
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {promoPageCount} introduktionssida{promoPageCount === 1 ? '' : 'or'} visas först. Hoppa direkt till pris och detaljer.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleJumpToOffer}
+                className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+              >
+                Hoppa till offert
+              </button>
+            </motion.div>
+          </div>
+        )}
+
         {/* Document iframe */}
         {offer.generatedDocument && (
           <motion.section
+            ref={documentSectionRef}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.04 }}

@@ -337,6 +337,87 @@ function buildLineItemsTable(items: OfferLineItem[], mode: Offer['priceDisplayMo
     </table>`;
 }
 
+function buildStructuredLineItems(items: OfferLineItem[], mode: Offer['priceDisplayMode']): string {
+  const pricing = summarizeOfferPricing(items, mode);
+  const showVatColumn = pricing.hasVat;
+  const showDiscountColumn = items.some((item) => (item.discount ?? 0) > 0);
+  const gridTemplate = [
+    'minmax(0, 1.85fr)',
+    '72px',
+    '112px',
+    ...(showDiscountColumn ? ['92px'] : []),
+    ...(showVatColumn ? ['92px'] : []),
+    '116px',
+  ].join(' ');
+
+  const headerCells = [
+    '<span>Produkt eller tjänst</span>',
+    '<span>Antal</span>',
+    '<span>&Aring;-pris</span>',
+    ...(showDiscountColumn ? ['<span>Rabatt</span>'] : []),
+    ...(showVatColumn ? ['<span>Moms</span>'] : []),
+    '<span>Belopp</span>',
+  ].join('');
+
+  const desktopRows = items.map((item) => {
+    const displayUnitPrice = getDisplayUnitPrice(item, mode);
+    const displayLineTotal = getDisplayLineTotal(item, mode);
+    const description = getOfferLineItemDescription(item.description);
+    return `
+      <article class="offer-item-row" style="--offer-columns:${gridTemplate}">
+        <div class="offer-item-row__product">
+          <div class="offer-item-row__title">${escapeHtml(description.title)}</div>
+          ${description.detail ? `<div class="offer-item-row__detail">${escapeHtml(description.detail)}</div>` : ''}
+        </div>
+        <div class="offer-item-row__value">${item.quantity}</div>
+        <div class="offer-item-row__value">${fmtSEKPrecise(displayUnitPrice)}</div>
+        ${showDiscountColumn ? `<div class="offer-item-row__value">${item.discount ? `${item.discount}%` : '—'}</div>` : ''}
+        ${showVatColumn ? `<div class="offer-item-row__value">${formatVatRate(item.vatRate)}</div>` : ''}
+        <div class="offer-item-row__value offer-item-row__value--strong">${fmtSEKPrecise(displayLineTotal)}</div>
+      </article>`;
+  }).join('');
+
+  const mobileCards = items.map((item) => {
+    const displayUnitPrice = getDisplayUnitPrice(item, mode);
+    const displayLineTotal = getDisplayLineTotal(item, mode);
+    const description = getOfferLineItemDescription(item.description);
+    const mobileRows = [
+      `<div class="offer-item-card__metric"><dt>Antal</dt><dd>${item.quantity}</dd></div>`,
+      `<div class="offer-item-card__metric"><dt>&Aring;-pris</dt><dd>${fmtSEKPrecise(displayUnitPrice)}</dd></div>`,
+      ...(showDiscountColumn ? [`<div class="offer-item-card__metric"><dt>Rabatt</dt><dd>${item.discount ? `${item.discount}%` : '—'}</dd></div>`] : []),
+      ...(showVatColumn ? [`<div class="offer-item-card__metric"><dt>Moms</dt><dd>${formatVatRate(item.vatRate)}</dd></div>`] : []),
+      `<div class="offer-item-card__metric offer-item-card__metric--total"><dt>Belopp</dt><dd>${fmtSEKPrecise(displayLineTotal)}</dd></div>`,
+    ].join('');
+
+    return `
+      <article class="offer-item-card">
+        <div class="offer-item-card__top">
+          <div class="offer-item-card__eyebrow">Produkt eller tjänst</div>
+          <div class="offer-item-card__title">${escapeHtml(description.title)}</div>
+          ${description.detail ? `<div class="offer-item-card__detail">${escapeHtml(description.detail)}</div>` : ''}
+        </div>
+        <dl class="offer-item-card__grid">
+          ${mobileRows}
+        </dl>
+      </article>`;
+  }).join('');
+
+  return `
+    <div class="offer-items">
+      <div class="offer-items__table">
+        <div class="offer-items__head" style="--offer-columns:${gridTemplate}">
+          ${headerCells}
+        </div>
+        <div class="offer-items__body">
+          ${desktopRows}
+        </div>
+      </div>
+      <div class="offer-items__cards">
+        ${mobileCards}
+      </div>
+    </div>`;
+}
+
 // ─── Signature placeholder HTML ────────────────────────────────────────────────
 
 const SIGNATURE_FIELD_HTML = `
@@ -560,7 +641,7 @@ function renderStructuredDocumentPage(
     .trim()
     .length > 0;
   const hasIntroContent = settings.showIntro && (hasIntroVisualContent || hasIntroTextContent);
-  const tableHtml = buildLineItemsTable(offer.lineItems, offer.priceDisplayMode);
+  const tableHtml = buildStructuredLineItems(offer.lineItems, offer.priceDisplayMode);
   const summaryHtml = renderDocumentSummary(
     offer,
     (settings.summaryPlacement ?? 'right') as 'right' | 'below',
@@ -960,13 +1041,37 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     .offer-section { display: grid; gap: 8px; }
     .offer-section h2, .offer-section h3 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #475569; }
     .offer-section p { margin: 0; font-size: 12px; line-height: 1.65; color: #334155; }
-    .offer-table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .offer-summary { margin-left: auto; width: min(268px, 100%); border: 1px solid #dbe4ee; border-radius: 16px; background: #fbfcfe; padding: 0; display: grid; gap: 0; overflow: hidden; }
-    .offer-summary--below { width: 100%; margin-left: 0; }
-    .offer-summary__row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 14px; font-size: 12px; color: #334155; border-bottom: 1px solid #e8eef5; }
-    .offer-summary__row strong { white-space: nowrap; }
-    .offer-summary__row--total { padding: 12px 14px; border-top: none; border-bottom: none; background: #0f172a; font-size: 13px; font-weight: 700; color: #f8fafc; }
-    .offer-summary__row--total strong { color: #ffffff; font-size: 16px; }
+    .offer-table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .offer-items { display: grid; gap: 12px; }
+    .offer-items__table { display: block; border: 1px solid #dbe4ee; border-radius: 18px; background: #ffffff; overflow: hidden; }
+    .offer-items__head, .offer-item-row { display: grid; grid-template-columns: var(--offer-columns); align-items: start; }
+    .offer-items__head { gap: 14px; padding: 11px 16px; background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%); border-bottom: 1px solid #dbe4ee; color: #64748b; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .offer-item-row { gap: 14px; padding: 16px; border-bottom: 1px solid #eef2f7; }
+    .offer-item-row:last-child { border-bottom: none; }
+    .offer-item-row__product { display: grid; gap: 5px; min-width: 0; }
+    .offer-item-row__title { font-size: 15px; line-height: 1.35; font-weight: 700; color: #0f172a; }
+    .offer-item-row__detail { font-size: 12px; line-height: 1.55; color: #64748b; }
+    .offer-item-row__value { text-align: right; font-size: 13px; line-height: 1.45; color: #334155; }
+    .offer-item-row__value--strong { font-weight: 700; color: #0f172a; }
+    .offer-items__cards { display: none; }
+    .offer-item-card { border: 1px solid #dbe4ee; border-radius: 18px; background: #ffffff; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+    .offer-item-card__top { display: grid; gap: 6px; padding: 15px 16px 14px; background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%); border-bottom: 1px solid #eef2f7; }
+    .offer-item-card__eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; }
+    .offer-item-card__title { font-size: 16px; line-height: 1.3; font-weight: 700; color: #0f172a; }
+    .offer-item-card__detail { font-size: 12px; line-height: 1.55; color: #64748b; }
+    .offer-item-card__grid { display: grid; gap: 0; margin: 0; }
+    .offer-item-card__metric { display: flex; justify-content: space-between; gap: 16px; padding: 11px 16px; border-bottom: 1px solid #eef2f7; }
+    .offer-item-card__metric:last-child { border-bottom: none; }
+    .offer-item-card__metric dt, .offer-item-card__metric dd { margin: 0; }
+    .offer-item-card__metric dt { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
+    .offer-item-card__metric dd { text-align: right; font-size: 13px; font-weight: 600; color: #0f172a; }
+    .offer-item-card__metric--total { background: #f8fafc; }
+    .offer-summary { margin-left: auto; width: min(240px, 100%); border: 1px solid #dbe4ee; border-radius: 14px; background: #ffffff; padding: 8px 0; display: grid; gap: 0; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03); }
+    .offer-summary--below { width: min(360px, 100%); margin-left: auto; }
+    .offer-summary__row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 7px 14px; font-size: 12px; color: #475569; }
+    .offer-summary__row strong { white-space: nowrap; color: #0f172a; }
+    .offer-summary__row--total { margin-top: 6px; padding: 11px 14px 10px; border-top: 1px solid #e8eef5; background: #f8fafc; font-size: 13px; font-weight: 700; color: #0f172a; }
+    .offer-summary__row--total strong { color: #0f172a; font-size: 17px; }
     .offer-section--terms { margin-top: auto; }
     .offer-shell__footer { display: grid; grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); gap: 14px; padding-top: 14px; border-top: 1px solid #dbe4ee; }
     .offer-shell__footer div { display: grid; gap: 4px; font-size: 12px; color: #475569; }
@@ -990,8 +1095,11 @@ export function generateDocument(templateContent: string, offer: Offer, branding
       .offer-shell__meta dt, .offer-shell__meta dd { font-size: 11px; }
       .offer-shell__topline h1 { font-size: 17px; }
       .offer-shell__customer { min-width: 0; border-left: 1px solid #e2e8f0; border-top: none; padding-left: 10px; padding-top: 0; }
-      .offer-summary { width: 100%; border-radius: 14px; }
-      .offer-summary__row { font-size: 12px; padding: 10px 12px; }
+      .offer-items__table { display: none; }
+      .offer-items__cards { display: grid; gap: 12px; }
+      .offer-summary { width: 100%; border-radius: 14px; padding: 8px 0; }
+      .offer-summary--below { width: 100%; }
+      .offer-summary__row { font-size: 12px; padding: 8px 12px; }
       .offer-summary__row--total { font-size: 14px; padding: 12px; }
       ${MOBILE_TABLE_CSS}
     }
