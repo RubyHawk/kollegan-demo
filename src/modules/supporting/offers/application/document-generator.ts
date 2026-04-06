@@ -53,10 +53,10 @@ function buildOfferSummary(offer: Offer) {
 
 function getOfferStatusLabel(status: Offer['status']): string {
   const labels: Record<Offer['status'], string> = {
-    draft: 'Utkast',
-    sent: 'Skickad',
-    viewed: 'Visad',
-    accepted: 'Accepterad',
+    draft: 'Offert',
+    sent: 'Offert',
+    viewed: 'Offert',
+    accepted: 'Signerad',
     declined: 'Avvisad',
     expired: 'Utgången',
   };
@@ -77,11 +77,22 @@ function getOfferLineItemDescription(description: string): { title: string; deta
 }
 
 function buildCustomerLines(offer: Offer): string[] {
-  const lines = offer.recipientCompany
-    ? [offer.recipientCompany, offer.recipientName, offer.recipientEmail]
-    : [offer.recipientName, offer.recipientEmail];
+  const lines = [
+    offer.recipientCompany ?? '',
+    offer.recipientName,
+    offer.recipientEmail,
+  ];
 
-  return lines.filter((value) => value.trim().length > 0);
+  const seen = new Set<string>();
+  return lines
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0)
+    .filter((value) => {
+      const key = value.toLocaleLowerCase('sv-SE');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 function formatOfferStatus(status: Offer['status']): string {
@@ -299,8 +310,8 @@ function buildLineItemsTable(items: OfferLineItem[], mode: Offer['priceDisplayMo
     return `
       <tr>
         <td data-label="Beskrivning" style="${cellStyle}">
-          <div style="font-weight:600;color:#0f172a;margin-bottom:${description.detail ? '4px' : '0'};">${escapeHtml(description.title)}</div>
-          ${description.detail ? `<div style="font-size:12px;line-height:1.45;color:#64748b;">${escapeHtml(description.detail)}</div>` : ''}
+          <div class="line-item__title" style="font-weight:600;color:#0f172a;margin-bottom:${description.detail ? '4px' : '0'};">${escapeHtml(description.title)}</div>
+          ${description.detail ? `<div class="line-item__detail" style="font-size:12px;line-height:1.45;color:#64748b;">${escapeHtml(description.detail)}</div>` : ''}
         </td>
         <td data-label="Antal"       style="${numStyle}">${item.quantity}</td>
         <td data-label="Å-pris" style="${numStyle}">${fmtSEKPrecise(displayUnitPrice)}</td>
@@ -391,11 +402,17 @@ export function interpolateEmailText(text: string, offer: Offer): string {
 const MOBILE_TABLE_CSS = `
       .line-items { display: block; width: 100%; }
       .line-items thead { display: none; }
-      .line-items tbody { display: block; }
-      .line-items tr { display: block; background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 0 0 1px #e2e8f0; margin-bottom: 8px; overflow: hidden; }
-      .line-items td { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px; text-align: left !important; }
+      .line-items tbody { display: grid; gap: 10px; }
+      .line-items tr { display: grid; gap: 0; background: #ffffff; border-radius: 16px; border: 1px solid #dbe4ee; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); overflow: hidden; }
+      .line-items td { display: grid; grid-template-columns: 84px minmax(0, 1fr); align-items: start; gap: 10px; padding: 9px 14px; border-bottom: 1px solid #eef2f7; font-size: 13px; text-align: left !important; color: #0f172a; }
       .line-items td:last-child { border-bottom: none; }
-      .line-items td::before { content: attr(data-label); color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; margin-right: 12px; padding-top: 1px; }
+      .line-items td[data-label="Beskrivning"] { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 14px; background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%); }
+      .line-items td[data-label="Beskrivning"]::before { content: "Produkt eller tj\\00e4nst"; margin-bottom: 2px; }
+      .line-items td[data-label="Belopp"] { margin: 8px 14px 14px; padding: 10px 12px; border: 1px solid #dbe4ee; border-radius: 12px; background: #f8fafc; font-weight: 700; }
+      .line-items td[data-label="Belopp"]::before { color: #64748b; }
+      .line-items td::before { content: attr(data-label); color: #94a3b8; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px; }
+      .line-item__title { font-size: 16px; line-height: 1.3; font-weight: 700; }
+      .line-item__detail { font-size: 12px; line-height: 1.5; max-width: 32ch; color: #64748b; }
       .totals { display: block; width: 100%; }
       .totals tr { display: flex; justify-content: space-between; }
       .totals td { border: none !important; flex: 1; }
@@ -534,17 +551,15 @@ function renderStructuredDocumentPage(
   ]
     .filter(Boolean)
     .join('');
-  const senderDetailsHtml = [
-    `<p class="offer-shell__sender-name">${escapeHtml(companyName)}</p>`,
-    ...addressLines.map((line) => `<p>${escapeHtml(line)}</p>`),
-    responsibleName ? `<p><strong>Ansvarig:</strong> ${escapeHtml(responsibleName)}</p>` : '',
-    responsibleEmail ? `<p><strong>Kontakt:</strong> ${escapeHtml(responsibleEmail)}</p>` : '',
-    senderWebsite ? `<p>${escapeHtml(senderWebsite)}</p>` : '',
-  ]
-    .filter(Boolean)
-    .join('');
   const noteHtml = offer.notes ? `<section class="offer-section"><h3>Anteckningar</h3><p>${secureEscapeHtml(offer.notes)}</p></section>` : '';
   const introHtml = nodeToHtml(page.body, replacements);
+  const hasIntroVisualContent = /<(img|hr|table|ul|ol)\b/i.test(introHtml);
+  const hasIntroTextContent = introHtml
+    .replace(/<p[^>]*>(?:&nbsp;|\s|<br\s*\/?>)*<\/p>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .trim()
+    .length > 0;
+  const hasIntroContent = settings.showIntro && (hasIntroVisualContent || hasIntroTextContent);
   const tableHtml = buildLineItemsTable(offer.lineItems, offer.priceDisplayMode);
   const summaryHtml = renderDocumentSummary(
     offer,
@@ -588,7 +603,7 @@ function renderStructuredDocumentPage(
               </div>` : ''}
           </section>
 
-          ${settings.showIntro ? `<section class="offer-section offer-section--intro">${introHtml}</section>` : ''}
+          ${hasIntroContent ? `<section class="offer-section offer-section--intro">${introHtml}</section>` : ''}
 
           ${settings.showLineItems ? `
             <section class="offer-section">
@@ -599,35 +614,23 @@ function renderStructuredDocumentPage(
             </section>` : ''}
 
           ${settings.showSummary ? summaryHtml : ''}
-          ${settings.showNotes ? noteHtml : ''}
           ${settings.showTerms ? `
             <section class="offer-section offer-section--terms">
               <h3>Juridiska villkor</h3>
               <p>Offerten gäller till angivet datum. Arbetet utförs enligt överenskommen omfattning och faktureras enligt summeringen ovan. Eventuella ändringar eller tillägg hanteras som separat tilläggsbeställning.</p>
             </section>` : ''}
+          ${settings.showNotes ? noteHtml : ''}
           ${settings.showFooter ? `
             <footer class="offer-shell__footer">
               <div><strong>${escapeHtml(companyName)}</strong><span>${escapeHtml(senderWebsite || '—')}</span></div>
               <div><strong>Ansvarig</strong><span>${escapeHtml(responsibleName || responsibleEmail || '—')}</span></div>
               <div><strong>Kontakt</strong><span>${escapeHtml(responsibleEmail || '—')}</span></div>
-              <div><strong>Prisvisning</strong><span>${getDisplayModeLabel(buildOfferSummary(offer).hasVat, offer.priceDisplayMode)}</span></div>
             </footer>` : ''}
         </section>
       </div>
     </div>`;
 
-  return html
-    .replace('Produkter och tjÃ¤nster', 'Produkter och tjänster')
-    .replace('Offerten gÃ¤ller till angivet datum. Arbetet utfÃ¶rs enligt Ã¶verenskommen omfattning och faktureras enligt summeringen ovan. Eventuella Ã¤ndringar eller tillÃ¤gg hanteras som separat tillÃ¤ggsbestÃ¤llning.', 'Offerten gäller till angivet datum. Arbetet utförs enligt överenskommen omfattning och faktureras enligt summeringen ovan. Eventuella ändringar eller tillägg hanteras som separat tilläggsbeställning.')
-    .replace(
-      `<div><strong>${escapeHtml(companyName)}</strong><span>${escapeHtml(senderWebsite || 'â€”')}</span></div>
-              <div><strong>Ansvarig</strong><span>${escapeHtml(responsibleName || responsibleEmail || 'â€”')}</span></div>
-              <div><strong>Kontakt</strong><span>${escapeHtml(responsibleEmail || 'â€”')}</span></div>
-              <div><strong>Prisvisning</strong><span>${getDisplayModeLabel(buildOfferSummary(offer).hasVat, offer.priceDisplayMode)}</span></div>`,
-      `<div><strong>${escapeHtml(companyName)}</strong><span>${escapeHtml(senderWebsite || '—')}</span></div>
-              <div><strong>Ansvarig</strong><span>${escapeHtml(responsibleName || responsibleEmail || '—')}</span></div>
-              <div><strong>Kontakt</strong><span>${escapeHtml(responsibleEmail || '—')}</span></div>`,
-    );
+  return html;
 }
 
 // ─── Main generator ────────────────────────────────────────────────────────────
@@ -933,39 +936,39 @@ export function generateDocument(templateContent: string, offer: Offer, branding
       pointer-events: none;
     }
     .page-content--document { position: relative; z-index: 1; min-height: 1056px; }
-    .offer-shell { min-height: 100%; display: flex; flex-direction: column; gap: 24px; color: #0f172a; }
-    .offer-shell__header, .offer-shell__topline { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
-    .offer-shell__sender { display: flex; gap: 16px; align-items: flex-start; min-width: 0; flex: 1; }
-    .offer-shell__logo { width: 54px; height: 54px; object-fit: contain; }
+    .offer-shell { min-height: 100%; display: flex; flex-direction: column; gap: 18px; color: #0f172a; }
+    .offer-shell__header, .offer-shell__topline { display: grid; grid-template-columns: minmax(0, 1fr) minmax(196px, 232px); gap: 18px; align-items: flex-start; }
+    .offer-shell__sender { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+    .offer-shell__logo { width: 48px; height: 48px; object-fit: contain; }
+    .offer-shell__sender-copy { display: grid; gap: 2px; font-size: 12px; line-height: 1.45; color: #475569; }
     .offer-shell__sender-copy p, .offer-shell__meta dt, .offer-shell__meta dd, .offer-shell__customer p { margin: 0; }
     .offer-shell__sender-name, .offer-shell__customer-name { font-weight: 700; }
-    .offer-shell__meta { width: min(260px, 100%); display: grid; gap: 12px; justify-items: end; text-align: right; }
-    .offer-shell__status { margin: 0; display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .offer-shell__meta { min-width: 0; display: grid; gap: 10px; justify-items: end; text-align: right; }
+    .offer-shell__status { margin: 0; display: inline-flex; align-items: center; justify-content: center; padding: 5px 11px; border-radius: 999px; font-size: 11px; font-weight: 700; }
     .offer-shell__status--draft { background: #e2e8f0; color: #334155; }
     .offer-shell__status--sent, .offer-shell__status--viewed { background: #dbeafe; color: #1d4ed8; }
     .offer-shell__status--accepted { background: #dcfce7; color: #166534; }
     .offer-shell__status--declined { background: #fee2e2; color: #b91c1c; }
     .offer-shell__status--expired { background: #f3f4f6; color: #6b7280; }
-    .offer-shell__meta dl { margin: 0; display: grid; gap: 8px; width: 100%; }
-    .offer-shell__meta dl div { display: flex; gap: 12px; align-items: baseline; justify-content: flex-end; }
+    .offer-shell__meta dl { margin: 0; display: grid; gap: 6px; width: 100%; }
+    .offer-shell__meta dl div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; justify-content: flex-end; }
     .offer-shell__meta dt { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; }
-    .offer-shell__meta dd { font-size: 14px; font-weight: 600; color: #0f172a; white-space: nowrap; }
-    .offer-shell__meta dt { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; }
-    .offer-shell__meta dd { font-size: 13px; font-weight: 600; }
-    .offer-shell__topline { align-items: flex-start; padding-bottom: 18px; border-bottom: 1px solid #dbe4ee; }
-    .offer-shell__topline h1 { margin: 0; font-size: 22px; font-weight: 700; }
-    .offer-shell__customer { min-width: 220px; display: grid; gap: 3px; border-left: 1px solid #e2e8f0; padding-left: 18px; }
-    .offer-section { display: grid; gap: 10px; }
+    .offer-shell__meta dd { font-size: 13px; font-weight: 600; color: #0f172a; white-space: nowrap; }
+    .offer-shell__topline { align-items: flex-start; padding-bottom: 14px; border-bottom: 1px solid #dbe4ee; }
+    .offer-shell__topline h1 { margin: 0; font-size: 19px; line-height: 1.2; font-weight: 700; }
+    .offer-shell__customer { display: grid; gap: 2px; padding-left: 14px; border-left: 1px solid #e2e8f0; font-size: 12px; color: #475569; }
+    .offer-section { display: grid; gap: 8px; }
     .offer-section h2, .offer-section h3 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #475569; }
-    .offer-section p { margin: 0; font-size: 13px; line-height: 1.7; color: #334155; }
-    .offer-table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .offer-summary { margin-left: auto; width: min(276px, 100%); border: 1px solid #dbe4ee; border-radius: 14px; background: rgba(248, 250, 252, 0.92); padding: 12px 14px; display: grid; gap: 8px; }
+    .offer-section p { margin: 0; font-size: 12px; line-height: 1.65; color: #334155; }
+    .offer-table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .offer-summary { margin-left: auto; width: min(268px, 100%); border: 1px solid #dbe4ee; border-radius: 16px; background: #fbfcfe; padding: 0; display: grid; gap: 0; overflow: hidden; }
     .offer-summary--below { width: 100%; margin-left: 0; }
-    .offer-summary__row { display: flex; justify-content: space-between; gap: 16px; font-size: 12px; color: #334155; }
+    .offer-summary__row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 14px; font-size: 12px; color: #334155; border-bottom: 1px solid #e8eef5; }
     .offer-summary__row strong { white-space: nowrap; }
-    .offer-summary__row--total { padding-top: 8px; border-top: 1px solid #dbe4ee; font-size: 14px; font-weight: 700; color: #0f172a; }
+    .offer-summary__row--total { padding: 12px 14px; border-top: none; border-bottom: none; background: #0f172a; font-size: 13px; font-weight: 700; color: #f8fafc; }
+    .offer-summary__row--total strong { color: #ffffff; font-size: 16px; }
     .offer-section--terms { margin-top: auto; }
-    .offer-shell__footer { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr)); gap: 16px; padding-top: 16px; border-top: 1px solid #dbe4ee; }
+    .offer-shell__footer { display: grid; grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); gap: 14px; padding-top: 14px; border-top: 1px solid #dbe4ee; }
     .offer-shell__footer div { display: grid; gap: 4px; font-size: 12px; color: #475569; }
     .doc-header { font-size: 12px; color: #64748b; margin-bottom: 0; }
     .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
@@ -979,12 +982,17 @@ export function generateDocument(templateContent: string, offer: Offer, branding
       .page-content { padding: 20px 16px; }
       .page-block { min-height: 0; overflow: visible; }
       .page-block > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
-      .offer-shell__header, .offer-shell__topline, .offer-shell__footer { grid-template-columns: 1fr; display: grid; }
-      .offer-shell__header, .offer-shell__topline { gap: 16px; }
-      .offer-shell__meta { min-width: 0; width: 100%; justify-items: start; text-align: left; }
-      .offer-shell__meta dl div { justify-content: space-between; }
-      .offer-shell__customer { min-width: 0; text-align: left; border-left: none; border-top: 1px solid #e2e8f0; padding-left: 0; padding-top: 12px; }
-      .offer-summary { width: 100%; }
+      .offer-shell { gap: 16px; }
+      .offer-shell__header, .offer-shell__topline { display: grid; grid-template-columns: minmax(0, 1fr) 160px; gap: 12px; }
+      .offer-shell__footer { grid-template-columns: 1fr; gap: 10px; }
+      .offer-shell__meta { min-width: 0; justify-items: end; text-align: right; }
+      .offer-shell__meta dl div { gap: 8px; }
+      .offer-shell__meta dt, .offer-shell__meta dd { font-size: 11px; }
+      .offer-shell__topline h1 { font-size: 17px; }
+      .offer-shell__customer { min-width: 0; border-left: 1px solid #e2e8f0; border-top: none; padding-left: 10px; padding-top: 0; }
+      .offer-summary { width: 100%; border-radius: 14px; }
+      .offer-summary__row { font-size: 12px; padding: 10px 12px; }
+      .offer-summary__row--total { font-size: 14px; padding: 12px; }
       ${MOBILE_TABLE_CSS}
     }
     @media print {

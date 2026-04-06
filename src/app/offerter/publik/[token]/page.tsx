@@ -75,6 +75,34 @@ function fmtDate(iso: string) {
 function todaySv() {
   return new Date().toLocaleDateString('sv-SE');
 }
+function getStatusLabel(status: OfferStatus) {
+  const labels: Record<OfferStatus, string> = {
+    draft: 'Offert',
+    sent: 'Offert',
+    viewed: 'Offert',
+    accepted: 'Signerad',
+    declined: 'Avvisad',
+    expired: 'Utgången',
+  };
+  return labels[status] ?? 'Offert';
+}
+
+function normalizeBrokenSwedish(text: string): string {
+  return text
+    .replace(/Ã…/g, 'Å')
+    .replace(/Ã„/g, 'Ä')
+    .replace(/Ã–/g, 'Ö')
+    .replace(/Ã¥/g, 'å')
+    .replace(/Ã¤/g, 'ä')
+    .replace(/Ã¶/g, 'ö')
+    .replace(/Â /g, '\u00a0')
+    .replace(/Â·/g, '·')
+    .replace(/â€”/g, '—')
+    .replace(/â€“/g, '–')
+    .replace(/â€œ/g, '“')
+    .replace(/â€\u009d/g, '”')
+    .replace(/â€™/g, '’');
+}
 function textToSignatureImage(text: string, fontFamily: string): string {
   const canvas = document.createElement('canvas');
   canvas.width = 600; canvas.height = 150;
@@ -432,6 +460,52 @@ export default function PublicOfferPage() {
       table { max-width: 100% !important; width: 100%; table-layout: fixed; }
       td, th { word-break: break-word; overflow-wrap: break-word; }
       pre, code { white-space: pre-wrap !important; word-break: break-word !important; overflow-x: hidden !important; }
+      .offer-shell { gap: 16px !important; }
+      .offer-shell__header, .offer-shell__topline { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(196px, 232px) !important; gap: 14px !important; align-items: flex-start !important; }
+      .offer-shell__sender { gap: 10px !important; align-items: flex-start !important; }
+      .offer-shell__logo { width: 46px !important; height: 46px !important; }
+      .offer-shell__sender-copy { display: grid !important; gap: 2px !important; font-size: 12px !important; line-height: 1.45 !important; color: #475569 !important; }
+      .offer-shell__meta { min-width: 0 !important; display: grid !important; gap: 8px !important; justify-items: end !important; text-align: right !important; }
+      .offer-shell__status { margin: 0 !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 5px 11px !important; border-radius: 999px !important; font-size: 11px !important; font-weight: 700 !important; }
+      .offer-shell__status--draft { background: #e2e8f0 !important; color: #334155 !important; }
+      .offer-shell__status--sent, .offer-shell__status--viewed { background: #dbeafe !important; color: #1d4ed8 !important; }
+      .offer-shell__status--accepted { background: #dcfce7 !important; color: #166534 !important; }
+      .offer-shell__status--declined { background: #fee2e2 !important; color: #b91c1c !important; }
+      .offer-shell__status--expired { background: #f3f4f6 !important; color: #6b7280 !important; }
+      .offer-shell__meta dl { display: grid !important; gap: 6px !important; width: 100% !important; }
+      .offer-shell__meta dl div { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; justify-content: flex-end !important; gap: 10px !important; }
+      .offer-shell__topline { padding-bottom: 14px !important; }
+      .offer-shell__topline h1 { font-size: 18px !important; line-height: 1.2 !important; }
+      .offer-shell__customer { min-width: 0 !important; display: grid !important; gap: 2px !important; padding-left: 12px !important; border-left: 1px solid #e2e8f0 !important; font-size: 12px !important; color: #475569 !important; }
+      .offer-section { gap: 8px !important; }
+      .offer-section p { font-size: 12px !important; line-height: 1.65 !important; }
+      .offer-summary { width: min(268px, 100%) !important; border: 1px solid #dbe4ee !important; border-radius: 16px !important; background: #fbfcfe !important; padding: 0 !important; gap: 0 !important; overflow: hidden !important; }
+      .offer-summary__row { font-size: 12px !important; padding: 10px 14px !important; border-bottom: 1px solid #e8eef5 !important; }
+      .offer-summary__row--total { padding: 12px 14px !important; border-top: none !important; border-bottom: none !important; background: #0f172a !important; color: #f8fafc !important; font-size: 13px !important; }
+      .offer-summary__row--total strong { color: #ffffff !important; font-size: 16px !important; }
+      .offer-shell__footer { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; padding-top: 14px !important; }
+      .offer-shell__footer div { font-size: 12px !important; }
+      .line-items tbody { display: grid !important; gap: 10px !important; }
+      .line-items tr { display: grid !important; gap: 0 !important; background: #ffffff !important; border-radius: 16px !important; border: 1px solid #dbe4ee !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important; overflow: hidden !important; }
+      .line-items td { display: grid !important; grid-template-columns: 84px minmax(0, 1fr) !important; align-items: start !important; gap: 10px !important; padding: 9px 14px !important; border-bottom: 1px solid #eef2f7 !important; font-size: 13px !important; text-align: left !important; color: #0f172a !important; }
+      .line-items td:last-child { border-bottom: none !important; }
+      .line-items td[data-label="Beskrivning"] { grid-template-columns: minmax(0, 1fr) !important; gap: 6px !important; padding: 14px !important; background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%) !important; }
+      .line-items td[data-label="Beskrivning"]::before { content: "Produkt eller tj\\00e4nst" !important; margin-bottom: 2px !important; }
+      .line-items td[data-label="Belopp"] { margin: 8px 14px 14px !important; padding: 10px 12px !important; border: 1px solid #dbe4ee !important; border-radius: 12px !important; background: #f8fafc !important; font-weight: 700 !important; }
+      .line-items td[data-label="Belopp"]::before { color: #64748b !important; }
+      .line-items td::before { content: attr(data-label) !important; color: #94a3b8 !important; font-size: 10px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.06em !important; padding-top: 2px !important; }
+      .line-item__title { font-size: 16px !important; line-height: 1.3 !important; font-weight: 700 !important; }
+      .line-item__detail { font-size: 12px !important; line-height: 1.5 !important; max-width: 32ch !important; color: #64748b !important; }
+      @media (max-width: 640px) {
+        .offer-shell__header, .offer-shell__topline { grid-template-columns: minmax(0, 1fr) 160px !important; gap: 12px !important; }
+        .offer-shell__meta { justify-items: end !important; text-align: right !important; }
+        .offer-shell__meta dt, .offer-shell__meta dd { font-size: 11px !important; }
+        .offer-shell__customer { padding-left: 10px !important; }
+        .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
+        .offer-summary { width: 100% !important; border-radius: 14px !important; }
+        .offer-summary__row { font-size: 12px !important; padding: 10px 12px !important; }
+        .offer-summary__row--total { font-size: 14px !important; padding: 12px !important; }
+      }
     `;
     if (doc.head) doc.head.appendChild(responsiveStyle);
     else if (doc.body) doc.body.insertBefore(responsiveStyle, doc.body.firstChild);
@@ -454,6 +528,52 @@ export default function PublicOfferPage() {
     doc.body.style.overflow = 'hidden';
 
     applySignatureFields(doc, signatureFields);
+
+    doc.querySelectorAll<HTMLElement>('.offer-section--intro').forEach((section) => {
+      const text = section.textContent?.replace(/\u00a0/g, ' ').trim() ?? '';
+      if (!text) section.remove();
+    });
+
+    const senderCopy = doc.querySelector<HTMLElement>('.offer-shell__sender-copy');
+    senderCopy?.querySelectorAll('p').forEach((line) => {
+      const text = line.textContent?.trim().toLocaleLowerCase('sv-SE') ?? '';
+      if (text.startsWith('ansvarig:') || text.startsWith('kontakt:')) line.remove();
+    });
+
+    const customerBlock = doc.querySelector<HTMLElement>('.offer-shell__customer');
+    if (customerBlock) {
+      const seen = new Set<string>();
+      customerBlock.querySelectorAll('p').forEach((line) => {
+        const text = line.textContent?.trim() ?? '';
+        const key = text.toLocaleLowerCase('sv-SE');
+        if (!text || seen.has(key)) {
+          line.remove();
+          return;
+        }
+        seen.add(key);
+      });
+    }
+
+    doc.querySelectorAll<HTMLElement>('.offer-shell__footer > div').forEach((item) => {
+      const label = item.querySelector('strong')?.textContent?.trim().toLocaleLowerCase('sv-SE') ?? '';
+      if (label === 'prisvisning') item.remove();
+    });
+
+    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      const value = node.nodeValue ?? '';
+      const normalized = normalizeBrokenSwedish(value);
+      if (normalized !== value) node.nodeValue = normalized;
+    }
+
+    const legacyMetaTitle = doc.querySelector<HTMLElement>('.offer-shell__title');
+    if (legacyMetaTitle && offer) {
+      legacyMetaTitle.textContent = getStatusLabel(offer.status);
+      legacyMetaTitle.className = offer.status === 'accepted' || offer.status === 'declined' || offer.status === 'expired'
+        ? `offer-shell__status offer-shell__status--${offer.status}`
+        : 'offer-shell__title';
+    }
 
     // ── Viewport scaling ───────────────────────────────────────────────────────
     // The document is authored at 816 px. On narrower viewports we scale the
@@ -645,7 +765,7 @@ export default function PublicOfferPage() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({})) as { detail?: string };
-        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Avvisningen misslyckades. F?rs?k igen.';
+        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Avvisningen misslyckades. Försök igen.';
         throw new Error(msg);
       }
       setState('declined');
@@ -659,7 +779,7 @@ export default function PublicOfferPage() {
       const safeName = offer.title.replace(/[^a-zA-Z0-9\u00C0-\u024F ]/g, '').trim().replace(/\s+/g, '-');
       await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`, signatureFields);
     } catch {
-      setErrMsg('Kunde inte ladda ner PDF. F?rs?k igen.');
+      setErrMsg('Kunde inte ladda ner PDF. Försök igen.');
     } finally {
       setDownloading(false);
     }
@@ -687,10 +807,10 @@ export default function PublicOfferPage() {
   // Terminal status screens
   if (state === 'expired' || state === 'error' || state === 'accepted' || state === 'declined') {
     const configs = {
-      expired:  { icon: <ClockIcon size={40} className="text-slate-400" />, title: 'L?nken har g?tt ut', sub: 'Kontakta ansvarig kontakt f?r att f? en ny l?nk till offerten.' },
-      error:    { icon: <XCircleIcon size={40} className="text-red-400" />, title: 'Offerten hittades inte', sub: 'Kontrollera l?nken och f?rs?k igen.' },
-      accepted: { icon: null, title: 'Offert signerad', sub: 'Tack! Din underskrift ?r registrerad och ansvarig kontakt har nu f?tt besked.' },
-      declined: { icon: null, title: 'Offert avvisad', sub: 'Din avvisning ?r registrerad och ansvarig kontakt har nu f?tt besked.' },
+      expired:  { icon: <ClockIcon size={40} className="text-slate-400" />, title: 'Länken har gått ut', sub: 'Kontakta ansvarig kontakt för att få en ny länk till offerten.' },
+      error:    { icon: <XCircleIcon size={40} className="text-red-400" />, title: 'Offerten hittades inte', sub: 'Kontrollera länken och försök igen.' },
+      accepted: { icon: null, title: 'Offert signerad', sub: 'Tack! Din underskrift är registrerad och ansvarig kontakt har nu fått besked.' },
+      declined: { icon: null, title: 'Offert avvisad', sub: 'Din avvisning är registrerad och ansvarig kontakt har nu fått besked.' },
     };
     const cfg = configs[state];
     const isDeclinedState = state === 'declined';
@@ -775,7 +895,7 @@ export default function PublicOfferPage() {
     >
       {/* ─── Sticky header ─── */}
       <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/96 backdrop-blur-md">
-        <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
+        <div className="flex h-13 items-center gap-3 px-4 sm:h-14 sm:px-6">
 
           {/* Left: title + recipient */}
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
@@ -785,7 +905,8 @@ export default function PublicOfferPage() {
             <div className="min-w-0">
               <h1 className="truncate text-sm font-semibold leading-tight text-slate-900">{offer.title}</h1>
               <p className="truncate text-[11px] leading-tight text-slate-400">
-                {offer.recipientName}{offer.recipientCompany ? ` · ${offer.recipientCompany}` : ''}
+                {offer.recipientName}
+                {offer.recipientCompany ? ` · ${offer.recipientCompany}` : ''}
               </p>
             </div>
           </div>
@@ -796,10 +917,6 @@ export default function PublicOfferPage() {
               <span className="text-sm font-bold tabular-nums text-slate-900">{fmtSEK(pricing.totalAmount)}</span>
               <span className="h-3.5 w-px bg-slate-300" />
               <span className="text-[12px] text-slate-500">{pricing.displayModeLabel} · Giltig till {fmtDate(offer.validUntil)}</span>
-            </div>
-            {/* Mobile price pill */}
-            <div className="flex sm:hidden items-center rounded-md bg-slate-900 px-2.5 py-1">
-              <span className="text-xs font-bold tabular-nums text-white">{fmtSEK(pricing.totalAmount)}</span>
             </div>
             {/* PDF download */}
             <button
@@ -815,7 +932,7 @@ export default function PublicOfferPage() {
               ) : (
                 <FileTextIcon size={13} />
               )}
-              <span className="hidden sm:inline">{downloading ? 'Genererar…' : 'PDF'}</span>
+              <span className="hidden sm:inline">{downloading ? 'Genererar...' : 'PDF'}</span>
             </button>
           </div>
         </div>
@@ -864,7 +981,7 @@ export default function PublicOfferPage() {
         <div className="px-4 sm:px-0">
         {offer.generatedDocument && !documentReady && (
           <div className="mb-4 flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white px-4 py-3 text-sm text-slate-500 shadow-[0_2px_12px_rgba(0,0,0,0.05)]">
-            Anpassar offerten f?r din sk?rm...
+            Anpassar offerten för din skärm...
           </div>
         )}
         <AnimatePresence mode="wait">
@@ -878,21 +995,20 @@ export default function PublicOfferPage() {
               className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)]"
             >
               {/* Header */}
-              <div className="border-b border-slate-100 px-5 py-4 sm:px-7 sm:py-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-900">
+              <div className="border-b border-slate-100 px-4 py-3 sm:px-6 sm:py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-900">
                       <ShieldIcon size={14} className="text-white" />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-slate-900">Godk?nnande och underskrift</h2>
-                      <p className="text-[13px] text-slate-500">Underteckna f?r att bekr?fta offerten.</p>
-                      <p className="mt-1 text-[12px] text-slate-500">Vi sparar namn, datum och signatur tillsammans med offerten f?r tydlig uppf?ljning.</p>
+                      <h2 className="text-sm font-bold text-slate-900">Godkännande och underskrift</h2>
+                      <p className="mt-0.5 text-[12px] leading-relaxed text-slate-500">Underteckna för att bekräfta offerten. Namn, datum och signatur sparas tillsammans med offerten.</p>
                     </div>
                   </div>
-                  <div className="shrink-0 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-right sm:px-4 sm:py-2">
-                    <p className="text-sm font-bold tabular-nums text-emerald-700 sm:text-base">{fmtSEK(pricing.totalAmount)}</p>
-                    <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-500">{pricing.displayModeLabel}</p>
+                  <div className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-right sm:px-3 sm:py-1.5">
+                    <p className="text-xs font-bold tabular-nums text-slate-800 sm:text-sm">{fmtSEK(pricing.totalAmount)}</p>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">{pricing.displayModeLabel}</p>
                   </div>
                 </div>
               </div>
@@ -907,7 +1023,7 @@ export default function PublicOfferPage() {
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="mx-6 mt-4 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-600 sm:mx-8">
+                    <div className="mx-4 mt-3 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-600 sm:mx-6">
                       <XCircleIcon size={14} className="shrink-0" />
                       {errMsg}
                     </div>
@@ -916,13 +1032,13 @@ export default function PublicOfferPage() {
               </AnimatePresence>
 
               {/* Fields */}
-              <div className="px-5 pt-5 sm:px-7">
+              <div className="px-4 pt-4 sm:px-6">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {/* Name */}
                   <div>
                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
                       <UserIcon size={12} />
-                      Fullst?ndigt namn
+                      Fullständigt namn
                     </label>
                     <input
                       type="text"
@@ -949,7 +1065,7 @@ export default function PublicOfferPage() {
               </div>
 
               {/* Signature */}
-              <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6">
+              <div className="px-4 pb-4 pt-3 sm:px-6 sm:pb-5">
                 <div className="mb-2 flex items-center justify-between">
                   <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
                     <EditIcon size={13} />
@@ -970,13 +1086,13 @@ export default function PublicOfferPage() {
                       transition={{ duration: 0.2 }}
                     >
                       {/* Font selector */}
-                      <div className="mb-2.5 flex flex-wrap gap-1.5">
+                      <div className="mb-2 flex flex-wrap gap-1.5">
                         {SIG_FONTS.map((f) => (
                           <button
                             key={f.id}
                             type="button"
                             onClick={() => setSigFont(f.id)}
-                            className={`rounded-md px-3 py-1.5 text-xs transition-all ${
+                            className={`rounded-md px-2.5 py-1.5 text-[11px] transition-all ${
                               sigFont === f.id
                                 ? 'border-2 border-slate-900 bg-slate-50 font-semibold text-slate-900'
                                 : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300'
@@ -988,13 +1104,13 @@ export default function PublicOfferPage() {
                         ))}
                       </div>
                       {/* Typed signature */}
-                      <div className="flex min-h-[72px] items-center rounded-lg border border-slate-200 bg-white px-5">
+                      <div className="flex min-h-[68px] items-center rounded-lg border border-slate-200 bg-white px-4">
                         <input
                           type="text"
                           value={typedSig}
                           onChange={(e) => setTypedSig(e.target.value)}
-                          placeholder="Skriv ditt namn h?r..."
-                          className="w-full border-none bg-transparent p-0 text-3xl text-slate-900 outline-none placeholder:text-slate-300"
+                          placeholder="Skriv ditt namn här..."
+                          className="w-full border-none bg-transparent p-0 text-[32px] text-slate-900 outline-none placeholder:text-slate-300"
                           style={{ fontFamily: selectedFont.family }}
                         />
                       </div>
@@ -1036,7 +1152,7 @@ export default function PublicOfferPage() {
               </div>
 
               {/* Action bar */}
-              <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-4 sm:px-7">
+              <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/60 px-4 py-3 sm:px-6">
                 <button
                   type="button"
                   onClick={() => setState('declining')}
@@ -1072,7 +1188,7 @@ export default function PublicOfferPage() {
                   </div>
                   <div>
                     <h2 className="text-base font-bold text-red-700">Avvisa offert</h2>
-                    <p className="mt-0.5 text-[13px] text-red-700/75">Vi skickar besked direkt till ansvarig kontakt n?r du bekr?ftar avvisningen.</p>
+                    <p className="mt-0.5 text-[13px] text-red-700/75">Vi skickar besked direkt till ansvarig kontakt när du bekräftar avvisningen.</p>
                   </div>
                 </div>
               </div>
@@ -1094,7 +1210,7 @@ export default function PublicOfferPage() {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
-                  placeholder="Ber?tta g?rna varf?r..."
+                  placeholder="Berätta gärna varför..."
                   className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-[border-color,box-shadow] focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
                 />
               </div>
@@ -1112,7 +1228,7 @@ export default function PublicOfferPage() {
                   disabled={busy}
                   className="rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:bg-red-700 disabled:opacity-50"
                 >
-                  {busy ? 'Avvisar...' : 'Bekr?fta avvisning'}
+                  {busy ? 'Avvisar...' : 'Bekräfta avvisning'}
                 </button>
               </div>
             </motion.section>
