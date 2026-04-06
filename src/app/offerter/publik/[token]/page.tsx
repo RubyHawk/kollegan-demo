@@ -645,7 +645,7 @@ export default function PublicOfferPage() {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({})) as { detail?: string };
-        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Avvisningen misslyckades. F?rs?k igen.';
+        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Avvisningen misslyckades. Försök igen.';
         throw new Error(msg);
       }
       setState('declined');
@@ -659,7 +659,7 @@ export default function PublicOfferPage() {
       const safeName = offer.title.replace(/[^a-zA-Z0-9\u00C0-\u024F ]/g, '').trim().replace(/\s+/g, '-');
       await downloadPdf(offer.generatedDocument, `${safeName || 'offert'}.pdf`, signatureFields);
     } catch {
-      setErrMsg('Kunde inte ladda ner PDF. F?rs?k igen.');
+      setErrMsg('Kunde inte ladda ner PDF. Försök igen.');
     } finally {
       setDownloading(false);
     }
@@ -687,10 +687,10 @@ export default function PublicOfferPage() {
   // Terminal status screens
   if (state === 'expired' || state === 'error' || state === 'accepted' || state === 'declined') {
     const configs = {
-      expired:  { icon: <ClockIcon size={40} className="text-slate-400" />, title: 'L?nken har g?tt ut', sub: 'Kontakta ansvarig kontakt f?r att f? en ny l?nk till offerten.' },
-      error:    { icon: <XCircleIcon size={40} className="text-red-400" />, title: 'Offerten hittades inte', sub: 'Kontrollera l?nken och f?rs?k igen.' },
-      accepted: { icon: null, title: 'Offert signerad', sub: 'Tack! Din underskrift ?r registrerad och ansvarig kontakt har nu f?tt besked.' },
-      declined: { icon: null, title: 'Offert avvisad', sub: 'Din avvisning ?r registrerad och ansvarig kontakt har nu f?tt besked.' },
+      expired:  { icon: <ClockIcon size={40} className="text-slate-400" />, title: 'Länken har gått ut', sub: 'Kontakta ansvarig kontakt för att få en ny länk till offerten.' },
+      error:    { icon: <XCircleIcon size={40} className="text-red-400" />, title: 'Offerten hittades inte', sub: 'Kontrollera länken och försök igen.' },
+      accepted: { icon: null, title: 'Offert signerad', sub: 'Tack! Din underskrift är registrerad och ansvarig kontakt har nu fått besked.' },
+      declined: { icon: null, title: 'Offert avvisad', sub: 'Din avvisning är registrerad och ansvarig kontakt har nu fått besked.' },
     };
     const cfg = configs[state];
     const isDeclinedState = state === 'declined';
@@ -864,7 +864,7 @@ export default function PublicOfferPage() {
         <div className="px-4 sm:px-0">
         {offer.generatedDocument && !documentReady && (
           <div className="mb-4 flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white px-4 py-3 text-sm text-slate-500 shadow-[0_2px_12px_rgba(0,0,0,0.05)]">
-            Anpassar offerten f?r din sk?rm...
+            Anpassar offerten för din skärm...
           </div>
         )}
         <AnimatePresence mode="wait">
@@ -885,9 +885,9 @@ export default function PublicOfferPage() {
                       <ShieldIcon size={14} className="text-white" />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-slate-900">Godk?nnande och underskrift</h2>
-                      <p className="text-[13px] text-slate-500">Underteckna f?r att bekr?fta offerten.</p>
-                      <p className="mt-1 text-[12px] text-slate-500">Vi sparar namn, datum och signatur tillsammans med offerten f?r tydlig uppf?ljning.</p>
+                      <h2 className="text-sm font-bold text-slate-900">Godkännande och underskrift</h2>
+                      <p className="text-[13px] text-slate-500">Underteckna för att bekräfta offerten.</p>
+                      <p className="mt-1 text-[12px] text-slate-500">Vi sparar namn, datum och signatur tillsammans med offerten för tydlig uppföljning.</p>
                     </div>
                   </div>
                   <div className="shrink-0 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-right sm:px-4 sm:py-2">
@@ -922,7 +922,7 @@ export default function PublicOfferPage() {
                   <div>
                     <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
                       <UserIcon size={12} />
-                      Fullst?ndigt namn
+                      Fullständigt namn
                     </label>
                     <input
                       type="text"
@@ -993,7 +993,7 @@ export default function PublicOfferPage() {
                           type="text"
                           value={typedSig}
                           onChange={(e) => setTypedSig(e.target.value)}
-                          placeholder="Skriv ditt namn h?r..."
+                          placeholder="Skriv ditt namn här..."
                           className="w-full border-none bg-transparent p-0 text-3xl text-slate-900 outline-none placeholder:text-slate-300"
                           style={{ fontFamily: selectedFont.family }}
                         />
@@ -1072,7 +1072,7 @@ export default function PublicOfferPage() {
                   </div>
                   <div>
                     <h2 className="text-base font-bold text-red-700">Avvisa offert</h2>
-                    <p className="mt-0.5 text-[13px] text-red-700/75">Vi skickar besked direkt till ansvarig kontakt n?r du bekr?ftar avvisningen.</p>
+                    <p className="mt-0.5 text-[13px] text-red-700/75">Vi skickar besked direkt till ansvarig kontakt när du bekräftar avvisningen.</p>
                   </div>
                 </div>
               </div>
@@ -1094,7 +1094,7 @@ export default function PublicOfferPage() {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
-                  placeholder="Ber?tta g?rna varf?r..."
+                  placeholder="Berätta gärna varför..."
                   className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-[border-color,box-shadow] focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
                 />
               </div>
@@ -1112,7 +1112,7 @@ export default function PublicOfferPage() {
                   disabled={busy}
                   className="rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:bg-red-700 disabled:opacity-50"
                 >
-                  {busy ? 'Avvisar...' : 'Bekr?fta avvisning'}
+                  {busy ? 'Avvisar...' : 'Bekräfta avvisning'}
                 </button>
               </div>
             </motion.section>
