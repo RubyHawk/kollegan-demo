@@ -604,13 +604,21 @@ export default function OffersPage() {
   const pickProduct = useCallback((idx: number, p: OfferProduct) => {
     setForm((f) => {
       const items = [...f.lineItems];
+      const mainCategoryTitle = (((p as unknown as { category?: string }).category) ?? '')
+        .split('/')
+        .map((part: string) => part.trim())
+        .filter(Boolean)[0];
       items[idx] = {
         ...items[idx],
         description: p.name + (p.description ? ` — ${p.description}` : ''),
         unitPrice:   p.unitPrice,
         vatRate:     p.vatRate,
       };
-      return { ...f, lineItems: items };
+      return {
+        ...f,
+        lineItems: items,
+        title: f.title.trim() || mainCategoryTitle || f.title,
+      };
     });
     setProductPickerRow(null);
     setProductSearch('');

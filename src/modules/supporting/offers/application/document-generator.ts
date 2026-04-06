@@ -51,6 +51,39 @@ function buildOfferSummary(offer: Offer) {
   return summarizeOfferPricing(offer.lineItems, offer.priceDisplayMode);
 }
 
+function getOfferStatusLabel(status: Offer['status']): string {
+  const labels: Record<Offer['status'], string> = {
+    draft: 'Utkast',
+    sent: 'Skickad',
+    viewed: 'Visad',
+    accepted: 'Accepterad',
+    declined: 'Avvisad',
+    expired: 'Utgången',
+  };
+  return labels[status] ?? 'Offert';
+}
+
+function getOfferLineItemDescription(description: string): { title: string; detail?: string } {
+  const value = description.trim();
+  const separator = value.includes(' — ') ? ' — ' : value.includes(' - ') ? ' - ' : '';
+  if (!separator) return { title: value };
+
+  const [title, ...rest] = value.split(separator);
+  const detail = rest.join(separator).trim();
+  return {
+    title: title.trim(),
+    detail: detail || undefined,
+  };
+}
+
+function buildCustomerLines(offer: Offer): string[] {
+  const lines = offer.recipientCompany
+    ? [offer.recipientCompany, offer.recipientName, offer.recipientEmail]
+    : [offer.recipientName, offer.recipientEmail];
+
+  return lines.filter((value) => value.trim().length > 0);
+}
+
 function formatOfferStatus(status: Offer['status']): string {
   const labels: Record<Offer['status'], string> = {
     draft: 'Utkast',
@@ -255,14 +288,14 @@ function buildLineItemsTable(items: OfferLineItem[], mode: Offer['priceDisplayMo
   const pricing = summarizeOfferPricing(items, mode);
   const showVatColumn = pricing.hasVat;
   const showDiscountColumn = items.some((item) => (item.discount ?? 0) > 0);
-  const headerStyle = 'padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#475569;background:#eef2f7;border-bottom:1px solid #d9e2ec;';
-  const cellStyle   = 'padding:10px 12px;font-size:13px;border-bottom:1px solid #e2e8f0;vertical-align:top;';
+  const headerStyle = 'padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#475569;background:#eef2f7;border-bottom:1px solid #d9e2ec;';
+  const cellStyle   = 'padding:8px 10px;font-size:12px;border-bottom:1px solid #e2e8f0;vertical-align:top;';
   const numStyle    = `${cellStyle}text-align:right;`;
 
   const rows = items.map((item) => {
     const displayUnitPrice = getDisplayUnitPrice(item, mode);
     const displayLineTotal = getDisplayLineTotal(item, mode);
-    const description = splitLineItemDescription(item.description);
+    const description = getOfferLineItemDescription(item.description);
     return `
       <tr>
         <td data-label="Beskrivning" style="${cellStyle}">
@@ -270,7 +303,7 @@ function buildLineItemsTable(items: OfferLineItem[], mode: Offer['priceDisplayMo
           ${description.detail ? `<div style="font-size:12px;line-height:1.45;color:#64748b;">${escapeHtml(description.detail)}</div>` : ''}
         </td>
         <td data-label="Antal"       style="${numStyle}">${item.quantity}</td>
-        <td data-label="&Agrave;-pris" style="${numStyle}">${fmtSEKPrecise(displayUnitPrice)}</td>
+        <td data-label="Å-pris" style="${numStyle}">${fmtSEKPrecise(displayUnitPrice)}</td>
         ${showDiscountColumn ? `<td data-label="Rabatt" style="${numStyle}">${item.discount ? `${item.discount}%` : '—'}</td>` : ''}
         ${showVatColumn ? `<td data-label="Moms" style="${numStyle}">${formatVatRate(item.vatRate)}</td>` : ''}
         <td data-label="Belopp"      style="${numStyle};font-weight:600;">${fmtSEKPrecise(displayLineTotal)}</td>
@@ -283,7 +316,7 @@ function buildLineItemsTable(items: OfferLineItem[], mode: Offer['priceDisplayMo
         <tr>
           <th style="${headerStyle}">Beskrivning</th>
           <th style="${headerStyle}text-align:right;">Antal</th>
-          <th style="${headerStyle}text-align:right;">&Agrave;-pris</th>
+          <th style="${headerStyle}text-align:right;">Å-pris</th>
           ${showDiscountColumn ? `<th style="${headerStyle}text-align:right;">Rabatt</th>` : ''}
           ${showVatColumn ? `<th style="${headerStyle}text-align:right;">Moms</th>` : ''}
           <th style="${headerStyle}text-align:right;">Belopp</th>
@@ -491,7 +524,16 @@ function renderStructuredDocumentPage(
   const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '';
   const senderWebsite = branding?.website?.trim()?.replace(/^https?:\/\//, '') || '';
   const logoUrl = branding?.logoUrl?.trim() || '';
+  const statusLabel = getOfferStatusLabel(offer.status);
+  const customerLines = buildCustomerLines(offer);
   const addressLines = branding?.addressLines ?? [];
+  const headerSenderDetailsHtml = [
+    `<p class="offer-shell__sender-name">${escapeHtml(companyName)}</p>`,
+    ...addressLines.map((line) => `<p>${escapeHtml(line)}</p>`),
+    senderWebsite ? `<p>${escapeHtml(senderWebsite)}</p>` : '',
+  ]
+    .filter(Boolean)
+    .join('');
   const senderDetailsHtml = [
     `<p class="offer-shell__sender-name">${escapeHtml(companyName)}</p>`,
     ...addressLines.map((line) => `<p>${escapeHtml(line)}</p>`),
@@ -514,7 +556,7 @@ function renderStructuredDocumentPage(
       };--doc-bg-size:${settings.watermarkMode === 'full' ? '100% 100%' : '78% auto'};"`
     : '';
 
-  return `
+  const html = `
     <div class="page-block page-block--document" ${backgroundStyle} data-page="${pageIndex + 1}"${page.includeInCustomerPdf === false ? ' data-customer-pdf="false"' : ''}>
       <div class="page-content page-content--document">
         <section class="offer-shell">
@@ -523,13 +565,13 @@ function renderStructuredDocumentPage(
               ${settings.showLogo && logoUrl ? `<img class="offer-shell__logo" src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(companyName)}" />` : ''}
               ${settings.showSenderDetails ? `
                 <div class="offer-shell__sender-copy">
-                  ${senderDetailsHtml}
+                  ${headerSenderDetailsHtml}
                 </div>` : ''}
             </div>
             <div class="offer-shell__meta">
-              <p class="offer-shell__title">Offert</p>
+              <p class="offer-shell__status offer-shell__status--${offer.status}">${escapeHtml(statusLabel)}</p>
               <dl>
-                <div><dt>Offertnummer</dt><dd>${offerNumber}</dd></div>
+                <div><dt>Offert #</dt><dd>#${offerNumber}</dd></div>
                 <div><dt>Offertdatum</dt><dd>${replacements['{{createdDate}}']}</dd></div>
                 <div><dt>Giltig till</dt><dd>${replacements['{{validUntil}}']}</dd></div>
               </dl>
@@ -542,9 +584,7 @@ function renderStructuredDocumentPage(
             </div>
             ${settings.showCustomerBlock ? `
               <div class="offer-shell__customer">
-                <p class="offer-shell__customer-name">${escapeHtml(offer.recipientCompany || offer.recipientName)}</p>
-                <p>${escapeHtml(offer.recipientName)}</p>
-                <p>${escapeHtml(offer.recipientEmail)}</p>
+                ${customerLines.map((line: string, index: number) => `<p class="${index === 0 ? 'offer-shell__customer-name' : ''}">${escapeHtml(line)}</p>`).join('')}
               </div>` : ''}
           </section>
 
@@ -575,6 +615,19 @@ function renderStructuredDocumentPage(
         </section>
       </div>
     </div>`;
+
+  return html
+    .replace('Produkter och tjÃ¤nster', 'Produkter och tjänster')
+    .replace('Offerten gÃ¤ller till angivet datum. Arbetet utfÃ¶rs enligt Ã¶verenskommen omfattning och faktureras enligt summeringen ovan. Eventuella Ã¤ndringar eller tillÃ¤gg hanteras som separat tillÃ¤ggsbestÃ¤llning.', 'Offerten gäller till angivet datum. Arbetet utförs enligt överenskommen omfattning och faktureras enligt summeringen ovan. Eventuella ändringar eller tillägg hanteras som separat tilläggsbeställning.')
+    .replace(
+      `<div><strong>${escapeHtml(companyName)}</strong><span>${escapeHtml(senderWebsite || 'â€”')}</span></div>
+              <div><strong>Ansvarig</strong><span>${escapeHtml(responsibleName || responsibleEmail || 'â€”')}</span></div>
+              <div><strong>Kontakt</strong><span>${escapeHtml(responsibleEmail || 'â€”')}</span></div>
+              <div><strong>Prisvisning</strong><span>${getDisplayModeLabel(buildOfferSummary(offer).hasVat, offer.priceDisplayMode)}</span></div>`,
+      `<div><strong>${escapeHtml(companyName)}</strong><span>${escapeHtml(senderWebsite || '—')}</span></div>
+              <div><strong>Ansvarig</strong><span>${escapeHtml(responsibleName || responsibleEmail || '—')}</span></div>
+              <div><strong>Kontakt</strong><span>${escapeHtml(responsibleEmail || '—')}</span></div>`,
+    );
 }
 
 // ─── Main generator ────────────────────────────────────────────────────────────
@@ -593,6 +646,8 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
   const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '';
   const senderWebsite = branding?.website?.trim()?.replace(/^https?:\/\//, '') || '';
   const logoUrl = branding?.logoUrl?.trim() || '';
+  const statusLabel = getOfferStatusLabel(offer.status);
+  const customerLines = buildCustomerLines(offer);
 
   const fallbackAddressLines = branding?.addressLines ?? [];
   const senderBlockHtml = [
@@ -604,8 +659,15 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
   ]
     .filter(Boolean)
     .join('');
+  const headerSenderBlockHtml = [
+    `<p style="margin:0;font-weight:700;color:#0f172a;">${escapeHtml(companyName)}</p>`,
+    ...fallbackAddressLines.map((line) => `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(line)}</p>`),
+    senderWebsite ? `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(senderWebsite)}</p>` : '',
+  ]
+    .filter(Boolean)
+    .join('');
 
-  return `<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="sv">
 <head>
   <meta charset="UTF-8"/>
@@ -628,20 +690,26 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
     <div style="display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:28px;">
       <div style="display:flex;gap:14px;align-items:flex-start;">
         ${logoUrl ? `<img src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(companyName)}" style="width:54px;height:54px;object-fit:contain;border-radius:12px;"/>` : ''}
-        <div>${senderBlockHtml}</div>
+        <div>${headerSenderBlockHtml}</div>
       </div>
-      <div style="text-align:right;">
-        <p style="margin:0;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Offert</p>
-        <p style="margin:8px 0 0 0;color:#0f172a;font-weight:700;">${escapeHtml(offerNumberStr)}</p>
+      <div style="min-width:220px;text-align:right;display:grid;gap:8px;">
+        <p style="margin:0 0 4px auto;display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:700;">${escapeHtml(statusLabel)}</p>
+        <div style="display:grid;gap:6px;">
+          <p style="margin:0;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Offert #</p>
+          <p style="margin:0;color:#0f172a;font-weight:700;">#${escapeHtml(offerNumberStr)}</p>
+          <p style="margin:4px 0 0 0;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Offertdatum</p>
+          <p style="margin:0;color:#0f172a;font-weight:600;">${fmtDate(offer.createdAt)}</p>
+          <p style="margin:4px 0 0 0;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Giltig till</p>
+          <p style="margin:0;color:#0f172a;font-weight:600;">${fmtDate(offer.validUntil)}</p>
+        </div>
       </div>
     </div>` : ''}
     <h1 style="font-size:1.8em;font-weight:700;margin:0 0 6px 0;">${escapeHtml(offer.title)}</h1>
     <p style="color:#64748b;font-size:13px;margin:0 0 32px 0;">Offert ${escapeHtml(offerNumberStr)} · Giltig till ${fmtDate(offer.validUntil)}</p>
 
     <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;margin:0 0 4px 0;">Till</p>
-    <p style="font-weight:600;margin:0 0 2px 0;">${escapeHtml(offer.recipientName)}</p>
-    ${offer.recipientCompany ? `<p style="color:#64748b;margin:0 0 2px 0;">${escapeHtml(offer.recipientCompany)}</p>` : ''}
-    <p style="color:#64748b;margin:0 0 32px 0;">${escapeHtml(offer.recipientEmail)}</p>
+    ${customerLines.map((line: string, index: number) => `<p style="margin:0 0 2px 0;${index === 0 ? 'font-weight:600;color:#0f172a;' : 'color:#64748b;'}">${escapeHtml(line)}</p>`).join('')}
+    <div style="height:30px;"></div>
 
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 24px 0;"/>
 
@@ -652,6 +720,10 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
         <td style="text-align:right;padding:4px 12px;font-size:13px;color:#64748b;">${pricing.subtotalLabel}</td>
         <td style="text-align:right;padding:4px 12px;font-size:13px;font-weight:600;white-space:nowrap;">${fmtSEK(offer.totalExVat)}</td>
       </tr>
+      ${pricing.discountAmount > 0 ? `<tr>
+        <td style="text-align:right;padding:4px 12px;font-size:13px;color:#64748b;">Rabatt</td>
+        <td style="text-align:right;padding:4px 12px;font-size:13px;white-space:nowrap;">${fmtSEK(pricing.discountAmount)}</td>
+      </tr>` : ''}
       ${pricing.hasVat ? `<tr>
         <td style="text-align:right;padding:4px 12px;font-size:13px;color:#64748b;">${pricing.vatLabel}</td>
         <td style="text-align:right;padding:4px 12px;font-size:13px;white-space:nowrap;">${fmtSEK(pricing.vatAmount)}</td>
@@ -667,10 +739,27 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
     <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;margin:0 0 8px 0;">Anteckningar</p>
     <p style="color:#334155;margin:0;">${escapeHtml(offer.notes)}</p>` : ''}
 
+    ${(responsibleName || responsibleEmail) ? `
+    <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;"/>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+      <div style="display:grid;gap:4px;font-size:12px;color:#475569;">
+        <strong>Ansvarig</strong>
+        <span>${escapeHtml(responsibleName || responsibleEmail || '—')}</span>
+      </div>
+      <div style="display:grid;gap:4px;font-size:12px;color:#475569;">
+        <strong>Kontakt</strong>
+        <span>${escapeHtml(responsibleEmail || '—')}</span>
+      </div>
+    </div>` : ''}
+
     ${SIGNATURE_FIELD_HTML}
   </div>
 </body>
 </html>`;
+
+  return html
+    .replace(`Offert ${escapeHtml(offerNumberStr)} Â· Giltig till`, `Offert #${escapeHtml(offerNumberStr)} · Giltig till`)
+    .replace('AvsÃ¤ndare', 'Avsändare');
 }
 
 /**
@@ -845,31 +934,38 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     }
     .page-content--document { position: relative; z-index: 1; min-height: 1056px; }
     .offer-shell { min-height: 100%; display: flex; flex-direction: column; gap: 24px; color: #0f172a; }
-    .offer-shell__header, .offer-shell__topline { display: flex; justify-content: space-between; gap: 40px; }
-    .offer-shell__sender { display: flex; gap: 16px; align-items: flex-start; }
+    .offer-shell__header, .offer-shell__topline { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
+    .offer-shell__sender { display: flex; gap: 16px; align-items: flex-start; min-width: 0; flex: 1; }
     .offer-shell__logo { width: 54px; height: 54px; object-fit: contain; }
     .offer-shell__sender-copy p, .offer-shell__meta dt, .offer-shell__meta dd, .offer-shell__customer p { margin: 0; }
     .offer-shell__sender-name, .offer-shell__customer-name { font-weight: 700; }
-    .offer-shell__meta { min-width: 220px; text-align: right; }
-    .offer-shell__title { margin: 0 0 12px 0; font-size: 28px; font-weight: 700; }
-    .offer-shell__meta dl { margin: 0; display: grid; gap: 8px; }
-    .offer-shell__meta dl div { display: grid; gap: 2px; }
+    .offer-shell__meta { width: min(260px, 100%); display: grid; gap: 12px; justify-items: end; text-align: right; }
+    .offer-shell__status { margin: 0; display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .offer-shell__status--draft { background: #e2e8f0; color: #334155; }
+    .offer-shell__status--sent, .offer-shell__status--viewed { background: #dbeafe; color: #1d4ed8; }
+    .offer-shell__status--accepted { background: #dcfce7; color: #166534; }
+    .offer-shell__status--declined { background: #fee2e2; color: #b91c1c; }
+    .offer-shell__status--expired { background: #f3f4f6; color: #6b7280; }
+    .offer-shell__meta dl { margin: 0; display: grid; gap: 8px; width: 100%; }
+    .offer-shell__meta dl div { display: flex; gap: 12px; align-items: baseline; justify-content: flex-end; }
+    .offer-shell__meta dt { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; }
+    .offer-shell__meta dd { font-size: 14px; font-weight: 600; color: #0f172a; white-space: nowrap; }
     .offer-shell__meta dt { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; }
     .offer-shell__meta dd { font-size: 13px; font-weight: 600; }
     .offer-shell__topline { align-items: flex-start; padding-bottom: 18px; border-bottom: 1px solid #dbe4ee; }
     .offer-shell__topline h1 { margin: 0; font-size: 22px; font-weight: 700; }
-    .offer-shell__customer { min-width: 220px; display: grid; gap: 3px; }
+    .offer-shell__customer { min-width: 220px; display: grid; gap: 3px; border-left: 1px solid #e2e8f0; padding-left: 18px; }
     .offer-section { display: grid; gap: 10px; }
     .offer-section h2, .offer-section h3 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #475569; }
     .offer-section p { margin: 0; font-size: 13px; line-height: 1.7; color: #334155; }
     .offer-table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .offer-summary { margin-left: auto; width: min(320px, 100%); border: 1px solid #dbe4ee; border-radius: 18px; background: rgba(248, 250, 252, 0.92); padding: 18px 20px; display: grid; gap: 12px; }
+    .offer-summary { margin-left: auto; width: min(276px, 100%); border: 1px solid #dbe4ee; border-radius: 14px; background: rgba(248, 250, 252, 0.92); padding: 12px 14px; display: grid; gap: 8px; }
     .offer-summary--below { width: 100%; margin-left: 0; }
-    .offer-summary__row { display: flex; justify-content: space-between; gap: 24px; font-size: 13px; color: #334155; }
+    .offer-summary__row { display: flex; justify-content: space-between; gap: 16px; font-size: 12px; color: #334155; }
     .offer-summary__row strong { white-space: nowrap; }
-    .offer-summary__row--total { padding-top: 12px; border-top: 1px solid #dbe4ee; font-size: 15px; font-weight: 700; color: #0f172a; }
+    .offer-summary__row--total { padding-top: 8px; border-top: 1px solid #dbe4ee; font-size: 14px; font-weight: 700; color: #0f172a; }
     .offer-section--terms { margin-top: auto; }
-    .offer-shell__footer { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-top: 16px; border-top: 1px solid #dbe4ee; }
+    .offer-shell__footer { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr)); gap: 16px; padding-top: 16px; border-top: 1px solid #dbe4ee; }
     .offer-shell__footer div { display: grid; gap: 4px; font-size: 12px; color: #475569; }
     .doc-header { font-size: 12px; color: #64748b; margin-bottom: 0; }
     .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
@@ -884,8 +980,10 @@ export function generateDocument(templateContent: string, offer: Offer, branding
       .page-block { min-height: 0; overflow: visible; }
       .page-block > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
       .offer-shell__header, .offer-shell__topline, .offer-shell__footer { grid-template-columns: 1fr; display: grid; }
-      .offer-shell__header, .offer-shell__topline { gap: 20px; }
-      .offer-shell__meta, .offer-shell__customer { min-width: 0; text-align: left; }
+      .offer-shell__header, .offer-shell__topline { gap: 16px; }
+      .offer-shell__meta { min-width: 0; width: 100%; justify-items: start; text-align: left; }
+      .offer-shell__meta dl div { justify-content: space-between; }
+      .offer-shell__customer { min-width: 0; text-align: left; border-left: none; border-top: 1px solid #e2e8f0; padding-left: 0; padding-top: 12px; }
       .offer-summary { width: 100%; }
       ${MOBILE_TABLE_CSS}
     }
