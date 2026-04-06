@@ -553,11 +553,13 @@ function renderStructuredDocumentPage(
     .join('');
   const noteHtml = offer.notes ? `<section class="offer-section"><h3>Anteckningar</h3><p>${secureEscapeHtml(offer.notes)}</p></section>` : '';
   const introHtml = nodeToHtml(page.body, replacements);
-  const hasIntroContent = settings.showIntro && introHtml
+  const hasIntroVisualContent = /<(img|hr|table|ul|ol)\b/i.test(introHtml);
+  const hasIntroTextContent = introHtml
     .replace(/<p[^>]*>(?:&nbsp;|\s|<br\s*\/?>)*<\/p>/gi, '')
     .replace(/<[^>]+>/g, '')
     .trim()
     .length > 0;
+  const hasIntroContent = settings.showIntro && (hasIntroVisualContent || hasIntroTextContent);
   const tableHtml = buildLineItemsTable(offer.lineItems, offer.priceDisplayMode);
   const summaryHtml = renderDocumentSummary(
     offer,
