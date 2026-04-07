@@ -152,18 +152,23 @@ export function CompanyOverviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-5xl">
+      <DialogContent
+        mobileVariant="fullscreen"
+        showMobileClose
+        className="w-[min(100vw-1.5rem,1320px)] sm:max-w-[1320px]"
+      >
         <DialogHeader className="border-b border-[var(--border)] pr-16">
           <DialogTitle>Företagsöversikt</DialogTitle>
           <DialogDescription>
-            Se branding, kopplade medlemmar, mallar och produkter för {company.name}. Allt här styr hur företaget beter sig i offertflödet.
+            Se branding, kopplade medlemmar, mallar och produkter för {company.name}. Här blir det också tydligt vad som
+            styr offertens topp och var du ändrar juridiska textblock.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[min(72dvh,760px)] space-y-5 overflow-y-auto px-6 py-6">
+        <div className="max-h-[min(84dvh,920px)] space-y-5 overflow-y-auto px-6 py-6">
           <section className="overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)]">
-            <div className="grid gap-0 lg:grid-cols-[1.3fr_0.9fr]">
-              <div className="border-b border-[var(--border)] p-5 lg:border-b-0 lg:border-r">
+            <div className="grid gap-0 xl:grid-cols-[1.25fr_0.95fr]">
+              <div className="border-b border-[var(--border)] p-5 xl:border-b-0 xl:border-r">
                 <div className="flex items-start gap-4">
                   {company.logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -179,12 +184,19 @@ export function CompanyOverviewDialog({
                   )}
 
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Aktivt företagskort</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      Aktivt företagskort
+                    </p>
                     <h2 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">{company.name}</h2>
                     <div className="mt-2 flex flex-wrap gap-2 text-xs text-[var(--text-muted)]">
                       <span className={`rounded-full border px-2.5 py-1 ${brandingReady ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300' : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300'}`}>
                         {brandingReady ? 'Branding redo' : 'Branding saknas delvis'}
                       </span>
+                      {company.orgNumber && (
+                        <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1">
+                          Org.nr {company.orgNumber}
+                        </span>
+                      )}
                     </div>
                     {addressLines.length > 0 && (
                       <div className="mt-4 space-y-1 text-sm leading-6 text-[var(--text-secondary)]">
@@ -205,22 +217,45 @@ export function CompanyOverviewDialog({
                       <span className="text-xs font-semibold uppercase tracking-[0.16em]">Offerttoppen</span>
                     </div>
                     <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">{company.name}</p>
-                    <p className="mt-1 text-xs text-[var(--text-muted)]">{company.senderEmail || 'Avsändarmejl saknas'}</p>
+                    <p className="mt-1 text-xs text-[var(--text-muted)]">
+                      {company.orgNumber ? `Org.nr ${company.orgNumber}` : 'Organisationsnummer saknas'}
+                    </p>
                   </div>
+
                   <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
                     <div className="flex items-center gap-2 text-[var(--text-muted)]">
                       <Globe size={16} weight="duotone" />
                       <span className="text-xs font-semibold uppercase tracking-[0.16em]">Kontakt</span>
                     </div>
-                    <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">{company.website?.replace(/^https?:\/\//, '') || 'Ingen webbplats'}</p>
+                    <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">
+                      {company.website?.replace(/^https?:\/\//, '') || 'Ingen webbplats'}
+                    </p>
                     <p className="mt-1 text-xs text-[var(--text-muted)]">Logga och webbadress används i mallar och mejl.</p>
+                  </div>
+
+                  <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-alt)] p-4 sm:col-span-2">
+                    <div className="flex items-center gap-2 text-[var(--text-muted)]">
+                      <FileText size={16} weight="duotone" />
+                      <span className="text-xs font-semibold uppercase tracking-[0.16em]">Juridik i offert</span>
+                    </div>
+                    <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">Redigeras i Mallar</p>
+                    <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
+                      Juridiska villkor och andra fasta textblock styrs i offertmallarna, inte i företagskortet.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => onOpenTemplates(company)}
+                      className="mt-3 inline-flex rounded-2xl border border-[var(--border)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-0)]"
+                    >
+                      Öppna mallar för juridik
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          <section className="grid gap-4 xl:grid-cols-[1.1fr_1fr_1fr]">
+          <section className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-[1.1fr_1fr_1fr]">
             <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -355,6 +390,13 @@ export function CompanyOverviewDialog({
                 className="inline-flex rounded-2xl border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
               >
                 Hantera användare
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenTemplates(company)}
+                className="inline-flex rounded-2xl border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
+              >
+                Redigera juridik i mallar
               </button>
               {company.website && (
                 <Link

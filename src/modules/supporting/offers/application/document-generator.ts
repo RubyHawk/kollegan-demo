@@ -730,6 +730,7 @@ function renderStructuredDocumentPage(
   const responsibleName = branding?.responsibleName?.trim() || branding?.senderName?.trim() || '';
   const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '';
   const senderWebsite = branding?.website?.trim()?.replace(/^https?:\/\//, '') || '';
+  const organizationNumber = branding?.organizationNumber?.trim() || '';
   const logoUrl = branding?.logoUrl?.trim() || '';
   const statusLabel = getOfferStatusLabel(offer.status);
   const customerLines = buildCustomerLines(offer);
@@ -743,6 +744,7 @@ function renderStructuredDocumentPage(
     : '';
   const headerSenderDetailsHtml = [
     `<p class="offer-shell__sender-name">${escapeHtml(companyName)}</p>`,
+    organizationNumber ? `<p>Org.nr ${escapeHtml(organizationNumber)}</p>` : '',
     ...addressLines.map((line) => `<p>${escapeHtml(line)}</p>`),
     senderWebsite ? `<p>${escapeHtml(senderWebsite)}</p>` : '',
   ]
@@ -856,6 +858,7 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
   const responsibleName = branding?.responsibleName?.trim() || branding?.senderName?.trim() || '';
   const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '';
   const senderWebsite = branding?.website?.trim()?.replace(/^https?:\/\//, '') || '';
+  const organizationNumber = branding?.organizationNumber?.trim() || '';
   const logoUrl = branding?.logoUrl?.trim() || '';
   const statusLabel = getOfferStatusLabel(offer.status);
   const customerLines = buildCustomerLines(offer);
@@ -863,6 +866,7 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
   const fallbackAddressLines = branding?.addressLines ?? [];
   const headerSenderBlockHtml = [
     `<p style="margin:0;font-weight:700;color:#0f172a;">${escapeHtml(companyName)}</p>`,
+    organizationNumber ? `<p style="margin:2px 0 0 0;color:#64748b;">Org.nr ${escapeHtml(organizationNumber)}</p>` : '',
     ...fallbackAddressLines.map((line) => `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(line)}</p>`),
     senderWebsite ? `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(senderWebsite)}</p>` : '',
   ]
