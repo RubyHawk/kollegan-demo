@@ -399,6 +399,7 @@ export default function PublicOfferPage() {
       .offer-section { gap: 8px !important; }
       .offer-section p { font-size: 13px !important; line-height: 1.72 !important; }
       .line-items { width: 100% !important; border-collapse: separate !important; border-spacing: 0 !important; border: 1px solid #dbe4ee !important; border-radius: 18px !important; overflow: hidden !important; background: #ffffff !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important; }
+      .line-items--desktop-headerless thead { display: none !important; }
       .line-items thead { display: table-header-group !important; }
       .line-items tbody { display: table-row-group !important; }
       .line-items tr { display: table-row !important; background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; }
@@ -755,6 +756,26 @@ export default function PublicOfferPage() {
     // entire document down so it fits without horizontal scrolling.
     const DOC_WIDTH = 816;
 
+    const syncDesktopLegacyTableHeaders = (isCompactDocument: boolean) => {
+      const frameWindow = doc.defaultView;
+      doc.querySelectorAll<HTMLTableElement>('table.line-items').forEach((table) => {
+        const header = table.querySelector('thead');
+        if (!header || isCompactDocument || !frameWindow) {
+          table.classList.remove('line-items--desktop-headerless');
+          return;
+        }
+
+        const firstRow = table.querySelector('tbody tr');
+        const rowDisplay = firstRow ? frameWindow.getComputedStyle(firstRow).display : '';
+        const tbodyDisplay = table.tBodies[0]
+          ? frameWindow.getComputedStyle(table.tBodies[0]).display
+          : '';
+
+        const shouldHideHeader = rowDisplay === 'grid' || rowDisplay === 'block' || tbodyDisplay === 'grid';
+        table.classList.toggle('line-items--desktop-headerless', shouldHideHeader);
+      });
+    };
+
     const applyViewportLayout = () => {
       if (!doc.documentElement) return 1;
 
@@ -765,6 +786,7 @@ export default function PublicOfferPage() {
       const effectiveScale = isCompactDocument ? 1 : scale;
 
       doc.documentElement.classList.toggle('offer-mobile', isCompactDocument);
+      syncDesktopLegacyTableHeaders(isCompactDocument);
 
       if (effectiveScale < 1) {
         doc.documentElement.style.width = `${DOC_WIDTH}px`;
