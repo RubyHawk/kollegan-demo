@@ -439,15 +439,19 @@ export default function PublicOfferPage() {
       html.offer-mobile .offer-shell__sender-copy { font-size: 14px !important; line-height: 1.55 !important; }
       html.offer-mobile .offer-section p { font-size: 14px !important; line-height: 1.78 !important; }
       html.offer-mobile .offer-item-card__title { font-size: 17px !important; line-height: 1.35 !important; }
-      html.offer-mobile .offer-item-card__detail { font-size: 14px !important; line-height: 1.72 !important; }
+      html.offer-mobile .offer-item-card__detail { display: none !important; }
       html.offer-mobile .offer-items__table { display: none !important; }
-      html.offer-mobile .offer-items__cards { display: grid !important; gap: 12px !important; }
+      html.offer-mobile .offer-items__cards { display: grid !important; gap: 16px !important; }
+      html.offer-mobile .offer-item-card { border-color: #cfdbe8 !important; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important; background: #ffffff !important; }
+      html.offer-mobile .offer-item-card__metric { background: #ffffff !important; }
+      html.offer-mobile .offer-item-card__metric:nth-child(even) { background: #fbfdff !important; }
+      html.offer-mobile .offer-item-card__metric--total { background: #eef5ff !important; border-top: 1px solid #d6e3f3 !important; }
       html.offer-mobile .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
-      html.offer-mobile .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 8px 0 !important; }
-      html.offer-mobile .offer-summary--below { width: 100% !important; }
+      html.offer-mobile .offer-summary { width: 100% !important; border-radius: 16px !important; padding: 8px 0 !important; margin-top: 18px !important; border-color: #cfdbe8 !important; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05) !important; }
+      html.offer-mobile .offer-summary--below { width: 100% !important; margin-top: 18px !important; }
       html.offer-mobile .offer-summary__row { font-size: 14px !important; padding: 8px 12px !important; line-height: 1.55 !important; }
-      html.offer-mobile .offer-summary__row--total { font-size: 16px !important; padding: 12px !important; }
-      html.offer-mobile .offer-summary__row--total strong { font-size: 19px !important; }
+      html.offer-mobile .offer-summary__row--total { font-size: 16px !important; padding: 12px !important; background: #0f172a !important; color: #f8fafc !important; }
+      html.offer-mobile .offer-summary__row--total strong { font-size: 19px !important; color: #ffffff !important; }
       html.offer-mobile .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
       @media (max-width: 640px) {
         .offer-shell__header, .offer-shell__topline { grid-template-columns: minmax(0, 1fr) 168px !important; gap: 12px !important; }
@@ -459,15 +463,19 @@ export default function PublicOfferPage() {
         .offer-shell__sender-copy { font-size: 14px !important; line-height: 1.55 !important; }
         .offer-section p { font-size: 14px !important; line-height: 1.78 !important; }
         .offer-item-card__title { font-size: 17px !important; line-height: 1.35 !important; }
-        .offer-item-card__detail { font-size: 14px !important; line-height: 1.72 !important; }
+        .offer-item-card__detail { display: none !important; }
         .offer-items__table { display: none !important; }
-        .offer-items__cards { display: grid !important; gap: 12px !important; }
+        .offer-items__cards { display: grid !important; gap: 16px !important; }
+        .offer-item-card { border-color: #cfdbe8 !important; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important; background: #ffffff !important; }
+        .offer-item-card__metric { background: #ffffff !important; }
+        .offer-item-card__metric:nth-child(even) { background: #fbfdff !important; }
+        .offer-item-card__metric--total { background: #eef5ff !important; border-top: 1px solid #d6e3f3 !important; }
         .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
-        .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 8px 0 !important; }
-        .offer-summary--below { width: 100% !important; }
+        .offer-summary { width: 100% !important; border-radius: 16px !important; padding: 8px 0 !important; margin-top: 18px !important; border-color: #cfdbe8 !important; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05) !important; }
+        .offer-summary--below { width: 100% !important; margin-top: 18px !important; }
         .offer-summary__row { font-size: 14px !important; padding: 8px 12px !important; line-height: 1.55 !important; }
-        .offer-summary__row--total { font-size: 16px !important; padding: 12px !important; }
-        .offer-summary__row--total strong { font-size: 19px !important; }
+        .offer-summary__row--total { font-size: 16px !important; padding: 12px !important; background: #0f172a !important; color: #f8fafc !important; }
+        .offer-summary__row--total strong { font-size: 19px !important; color: #ffffff !important; }
         .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
       }
     `;
