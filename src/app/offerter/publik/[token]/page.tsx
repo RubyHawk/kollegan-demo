@@ -462,8 +462,9 @@ export default function PublicOfferPage() {
       .offer-item-card__metric--total { background: #f8fafc !important; }
       html.offer-mobile .offer-shell__header, html.offer-mobile .offer-shell__topline { grid-template-columns: minmax(0, 1fr) 168px !important; gap: 12px !important; }
       html.offer-mobile .offer-shell__meta { justify-items: end !important; text-align: right !important; }
+      html.offer-mobile .offer-shell__meta dl div { grid-template-columns: 1fr !important; gap: 2px !important; justify-items: end !important; }
       html.offer-mobile .offer-shell__meta dt { font-size: 12.5px !important; line-height: 1.5 !important; }
-      html.offer-mobile .offer-shell__meta dd { font-size: 14px !important; line-height: 1.5 !important; }
+      html.offer-mobile .offer-shell__meta dd { font-size: 14px !important; line-height: 1.5 !important; white-space: normal !important; }
       html.offer-mobile .offer-shell__customer { padding-left: 10px !important; font-size: 14px !important; line-height: 1.55 !important; }
       html.offer-mobile .offer-shell__sender-copy { font-size: 14px !important; line-height: 1.55 !important; }
       html.offer-mobile .offer-section p { font-size: 14px !important; line-height: 1.78 !important; }
@@ -495,8 +496,9 @@ export default function PublicOfferPage() {
       @media (max-width: 640px) {
         .offer-shell__header, .offer-shell__topline { grid-template-columns: minmax(0, 1fr) 168px !important; gap: 12px !important; }
         .offer-shell__meta { justify-items: end !important; text-align: right !important; }
+        .offer-shell__meta dl div { grid-template-columns: 1fr !important; gap: 2px !important; justify-items: end !important; }
         .offer-shell__meta dt { font-size: 12.5px !important; line-height: 1.5 !important; }
-        .offer-shell__meta dd { font-size: 14px !important; line-height: 1.5 !important; }
+        .offer-shell__meta dd { font-size: 14px !important; line-height: 1.5 !important; white-space: normal !important; }
         .offer-shell__customer { padding-left: 10px !important; font-size: 14px !important; line-height: 1.55 !important; }
         .offer-shell__sender-copy { font-size: 14px !important; line-height: 1.55 !important; }
         .offer-section p { font-size: 14px !important; line-height: 1.78 !important; }
