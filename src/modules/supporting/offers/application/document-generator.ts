@@ -404,7 +404,7 @@ function buildStructuredLineItems(items: OfferLineItem[], mode: Offer['priceDisp
 
   return `
     <div class="offer-items">
-      <div class="offer-items__table">
+      <div class="offer-items__table" style="display:block;">
         <div class="offer-items__head" style="--offer-columns:${gridTemplate}">
           ${headerCells}
         </div>
@@ -412,7 +412,7 @@ function buildStructuredLineItems(items: OfferLineItem[], mode: Offer['priceDisp
           ${desktopRows}
         </div>
       </div>
-      <div class="offer-items__cards">
+      <div class="offer-items__cards" style="display:none;">
         ${mobileCards}
       </div>
     </div>`;
@@ -667,7 +667,7 @@ function renderStructuredDocumentPage(
             <div class="offer-shell__meta">
               <p class="offer-shell__status offer-shell__status--${offer.status}">${escapeHtml(statusLabel)}</p>
               <dl>
-                <div><dt>Offert #</dt><dd>#${offerNumber}</dd></div>
+                <div><dt>Offertnummer</dt><dd>#${offerNumber}</dd></div>
                 <div><dt>Offertdatum</dt><dd>${replacements['{{createdDate}}']}</dd></div>
                 <div><dt>Giltig till</dt><dd>${replacements['{{validUntil}}']}</dd></div>
               </dl>
@@ -721,10 +721,11 @@ function renderStructuredDocumentPage(
  * Used when an offer is sent without a linked template.
  */
 export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingProfile): string {
-  const pricing        = buildOfferSummary(offer);
   const offerNumberStr = offer.offerNumber
     ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
     : offer.id.slice(0, 8).toUpperCase();
+  const fallbackLineItemsHtml = buildStructuredLineItems(offer.lineItems, offer.priceDisplayMode);
+  const fallbackSummaryHtml = renderDocumentSummary(offer, 'below');
   const companyName = branding?.companyName?.trim() || branding?.senderName?.trim() || 'Avsändare';
   const responsibleName = branding?.responsibleName?.trim() || branding?.senderName?.trim() || '';
   const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '';
@@ -762,8 +763,51 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; background: #fff; margin: 0; padding: 0; }
     img { max-width: 100%; height: auto; }
     .doc-wrapper { max-width: 816px; margin: 40px auto; padding: 40px 48px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+    .offer-section { display: grid; gap: 8px; }
+    .offer-table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .offer-table-header h2 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #475569; }
+    .offer-items { display: grid; gap: 12px; }
+    .offer-items__table { display: block; border: 1px solid #dbe4ee; border-radius: 18px; background: #ffffff; overflow: hidden; }
+    .offer-items__head, .offer-item-row { display: grid; grid-template-columns: var(--offer-columns); align-items: start; }
+    .offer-items__head { gap: 14px; padding: 11px 16px; background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%); border-bottom: 1px solid #dbe4ee; color: #64748b; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .offer-item-row { gap: 14px; padding: 16px; border-bottom: 1px solid #eef2f7; }
+    .offer-item-row:last-child { border-bottom: none; }
+    .offer-item-row__product { display: grid; gap: 5px; min-width: 0; }
+    .offer-item-row__title { font-size: 15px; line-height: 1.35; font-weight: 700; color: #0f172a; }
+    .offer-item-row__detail { font-size: 13px; line-height: 1.68; color: #64748b; }
+    .offer-item-row__value { text-align: right; font-size: 14px; line-height: 1.5; color: #334155; }
+    .offer-item-row__value--strong { font-weight: 700; color: #0f172a; }
+    .offer-items__cards { display: none; }
+    .offer-item-card { border: 1px solid #dbe4ee; border-radius: 18px; background: #ffffff; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+    .offer-item-card__top { display: grid; gap: 6px; padding: 15px 16px 14px; background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%); border-bottom: 1px solid #eef2f7; }
+    .offer-item-card__eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; }
+    .offer-item-card__title { font-size: 16px; line-height: 1.3; font-weight: 700; color: #0f172a; }
+    .offer-item-card__detail { font-size: 13px; line-height: 1.7; color: #64748b; }
+    .offer-item-card__grid { display: grid; gap: 0; margin: 0; }
+    .offer-item-card__metric { display: flex; justify-content: space-between; gap: 16px; padding: 11px 16px; border-bottom: 1px solid #eef2f7; }
+    .offer-item-card__metric:last-child { border-bottom: none; }
+    .offer-item-card__metric dt, .offer-item-card__metric dd { margin: 0; }
+    .offer-item-card__metric dt { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
+    .offer-item-card__metric dd { text-align: right; font-size: 14px; font-weight: 600; color: #0f172a; }
+    .offer-item-card__metric--total { background: #f8fafc; }
+    .offer-summary { margin-left: auto; width: min(240px, 100%); border: 1px solid #dbe4ee; border-radius: 14px; background: #ffffff; padding: 8px 0; display: grid; gap: 0; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03); }
+    .offer-summary--below { width: min(360px, 100%); margin-left: auto; }
+    .offer-summary__row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 7px 14px; font-size: 13px; line-height: 1.5; color: #475569; }
+    .offer-summary__row strong { white-space: nowrap; color: #0f172a; }
+    .offer-summary__row--total { margin-top: 6px; padding: 11px 14px 10px; border-top: 1px solid #e8eef5; background: #f8fafc; font-size: 14px; font-weight: 700; color: #0f172a; }
+    .offer-summary__row--total strong { color: #0f172a; font-size: 18px; }
     @media (max-width: 640px) {
-      .doc-wrapper { margin: 0; padding: 24px 16px; border: none; border-radius: 0; }${MOBILE_TABLE_CSS}
+      .doc-wrapper { margin: 0; padding: 24px 16px; border: none; border-radius: 0; }
+      .offer-items__table { display: none; }
+      .offer-items__cards { display: grid; gap: 12px; }
+      .offer-item-card__title { font-size: 17px; line-height: 1.35; }
+      .offer-item-card__detail { font-size: 14px; line-height: 1.72; }
+      .offer-summary { width: 100%; border-radius: 14px; padding: 8px 0; }
+      .offer-summary--below { width: 100%; }
+      .offer-summary__row { font-size: 14px; padding: 8px 12px; line-height: 1.55; }
+      .offer-summary__row--total { font-size: 16px; padding: 12px; }
+      .offer-summary__row--total strong { font-size: 19px; }
+      ${MOBILE_TABLE_CSS}
     }
     @media print { .doc-wrapper { margin: 0; padding: 0; border: none; } }
   </style>
@@ -779,7 +823,7 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
       <div style="min-width:220px;text-align:right;display:grid;gap:8px;">
         <p style="margin:0 0 4px auto;display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:700;">${escapeHtml(statusLabel)}</p>
         <div style="display:grid;gap:6px;">
-          <p style="margin:0;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Offert #</p>
+          <p style="margin:0;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Offertnummer</p>
           <p style="margin:0;color:#0f172a;font-weight:700;">#${escapeHtml(offerNumberStr)}</p>
           <p style="margin:4px 0 0 0;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Offertdatum</p>
           <p style="margin:0;color:#0f172a;font-weight:600;">${fmtDate(offer.createdAt)}</p>
@@ -797,26 +841,14 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
 
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 24px 0;"/>
 
-    ${buildLineItemsTable(offer.lineItems, offer.priceDisplayMode)}
+    <section class="offer-section">
+      <div class="offer-table-header">
+        <h2>Produkter och tjänster</h2>
+      </div>
+      ${fallbackLineItemsHtml}
+    </section>
 
-    <table class="totals" style="width:100%;border-collapse:collapse;margin-top:8px;">
-      <tr>
-        <td style="text-align:right;padding:4px 12px;font-size:13px;color:#64748b;">${pricing.subtotalLabel}</td>
-        <td style="text-align:right;padding:4px 12px;font-size:13px;font-weight:600;white-space:nowrap;">${fmtSEK(offer.totalExVat)}</td>
-      </tr>
-      ${pricing.discountAmount > 0 ? `<tr>
-        <td style="text-align:right;padding:4px 12px;font-size:13px;color:#64748b;">Rabatt</td>
-        <td style="text-align:right;padding:4px 12px;font-size:13px;white-space:nowrap;">${fmtSEK(pricing.discountAmount)}</td>
-      </tr>` : ''}
-      ${pricing.hasVat ? `<tr>
-        <td style="text-align:right;padding:4px 12px;font-size:13px;color:#64748b;">${pricing.vatLabel}</td>
-        <td style="text-align:right;padding:4px 12px;font-size:13px;white-space:nowrap;">${fmtSEK(pricing.vatAmount)}</td>
-      </tr>` : ''}
-      <tr>
-        <td style="text-align:right;padding:8px 12px;font-size:15px;font-weight:700;border-top:2px solid #e2e8f0;">${pricing.totalLabel}</td>
-        <td style="text-align:right;padding:8px 12px;font-size:15px;font-weight:700;border-top:2px solid #e2e8f0;white-space:nowrap;">${fmtSEK(pricing.totalAmount)}</td>
-      </tr>
-    </table>
+    ${fallbackSummaryHtml}
 
     ${offer.notes ? `
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;"/>
