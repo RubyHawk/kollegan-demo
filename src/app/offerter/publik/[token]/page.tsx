@@ -567,7 +567,7 @@ export default function PublicOfferPage() {
       if (label === 'prisvisning') item.remove();
     });
 
-    const shouldUpgradeForCompact = (iframe.getBoundingClientRect().width || window.innerWidth) < 700;
+    const shouldUpgradeForCompact = (window.innerWidth || iframe.getBoundingClientRect().width) < 700;
 
     const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {
@@ -741,8 +741,9 @@ export default function PublicOfferPage() {
       if (!doc.documentElement) return 1;
 
       const containerW = iframe.getBoundingClientRect().width || window.innerWidth;
+      const viewportW = window.innerWidth || containerW;
       const scale = Math.min(1, containerW / DOC_WIDTH);
-      const isCompactDocument = containerW < 700;
+      const isCompactDocument = viewportW < 700;
       const effectiveScale = isCompactDocument ? 1 : scale;
 
       doc.documentElement.classList.toggle('offer-mobile', isCompactDocument);
