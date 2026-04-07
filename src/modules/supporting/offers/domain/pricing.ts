@@ -27,6 +27,11 @@ function roundCurrency(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+export function normalizeVatRate(rate: number): number {
+  if (!Number.isFinite(rate) || rate <= 0) return 0;
+  return rate > 1 ? rate / 100 : rate;
+}
+
 export function getDiscountFactor(discount?: number | null): number {
   return 1 - ((discount ?? 0) / 100);
 }
@@ -36,7 +41,7 @@ export function getLineExVat(item: PriceLineLike): number {
 }
 
 export function getLineVatAmount(item: PriceLineLike): number {
-  return roundCurrency(getLineExVat(item) * item.vatRate);
+  return roundCurrency(getLineExVat(item) * normalizeVatRate(item.vatRate));
 }
 
 export function getLineIncVat(item: PriceLineLike): number {
@@ -44,8 +49,9 @@ export function getLineIncVat(item: PriceLineLike): number {
 }
 
 export function getDisplayUnitPrice(item: Pick<PriceLineLike, 'unitPrice' | 'vatRate'>, mode: OfferPriceDisplayMode): number {
-  if (mode === 'inclusive' && item.vatRate > 0) {
-    return roundCurrency(item.unitPrice * (1 + item.vatRate));
+  const vatRate = normalizeVatRate(item.vatRate);
+  if (mode === 'inclusive' && vatRate > 0) {
+    return roundCurrency(item.unitPrice * (1 + vatRate));
   }
   return roundCurrency(item.unitPrice);
 }
@@ -55,8 +61,9 @@ export function fromDisplayUnitPrice(
   vatRate: number,
   mode: OfferPriceDisplayMode,
 ): number {
-  if (mode === 'inclusive' && vatRate > 0) {
-    return roundCurrency(displayUnitPrice / (1 + vatRate));
+  const normalizedVatRate = normalizeVatRate(vatRate);
+  if (mode === 'inclusive' && normalizedVatRate > 0) {
+    return roundCurrency(displayUnitPrice / (1 + normalizedVatRate));
   }
   return roundCurrency(displayUnitPrice);
 }
@@ -80,13 +87,14 @@ export function summarizeOfferPricing(
   let hasVat = false;
 
   for (const item of items) {
+    const vatRate = normalizeVatRate(item.vatRate);
     const lineBase = Math.max(0, item.quantity) * Math.max(0, item.unitPrice);
     const lineExVat = getLineExVat(item);
     exVat += lineExVat;
     discountAmount += Math.max(0, lineBase - lineExVat);
-    if (item.vatRate > 0) {
+    if (vatRate > 0) {
       hasVat = true;
-      vatAmount += lineExVat * item.vatRate;
+      vatAmount += lineExVat * vatRate;
     }
   }
 
@@ -111,5 +119,6 @@ export function summarizeOfferPricing(
 }
 
 export function formatVatRate(rate: number): string {
-  return rate > 0 ? `${Math.round(rate * 100)}% moms` : 'Momsfri';
+  const normalizedRate = normalizeVatRate(rate);
+  return normalizedRate > 0 ? `${Math.round(normalizedRate * 100)}% moms` : 'Momsfri';
 }
