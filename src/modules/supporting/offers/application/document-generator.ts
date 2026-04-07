@@ -136,6 +136,20 @@ interface TipTapNode {
   marks?:  Array<{ type: string; attrs?: Record<string, unknown> }>;
 }
 
+function getNodeTextContent(node: TipTapNode): string {
+  if (node.type === 'text') return String(node.text ?? '');
+  return (node.content ?? []).map(getNodeTextContent).join('');
+}
+
+function normalizeNodeText(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLocaleLowerCase('sv-SE');
+}
+
 function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): string {
   // Curry replacements into recursive calls
   const r = (n: TipTapNode) => nodeToHtml(n, replacements);
@@ -592,6 +606,73 @@ interface V3PageDoc {
   };
 }
 
+function pageContainsNodeType(node: TipTapNode, type: string): boolean {
+  if (node.type === type) return true;
+  return (node.content ?? []).some((child) => pageContainsNodeType(child, type));
+}
+
+function isLegacyStructuredDocumentPage(page: V3PageDoc): boolean {
+  if (page.kind === 'document' || page.document) return true;
+
+  const content = page.body.content ?? [];
+  const hasSignatureFields = content.some((node) => pageContainsNodeType(node, 'signatureBlock'));
+  const hasDocumentLikeHeading = content.some((node) => {
+    if (node.type !== 'heading') return false;
+    const text = normalizeNodeText(getNodeTextContent(node));
+    return [
+      'prissattning',
+      'sammanstallning',
+      'betalnings- och leveransvillkor',
+      'juridiska villkor',
+      'godkannande och underskrift',
+    ].includes(text);
+  });
+
+  return hasSignatureFields || hasDocumentLikeHeading;
+}
+
+function extractLegacyDocumentIntroHtml(
+  page: V3PageDoc,
+  introReplacements: Record<string, string>,
+  offer: Offer,
+): string {
+  const offerTitle = normalizeNodeText(offer.title);
+  const content = page.body.content ?? [];
+  const introNodes: TipTapNode[] = [];
+
+  for (const node of content) {
+    if (node.type === 'signatureBlock') break;
+
+    if (node.type === 'heading') {
+      const headingText = normalizeNodeText(getNodeTextContent(node));
+      if ([
+        'prissattning',
+        'sammanstallning',
+        'betalnings- och leveransvillkor',
+        'juridiska villkor',
+        'godkannande och underskrift',
+      ].includes(headingText)) {
+        break;
+      }
+    }
+
+    const text = normalizeNodeText(getNodeTextContent(node));
+    if (!text && node.type === 'paragraph') continue;
+
+    const isBoilerplateParagraph = text === offerTitle
+      || text.startsWith('till:')
+      || text.startsWith('offert nr:')
+      || text.startsWith('offertnummer')
+      || (text.includes('datum:') && text.includes('giltig till'));
+
+    if (isBoilerplateParagraph) continue;
+    introNodes.push(node);
+  }
+
+  if (introNodes.length === 0) return '';
+  return stripLegacyStructuredIntroHtml(nodeToHtml({ type: 'doc', content: introNodes }, introReplacements));
+}
+
 function renderDocumentSummary(offer: Offer, placement: 'right' | 'below'): string {
   const summary = buildOfferSummary(offer);
   const boxClass = placement === 'below' ? 'offer-summary offer-summary--below' : 'offer-summary';
@@ -653,6 +734,13 @@ function renderStructuredDocumentPage(
   const statusLabel = getOfferStatusLabel(offer.status);
   const customerLines = buildCustomerLines(offer);
   const addressLines = branding?.addressLines ?? [];
+  const isLegacyDocumentPage = !page.kind && !page.document;
+  const recipientDetailsHtml = settings.showCustomerBlock && customerLines.length > 0
+    ? `<div class="offer-shell__recipient-details${isLegacyDocumentPage ? ' offer-shell__recipient-details--legacy' : ''}">
+        <p><strong>Till:</strong> ${escapeHtml(customerLines[0] ?? '')}</p>
+        ${customerLines.slice(1).map((line) => `<p>${escapeHtml(line)}</p>`).join('')}
+      </div>`
+    : '';
   const headerSenderDetailsHtml = [
     `<p class="offer-shell__sender-name">${escapeHtml(companyName)}</p>`,
     ...addressLines.map((line) => `<p>${escapeHtml(line)}</p>`),
@@ -672,7 +760,9 @@ function renderStructuredDocumentPage(
     '{{totalIncVat}}': '',
     '{{vatAmount}}': '',
   };
-  const introHtml = stripLegacyStructuredIntroHtml(nodeToHtml(page.body, introReplacements));
+  const introHtml = isLegacyDocumentPage
+    ? extractLegacyDocumentIntroHtml(page, introReplacements, offer)
+    : stripLegacyStructuredIntroHtml(nodeToHtml(page.body, introReplacements));
   const hasIntroVisualContent = /<(img|hr|table|ul|ol)\b/i.test(introHtml);
   const hasIntroTextContent = introHtml
     .replace(/<p[^>]*>(?:&nbsp;|\s|<br\s*\/?>)*<\/p>/gi, '')
@@ -713,14 +803,11 @@ function renderStructuredDocumentPage(
             </div>
           </header>
 
-          <section class="offer-shell__topline">
+          <section class="offer-shell__topline${isLegacyDocumentPage ? ' offer-shell__topline--legacy' : ''}">
             <div>
               <h1>${escapeHtml(offer.title)}</h1>
+              ${recipientDetailsHtml}
             </div>
-            ${settings.showCustomerBlock ? `
-              <div class="offer-shell__customer">
-                ${customerLines.map((line: string, index: number) => `<p class="${index === 0 ? 'offer-shell__customer-name' : ''}">${escapeHtml(line)}</p>`).join('')}
-              </div>` : ''}
           </section>
 
           ${hasIntroContent ? `<section class="offer-section offer-section--intro">${introHtml}</section>` : ''}
@@ -938,8 +1025,8 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     defaultFooter: TipTapNode,
     pageIndex:     number,
   ): string {
-    if (page.kind === 'document') {
-        return renderStructuredDocumentPage(page, offer, replacements, pageIndex, branding);
+    if (isLegacyStructuredDocumentPage(page)) {
+      return renderStructuredDocumentPage(page, offer, replacements, pageIndex, branding);
     }
 
     let pageHeaderHtml = '';
@@ -1105,8 +1192,13 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     .offer-shell__meta dl div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; justify-content: flex-end; }
     .offer-shell__meta dt { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; line-height: 1.45; }
     .offer-shell__meta dd { font-size: 14px; font-weight: 600; color: #0f172a; white-space: nowrap; line-height: 1.45; }
-    .offer-shell__topline { align-items: flex-start; padding-bottom: 14px; border-bottom: 1px solid #dbe4ee; }
+    .offer-shell__topline { grid-template-columns: minmax(0, 1fr); align-items: flex-start; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid #dbe4ee; }
+    .offer-shell__topline--legacy { gap: 10px; }
     .offer-shell__topline h1 { margin: 0; font-size: 19px; line-height: 1.2; font-weight: 700; }
+    .offer-shell__recipient-details { display: grid; gap: 2px; margin-top: 10px; font-size: 13px; line-height: 1.6; color: #475569; }
+    .offer-shell__recipient-details p { margin: 0; }
+    .offer-shell__recipient-details strong { color: #0f172a; }
+    .offer-shell__recipient-details--legacy { margin-top: 10px; }
     .offer-shell__customer { display: grid; gap: 2px; padding-left: 14px; border-left: 1px solid #e2e8f0; font-size: 12px; color: #475569; }
     .offer-section { display: grid; gap: 8px; }
     .offer-section h2, .offer-section h3 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #475569; }
@@ -1158,13 +1250,15 @@ export function generateDocument(templateContent: string, offer: Offer, branding
       .page-block { min-height: 0; overflow: visible; }
       .page-content--edge-to-edge > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
       .offer-shell { gap: 16px; }
-      .offer-shell__header, .offer-shell__topline { display: grid; grid-template-columns: minmax(0, 1fr) 168px; gap: 12px; }
+      .offer-shell__header { display: grid; grid-template-columns: minmax(0, 1fr) 168px; gap: 12px; }
+      .offer-shell__topline { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
       .offer-shell__footer { grid-template-columns: 1fr; gap: 10px; }
       .offer-shell__meta { min-width: 0; justify-items: end; text-align: right; }
       .offer-shell__meta dl div { grid-template-columns: 1fr; gap: 2px; justify-items: end; }
       .offer-shell__meta dt { font-size: 12.5px; line-height: 1.5; }
       .offer-shell__meta dd { font-size: 14px; line-height: 1.5; white-space: normal; }
       .offer-shell__topline h1 { font-size: 17px; }
+      .offer-shell__recipient-details { margin-top: 8px; font-size: 14px; line-height: 1.7; }
       .offer-shell__customer { min-width: 0; border-left: 1px solid #e2e8f0; border-top: none; padding-left: 10px; padding-top: 0; font-size: 14px; line-height: 1.55; }
       .offer-shell__sender-copy { font-size: 14px; line-height: 1.55; }
       .offer-section p { font-size: 14px; line-height: 1.78; }
