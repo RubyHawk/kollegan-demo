@@ -399,14 +399,19 @@ export default function PublicOfferPage() {
       .offer-section { gap: 8px !important; }
       .offer-section p { font-size: 13px !important; line-height: 1.72 !important; }
       .line-items { width: 100% !important; border-collapse: separate !important; border-spacing: 0 !important; border: 1px solid #dbe4ee !important; border-radius: 18px !important; overflow: hidden !important; background: #ffffff !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important; }
+      .line-items thead { display: table-header-group !important; }
+      .line-items tbody { display: table-row-group !important; }
+      .line-items tr { display: table-row !important; background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; }
       .line-items thead th { padding: 12px 16px !important; background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%) !important; border-bottom: 1px solid #dbe4ee !important; color: #64748b !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; }
       .line-items tbody td { padding: 15px 16px !important; border-bottom: 1px solid #eef2f7 !important; font-size: 13px !important; color: #334155 !important; vertical-align: top !important; }
+      .line-items td { display: table-cell !important; width: auto !important; margin: 0 !important; border-radius: 0 !important; background: transparent !important; }
+      .line-items td::before { content: none !important; display: none !important; }
       .line-items tbody tr:last-child td { border-bottom: none !important; }
       .line-items tbody td[data-label="Beskrivning"] { width: 44% !important; }
       .line-items tbody td[data-label="Belopp"] { font-weight: 700 !important; color: #0f172a !important; }
       .totals { width: min(280px, 100%) !important; margin-left: auto !important; border-collapse: separate !important; border-spacing: 0 !important; border: 1px solid #dbe4ee !important; border-radius: 14px !important; overflow: hidden !important; background: #ffffff !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important; }
       .totals tbody, .totals { display: table !important; }
-      .totals tr { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; align-items: baseline !important; }
+      .totals tr { display: table-row !important; }
       .totals td { padding: 8px 14px !important; border: none !important; font-size: 12px !important; color: #475569 !important; white-space: nowrap !important; }
       .totals tr:last-child td { padding: 12px 14px !important; border-top: 1px solid #e8eef5 !important; background: #f8fafc !important; font-size: 14px !important; font-weight: 700 !important; color: #0f172a !important; }
       .totals tr:last-child td:last-child { font-size: 17px !important; }
