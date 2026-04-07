@@ -18,6 +18,7 @@ import {
   countOffers,
   updateOffer,
   sendOffer,
+  acceptOffer,
   declineOffer,
   deleteOffer,
   duplicateOffer,
@@ -100,7 +101,7 @@ const VALID_VALIDITY_DAYS = [7, 14, 30, 60, 90] as const;
 
 const CreateBodySchema = z.object({
   title: z.string().min(1).max(300),
-  priceDisplayMode: z.enum(['exclusive', 'inclusive']).default('exclusive'),
+  priceDisplayMode: z.enum(['exclusive', 'inclusive']).default('inclusive'),
   recipientName: z.string().min(1).max(200),
   recipientEmail: z.string().email(),
   recipientCompany: z.string().max(200).optional(),
@@ -176,7 +177,7 @@ const PatchBodySchema = z.object({
 });
 
 const PatchQuerySchema = z.object({
-  action: z.enum(['send', 'decline', 'duplicate', 'remind']).optional(),
+  action: z.enum(['send', 'accept', 'decline', 'duplicate', 'remind']).optional(),
 });
 
 export const handleUpdateOffer = createHandler(
@@ -198,6 +199,7 @@ export const handleUpdateOffer = createHandler(
 
     let updated;
     if (query.action === 'send') updated = await sendOffer(id, payload.orgId!);
+    else if (query.action === 'accept') updated = await acceptOffer(id, payload.orgId!);
     else if (query.action === 'decline') updated = await declineOffer(id, payload.orgId!);
     else if (query.action === 'remind') updated = await sendOfferReminder(id, payload.orgId!);
     else {

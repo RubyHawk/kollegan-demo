@@ -1,8 +1,9 @@
 import Link from 'next/link';
+import { revalidatePath } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
 import { getSessionUser } from '@platform/auth/session';
 import { prisma } from '@platform/database/prisma';
-import { getOffer } from '@modules/supporting/offers/application/offers.service';
+import { acceptOffer as acceptOfferByStaff, getOffer } from '@modules/supporting/offers/application/offers.service';
 import { summarizeOfferPricing } from '@modules/supporting/offers/domain/pricing';
 
 function fmtDate(iso?: string) {
@@ -49,6 +50,24 @@ export default async function OfferDetailsPage({
   const offer = await getOffer(id, orgId);
   if (!offer) notFound();
 
+  async function acceptOnBehalfAction() {
+    'use server';
+
+    const sessionUser = await getSessionUser();
+    if (!sessionUser) redirect('/logga-in');
+
+    const actionOrgId = await prisma.user
+      .findUnique({ where: { id: sessionUser.id }, select: { organizationId: true } })
+      .then((record) => record?.organizationId ?? '');
+
+    if (!actionOrgId) notFound();
+
+    await acceptOfferByStaff(id, actionOrgId);
+    revalidatePath('/offerter');
+    revalidatePath(`/offerter/${id}`);
+    redirect(`/offerter/${id}`);
+  }
+
   const publicHref =
     offer.status === 'sent' || offer.status === 'viewed' || offer.status === 'accepted'
       ? `/offerter/publik/${offer.publicToken}`
@@ -86,6 +105,16 @@ export default async function OfferDetailsPage({
           </div>
 
           <div className="flex flex-wrap gap-2">
+            {(offer.status === 'sent' || offer.status === 'viewed') && (
+              <form action={acceptOnBehalfAction}>
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
+                >
+                  Acceptera åt kund
+                </button>
+              </form>
+            )}
             {offer.generatedDocument && (
               <a
                 href={`/api/offers/${offer.id}/pdf`}

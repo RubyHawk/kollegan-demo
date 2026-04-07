@@ -26,7 +26,6 @@ import {
   formatVatRate,
   fromDisplayUnitPrice,
   getDisplayLineTotal,
-  getDisplayModeLabel,
   getDisplayUnitPrice,
   summarizeOfferPricing,
 } from '@modules/supporting/offers/domain/pricing';
@@ -111,6 +110,10 @@ function normalizeSearchValue(value: string) {
 function pricingSummary(items: LineItem[], mode: OfferPriceDisplayMode) {
   const validItems = items.filter((item) => item.description.trim() && item.quantity > 0);
   return summarizeOfferPricing(validItems, mode);
+}
+
+function linePriceLabel(vatRate: number) {
+  return vatRate > 0 ? 'inkl. moms' : 'exkl. moms';
 }
 
 function publicUrl(token: string): string {
@@ -1538,35 +1541,13 @@ export default function OffersPage() {
                                       ))}
                                     </div>
                                   </div>
-                                  <div>
-                                    <div className="mb-1 flex items-center justify-between gap-2">
-                                      <label className="block text-[10px] font-medium text-[var(--text-secondary)]">Priser visas som</label>
-                                      <span className="text-[10px] text-[var(--text-muted)]">
-                                        {getDisplayModeLabel(tots.hasVat, form.priceDisplayMode)}
-                                      </span>
+                                    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2.5">
+                                      <p className="text-[10px] font-medium text-[var(--text-secondary)]">Prisvisning</p>
+                                      <p className="mt-1 text-[11px] leading-5 text-[var(--text-muted)]">
+                                        Offerten visas automatiskt med <span className="font-semibold text-[var(--text-primary)]">inkl. moms</span>.
+                                        Om alla rader är 0% moms visas beloppen istället som <span className="font-semibold text-[var(--text-primary)]">exkl. moms</span>.
+                                      </p>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] p-1">
-                                      {([
-                                        { id: 'exclusive', label: 'Exkl. moms', hint: 'Radpriser visas utan moms' },
-                                        { id: 'inclusive', label: 'Inkl. moms', hint: 'Radpriser visar totalpris' },
-                                      ] as const).map((option) => (
-                                        <button
-                                          key={option.id}
-                                          type="button"
-                                          onClick={() => setForm((f) => ({ ...f, priceDisplayMode: option.id }))}
-                                          className={cn(
-                                            'rounded-md border px-3 py-2 text-left transition-all',
-                                            form.priceDisplayMode === option.id
-                                              ? 'border-[var(--accent)] bg-[var(--surface)] shadow-sm'
-                                              : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border)] hover:bg-[var(--surface)]/70',
-                                          )}
-                                        >
-                                          <p className="text-[11px] font-semibold text-[var(--text-primary)]">{option.label}</p>
-                                          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">{option.hint}</p>
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </div>
                                   <details className="rounded-lg border border-[var(--border)]/60 overflow-hidden group">
                                     <summary className="px-3 py-2 text-[10px] font-medium text-[var(--text-secondary)] cursor-pointer bg-[var(--surface-alt)] list-none flex items-center justify-between hover:bg-[var(--surface-active)] transition-colors select-none">
                                       <span>Anteckningar{form.notes ? ' · ifyllt' : ' (frivilligt)'}</span>
@@ -1731,7 +1712,7 @@ export default function OffersPage() {
                                         <span className="pb-2 text-[var(--text-muted)] text-xs shrink-0 select-none">×</span>
                                         <div className="flex-1 min-w-0">
                                           <label className="block text-[10px] text-[var(--text-muted)] mb-1">
-                                            Á-pris ({form.priceDisplayMode === 'inclusive' ? 'inkl. moms' : 'exkl. moms'})
+                                            Á-pris ({linePriceLabel(item.vatRate)})
                                           </label>
                                           <input type="number" min={0} value={displayUnitPrice} onChange={(e) => setLineUnitPriceFromDisplay(idx, parseFloat(e.target.value) || 0)} onFocus={(e) => { try { const l = e.target.value.length; e.target.setSelectionRange(l, l); } catch {} setActiveField('Rad ' + (idx + 1)); }} className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-xs text-right text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
                                         </div>
@@ -2047,8 +2028,8 @@ export default function OffersPage() {
                   <p className="text-xs text-[var(--text-muted)]">{offer.recipientCompany ?? offer.recipientEmail}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-bold text-[var(--text-primary)]">{fmtSEK(offer.totalIncVat)}</p>
-                  <p className="text-[11px] text-[var(--text-muted)]">ex. {fmtSEK(offer.totalExVat)}</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)]">{fmtSEK(pricingSummary(offer.lineItems, offer.priceDisplayMode).totalAmount)}</p>
+                  <p className="text-[11px] text-[var(--text-muted)]">{pricingSummary(offer.lineItems, offer.priceDisplayMode).displayModeLabel}</p>
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between gap-2">
@@ -2163,8 +2144,8 @@ export default function OffersPage() {
 
                     {/* Amount */}
                     <td className="px-3 py-3 text-right tabular-nums whitespace-nowrap">
-                      <p className="text-xs font-semibold text-[var(--text-primary)]">{fmtSEK(offer.totalIncVat)}</p>
-                      <p className="text-[10px] text-[var(--text-muted)]">ex. {fmtSEK(offer.totalExVat)}</p>
+                      <p className="text-xs font-semibold text-[var(--text-primary)]">{fmtSEK(pricingSummary(offer.lineItems, offer.priceDisplayMode).totalAmount)}</p>
+                      <p className="text-[10px] text-[var(--text-muted)]">{pricingSummary(offer.lineItems, offer.priceDisplayMode).displayModeLabel}</p>
                     </td>
 
                     {/* Valid until */}

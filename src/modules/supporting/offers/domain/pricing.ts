@@ -1,6 +1,6 @@
 export type OfferPriceDisplayMode = 'exclusive' | 'inclusive';
 
-export const DEFAULT_OFFER_PRICE_DISPLAY_MODE: OfferPriceDisplayMode = 'exclusive';
+export const DEFAULT_OFFER_PRICE_DISPLAY_MODE: OfferPriceDisplayMode = 'inclusive';
 
 interface PriceLineLike {
   quantity: number;
@@ -73,7 +73,7 @@ export function getDisplayLineTotal(item: PriceLineLike, mode: OfferPriceDisplay
 }
 
 export function getDisplayModeLabel(hasVat: boolean, mode: OfferPriceDisplayMode): string {
-  if (!hasVat) return 'momsfri';
+  if (!hasVat) return 'exkl. moms';
   return mode === 'inclusive' ? 'inkl. moms' : 'exkl. moms';
 }
 
@@ -110,8 +110,8 @@ export function summarizeOfferPricing(
     discountAmount: roundCurrency(discountAmount),
     hasVat,
     priceDisplayMode: mode,
-    subtotalLabel: hasVat ? 'Delsumma exkl. moms' : 'Delsumma',
-    vatLabel: hasVat ? 'Moms' : 'Ingen moms',
+    subtotalLabel: 'Delsumma exkl. moms',
+    vatLabel: 'Moms',
     totalLabel: hasVat ? 'Totalsumma inkl. moms' : 'Totalsumma exkl. moms',
     totalAmount: hasVat ? roundedIncVat : roundedExVat,
     displayModeLabel,
