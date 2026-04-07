@@ -172,6 +172,7 @@ function SortableRow({ id, children }: {
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function OffersPage() {
+  const enforcedPriceDisplayMode = DEFAULT_OFFER_PRICE_DISPLAY_MODE;
   const {
     companies,
     selectedCompany,
@@ -302,7 +303,7 @@ export default function OffersPage() {
     setEditingOfferId(offer.id);
     setForm({
       templateId:       offer.templateId ?? '',
-      priceDisplayMode: offer.priceDisplayMode ?? DEFAULT_OFFER_PRICE_DISPLAY_MODE,
+      priceDisplayMode: enforcedPriceDisplayMode,
       contactId:        '',
       companyId:        offer.companyId ?? '',
       title:            offer.title,
@@ -337,7 +338,7 @@ export default function OffersPage() {
               body: JSON.stringify({
                 content,
                 branding: selectedCompanyBranding,
-                offer: { priceDisplayMode: offer.priceDisplayMode ?? DEFAULT_OFFER_PRICE_DISPLAY_MODE },
+                offer: { priceDisplayMode: enforcedPriceDisplayMode },
               }),
             });
             const j = await res.json() as { html?: string };
@@ -385,7 +386,7 @@ export default function OffersPage() {
     try {
       const body: Record<string, unknown> = {
         title:            form.title,
-        priceDisplayMode: form.priceDisplayMode,
+        priceDisplayMode: enforcedPriceDisplayMode,
         recipientName:    form.recipientName,
         recipientEmail:   form.recipientEmail,
         recipientCompany: form.recipientCompany || undefined,
@@ -712,7 +713,7 @@ export default function OffersPage() {
             content,
             branding: selectedCompanyBranding,
             offer: {
-              priceDisplayMode: currentForm.priceDisplayMode,
+              priceDisplayMode: enforcedPriceDisplayMode,
               title:            currentForm.title            || undefined,
               recipientName:    currentForm.recipientName    || undefined,
               recipientEmail:   currentForm.recipientEmail   || undefined,
@@ -737,13 +738,13 @@ export default function OffersPage() {
     scheduleLivePreview(form, cachedTplContent);
   }, [
     form.title, form.recipientName, form.recipientEmail,
-    form.recipientCompany, form.notes, form.lineItems, form.priceDisplayMode,
+    form.recipientCompany, form.notes, form.lineItems,
     showForm, wizardStep, cachedTplContent, scheduleLivePreview,
   ]);
 
   const tots = useMemo(
-    () => pricingSummary(form.lineItems, form.priceDisplayMode),
-    [form.lineItems, form.priceDisplayMode],
+    () => pricingSummary(form.lineItems, enforcedPriceDisplayMode),
+    [enforcedPriceDisplayMode, form.lineItems],
   );
 
   // ── Drag-to-reorder line items ────────────────────────────────────────────────
@@ -759,20 +760,20 @@ export default function OffersPage() {
   const setLineUnitPriceFromDisplay = useCallback((idx: number, displayValue: number) => {
     const item = form.lineItems[idx];
     if (!item) return;
-    updateLine(idx, 'unitPrice', fromDisplayUnitPrice(displayValue, item.vatRate, form.priceDisplayMode));
-  }, [form.lineItems, form.priceDisplayMode, updateLine]);
+    updateLine(idx, 'unitPrice', fromDisplayUnitPrice(displayValue, item.vatRate, enforcedPriceDisplayMode));
+  }, [enforcedPriceDisplayMode, form.lineItems, updateLine]);
 
   const setLineVatRate = useCallback((idx: number, nextRate: number) => {
     const item = form.lineItems[idx];
     if (!item) return;
-    if (form.priceDisplayMode === 'inclusive') {
-      const currentDisplayUnitPrice = getDisplayUnitPrice(item, form.priceDisplayMode);
+    if (enforcedPriceDisplayMode === 'inclusive') {
+      const currentDisplayUnitPrice = getDisplayUnitPrice(item, enforcedPriceDisplayMode);
       updateLine(idx, 'vatRate', nextRate);
-      updateLine(idx, 'unitPrice', fromDisplayUnitPrice(currentDisplayUnitPrice, nextRate, form.priceDisplayMode));
+      updateLine(idx, 'unitPrice', fromDisplayUnitPrice(currentDisplayUnitPrice, nextRate, enforcedPriceDisplayMode));
       return;
     }
     updateLine(idx, 'vatRate', nextRate);
-  }, [form.lineItems, form.priceDisplayMode, updateLine]);
+  }, [enforcedPriceDisplayMode, form.lineItems, updateLine]);
 
   function handleLineItemDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -1541,13 +1542,6 @@ export default function OffersPage() {
                                       ))}
                                     </div>
                                   </div>
-                                    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2.5">
-                                      <p className="text-[10px] font-medium text-[var(--text-secondary)]">Prisvisning</p>
-                                      <p className="mt-1 text-[11px] leading-5 text-[var(--text-muted)]">
-                                        Offerten visas automatiskt med <span className="font-semibold text-[var(--text-primary)]">inkl. moms</span>.
-                                        Om alla rader är 0% moms visas beloppen istället som <span className="font-semibold text-[var(--text-primary)]">exkl. moms</span>.
-                                      </p>
-                                    </div>
                                   <details className="rounded-lg border border-[var(--border)]/60 overflow-hidden group">
                                     <summary className="px-3 py-2 text-[10px] font-medium text-[var(--text-secondary)] cursor-pointer bg-[var(--surface-alt)] list-none flex items-center justify-between hover:bg-[var(--surface-active)] transition-colors select-none">
                                       <span>Anteckningar{form.notes ? ' · ifyllt' : ' (frivilligt)'}</span>
@@ -1585,8 +1579,8 @@ export default function OffersPage() {
                             <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleLineItemDragEnd}>
                               <SortableContext items={lineItemIds} strategy={verticalListSortingStrategy}>
                             {form.lineItems.map((item, idx) => {
-                              const displayUnitPrice = getDisplayUnitPrice(item, form.priceDisplayMode);
-                              const displayLineTotal = getDisplayLineTotal(item, form.priceDisplayMode);
+                              const displayUnitPrice = getDisplayUnitPrice(item, enforcedPriceDisplayMode);
+                              const displayLineTotal = getDisplayLineTotal(item, enforcedPriceDisplayMode);
                               const lineComplete = item.description.trim().length > 0 && item.quantity > 0;
                               const isOpen = openLines.has(idx);
                               return (
@@ -1678,7 +1672,7 @@ export default function OffersPage() {
                                                   <div className="flex-1 min-w-0">
                                                     <p className="text-xs font-medium text-[var(--text-primary)] truncate">{p.name}</p>
                                                     <p className="text-[10px] text-[var(--text-muted)]">
-                                                      {fmtSEK(getDisplayUnitPrice(p, form.priceDisplayMode))}{p.unit ? ` / ${p.unit}` : ''} · {formatVatRate(p.vatRate)}
+                                                      {fmtSEK(getDisplayUnitPrice(p, enforcedPriceDisplayMode))}{p.unit ? ` / ${p.unit}` : ''} · {formatVatRate(p.vatRate)}
                                                     </p>
                                                   </div>
                                                 </button>
@@ -2028,8 +2022,8 @@ export default function OffersPage() {
                   <p className="text-xs text-[var(--text-muted)]">{offer.recipientCompany ?? offer.recipientEmail}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-bold text-[var(--text-primary)]">{fmtSEK(pricingSummary(offer.lineItems, offer.priceDisplayMode).totalAmount)}</p>
-                  <p className="text-[11px] text-[var(--text-muted)]">{pricingSummary(offer.lineItems, offer.priceDisplayMode).displayModeLabel}</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)]">{fmtSEK(pricingSummary(offer.lineItems, enforcedPriceDisplayMode).totalAmount)}</p>
+                  <p className="text-[11px] text-[var(--text-muted)]">{pricingSummary(offer.lineItems, enforcedPriceDisplayMode).displayModeLabel}</p>
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between gap-2">
@@ -2159,8 +2153,8 @@ export default function OffersPage() {
 
                     {/* Amount */}
                     <td className="px-3 py-3 text-right tabular-nums whitespace-nowrap">
-                      <p className="text-xs font-semibold text-[var(--text-primary)]">{fmtSEK(pricingSummary(offer.lineItems, offer.priceDisplayMode).totalAmount)}</p>
-                      <p className="text-[10px] text-[var(--text-muted)]">{pricingSummary(offer.lineItems, offer.priceDisplayMode).displayModeLabel}</p>
+                      <p className="text-xs font-semibold text-[var(--text-primary)]">{fmtSEK(pricingSummary(offer.lineItems, enforcedPriceDisplayMode).totalAmount)}</p>
+                      <p className="text-[10px] text-[var(--text-muted)]">{pricingSummary(offer.lineItems, enforcedPriceDisplayMode).displayModeLabel}</p>
                     </td>
 
                     {/* Valid until */}

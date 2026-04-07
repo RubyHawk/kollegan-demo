@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { generateDocument, generateFallbackDocument } from '@modules/supporting/offers/application/document-generator';
 import type { Offer } from '@modules/supporting/offers/domain/offer.entity';
 import { resolveOfferBranding } from '@modules/supporting/offers/application/company-branding';
+import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '@modules/supporting/offers/domain/pricing';
 
 const PREVIEW_SENTINELS = {
   title: '__PREVIEW_TITLE__',
@@ -121,7 +122,7 @@ export async function POST(req: Request) {
     const offer: Offer = {
       ...SAMPLE_OFFER,
       ...(body.offer?.title ? { title: body.offer.title } : {}),
-      ...(body.offer?.priceDisplayMode ? { priceDisplayMode: body.offer.priceDisplayMode } : {}),
+      priceDisplayMode: DEFAULT_OFFER_PRICE_DISPLAY_MODE,
       ...(body.offer?.recipientName ? { recipientName: body.offer.recipientName } : {}),
       ...(body.offer?.recipientEmail ? { recipientEmail: body.offer.recipientEmail } : {}),
       ...(body.offer?.recipientCompany != null ? { recipientCompany: body.offer.recipientCompany } : {}),

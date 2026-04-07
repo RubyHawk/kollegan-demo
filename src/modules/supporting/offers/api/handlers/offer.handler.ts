@@ -11,6 +11,7 @@ import { ok, created } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
 import { verifyToken } from '@platform/auth/jwt';
 import { constantTimeEqual } from '@platform/security/sanitize';
+import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '../../domain/pricing';
 import {
   createOffer,
   getOffer,
@@ -129,7 +130,7 @@ export const handleCreateOffer = createHandler(
     const offer = await createOffer({
       organizationId: payload.orgId!,
       createdBy:      payload.sub,
-      priceDisplayMode: body.priceDisplayMode,
+      priceDisplayMode: DEFAULT_OFFER_PRICE_DISPLAY_MODE,
       title: body.title, recipientName: body.recipientName,
       recipientEmail: body.recipientEmail, recipientCompany: body.recipientCompany,
       notes: body.notes, validUntil: placeholderValidUntil, validityDays: body.validityDays,
@@ -208,7 +209,7 @@ export const handleUpdateOffer = createHandler(
         ? new Date(Date.now() + body.validityDays * 24 * 60 * 60 * 1000)
         : undefined;
       updated = await updateOffer(id, payload.orgId!, {
-        title: body.title, priceDisplayMode: body.priceDisplayMode, recipientName: body.recipientName,
+        title: body.title, priceDisplayMode: DEFAULT_OFFER_PRICE_DISPLAY_MODE, recipientName: body.recipientName,
         recipientEmail: body.recipientEmail, recipientCompany: body.recipientCompany,
         notes: body.notes, validUntil: newValidUntil, validityDays: body.validityDays,
         companyId: body.companyId,
