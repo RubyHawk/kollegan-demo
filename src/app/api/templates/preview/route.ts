@@ -29,7 +29,7 @@ const SAMPLE_OFFER: Offer = {
   title: PREVIEW_SENTINELS.title,
   status: 'draft',
   offerNumber: undefined,
-  priceDisplayMode: 'exclusive',
+  priceDisplayMode: 'inclusive',
   recipientName: PREVIEW_SENTINELS.recipientName,
   recipientEmail: PREVIEW_SENTINELS.recipientEmail,
   recipientCompany: PREVIEW_SENTINELS.recipientCompany,

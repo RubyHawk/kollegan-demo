@@ -365,9 +365,17 @@ export async function declineOfferByToken(
 }
 
 export async function acceptOffer(id: string, orgId: string): Promise<Offer | null> {
+  const existing = await offersRepository.findById(id, orgId);
+  if (!existing) return null;
+
+  if (existing.status !== 'sent' && existing.status !== 'viewed') {
+    return null;
+  }
+
   const updated = await offersRepository.update(id, orgId, {
     status: 'accepted',
     acceptedAt: new Date(),
+    signerName: existing.recipientName,
   });
   if (!updated) return null;
 
@@ -388,6 +396,16 @@ export async function acceptOffer(id: string, orgId: string): Promise<Offer | nu
       logger.warn(TAG, 'Failed to auto-update lead on offer acceptance', { err })
     );
   }
+
+  const org = await identityService.getOrg(orgId).catch(() => null);
+  await dispatchCreatorNotification(
+    buildCreatorNotificationPayload(updated, 'signed', {
+      senderEmail: org?.senderEmail,
+      senderName: org?.senderName,
+    }),
+  ).catch((err: unknown) =>
+    logger.warn(TAG, 'Failed to send creator notification for internal acceptance', { err })
+  );
 
   logger.info(TAG, `Offer accepted: ${id}`, { totalIncVat: updated.totalIncVat });
   return updated;

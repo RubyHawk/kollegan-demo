@@ -101,7 +101,7 @@ export interface ServiceForm {
 export const EMPTY_LINE: LineItem = { description: '', quantity: 1, unitPrice: 0, vatRate: 0.25, discount: 0 };
 
 export const EMPTY_FORM: OfferForm = {
-  templateId: '', priceDisplayMode: 'exclusive', contactId: '', companyId: '', title: '', recipientName: '',
+  templateId: '', priceDisplayMode: 'inclusive', contactId: '', companyId: '', title: '', recipientName: '',
   recipientEmail: '', recipientCompany: '', notes: '',
   validityDays: 30, lineItems: [{ ...EMPTY_LINE }],
 };
