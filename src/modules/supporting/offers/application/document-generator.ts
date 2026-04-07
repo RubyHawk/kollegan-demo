@@ -1091,9 +1091,9 @@ export function generateDocument(templateContent: string, offer: Offer, branding
       .offer-shell__header, .offer-shell__topline { display: grid; grid-template-columns: minmax(0, 1fr) 168px; gap: 12px; }
       .offer-shell__footer { grid-template-columns: 1fr; gap: 10px; }
       .offer-shell__meta { min-width: 0; justify-items: end; text-align: right; }
-      .offer-shell__meta dl div { gap: 8px; }
+      .offer-shell__meta dl div { grid-template-columns: 1fr; gap: 2px; justify-items: end; }
       .offer-shell__meta dt { font-size: 12.5px; line-height: 1.5; }
-      .offer-shell__meta dd { font-size: 14px; line-height: 1.5; }
+      .offer-shell__meta dd { font-size: 14px; line-height: 1.5; white-space: normal; }
       .offer-shell__topline h1 { font-size: 17px; }
       .offer-shell__customer { min-width: 0; border-left: 1px solid #e2e8f0; border-top: none; padding-left: 10px; padding-top: 0; font-size: 14px; line-height: 1.55; }
       .offer-shell__sender-copy { font-size: 14px; line-height: 1.55; }
