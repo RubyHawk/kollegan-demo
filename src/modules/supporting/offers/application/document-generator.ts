@@ -1088,20 +1088,29 @@ export function generateDocument(templateContent: string, offer: Offer, branding
       .page-block { min-height: 0; overflow: visible; }
       .page-block > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
       .offer-shell { gap: 16px; }
-      .offer-shell__header, .offer-shell__topline { display: grid; grid-template-columns: minmax(0, 1fr) 160px; gap: 12px; }
+      .offer-shell__header, .offer-shell__topline { display: grid; grid-template-columns: minmax(0, 1fr) 168px; gap: 12px; }
       .offer-shell__footer { grid-template-columns: 1fr; gap: 10px; }
       .offer-shell__meta { min-width: 0; justify-items: end; text-align: right; }
       .offer-shell__meta dl div { gap: 8px; }
-      .offer-shell__meta dt { font-size: 12px; line-height: 1.45; }
-      .offer-shell__meta dd { font-size: 13px; line-height: 1.45; }
+      .offer-shell__meta dt { font-size: 12.5px; line-height: 1.5; }
+      .offer-shell__meta dd { font-size: 14px; line-height: 1.5; }
       .offer-shell__topline h1 { font-size: 17px; }
-      .offer-shell__customer { min-width: 0; border-left: 1px solid #e2e8f0; border-top: none; padding-left: 10px; padding-top: 0; }
+      .offer-shell__customer { min-width: 0; border-left: 1px solid #e2e8f0; border-top: none; padding-left: 10px; padding-top: 0; font-size: 14px; line-height: 1.55; }
+      .offer-shell__sender-copy { font-size: 14px; line-height: 1.55; }
+      .offer-section p { font-size: 14px; line-height: 1.78; }
+      .offer-item-card__title { font-size: 17px; line-height: 1.35; }
+      .offer-item-card__detail { font-size: 14px; line-height: 1.72; }
       .offer-items__table { display: none; }
       .offer-items__cards { display: grid; gap: 12px; }
+      .line-items td { font-size: 14px; line-height: 1.55; }
+      .line-items td::before { font-size: 12px; }
+      .totals td { font-size: 13.5px; line-height: 1.5; }
       .offer-summary { width: 100%; border-radius: 14px; padding: 8px 0; }
       .offer-summary--below { width: 100%; }
-      .offer-summary__row { font-size: 13px; padding: 8px 12px; }
-      .offer-summary__row--total { font-size: 15px; padding: 12px; }
+      .offer-summary__row { font-size: 14px; padding: 8px 12px; line-height: 1.55; }
+      .offer-summary__row--total { font-size: 16px; padding: 12px; }
+      .offer-summary__row--total strong { font-size: 19px; }
+      .offer-shell__footer div { font-size: 14px; line-height: 1.6; }
       ${MOBILE_TABLE_CSS}
     }
     @media print {
