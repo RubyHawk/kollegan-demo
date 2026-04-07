@@ -464,6 +464,24 @@ function buildEmailReplacements(offer: Offer): Record<string, string> {
   return buildReplacements(offer);
 }
 
+function normalizeOfferHtmlText(html: string): string {
+  return normalizeOfferHtmlText(html);
+  return html
+    .replace(/AvsÃ¤ndare/g, 'Avsändare')
+    .replace(/AvsÃƒÂ¤ndare/g, 'Avsändare')
+    .replace(/Produkt eller tjÃ¤nst/g, 'Produkt eller tjänst')
+    .replace(/Produkter och tjÃ¤nster/g, 'Produkter och tjänster')
+    .replace(/Ã…-pris/g, 'Å-pris')
+    .replace(/gÃ¤ller/g, 'gäller')
+    .replace(/utfÃ¶rs/g, 'utförs')
+    .replace(/Ã¶verenskommen/g, 'överenskommen')
+    .replace(/Ã¤ndringar/g, 'ändringar')
+    .replace(/tillÃ¤ggsbestÃ¤llning/g, 'tilläggsbeställning')
+    .replace(/tillÃ¤gg/g, 'tillägg')
+    .replace(/Â·/g, '·')
+    .replace(/â€”/g, '—');
+}
+
 /**
  * Interpolates {{placeholder}} variables in a plain-text or HTML string.
  * Used for custom email subject / body.
@@ -711,7 +729,7 @@ function renderStructuredDocumentPage(
       </div>
     </div>`;
 
-  return html;
+  return normalizeOfferHtmlText(html);
 }
 
 // ─── Main generator ────────────────────────────────────────────────────────────
