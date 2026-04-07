@@ -399,7 +399,6 @@ export default function PublicOfferPage() {
       .offer-section { gap: 8px !important; }
       .offer-section p { font-size: 13px !important; line-height: 1.72 !important; }
       .line-items { width: 100% !important; border-collapse: separate !important; border-spacing: 0 !important; border: 1px solid #dbe4ee !important; border-radius: 18px !important; overflow: hidden !important; background: #ffffff !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important; }
-      .line-items--desktop-headerless thead { display: none !important; }
       .line-items thead { display: table-header-group !important; }
       .line-items tbody { display: table-row-group !important; }
       .line-items tr { display: table-row !important; background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; }
@@ -761,7 +760,7 @@ export default function PublicOfferPage() {
       doc.querySelectorAll<HTMLTableElement>('table.line-items').forEach((table) => {
         const header = table.querySelector('thead');
         if (!header || isCompactDocument || !frameWindow) {
-          table.classList.remove('line-items--desktop-headerless');
+          header?.style.removeProperty('display');
           return;
         }
 
@@ -772,7 +771,8 @@ export default function PublicOfferPage() {
           : '';
 
         const shouldHideHeader = rowDisplay === 'grid' || rowDisplay === 'block' || tbodyDisplay === 'grid';
-        table.classList.toggle('line-items--desktop-headerless', shouldHideHeader);
+        if (shouldHideHeader) header.style.setProperty('display', 'none', 'important');
+        else header.style.removeProperty('display');
       });
     };
 
@@ -823,6 +823,7 @@ export default function PublicOfferPage() {
           ? Math.max(Math.ceil(naturalH * effectiveScale), Math.ceil(renderedH))
           : Math.max(naturalH, Math.ceil(renderedH));
         iframe.style.height = `${targetHeight}px`;
+        syncDesktopLegacyTableHeaders(window.innerWidth < 700);
         const rawOfferOffset = firstDocumentPage?.offsetTop ?? 0;
         const scaledOfferOffset = effectiveScale < 1 ? rawOfferOffset * effectiveScale : rawOfferOffset;
         setOfferSectionOffset(Math.max(0, Math.round(scaledOfferOffset)));
