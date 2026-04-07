@@ -398,42 +398,12 @@ export default function PublicOfferPage() {
       .offer-shell__customer { min-width: 0 !important; display: grid !important; gap: 3px !important; padding-left: 12px !important; border-left: 1px solid #e2e8f0 !important; font-size: 13px !important; line-height: 1.5 !important; color: #475569 !important; }
       .offer-section { gap: 8px !important; }
       .offer-section p { font-size: 13px !important; line-height: 1.72 !important; }
-      .line-items { width: 100% !important; border-collapse: separate !important; border-spacing: 0 !important; border: 1px solid #dbe4ee !important; border-radius: 18px !important; overflow: hidden !important; background: #ffffff !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important; }
-      .line-items thead { display: table-header-group !important; }
-      .line-items tbody { display: table-row-group !important; }
-      .line-items tr { display: table-row !important; background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; }
-      .line-items thead th { padding: 12px 16px !important; background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%) !important; border-bottom: 1px solid #dbe4ee !important; color: #64748b !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; }
-      .line-items tbody td { padding: 15px 16px !important; border-bottom: 1px solid #eef2f7 !important; font-size: 13px !important; color: #334155 !important; vertical-align: top !important; }
-      .line-items td { display: table-cell !important; width: auto !important; margin: 0 !important; border-radius: 0 !important; background: transparent !important; }
-      .line-items td::before { content: none !important; display: none !important; }
-      .line-items tbody tr:last-child td { border-bottom: none !important; }
-      .line-items tbody td[data-label="Beskrivning"] { width: 44% !important; }
-      .line-items tbody td[data-label="Belopp"] { font-weight: 700 !important; color: #0f172a !important; }
-      .totals { width: min(280px, 100%) !important; margin-left: auto !important; border-collapse: separate !important; border-spacing: 0 !important; border: 1px solid #dbe4ee !important; border-radius: 14px !important; overflow: hidden !important; background: #ffffff !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important; }
-      .totals tbody, .totals { display: table !important; }
-      .totals tr { display: table-row !important; }
-      .totals td { padding: 8px 14px !important; border: none !important; font-size: 12px !important; color: #475569 !important; white-space: nowrap !important; }
-      .totals tr:last-child td { padding: 12px 14px !important; border-top: 1px solid #e8eef5 !important; background: #f8fafc !important; font-size: 14px !important; font-weight: 700 !important; color: #0f172a !important; }
-      .totals tr:last-child td:last-child { font-size: 17px !important; }
       .offer-summary { width: min(240px, 100%) !important; border: 1px solid #dbe4ee !important; border-radius: 14px !important; background: #ffffff !important; padding: 8px 0 !important; gap: 0 !important; overflow: hidden !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important; }
       .offer-summary--below { width: min(360px, 100%) !important; margin-left: auto !important; }
       .offer-summary__row { font-size: 13px !important; padding: 7px 14px !important; border-bottom: none !important; color: #475569 !important; align-items: baseline !important; line-height: 1.5 !important; }
       .offer-summary__row strong { color: #0f172a !important; }
       .offer-summary__row--total { margin-top: 6px !important; padding: 11px 14px 10px !important; border-top: 1px solid #e8eef5 !important; border-bottom: none !important; background: #f8fafc !important; color: #0f172a !important; font-size: 14px !important; }
       .offer-summary__row--total strong { color: #0f172a !important; font-size: 18px !important; }
-      @media (min-width: 700px) {
-        .line-items { display: table !important; width: 100% !important; }
-        .line-items thead { display: table-header-group !important; }
-        .line-items tbody { display: table-row-group !important; }
-        .line-items tr { display: table-row !important; background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; margin: 0 !important; }
-        .line-items td { display: table-cell !important; width: auto !important; margin: 0 !important; padding: 15px 16px !important; border-radius: 0 !important; background: transparent !important; }
-        .line-items td::before { content: none !important; display: none !important; }
-        .line-items td[data-label="Beskrivning"] { display: table-cell !important; width: 44% !important; padding: 15px 16px !important; background: transparent !important; }
-        .line-items td[data-label="Belopp"] { margin: 0 !important; padding: 15px 16px !important; border: none !important; border-radius: 0 !important; background: transparent !important; }
-        .totals, .totals tbody { display: table !important; width: min(280px, 100%) !important; }
-        .totals tr { display: table-row !important; }
-        .totals td { display: table-cell !important; flex: none !important; white-space: nowrap !important; }
-      }
       .offer-shell__footer { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; padding-top: 14px !important; }
       .offer-shell__footer div { font-size: 13px !important; line-height: 1.55 !important; }
       .offer-items { display: grid !important; gap: 12px !important; }
@@ -460,6 +430,8 @@ export default function PublicOfferPage() {
       .offer-item-card__metric dt { font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; color: #94a3b8 !important; }
       .offer-item-card__metric dd { text-align: right !important; font-size: 14px !important; font-weight: 600 !important; color: #0f172a !important; }
       .offer-item-card__metric--total { background: #f8fafc !important; }
+      .offer-item-card__metric--total dt { color: #475569 !important; }
+      .offer-item-card__metric--total dd { font-size: 18px !important; font-weight: 800 !important; letter-spacing: -0.02em !important; color: #0f172a !important; }
       html.offer-mobile .offer-shell__header, html.offer-mobile .offer-shell__topline { grid-template-columns: minmax(0, 1fr) 168px !important; gap: 12px !important; }
       html.offer-mobile .offer-shell__meta { justify-items: end !important; text-align: right !important; }
       html.offer-mobile .offer-shell__meta dl div { grid-template-columns: 1fr !important; gap: 2px !important; justify-items: end !important; }
@@ -469,29 +441,20 @@ export default function PublicOfferPage() {
       html.offer-mobile .offer-shell__sender-copy { font-size: 14px !important; line-height: 1.55 !important; }
       html.offer-mobile .offer-section p { font-size: 14px !important; line-height: 1.78 !important; }
       html.offer-mobile .offer-item-card__title { font-size: 17px !important; line-height: 1.35 !important; }
-      html.offer-mobile .offer-item-card__detail { font-size: 14px !important; line-height: 1.72 !important; }
+      html.offer-mobile .offer-item-card__detail { display: none !important; }
       html.offer-mobile .offer-items__table { display: none !important; }
-      html.offer-mobile .offer-items__cards { display: grid !important; gap: 12px !important; }
-      html.offer-mobile .line-items { display: block !important; width: 100% !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; background: transparent !important; }
-      html.offer-mobile .line-items thead { display: none !important; }
-      html.offer-mobile .line-items tbody { display: grid !important; gap: 12px !important; }
-      html.offer-mobile .line-items tr { display: grid !important; gap: 0 !important; background: #ffffff !important; border: 1px solid #dbe4ee !important; border-radius: 18px !important; overflow: hidden !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important; }
-      html.offer-mobile .line-items td { display: flex !important; justify-content: space-between !important; align-items: baseline !important; gap: 14px !important; padding: 11px 16px !important; border-bottom: 1px solid #eef2f7 !important; font-size: 14px !important; line-height: 1.55 !important; text-align: left !important; color: #0f172a !important; }
-      html.offer-mobile .line-items td::before { content: attr(data-label) !important; color: #94a3b8 !important; font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; }
-      html.offer-mobile .line-items td[data-label="Beskrivning"] { display: block !important; width: auto !important; padding: 16px !important; background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%) !important; }
-      html.offer-mobile .line-items td[data-label="Beskrivning"]::before { content: "Produkt eller tjänst" !important; display: block !important; margin-bottom: 6px !important; }
-      html.offer-mobile .line-items td[data-label="Belopp"] { background: #f8fafc !important; font-weight: 700 !important; }
-      html.offer-mobile .line-items tr:last-child td { border-bottom: none !important; }
-      html.offer-mobile .totals { display: block !important; width: 100% !important; border-radius: 14px !important; }
-      html.offer-mobile .totals tbody { display: block !important; }
-      html.offer-mobile .totals tr { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; }
-      html.offer-mobile .totals td { font-size: 13.5px !important; padding: 8px 12px !important; white-space: normal !important; line-height: 1.5 !important; }
+      html.offer-mobile .offer-items__cards { display: grid !important; gap: 16px !important; }
+      html.offer-mobile .offer-item-card { border-color: #cfdbe8 !important; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important; background: #ffffff !important; }
+      html.offer-mobile .offer-item-card__metric { background: #ffffff !important; }
+      html.offer-mobile .offer-item-card__metric:nth-child(even) { background: #fbfdff !important; }
+      html.offer-mobile .offer-item-card__metric--total { background: linear-gradient(180deg, #eef5ff 0%, #e2eeff 100%) !important; border-top: 1px solid #c7d9ee !important; }
+      html.offer-mobile .offer-item-card__metric--total dd { font-size: 20px !important; font-weight: 800 !important; color: #0f172a !important; }
       html.offer-mobile .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
-      html.offer-mobile .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 8px 0 !important; }
-      html.offer-mobile .offer-summary--below { width: 100% !important; }
+      html.offer-mobile .offer-summary { width: 100% !important; border-radius: 16px !important; padding: 8px 0 !important; margin-top: 18px !important; border-color: #cfdbe8 !important; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05) !important; }
+      html.offer-mobile .offer-summary--below { width: 100% !important; margin-top: 18px !important; }
       html.offer-mobile .offer-summary__row { font-size: 14px !important; padding: 8px 12px !important; line-height: 1.55 !important; }
-      html.offer-mobile .offer-summary__row--total { font-size: 16px !important; padding: 12px !important; }
-      html.offer-mobile .offer-summary__row--total strong { font-size: 19px !important; }
+      html.offer-mobile .offer-summary__row--total { font-size: 16px !important; padding: 12px !important; background: #0f172a !important; color: #f8fafc !important; }
+      html.offer-mobile .offer-summary__row--total strong { font-size: 19px !important; color: #ffffff !important; }
       html.offer-mobile .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
       @media (max-width: 640px) {
         .offer-shell__header, .offer-shell__topline { grid-template-columns: minmax(0, 1fr) 168px !important; gap: 12px !important; }
@@ -503,29 +466,20 @@ export default function PublicOfferPage() {
         .offer-shell__sender-copy { font-size: 14px !important; line-height: 1.55 !important; }
         .offer-section p { font-size: 14px !important; line-height: 1.78 !important; }
         .offer-item-card__title { font-size: 17px !important; line-height: 1.35 !important; }
-        .offer-item-card__detail { font-size: 14px !important; line-height: 1.72 !important; }
+        .offer-item-card__detail { display: none !important; }
         .offer-items__table { display: none !important; }
-        .offer-items__cards { display: grid !important; gap: 12px !important; }
-        .line-items { display: block !important; width: 100% !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; background: transparent !important; }
-        .line-items thead { display: none !important; }
-        .line-items tbody { display: grid !important; gap: 12px !important; }
-        .line-items tr { display: grid !important; gap: 0 !important; background: #ffffff !important; border: 1px solid #dbe4ee !important; border-radius: 18px !important; overflow: hidden !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important; }
-        .line-items td { display: flex !important; justify-content: space-between !important; align-items: baseline !important; gap: 14px !important; padding: 11px 16px !important; border-bottom: 1px solid #eef2f7 !important; font-size: 14px !important; line-height: 1.55 !important; text-align: left !important; color: #0f172a !important; }
-        .line-items td::before { content: attr(data-label) !important; color: #94a3b8 !important; font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; }
-        .line-items td[data-label="Beskrivning"] { display: block !important; width: auto !important; padding: 16px !important; background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%) !important; }
-        .line-items td[data-label="Beskrivning"]::before { content: "Produkt eller tjänst" !important; display: block !important; margin-bottom: 6px !important; }
-        .line-items td[data-label="Belopp"] { background: #f8fafc !important; font-weight: 700 !important; }
-        .line-items tr:last-child td { border-bottom: none !important; }
-        .totals { display: block !important; width: 100% !important; border-radius: 14px !important; }
-        .totals tbody { display: block !important; }
-        .totals tr { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; }
-        .totals td { font-size: 13.5px !important; padding: 8px 12px !important; white-space: normal !important; line-height: 1.5 !important; }
+        .offer-items__cards { display: grid !important; gap: 16px !important; }
+        .offer-item-card { border-color: #cfdbe8 !important; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important; background: #ffffff !important; }
+        .offer-item-card__metric { background: #ffffff !important; }
+        .offer-item-card__metric:nth-child(even) { background: #fbfdff !important; }
+        .offer-item-card__metric--total { background: linear-gradient(180deg, #eef5ff 0%, #e2eeff 100%) !important; border-top: 1px solid #c7d9ee !important; }
+        .offer-item-card__metric--total dd { font-size: 20px !important; font-weight: 800 !important; color: #0f172a !important; }
         .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
-        .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 8px 0 !important; }
-        .offer-summary--below { width: 100% !important; }
+        .offer-summary { width: 100% !important; border-radius: 16px !important; padding: 8px 0 !important; margin-top: 18px !important; border-color: #cfdbe8 !important; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05) !important; }
+        .offer-summary--below { width: 100% !important; margin-top: 18px !important; }
         .offer-summary__row { font-size: 14px !important; padding: 8px 12px !important; line-height: 1.55 !important; }
-        .offer-summary__row--total { font-size: 16px !important; padding: 12px !important; }
-        .offer-summary__row--total strong { font-size: 19px !important; }
+        .offer-summary__row--total { font-size: 16px !important; padding: 12px !important; background: #0f172a !important; color: #f8fafc !important; }
+        .offer-summary__row--total strong { font-size: 19px !important; color: #ffffff !important; }
         .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
       }
     `;
@@ -587,161 +541,12 @@ export default function PublicOfferPage() {
       if (label === 'prisvisning') item.remove();
     });
 
-    const shouldUpgradeForCompact = (window.innerWidth || iframe.getBoundingClientRect().width) < 700;
-
     const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {
       const node = walker.currentNode;
       const value = node.nodeValue ?? '';
       const normalized = normalizeBrokenSwedish(value);
       if (normalized !== value) node.nodeValue = normalized;
-    }
-
-    if (shouldUpgradeForCompact) {
-      doc.querySelectorAll<HTMLTableElement>('table.line-items').forEach((table) => {
-      if (table.dataset.enhanced === 'true' || table.closest('.offer-items')) return;
-
-      const headers = Array.from(table.querySelectorAll('thead th')).map((header) => (
-        header.textContent?.replace(/\u00a0/g, ' ').trim() ?? ''
-      ));
-      const rows = Array.from(table.querySelectorAll('tbody tr'));
-      if (headers.length === 0 || rows.length === 0) return;
-
-      const gridTemplate = [
-        'minmax(0, 1.85fr)',
-        '72px',
-        '112px',
-        ...(headers.some((label) => label.toLocaleLowerCase('sv-SE').includes('rabatt')) ? ['92px'] : []),
-        ...(headers.some((label) => label.toLocaleLowerCase('sv-SE').includes('moms')) ? ['92px'] : []),
-        '116px',
-      ].join(' ');
-
-      const wrapperEl = doc.createElement('div');
-      wrapperEl.className = 'offer-items';
-
-      const tableShell = doc.createElement('div');
-      tableShell.className = 'offer-items__table';
-
-      const headEl = doc.createElement('div');
-      headEl.className = 'offer-items__head';
-      headEl.style.setProperty('--offer-columns', gridTemplate);
-      headers.forEach((label) => {
-        const cell = doc.createElement('span');
-        cell.textContent = label;
-        headEl.appendChild(cell);
-      });
-      tableShell.appendChild(headEl);
-
-      const bodyEl = doc.createElement('div');
-      bodyEl.className = 'offer-items__body';
-
-      const cardsEl = doc.createElement('div');
-      cardsEl.className = 'offer-items__cards';
-
-      rows.forEach((row) => {
-        const cells = Array.from(row.querySelectorAll('td'));
-        if (cells.length === 0) return;
-
-        const descriptionCell = cells[0];
-        const descriptionBlocks = Array.from(descriptionCell.children) as HTMLElement[];
-        const titleHtml = descriptionBlocks[0]?.innerHTML?.trim() || descriptionCell.innerHTML.trim();
-        const detailHtml = descriptionBlocks.slice(1).map((block) => block.innerHTML.trim()).filter(Boolean).join('');
-
-        const desktopRow = doc.createElement('article');
-        desktopRow.className = 'offer-item-row';
-        desktopRow.style.setProperty('--offer-columns', gridTemplate);
-
-        const desktopProduct = doc.createElement('div');
-        desktopProduct.className = 'offer-item-row__product';
-        const desktopTitle = doc.createElement('div');
-        desktopTitle.className = 'offer-item-row__title';
-        desktopTitle.innerHTML = titleHtml;
-        desktopProduct.appendChild(desktopTitle);
-        if (detailHtml) {
-          const desktopDetail = doc.createElement('div');
-          desktopDetail.className = 'offer-item-row__detail';
-          desktopDetail.innerHTML = detailHtml;
-          desktopProduct.appendChild(desktopDetail);
-        }
-        desktopRow.appendChild(desktopProduct);
-
-        const cardEl = doc.createElement('article');
-        cardEl.className = 'offer-item-card';
-        const cardTop = doc.createElement('div');
-        cardTop.className = 'offer-item-card__top';
-        const cardEyebrow = doc.createElement('div');
-        cardEyebrow.className = 'offer-item-card__eyebrow';
-        cardEyebrow.textContent = 'Produkt eller tjänst';
-        const cardTitle = doc.createElement('div');
-        cardTitle.className = 'offer-item-card__title';
-        cardTitle.innerHTML = titleHtml;
-        cardTop.appendChild(cardEyebrow);
-        cardTop.appendChild(cardTitle);
-        if (detailHtml) {
-          const cardDetail = doc.createElement('div');
-          cardDetail.className = 'offer-item-card__detail';
-          cardDetail.innerHTML = detailHtml;
-          cardTop.appendChild(cardDetail);
-        }
-        cardEl.appendChild(cardTop);
-
-        const cardGrid = doc.createElement('dl');
-        cardGrid.className = 'offer-item-card__grid';
-
-        headers.slice(1).forEach((label, index) => {
-          const cell = cells[index + 1];
-          if (!cell) return;
-          const desktopValue = doc.createElement('div');
-          desktopValue.className = `offer-item-row__value${label.toLocaleLowerCase('sv-SE').includes('belopp') ? ' offer-item-row__value--strong' : ''}`;
-          desktopValue.innerHTML = cell.innerHTML.trim();
-          desktopRow.appendChild(desktopValue);
-
-          const metric = doc.createElement('div');
-          metric.className = `offer-item-card__metric${label.toLocaleLowerCase('sv-SE').includes('belopp') ? ' offer-item-card__metric--total' : ''}`;
-          const dt = doc.createElement('dt');
-          dt.textContent = label;
-          const dd = doc.createElement('dd');
-          dd.innerHTML = cell.innerHTML.trim();
-          metric.appendChild(dt);
-          metric.appendChild(dd);
-          cardGrid.appendChild(metric);
-        });
-
-        bodyEl.appendChild(desktopRow);
-        cardEl.appendChild(cardGrid);
-        cardsEl.appendChild(cardEl);
-      });
-
-      tableShell.appendChild(bodyEl);
-      wrapperEl.appendChild(tableShell);
-      wrapperEl.appendChild(cardsEl);
-        table.replaceWith(wrapperEl);
-      });
-
-      doc.querySelectorAll<HTMLTableElement>('table.totals').forEach((table) => {
-      if (table.dataset.enhanced === 'true' || table.closest('.offer-summary')) return;
-      const rows = Array.from(table.querySelectorAll('tr'));
-      if (rows.length === 0) return;
-
-      const summaryEl = doc.createElement('aside');
-      summaryEl.className = 'offer-summary offer-summary--below';
-
-      rows.forEach((row, index) => {
-        const cells = Array.from(row.querySelectorAll('td'));
-        if (cells.length < 2) return;
-        const line = doc.createElement('div');
-        line.className = `offer-summary__row${index === rows.length - 1 ? ' offer-summary__row--total' : ''}`;
-        const label = doc.createElement('span');
-        label.textContent = cells[0].textContent?.replace(/\u00a0/g, ' ').trim() ?? '';
-        const value = doc.createElement('strong');
-        value.innerHTML = cells[1].innerHTML.trim();
-        line.appendChild(label);
-        line.appendChild(value);
-        summaryEl.appendChild(line);
-      });
-
-        table.replaceWith(summaryEl);
-      });
     }
 
     const legacyMetaTitle = doc.querySelector<HTMLElement>('.offer-shell__title');
@@ -757,27 +562,6 @@ export default function PublicOfferPage() {
     // entire document down so it fits without horizontal scrolling.
     const DOC_WIDTH = 816;
 
-    const syncDesktopLegacyTableHeaders = (isCompactDocument: boolean) => {
-      const frameWindow = doc.defaultView;
-      doc.querySelectorAll<HTMLTableElement>('table.line-items').forEach((table) => {
-        const header = table.querySelector('thead');
-        if (!header || isCompactDocument || !frameWindow) {
-          header?.style.removeProperty('display');
-          return;
-        }
-
-        const firstRow = table.querySelector('tbody tr');
-        const rowDisplay = firstRow ? frameWindow.getComputedStyle(firstRow).display : '';
-        const tbodyDisplay = table.tBodies[0]
-          ? frameWindow.getComputedStyle(table.tBodies[0]).display
-          : '';
-
-        const shouldHideHeader = rowDisplay === 'grid' || rowDisplay === 'block' || tbodyDisplay === 'grid';
-        if (shouldHideHeader) header.style.setProperty('display', 'none', 'important');
-        else header.style.removeProperty('display');
-      });
-    };
-
     const applyViewportLayout = () => {
       if (!doc.documentElement) return 1;
 
@@ -788,7 +572,6 @@ export default function PublicOfferPage() {
       const effectiveScale = isCompactDocument ? 1 : scale;
 
       doc.documentElement.classList.toggle('offer-mobile', isCompactDocument);
-      syncDesktopLegacyTableHeaders(isCompactDocument);
 
       if (effectiveScale < 1) {
         doc.documentElement.style.width = `${DOC_WIDTH}px`;
@@ -825,7 +608,6 @@ export default function PublicOfferPage() {
           ? Math.max(Math.ceil(naturalH * effectiveScale), Math.ceil(renderedH))
           : Math.max(naturalH, Math.ceil(renderedH));
         iframe.style.height = `${targetHeight}px`;
-        syncDesktopLegacyTableHeaders(window.innerWidth < 700);
         const rawOfferOffset = firstDocumentPage?.offsetTop ?? 0;
         const scaledOfferOffset = effectiveScale < 1 ? rawOfferOffset * effectiveScale : rawOfferOffset;
         setOfferSectionOffset(Math.max(0, Math.round(scaledOfferOffset)));
