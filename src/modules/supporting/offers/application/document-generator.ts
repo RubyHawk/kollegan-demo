@@ -1034,7 +1034,7 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     .page-content { padding: 40px 48px; }
     .page-content--edge-to-edge { padding: 0; }
     /* Keep regular content above absolute background/overlay images on mixed pages. */
-    .page-content > *:not(div[style*="position:absolute"]) { position: relative; z-index: 10; }
+    .page-content > *:not(div[style*="position:absolute"]) { position: relative; z-index: 30; }
     .page-block--document { background: #ffffff; }
     .page-block--document::before {
       content: '';
@@ -1117,7 +1117,7 @@ export function generateDocument(templateContent: string, offer: Offer, branding
       .doc-wrapper { margin: 0; border: none; border-radius: 0; }
       .page-content { padding: 20px 16px; }
       .page-block { min-height: 0; overflow: visible; }
-      .page-block > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
+      .page-content--edge-to-edge > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; }
       .offer-shell { gap: 16px; }
       .offer-shell__header, .offer-shell__topline { display: grid; grid-template-columns: minmax(0, 1fr) 168px; gap: 12px; }
       .offer-shell__footer { grid-template-columns: 1fr; gap: 10px; }
