@@ -111,7 +111,7 @@ export function CompanyMembersDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-3xl">
+      <DialogContent mobileVariant="fullscreen" showMobileClose className="w-[min(100vw-1.5rem,1200px)] sm:max-w-[1200px]">
         <DialogHeader className="border-b border-[var(--border)] pr-16">
           <DialogTitle>Koppla användare till {companyName}</DialogTitle>
           <DialogDescription>
@@ -119,7 +119,8 @@ export function CompanyMembersDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[min(72dvh,760px)] space-y-5 overflow-y-auto px-6 py-6">
+        <div className="max-h-[min(84dvh,900px)] overflow-y-auto px-6 py-6">
+          <div className="grid gap-5 xl:grid-cols-[minmax(340px,0.9fr)_minmax(0,1.2fr)]">
           <section className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
             <div className="flex items-start gap-3">
               <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] text-[var(--accent)]">
@@ -275,6 +276,7 @@ export function CompanyMembersDialog({
               </div>
             )}
           </section>
+          </div>
         </div>
 
         <DialogFooter>

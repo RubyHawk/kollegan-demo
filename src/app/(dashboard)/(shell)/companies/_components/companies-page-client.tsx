@@ -455,6 +455,11 @@ export function CompaniesPageClient() {
         company={editCompany}
         onClose={closeModal}
         onSave={handleSave}
+        onOpenTemplates={() => {
+          const targetCompany = editCompany ?? selectedCompany;
+          if (!targetCompany) return;
+          openTemplatesForCompany(targetCompany);
+        }}
         saving={saving}
       />
 

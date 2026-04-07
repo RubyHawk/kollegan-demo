@@ -3,6 +3,7 @@ import type { Company } from '../domain/offer.entity';
 export interface OfferBrandingProfile {
   companyName: string;
   senderName: string;
+  organizationNumber?: string;
   senderEmail?: string;
   website?: string;
   logoUrl?: string;
@@ -34,6 +35,7 @@ export function resolveOfferBranding(
   return {
     companyName,
     senderName,
+    organizationNumber: company?.orgNumber?.trim() || undefined,
     senderEmail: company?.senderEmail?.trim() || org?.senderEmail?.trim(),
     website: company?.website?.trim(),
     logoUrl: company?.logoUrl?.trim(),
