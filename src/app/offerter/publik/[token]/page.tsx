@@ -103,6 +103,50 @@ function normalizeBrokenSwedish(text: string): string {
     .replace(/â€\u009d/g, '”')
     .replace(/â€™/g, '’');
 }
+
+function normalizeOfferText(text: string): string {
+  return normalizeBrokenSwedish(text)
+    .replace(/Ã…/g, 'Å')
+    .replace(/Ã„/g, 'Ä')
+    .replace(/Ã–/g, 'Ö')
+    .replace(/Ã¥/g, 'å')
+    .replace(/Ã¤/g, 'ä')
+    .replace(/Ã¶/g, 'ö')
+    .replace(/Â /g, '\u00a0')
+    .replace(/Â·/g, '·')
+    .replace(/Â(?=[\u00a0 0-9%.,:;|kr])/g, '');
+}
+
+function isPromoPageBlock(pageBlock: HTMLElement): boolean {
+  const pageContent = pageBlock.querySelector<HTMLElement>('.page-content') ?? pageBlock;
+  const text = pageContent.innerText.replace(/\s+/g, ' ').trim();
+  const topLevelChildren = Array.from(pageContent.children) as HTMLElement[];
+  const hasEdgeToEdgeAbsoluteImage = topLevelChildren.some((child) => child.style.position === 'absolute');
+  const hasMeaningfulInlineContent = topLevelChildren.some((child) => {
+    if (child.style.position === 'absolute') return false;
+    const childText = child.innerText.replace(/\s+/g, ' ').trim();
+    return childText.length >= 40 || /^(H[1-6]|UL|OL|TABLE)$/.test(child.tagName);
+  });
+  const hasStructuredOfferContent = !!pageContent.querySelector(
+    '.offer-shell, .offer-items, .offer-summary, [data-var="lineItems"], table',
+  );
+
+  return hasEdgeToEdgeAbsoluteImage && !hasMeaningfulInlineContent && !hasStructuredOfferContent && text.length < 40;
+}
+
+function findFirstOfferPageIndex(pageBlocks: HTMLElement[]): number {
+  const firstOfferPageIndex = pageBlocks.findIndex((pageBlock) => !isPromoPageBlock(pageBlock));
+  return firstOfferPageIndex === -1 ? 0 : firstOfferPageIndex;
+}
+
+function findOfferAnchor(pageBlock: HTMLElement | null): HTMLElement | null {
+  if (!pageBlock) return null;
+
+  return pageBlock.querySelector<HTMLElement>(
+    '.offer-shell__topline, .offer-shell, .offer-section, .offer-items, .offer-summary, h1, h2, table',
+  );
+}
+
 function textToSignatureImage(text: string, fontFamily: string): string {
   const canvas = document.createElement('canvas');
   canvas.width = 600; canvas.height = 150;
@@ -277,6 +321,7 @@ export default function PublicOfferPage() {
   const [documentReady, setDocumentReady] = useState(false);
   const [offerSectionOffset, setOfferSectionOffset] = useState(0);
   const [promoPageCount, setPromoPageCount] = useState(0);
+  const [jumpScrollBuffer, setJumpScrollBuffer] = useState(0);
 
   const sigRef = useRef<SignatureCanvas>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
@@ -309,6 +354,18 @@ export default function PublicOfferPage() {
     },
     [capturedAt, capturedSignature, offer, signerName],
   );
+  const iframeDocumentHtml = useMemo(() => {
+    if (!offer?.generatedDocument) return '';
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    if (!origin || /<base\b/i.test(offer.generatedDocument)) {
+      return offer.generatedDocument;
+    }
+
+    return offer.generatedDocument.includes('</head>')
+      ? offer.generatedDocument.replace('</head>', `<base href="${origin}/" />\n</head>`)
+      : `<base href="${origin}/" />${offer.generatedDocument}`;
+  }, [offer?.generatedDocument]);
 
   useEffect(() => {
     if (sigMode !== 'type') {
@@ -319,8 +376,8 @@ export default function PublicOfferPage() {
   useEffect(() => {
     setDocumentReady(false);
     setOfferSectionOffset(0);
-    setPromoPageCount(0);
-  }, [offer?.generatedDocument]);
+    setJumpScrollBuffer(0);
+  }, [iframeDocumentHtml]);
 
   // The app shell uses a globally locked viewport, but the public signing page
   // needs normal document scrolling so the full offer can be reviewed.
@@ -432,6 +489,9 @@ export default function PublicOfferPage() {
       .offer-item-card__metric--total { background: #f8fafc !important; }
       .offer-item-card__metric--total dt { color: #475569 !important; }
       .offer-item-card__metric--total dd { font-size: 18px !important; font-weight: 800 !important; letter-spacing: -0.02em !important; color: #0f172a !important; }
+      html.offer-mobile .doc-wrapper { width: 100% !important; max-width: none !important; margin: 0 !important; border: none !important; border-radius: 0 !important; }
+      html.offer-mobile .page-content--edge-to-edge > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; line-height: 0 !important; }
+      html.offer-mobile .page-content--edge-to-edge > div[style*="position:absolute"] img { width: 100% !important; max-width: none !important; height: auto !important; object-fit: cover !important; border-radius: 0 !important; }
       html.offer-mobile .offer-shell__header, html.offer-mobile .offer-shell__topline { grid-template-columns: minmax(0, 1fr) 168px !important; gap: 12px !important; }
       html.offer-mobile .offer-shell__meta { justify-items: end !important; text-align: right !important; }
       html.offer-mobile .offer-shell__meta dl div { grid-template-columns: 1fr !important; gap: 2px !important; justify-items: end !important; }
@@ -506,8 +566,12 @@ export default function PublicOfferPage() {
     applySignatureFields(doc, signatureFields);
 
     const pageBlocks = Array.from(doc.querySelectorAll<HTMLElement>('.page-block'));
-    const firstDocumentPage = doc.querySelector<HTMLElement>('.page-block--document') ?? pageBlocks[0] ?? null;
-    const firstDocumentIndex = firstDocumentPage ? pageBlocks.indexOf(firstDocumentPage) : 0;
+    const explicitDocumentPage = doc.querySelector<HTMLElement>('.page-block--document');
+    const firstDocumentIndex = explicitDocumentPage
+      ? pageBlocks.indexOf(explicitDocumentPage)
+      : findFirstOfferPageIndex(pageBlocks);
+    const firstDocumentPage = pageBlocks[firstDocumentIndex] ?? pageBlocks[0] ?? null;
+    const firstOfferAnchor = findOfferAnchor(firstDocumentPage);
     setPromoPageCount(Math.max(0, firstDocumentIndex));
 
     doc.querySelectorAll<HTMLElement>('.offer-section--intro').forEach((section) => {
@@ -545,7 +609,7 @@ export default function PublicOfferPage() {
     while (walker.nextNode()) {
       const node = walker.currentNode;
       const value = node.nodeValue ?? '';
-      const normalized = normalizeBrokenSwedish(value);
+      const normalized = normalizeOfferText(value);
       if (normalized !== value) node.nodeValue = normalized;
     }
 
@@ -608,9 +672,22 @@ export default function PublicOfferPage() {
           ? Math.max(Math.ceil(naturalH * effectiveScale), Math.ceil(renderedH))
           : Math.max(naturalH, Math.ceil(renderedH));
         iframe.style.height = `${targetHeight}px`;
-        const rawOfferOffset = firstDocumentPage?.offsetTop ?? 0;
+        const rawOfferOffset = firstOfferAnchor
+          ? firstOfferAnchor.getBoundingClientRect().top - (doc.body?.getBoundingClientRect().top ?? 0)
+          : firstDocumentPage?.offsetTop ?? 0;
         const scaledOfferOffset = effectiveScale < 1 ? rawOfferOffset * effectiveScale : rawOfferOffset;
-        setOfferSectionOffset(Math.max(0, Math.round(scaledOfferOffset)));
+        const nextOfferOffset = Math.max(0, Math.round(scaledOfferOffset));
+        setOfferSectionOffset(nextOfferOffset);
+        const scrollRoot = mainRef.current;
+        const documentSection = documentSectionRef.current;
+        if (scrollRoot && documentSection) {
+          const targetTop = Math.max(0, documentSection.offsetTop + nextOfferOffset - 12);
+          const maxScrollTop = Math.max(0, scrollRoot.scrollHeight - scrollRoot.clientHeight);
+          const requiredBuffer = Math.max(0, targetTop - maxScrollTop);
+          if (requiredBuffer > 0) {
+            setJumpScrollBuffer((prev) => Math.max(prev, Math.ceil(requiredBuffer + 24)));
+          }
+        }
         setDocumentReady(true);
       });
     };
@@ -965,7 +1042,11 @@ export default function PublicOfferPage() {
       </header>
 
       {/* ─── Content ─── */}
-      <main ref={mainRef} className="h-[calc(100dvh-57px)] overflow-y-auto bg-slate-50 pb-16">
+      <main
+        ref={mainRef}
+        className="h-[calc(100dvh-57px)] overflow-y-auto bg-slate-50"
+        style={{ paddingBottom: `${64 + jumpScrollBuffer}px` }}
+      >
         <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-8">
 
         {offer.generatedDocument && documentReady && promoPageCount > 0 && (
@@ -1006,7 +1087,7 @@ export default function PublicOfferPage() {
           >
             <iframe
               ref={iframeRef}
-              srcDoc={offer.generatedDocument}
+              srcDoc={iframeDocumentHtml}
               sandbox="allow-same-origin"
               title="Offertdokument"
               onLoad={handleIframeLoad}
