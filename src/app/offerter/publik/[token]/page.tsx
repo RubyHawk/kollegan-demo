@@ -147,6 +147,38 @@ function findOfferAnchor(pageBlock: HTMLElement | null): HTMLElement | null {
   );
 }
 
+function looksLikeLegacyLineItemTableText(text: string): boolean {
+  const normalized = text
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLocaleUpperCase('sv-SE');
+
+  const hasHeader = normalized.includes('BESKRIVNING') || normalized.includes('PRODUKT ELLER TJÄNST');
+  const hasColumns = normalized.includes('ANTAL')
+    && (normalized.includes('Å-PRIS') || normalized.includes('A-PRIS'))
+    && normalized.includes('MOMS')
+    && normalized.includes('BELOPP');
+
+  return hasHeader && hasColumns;
+}
+
+function stripLegacyLineItemTables(root: ParentNode): void {
+  const hasStructuredItems = !!root.querySelector('.offer-items, .offer-items__table, .offer-items__cards, .offer-item-card');
+  if (!hasStructuredItems) return;
+
+  root.querySelectorAll<HTMLTableSectionElement>('thead').forEach((section) => {
+    if (looksLikeLegacyLineItemTableText(section.innerText)) {
+      section.parentElement?.remove();
+    }
+  });
+
+  root.querySelectorAll<HTMLTableElement>('table').forEach((table) => {
+    if (looksLikeLegacyLineItemTableText(table.innerText)) {
+      table.remove();
+    }
+  });
+}
+
 function textToSignatureImage(text: string, fontFamily: string): string {
   const canvas = document.createElement('canvas');
   canvas.width = 600; canvas.height = 150;
@@ -604,6 +636,8 @@ export default function PublicOfferPage() {
       const label = item.querySelector('strong')?.textContent?.trim().toLocaleLowerCase('sv-SE') ?? '';
       if (label === 'prisvisning') item.remove();
     });
+
+    stripLegacyLineItemTables(doc);
 
     const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {
