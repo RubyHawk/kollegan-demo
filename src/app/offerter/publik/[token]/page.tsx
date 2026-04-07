@@ -421,6 +421,19 @@ export default function PublicOfferPage() {
       .offer-summary__row strong { color: #0f172a !important; }
       .offer-summary__row--total { margin-top: 6px !important; padding: 11px 14px 10px !important; border-top: 1px solid #e8eef5 !important; border-bottom: none !important; background: #f8fafc !important; color: #0f172a !important; font-size: 14px !important; }
       .offer-summary__row--total strong { color: #0f172a !important; font-size: 18px !important; }
+      @media (min-width: 700px) {
+        .line-items { display: table !important; width: 100% !important; }
+        .line-items thead { display: table-header-group !important; }
+        .line-items tbody { display: table-row-group !important; }
+        .line-items tr { display: table-row !important; background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; margin: 0 !important; }
+        .line-items td { display: table-cell !important; width: auto !important; margin: 0 !important; padding: 15px 16px !important; border-radius: 0 !important; background: transparent !important; }
+        .line-items td::before { content: none !important; display: none !important; }
+        .line-items td[data-label="Beskrivning"] { display: table-cell !important; width: 44% !important; padding: 15px 16px !important; background: transparent !important; }
+        .line-items td[data-label="Belopp"] { margin: 0 !important; padding: 15px 16px !important; border: none !important; border-radius: 0 !important; background: transparent !important; }
+        .totals, .totals tbody { display: table !important; width: min(280px, 100%) !important; }
+        .totals tr { display: table-row !important; }
+        .totals td { display: table-cell !important; flex: none !important; white-space: nowrap !important; }
+      }
       .offer-shell__footer { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; padding-top: 14px !important; }
       .offer-shell__footer div { font-size: 13px !important; line-height: 1.55 !important; }
       .offer-items { display: grid !important; gap: 12px !important; }
