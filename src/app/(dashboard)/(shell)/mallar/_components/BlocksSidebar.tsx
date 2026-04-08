@@ -1,652 +1,592 @@
 'use client';
 
-/**
- * BlocksSidebar — left insert panel.
- *
- * Four sections:
- *   1. Section presets (one-click enterprise content templates)
- *   2. Block types (headings, paragraph, image, table, divider)
- *   3. Variables (inserts VariableNode chips)
- *   4. Signature fields (inserts SignatureBlockNode)
- */
-
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import { uploadTemplateImage } from './template-image-upload';
 import { insertTemplateImageIntoEditor } from './template-image-insert';
 import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
 import {
-  File, FileText, Star, CheckSquare, Tag, Buildings, Scales,
-  TextHOne, TextHTwo, Paragraph, ListBullets, Table, Minus as PhMinus, Image as PhImage,
-  BracketsCurly, PenNib, User, CalendarBlank,
+  ArrowDown,
+  ArrowUp,
+  BracketsCurly,
+  CalendarBlank,
+  ChatText,
+  ClipboardText,
+  File,
+  FileArrowUp,
+  FileText,
+  Image as PhImage,
+  ListBullets,
+  Minus as PhMinus,
+  NotePencil,
+  PenNib,
+  Plus,
+  Quotes,
+  Signature,
+  SquaresFour,
+  Table,
+  TextHOne,
+  TextHTwo,
+  TextT,
+  Trash,
+  User,
 } from '@phosphor-icons/react';
+import { cn } from '@shared/lib/utils';
 import { SECTION_PRESETS } from './section-presets';
+import { PAGE_ROLE_LABELS, type PageDoc, type PageRole } from './template-doc';
 
 type TipTapNode = Record<string, unknown>;
 
-// ── Enterprise page presets ────────────────────────────────────────────────────
-// Each preset adds a new page with pre-filled TipTap body content.
-
-type PagePreset = {
-  key:     string;
-  label:   string;
-  icon:    React.ReactNode;
-  tooltip: string;
-  body:    { type: 'doc'; content: TipTapNode[] };
+type PageBlueprint = {
+  key: string;
+  label: string;
+  role: PageRole;
+  kind: 'presentation' | 'document';
+  description: string;
+  icon: React.ReactNode;
+  body: { type: 'doc'; content: TipTapNode[] };
 };
 
-const PAGE_PRESETS: PagePreset[] = [
+const PAGE_BLUEPRINTS: PageBlueprint[] = [
   {
-    key:     'offertsida',
-    label:   'Offertsida',
-    tooltip: 'Strukturerad dokumentmall för klassisk offert',
-    icon:    <FileText size={14} />,
-    body: {
-      type: 'doc',
-      content: [
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: 'Skriv tilläggsinformation eller en kort introduktion till kunden här.' }],
-        },
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: 'Lägg sedan in anteckningar och juridiska villkor längre ned. Tabell, summering och footer är fasta dokumentblock.' }],
-        },
-      ],
-    },
-  },
-  {
-    key:     'omslag',
-    label:   'Omslag',
-    tooltip: 'Försättsblad med titel, företag och offertinfo',
-    icon:    <File size={14} />,
+    key: 'cover',
+    label: 'Omslag',
+    role: 'cover',
+    kind: 'presentation',
+    description: 'Första sidan med stark rubrik, företag och sammanhang.',
+    icon: <File size={16} />,
     body: {
       type: 'doc',
       content: [
         { type: 'paragraph', content: [{ type: 'text', text: '' }] },
+        { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Sätt tonen direkt' }] },
         {
-          type: 'heading', attrs: { level: 1, textAlign: 'center' },
-          content: [{ type: 'variable', attrs: { key: 'offerTitle', label: 'Offertrubrik' } }],
-        },
-        {
-          type: 'paragraph', attrs: { textAlign: 'center' },
-          content: [
-            { type: 'variable', attrs: { key: 'recipientCompany', label: 'Mottagarens företag' } },
-          ],
-        },
-        { type: 'horizontalRule' },
-        {
-          type: 'paragraph', attrs: { textAlign: 'center' },
-          content: [
-            { type: 'text', text: 'Offert nr: ', marks: [{ type: 'bold' }] },
-            { type: 'variable', attrs: { key: 'quoteNumber', label: 'Offertnummer' } },
-            { type: 'text', text: '   ·   Datum: ' },
-            { type: 'variable', attrs: { key: 'createdDate', label: 'Skapad datum' } },
-            { type: 'text', text: '   ·   Giltig till: ' },
-            { type: 'variable', attrs: { key: 'validUntil', label: 'Giltig till' } },
-          ],
-        },
-        {
-          type: 'paragraph', attrs: { textAlign: 'center' },
-          content: [
-            { type: 'text', text: 'Till: ' },
-            { type: 'variable', attrs: { key: 'recipientName', label: 'Mottagarens namn' } },
-          ],
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Använd omslaget för ett starkt första intryck, en tydlig titel och en kort kontext om offerten.' }],
         },
       ],
     },
   },
   {
-    key:     'sammanfattning',
-    label:   'Sammanfattning',
-    tooltip: 'Ledningssummering / executive summary',
-    icon:    <Star size={14} />,
+    key: 'introduction',
+    label: 'Introduktion',
+    role: 'introduction',
+    kind: 'presentation',
+    description: 'Kort värdeerbjudande eller inledning till kunden.',
+    icon: <ChatText size={16} />,
     body: {
       type: 'doc',
       content: [
-        {
-          type: 'heading', attrs: { level: 1 },
-          content: [{ type: 'text', text: 'Sammanfattning' }],
-        },
+        { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Introduktion' }] },
         {
           type: 'paragraph',
-          content: [{ type: 'text', text: 'Beskriv kortfattat syftet med denna offert och det affärsproblem ni löser för kunden.' }],
-        },
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: 'Lyft fram det mest relevanta värdet ni erbjuder och varför er lösning är rätt val.' }],
-        },
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: 'Avsluta med en tydlig uppmaning till handling och nästa steg.' }],
+          content: [{ type: 'text', text: 'Sammanfatta vad kunden får, varför lösningen passar och vilket nästa steg du vill leda dem till.' }],
         },
       ],
     },
   },
   {
-    key:     'leveranser',
-    label:   'Leveranser & Scope',
-    tooltip: 'Scope of work — vad som ingår och vad som levereras',
-    icon:    <CheckSquare size={14} />,
+    key: 'offer',
+    label: 'Offertsida',
+    role: 'offer',
+    kind: 'document',
+    description: 'Strukturerad offert med pris, summering, juridik och tydlig layout.',
+    icon: <NotePencil size={16} />,
     body: {
       type: 'doc',
       content: [
         {
-          type: 'heading', attrs: { level: 1 },
-          content: [{ type: 'text', text: 'Leveranser & Scope' }],
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Här kan du skriva en kort introduktion, extra förtydliganden eller offertspecifika anteckningar.' }],
         },
         {
           type: 'paragraph',
-          content: [{ type: 'text', text: 'Följande leverabler ingår i uppdraget:' }],
+          content: [{ type: 'text', text: 'Prisdel, summering och godkännande byggs automatiskt av systemet.' }],
         },
+      ],
+    },
+  },
+  {
+    key: 'scope',
+    label: 'Scope',
+    role: 'scope',
+    kind: 'presentation',
+    description: 'Vad som ingår i leveransen och hur arbetet är avgränsat.',
+    icon: <ClipboardText size={16} />,
+    body: {
+      type: 'doc',
+      content: [
+        { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Leverans & omfattning' }] },
         {
           type: 'bulletList',
           content: [
-            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Leverabel 1 — beskriv vad som ingår' }] }] },
-            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Leverabel 2 — beskriv vad som ingår' }] }] },
-            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Leverabel 3 — beskriv vad som ingår' }] }] },
-          ],
-        },
-        {
-          type: 'heading', attrs: { level: 2 },
-          content: [{ type: 'text', text: 'Avgränsningar' }],
-        },
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: 'Följande ingår INTE i uppdraget om inget annat avtalats skriftligt:' }],
-        },
-        {
-          type: 'bulletList',
-          content: [
-            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Avgränsning 1' }] }] },
-            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Avgränsning 2' }] }] },
+            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Leverans 1' }] }] },
+            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Leverans 2' }] }] },
+            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Avgränsning eller ansvarspunkt' }] }] },
           ],
         },
       ],
     },
   },
   {
-    key:     'prissida',
-    label:   'Prissida',
-    tooltip: 'Radartiklar, moms och totalsumma',
-    icon:    <Tag size={14} />,
+    key: 'references',
+    label: 'Referenser',
+    role: 'references',
+    kind: 'presentation',
+    description: 'Referenskunder, case eller social proof.',
+    icon: <Quotes size={16} />,
     body: {
       type: 'doc',
       content: [
-        {
-          type: 'heading', attrs: { level: 1 },
-          content: [{ type: 'text', text: 'Prissättning' }],
-        },
+        { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Referenser' }] },
         {
           type: 'paragraph',
-          content: [{ type: 'variable', attrs: { key: 'lineItems', label: 'Radartiklar' } }],
-        },
-        {
-          type: 'paragraph',
-          content: [
-            { type: 'text', text: 'Summa ex. moms: ', marks: [{ type: 'bold' }] },
-            { type: 'variable', attrs: { key: 'totalExVat', label: 'Summa ex. moms' } },
-          ],
-        },
-        {
-          type: 'paragraph',
-          content: [
-            { type: 'text', text: 'Moms (25 %): ', marks: [{ type: 'bold' }] },
-            { type: 'variable', attrs: { key: 'vatAmount', label: 'Momsbelopp' } },
-          ],
-        },
-        {
-          type: 'paragraph',
-          content: [
-            { type: 'text', text: 'Totalt inkl. moms: ', marks: [{ type: 'bold' }] },
-            { type: 'variable', attrs: { key: 'totalIncVat', label: 'Summa inkl. moms' } },
-          ],
-        },
-        { type: 'horizontalRule' },
-      ],
-    },
-  },
-  {
-    key:     'omoss',
-    label:   'Om oss',
-    tooltip: 'Om företaget, team och kontaktinfo',
-    icon:    <Buildings size={14} />,
-    body: {
-      type: 'doc',
-      content: [
-        {
-          type: 'heading', attrs: { level: 1 },
-          content: [{ type: 'text', text: 'Om oss' }],
-        },
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: 'Beskriv ert företag, er historia och vad som gör er unika. Lyft fram er expertis och era viktigaste kunder eller projekt.' }],
-        },
-        {
-          type: 'heading', attrs: { level: 2 },
-          content: [{ type: 'text', text: 'Varför välja oss?' }],
-        },
-        {
-          type: 'bulletList',
-          content: [
-            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Styrka 1 — er viktigaste differentieringspunkt' }] }] },
-            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Styrka 2 — erfarenhet eller certifiering' }] }] },
-            { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Styrka 3 — referenskunder eller branschkunskap' }] }] },
-          ],
+          content: [{ type: 'text', text: 'Lägg till kundcitat, case eller konkreta resultat som bygger förtroende.' }],
         },
       ],
     },
   },
   {
-    key:     'foretagsinfo',
-    label:   'Företagsinformation',
-    tooltip: 'Org.nr, adress och kontaktuppgifter',
-    icon:    <FileText size={14} />,
+    key: 'terms',
+    label: 'Villkor',
+    role: 'terms',
+    kind: 'presentation',
+    description: 'Extra villkor eller policyer som ska ligga utanför offertsidan.',
+    icon: <Signature size={16} />,
     body: {
       type: 'doc',
       content: [
-        {
-          type: 'heading', attrs: { level: 1 },
-          content: [{ type: 'text', text: 'Företagsinformation' }],
-        },
+        { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Villkor' }] },
         {
           type: 'paragraph',
-          content: [
-            { type: 'text', text: 'Företagsnamn:', marks: [{ type: 'bold' }] },
-            { type: 'text', text: ' [Ditt företagsnamn AB]' },
-          ],
-        },
-        {
-          type: 'paragraph',
-          content: [
-            { type: 'text', text: 'Organisationsnummer:', marks: [{ type: 'bold' }] },
-            { type: 'text', text: ' 556XXX-XXXX' },
-          ],
-        },
-        {
-          type: 'paragraph',
-          content: [
-            { type: 'text', text: 'Adress:', marks: [{ type: 'bold' }] },
-            { type: 'text', text: ' Gatuadress, Postnummer Stad' },
-          ],
-        },
-        {
-          type: 'paragraph',
-          content: [
-            { type: 'text', text: 'E-post:', marks: [{ type: 'bold' }] },
-            { type: 'text', text: ' info@foretagsnamn.se' },
-          ],
-        },
-        {
-          type: 'paragraph',
-          content: [
-            { type: 'text', text: 'Telefon:', marks: [{ type: 'bold' }] },
-            { type: 'text', text: ' +46 XX XXX XX XX' },
-          ],
-        },
-        {
-          type: 'paragraph',
-          content: [
-            { type: 'text', text: 'Webb:', marks: [{ type: 'bold' }] },
-            { type: 'text', text: ' www.foretagsnamn.se' },
-          ],
-        },
-        {
-          type: 'paragraph',
-          content: [
-            { type: 'text', text: 'Godkänd för F-skatt:', marks: [{ type: 'bold' }] },
-            { type: 'text', text: ' Ja' },
-          ],
+          content: [{ type: 'text', text: 'Använd den här sidan för längre villkor, bilagor eller policytexter som inte hör hemma i själva offertsidan.' }],
         },
       ],
     },
   },
   {
-    key:     'villkor',
-    label:   'Allmänna villkor',
-    tooltip: 'Standardvillkor för leverans och betalning',
-    icon:    <Scales size={14} />,
+    key: 'appendix',
+    label: 'Bilaga',
+    role: 'appendix',
+    kind: 'presentation',
+    description: 'Fristående avslutande sida för tabeller, visualiseringar eller bilagor.',
+    icon: <FileArrowUp size={16} />,
     body: {
       type: 'doc',
       content: [
-        {
-          type: 'heading', attrs: { level: 1 },
-          content: [{ type: 'text', text: 'Allmänna villkor' }],
-        },
-        {
-          type: 'heading', attrs: { level: 2 },
-          content: [{ type: 'text', text: '1. Betalningsvillkor' }],
-        },
+        { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Bilaga' }] },
         {
           type: 'paragraph',
-          content: [{ type: 'text', text: 'Betalning ska erläggas inom 30 dagar från fakturadatum. Vid försenad betalning debiteras dröjsmålsränta om 8 % per år.' }],
-        },
-        {
-          type: 'heading', attrs: { level: 2 },
-          content: [{ type: 'text', text: '2. Leverans' }],
-        },
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: 'Leverans sker enligt separat överenskommelse och specificeras i projektplanen. Tidplan förutsätter att kunden tillhandahåller nödvändigt material och beslut i tid.' }],
-        },
-        {
-          type: 'heading', attrs: { level: 2 },
-          content: [{ type: 'text', text: '3. Priser och moms' }],
-        },
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: 'Alla priser anges i SEK exklusive moms (25 %) om inget annat anges. Offerten är giltig till och med ' },
-            { type: 'variable', attrs: { key: 'validUntil', label: 'Giltig till' } },
-            { type: 'text', text: '.' },
-          ],
-        },
-        {
-          type: 'heading', attrs: { level: 2 },
-          content: [{ type: 'text', text: '4. Ansvarsbegränsning' }],
-        },
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: 'Leverantörens ansvar är begränsat till direkt skada och kan aldrig överstiga det kontrakterade beloppet. Leverantören ansvarar inte för indirekt skada, utebliven vinst eller följdskada.' }],
-        },
-        {
-          type: 'heading', attrs: { level: 2 },
-          content: [{ type: 'text', text: '5. Tvistelösning' }],
-        },
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: 'Tvister ska i första hand lösas genom förhandling. Om enighet inte kan nås ska tvisten avgöras av svensk domstol med tillämpning av svensk rätt.' }],
+          content: [{ type: 'text', text: 'Fyll sidan med kompletterande material som ska följa med kunden men inte störa huvudflödet.' }],
         },
       ],
     },
   },
 ];
 
-// Strip {{ }} to get the key used by VariableNode
 function toKey(placeholder: string) {
   return placeholder.replace(/[{}]/g, '');
 }
 
+function getPageBadge(page: PageDoc) {
+  if (page.kind === 'document') return 'Offertsida';
+  return PAGE_ROLE_LABELS[page.role ?? 'custom'];
+}
+
 export default function BlocksSidebar() {
   const editor = useTemplateEditor();
-  const hf     = useHeaderFooter();
+  const hf = useHeaderFooter();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [showBlueprints, setShowBlueprints] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
-  if (!editor) return <SidebarShell />;
+  const activePage = hf?.pages[hf.activeIdx];
+  const isDocumentPage = activePage?.kind === 'document';
+
+  const quickSections = useMemo(
+    () => SECTION_PRESETS.filter((preset) => ['introSection', 'offerHeader', 'pricingSection', 'termsSection'].includes(preset.key)),
+    [],
+  );
+
+  if (!editor || !hf) {
+    return (
+      <aside className="hidden w-[292px] shrink-0 border-r border-[var(--border)] bg-[var(--surface-1)] xl:flex" />
+    );
+  }
+
+  const context = hf;
 
   async function insertImage(file: File) {
+    if (!editor) return;
     try {
       const src = await uploadTemplateImage(file);
-      insertTemplateImageIntoEditor(editor!, src);
+      insertTemplateImageIntoEditor(editor, src);
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Kunde inte ladda upp bilden.');
     }
   }
 
-  return (
-    <SidebarShell>
-      {/* ── Page presets (enterprise) ── */}
-      {hf && (
-        <Section label="SIDOR" collapsible defaultCollapsed>
-          {PAGE_PRESETS.map((preset) => (
-            <InsertItem
-              key={preset.key}
-              label={preset.label}
-              icon={preset.icon}
-              chipLabel={preset.key === 'offertsida' ? 'dokument' : 'sida'}
-              chipColor={preset.key === 'offertsida' ? 'purple' : 'blue'}
-              onClick={() => hf.addPage({
-                label: preset.label,
-                body: preset.body,
-                kind: preset.key === 'offertsida' ? 'document' : 'presentation',
-                document: preset.key === 'offertsida'
-                  ? {
-                      backgroundOpacity: 0.08,
-                      watermarkMode: 'bottom',
-                      showLogo: true,
-                      showSenderDetails: true,
-                      showCustomerBlock: true,
-                      showIntro: true,
-                      showLineItems: true,
-                      showSummary: true,
-                      showNotes: true,
-                      showTerms: true,
-                      showFooter: true,
-                      summaryPlacement: 'right',
-                    }
-                  : undefined,
-              })}
-            />
-          ))}
-        </Section>
-      )}
-
-      {/* ── Section presets ── */}
-      <Section label="SEKTIONER">
-        {SECTION_PRESETS.map((preset) => (
-          <InsertItem
-            key={preset.key}
-            label={preset.label}
-            icon={preset.icon}
-            chipLabel="mall"
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onClick={() => editor.chain().focus().insertContent(preset.nodes as any).run()}
-          />
-        ))}
-      </Section>
-
-      {/* ── Blocks ── */}
-      <Section label="BLOCK">
-        <InsertItem
-          label="Rubrik 1"
-          icon={<TextHOne size={14} />}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-        />
-        <InsertItem
-          label="Rubrik 2"
-          icon={<TextHTwo size={14} />}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        />
-        <InsertItem
-          label="Brödtext"
-          icon={<Paragraph size={14} />}
-          onClick={() => editor.chain().focus().setParagraph().run()}
-        />
-        <InsertItem
-          label="Punktlista"
-          icon={<ListBullets size={14} />}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-        />
-        <InsertItem
-          label="Tabell"
-          icon={<Table size={14} />}
-          onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-        />
-        <InsertItem
-          label="Avdelare"
-          icon={<PhMinus size={14} />}
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
-        />
-        <InsertItem
-          label="Bild"
-          icon={<PhImage size={14} />}
-          onClick={() => fileRef.current?.click()}
-        />
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) insertImage(file);
-            e.target.value = '';
-          }}
-        />
-      </Section>
-
-      {/* ── Variables ── */}
-      <Section label="VARIABLER" collapsible defaultCollapsed>
-        {OFFER_PLACEHOLDERS
-          .filter((p) => p.key !== '{{lineItems}}' && p.key !== '{{signature}}')
-          .map((p) => (
-            <InsertItem
-              key={p.key}
-              label={p.label}
-              icon={<BracketsCurly size={14} />}
-              chip
-              onClick={() =>
-                editor
-                  .chain()
-                  .focus()
-                  .insertContent({
-                    type: 'variable',
-                    attrs: { key: toKey(p.key), label: p.label },
-                  })
-                  .run()
-              }
-            />
-          ))}
-        {/* lineItems is a special placeholder — insert as text since it's a full table */}
-        <InsertItem
-          label="Radartiklar (tabell)"
-          icon={<BracketsCurly size={14} />}
-          chip
-          onClick={() =>
-            editor
-              .chain()
-              .focus()
-              .insertContent({
-                type: 'variable',
-                attrs: { key: 'lineItems', label: 'Radartiklar' },
-              })
-              .run()
-          }
-        />
-      </Section>
-
-      {/* ── Signature fields ── */}
-      <Section label="SIGNATURFÄLT" collapsible defaultCollapsed>
-        <InsertItem
-          label="Signaturfält"
-          icon={<PenNib size={14} />}
-          onClick={() =>
-            editor
-              .chain()
-              .focus()
-              .insertContent({ type: 'signatureBlock', attrs: { fieldType: 'signature', label: 'Signatur' } })
-              .run()
-          }
-        />
-        <InsertItem
-          label="Namnfält"
-          icon={<User size={14} />}
-          onClick={() =>
-            editor
-              .chain()
-              .focus()
-              .insertContent({ type: 'signatureBlock', attrs: { fieldType: 'name', label: 'Fullständigt namn' } })
-              .run()
-          }
-        />
-        <InsertItem
-          label="Datumfält"
-          icon={<CalendarBlank size={14} />}
-          onClick={() =>
-            editor
-              .chain()
-              .focus()
-              .insertContent({ type: 'signatureBlock', attrs: { fieldType: 'date', label: 'Signeringsdatum' } })
-              .run()
-          }
-        />
-      </Section>
-    </SidebarShell>
-  );
-}
-
-// ── Layout helpers ─────────────────────────────────────────────────────────────
-
-function SidebarShell({ children }: { children?: React.ReactNode }) {
-  return (
-    <div className="w-44 lg:w-52 shrink-0 flex-col overflow-y-auto border-r border-[var(--border)] bg-[var(--surface-2)] hidden md:flex">
-      <div className="px-3 pt-3 pb-2 border-b border-[var(--border)]">
-        <p className="text-sm font-semibold text-[var(--text-primary)]">
-          Infoga
-        </p>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function Section({ label, children, collapsible, defaultCollapsed }: { label: string; children: React.ReactNode; collapsible?: boolean; defaultCollapsed?: boolean }) {
-  const [open, setOpen] = useState(!defaultCollapsed);
-  if (!collapsible) {
-    return (
-      <div className="pb-1">
-        <p className="px-3 pt-4 pb-1 text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-wider">
-          {label}
-        </p>
-        {children}
-      </div>
-    );
+  function addPage(blueprint: PageBlueprint) {
+    context.addPage({
+      label: blueprint.label,
+      role: blueprint.role,
+      kind: blueprint.kind,
+      includeInCustomerPdf: blueprint.kind === 'document' || blueprint.role === 'cover' || blueprint.role === 'appendix',
+      body: blueprint.body,
+    });
+    setShowBlueprints(false);
   }
+
   return (
-    <div className="pb-1">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full px-3 pt-4 pb-1 flex items-center justify-between text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-      >
-        <span className="text-[10px] font-semibold uppercase tracking-wider">{label}</span>
-        <svg
-          width="10" height="10" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-          className={`transition-transform ${open ? '' : '-rotate-90'}`}
+    <aside className="hidden w-[292px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface-1)] xl:flex">
+      <div className="border-b border-[var(--border)] px-4 py-4">
+        <div className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)]">
+            <SquaresFour size={18} weight="duotone" />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Mallflöde</p>
+            <p className="text-xs leading-5 text-[var(--text-muted)]">Bygg ordning, sidor och innehåll med en tydligare struktur.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-3 py-3">
+        <SidebarCard
+          title="Sidor"
+          subtitle="Byt ordning, namn och sidtyp här. Offertsidan är en särskild sidmodell."
+          action={(
+            <button
+              type="button"
+              onClick={() => setShowBlueprints((value) => !value)}
+              className="inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-3 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+            >
+              <Plus size={12} weight="bold" />
+              Lägg till sida
+            </button>
+          )}
         >
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
+          <div className="space-y-2">
+            {context.pages.map((page, index) => (
+              <PageRow
+                key={page.id}
+                page={page}
+                active={index === context.activeIdx}
+                index={index}
+                total={context.pages.length}
+                onActivate={() => context.switchPage(index)}
+                onMoveUp={index > 0 ? () => context.movePage(index, index - 1) : undefined}
+                onMoveDown={index < context.pages.length - 1 ? () => context.movePage(index, index + 1) : undefined}
+                onDelete={context.pages.length > 1 ? () => context.removePage(index) : undefined}
+              />
+            ))}
+          </div>
+
+          {showBlueprints && (
+            <div className="mt-3 space-y-2 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Sidtyper</p>
+              <div className="grid gap-2">
+                {PAGE_BLUEPRINTS.map((blueprint) => (
+                  <button
+                    key={blueprint.key}
+                    type="button"
+                    onClick={() => addPage(blueprint)}
+                    className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3 py-3 text-left transition-colors hover:border-[var(--accent-border)] hover:bg-[var(--accent-subtle)]"
+                  >
+                    <div className="mb-2 flex items-center gap-2 text-[var(--text-primary)]">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--surface-2)] text-[var(--accent)]">
+                        {blueprint.icon}
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold">{blueprint.label}</p>
+                        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                          {blueprint.kind === 'document' ? 'Strukturerad sida' : 'Presentationssida'}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs leading-5 text-[var(--text-secondary)]">{blueprint.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </SidebarCard>
+
+        <SidebarCard
+          title={isDocumentPage ? 'Offertsida' : 'Innehåll'}
+          subtitle={isDocumentPage
+            ? 'Pris, summering och signering är låsta systemblock. Redigera bara den fria texten och styr resten i högerspalten.'
+            : 'Snabbinnehåll för presentationssidor. Håll formatet enkelt och bygg sida för sida.'}
+        >
+          {isDocumentPage ? (
+            <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-4 py-4">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Strukturerad offertlayout</p>
+              <p className="mt-2 text-xs leading-6 text-[var(--text-secondary)]">
+                Kundblock, metadata, radartiklar, summering och footer genereras av systemet.
+                Det gör att offerten blir tydlig, konsekvent och lättare att hålla professionell.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Snabbsektioner</p>
+                <div className="grid gap-2">
+                  {quickSections.map((preset) => (
+                    <InsertButton
+                      key={preset.key}
+                      icon={preset.icon}
+                      label={preset.label}
+                      description={preset.tooltip}
+                      onClick={() => editor.chain().focus().insertContent(preset.nodes as never).run()}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Grundblock</p>
+                <div className="grid gap-2">
+                  <InsertButton icon={<TextHOne size={15} />} label="Rubrik 1" description="Tydlig huvudrubrik för sidan." onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} />
+                  <InsertButton icon={<TextHTwo size={15} />} label="Rubrik 2" description="Sektionstitel eller underrubrik." onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} />
+                  <InsertButton icon={<TextT size={15} />} label="Brödtext" description="Vanligt textstycke." onClick={() => editor.chain().focus().setParagraph().run()} />
+                  <InsertButton icon={<ListBullets size={15} />} label="Punktlista" description="Samla leveranser eller nyckelpunkter." onClick={() => editor.chain().focus().toggleBulletList().run()} />
+                  <InsertButton icon={<Table size={15} />} label="Tabell" description="För jämförelser eller bilagor." onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
+                  <InsertButton icon={<PhMinus size={15} />} label="Avdelare" description="Skapa luft mellan sektioner." onClick={() => editor.chain().focus().setHorizontalRule().run()} />
+                  <InsertButton icon={<PhImage size={15} />} label="Bild" description="Lägg till en bild eller illustration." onClick={() => fileRef.current?.click()} />
+                </div>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void insertImage(file);
+                    event.target.value = '';
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </SidebarCard>
+
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+          <button
+            type="button"
+            onClick={() => setAdvancedOpen((value) => !value)}
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+          >
+            <div>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Avancerat</p>
+              <p className="text-xs leading-5 text-[var(--text-muted)]">Variabler och signaturfält för specialfall och äldre fria sidor.</p>
+            </div>
+            <span className={cn('text-[var(--text-muted)] transition-transform', advancedOpen ? 'rotate-180' : '')}>
+              <ArrowDown size={14} />
+            </span>
+          </button>
+
+          {advancedOpen && (
+            <div className="border-t border-[var(--border)] px-4 py-3">
+              {isDocumentPage ? (
+                <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-3 py-4 text-xs leading-6 text-[var(--text-secondary)]">
+                  Offertsidan använder redan systemets pris-, summerings- och godkännandeblock.
+                  Använd variabler och signaturfält på presentationssidor eller i äldre specialmallar.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Variabler</p>
+                    {OFFER_PLACEHOLDERS
+                      .filter((placeholder) => placeholder.key !== '{{lineItems}}' && placeholder.key !== '{{signature}}')
+                      .map((placeholder) => (
+                        <InsertButton
+                          key={placeholder.key}
+                          icon={<BracketsCurly size={15} />}
+                          label={placeholder.label}
+                          description={placeholder.key}
+                          onClick={() =>
+                            editor
+                              .chain()
+                              .focus()
+                              .insertContent({ type: 'variable', attrs: { key: toKey(placeholder.key), label: placeholder.label } })
+                              .run()
+                          }
+                        />
+                      ))}
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Signaturfält</p>
+                    <InsertButton icon={<PenNib size={15} />} label="Signaturfält" description="Manuellt signaturblock för specialmallar." onClick={() => editor.chain().focus().insertContent({ type: 'signatureBlock', attrs: { fieldType: 'signature', label: 'Signatur' } }).run()} />
+                    <InsertButton icon={<User size={15} />} label="Namnfält" description="Fält för fullständigt namn." onClick={() => editor.chain().focus().insertContent({ type: 'signatureBlock', attrs: { fieldType: 'name', label: 'Fullständigt namn' } }).run()} />
+                    <InsertButton icon={<CalendarBlank size={15} />} label="Datumfält" description="Fält för signeringsdatum." onClick={() => editor.chain().focus().insertContent({ type: 'signatureBlock', attrs: { fieldType: 'date', label: 'Signeringsdatum' } }).run()} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function SidebarCard({
+  title,
+  subtitle,
+  action,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mb-3 rounded-[24px] border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+      <div className="border-b border-[var(--border)] px-4 py-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
+            {subtitle && <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{subtitle}</p>}
+          </div>
+          {action}
+        </div>
+      </div>
+      <div className="px-4 py-4">{children}</div>
+    </section>
+  );
+}
+
+function PageRow({
+  page,
+  active,
+  index,
+  total,
+  onActivate,
+  onMoveUp,
+  onMoveDown,
+  onDelete,
+}: {
+  page: PageDoc;
+  active: boolean;
+  index: number;
+  total: number;
+  onActivate: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  onDelete?: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        'rounded-2xl border px-3 py-3 transition-colors',
+        active
+          ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)]'
+          : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-active)]'
+      )}
+    >
+      <button type="button" onClick={onActivate} className="block w-full text-left">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{page.label}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <span className={cn(
+                'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
+                page.kind === 'document'
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'bg-slate-100 text-slate-600'
+              )}>
+                {getPageBadge(page)}
+              </span>
+              <span className="text-[11px] text-[var(--text-muted)]">
+                {page.includeInCustomerPdf === false ? 'Intern sida' : 'Med i PDF'}
+              </span>
+            </div>
+          </div>
+          <span className="text-[11px] font-medium text-[var(--text-muted)]">{index + 1}/{total}</span>
+        </div>
       </button>
-      {open && children}
+
+      <div className="mt-3 flex items-center gap-1">
+        <IconAction label="Flytta upp" disabled={!onMoveUp} onClick={onMoveUp}>
+          <ArrowUp size={13} />
+        </IconAction>
+        <IconAction label="Flytta ned" disabled={!onMoveDown} onClick={onMoveDown}>
+          <ArrowDown size={13} />
+        </IconAction>
+        <div className="flex-1" />
+        <IconAction label="Ta bort sida" disabled={!onDelete} onClick={onDelete} danger>
+          <Trash size={13} />
+        </IconAction>
+      </div>
     </div>
   );
 }
 
-function InsertItem({
-  label, icon, chip, chipLabel, chipColor: chipColorProp, onClick,
+function InsertButton({
+  icon,
+  label,
+  description,
+  onClick,
 }: {
-  label: string;
   icon: React.ReactNode;
-  chip?: boolean;
-  chipLabel?: string;
-  chipColor?: 'green' | 'purple' | 'blue';
+  label: string;
+  description: string;
   onClick: () => void;
 }) {
-  const resolvedChipLabel = chipLabel ?? (chip ? 'var' : undefined);
-  const chipColorStyles =
-    chipColorProp === 'blue'   ? 'text-blue-700 bg-blue-50 border border-blue-200'
-    : chipColorProp === 'green' || chipLabel
-      ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
-      : 'text-violet-700 bg-violet-50 border border-violet-200';
-
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-md hover:bg-[var(--surface-active)] text-[var(--text-primary)] text-xs font-medium transition-colors group"
+      className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3 py-3 text-left transition-colors hover:border-[var(--accent-border)] hover:bg-[var(--accent-subtle)]"
     >
-      <span className="w-6 h-6 rounded flex items-center justify-center bg-[var(--surface-3)] text-[var(--accent)] group-hover:bg-[var(--accent-subtle)] shrink-0 transition-colors">
-        {icon}
-      </span>
-      <span className="flex-1 min-w-0 truncate">{label}</span>
-      {resolvedChipLabel && (
-        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0 ${chipColorStyles}`}>
-          {resolvedChipLabel}
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--surface-2)] text-[var(--accent)]">
+          {icon}
         </span>
-      )}
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-[var(--text-primary)]">{label}</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{description}</p>
+        </div>
+      </div>
     </button>
   );
 }
 
-
+function IconAction({
+  label,
+  children,
+  onClick,
+  danger = false,
+  disabled = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+  danger?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      disabled={disabled}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick?.();
+      }}
+      className={cn(
+        'inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
+        disabled
+          ? 'cursor-default border-[var(--border)] text-[var(--text-muted)] opacity-40'
+          : danger
+            ? 'border-red-200 text-red-500 hover:bg-red-50'
+            : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]'
+      )}
+    >
+      {children}
+    </button>
+  );
+}

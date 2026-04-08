@@ -1008,6 +1008,7 @@ function isImageOnlyPresentationPage(node: TipTapNode): boolean {
 
 interface V3PageDoc {
   kind?: 'presentation' | 'document';
+  role?: 'cover' | 'introduction' | 'offer' | 'scope' | 'references' | 'terms' | 'appendix' | 'custom';
   label?: string;
   includeInCustomerPdf?: boolean;
   body:   TipTapNode;
@@ -1021,6 +1022,7 @@ interface V3PageDoc {
     showSenderDetails?: boolean;
     showCustomerBlock?: boolean;
     showIntro?: boolean;
+    introLayout?: 'compact' | 'roomy';
     showLineItems?: boolean;
     showSummary?: boolean;
     showNotes?: boolean;
@@ -1143,6 +1145,7 @@ function renderStructuredDocumentPage(
     showSenderDetails: true,
     showCustomerBlock: true,
     showIntro: true,
+    introLayout: 'compact',
     showLineItems: true,
     showSummary: true,
     showNotes: true,
@@ -1266,7 +1269,7 @@ function renderStructuredDocumentPage(
             ${customerCardHtml}
           </section>
 
-          ${hasIntroContent ? `<section class="offer-section offer-section--intro">${introHtml}</section>` : ''}
+          ${hasIntroContent ? `<section class="offer-section offer-section--intro offer-section--intro-${settings.introLayout ?? 'compact'}">${introHtml}</section>` : ''}
 
           ${pricingSectionHtml}
           ${settings.showSummary && summaryPlacement !== 'right' ? summaryHtml : ''}
@@ -1332,6 +1335,8 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
     img { max-width: 100%; height: auto; }
     .doc-wrapper { max-width: 816px; margin: 40px auto; padding: 48px 56px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
     .offer-section { display: grid; gap: 12px; }
+    .offer-section--intro-compact { max-width: 60ch; }
+    .offer-section--intro-roomy { max-width: 74ch; }
     .offer-table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .offer-table-header h2 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #475569; }
     .offer-items { display: grid; gap: 18px; }
@@ -1527,8 +1532,8 @@ export function generateDocument(templateContent: string, offer: Offer, branding
   try {
     const parsed = JSON.parse(templateContent) as Record<string, unknown>;
 
-    if (parsed._v === 3) {
-      // TemplateDoc v3: multi-page format
+    if (parsed._v === 4 || parsed._v === 3) {
+      // TemplateDoc v4/v3: multi-page format
       const pages         = (parsed.pages ?? []) as V3PageDoc[];
       const defaultHeader = (parsed.defaultHeader ?? { type: 'doc', content: [] }) as TipTapNode;
       const defaultFooter = (parsed.defaultFooter ?? { type: 'doc', content: [] }) as TipTapNode;
@@ -1652,6 +1657,8 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     .offer-shell__recipient-details--legacy { margin-top: 10px; }
     .offer-shell__customer { display: grid; gap: 4px; padding-left: 16px; border-left: 1px solid #e2e8f0; font-size: 12px; line-height: 1.55; color: #475569; }
     .offer-section { display: grid; gap: 12px; }
+    .offer-section--intro-compact { max-width: 60ch; }
+    .offer-section--intro-roomy { max-width: 74ch; }
     .offer-section h2, .offer-section h3 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #475569; }
     .offer-section p { margin: 0; font-size: 13px; line-height: 1.72; color: #334155; }
     .offer-table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
