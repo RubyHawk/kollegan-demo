@@ -29,6 +29,7 @@ import {
   getDisplayUnitPrice,
   summarizeOfferPricing,
 } from '@modules/supporting/offers/domain/pricing';
+import { deriveValidityDays } from '@modules/supporting/offers/domain/validity';
 import {
   DndContext,
   closestCenter,
@@ -311,9 +312,8 @@ export default function OffersPage() {
       recipientEmail:   offer.recipientEmail,
       recipientCompany: offer.recipientCompany ?? '',
       notes:            offer.notes ?? '',
-      validityDays:     offer.validUntil
-        ? Math.max(1, Math.round((new Date(offer.validUntil).getTime() - new Date(offer.createdAt).getTime()) / 86_400_000))
-        : 30,
+      validityDays:     offer.validityDays
+        ?? (offer.validUntil ? deriveValidityDays(offer.createdAt, offer.validUntil) : 30),
       lineItems:        offer.lineItems.length > 0 ? offer.lineItems : [{ ...EMPTY_LINE }],
     });
     setWizardStep(2);           // skip template picker when editing

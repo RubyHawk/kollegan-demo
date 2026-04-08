@@ -21,6 +21,7 @@ import { companiesRepository } from '../infrastructure/companies.repository';
 import { resolveOfferBranding } from './company-branding';
 import { dispatchCreatorNotification, dispatchOfferEmail, dispatchReminderEmail } from './offer-email-dispatch';
 import { prisma } from '@platform/database/prisma';
+import { computeOfferValidUntil } from '../domain/validity';
 
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
 
@@ -100,7 +101,7 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
 
   const offerNumber = await offersRepository.assignOfferNumber(id, orgId);
   const sentAt = new Date();
-  const validUntil = new Date(sentAt.getTime() + (existing.validityDays ?? 30) * 24 * 60 * 60 * 1000);
+  const validUntil = computeOfferValidUntil(sentAt, existing.validityDays ?? 30);
   const publicTokenExpiresAt = validUntil;
 
   const sendSnapshot: Offer = {

@@ -3,6 +3,7 @@ import { generateDocument, generateFallbackDocument } from '@modules/supporting/
 import type { Offer } from '@modules/supporting/offers/domain/offer.entity';
 import { resolveOfferBranding } from '@modules/supporting/offers/application/company-branding';
 import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '@modules/supporting/offers/domain/pricing';
+import { computeOfferValidUntil } from '@modules/supporting/offers/domain/validity';
 
 const PREVIEW_SENTINELS = {
   title: '__PREVIEW_TITLE__',
@@ -35,7 +36,7 @@ const SAMPLE_OFFER: Offer = {
   recipientEmail: PREVIEW_SENTINELS.recipientEmail,
   recipientCompany: PREVIEW_SENTINELS.recipientCompany,
   notes: '',
-  validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  validUntil: computeOfferValidUntil(new Date(), 30).toISOString(),
   totalExVat: 0,
   totalIncVat: 0,
   createdAt: new Date().toISOString(),
