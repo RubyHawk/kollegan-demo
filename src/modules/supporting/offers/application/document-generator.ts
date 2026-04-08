@@ -468,9 +468,7 @@ const SIGNATURE_FIELD_HTML = `
  */
 export function buildReplacements(offer: Offer): Record<string, string> {
   const vatAmount = offer.totalIncVat - offer.totalExVat;
-  const offerNumberStr = offer.offerNumber
-    ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
-    : offer.id.slice(0, 8).toUpperCase();
+  const offerNumberStr = getOfferNumberString(offer);
 
   return {
     '{{offerTitle}}':       secureEscapeHtml(offer.title),
@@ -486,6 +484,12 @@ export function buildReplacements(offer: Offer): Record<string, string> {
     '{{vatAmount}}':        fmtSEK(vatAmount),
     '{{notes}}':            secureEscapeHtml(offer.notes ?? ''),
   };
+}
+
+function getOfferNumberString(offer: Pick<Offer, 'offerNumber' | 'createdAt' | 'id'>): string {
+  return offer.offerNumber
+    ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
+    : offer.id.slice(0, 8).toUpperCase();
 }
 
 /**
@@ -523,6 +527,105 @@ function fixOfferHtmlText(html: string): string {
     .replace(/ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·/g, '\u00b7')
     .replace(/Ãƒâ€šÃ‚Â·/g, '\u00b7')
     .replace(/ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â/g, '\u2014');
+}
+
+function injectDocumentPatchStyles(html: string): string {
+  const patchStyles = `
+<style data-offer-document-patch>
+  @media screen {
+    .page-content--document {
+      min-height: 920px !important;
+    }
+    .offer-shell {
+      gap: 22px !important;
+    }
+    .offer-summary--below {
+      margin-top: 12px !important;
+    }
+    .offer-section--terms {
+      margin-top: 12px !important;
+    }
+    .offer-shell__footer {
+      margin-top: 18px !important;
+    }
+  }
+  .offer-shell__meta {
+    align-self: center !important;
+    justify-items: end !important;
+    text-align: right !important;
+  }
+  .offer-shell__meta dl {
+    gap: 8px !important;
+    width: auto !important;
+    min-width: min(248px, 100%) !important;
+  }
+  .offer-shell__meta dl div {
+    grid-template-columns: minmax(108px, max-content) auto !important;
+    align-items: center !important;
+    column-gap: 12px !important;
+  }
+  .offer-shell__meta dt,
+  .offer-shell__meta dd {
+    justify-self: end !important;
+  }
+  .offer-shell__sender-copy {
+    gap: 4px !important;
+  }
+</style>`;
+
+  if (html.includes('data-offer-document-patch')) return html;
+  if (html.includes('</head>')) return html.replace('</head>', `${patchStyles}\n</head>`);
+  return `${patchStyles}\n${html}`;
+}
+
+function injectOrganizationNumber(
+  html: string,
+  organizationNumber?: string,
+): string {
+  if (!organizationNumber || /Org\.nr/i.test(html)) return html;
+
+  return html.replace(
+    /(<div class="offer-shell__sender-copy">[\s\S]*?<p class="offer-shell__sender-name"[^>]*>[\s\S]*?<\/p>)/i,
+    `$1\n<p>Org.nr ${escapeHtml(organizationNumber)}</p>`,
+  );
+}
+
+function normalizeLegacyOfferMeta(
+  html: string,
+  offerNumber: string,
+): string {
+  const metaRowPattern = /(<div>\s*<dt[^>]*>)\s*Offert(?:nummer| nr)?\s*#?\s*(<\/dt>\s*<dd[^>]*>)\s*#?([^<]+?)\s*(<\/dd>\s*<\/div>)/i;
+  if (metaRowPattern.test(html)) {
+    return html.replace(
+      metaRowPattern,
+      `$1Offertnummer$2${escapeHtml(offerNumber)}$4`,
+    );
+  }
+
+  return html
+    .replace(/(<dt[^>]*>)\s*Offert(?:nummer| nr)?\s*#?\s*(<\/dt>)/i, '$1Offertnummer$2')
+    .replace(/(<dd[^>]*>\s*)##?(?=\d{4}-\d+)/i, '$1');
+}
+
+function replaceLegacyLineItemsTable(html: string, offer: Offer): string {
+  if (!/\bclass="[^"]*\bline-items\b/i.test(html)) return html;
+  return html.replace(
+    /<table\b[^>]*class="[^"]*\bline-items\b[^"]*"[^>]*>[\s\S]*?<\/table>/gi,
+    buildStructuredLineItems(offer.lineItems, offer.priceDisplayMode),
+  );
+}
+
+export function sanitizeGeneratedOfferDocument(
+  documentHtml: string,
+  offer: Offer,
+  branding?: OfferBrandingProfile,
+): string {
+  let html = documentHtml;
+  html = replaceLegacyLineItemsTable(html, offer);
+  html = normalizeLegacyOfferMeta(html, getOfferNumberString(offer));
+  html = injectOrganizationNumber(html, branding?.organizationNumber);
+  html = injectDocumentPatchStyles(html);
+  return fixOfferHtmlText(html);
 }
 /**
  * Interpolates {{placeholder}} variables in a plain-text or HTML string.
@@ -849,9 +952,7 @@ function renderStructuredDocumentPage(
  * Used when an offer is sent without a linked template.
  */
 export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingProfile): string {
-  const offerNumberStr = offer.offerNumber
-    ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
-    : offer.id.slice(0, 8).toUpperCase();
+  const offerNumberStr = getOfferNumberString(offer);
   const fallbackLineItemsHtml = buildStructuredLineItems(offer.lineItems, offer.priceDisplayMode);
   const fallbackSummaryHtml = renderDocumentSummary(offer, 'below');
   const companyName = branding?.companyName?.trim() || branding?.senderName?.trim() || 'Avs\u00e4ndare';
@@ -1004,7 +1105,7 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
 </body>
 </html>`;
 
-  return fixOfferHtmlText(html);
+  return sanitizeGeneratedOfferDocument(html, offer, branding);
 }
 
 /**
@@ -1147,7 +1248,7 @@ export function generateDocument(templateContent: string, offer: Offer, branding
 
   // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Wrap in a styled document shell ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-  return `<!DOCTYPE html>
+  return sanitizeGeneratedOfferDocument(`<!DOCTYPE html>
 <html lang="sv">
 <head>
   <meta charset="utf-8" />
@@ -1180,7 +1281,7 @@ export function generateDocument(templateContent: string, offer: Offer, branding
       pointer-events: none;
     }
     .page-content--document { position: relative; z-index: 1; min-height: 1056px; }
-    .offer-shell { min-height: 100%; display: flex; flex-direction: column; gap: 28px; color: #0f172a; }
+    .offer-shell { min-height: 100%; display: flex; flex-direction: column; gap: 24px; color: #0f172a; }
     .offer-shell__header, .offer-shell__topline { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 256px); gap: 26px; align-items: flex-start; }
     .offer-shell__sender { display: flex; gap: 16px; align-items: flex-start; min-width: 0; }
     .offer-shell__logo { width: 54px; height: 54px; object-fit: contain; }
@@ -1242,8 +1343,8 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     .offer-summary__row strong { white-space: nowrap; color: #0f172a; }
     .offer-summary__row--total { margin-top: 8px; padding: 12px 16px; border-top: 1px solid #e8eef5; background: #f8fafc; font-size: 14px; font-weight: 700; color: #0f172a; }
     .offer-summary__row--total strong { color: #0f172a; font-size: 18px; }
-    .offer-section--terms { margin-top: 24px; }
-    .offer-shell__footer { display: grid; grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); gap: 18px; padding-top: 18px; margin-top: auto; border-top: 1px solid #dbe4ee; }
+    .offer-section--terms { margin-top: 14px; }
+    .offer-shell__footer { display: grid; grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); gap: 18px; padding-top: 18px; margin-top: 18px; border-top: 1px solid #dbe4ee; }
     .offer-shell__footer div { display: grid; gap: 6px; font-size: 13px; line-height: 1.6; color: #475569; }
     .doc-header { font-size: 12px; color: #64748b; margin-bottom: 0; }
     .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
@@ -1302,7 +1403,7 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     ${bodyHtml}
   </div>
 </body>
-</html>`;
+</html>`, offer, branding);
 }
 
 
