@@ -46,7 +46,7 @@ export default function BlockSettingsSidebar() {
   if (!hf) return null;
 
   return (
-    <aside className="hidden w-[252px] shrink-0 xl:flex flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface-1)]">
+    <aside className="hidden w-[288px] shrink-0 xl:flex flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface-1)]">
       {isDocumentPage ? (
         <StructuredOfferInspector hf={hf} />
       ) : (
@@ -88,19 +88,17 @@ function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-2">
-            <ToggleCard
-              title="Med i kundens PDF"
-              description={page.includeInCustomerPdf === false ? 'Dold för kunden' : 'Visas i den slutliga offerten'}
-              checked={page.includeInCustomerPdf !== false}
-              onChange={(checked) => hf.patchActivePage({ includeInCustomerPdf: checked })}
-            />
-            <StaticCard
-              title="Sidmodell"
-              description="Strukturerad offert"
-              badge="System"
-            />
-          </div>
+          <ToggleCard
+            title="Med i kundens PDF"
+            description={page.includeInCustomerPdf === false ? 'Dold för kunden' : 'Visas i offerten'}
+            checked={page.includeInCustomerPdf !== false}
+            onChange={(checked) => hf.patchActivePage({ includeInCustomerPdf: checked })}
+          />
+          <StaticCard
+            title="Sidmodell"
+            description="Strukturerad offert"
+            badge="System"
+          />
         </div>
       </InspectorCard>
 
@@ -149,7 +147,7 @@ function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
         title="Innehåll"
         subtitle="Block som visas på offertsidan."
       >
-        <div className="grid grid-cols-2 gap-1">
+        <div className="space-y-1">
           <ToggleRow label="Logo" checked={document.showLogo ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showLogo: checked } })} />
           <ToggleRow label="Avsändare" checked={document.showSenderDetails ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showSenderDetails: checked } })} />
           <ToggleRow label="Kundblock" checked={document.showCustomerBlock ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showCustomerBlock: checked } })} />
@@ -572,10 +570,10 @@ function ToggleCard({
 }) {
   return (
     <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-[var(--text-primary)]">{title}</p>
-          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">{description}</p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[11px] font-semibold text-[var(--text-primary)]">{title}</p>
+          <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">{description}</p>
         </div>
         <ToggleSwitch checked={checked} onChange={onChange} />
       </div>
@@ -594,12 +592,12 @@ function StaticCard({
 }) {
   return (
     <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold text-[var(--text-primary)]">{title}</p>
-          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">{description}</p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[11px] font-semibold text-[var(--text-primary)]">{title}</p>
+          <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">{description}</p>
         </div>
-        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">
+        <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">
           {badge}
         </span>
       </div>
@@ -618,8 +616,8 @@ function ToggleRow({
 }) {
   return (
     <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] text-[var(--text-primary)]">{label}</span>
+      <div className="flex items-center justify-between gap-1.5">
+        <span className="min-w-0 flex-1 truncate text-[11px] text-[var(--text-primary)]">{label}</span>
         <ToggleSwitch checked={checked} onChange={onChange} />
       </div>
     </div>
@@ -638,15 +636,17 @@ function ToggleSwitch({
       type="button"
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative inline-flex h-4 w-7 shrink-0 items-center rounded-full border border-transparent transition-colors',
-        checked ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
+        'relative h-4 w-7 shrink-0 cursor-pointer rounded-full transition-colors',
+        checked ? 'bg-[var(--accent)]' : 'bg-slate-300'
       )}
       aria-pressed={checked}
     >
-      <span className={cn(
-        'pointer-events-none inline-block h-3 w-3 rounded-full bg-white shadow transition-transform',
-        checked ? 'translate-x-3.5' : 'translate-x-0.5'
-      )} />
+      <span
+        className={cn(
+          'pointer-events-none absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform',
+          checked ? 'translate-x-3' : 'translate-x-0'
+        )}
+      />
     </button>
   );
 }

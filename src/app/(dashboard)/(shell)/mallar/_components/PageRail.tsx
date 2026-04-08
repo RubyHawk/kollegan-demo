@@ -210,65 +210,13 @@ export default function PageRail() {
 
   return (
     <div className="border-t border-[var(--border)] bg-[var(--surface-1)] px-2 py-1.5">
-      <div className="relative rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5">
-        <div className="mb-1.5 flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">Sidor</p>
-            <p className="hidden min-w-0 truncate text-[11px] text-[var(--text-muted)] sm:block">
-              {activeDescription}
-            </p>
-          </div>
-          <div className="relative" ref={blueprintRef}>
-            <button
-              type="button"
-              onClick={() => setShowBlueprints((value) => !value)}
-              className="inline-flex items-center gap-1 rounded-md bg-[var(--accent)] px-2 py-1 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
-            >
-              <Plus size={11} weight="bold" />
-              Lägg till sida
-            </button>
+      <div className="flex items-center gap-2">
+        <p className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">Sidor</p>
 
-            {showBlueprints && (
-              <div
-                role="menu"
-                className="absolute right-0 bottom-[calc(100%+6px)] z-20 w-[260px] rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1 shadow-[0_12px_32px_rgba(15,23,42,0.14)]"
-              >
-                <div className="space-y-0.5">
-                  {PAGE_BLUEPRINTS.map((blueprint) => (
-                    <button
-                      key={blueprint.key}
-                      type="button"
-                      onClick={() => {
-                        hf.addPage({
-                          label: blueprint.label,
-                          role: blueprint.role,
-                          kind: blueprint.kind,
-                          includeInCustomerPdf: blueprint.includeInCustomerPdf,
-                          body: blueprint.body,
-                        });
-                        setShowBlueprints(false);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-[var(--surface-active)]"
-                    >
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--surface-2)] text-[var(--accent)]">
-                        {blueprint.icon}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-xs font-semibold text-[var(--text-primary)]">{blueprint.label}</span>
-                        <span className="block truncate text-[11px] text-[var(--text-muted)]">{blueprint.description}</span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="-mx-0.5 overflow-x-auto">
+        <div className="min-w-0 flex-1 overflow-x-auto">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={hf.pages.map((p) => p.id)} strategy={horizontalListSortingStrategy}>
-              <div className="flex min-w-max items-stretch gap-1.5 px-0.5">
+              <div className="flex min-w-max items-stretch gap-1.5">
                 {hf.pages.map((page, index) => (
                   <SortablePageCard
                     key={page.id}
@@ -283,6 +231,53 @@ export default function PageRail() {
               </div>
             </SortableContext>
           </DndContext>
+        </div>
+
+        <div className="relative shrink-0" ref={blueprintRef}>
+          <button
+            type="button"
+            onClick={() => setShowBlueprints((value) => !value)}
+            title={activeDescription}
+            className="inline-flex items-center gap-1 rounded-md bg-[var(--accent)] px-2 py-1 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            <Plus size={11} weight="bold" />
+            Lägg till sida
+          </button>
+
+          {showBlueprints && (
+            <div
+              role="menu"
+              className="absolute right-0 bottom-[calc(100%+6px)] z-20 w-[240px] rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1 shadow-[0_12px_32px_rgba(15,23,42,0.14)]"
+            >
+              <div className="space-y-0.5">
+                {PAGE_BLUEPRINTS.map((blueprint) => (
+                  <button
+                    key={blueprint.key}
+                    type="button"
+                    onClick={() => {
+                      hf.addPage({
+                        label: blueprint.label,
+                        role: blueprint.role,
+                        kind: blueprint.kind,
+                        includeInCustomerPdf: blueprint.includeInCustomerPdf,
+                        body: blueprint.body,
+                      });
+                      setShowBlueprints(false);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-[var(--surface-active)]"
+                  >
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[var(--surface-2)] text-[var(--accent)]">
+                      {blueprint.icon}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[11px] font-semibold text-[var(--text-primary)]">{blueprint.label}</span>
+                      <span className="block truncate text-[10px] text-[var(--text-muted)]">{blueprint.description}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
