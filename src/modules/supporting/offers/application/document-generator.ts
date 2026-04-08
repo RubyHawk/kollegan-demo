@@ -578,6 +578,69 @@ function injectDocumentPatchStyles(html: string): string {
   return `${patchStyles}\n${html}`;
 }
 
+function injectStructuredLineItemStyles(html: string): string {
+  if (!html.includes('class="offer-items"')) return html;
+  if (html.includes('data-offer-line-item-patch')) return html;
+
+  const lineItemStyles = `
+<style data-offer-line-item-patch>
+  .offer-items { display: grid; gap: 18px; }
+  .offer-items__table { display: block; border: 1px solid #dbe4ee; border-radius: 18px; background: #ffffff; overflow: hidden; }
+  .offer-items__head,
+  .offer-item-row {
+    display: grid;
+    grid-template-columns: var(--offer-columns, minmax(0, 1.85fr) 72px 112px 92px 116px);
+    align-items: start;
+  }
+  .offer-items__head {
+    gap: 18px;
+    padding: 14px 20px;
+    background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+    border-bottom: 1px solid #dbe4ee;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .offer-items__head span:first-child { text-align: left; }
+  .offer-items__head span:not(:first-child) { text-align: right; }
+  .offer-item-row {
+    gap: 18px;
+    padding: 20px;
+    border-bottom: 1px solid #eef2f7;
+  }
+  .offer-item-row:last-child { border-bottom: none; }
+  .offer-item-row__product { display: grid; gap: 7px; min-width: 0; }
+  .offer-item-row__title { font-size: 16px; line-height: 1.4; font-weight: 700; color: #0f172a; }
+  .offer-item-row__detail { font-size: 13px; line-height: 1.68; color: #64748b; }
+  .offer-item-row__value { text-align: right; font-size: 14px; line-height: 1.5; color: #334155; }
+  .offer-item-row__value--strong { font-weight: 700; color: #0f172a; }
+  .offer-items__cards { display: none; }
+  .offer-item-card { border: 1px solid #dbe4ee; border-radius: 18px; background: #ffffff; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+  .offer-item-card__top { display: grid; gap: 6px; padding: 15px 16px 14px; background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%); border-bottom: 1px solid #eef2f7; }
+  .offer-item-card__eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; }
+  .offer-item-card__title { font-size: 16px; line-height: 1.3; font-weight: 700; color: #0f172a; }
+  .offer-item-card__detail { font-size: 13px; line-height: 1.7; color: #64748b; }
+  .offer-item-card__grid { display: grid; gap: 0; margin: 0; }
+  .offer-item-card__metric { display: flex; justify-content: space-between; gap: 16px; padding: 11px 16px; border-bottom: 1px solid #eef2f7; }
+  .offer-item-card__metric:last-child { border-bottom: none; }
+  .offer-item-card__metric dt,
+  .offer-item-card__metric dd { margin: 0; }
+  .offer-item-card__metric dt { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
+  .offer-item-card__metric dd { text-align: right; font-size: 14px; font-weight: 600; color: #0f172a; }
+  .offer-item-card__metric--total { background: #f8fafc; }
+  @media (max-width: 640px) {
+    .offer-items__table { display: none; }
+    .offer-items__cards { display: grid; gap: 16px; }
+    .offer-item-card__detail { display: none; }
+  }
+</style>`;
+
+  if (html.includes('</head>')) return html.replace('</head>', `${lineItemStyles}\n</head>`);
+  return `${lineItemStyles}\n${html}`;
+}
+
 function injectOrganizationNumber(
   html: string,
   organizationNumber?: string,
@@ -622,6 +685,7 @@ export function sanitizeGeneratedOfferDocument(
 ): string {
   let html = documentHtml;
   html = replaceLegacyLineItemsTable(html, offer);
+  html = injectStructuredLineItemStyles(html);
   html = normalizeLegacyOfferMeta(html, getOfferNumberString(offer));
   html = injectOrganizationNumber(html, branding?.organizationNumber);
   html = injectDocumentPatchStyles(html);
