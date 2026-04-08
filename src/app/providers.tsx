@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { ToastProvider } from '@shared/ui/toast/toast-context';
 import { useSSE } from '@shared/hooks/use-sse';
+import { ThemeBootstrap } from '@shared/ui/theme-bootstrap';
 
 function SSEInitializer({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -17,6 +18,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemeBootstrap />
       <ToastProvider>
         <SSEInitializer>
           {children}

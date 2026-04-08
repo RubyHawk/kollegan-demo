@@ -8,6 +8,10 @@ model User {
   firstName       String?
   lastName        String?
   avatarUrl       String?
+  themeMode       String?
+  themeAccent     String?
+  themeFontFamily String?
+  themeFontSize   String?
   userType        String    @default("staff") // staff | customer
   isActive        Boolean   @default(true)
   emailVerified   Boolean   @default(false)

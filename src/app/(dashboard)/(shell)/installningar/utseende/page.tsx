@@ -32,6 +32,21 @@ const MODE_OPTIONS: { id: ThemeMode; label: string; desc: string }[] = [
 
 const DEFAULT_THEME = THEMES.find((item) => item.id === DEFAULT_THEME_ID) ?? THEMES[0];
 
+function persistAppearancePatch(patch: {
+  themeMode?: ThemeMode;
+  themeAccent?: string;
+  themeFontFamily?: string;
+  themeFontSize?: FontSize;
+}) {
+  void fetch('/api/auth/profile', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  }).catch(() => {
+    // ignore background persistence failures
+  });
+}
+
 function WorkspacePreview({
   theme,
   dark,
@@ -287,6 +302,7 @@ export default function UtseendePage() {
         (nextTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
       localStorage.setItem(THEME_STORAGE_KEYS.mode, nextTheme);
       setThemePreferenceCookie(THEME_COOKIE_KEYS.mode, nextTheme);
+      persistAppearancePatch({ themeMode: nextTheme });
 
       document.documentElement.classList.toggle('dark', isDark);
       setResolvedDark(isDark);
@@ -308,6 +324,7 @@ export default function UtseendePage() {
       localStorage.setItem(THEME_STORAGE_KEYS.accent, nextTheme.id);
       localStorage.setItem(THEME_STORAGE_KEYS.data, JSON.stringify({ light: nextTheme.light, dark: nextTheme.dark }));
       setThemePreferenceCookie(THEME_COOKIE_KEYS.accent, nextTheme.id);
+      persistAppearancePatch({ themeAccent: nextTheme.id });
     } catch {
       // ignore theme persistence errors
     }
@@ -332,6 +349,7 @@ export default function UtseendePage() {
       );
       localStorage.setItem(THEME_STORAGE_KEYS.fontFamily, nextFont.id);
       setThemePreferenceCookie(THEME_COOKIE_KEYS.fontFamily, nextFont.id);
+      persistAppearancePatch({ themeFontFamily: nextFont.id });
     } catch {
       // ignore font persistence errors
     }
@@ -361,6 +379,7 @@ export default function UtseendePage() {
       `);
       localStorage.setItem(THEME_STORAGE_KEYS.fontSize, nextSize);
       setThemePreferenceCookie(THEME_COOKIE_KEYS.fontSize, nextSize);
+      persistAppearancePatch({ themeFontSize: nextSize });
       const restoreScroll = () => {
         if (scrollContainer) {
           scrollContainer.scrollTop = scrollTop;
