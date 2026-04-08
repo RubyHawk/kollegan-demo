@@ -84,6 +84,7 @@ interface Props {
   initialContent?: string;
   editorRef?:      React.MutableRefObject<TemplateEditorHandle | null>;
   onUpdate?:       () => void;
+  onMigrationNotice?: (message: string | null) => void;
 }
 
 // ── Image drop helper ─────────────────────────────────────────────────────────
@@ -99,7 +100,7 @@ async function insertImageFile(view: EditorView, file: File) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function TemplateEditor({ initialContent, editorRef, onUpdate }: Props) {
+export default function TemplateEditor({ initialContent, editorRef, onUpdate, onMigrationNotice }: Props) {
   // Parse the full doc once (ref avoids re-parsing on every render)
   const initDoc = useRef(parseTemplateDoc(initialContent));
 
@@ -408,6 +409,10 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
     setDocSettings((prev) => ({ ...prev, ...p }));
   }, []);
 
+  useEffect(() => {
+    onMigrationNotice?.(initDoc.current.migrationNotice ?? null);
+  }, [onMigrationNotice]);
+
   // ── Expose handle to parent pages ────────────────────────────────────────────
 
   useEffect(() => {
@@ -418,7 +423,7 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
         // Flush current page into a local copy and serialize as v3
         const allPages = normalizePresentationPages(flushPage(activeIdxRef.current, pagesRef.current));
         return {
-          _v:           3,
+          _v:           4,
           pages:        allPages,
           defaultHeader: headerDefault?.getJSON() ?? EMPTY_DOC,
           defaultFooter: footerDefault?.getJSON()  ?? EMPTY_DOC,
@@ -470,7 +475,7 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate }: 
         docSettings,
         patchDocSettings,
       }}>
-        <div className="template-editor-light flex h-full overflow-hidden">
+        <div className="template-editor-light flex h-full overflow-hidden bg-[var(--surface-2)]">
           {/* Left panel */}
           <BlocksSidebar />
 

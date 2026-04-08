@@ -66,6 +66,7 @@ export default function TemplateEditorPage() {
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [draftBanner, setDraftBanner] = useState(false);
+  const [migrationNotice, setMigrationNotice] = useState<string | null>(null);
 
   const [initEmailSubject, setInitEmailSubject] = useState('');
   const [initEmailBody, setInitEmailBody] = useState('');
@@ -414,6 +415,19 @@ export default function TemplateEditorPage() {
         </div>
       )}
 
+      {migrationNotice && (
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-sky-200 bg-sky-50 px-4 py-2.5 text-xs text-sky-900">
+          <span>{migrationNotice}</span>
+          <button
+            type="button"
+            onClick={() => setMigrationNotice(null)}
+            className="shrink-0 font-medium text-sky-700 hover:text-sky-900"
+          >
+            Stäng
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex flex-1 items-center justify-center gap-3 text-[var(--text-muted)]">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
@@ -428,6 +442,7 @@ export default function TemplateEditorPage() {
               initialContent={initialContentRef.current}
               editorRef={editorRef}
               onUpdate={() => setIsDirty(true)}
+              onMigrationNotice={setMigrationNotice}
             />
           </div>
 

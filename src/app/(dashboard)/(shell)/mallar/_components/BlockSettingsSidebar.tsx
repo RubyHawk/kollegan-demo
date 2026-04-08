@@ -1,906 +1,657 @@
 'use client';
 
-/**
- * BlockSettingsSidebar — right contextual panel.
- *
- * Shows settings for the currently selected block type:
- *   - Image: alignment, width
- *   - Table: add/remove row & column, merge/split cells
- *   - SignatureBlock: field type, label
- *   - Variable: which variable is selected
- *   - Nothing: placeholder reference card
- */
-
 import { useEffect, useRef, useState } from 'react';
+import type { Editor } from '@tiptap/core';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import type { HFCtxValue } from './header-footer-context';
-import { PRESENTATION_PAGE_HEIGHT, PRESENTATION_PAGE_WIDTH, syncPresentationPageHeightForActivePage } from './presentation-page-height';
 import {
   DEFAULT_DOCUMENT_NOTES_HEADING,
   DEFAULT_DOCUMENT_TERMS_BODY,
   DEFAULT_DOCUMENT_TERMS_HEADING,
+  PAGE_ROLE_LABELS,
 } from './template-doc';
 import { uploadTemplateImage } from './template-image-upload';
+import { cn } from '@shared/lib/utils';
+import { ArrowDown, CaretDoubleRight } from '@phosphor-icons/react';
 
 type ActiveBlock = 'image' | 'table' | 'signatureBlock' | 'variable' | null;
 
 export default function BlockSettingsSidebar() {
   const editor = useTemplateEditor();
-  const hf     = useHeaderFooter();
+  const hf = useHeaderFooter();
   const [active, setActive] = useState<ActiveBlock>(null);
-  const [bgImages, setBgImages] = useState<Array<{ pos: number; src: string }>>([]);
+
+  const activePage = hf?.pages[hf.activeIdx] ?? null;
+  const isDocumentPage = activePage?.kind === 'document';
 
   useEffect(() => {
     if (!editor) return;
+    const activeEditor = editor;
     function update() {
-      if (editor!.isActive('image'))          setActive('image');
-      else if (editor!.isActive('table'))     setActive('table');
-      else if (editor!.isActive('signatureBlock')) setActive('signatureBlock');
-      else if (editor!.isActive('variable'))  setActive('variable');
-      else                                    setActive(null);
+      if (activeEditor.isActive('image')) setActive('image');
+      else if (activeEditor.isActive('table')) setActive('table');
+      else if (activeEditor.isActive('signatureBlock')) setActive('signatureBlock');
+      else if (activeEditor.isActive('variable')) setActive('variable');
+      else setActive(null);
     }
-    editor.on('selectionUpdate', update);
-    editor.on('transaction',     update);
+    update();
+    activeEditor.on('selectionUpdate', update);
+    activeEditor.on('transaction', update);
     return () => {
-      editor.off('selectionUpdate', update);
-      editor.off('transaction',     update);
+      activeEditor.off('selectionUpdate', update);
+      activeEditor.off('transaction', update);
     };
   }, [editor]);
 
-  // Track all background images (free + zIndex < 0) for the selection panel
-  useEffect(() => {
-    if (!editor) return;
-    function scanBg() {
-      const imgs: Array<{ pos: number; src: string }> = [];
-      editor!.state.doc.descendants((n, pos) => {
-        if (n.type.name === 'image' && n.attrs.position === 'free' && (n.attrs.zIndex ?? 0) < 0)
-          imgs.push({ pos, src: n.attrs.src as string });
-      });
-      setBgImages(imgs);
-    }
-    scanBg();
-    editor.on('transaction', scanBg);
-    return () => { editor.off('transaction', scanBg); };
-  }, [editor]);
+  if (!hf) return null;
 
   return (
-    <div className="w-56 shrink-0 hidden 2xl:flex flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface-1)]">
-      {/* Background images panel — always visible when background images exist */}
-      {editor && bgImages.length > 0 && (
-        <div className="border-b border-[var(--border)] p-3 shrink-0">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">
-            Bakgrundsbilder
-          </p>
-          {bgImages.map((img) => (
-            <div key={img.pos} className="flex items-center gap-2 mb-1.5">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.src} alt="" className="w-10 h-7 object-cover rounded border border-[var(--border)] shrink-0" />
-              <span className="text-[11px] text-[var(--text-secondary)] flex-1 truncate">Bakgrundslager</span>
-              <button
-                onClick={() => editor.commands.setNodeSelection(img.pos)}
-                className="text-[10px] text-[var(--accent)] hover:underline shrink-0"
-              >
-                Välj
-              </button>
-            </div>
-          ))}
+    <aside className="hidden w-[320px] shrink-0 xl:flex flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface-1)]">
+      {isDocumentPage ? (
+        <StructuredOfferInspector hf={hf} />
+      ) : (
+        <div className="space-y-3 p-3">
+          {active === 'image' && editor && <ImageInspector editor={editor} />}
+          {active === 'table' && <TableInspector />}
+          {active === 'signatureBlock' && editor && <SignatureInspector editor={editor} />}
+          {active === 'variable' && editor && <VariableInspector editor={editor} />}
+          {active === null && (
+            <>
+              <PresentationPageInspector hf={hf} />
+              <DocumentDefaultsInspector hf={hf} />
+            </>
+          )}
         </div>
       )}
+    </aside>
+  );
+}
 
-      {active === 'image'          && editor && <ImageSettings editor={editor} hf={hf} />}
-      {active === 'table'          && editor && <TableSettings editor={editor} />}
-      {active === 'signatureBlock' && editor && <SignatureSettings editor={editor} />}
-      {active === 'variable'       && editor && <VariableInfo editor={editor} />}
-      {active === null             && hf        && <DocumentSettings hf={hf} />}
-      {active === null             && !hf       && <PlaceholderReference />}
-      {/* Page settings panel — always visible at the bottom */}
-      {hf && <PageSettings hf={hf} />}
+function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
+  const uploadRef = useRef<HTMLInputElement>(null);
+  const page = hf.pages[hf.activeIdx];
+  const document = page.document ?? {};
+
+  return (
+    <div className="space-y-3 p-3">
+      <InspectorCard
+        title="Offertsida"
+        subtitle="Den här sidan styr offertens struktur, juridik, summering och helhetslayout."
+      >
+        <div className="space-y-3">
+          <Field label="Sidnamn">
+            <input
+              type="text"
+              value={page.label}
+              onChange={(event) => hf.renamePage(hf.activeIdx, event.target.value)}
+              className={inputClass}
+            />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-2">
+            <ToggleCard
+              title="Med i kundens PDF"
+              description={page.includeInCustomerPdf === false ? 'Dold för kunden' : 'Visas i den slutliga offerten'}
+              checked={page.includeInCustomerPdf !== false}
+              onChange={(checked) => hf.patchActivePage({ includeInCustomerPdf: checked })}
+            />
+            <StaticCard
+              title="Sidmodell"
+              description="Strukturerad offert"
+              badge="System"
+            />
+          </div>
+        </div>
+      </InspectorCard>
+
+      <InspectorCard
+        title="Layout"
+        subtitle="Styr hur kundblock, summering och fri textyta placeras."
+      >
+        <div className="space-y-3">
+          <Field label="Summering">
+            <div className="grid grid-cols-2 gap-2">
+              <ChoiceButton
+                active={(document.summaryPlacement ?? 'right') === 'right'}
+                onClick={() => hf.patchActivePage({ document: { ...document, summaryPlacement: 'right' } })}
+              >
+                Till höger
+              </ChoiceButton>
+              <ChoiceButton
+                active={(document.summaryPlacement ?? 'right') === 'below'}
+                onClick={() => hf.patchActivePage({ document: { ...document, summaryPlacement: 'below' } })}
+              >
+                Under prisdel
+              </ChoiceButton>
+            </div>
+          </Field>
+
+          <Field label="Fri textyta">
+            <div className="grid grid-cols-2 gap-2">
+              <ChoiceButton
+                active={(document.introLayout ?? 'compact') === 'compact'}
+                onClick={() => hf.patchActivePage({ document: { ...document, introLayout: 'compact' } })}
+              >
+                Kompakt
+              </ChoiceButton>
+              <ChoiceButton
+                active={(document.introLayout ?? 'compact') === 'roomy'}
+                onClick={() => hf.patchActivePage({ document: { ...document, introLayout: 'roomy' } })}
+              >
+                Rymlig
+              </ChoiceButton>
+            </div>
+          </Field>
+        </div>
+      </InspectorCard>
+
+      <InspectorCard
+        title="Innehåll"
+        subtitle="Välj vilka fasta block som ska finnas med på offertsidan."
+      >
+        <div className="grid grid-cols-2 gap-2">
+          <ToggleRow label="Logo" checked={document.showLogo ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showLogo: checked } })} />
+          <ToggleRow label="Avsändare" checked={document.showSenderDetails ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showSenderDetails: checked } })} />
+          <ToggleRow label="Kundblock" checked={document.showCustomerBlock ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showCustomerBlock: checked } })} />
+          <ToggleRow label="Fri textyta" checked={document.showIntro ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showIntro: checked } })} />
+          <ToggleRow label="Prisdel" checked={document.showLineItems ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showLineItems: checked } })} />
+          <ToggleRow label="Summering" checked={document.showSummary ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showSummary: checked } })} />
+          <ToggleRow label="Juridik" checked={document.showTerms ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showTerms: checked } })} />
+          <ToggleRow label="Anteckningar" checked={document.showNotes ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showNotes: checked } })} />
+          <ToggleRow label="Footer" checked={document.showFooter ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showFooter: checked } })} />
+        </div>
+      </InspectorCard>
+
+      <InspectorCard
+        title="Branding & bakgrund"
+        subtitle="Styr watermark och visuell identitet på offertsidan."
+      >
+        <div className="space-y-3">
+          <Field label="Bakgrund / watermark">
+            <input
+              type="text"
+              value={document.backgroundImageSrc ?? ''}
+              onChange={(event) => hf.patchActivePage({ document: { ...document, backgroundImageSrc: event.target.value } })}
+              placeholder="Klistra in bild-URL eller ladda upp en bakgrund"
+              className={inputClass}
+            />
+          </Field>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => uploadRef.current?.click()}
+              className={secondaryButtonClass}
+            >
+              Ladda upp bild
+            </button>
+            {document.backgroundImageSrc && (
+              <button
+                type="button"
+                onClick={() => hf.patchActivePage({ document: { ...document, backgroundImageSrc: '' } })}
+                className={secondaryButtonClass}
+              >
+                Rensa
+              </button>
+            )}
+          </div>
+
+          <input
+            ref={uploadRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              event.target.value = '';
+              if (!file) return;
+              try {
+                const src = await uploadTemplateImage(file);
+                hf.patchActivePage({ document: { ...document, backgroundImageSrc: src } });
+              } catch (error) {
+                window.alert(error instanceof Error ? error.message : 'Kunde inte ladda upp bakgrunden.');
+              }
+            }}
+          />
+
+          <Field label="Bakgrundsstyrka">
+            <input
+              type="range"
+              min={0}
+              max={0.2}
+              step={0.01}
+              value={document.backgroundOpacity ?? 0.08}
+              onChange={(event) => hf.patchActivePage({ document: { ...document, backgroundOpacity: Number(event.target.value) } })}
+              className="w-full accent-[var(--accent)]"
+            />
+          </Field>
+
+          <Field label="Placering">
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { value: 'top', label: 'Topp' },
+                { value: 'bottom', label: 'Botten' },
+                { value: 'full', label: 'Hel sida' },
+              ].map((option) => (
+                <ChoiceButton
+                  key={option.value}
+                  active={(document.watermarkMode ?? 'bottom') === option.value}
+                  onClick={() => hf.patchActivePage({ document: { ...document, watermarkMode: option.value as 'top' | 'bottom' | 'full' } })}
+                >
+                  {option.label}
+                </ChoiceButton>
+              ))}
+            </div>
+          </Field>
+        </div>
+      </InspectorCard>
+
+      <InspectorCard
+        title="Juridik & texter"
+        subtitle="Här styr du standardtexterna som används i den färdiga offerten."
+      >
+        <div className="space-y-3">
+          <Field label="Rubrik för juridik">
+            <input
+              type="text"
+              value={document.termsHeading ?? DEFAULT_DOCUMENT_TERMS_HEADING}
+              onChange={(event) => hf.patchActivePage({ document: { ...document, termsHeading: event.target.value } })}
+              className={inputClass}
+            />
+          </Field>
+
+          <Field label="Juridisk standardtext">
+            <textarea
+              rows={6}
+              value={document.termsBody ?? DEFAULT_DOCUMENT_TERMS_BODY}
+              onChange={(event) => hf.patchActivePage({ document: { ...document, termsBody: event.target.value } })}
+              className={textareaClass}
+            />
+          </Field>
+
+          <Field label="Rubrik för offertspecifik anteckning">
+            <input
+              type="text"
+              value={document.notesHeading ?? DEFAULT_DOCUMENT_NOTES_HEADING}
+              onChange={(event) => hf.patchActivePage({ document: { ...document, notesHeading: event.target.value } })}
+              className={inputClass}
+            />
+          </Field>
+        </div>
+      </InspectorCard>
     </div>
   );
 }
 
-// ── Image settings ──────────────────────────────────────────────────────────────
-
-import type { Editor } from '@tiptap/core';
-
-// ── Layer helpers (mirrors ImageNodeView logic, operating from the sidebar) ───
-
-interface StackItem { pos: number; zIndex: number }
-
-function buildFreeImageStack(editor: Editor): StackItem[] {
-  const items: StackItem[] = [];
-  editor.state.doc.descendants((n, pos) => {
-    if (n.type.name === 'image' && n.attrs.position === 'free') {
-      items.push({ pos, zIndex: n.attrs.zIndex ?? 0 });
-    }
-  });
-  return items.sort((a, b) => a.zIndex - b.zIndex);
-}
-
-/** Position of the currently selected image node, or null. */
-function getSelectedImagePos(editor: Editor): number | null {
-  const sel = editor.state.selection as { from: number; node?: { type: { name: string } } };
-  return sel.node?.type.name === 'image' ? sel.from : null;
-}
-
-function dispatchLayerSwap(editor: Editor, posA: number, posB: number): void {
-  const { doc, tr } = editor.state;
-  const nodeA = doc.nodeAt(posA);
-  const nodeB = doc.nodeAt(posB);
-  if (!nodeA || !nodeB) return;
-  tr.setNodeAttribute(posA, 'zIndex', nodeB.attrs.zIndex);
-  tr.setNodeAttribute(posB, 'zIndex', nodeA.attrs.zIndex);
-  editor.view.dispatch(tr);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-function ImageSettings({ editor, hf }: { editor: Editor; hf: HFCtxValue | null }) {
-  const attrs    = editor.getAttributes('image');
-  const width    = (attrs.width    as number | undefined) ?? 0;
-  const height   = (attrs.height   as number | null | undefined) ?? null;
-  const align    = (attrs.align    as string | undefined) ?? 'left';
-  const isFree   = (attrs.position as string | undefined) === 'free';
-  const wrapText = (attrs.wrapText as string | undefined) ?? 'none';
-  const posX     = Math.round((attrs.posX as number | undefined) ?? 100);
-  const posY     = Math.round((attrs.posY as number | undefined) ?? 100);
-
-  // Layer rank info — computed from the live document state
-  let layerRank  = 1;
-  let layerTotal = 1;
-  let atBottom   = true;
-  let atTop      = true;
-
-  if (isFree) {
-    const stack   = buildFreeImageStack(editor);
-    const myPos   = getSelectedImagePos(editor);
-    const myIdx   = myPos !== null ? stack.findIndex(s => s.pos === myPos) : -1;
-    layerTotal    = stack.length;
-    layerRank     = myIdx >= 0 ? myIdx + 1 : layerTotal;
-    atBottom      = myIdx <= 0;
-    atTop         = myIdx >= layerTotal - 1;
-  }
-
-  const set = (patch: Record<string, unknown>) => {
-    editor.chain().focus().updateAttributes('image', patch).run();
-    syncPresentationPageHeightForActivePage(hf, editor.getJSON() as object);
-  };
-
-  const bringForward = () => {
-    const stack = buildFreeImageStack(editor);
-    const myPos = getSelectedImagePos(editor);
-    if (myPos === null) return;
-    const idx = stack.findIndex(s => s.pos === myPos);
-    if (idx === -1 || idx >= stack.length - 1) return;
-    dispatchLayerSwap(editor, stack[idx].pos, stack[idx + 1].pos);
-  };
-
-  const sendBackward = () => {
-    const stack = buildFreeImageStack(editor);
-    const myPos = getSelectedImagePos(editor);
-    if (myPos === null) return;
-    const idx = stack.findIndex(s => s.pos === myPos);
-    if (idx <= 0) return;
-    dispatchLayerSwap(editor, stack[idx].pos, stack[idx - 1].pos);
-  };
-
-  const btnStyle = (active: boolean): React.CSSProperties => ({
-    flex: 1, padding: '4px 0', fontSize: 11, borderRadius: 6, cursor: 'pointer',
-    background: active ? 'var(--accent-subtle)' : 'var(--surface-0)',
-    border:     active ? '1px solid var(--accent-border)' : '1px solid var(--border)',
-    color:      active ? 'var(--accent)' : 'var(--text-primary)',
-    transition: 'background 0.1s, border-color 0.1s',
-  });
+function PresentationPageInspector({ hf }: { hf: HFCtxValue }) {
+  const page = hf.pages[hf.activeIdx];
 
   return (
-    <PanelWrap title="Bild">
+    <InspectorCard
+      title="Sida"
+      subtitle="Grundinställningar för presentationssidan."
+    >
+      <div className="space-y-3">
+        <Field label="Sidnamn">
+          <input
+            type="text"
+            value={page.label}
+            onChange={(event) => hf.renamePage(hf.activeIdx, event.target.value)}
+            className={inputClass}
+          />
+        </Field>
 
-      {/* ── Position mode ────────────────────────────────────────────────── */}
-      <Label>Placering</Label>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-        <button type="button" style={btnStyle(!isFree)}
-          onClick={() => set({ position: 'inline', float: null, align: 'left' })}>
-          Infogad
-        </button>
-        <button type="button" style={btnStyle(isFree)}
-          onClick={() => set({ position: 'free', float: null })}>
-          Fri
-        </button>
+        <Field label="Sidroll">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
+            {PAGE_ROLE_LABELS[page.role ?? 'custom']}
+          </div>
+        </Field>
+
+        <ToggleCard
+          title="Med i kundens PDF"
+          description={page.includeInCustomerPdf === false ? 'Sidan är intern' : 'Sidan följer med kunden'}
+          checked={page.includeInCustomerPdf !== false}
+          onChange={(checked) => hf.patchActivePage({ includeInCustomerPdf: checked })}
+        />
+
+        <div className="grid grid-cols-2 gap-2">
+          <ChoiceButton
+            active={(page.kind ?? 'presentation') === 'presentation'}
+            onClick={() => hf.patchActivePage({ kind: 'presentation', role: page.role ?? 'custom' })}
+          >
+            Presentation
+          </ChoiceButton>
+          <ChoiceButton
+            active={(page.kind ?? 'presentation') === 'document'}
+            onClick={() => hf.patchActivePage({ kind: 'document', role: 'offer', includeInCustomerPdf: true })}
+          >
+            Gör till offertsida
+          </ChoiceButton>
+        </div>
       </div>
-
-      {/* ── Alignment (inline / block mode only) ─────────────────────────── */}
-      {!isFree && (
-        <>
-          <Label>Justering</Label>
-          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-            {(['left', 'center', 'right'] as const).map((a) => (
-              <button key={a} type="button" style={btnStyle(align === a)}
-                onClick={() => set({ align: a, float: null })}>
-                {a === 'left' ? 'Vänster' : a === 'center' ? 'Center' : 'Höger'}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* ── Width ────────────────────────────────────────────────────────── */}
-      <Label>Bredd (px)</Label>
-      <input
-        type="range" min={80} max={816} step={10}
-        value={width || 400}
-        onChange={(e) => set({ width: Number(e.target.value) })}
-        className="w-full accent-[var(--accent)] mb-1"
-      />
-      <p className="text-[11px] text-[var(--text-muted)] text-right mb-4">
-        {width || 400} px
-      </p>
-
-      {/* ── Layer order (free mode only, only when > 1 free image) ──────── */}
-      {isFree && layerTotal > 1 && (
-        <>
-          <Label>Lagerordning</Label>
-
-          {/* Rank display */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 8, marginBottom: 8,
-          }}>
-            <span style={{
-              fontSize: 11, fontFamily: 'Calibri, Arial, sans-serif',
-              color: '#323130',
-            }}>
-              Lager {layerRank} av {layerTotal}
-            </span>
-          </div>
-
-          {/* Forward / backward buttons */}
-          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-            <button
-              type="button"
-              disabled={atBottom}
-              onClick={sendBackward}
-              style={{ ...layerBtnStyle, opacity: atBottom ? 0.35 : 1, cursor: atBottom ? 'default' : 'pointer' }}
-            >
-              ↓ Bakåt
-            </button>
-            <button
-              type="button"
-              disabled={atTop}
-              onClick={bringForward}
-              style={{ ...layerBtnStyle, opacity: atTop ? 0.35 : 1, cursor: atTop ? 'default' : 'pointer' }}
-            >
-              ↑ Framåt
-            </button>
-          </div>
-        </>
-      )}
-
-      {/* ── Text wrap (free mode only) ───────────────────────────────────── */}
-      {isFree && (
-        <>
-          <Label>Textflöde</Label>
-          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-            {(['none', 'left', 'right'] as const).map((w) => (
-              <button key={w} type="button" style={btnStyle(wrapText === w)}
-                onClick={() => set({ wrapText: w })}>
-                {w === 'none' ? 'Inget' : w === 'left' ? 'Vänster' : 'Höger'}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* ── Free position coordinates ─────────────────────────────────────── */}
-      {isFree && (
-        <>
-          <Label>Position (px från sidkant)</Label>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 11, color: '#475569', fontFamily: 'system-ui,sans-serif', marginBottom: 3, fontWeight: 600 }}>X — horisontellt</p>
-              <input type="number" value={posX} min={0} step={10}
-                onChange={(e) => set({ posX: Number(e.target.value) })}
-                style={coordInputStyle} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 11, color: '#475569', fontFamily: 'system-ui,sans-serif', marginBottom: 3, fontWeight: 600 }}>Y — vertikalt</p>
-              <input type="number" value={posY} min={0} step={10}
-                onChange={(e) => set({ posY: Number(e.target.value) })}
-                style={coordInputStyle} />
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-            <button type="button" style={{ ...quickBtnStyle }}
-              onClick={() => set({ posX: 0, posY: 0 })} title="Placera i sidans övre vänstra hörn">
-              Övre vänster
-            </button>
-            <button type="button" style={{ ...quickBtnStyle }}
-              onClick={() => set({ posX: 96, posY: 96 })} title="Placera i textområdets övre vänstra hörn (96px marginal)">
-              Textyta
-            </button>
-            <button type="button" style={{ ...quickBtnStyle, color: '#0078d4', borderColor: '#c0d8f0' }}
-              onClick={() => set({ posX: 0, posY: 0, width: PRESENTATION_PAGE_WIDTH, height: PRESENTATION_PAGE_HEIGHT, wrapText: 'none' })}
-              title={`Sträck bilden till hela sidan (${PRESENTATION_PAGE_WIDTH}×${PRESENTATION_PAGE_HEIGHT} px)`}>
-              Fyll sida
-            </button>
-          </div>
-
-          {/* ── Height ────────────────────────────────────────────────────── */}
-          <Label>Höjd (px, tomt = auto)</Label>
-          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-            <input
-              type="number"
-              min={0}
-              step={10}
-              value={height ?? ''}
-              placeholder="auto"
-              onChange={(e) => set({ height: e.target.value ? Number(e.target.value) : null })}
-              style={{ ...coordInputStyle, flex: 1 }}
-            />
-            {height !== null && (
-              <button type="button" style={{ ...quickBtnStyle, flexShrink: 0, padding: '3px 8px' }}
-                onClick={() => set({ height: null })} title="Återställ till automatisk höjd">
-                ×
-              </button>
-            )}
-          </div>
-        </>
-      )}
-
-    </PanelWrap>
+    </InspectorCard>
   );
 }
 
-const layerBtnStyle: React.CSSProperties = {
-  flex: 1, padding: '4px 0', fontSize: 11, borderRadius: 6,
-  border: '1px solid var(--border)', background: 'var(--surface-0)',
-  color: 'var(--text-primary)', cursor: 'pointer',
-};
+function DocumentDefaultsInspector({ hf }: { hf: HFCtxValue }) {
+  const fonts = ['Calibri', 'Arial', 'Georgia', 'Helvetica Neue', 'Inter'];
 
-const coordInputStyle: React.CSSProperties = {
-  width: '100%', padding: '6px 10px', fontSize: 13, fontWeight: 600,
-  border: '1.5px solid #cbd5e1', borderRadius: 6,
-  color: '#1e293b', background: '#ffffff',
-  outline: 'none', fontFamily: 'ui-monospace,monospace',
-};
-
-const quickBtnStyle: React.CSSProperties = {
-  flex: 1, padding: '3px 4px', fontSize: 10, borderRadius: 6, cursor: 'pointer',
-  border: '1px solid var(--border)', background: 'var(--surface-0)',
-  color: 'var(--text-primary)',
-};
-
-// ── Table settings ──────────────────────────────────────────────────────────────
-
-function TableSettings({ editor }: { editor: Editor }) {
   return (
-    <PanelWrap title="Tabell">
-      <div className="flex flex-col gap-1.5">
-        <TableBtn label="Lägg till rad" onClick={() => editor.chain().focus().addRowAfter().run()} disabled={!editor.can().addRowAfter()} />
-        <TableBtn label="Ta bort rad"   onClick={() => editor.chain().focus().deleteRow().run()} disabled={!editor.can().deleteRow()} />
-        <TableBtn label="Lägg till kolumn" onClick={() => editor.chain().focus().addColumnAfter().run()} disabled={!editor.can().addColumnAfter()} />
-        <TableBtn label="Ta bort kolumn"   onClick={() => editor.chain().focus().deleteColumn().run()} disabled={!editor.can().deleteColumn()} />
-        <div className="h-px bg-[var(--border)] my-1" />
-        <TableBtn label="Slå ihop celler"  onClick={() => editor.chain().focus().mergeCells().run()} disabled={!editor.can().mergeCells()} />
-        <TableBtn label="Dela cell"        onClick={() => editor.chain().focus().splitCell().run()} disabled={!editor.can().splitCell()} />
-        <div className="h-px bg-[var(--border)] my-1" />
-        <TableBtn label="Ta bort tabell" danger onClick={() => editor.chain().focus().deleteTable().run()} disabled={!editor.can().deleteTable()} />
+    <InspectorCard
+      title="Dokumentstandard"
+      subtitle="Gemensamma inställningar för presentationssidornas textyta."
+    >
+      <div className="space-y-3">
+        <Field label="Standardteckensnitt">
+          <select
+            value={hf.docSettings.defaultFont}
+            onChange={(event) => hf.patchDocSettings({ defaultFont: event.target.value })}
+            className={inputClass}
+          >
+            {fonts.map((font) => (
+              <option key={font} value={font}>{font}</option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Sidmarginal">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { value: 'tight', label: 'Smal' },
+              { value: 'normal', label: 'Normal' },
+              { value: 'wide', label: 'Bred' },
+            ].map((option) => (
+              <ChoiceButton
+                key={option.value}
+                active={hf.docSettings.pageMargin === option.value}
+                onClick={() => hf.patchDocSettings({ pageMargin: option.value as 'tight' | 'normal' | 'wide' })}
+              >
+                {option.label}
+              </ChoiceButton>
+            ))}
+          </div>
+        </Field>
       </div>
-    </PanelWrap>
+    </InspectorCard>
   );
 }
 
-import { cn } from '@shared/lib/utils';
+function ImageInspector({ editor }: { editor: Editor }) {
+  const attrs = editor.getAttributes('image');
+  const width = Number(attrs.width ?? 360);
+  const align = (attrs.align as string | undefined) ?? 'left';
 
-function TableBtn({ label, onClick, disabled, danger }: { label: string; onClick: () => void; disabled?: boolean; danger?: boolean }) {
+  return (
+    <InspectorCard
+      title="Bild"
+      subtitle="Grundläggande inställningar för den markerade bilden."
+    >
+      <div className="space-y-3">
+        <Field label="Bredd">
+          <input
+            type="range"
+            min={120}
+            max={816}
+            step={8}
+            value={width}
+            onChange={(event) => editor.chain().focus().updateAttributes('image', { width: Number(event.target.value) }).run()}
+            className="w-full accent-[var(--accent)]"
+          />
+          <p className="mt-2 text-right text-xs text-[var(--text-muted)]">{width}px</p>
+        </Field>
+
+        <Field label="Justering">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { value: 'left', label: 'Vänster' },
+              { value: 'center', label: 'Center' },
+              { value: 'right', label: 'Höger' },
+            ].map((option) => (
+              <ChoiceButton
+                key={option.value}
+                active={align === option.value}
+                onClick={() => editor.chain().focus().updateAttributes('image', { align: option.value, position: 'inline' }).run()}
+              >
+                {option.label}
+              </ChoiceButton>
+            ))}
+          </div>
+        </Field>
+      </div>
+    </InspectorCard>
+  );
+}
+
+function TableInspector() {
+  return (
+    <InspectorCard
+      title="Tabell"
+      subtitle="Tabeller justeras direkt i dokumentytan. Markera celler och använd den fria layouten på sidan."
+    >
+      <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-3 py-4 text-xs leading-6 text-[var(--text-secondary)]">
+        Den här editorn är nu mindre Word-lik. För tabeller räcker det i regel att ändra innehållet direkt i canvasen.
+      </div>
+    </InspectorCard>
+  );
+}
+
+function SignatureInspector({ editor }: { editor: Editor }) {
+  const attrs = editor.getAttributes('signatureBlock');
+  const fieldType = (attrs.fieldType as string) ?? 'signature';
+  const label = (attrs.label as string) ?? 'Signatur';
+
+  return (
+    <InspectorCard title="Signaturfält" subtitle="Avancerat block för specialmallar och fria presentationssidor.">
+      <div className="space-y-3">
+        <Field label="Fälttyp">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { value: 'signature', label: 'Signatur' },
+              { value: 'name', label: 'Namn' },
+              { value: 'date', label: 'Datum' },
+            ].map((option) => (
+              <ChoiceButton
+                key={option.value}
+                active={fieldType === option.value}
+                onClick={() => editor.chain().focus().updateAttributes('signatureBlock', { fieldType: option.value }).run()}
+              >
+                {option.label}
+              </ChoiceButton>
+            ))}
+          </div>
+        </Field>
+
+        <Field label="Etikett">
+          <input
+            type="text"
+            value={label}
+            onChange={(event) => editor.chain().focus().updateAttributes('signatureBlock', { label: event.target.value }).run()}
+            className={inputClass}
+          />
+        </Field>
+      </div>
+    </InspectorCard>
+  );
+}
+
+function VariableInspector({ editor }: { editor: Editor }) {
+  const attrs = editor.getAttributes('variable');
+  const key = (attrs.key as string) ?? '';
+  const label = (attrs.label as string) ?? '';
+
+  return (
+    <InspectorCard title="Variabel" subtitle="Avancerat fält som fylls med offertdata automatiskt.">
+      <div className="space-y-3">
+        <Field label="Variabelnamn">
+          <code className="block break-all rounded-2xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-700">
+            {`{{${key}}}`}
+          </code>
+        </Field>
+        <Field label="Etikett">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
+            {label}
+          </div>
+        </Field>
+      </div>
+    </InspectorCard>
+  );
+}
+
+function InspectorCard({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+      <div className="border-b border-[var(--border)] px-4 py-3">
+        <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
+        {subtitle && <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{subtitle}</p>}
+      </div>
+      <div className="px-4 py-4">{children}</div>
+    </section>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function ChoiceButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      disabled={disabled}
       className={cn(
-        'w-full px-3 py-1.5 text-left text-xs rounded-md border transition-colors',
-        disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
-        danger
-          ? 'border-red-200 text-red-600 hover:bg-red-50 bg-transparent'
-          : 'border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--surface-active)] bg-transparent'
+        'rounded-2xl border px-3 py-2 text-sm font-medium transition-colors',
+        active
+          ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)] text-[var(--accent)]'
+          : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]'
       )}
     >
-      {label}
+      {children}
     </button>
   );
 }
 
-// ── Signature settings ──────────────────────────────────────────────────────────
-
-function SignatureSettings({ editor }: { editor: Editor }) {
-  const attrs    = editor.getAttributes('signatureBlock');
-  const fieldType = (attrs.fieldType as string) ?? 'signature';
-  const label     = (attrs.label as string) ?? 'Signatur';
-
+function ToggleCard({
+  title,
+  description,
+  checked,
+  onChange,
+}: {
+  title: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
   return (
-    <PanelWrap title="Signaturfält">
-      <Label>Fälttyp</Label>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 16 }}>
-        {(['signature', 'name', 'date'] as const).map((ft) => {
-          const labels: Record<string, string> = { signature: 'Signatur', name: 'Namnfält', date: 'Datumfält' };
-          return (
-            <button
-              key={ft}
-              type="button"
-              onClick={() => editor.chain().focus().updateAttributes('signatureBlock', { fieldType: ft }).run()}
-              className={cn(
-                'w-full px-3 py-1.5 text-xs text-left rounded-md border cursor-pointer transition-colors',
-                fieldType === ft
-                  ? 'bg-[var(--accent-subtle)] text-[var(--accent)] border-[var(--accent-border)]'
-                  : 'bg-[var(--surface-0)] text-[var(--text-primary)] border-[var(--border)] hover:bg-[var(--surface-active)]'
-              )}
-            >
-              {labels[ft]}
-            </button>
-          );
-        })}
-      </div>
-      <Label>Etikett</Label>
-      <input
-        type="text"
-        value={label}
-        onChange={(e) => editor.chain().focus().updateAttributes('signatureBlock', { label: e.target.value }).run()}
-        className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
-      />
-    </PanelWrap>
-  );
-}
-
-// ── Variable info ──────────────────────────────────────────────────────────────
-
-function VariableInfo({ editor }: { editor: Editor }) {
-  const attrs = editor.getAttributes('variable');
-  const key   = (attrs.key as string) ?? '';
-  const label = (attrs.label as string) ?? '';
-  return (
-    <PanelWrap title="Variabel">
-      <Label>Variabelnamn</Label>
-      <code className="block break-all text-[11px] font-mono text-violet-600 bg-violet-50 border border-violet-200 px-2 py-1 rounded-md mb-3">
-        {`{{${key}}}`}
-      </code>
-      <Label>Etikett</Label>
-      <p className="text-sm text-[var(--text-primary)] mb-3">{label}</p>
-      <p className="text-[11px] text-[var(--text-muted)] italic">
-        Tryck Backspace för att ta bort variabeln.
-      </p>
-    </PanelWrap>
-  );
-}
-
-// ── Document settings (shown when nothing is selected) ────────────────────────
-
-function DocumentSettings({ hf }: { hf: HFCtxValue }) {
-  const { docSettings, patchDocSettings } = hf;
-  const FONTS = ['Calibri', 'Arial', 'Georgia', 'Times New Roman', 'Helvetica Neue'];
-  const MARGINS = [
-    { key: 'tight',  label: 'Smal',   px: '64 px' },
-    { key: 'normal', label: 'Normal', px: '96 px' },
-    { key: 'wide',   label: 'Bred',   px: '128 px' },
-  ] as const;
-
-  return (
-    <PanelWrap title="Dokumentinställningar">
-      <Label>Standardteckensnitt</Label>
-      <select
-        value={docSettings.defaultFont}
-        onChange={(e) => patchDocSettings({ defaultFont: e.target.value })}
-        className="w-full mb-4 px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
-        style={{ fontFamily: docSettings.defaultFont }}
-      >
-        {FONTS.map((f) => (
-          <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>
-        ))}
-      </select>
-
-      <Label>Sidmarginal</Label>
-      <div className="flex gap-1 mb-4">
-        {MARGINS.map(({ key, label, px }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => patchDocSettings({ pageMargin: key })}
-            title={px}
-            className={`flex-1 rounded-md border px-1.5 py-1.5 text-[11px] font-medium transition-colors ${
-              docSettings.pageMargin === key
-                ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
-                : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
-        Klicka på ett block i dokumentet för att se dess inställningar här.
-      </p>
-    </PanelWrap>
-  );
-}
-
-// ── Fallback (no HF context) ───────────────────────────────────────────────────
-
-function PlaceholderReference() {
-  return (
-    <div className="px-4 py-2 border-b border-[var(--border)]">
-      <p className="text-xs text-[var(--text-muted)] leading-tight">
-        Inget markerat · Klicka på ett block för inställningar
-      </p>
-    </div>
-  );
-}
-
-// ── Page settings panel ────────────────────────────────────────────────────────
-
-function PageSettings({ hf }: { hf: HFCtxValue }) {
-  const bgUploadRef = useRef<HTMLInputElement>(null);
-  const page = hf.pages[hf.activeIdx];
-  if (!page) return null;
-
-  const { activeHeader, activeFooter, patchActiveHeader, patchActiveFooter, patchActivePage } = hf;
-  const document = page.document ?? {};
-
-  return (
-    <div className="border-t-2 border-[var(--border)]">
-      <div className="px-4 py-3 border-b border-[var(--border)]">
-        <h3 className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-wider">
-          Sida
-        </h3>
-      </div>
-      <div className="px-4 py-3 space-y-3">
-
-        {/* Page label */}
+    <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-0)] px-3 py-3">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <Label>Sidnamn</Label>
-          <input
-            type="text"
-            value={page.label}
-            onChange={(e) => hf.renamePage(hf.activeIdx, e.target.value)}
-            className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
-          />
+          <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{description}</p>
         </div>
-
-        <div>
-          <Label>Sidtyp</Label>
-          <div className="grid grid-cols-2 gap-1">
-            {[
-              { key: 'presentation', label: 'Presentation' },
-              { key: 'document', label: 'Offertsida' },
-            ].map((type) => (
-              <button
-                key={type.key}
-                type="button"
-                onClick={() => patchActivePage({
-                  kind: type.key as 'presentation' | 'document',
-                  includeInCustomerPdf: type.key === 'document',
-                  document: type.key === 'document'
-                    ? {
-                        backgroundOpacity: 0.08,
-                        watermarkMode: 'bottom',
-                        showLogo: true,
-                        showSenderDetails: true,
-                        showCustomerBlock: true,
-                        showIntro: true,
-                        showLineItems: true,
-                        showSummary: true,
-                        showNotes: true,
-                        showTerms: true,
-                        showFooter: true,
-                        termsHeading: DEFAULT_DOCUMENT_TERMS_HEADING,
-                        termsBody: DEFAULT_DOCUMENT_TERMS_BODY,
-                        notesHeading: DEFAULT_DOCUMENT_NOTES_HEADING,
-                        summaryPlacement: 'right',
-                        ...document,
-                      }
-                    : undefined,
-                })}
-                className={`rounded-md border px-2 py-1.5 text-[11px] font-medium transition-colors ${
-                  (page.kind ?? 'presentation') === type.key
-                    ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
-                    : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
-                }`}
-              >
-                {type.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-semibold text-[var(--text-secondary)]">Kundens PDF</p>
-              <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-                Styr om just denna sida ska finnas med när kunden laddar ner PDF.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => patchActivePage({ includeInCustomerPdf: page.includeInCustomerPdf === false ? true : false })}
-              className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-                page.includeInCustomerPdf !== false ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
-              }`}
-              role="switch"
-              aria-checked={page.includeInCustomerPdf !== false}
-              aria-label="Inkludera sidan i kundens PDF"
-            >
-              <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                page.includeInCustomerPdf !== false ? 'translate-x-4' : 'translate-x-0'
-              }`} />
-            </button>
-          </div>
-          <p className="mt-2 text-[10px] text-[var(--text-muted)]">
-            {page.includeInCustomerPdf !== false
-              ? 'Den här sidan följer med i kundens nedladdning.'
-              : 'Den här sidan visas i mallen men döljs i kundens PDF.'}
-          </p>
-        </div>
-
-        {page.kind === 'document' && (
-          <>
-            <div className="h-px bg-[var(--border)]" />
-
-            <div className="space-y-3">
-              <div>
-                <Label>Bakgrund / watermark</Label>
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    value={document.backgroundImageSrc ?? ''}
-                    placeholder="Klistra in bild-URL eller ladda upp en bakgrund"
-                    onChange={(e) => patchActivePage({ document: { ...document, backgroundImageSrc: e.target.value } })}
-                    className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => bgUploadRef.current?.click()}
-                      className="flex-1 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
-                    >
-                      Ladda upp bild
-                    </button>
-                    {document.backgroundImageSrc && (
-                      <button
-                        type="button"
-                        onClick={() => patchActivePage({ document: { ...document, backgroundImageSrc: '' } })}
-                        className="rounded-md border border-[var(--border)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:border-red-300 hover:text-red-500"
-                      >
-                        Rensa
-                      </button>
-                    )}
-                  </div>
-                  <input
-                    ref={bgUploadRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      e.target.value = '';
-                      if (!file) return;
-                      try {
-                        const src = await uploadTemplateImage(file);
-                        patchActivePage({ document: { ...document, backgroundImageSrc: src } });
-                      } catch (error) {
-                        window.alert(error instanceof Error ? error.message : 'Kunde inte ladda upp bakgrunden.');
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label>Bakgrundsstyrka</Label>
-                <input
-                  type="range"
-                  min={0}
-                  max={0.2}
-                  step={0.01}
-                  value={document.backgroundOpacity ?? 0.08}
-                  onChange={(e) => patchActivePage({ document: { ...document, backgroundOpacity: Number(e.target.value) } })}
-                  className="w-full accent-[var(--accent)]"
-                />
-              </div>
-
-              <div>
-                <Label>Placering av watermark</Label>
-                <div className="grid grid-cols-3 gap-1">
-                  {[
-                    { key: 'top', label: 'Topp' },
-                    { key: 'bottom', label: 'Botten' },
-                    { key: 'full', label: 'Hel sida' },
-                  ].map((option) => (
-                    <button
-                      key={option.key}
-                      type="button"
-                      onClick={() => patchActivePage({ document: { ...document, watermarkMode: option.key as 'top' | 'bottom' | 'full' } })}
-                      className={`rounded-md border px-2 py-1.5 text-[11px] font-medium transition-colors ${
-                        (document.watermarkMode ?? 'bottom') === option.key
-                          ? 'border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)]'
-                          : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  ['showLogo', 'Logo'],
-                  ['showCustomerBlock', 'Kundblock'],
-                  ['showSummary', 'Summering'],
-                  ['showTerms', 'Juridik'],
-                  ['showNotes', 'Anteckningar'],
-                  ['showFooter', 'Footer'],
-                ].map(([key, label]) => (
-                  <label key={key} className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(document[key as keyof typeof document] ?? true)}
-                      onChange={(e) => patchActivePage({ document: { ...document, [key]: e.target.checked } })}
-                      className="accent-[var(--accent)]"
-                    />
-                    <span className="text-xs">{label}</span>
-                  </label>
-                ))}
-              </div>
-
-              <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-0)] px-3 py-3 space-y-3">
-                <div>
-                  <p className="text-[11px] font-semibold text-[var(--text-secondary)]">Textblock för offertsidan</p>
-                  <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-                    Här styr du mallens standardtext för juridik och rubriken för eventuella offer-specifika anteckningar.
-                  </p>
-                </div>
-
-                <div>
-                  <Label>Rubrik för juridik</Label>
-                  <input
-                    type="text"
-                    value={document.termsHeading ?? DEFAULT_DOCUMENT_TERMS_HEADING}
-                    onChange={(e) => patchActivePage({ document: { ...document, termsHeading: e.target.value } })}
-                    className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
-                    placeholder={DEFAULT_DOCUMENT_TERMS_HEADING}
-                  />
-                </div>
-
-                <div>
-                  <Label>Juridisk standardtext</Label>
-                  <textarea
-                    rows={5}
-                    value={document.termsBody ?? DEFAULT_DOCUMENT_TERMS_BODY}
-                    onChange={(e) => patchActivePage({ document: { ...document, termsBody: e.target.value } })}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2.5 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)] resize-y"
-                    placeholder={DEFAULT_DOCUMENT_TERMS_BODY}
-                  />
-                </div>
-
-                <div>
-                  <Label>Rubrik för offer-specifik anteckning</Label>
-                  <input
-                    type="text"
-                    value={document.notesHeading ?? DEFAULT_DOCUMENT_NOTES_HEADING}
-                    onChange={(e) => patchActivePage({ document: { ...document, notesHeading: e.target.value } })}
-                    className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
-                    placeholder={DEFAULT_DOCUMENT_NOTES_HEADING}
-                  />
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        <div className="h-px bg-[var(--border)]" />
-
-        {/* Header section */}
-        <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={activeHeader.enabled}
-            onChange={(e) => patchActiveHeader({ enabled: e.target.checked })}
-            className="accent-[var(--accent)]"
-          />
-          <span className="text-sm font-medium">Aktivera sidhuvud</span>
-        </label>
-
-        {activeHeader.enabled && (
-          <div className="pl-5 space-y-1">
-            <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
-              <input
-                type="radio"
-                name={`hdr-${page.id}`}
-                checked={activeHeader.useDefault}
-                onChange={() => patchActiveHeader({ useDefault: true })}
-                className="accent-[var(--accent)]"
-              />
-              Standard
-            </label>
-            <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
-              <input
-                type="radio"
-                name={`hdr-${page.id}`}
-                checked={!activeHeader.useDefault}
-                onChange={() => patchActiveHeader({ useDefault: false })}
-                className="accent-[var(--accent)]"
-              />
-              Unik för denna sida
-            </label>
-            {!activeHeader.useDefault && (
-              <p className="text-[11px] text-[var(--text-muted)] italic mt-1">
-                Redigera i dokumentet ovan.
-              </p>
-            )}
-          </div>
-        )}
-
-        <div className="h-px bg-[var(--border)]" />
-
-        {/* Footer section */}
-        <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={activeFooter.enabled}
-            onChange={(e) => patchActiveFooter({ enabled: e.target.checked })}
-            className="accent-[var(--accent)]"
-          />
-          <span className="text-sm font-medium">Aktivera sidfot</span>
-        </label>
-
-        {activeFooter.enabled && (
-          <div className="pl-5 space-y-1">
-            <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
-              <input
-                type="radio"
-                name={`ftr-${page.id}`}
-                checked={activeFooter.useDefault}
-                onChange={() => patchActiveFooter({ useDefault: true })}
-                className="accent-[var(--accent)]"
-              />
-              Standard
-            </label>
-            <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
-              <input
-                type="radio"
-                name={`ftr-${page.id}`}
-                checked={!activeFooter.useDefault}
-                onChange={() => patchActiveFooter({ useDefault: false })}
-                className="accent-[var(--accent)]"
-              />
-              Unik för denna sida
-            </label>
-            {!activeFooter.useDefault && (
-              <p className="text-[11px] text-[var(--text-muted)] italic mt-1">
-                Redigera i dokumentet ovan.
-              </p>
-            )}
-          </div>
-        )}
+        <ToggleSwitch checked={checked} onChange={onChange} />
       </div>
     </div>
   );
 }
 
-// ── Layout helpers ─────────────────────────────────────────────────────────────
-
-function PanelWrap({ title, children }: { title: string; children: React.ReactNode }) {
+function StaticCard({
+  title,
+  description,
+  badge,
+}: {
+  title: string;
+  description: string;
+  badge: string;
+}) {
   return (
-    <div className="border-b border-[var(--border)]">
-      <div className="px-4 py-3">
-        <h3 className="text-[var(--text-muted)] text-[10px] font-semibold uppercase tracking-wider">{title}</h3>
+    <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-0)] px-3 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{description}</p>
+        </div>
+        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+          {badge}
+        </span>
       </div>
-      <div className="px-4 pb-4">{children}</div>
     </div>
   );
 }
 
-function Label({ children }: { children: React.ReactNode }) {
-  return <p className="text-[var(--text-muted)] text-[11px] mb-1.5">{children}</p>;
+function ToggleRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm text-[var(--text-primary)]">{label}</span>
+        <ToggleSwitch checked={checked} onChange={onChange} />
+      </div>
+    </div>
+  );
 }
+
+function ToggleSwitch({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={cn(
+        'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors',
+        checked ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
+      )}
+      aria-pressed={checked}
+    >
+      <span className={cn(
+        'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-transform',
+        checked ? 'translate-x-5' : 'translate-x-0'
+      )} />
+    </button>
+  );
+}
+
+const inputClass = 'w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-border)]';
+const textareaClass = `${inputClass} min-h-[120px] resize-y`;
+const secondaryButtonClass = 'flex-1 rounded-2xl border border-[var(--border)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]';
