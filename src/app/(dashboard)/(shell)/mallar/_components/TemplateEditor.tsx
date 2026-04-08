@@ -31,6 +31,7 @@ import TableRow from '@tiptap/extension-table-row';
 import { TableCellWithBg, TableHeaderWithBg } from './extensions/table-cell-background.extension';
 import FontFamily from '@tiptap/extension-font-family';
 import Highlight from '@tiptap/extension-highlight';
+import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
 import { VariableNode } from './extensions/variable-node.extension';
@@ -158,6 +159,10 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
       VariableNode,
       SignatureBlockNode,
       DragHandleExtension,
+      Placeholder.configure({
+        placeholder: 'Skriv här eller välj en byggsten från panelen till vänster…',
+        emptyEditorClass: 'is-editor-empty',
+      }),
     ],
     content: initDoc.current.pages[0]?.body ?? EMPTY_DOC,
     editorProps: {
