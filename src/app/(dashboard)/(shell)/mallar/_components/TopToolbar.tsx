@@ -11,13 +11,13 @@ import {
   ListBullets,
   ListNumbers,
   Minus,
+  NotePencil,
   Table,
   TextAlignCenter,
   TextAlignLeft,
   TextAlignRight,
   TextB,
-  TextHOne,
-  TextHTwo,
+  TextColumns,
   TextItalic,
   TextUnderline,
 } from '@phosphor-icons/react';
@@ -43,115 +43,122 @@ export default function TopToolbar() {
   }, [editor]);
 
   if (!editor) return null;
-  const activeEditor = editor;
+  const currentEditor = editor;
 
   function applyStyle(style: (typeof STYLE_OPTIONS)[number]['action']) {
     if (style === 'paragraph') {
-      activeEditor.chain().focus().setParagraph().run();
+      currentEditor.chain().focus().setParagraph().run();
       return;
     }
     if (style === 'h1') {
-      activeEditor.chain().focus().toggleHeading({ level: 1 }).run();
+      currentEditor.chain().focus().toggleHeading({ level: 1 }).run();
       return;
     }
-    activeEditor.chain().focus().toggleHeading({ level: 2 }).run();
+    currentEditor.chain().focus().toggleHeading({ level: 2 }).run();
   }
 
   function insertLink() {
-    const previous = activeEditor.getAttributes('link').href as string | undefined;
+    const previous = currentEditor.getAttributes('link').href as string | undefined;
     const url = window.prompt('Länkadress', previous ?? '');
     if (url === null) return;
     if (!url.trim()) {
-      activeEditor.chain().focus().unsetLink().run();
+      currentEditor.chain().focus().unsetLink().run();
       return;
     }
-    activeEditor.chain().focus().setLink({ href: url.trim() }).run();
+    currentEditor.chain().focus().setLink({ href: url.trim() }).run();
   }
 
   return (
-    <div className="border-b border-[var(--border)] bg-[var(--surface-1)] px-4 py-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1">
-          <ToolbarIconButton title="Ångra" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
-            <ArrowUUpLeft size={15} />
-          </ToolbarIconButton>
-          <ToolbarIconButton title="Gör om" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}>
-            <ArrowUUpRight size={15} />
-          </ToolbarIconButton>
-        </div>
+    <div className="border-b border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
+      <div className="overflow-x-auto">
+        <div className="flex min-w-max items-center gap-2">
+          <ToolbarGroup>
+            <ToolbarIconButton title="Ångra" onClick={() => currentEditor.chain().focus().undo().run()} disabled={!currentEditor.can().undo()}>
+              <ArrowUUpLeft size={15} />
+            </ToolbarIconButton>
+            <ToolbarIconButton title="Gör om" onClick={() => currentEditor.chain().focus().redo().run()} disabled={!currentEditor.can().redo()}>
+              <ArrowUUpRight size={15} />
+            </ToolbarIconButton>
+          </ToolbarGroup>
 
-        <div className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Text</span>
-          <select
-            value={activeStyle}
-            onChange={(event) => applyStyle(STYLE_OPTIONS.find((option) => option.label === event.target.value)?.action ?? 'paragraph')}
-            className="rounded-full bg-[var(--surface-1)] px-3 py-1 text-xs font-medium text-[var(--text-primary)] focus:outline-none"
-          >
-            {STYLE_OPTIONS.map((option) => (
-              <option key={option.label} value={option.label}>{option.label}</option>
-            ))}
-          </select>
-          <ToolbarIconButton title="Fet" active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()}>
-            <TextB size={15} weight="bold" />
-          </ToolbarIconButton>
-          <ToolbarIconButton title="Kursiv" active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()}>
-            <TextItalic size={15} />
-          </ToolbarIconButton>
-          <ToolbarIconButton title="Understruken" active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()}>
-            <TextUnderline size={15} />
-          </ToolbarIconButton>
-        </div>
+          <ToolbarGroup className="gap-2 px-2.5">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Text</span>
+            <select
+              value={activeStyle}
+              onChange={(event) => applyStyle(STYLE_OPTIONS.find((option) => option.label === event.target.value)?.action ?? 'paragraph')}
+              className="rounded-full bg-[var(--surface-1)] px-3 py-1 text-xs font-medium text-[var(--text-primary)] focus:outline-none"
+            >
+              {STYLE_OPTIONS.map((option) => (
+                <option key={option.label} value={option.label}>{option.label}</option>
+              ))}
+            </select>
+            <ToolbarIconButton title="Fet" active={currentEditor.isActive('bold')} onClick={() => currentEditor.chain().focus().toggleBold().run()}>
+              <TextB size={15} weight="bold" />
+            </ToolbarIconButton>
+            <ToolbarIconButton title="Kursiv" active={currentEditor.isActive('italic')} onClick={() => currentEditor.chain().focus().toggleItalic().run()}>
+              <TextItalic size={15} />
+            </ToolbarIconButton>
+            <ToolbarIconButton title="Understruken" active={currentEditor.isActive('underline')} onClick={() => currentEditor.chain().focus().toggleUnderline().run()}>
+              <TextUnderline size={15} />
+            </ToolbarIconButton>
+          </ToolbarGroup>
 
-        <div className="flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1">
-          <ToolbarIconButton title="Vänsterställ" active={editor.isActive({ textAlign: 'left' })} onClick={() => editor.chain().focus().setTextAlign('left').run()}>
-            <TextAlignLeft size={15} />
-          </ToolbarIconButton>
-          <ToolbarIconButton title="Centrera" active={editor.isActive({ textAlign: 'center' })} onClick={() => editor.chain().focus().setTextAlign('center').run()}>
-            <TextAlignCenter size={15} />
-          </ToolbarIconButton>
-          <ToolbarIconButton title="Högerställ" active={editor.isActive({ textAlign: 'right' })} onClick={() => editor.chain().focus().setTextAlign('right').run()}>
-            <TextAlignRight size={15} />
-          </ToolbarIconButton>
-        </div>
+          <ToolbarGroup>
+            <ToolbarIconButton title="Vänsterställ" active={currentEditor.isActive({ textAlign: 'left' })} onClick={() => currentEditor.chain().focus().setTextAlign('left').run()}>
+              <TextAlignLeft size={15} />
+            </ToolbarIconButton>
+            <ToolbarIconButton title="Centrera" active={currentEditor.isActive({ textAlign: 'center' })} onClick={() => currentEditor.chain().focus().setTextAlign('center').run()}>
+              <TextAlignCenter size={15} />
+            </ToolbarIconButton>
+            <ToolbarIconButton title="Högerställ" active={currentEditor.isActive({ textAlign: 'right' })} onClick={() => currentEditor.chain().focus().setTextAlign('right').run()}>
+              <TextAlignRight size={15} />
+            </ToolbarIconButton>
+          </ToolbarGroup>
 
-        <div className="flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1">
-          <ToolbarIconButton title="Punktlista" active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()}>
-            <ListBullets size={15} />
-          </ToolbarIconButton>
-          <ToolbarIconButton title="Numrerad lista" active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
-            <ListNumbers size={15} />
-          </ToolbarIconButton>
-          {!isDocumentPage && (
-            <>
-              <ToolbarIconButton title="Avdelare" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
-                <Minus size={15} />
-              </ToolbarIconButton>
-              <ToolbarIconButton title="Tabell" onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>
-                <Table size={15} />
-              </ToolbarIconButton>
-            </>
-          )}
-          <ToolbarIconButton title="Lägg till länk" active={editor.isActive('link')} onClick={insertLink}>
-            <LinkIcon size={15} />
-          </ToolbarIconButton>
-        </div>
+          <ToolbarGroup>
+            <ToolbarIconButton title="Punktlista" active={currentEditor.isActive('bulletList')} onClick={() => currentEditor.chain().focus().toggleBulletList().run()}>
+              <ListBullets size={15} />
+            </ToolbarIconButton>
+            <ToolbarIconButton title="Numrerad lista" active={currentEditor.isActive('orderedList')} onClick={() => currentEditor.chain().focus().toggleOrderedList().run()}>
+              <ListNumbers size={15} />
+            </ToolbarIconButton>
+            {!isDocumentPage && (
+              <>
+                <ToolbarIconButton title="Avdelare" onClick={() => currentEditor.chain().focus().setHorizontalRule().run()}>
+                  <Minus size={15} />
+                </ToolbarIconButton>
+                <ToolbarIconButton title="Tabell" onClick={() => currentEditor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>
+                  <Table size={15} />
+                </ToolbarIconButton>
+              </>
+            )}
+            <ToolbarIconButton title="Lägg till länk" active={currentEditor.isActive('link')} onClick={insertLink}>
+              <LinkIcon size={15} />
+            </ToolbarIconButton>
+          </ToolbarGroup>
 
-        <div className="ml-auto flex items-center gap-2 rounded-[20px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
-          <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-            {isDocumentPage ? <TextHOne size={16} /> : <TextHTwo size={16} />}
-            <div>
-              <p className="text-xs font-semibold text-[var(--text-primary)]">
-                {isDocumentPage ? 'Strukturerad offertsida' : 'Presentationssida'}
-              </p>
-              <p className="text-[11px] leading-5 text-[var(--text-muted)]">
-                {isDocumentPage
-                  ? 'Pris, summering och godkännande styrs i sidoinställningarna till höger.'
-                  : 'Använd enkla sektioner och bygg innehållet sida för sida.'}
-              </p>
-            </div>
+          <div className="ml-1 hidden items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-secondary)] md:flex">
+            {isDocumentPage ? <NotePencil size={14} /> : <TextColumns size={14} />}
+            <span className="font-medium text-[var(--text-primary)]">
+              {isDocumentPage ? 'Strukturerad offertsida' : 'Presentationssida'}
+            </span>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ToolbarGroup({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn('flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1', className)}>
+      {children}
     </div>
   );
 }

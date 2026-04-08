@@ -230,7 +230,7 @@ export function makeEmptyPage(label = 'Sida 1', role: PageRole = 'custom'): Page
     label,
     role,
     kind: role === 'offer' ? 'document' : 'presentation',
-    includeInCustomerPdf: role === 'cover' || role === 'appendix',
+    includeInCustomerPdf: role !== 'custom',
     body: EMPTY_DOC,
     header: { enabled: false, useDefault: true, content: EMPTY_DOC },
     footer: { enabled: false, useDefault: true, content: EMPTY_DOC },
@@ -254,7 +254,11 @@ export function makeDocumentPage(label = 'Offertsida', role: PageRole = 'offer')
 export function makeNewDoc(): TemplateDoc {
   return {
     _v: 4,
-    pages: [makeEmptyPage('Omslag', 'cover'), makeDocumentPage('Offertsida', 'offer')],
+    pages: [
+      makeEmptyPage('Omslag', 'cover'),
+      makeEmptyPage('Introduktion', 'introduction'),
+      makeDocumentPage('Offertsida', 'offer'),
+    ],
     defaultHeader: EMPTY_DOC,
     defaultFooter: EMPTY_DOC,
     migrationNotice: null,

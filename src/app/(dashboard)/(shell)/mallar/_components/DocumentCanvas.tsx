@@ -36,26 +36,11 @@ export default function DocumentCanvas() {
     <div className="flex-1 overflow-hidden bg-[var(--surface-2)]">
       <BubbleFormattingMenu />
 
-      <div className="h-full overflow-auto px-8 py-8">
-        <div className="mx-auto w-full max-w-[980px]">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Aktiv sida</p>
-              <h2 className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{activePage.label}</h2>
-            </div>
-            <span className={cn(
-              'rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em]',
-              isDocumentPage
-                ? 'bg-blue-50 text-blue-700'
-                : 'bg-slate-100 text-slate-600'
-            )}>
-              {isDocumentPage ? 'Strukturerad offertsida' : 'Presentationssida'}
-            </span>
-          </div>
-
+      <div className="h-full overflow-auto px-3 py-3 md:px-6 md:py-5">
+        <div className="mx-auto w-full max-w-[940px]">
           <div
-            className="relative overflow-hidden rounded-[32px] border border-[var(--border)] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.12)]"
-            style={{ minHeight: 1120 }}
+            className="relative overflow-hidden rounded-[28px] border border-[var(--border)] bg-white shadow-[0_22px_60px_rgba(15,23,42,0.12)]"
+            style={{ minHeight: 1040 }}
           >
             {!isDocumentPage && headerEditor && (
               <HFZone
@@ -65,7 +50,7 @@ export default function DocumentCanvas() {
               />
             )}
 
-            <div className={cn('relative', isDocumentPage ? 'p-10' : '')}>
+            <div className={cn('relative', isDocumentPage ? 'p-5 md:p-8' : '')}>
               {isDocumentPage ? (
                 <StructuredOfferCanvas
                   editor={editor}
@@ -98,10 +83,10 @@ export default function DocumentCanvas() {
         .doc-editor {
           display: contents;
         }
-        .doc-editor .ProseMirror {
+      .doc-editor .ProseMirror {
           outline: none !important;
           border: none !important;
-          min-height: 520px;
+          min-height: 460px;
           color: #0f172a;
           font-size: 14px;
           line-height: 1.75;
@@ -245,9 +230,9 @@ function StructuredOfferCanvas({
 
   return (
     <div
-      className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#fbfdff_0%,#ffffff_24%)] p-8"
+      className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#fbfdff_0%,#ffffff_24%)] p-4 md:rounded-[28px] md:p-8"
       style={{
-        minHeight: 920,
+        minHeight: 840,
         fontFamily: `${fontFamily}, Arial, sans-serif`,
       }}
     >
@@ -269,7 +254,7 @@ function StructuredOfferCanvas({
         />
       )}
 
-      <div className="relative z-10 space-y-6">
+      <div className="relative z-10 space-y-5">
         <header className="grid gap-6 border-b border-slate-200 pb-6 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div className="flex items-start gap-4">
             {settings?.showLogo !== false && (
@@ -311,7 +296,7 @@ function StructuredOfferCanvas({
         )}>
           <div className="space-y-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Offertsida</p>
-            <h1 className="max-w-[12ch] text-[40px] font-semibold leading-[1.03] tracking-[-0.05em] text-slate-950">
+            <h1 className="max-w-[12ch] text-[34px] font-semibold leading-[1.03] tracking-[-0.05em] text-slate-950 md:text-[40px]">
               {title}
             </h1>
             <p className="max-w-[50ch] text-sm leading-7 text-slate-600">
