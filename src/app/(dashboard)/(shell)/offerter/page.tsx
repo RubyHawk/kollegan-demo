@@ -2178,7 +2178,7 @@ export default function OffersPage() {
 
                     {/* Actions — appear on hover */}
                     <td className="px-3 py-2">
-                      <div className="flex items-center justify-end gap-1 rounded-lg bg-[var(--surface-0)]/80 px-1 py-0.5 opacity-90 transition-opacity duration-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+                      <div className="flex items-center justify-end gap-1 rounded-lg bg-[var(--surface-0)]/80 px-1 py-0.5 opacity-90 transition-opacity duration-100 md:opacity-100">
                         {/* PDF / preview — show for all sent/viewed/accepted; fetch doc on-demand */}
                         {(offer.status === 'sent' || offer.status === 'viewed' || offer.status === 'accepted') && (
                           <>
