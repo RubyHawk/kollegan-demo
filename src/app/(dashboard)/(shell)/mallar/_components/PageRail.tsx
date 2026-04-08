@@ -1,11 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  CaretLeft,
-  CaretRight,
   ChatText,
   ClipboardText,
+  DotsSixVertical,
   File,
   FileArrowUp,
   NotePencil,
@@ -14,6 +13,22 @@ import {
   Signature,
   Trash,
 } from '@phosphor-icons/react';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@shared/lib/utils';
 import { useHeaderFooter } from './header-footer-context';
 import { PAGE_ROLE_LABELS, type PageDoc, type PageRole } from './template-doc';
@@ -147,6 +162,7 @@ function getPageBadge(page: PageDoc) {
 export default function PageRail() {
   const hf = useHeaderFooter();
   const [showBlueprints, setShowBlueprints] = useState(false);
+  const blueprintRef = useRef<HTMLDivElement>(null);
 
   const activePage = hf?.pages[hf.activeIdx];
   const activeDescription = useMemo(() => {
@@ -157,6 +173,39 @@ export default function PageRail() {
     return 'Presentationssidor är friare och passar för bild, text, case och berättelse.';
   }, [activePage]);
 
+  // Dismiss the blueprint dropdown on outside click or Escape.
+  useEffect(() => {
+    if (!showBlueprints) return;
+    function handleMouseDown(event: MouseEvent) {
+      if (blueprintRef.current && !blueprintRef.current.contains(event.target as Node)) {
+        setShowBlueprints(false);
+      }
+    }
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setShowBlueprints(false);
+    }
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [showBlueprints]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!hf || !over || active.id === over.id) return;
+    const oldIndex = hf.pages.findIndex((page) => page.id === active.id);
+    const newIndex = hf.pages.findIndex((page) => page.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    hf.movePage(oldIndex, newIndex);
+  }
+
   if (!hf) return null;
 
   return (
@@ -165,9 +214,12 @@ export default function PageRail() {
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-[var(--text-primary)]">Sidor</p>
-            <p className="mt-1 max-w-[62ch] text-xs leading-5 text-[var(--text-muted)]">{activeDescription}</p>
+            <p className="mt-1 max-w-[62ch] text-xs leading-5 text-[var(--text-muted)]">
+              {activeDescription}
+              <span className="ml-1 text-[var(--text-muted)]">Dra sidorna för att ändra ordning.</span>
+            </p>
           </div>
-          <div className="relative">
+          <div className="relative" ref={blueprintRef}>
             <button
               type="button"
               onClick={() => setShowBlueprints((value) => !value)}
@@ -178,7 +230,10 @@ export default function PageRail() {
             </button>
 
             {showBlueprints && (
-              <div className="absolute right-0 bottom-[calc(100%+10px)] z-20 w-[280px] rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[0_20px_60px_rgba(15,23,42,0.16)]">
+              <div
+                role="menu"
+                className="absolute right-0 bottom-[calc(100%+10px)] z-20 w-[280px] rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[0_20px_60px_rgba(15,23,42,0.16)]"
+              >
                 <div className="space-y-1">
                   {PAGE_BLUEPRINTS.map((blueprint) => (
                     <button
@@ -212,90 +267,116 @@ export default function PageRail() {
         </div>
 
         <div className="-mx-1 overflow-x-auto pb-1">
-          <div className="flex min-w-max items-stretch gap-2 px-1">
-            {hf.pages.map((page, index) => (
-              <button
-                key={page.id}
-                type="button"
-                onClick={() => hf.switchPage(index)}
-                className={cn(
-                  'min-w-[188px] rounded-[22px] border px-3 py-3 text-left transition-all md:min-w-[204px]',
-                  index === hf.activeIdx
-                    ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)] shadow-[0_10px_26px_rgba(37,99,235,0.12)]'
-                    : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-active)]'
-                )}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{page.label}</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                      <span className={cn(
-                        'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
-                        page.kind === 'document' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'
-                      )}>
-                        {getPageBadge(page)}
-                      </span>
-                      <span className="text-[11px] text-[var(--text-muted)]">
-                        {page.includeInCustomerPdf === false ? 'Intern' : 'Med i PDF'}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="shrink-0 text-[11px] font-medium text-[var(--text-muted)]">{index + 1}/{hf.pages.length}</span>
-                </div>
-
-                <div className="mt-3 flex items-center gap-1.5">
-                  <MiniAction label="Flytta åt vänster" onClick={index > 0 ? () => hf.movePage(index, index - 1) : undefined}>
-                    <CaretLeft size={13} />
-                  </MiniAction>
-                  <MiniAction label="Flytta åt höger" onClick={index < hf.pages.length - 1 ? () => hf.movePage(index, index + 1) : undefined}>
-                    <CaretRight size={13} />
-                  </MiniAction>
-                  <div className="flex-1" />
-                  <MiniAction label="Ta bort sida" danger onClick={hf.pages.length > 1 ? () => hf.removePage(index) : undefined}>
-                    <Trash size={13} />
-                  </MiniAction>
-                </div>
-              </button>
-            ))}
-          </div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={hf.pages.map((p) => p.id)} strategy={horizontalListSortingStrategy}>
+              <div className="flex min-w-max items-stretch gap-2 px-1">
+                {hf.pages.map((page, index) => (
+                  <SortablePageCard
+                    key={page.id}
+                    page={page}
+                    index={index}
+                    total={hf.pages.length}
+                    isActive={index === hf.activeIdx}
+                    onSelect={() => hf.switchPage(index)}
+                    onRemove={hf.pages.length > 1 ? () => hf.removePage(index) : undefined}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         </div>
       </div>
     </div>
   );
 }
 
-function MiniAction({
-  label,
-  children,
-  onClick,
-  danger = false,
+function SortablePageCard({
+  page,
+  index,
+  total,
+  isActive,
+  onSelect,
+  onRemove,
 }: {
-  label: string;
-  children: React.ReactNode;
-  onClick?: () => void;
-  danger?: boolean;
+  page: PageDoc;
+  index: number;
+  total: number;
+  isActive: boolean;
+  onSelect: () => void;
+  onRemove?: () => void;
 }) {
-  const disabled = !onClick;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   return (
-    <button
-      type="button"
-      title={label}
-      disabled={disabled}
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick?.();
-      }}
+    <div
+      ref={setNodeRef}
+      style={style}
       className={cn(
-        'inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
-        disabled
-          ? 'cursor-default border-[var(--border)] text-[var(--text-muted)] opacity-35'
-          : danger
-            ? 'border-red-200 text-red-500 hover:bg-red-50'
-            : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]'
+        'group relative flex min-w-[188px] flex-col rounded-[22px] border px-3 py-3 text-left transition-all md:min-w-[204px]',
+        isActive
+          ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)] shadow-[0_10px_26px_rgba(37,99,235,0.12)]'
+          : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-active)]',
+        isDragging && 'z-10 opacity-80 shadow-[0_18px_38px_rgba(15,23,42,0.18)]',
       )}
     >
-      {children}
-    </button>
+      <div className="flex items-start justify-between gap-3">
+        <button
+          type="button"
+          onClick={onSelect}
+          className="min-w-0 flex-1 text-left focus:outline-none"
+        >
+          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{page.label}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span className={cn(
+              'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
+              page.kind === 'document' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'
+            )}>
+              {getPageBadge(page)}
+            </span>
+            <span className="text-[11px] text-[var(--text-muted)]">
+              {page.includeInCustomerPdf === false ? 'Intern' : 'Med i PDF'}
+            </span>
+          </div>
+        </button>
+        <span className="shrink-0 text-[11px] font-medium text-[var(--text-muted)]">{index + 1}/{total}</span>
+      </div>
+
+      <div className="mt-3 flex items-center gap-1.5">
+        <button
+          type="button"
+          title="Dra för att flytta"
+          className={cn(
+            'inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-full border border-[var(--border)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)] active:cursor-grabbing',
+            isDragging && 'cursor-grabbing bg-[var(--surface-active)] text-[var(--accent)]',
+          )}
+          {...attributes}
+          {...listeners}
+        >
+          <DotsSixVertical size={15} />
+        </button>
+        <div className="flex-1" />
+        <button
+          type="button"
+          title={onRemove ? 'Ta bort sida' : 'Minst en sida krävs'}
+          disabled={!onRemove}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRemove?.();
+          }}
+          className={cn(
+            'inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
+            onRemove
+              ? 'border-red-200 text-red-500 hover:bg-red-50'
+              : 'cursor-default border-[var(--border)] text-[var(--text-muted)] opacity-35',
+          )}
+        >
+          <Trash size={13} />
+        </button>
+      </div>
+    </div>
   );
 }

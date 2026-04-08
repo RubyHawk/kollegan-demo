@@ -78,6 +78,9 @@ export default function BlocksSidebar() {
                     ? 'Den här sidan styrs av fasta offertblock. Lägg din energi på innehåll och inställningar i stället för manuell layout.'
                     : 'Snabbt innehåll för presentationssidor. Håll byggandet enkelt och låt sidan bära budskapet.'}
                 </p>
+                <p className="mt-2 text-[11px] text-[var(--text-muted)]">
+                  Sidor hanteras i raden längst ner ↓
+                </p>
               </div>
             </div>
           </div>

@@ -144,6 +144,14 @@ export default function DocumentCanvas() {
           font-size: 14px;
           line-height: 1.78;
         }
+        .doc-editor--presentation .ProseMirror p.is-editor-empty:first-child::before {
+          content: attr(data-placeholder);
+          color: #94a3b8;
+          float: left;
+          height: 0;
+          pointer-events: none;
+          font-style: italic;
+        }
         .hf-editor .ProseMirror {
           min-height: 60px !important;
           outline: none !important;
