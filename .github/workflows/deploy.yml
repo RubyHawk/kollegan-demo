@@ -16,4 +16,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 2222
-          script: /var/www/offert/deploy_kollegan.sh
+          script: |
+            set -e
+            cd /var/www/offert
+            git reset --hard HEAD
+            /var/www/offert/deploy_kollegan.sh
