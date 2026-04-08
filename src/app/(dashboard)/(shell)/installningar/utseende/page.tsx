@@ -6,7 +6,9 @@ import { cn } from '@shared/lib/utils';
 import { SPRING_SNAPPY } from '@shared/lib/motion';
 import { Icon, SaveButton } from '../_components/shared';
 import {
+  DEFAULT_THEME_ID,
   THEMES,
+  FONT_SIZE_SCALES,
   FONT_OPTIONS,
   THEME_PROPS,
   type ThemeDef,
@@ -14,6 +16,7 @@ import {
   type FontSize,
   type FontOption,
 } from '../_components/theme-data';
+import { THEME_COOKIE_KEYS, setThemePreferenceCookie, THEME_STORAGE_KEYS } from '@shared/lib/theme-preferences';
 
 const FONT_SIZE_OPTIONS: { id: FontSize; label: string; desc: string }[] = [
   { id: 'small', label: 'Liten', desc: 'Mer information' },
@@ -27,7 +30,7 @@ const MODE_OPTIONS: { id: ThemeMode; label: string; desc: string }[] = [
   { id: 'auto', label: 'Auto', desc: 'Följer enheten' },
 ];
 
-const DEFAULT_THEME = THEMES.find((item) => item.id === 'soleria') ?? THEMES[0];
+const DEFAULT_THEME = THEMES.find((item) => item.id === DEFAULT_THEME_ID) ?? THEMES[0];
 
 function WorkspacePreview({
   theme,
@@ -218,17 +221,17 @@ export default function UtseendePage() {
 
   useEffect(() => {
     try {
-      const storedTheme = localStorage.getItem('theme') as ThemeMode | null;
+      const storedTheme = localStorage.getItem(THEME_STORAGE_KEYS.mode) as ThemeMode | null;
       const nextTheme =
         storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'auto'
           ? storedTheme
           : 'light';
       setTheme(nextTheme);
 
-      const storedFontSize = localStorage.getItem('fontSize') as FontSize | null;
+      const storedFontSize = localStorage.getItem(THEME_STORAGE_KEYS.fontSize) as FontSize | null;
       if (storedFontSize) applyFontSize(storedFontSize);
 
-      const storedAccent = localStorage.getItem('accentColor');
+      const storedAccent = localStorage.getItem(THEME_STORAGE_KEYS.accent);
       const matchedTheme = THEMES.find((item) => item.id === storedAccent) ?? DEFAULT_THEME;
       setSelectedTheme(matchedTheme.id);
 
@@ -243,11 +246,13 @@ export default function UtseendePage() {
         document.documentElement.style.setProperty(prop, value);
       }
 
-      localStorage.setItem('theme', nextTheme);
-      localStorage.setItem('accentColor', matchedTheme.id);
-      localStorage.setItem('themeData', JSON.stringify({ light: matchedTheme.light, dark: matchedTheme.dark }));
+      localStorage.setItem(THEME_STORAGE_KEYS.mode, nextTheme);
+      localStorage.setItem(THEME_STORAGE_KEYS.accent, matchedTheme.id);
+      localStorage.setItem(THEME_STORAGE_KEYS.data, JSON.stringify({ light: matchedTheme.light, dark: matchedTheme.dark }));
+      setThemePreferenceCookie(THEME_COOKIE_KEYS.mode, nextTheme);
+      setThemePreferenceCookie(THEME_COOKIE_KEYS.accent, matchedTheme.id);
 
-      const storedFont = localStorage.getItem('fontFamily');
+      const storedFont = localStorage.getItem(THEME_STORAGE_KEYS.fontFamily);
       if (storedFont) {
         const matchedFont = FONT_OPTIONS.find((item) => item.id === storedFont);
         if (matchedFont) applyFont(matchedFont);
@@ -280,7 +285,8 @@ export default function UtseendePage() {
       const isDark: boolean =
         nextTheme === 'dark' ||
         (nextTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      localStorage.setItem('theme', nextTheme);
+      localStorage.setItem(THEME_STORAGE_KEYS.mode, nextTheme);
+      setThemePreferenceCookie(THEME_COOKIE_KEYS.mode, nextTheme);
 
       document.documentElement.classList.toggle('dark', isDark);
       setResolvedDark(isDark);
@@ -299,8 +305,9 @@ export default function UtseendePage() {
       for (const [prop, value] of Object.entries(vars)) {
         document.documentElement.style.setProperty(prop, value);
       }
-      localStorage.setItem('accentColor', nextTheme.id);
-      localStorage.setItem('themeData', JSON.stringify({ light: nextTheme.light, dark: nextTheme.dark }));
+      localStorage.setItem(THEME_STORAGE_KEYS.accent, nextTheme.id);
+      localStorage.setItem(THEME_STORAGE_KEYS.data, JSON.stringify({ light: nextTheme.light, dark: nextTheme.dark }));
+      setThemePreferenceCookie(THEME_COOKIE_KEYS.accent, nextTheme.id);
     } catch {
       // ignore theme persistence errors
     }
@@ -323,7 +330,8 @@ export default function UtseendePage() {
         'font-family-override',
         nextFont.id === 'inter' ? '' : `body { font-family: ${nextFont.css} !important; }`,
       );
-      localStorage.setItem('fontFamily', nextFont.id);
+      localStorage.setItem(THEME_STORAGE_KEYS.fontFamily, nextFont.id);
+      setThemePreferenceCookie(THEME_COOKIE_KEYS.fontFamily, nextFont.id);
     } catch {
       // ignore font persistence errors
     }
@@ -331,8 +339,7 @@ export default function UtseendePage() {
 
   function applyFontSize(nextSize: FontSize) {
     setFontSize(nextSize);
-    const scales: Record<FontSize, number> = { small: 0.875, medium: 1, large: 1.125 };
-    const scale = scales[nextSize];
+    const scale = FONT_SIZE_SCALES[nextSize];
     const scrollContainer = document.querySelector('main.flex-1.overflow-y-auto') as HTMLElement | null;
     const scrollTop = scrollContainer?.scrollTop ?? window.scrollY;
     try {
@@ -352,7 +359,8 @@ export default function UtseendePage() {
         .text-2xl { font-size: ${(1.5 * scale).toFixed(4)}rem !important; line-height: ${(2 * scale).toFixed(4)}rem !important; }
         .text-3xl { font-size: ${(1.875 * scale).toFixed(4)}rem !important; line-height: ${(2.25 * scale).toFixed(4)}rem !important; }
       `);
-      localStorage.setItem('fontSize', nextSize);
+      localStorage.setItem(THEME_STORAGE_KEYS.fontSize, nextSize);
+      setThemePreferenceCookie(THEME_COOKIE_KEYS.fontSize, nextSize);
       const restoreScroll = () => {
         if (scrollContainer) {
           scrollContainer.scrollTop = scrollTop;

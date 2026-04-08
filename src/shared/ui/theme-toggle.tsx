@@ -2,6 +2,10 @@
 
 import { useSyncExternalStore } from 'react';
 import { SunIcon, MoonIcon } from '@shared/ui/icons';
+import { THEMES } from '../../app/(dashboard)/(shell)/installningar/_components/theme-data';
+import { THEME_COOKIE_KEYS, THEME_STORAGE_KEYS, setThemePreferenceCookie } from '@shared/lib/theme-preferences';
+
+const DEFAULT_THEME = THEMES.find((item) => item.id === 'soleria') ?? THEMES[0];
 
 export default function ThemeToggle({ className }: { className?: string }) {
   const dark = useSyncExternalStore(
@@ -26,7 +30,15 @@ export default function ThemeToggle({ className }: { className?: string }) {
   const toggle = () => {
     const next = !dark;
     document.documentElement.classList.toggle('dark', next);
-    localStorage.setItem('theme', next ? 'dark' : 'light');
+    const accentId = localStorage.getItem(THEME_STORAGE_KEYS.accent) ?? DEFAULT_THEME.id;
+    const selectedTheme = THEMES.find((item) => item.id === accentId) ?? DEFAULT_THEME;
+    const vars = next ? selectedTheme.dark : selectedTheme.light;
+    for (const [prop, value] of Object.entries(vars)) {
+      document.documentElement.style.setProperty(prop, value);
+    }
+    localStorage.setItem(THEME_STORAGE_KEYS.mode, next ? 'dark' : 'light');
+    localStorage.setItem(THEME_STORAGE_KEYS.data, JSON.stringify({ light: selectedTheme.light, dark: selectedTheme.dark }));
+    setThemePreferenceCookie(THEME_COOKIE_KEYS.mode, next ? 'dark' : 'light');
   };
 
   return (
