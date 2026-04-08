@@ -12,6 +12,7 @@ import { Errors } from '@platform/api/errors';
 import { verifyToken } from '@platform/auth/jwt';
 import { constantTimeEqual } from '@platform/security/sanitize';
 import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '../../domain/pricing';
+import { computeOfferValidUntil } from '../../domain/validity';
 import {
   createOffer,
   getOffer,
@@ -128,7 +129,7 @@ export const handleCreateOffer = createHandler(
     const { body, req } = ctx as { body: z.infer<typeof CreateBodySchema>; req: NextRequest };
     const payload = await requireStaff(req);
     // Placeholder validUntil for the draft; recalculated from sentAt at send time
-    const placeholderValidUntil = new Date(Date.now() + body.validityDays * 24 * 60 * 60 * 1000);
+    const placeholderValidUntil = computeOfferValidUntil(new Date(), body.validityDays);
     const offer = await createOffer({
       organizationId: payload.orgId!,
       createdBy:      payload.sub,
@@ -212,7 +213,7 @@ export const handleUpdateOffer = createHandler(
     else {
       // If validityDays changed, recompute the placeholder validUntil for the draft
       const newValidUntil = body.validityDays !== undefined
-        ? new Date(Date.now() + body.validityDays * 24 * 60 * 60 * 1000)
+        ? computeOfferValidUntil(new Date(), body.validityDays)
         : undefined;
       updated = await updateOffer(id, payload.orgId!, {
         title: body.title, priceDisplayMode: DEFAULT_OFFER_PRICE_DISPLAY_MODE, recipientName: body.recipientName,

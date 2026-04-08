@@ -42,6 +42,7 @@ export interface Offer {
   publicTokenExpiresAt?: string;
   notes?:               string;
   validUntil?:          string;
+  validityDays?:        number;
 }
 
 export interface OfferTemplate {
