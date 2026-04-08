@@ -8,8 +8,6 @@ import { MenuIcon, ChevronRightIcon } from '@shared/ui/icons';
 import { SearchTrigger } from '@shared/ui/search-command';
 import { BrandLockup } from '@shared/ui/brand';
 
-// ─── Types ──────────────────────────────────────────────────────────────────
-
 interface User {
   email: string;
   firstName: string | null;
@@ -23,31 +21,29 @@ interface Props {
   children: React.ReactNode;
 }
 
-// ─── Breadcrumb helpers ─────────────────────────────────────────────────────
-
 const SEG_LABELS: Record<string, string> = {
-  offerter:      'Offerter',
-  ny:            'Ny offert',
-  mallar:        'Mallar',
-  produkter:     'Produkter',
+  offerter: 'Offerter',
+  ny: 'Ny offert',
+  mallar: 'Mallar',
+  produkter: 'Produkter',
   installningar: 'Inställningar',
-  anvandare:     'Användare',
-  profil:        'Profil',
-  fakturering:   'Fakturering',
+  anvandare: 'Användare',
+  profil: 'Profil',
+  fakturering: 'Fakturering',
   integrationer: 'Integrationer',
-  'logga-in':    'Logga in',
-  crm:           'CRM',
-  demos:         'Demos',
-  analytics:     'Analys',
-  reports:       'Rapporter',
-  projects:      'Projekt',
-  messages:      'Meddelanden',
-  admin:         'Admin',
-  compliance:    'Efterlevnad',
-  billing:       'Fakturering',
-  users:         'Användare',
-  profile:       'Profil',
-  integrations:  'Integrationer',
+  'logga-in': 'Logga in',
+  crm: 'CRM',
+  demos: 'Demos',
+  analytics: 'Analys',
+  reports: 'Rapporter',
+  projects: 'Projekt',
+  messages: 'Meddelanden',
+  admin: 'Admin',
+  compliance: 'Efterlevnad',
+  billing: 'Fakturering',
+  users: 'Användare',
+  profile: 'Profil',
+  integrations: 'Integrationer',
 };
 
 function buildCrumbs(pathname: string) {
@@ -55,19 +51,17 @@ function buildCrumbs(pathname: string) {
   if (segs.length === 0) return [{ label: 'Översikt', href: null as string | null }];
   return segs.map((seg, i) => ({
     label: SEG_LABELS[seg] ?? (seg.charAt(0).toUpperCase() + seg.slice(1)),
-    href:  i < segs.length - 1 ? '/' + segs.slice(0, i + 1).join('/') : null,
+    href: i < segs.length - 1 ? `/${segs.slice(0, i + 1).join('/')}` : null,
   }));
 }
-
-// ─── AppShell ────────────────────────────────────────────────────────────────
 
 const LS_KEY = 'sidebar-collapsed';
 
 export default function AppShell({ user, children }: Props) {
-  const pathname    = usePathname();
-  const router      = useRouter();
+  const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed,  setCollapsed]  = useState(() => {
+  const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem(LS_KEY) === 'true';
   });
@@ -85,26 +79,23 @@ export default function AppShell({ user, children }: Props) {
   }
 
   const crumbs = buildCrumbs(pathname);
-
-  // ─── Desktop topbar ──────────────────────────────────────────────────────
+  const isImmersiveTemplateEditor = pathname.startsWith('/mallar/') && pathname !== '/mallar';
 
   const topbar = (
-    <div className="hidden md:flex items-center justify-between h-12 px-5 border-b border-[var(--border)] glass-header shrink-0">
+    <div className="glass-header hidden h-12 shrink-0 items-center justify-between border-b border-[var(--border)] px-5 md:flex">
       <nav aria-label="Breadcrumb" className="flex items-center gap-1">
         {crumbs.map((crumb, i) => (
           <span key={i} className="flex items-center gap-1">
-            {i > 0 && (
-              <ChevronRightIcon size={12} className="text-[var(--text-muted)] mx-0.5 shrink-0" />
-            )}
+            {i > 0 && <ChevronRightIcon size={12} className="mx-0.5 shrink-0 text-[var(--text-muted)]" />}
             {crumb.href ? (
               <Link
                 href={crumb.href}
-                className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                className="text-sm text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
               >
                 {crumb.label}
               </Link>
             ) : (
-              <span className="text-sm text-[var(--text-primary)] font-medium">{crumb.label}</span>
+              <span className="text-sm font-medium text-[var(--text-primary)]">{crumb.label}</span>
             )}
           </span>
         ))}
@@ -113,13 +104,9 @@ export default function AppShell({ user, children }: Props) {
     </div>
   );
 
-  // ─── Root layout ─────────────────────────────────────────────────────────
-
   return (
-    <div className="h-dvh flex overflow-hidden bg-[var(--page-bg)]">
-
-      {/* Desktop sidebar */}
-      <div className="hidden md:flex h-full">
+    <div className="flex h-dvh overflow-hidden bg-[var(--page-bg)]">
+      <div className="hidden h-full md:flex">
         <Sidebar
           user={user}
           collapsed={collapsed}
@@ -128,14 +115,14 @@ export default function AppShell({ user, children }: Props) {
         />
       </div>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
-      <div className={`md:hidden fixed inset-y-0 left-0 z-50 transition-transform duration-200 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+
+      <div className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 md:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <Sidebar
           user={user}
           collapsed={false}
@@ -145,25 +132,23 @@ export default function AppShell({ user, children }: Props) {
         />
       </div>
 
-      {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {!isImmersiveTemplateEditor && (
+          <div className="glass-header flex items-center gap-3 border-b border-[var(--border)] px-4 py-3 md:hidden">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-1)]"
+              aria-label="Öppna meny"
+            >
+              <MenuIcon size={18} />
+            </button>
+            <BrandLockup size={22} className="gap-2" textClassName="font-heading text-sm text-[var(--text-primary)]" />
+          </div>
+        )}
 
-        {/* Mobile header */}
-        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] glass-header">
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--surface-1)] text-[var(--text-secondary)]"
-            aria-label="Öppna meny"
-          >
-            <MenuIcon size={18} />
-          </button>
-          <BrandLockup size={22} className="gap-2" textClassName="font-heading text-sm text-[var(--text-primary)]" />
-        </div>
+        {!isImmersiveTemplateEditor && topbar}
 
-        {/* Desktop topbar with breadcrumbs */}
-        {topbar}
-
-        <main className="flex-1 overflow-y-auto scrollbar-none">
+        <main className="scrollbar-none flex-1 overflow-y-auto">
           {children}
         </main>
       </div>

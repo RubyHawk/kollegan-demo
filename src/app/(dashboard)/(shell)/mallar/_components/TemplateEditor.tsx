@@ -53,6 +53,7 @@ import {
 import type { PageDoc } from './template-doc';
 import BlocksSidebar from './BlocksSidebar';
 import BlockSettingsSidebar from './BlockSettingsSidebar';
+import PageRail from './PageRail';
 import TopToolbar from './TopToolbar';
 
 const DocumentCanvas = dynamic(() => import('./DocumentCanvas'), { ssr: false });
@@ -476,16 +477,14 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
         patchDocSettings,
       }}>
         <div className="template-editor-light flex h-full overflow-hidden bg-[var(--surface-2)]">
-          {/* Left panel */}
           <BlocksSidebar />
 
-          {/* Center column */}
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
             <TopToolbar />
             <DocumentCanvas />
+            <PageRail />
           </div>
 
-          {/* Right panel */}
           <BlockSettingsSidebar />
         </div>
       </HFCtx.Provider>

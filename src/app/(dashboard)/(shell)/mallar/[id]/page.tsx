@@ -256,8 +256,8 @@ export default function TemplateEditorPage() {
   }, [save]);
 
   return (
-    <div className="flex h-[calc(100vh-64px)] flex-col overflow-hidden">
-      <div className="flex min-h-0 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-[var(--surface)] px-3 py-1.5">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="flex min-h-0 shrink-0 flex-wrap items-center gap-2 border-b border-[var(--border)] bg-[var(--surface)] px-3 py-2 md:px-4">
         <button
           type="button"
           onClick={() => router.push('/mallar')}
@@ -275,7 +275,7 @@ export default function TemplateEditorPage() {
             setIsDirty(true);
           }}
           placeholder="Mallnamn..."
-          className="max-w-[260px] flex-1 min-w-0 rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2.5 py-1 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors hover:border-[var(--accent)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-border)]"
+          className="min-w-[180px] flex-1 basis-[220px] rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2.5 py-1.5 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors hover:border-[var(--accent)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-border)] md:max-w-[320px]"
         />
 
         {companies.length > 0 && (
@@ -298,7 +298,7 @@ export default function TemplateEditorPage() {
 
         {isDirty && <span className="shrink-0 text-xs font-medium text-amber-500">Osparat •</span>}
 
-        <div className="flex-1" />
+        <div className="hidden flex-1 md:block" />
 
         <div className="flex shrink-0 items-center gap-0 overflow-hidden rounded-md border border-[var(--border)]">
           {(['offer', 'email'] as Tab[]).map((tab) => {
@@ -324,7 +324,7 @@ export default function TemplateEditorPage() {
           })}
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2 max-sm:w-full max-sm:justify-between">
           {error && <span className="max-w-[180px] truncate text-xs text-red-500">{error}</span>}
           {saved && (
             <span className="flex items-center gap-1 text-xs text-emerald-600">
