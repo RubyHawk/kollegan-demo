@@ -1518,7 +1518,7 @@ export default function OffersPage() {
                               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }} className="overflow-hidden">
                                 <div className="px-4 pb-3.5 border-t border-[var(--border)]/30 pt-2.5">
                                   <p className="text-sm text-[var(--text-primary)] font-medium">{form.title}</p>
-                                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Giltig {form.validityDays} dagar{form.notes ? ' · Anteckning bifogad' : ''}</p>
+                                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Giltig {form.validityDays} dagar{form.notes ? ' · Extra kommentar bifogad' : ''}</p>
                                 </div>
                               </motion.div>
                             )}
@@ -1544,13 +1544,16 @@ export default function OffersPage() {
                                   </div>
                                   <details className="rounded-lg border border-[var(--border)]/60 overflow-hidden group">
                                     <summary className="px-3 py-2 text-[10px] font-medium text-[var(--text-secondary)] cursor-pointer bg-[var(--surface-alt)] list-none flex items-center justify-between hover:bg-[var(--surface-active)] transition-colors select-none">
-                                      <span>Anteckningar{form.notes ? ' · ifyllt' : ' (frivilligt)'}</span>
+                                      <span>Extra kommentar till denna offert{form.notes ? ' · ifyllt' : ' (frivilligt)'}</span>
                                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-open:rotate-180">
                                         <polyline points="6 9 12 15 18 9"/>
                                       </svg>
                                     </summary>
                                     <div className="p-3 border-t border-[var(--border)]">
-                                      <textarea value={form.notes} rows={2} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Eventuella villkor eller kommentarer…" className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all resize-none"/>
+                                      <p className="mb-2 text-[10px] leading-4 text-[var(--text-muted)]">
+                                        Mallens juridik och standardvillkor styr du på offertsidan i mallen. Här lägger du bara till en extra kommentar för just den här offerten.
+                                      </p>
+                                      <textarea value={form.notes} rows={3} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="T.ex. särskild leveransinfo, projektkommentar eller kompletterande notering…" className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all resize-none"/>
                                     </div>
                                   </details>
                                   <div className="flex items-center justify-end pt-2 mt-1 border-t border-[var(--border)]/30">
