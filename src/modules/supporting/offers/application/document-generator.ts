@@ -534,42 +534,291 @@ function injectDocumentPatchStyles(html: string): string {
 <style data-offer-document-patch>
   @media screen {
     .page-content--document {
-      min-height: 920px !important;
+      min-height: 900px !important;
     }
     .offer-shell {
-      gap: 22px !important;
-    }
-    .offer-summary--below {
-      margin-top: 12px !important;
+      gap: 24px !important;
     }
     .offer-section--terms {
       margin-top: 12px !important;
     }
     .offer-shell__footer {
-      margin-top: 18px !important;
+      margin-top: 14px !important;
     }
   }
+  body {
+    font-family: "Aptos", "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+    color: #0f172a !important;
+  }
+  .page-content--document {
+    padding: 42px 46px 36px !important;
+    background:
+      linear-gradient(180deg, rgba(248, 251, 255, 0.92) 0px, rgba(255, 255, 255, 0) 180px),
+      #ffffff !important;
+  }
+  .offer-shell {
+    gap: 26px !important;
+    color: #0f172a !important;
+  }
+  .offer-shell__header {
+    gap: 28px !important;
+    align-items: stretch !important;
+    padding-bottom: 20px !important;
+    border-bottom: 1px solid #dbe4ee !important;
+  }
+  .offer-shell__sender {
+    align-items: flex-start !important;
+    gap: 14px !important;
+  }
+  .offer-shell__logo {
+    width: 58px !important;
+    height: 58px !important;
+    border-radius: 14px !important;
+  }
   .offer-shell__meta {
-    align-self: center !important;
-    justify-items: end !important;
-    text-align: right !important;
+    align-self: start !important;
+    justify-items: stretch !important;
+    text-align: left !important;
+    padding: 16px 18px !important;
+    border: 1px solid #dbe4ee !important;
+    border-radius: 20px !important;
+    background: linear-gradient(180deg, #fbfdff 0%, #f3f8ff 100%) !important;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06) !important;
   }
   .offer-shell__meta dl {
-    gap: 8px !important;
-    width: auto !important;
-    min-width: min(248px, 100%) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
   }
   .offer-shell__meta dl div {
-    grid-template-columns: minmax(108px, max-content) auto !important;
+    grid-template-columns: minmax(104px, max-content) minmax(0, 1fr) !important;
     align-items: center !important;
     column-gap: 12px !important;
   }
-  .offer-shell__meta dt,
+  .offer-shell__meta dt {
+    justify-self: start !important;
+    color: #64748b !important;
+  }
   .offer-shell__meta dd {
     justify-self: end !important;
+    text-align: right !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+  .offer-shell__status {
+    justify-self: end !important;
+    margin: 0 0 6px auto !important;
+    background: linear-gradient(180deg, #eef3ff 0%, #e2ebff 100%) !important;
+    color: #1e3a8a !important;
+    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.12) !important;
   }
   .offer-shell__sender-copy {
     gap: 4px !important;
+    color: #475569 !important;
+    overflow-wrap: anywhere !important;
+  }
+  .offer-shell__sender-name {
+    color: #0f172a !important;
+    font-size: 15px !important;
+  }
+  .offer-shell__topline {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 280px) !important;
+    gap: 28px !important;
+    align-items: start !important;
+    border-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .offer-shell__topline h1 {
+    font-size: 36px !important;
+    line-height: 1.06 !important;
+    letter-spacing: -0.035em !important;
+    margin: 0 !important;
+    max-width: 12ch !important;
+    text-wrap: balance !important;
+  }
+  .offer-shell__eyebrow {
+    margin: 0 0 8px 0 !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.14em !important;
+    text-transform: uppercase !important;
+    color: #64748b !important;
+  }
+  .offer-shell__lead {
+    margin: 10px 0 0 0 !important;
+    max-width: 44ch !important;
+    font-size: 13px !important;
+    line-height: 1.65 !important;
+    color: #475569 !important;
+  }
+  .offer-shell__customer-card {
+    display: grid !important;
+    gap: 6px !important;
+    padding: 16px 18px !important;
+    border: 1px solid #dbe4ee !important;
+    border-radius: 18px !important;
+    background: #ffffff !important;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05) !important;
+    min-width: 0 !important;
+  }
+  .offer-shell__customer-card p {
+    margin: 0 !important;
+    overflow-wrap: anywhere !important;
+  }
+  .offer-shell__customer-label {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+    color: #64748b !important;
+  }
+  .offer-shell__customer-primary {
+    font-size: 16px !important;
+    line-height: 1.35 !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+  }
+  .offer-shell__customer-secondary {
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    color: #475569 !important;
+  }
+  .offer-section h2,
+  .offer-section h3 {
+    letter-spacing: 0.09em !important;
+    color: #334155 !important;
+  }
+  .offer-section p {
+    color: #334155 !important;
+  }
+  .offer-pricing-layout {
+    display: grid !important;
+    gap: 18px !important;
+  }
+  .offer-pricing-layout--split {
+    grid-template-columns: minmax(0, 1fr) 278px !important;
+    align-items: start !important;
+  }
+  .offer-pricing-layout__summary {
+    align-self: start !important;
+  }
+  .offer-items__table {
+    border-radius: 20px !important;
+    border-color: #d7e3f1 !important;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.04) !important;
+  }
+  .offer-items__head {
+    gap: 16px !important;
+    padding: 14px 18px !important;
+    background: linear-gradient(180deg, #f8fbff 0%, #edf4fc 100%) !important;
+    border-bottom-color: #d7e3f1 !important;
+    font-size: 10.5px !important;
+  }
+  .offer-item-row {
+    gap: 16px !important;
+    padding: 18px !important;
+  }
+  .offer-item-row__title,
+  .offer-item-row__detail,
+  .offer-item-row__value {
+    overflow-wrap: anywhere !important;
+  }
+  .offer-item-row__title {
+    font-size: 15px !important;
+    line-height: 1.36 !important;
+  }
+  .offer-item-row__detail {
+    font-size: 12.5px !important;
+    line-height: 1.62 !important;
+  }
+  .offer-item-row__value {
+    font-size: 13.5px !important;
+    font-variant-numeric: tabular-nums !important;
+  }
+  .offer-summary {
+    width: 100% !important;
+    max-width: 278px !important;
+    border-radius: 18px !important;
+    border-color: #d7e3f1 !important;
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.07) !important;
+    overflow: hidden !important;
+  }
+  .offer-summary--below {
+    width: min(320px, 100%) !important;
+    margin-top: 14px !important;
+  }
+  .offer-summary__row {
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+    line-height: 1.55 !important;
+  }
+  .offer-summary__row--total {
+    margin-top: 8px !important;
+    padding: 14px 16px !important;
+    border-top: 0 !important;
+    background: linear-gradient(135deg, #0f172a 0%, #1d3b7a 100%) !important;
+    color: #f8fafc !important;
+  }
+  .offer-summary__row--total strong,
+  .offer-summary__row--total span {
+    color: #ffffff !important;
+  }
+  .offer-summary__row--total strong {
+    font-size: 24px !important;
+    letter-spacing: -0.03em !important;
+  }
+  .offer-section--terms {
+    gap: 8px !important;
+    padding: 18px 20px !important;
+    border: 1px solid #dbe4ee !important;
+    border-radius: 18px !important;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+  }
+  .offer-shell__footer {
+    grid-template-columns: 1.2fr 1fr 1fr !important;
+    gap: 16px !important;
+    padding-top: 16px !important;
+    border-top-color: #dbe4ee !important;
+  }
+  .offer-shell__footer div {
+    gap: 4px !important;
+    font-size: 12.5px !important;
+    overflow-wrap: anywhere !important;
+  }
+  .offer-shell__footer strong {
+    color: #334155 !important;
+  }
+  @media (max-width: 640px) {
+    .page-content--document {
+      padding: 22px 16px 20px !important;
+    }
+    .offer-shell__header {
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 14px !important;
+    }
+    .offer-shell__topline {
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 14px !important;
+    }
+    .offer-shell__topline h1 {
+      font-size: 28px !important;
+      max-width: none !important;
+    }
+    .offer-pricing-layout--split {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+    .offer-pricing-layout__summary {
+      width: 100% !important;
+    }
+    .offer-summary {
+      max-width: none !important;
+    }
+    .offer-summary__row--total strong {
+      font-size: 21px !important;
+    }
+    .offer-shell__footer {
+      grid-template-columns: 1fr !important;
+    }
   }
 </style>`;
 
@@ -903,11 +1152,12 @@ function renderStructuredDocumentPage(
   const customerLines = buildCustomerLines(offer);
   const addressLines = branding?.addressLines ?? [];
   const isLegacyDocumentPage = !page.kind && !page.document;
-  const recipientDetailsHtml = settings.showCustomerBlock && customerLines.length > 0
-    ? `<div class="offer-shell__recipient-details${isLegacyDocumentPage ? ' offer-shell__recipient-details--legacy' : ''}">
-        <p><strong>Till:</strong> ${escapeHtml(customerLines[0] ?? '')}</p>
-        ${customerLines.slice(1).map((line) => `<p>${escapeHtml(line)}</p>`).join('')}
-      </div>`
+  const customerCardHtml = settings.showCustomerBlock && customerLines.length > 0
+    ? `<aside class="offer-shell__customer-card">
+        <p class="offer-shell__customer-label">Offert till</p>
+        <p class="offer-shell__customer-primary">${escapeHtml(customerLines[0] ?? '')}</p>
+        ${customerLines.slice(1).map((line) => `<p class="offer-shell__customer-secondary">${escapeHtml(line)}</p>`).join('')}
+      </aside>`
     : '';
   const headerSenderDetailsHtml = [
     `<p class="offer-shell__sender-name">${escapeHtml(companyName)}</p>`,
@@ -940,10 +1190,26 @@ function renderStructuredDocumentPage(
     .length > 0;
   const hasIntroContent = settings.showIntro && (hasIntroVisualContent || hasIntroTextContent);
   const tableHtml = buildStructuredLineItems(offer.lineItems, offer.priceDisplayMode);
+  const summaryPlacement = (settings.summaryPlacement ?? 'right') as 'right' | 'below';
   const summaryHtml = renderDocumentSummary(
     offer,
-    (settings.summaryPlacement ?? 'right') as 'right' | 'below',
+    summaryPlacement,
   );
+  const pricingSectionHtml = settings.showLineItems
+    ? `<section class="offer-section">
+        <div class="offer-table-header">
+          <h2>Produkter och tj\u00e4nster</h2>
+        </div>
+        <div class="offer-pricing-layout${settings.showSummary && summaryPlacement === 'right' ? ' offer-pricing-layout--split' : ''}">
+          <div class="offer-pricing-layout__items">
+            ${tableHtml}
+          </div>
+          ${settings.showSummary && summaryPlacement === 'right'
+            ? `<div class="offer-pricing-layout__summary">${summaryHtml}</div>`
+            : ''}
+        </div>
+      </section>`
+    : '';
   const backgroundStyle = settings.backgroundImageSrc
     ? `style="--doc-bg:url('${sanitizeUrl(settings.backgroundImageSrc)}');--doc-bg-opacity:${settings.backgroundOpacity};--doc-bg-position:${
         settings.watermarkMode === 'top' ? 'center top' : settings.watermarkMode === 'full' ? 'center center' : 'center bottom'
@@ -974,22 +1240,17 @@ function renderStructuredDocumentPage(
 
           <section class="offer-shell__topline${isLegacyDocumentPage ? ' offer-shell__topline--legacy' : ''}">
             <div>
+              <p class="offer-shell__eyebrow">Offert</p>
               <h1>${escapeHtml(offer.title)}</h1>
-              ${recipientDetailsHtml}
+              <p class="offer-shell__lead">Tydlig prisbild, giltighet och villkor samlade i en offert som \u00e4r enkel att granska och godk\u00e4nna.</p>
             </div>
+            ${customerCardHtml}
           </section>
 
           ${hasIntroContent ? `<section class="offer-section offer-section--intro">${introHtml}</section>` : ''}
 
-          ${settings.showLineItems ? `
-            <section class="offer-section">
-              <div class="offer-table-header">
-                <h2>Produkter och tj\u00e4nster</h2>
-              </div>
-              ${tableHtml}
-            </section>` : ''}
-
-          ${settings.showSummary ? summaryHtml : ''}
+          ${pricingSectionHtml}
+          ${settings.showSummary && summaryPlacement !== 'right' ? summaryHtml : ''}
           ${settings.showTerms ? `
             <section class="offer-section offer-section--terms">
               <h3>Juridiska villkor</h3>
