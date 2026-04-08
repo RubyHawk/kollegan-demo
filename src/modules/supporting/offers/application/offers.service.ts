@@ -26,7 +26,7 @@ export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
 
 const TAG = 'OffersService';
 
-export async function getOfferResponsibleUser(userId: string) {
+async function getOfferResponsibleUser(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {

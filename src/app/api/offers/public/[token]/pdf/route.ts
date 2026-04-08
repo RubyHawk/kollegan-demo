@@ -240,9 +240,14 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     return new NextResponse('Offer has no generated document yet.', { status: 422 });
   }
 
-  const branding = await resolveOfferBrandingForOffer(offer);
-  const sanitizedDocument = sanitizeGeneratedOfferDocument(offer.generatedDocument, offer, branding);
-  const html = buildPublicPdfHtml(sanitizedDocument, req.nextUrl.origin, offer);
+  let documentHtml = offer.generatedDocument;
+  try {
+    const branding = await resolveOfferBrandingForOffer(offer);
+    documentHtml = sanitizeGeneratedOfferDocument(offer.generatedDocument, offer, branding);
+  } catch {
+    documentHtml = offer.generatedDocument;
+  }
+  const html = buildPublicPdfHtml(documentHtml, req.nextUrl.origin, offer);
   const browser = await chromium.launch({ headless: true });
 
   try {
