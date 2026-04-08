@@ -17,6 +17,12 @@ export interface ThemeDef {
 export type ThemeId = string;
 export type ThemeMode = 'light' | 'dark' | 'auto';
 export type FontSize = 'small' | 'medium' | 'large';
+export const DEFAULT_THEME_ID = 'soleria';
+export const FONT_SIZE_SCALES: Record<FontSize, number> = {
+  small: 0.875,
+  medium: 1,
+  large: 1.125,
+};
 
 export interface FontOption {
   id: string;
