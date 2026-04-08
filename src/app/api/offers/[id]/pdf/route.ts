@@ -159,9 +159,14 @@ export async function GET(
   }
 </style>`;
 
-  const branding = await resolveOfferBrandingForOffer(offer);
-  const sanitizedDocument = sanitizeGeneratedOfferDocument(offer.generatedDocument, offer, branding);
-  const html = sanitizedDocument
+  let documentHtml = offer.generatedDocument;
+  try {
+    const branding = await resolveOfferBrandingForOffer(offer);
+    documentHtml = sanitizeGeneratedOfferDocument(offer.generatedDocument, offer, branding);
+  } catch {
+    documentHtml = offer.generatedDocument;
+  }
+  const html = documentHtml
     .replace('</head>', `${printStyles}\n</head>`)
     .replace('</body>', `${signatureScript}\n${printScript}\n</body>`);
 

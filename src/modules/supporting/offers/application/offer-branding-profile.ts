@@ -1,8 +1,27 @@
 import { identityService } from '@modules/supporting/identity';
+import { prisma } from '@platform/database/prisma';
 import type { Offer } from '../domain/offer.entity';
 import { companiesRepository } from '../infrastructure/companies.repository';
 import { resolveOfferBranding } from './company-branding';
-import { getOfferResponsibleUser } from './offers.service';
+
+async function getOfferResponsibleUser(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      email: true,
+      firstName: true,
+      lastName: true,
+    },
+  });
+
+  if (!user) return null;
+
+  const name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email;
+  return {
+    name,
+    email: user.email,
+  };
+}
 
 export async function resolveOfferBrandingForOffer(
   offer: Pick<Offer, 'organizationId' | 'companyId' | 'createdBy'>,
