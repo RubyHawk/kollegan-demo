@@ -13,7 +13,6 @@ import {
 } from './template-doc';
 import { uploadTemplateImage } from './template-image-upload';
 import { cn } from '@shared/lib/utils';
-import { ArrowDown, CaretDoubleRight } from '@phosphor-icons/react';
 
 type ActiveBlock = 'image' | 'table' | 'signatureBlock' | 'variable' | null;
 
@@ -47,11 +46,11 @@ export default function BlockSettingsSidebar() {
   if (!hf) return null;
 
   return (
-    <aside className="hidden w-[320px] shrink-0 xl:flex flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface-1)]">
+    <aside className="hidden w-[252px] shrink-0 xl:flex flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface-1)]">
       {isDocumentPage ? (
         <StructuredOfferInspector hf={hf} />
       ) : (
-        <div className="space-y-3 p-3">
+        <div className="space-y-2 p-2">
           {active === 'image' && editor && <ImageInspector editor={editor} />}
           {active === 'table' && <TableInspector />}
           {active === 'signatureBlock' && editor && <SignatureInspector editor={editor} />}
@@ -74,12 +73,12 @@ function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
   const document = page.document ?? {};
 
   return (
-    <div className="space-y-3 p-3">
+    <div className="space-y-2 p-2">
       <InspectorCard
         title="Offertsida"
-        subtitle="Den här sidan styr offertens struktur, juridik, summering och helhetslayout."
+        subtitle="Systemstyrd sida för pris, juridik och summering."
       >
-        <div className="space-y-3">
+        <div className="space-y-2">
           <Field label="Sidnamn">
             <input
               type="text"
@@ -107,9 +106,9 @@ function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
 
       <InspectorCard
         title="Layout"
-        subtitle="Styr hur kundblock, summering och fri textyta placeras."
+        subtitle="Summering och fri textyta."
       >
-        <div className="space-y-3">
+        <div className="space-y-2">
           <Field label="Summering">
             <div className="grid grid-cols-2 gap-2">
               <ChoiceButton
@@ -148,9 +147,9 @@ function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
 
       <InspectorCard
         title="Innehåll"
-        subtitle="Välj vilka fasta block som ska finnas med på offertsidan."
+        subtitle="Block som visas på offertsidan."
       >
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-1">
           <ToggleRow label="Logo" checked={document.showLogo ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showLogo: checked } })} />
           <ToggleRow label="Avsändare" checked={document.showSenderDetails ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showSenderDetails: checked } })} />
           <ToggleRow label="Kundblock" checked={document.showCustomerBlock ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showCustomerBlock: checked } })} />
@@ -165,9 +164,9 @@ function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
 
       <InspectorCard
         title="Branding & bakgrund"
-        subtitle="Styr watermark och visuell identitet på offertsidan."
+        subtitle="Watermark och visuell identitet."
       >
-        <div className="space-y-3">
+        <div className="space-y-2">
           <Field label="Bakgrund / watermark">
             <input
               type="text"
@@ -249,9 +248,9 @@ function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
 
       <InspectorCard
         title="Juridik & texter"
-        subtitle="Här styr du standardtexterna som används i den färdiga offerten."
+        subtitle="Standardtexter som används i offerten."
       >
-        <div className="space-y-3">
+        <div className="space-y-2">
           <Field label="Rubrik för juridik">
             <input
               type="text"
@@ -292,7 +291,7 @@ function PresentationPageInspector({ hf }: { hf: HFCtxValue }) {
       title="Sida"
       subtitle="Grundinställningar för presentationssidan."
     >
-      <div className="space-y-3">
+      <div className="space-y-2">
         <Field label="Sidnamn">
           <input
             type="text"
@@ -303,7 +302,7 @@ function PresentationPageInspector({ hf }: { hf: HFCtxValue }) {
         </Field>
 
         <Field label="Sidroll">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
+          <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5 text-[12px] text-[var(--text-primary)]">
             {PAGE_ROLE_LABELS[page.role ?? 'custom']}
           </div>
         </Field>
@@ -340,9 +339,9 @@ function DocumentDefaultsInspector({ hf }: { hf: HFCtxValue }) {
   return (
     <InspectorCard
       title="Dokumentstandard"
-      subtitle="Gemensamma inställningar för presentationssidornas textyta."
+      subtitle="Typsnitt och marginaler för presentationssidorna."
     >
-      <div className="space-y-3">
+      <div className="space-y-2">
         <Field label="Standardteckensnitt">
           <select
             value={hf.docSettings.defaultFont}
@@ -385,9 +384,9 @@ function ImageInspector({ editor }: { editor: Editor }) {
   return (
     <InspectorCard
       title="Bild"
-      subtitle="Grundläggande inställningar för den markerade bilden."
+      subtitle="Inställningar för den markerade bilden."
     >
-      <div className="space-y-3">
+      <div className="space-y-2">
         <Field label="Bredd">
           <input
             type="range"
@@ -398,7 +397,7 @@ function ImageInspector({ editor }: { editor: Editor }) {
             onChange={(event) => editor.chain().focus().updateAttributes('image', { width: Number(event.target.value) }).run()}
             className="w-full accent-[var(--accent)]"
           />
-          <p className="mt-2 text-right text-xs text-[var(--text-muted)]">{width}px</p>
+          <p className="mt-1 text-right text-[10px] text-[var(--text-muted)]">{width}px</p>
         </Field>
 
         <Field label="Justering">
@@ -429,8 +428,8 @@ function TableInspector() {
       title="Tabell"
       subtitle="Tabeller justeras direkt i dokumentytan. Markera celler och använd den fria layouten på sidan."
     >
-      <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-3 py-4 text-xs leading-6 text-[var(--text-secondary)]">
-        Den här editorn är nu mindre Word-lik. För tabeller räcker det i regel att ändra innehållet direkt i canvasen.
+      <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-2 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+        Ändra tabellinnehåll direkt i canvasen — markera celler för att redigera.
       </div>
     </InspectorCard>
   );
@@ -442,8 +441,8 @@ function SignatureInspector({ editor }: { editor: Editor }) {
   const label = (attrs.label as string) ?? 'Signatur';
 
   return (
-    <InspectorCard title="Signaturfält" subtitle="Avancerat block för specialmallar och fria presentationssidor.">
-      <div className="space-y-3">
+    <InspectorCard title="Signaturfält" subtitle="Avancerat block för presentationssidor.">
+      <div className="space-y-2">
         <Field label="Fälttyp">
           <div className="grid grid-cols-3 gap-2">
             {[
@@ -481,15 +480,15 @@ function VariableInspector({ editor }: { editor: Editor }) {
   const label = (attrs.label as string) ?? '';
 
   return (
-    <InspectorCard title="Variabel" subtitle="Avancerat fält som fylls med offertdata automatiskt.">
-      <div className="space-y-3">
+    <InspectorCard title="Variabel" subtitle="Fält som fylls med offertdata automatiskt.">
+      <div className="space-y-2">
         <Field label="Variabelnamn">
-          <code className="block break-all rounded-2xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-700">
+          <code className="block break-all rounded-md border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] text-violet-700">
             {`{{${key}}}`}
           </code>
         </Field>
         <Field label="Etikett">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
+          <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5 text-[12px] text-[var(--text-primary)]">
             {label}
           </div>
         </Field>
@@ -508,12 +507,12 @@ function InspectorCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-      <div className="border-b border-[var(--border)] px-4 py-3">
-        <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-        {subtitle && <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{subtitle}</p>}
+    <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+      <div className="border-b border-[var(--border)] px-2.5 py-1.5">
+        <p className="text-[11px] font-semibold text-[var(--text-primary)]">{title}</p>
+        {subtitle && <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">{subtitle}</p>}
       </div>
-      <div className="px-4 py-4">{children}</div>
+      <div className="px-2.5 py-2">{children}</div>
     </section>
   );
 }
@@ -527,7 +526,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
         {label}
       </label>
       {children}
@@ -549,7 +548,7 @@ function ChoiceButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-2xl border px-3 py-2 text-sm font-medium transition-colors',
+        'rounded-md border px-2 py-1 text-[11px] font-medium transition-colors',
         active
           ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)] text-[var(--accent)]'
           : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]'
@@ -572,11 +571,11 @@ function ToggleCard({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-0)] px-3 py-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{description}</p>
+    <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold text-[var(--text-primary)]">{title}</p>
+          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">{description}</p>
         </div>
         <ToggleSwitch checked={checked} onChange={onChange} />
       </div>
@@ -594,13 +593,13 @@ function StaticCard({
   badge: string;
 }) {
   return (
-    <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-0)] px-3 py-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{description}</p>
+    <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold text-[var(--text-primary)]">{title}</p>
+          <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">{description}</p>
         </div>
-        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">
           {badge}
         </span>
       </div>
@@ -618,9 +617,9 @@ function ToggleRow({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm text-[var(--text-primary)]">{label}</span>
+    <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] text-[var(--text-primary)]">{label}</span>
         <ToggleSwitch checked={checked} onChange={onChange} />
       </div>
     </div>
@@ -639,19 +638,19 @@ function ToggleSwitch({
       type="button"
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors',
+        'relative inline-flex h-4 w-7 shrink-0 items-center rounded-full border border-transparent transition-colors',
         checked ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
       )}
       aria-pressed={checked}
     >
       <span className={cn(
-        'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-transform',
-        checked ? 'translate-x-5' : 'translate-x-0'
+        'pointer-events-none inline-block h-3 w-3 rounded-full bg-white shadow transition-transform',
+        checked ? 'translate-x-3.5' : 'translate-x-0.5'
       )} />
     </button>
   );
 }
 
-const inputClass = 'w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-border)]';
-const textareaClass = `${inputClass} min-h-[120px] resize-y`;
-const secondaryButtonClass = 'flex-1 rounded-2xl border border-[var(--border)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]';
+const inputClass = 'w-full rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5 text-[12px] text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-border)]';
+const textareaClass = `${inputClass} min-h-[72px] resize-y`;
+const secondaryButtonClass = 'flex-1 rounded-md border border-[var(--border)] px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]';

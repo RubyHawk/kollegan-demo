@@ -8,7 +8,7 @@ import { useHeaderFooter } from './header-footer-context';
 import { cn } from '@shared/lib/utils';
 import { Link as LinkIcon } from '@phosphor-icons/react';
 
-const MARGIN_PRESETS = { tight: 64, normal: 96, wide: 128 } as const;
+const MARGIN_PRESETS = { tight: 40, normal: 56, wide: 80 } as const;
 
 export default function DocumentCanvas() {
   const editor = useTemplateEditor();
@@ -36,11 +36,11 @@ export default function DocumentCanvas() {
     <div className="flex-1 overflow-hidden bg-[var(--surface-2)]">
       <BubbleFormattingMenu />
 
-      <div className="h-full overflow-auto px-3 py-3 md:px-6 md:py-5">
-        <div className="mx-auto w-full max-w-[940px]">
+      <div className="h-full overflow-auto px-3 py-2 md:px-4 md:py-3">
+        <div className="mx-auto w-full max-w-[820px]">
           <div
-            className="relative overflow-hidden rounded-[28px] border border-[var(--border)] bg-white shadow-[0_22px_60px_rgba(15,23,42,0.12)]"
-            style={{ minHeight: 1040 }}
+            className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-[0_8px_28px_rgba(15,23,42,0.08)]"
+            style={{ minHeight: 540 }}
           >
             {!isDocumentPage && headerEditor && (
               <HFZone
