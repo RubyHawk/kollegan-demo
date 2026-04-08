@@ -209,32 +209,31 @@ export default function PageRail() {
   if (!hf) return null;
 
   return (
-    <div className="border-t border-[var(--border)] bg-[var(--surface-1)] px-3 py-3">
-      <div className="relative rounded-[24px] border border-[var(--border)] bg-[var(--surface)] px-3 py-3 shadow-sm">
-        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">Sidor</p>
-            <p className="mt-1 max-w-[62ch] text-xs leading-5 text-[var(--text-muted)]">
+    <div className="border-t border-[var(--border)] bg-[var(--surface-1)] px-2 py-1.5">
+      <div className="relative rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5">
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">Sidor</p>
+            <p className="hidden min-w-0 truncate text-[11px] text-[var(--text-muted)] sm:block">
               {activeDescription}
-              <span className="ml-1 text-[var(--text-muted)]">Dra sidorna för att ändra ordning.</span>
             </p>
           </div>
           <div className="relative" ref={blueprintRef}>
             <button
               type="button"
               onClick={() => setShowBlueprints((value) => !value)}
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+              className="inline-flex items-center gap-1 rounded-md bg-[var(--accent)] px-2 py-1 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
             >
-              <Plus size={13} weight="bold" />
+              <Plus size={11} weight="bold" />
               Lägg till sida
             </button>
 
             {showBlueprints && (
               <div
                 role="menu"
-                className="absolute right-0 bottom-[calc(100%+10px)] z-20 w-[280px] rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[0_20px_60px_rgba(15,23,42,0.16)]"
+                className="absolute right-0 bottom-[calc(100%+6px)] z-20 w-[260px] rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1 shadow-[0_12px_32px_rgba(15,23,42,0.14)]"
               >
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   {PAGE_BLUEPRINTS.map((blueprint) => (
                     <button
                       key={blueprint.key}
@@ -249,14 +248,14 @@ export default function PageRail() {
                         });
                         setShowBlueprints(false);
                       }}
-                      className="flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition-colors hover:bg-[var(--surface-active)]"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-[var(--surface-active)]"
                     >
-                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-2)] text-[var(--accent)]">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--surface-2)] text-[var(--accent)]">
                         {blueprint.icon}
                       </span>
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold text-[var(--text-primary)]">{blueprint.label}</span>
-                        <span className="mt-1 block text-xs leading-5 text-[var(--text-secondary)]">{blueprint.description}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-xs font-semibold text-[var(--text-primary)]">{blueprint.label}</span>
+                        <span className="block truncate text-[11px] text-[var(--text-muted)]">{blueprint.description}</span>
                       </span>
                     </button>
                   ))}
@@ -266,10 +265,10 @@ export default function PageRail() {
           </div>
         </div>
 
-        <div className="-mx-1 overflow-x-auto pb-1">
+        <div className="-mx-0.5 overflow-x-auto">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={hf.pages.map((p) => p.id)} strategy={horizontalListSortingStrategy}>
-              <div className="flex min-w-max items-stretch gap-2 px-1">
+              <div className="flex min-w-max items-stretch gap-1.5 px-0.5">
                 {hf.pages.map((page, index) => (
                   <SortablePageCard
                     key={page.id}
@@ -316,67 +315,63 @@ function SortablePageCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group relative flex min-w-[188px] flex-col rounded-[22px] border px-3 py-3 text-left transition-all md:min-w-[204px]',
+        'group relative flex min-w-[156px] items-center gap-1 rounded-md border px-1.5 py-1 transition-all md:min-w-[172px]',
         isActive
-          ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)] shadow-[0_10px_26px_rgba(37,99,235,0.12)]'
+          ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)]'
           : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-active)]',
-        isDragging && 'z-10 opacity-80 shadow-[0_18px_38px_rgba(15,23,42,0.18)]',
+        isDragging && 'z-10 opacity-80 shadow-[0_10px_24px_rgba(15,23,42,0.14)]',
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <button
-          type="button"
-          onClick={onSelect}
-          className="min-w-0 flex-1 text-left focus:outline-none"
-        >
-          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{page.label}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            <span className={cn(
-              'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
-              page.kind === 'document' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'
-            )}>
-              {getPageBadge(page)}
-            </span>
-            <span className="text-[11px] text-[var(--text-muted)]">
-              {page.includeInCustomerPdf === false ? 'Intern' : 'Med i PDF'}
-            </span>
-          </div>
-        </button>
-        <span className="shrink-0 text-[11px] font-medium text-[var(--text-muted)]">{index + 1}/{total}</span>
-      </div>
-
-      <div className="mt-3 flex items-center gap-1.5">
-        <button
-          type="button"
-          title="Dra för att flytta"
-          className={cn(
-            'inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-full border border-[var(--border)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)] active:cursor-grabbing',
-            isDragging && 'cursor-grabbing bg-[var(--surface-active)] text-[var(--accent)]',
-          )}
-          {...attributes}
-          {...listeners}
-        >
-          <DotsSixVertical size={15} />
-        </button>
-        <div className="flex-1" />
-        <button
-          type="button"
-          title={onRemove ? 'Ta bort sida' : 'Minst en sida krävs'}
-          disabled={!onRemove}
-          onClick={(event) => {
-            event.stopPropagation();
-            onRemove?.();
-          }}
-          className={cn(
-            'inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors',
-            onRemove
-              ? 'border-red-200 text-red-500 hover:bg-red-50'
-              : 'cursor-default border-[var(--border)] text-[var(--text-muted)] opacity-35',
-          )}
-        >
-          <Trash size={13} />
-        </button>
-      </div>
+      <button
+        type="button"
+        title="Dra för att flytta"
+        className={cn(
+          'inline-flex h-6 w-4 shrink-0 cursor-grab items-center justify-center rounded text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] active:cursor-grabbing',
+          isDragging && 'cursor-grabbing text-[var(--accent)]',
+        )}
+        {...attributes}
+        {...listeners}
+      >
+        <DotsSixVertical size={13} />
+      </button>
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex min-w-0 flex-1 flex-col text-left focus:outline-none"
+      >
+        <div className="flex items-center gap-1">
+          <span className="truncate text-xs font-semibold text-[var(--text-primary)]">{page.label}</span>
+          <span className="shrink-0 text-[10px] text-[var(--text-muted)]">{index + 1}/{total}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className={cn(
+            'rounded px-1 py-px text-[9px] font-semibold uppercase tracking-[0.08em]',
+            page.kind === 'document' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'
+          )}>
+            {getPageBadge(page)}
+          </span>
+          <span className="text-[10px] text-[var(--text-muted)]">
+            {page.includeInCustomerPdf === false ? 'Intern' : 'PDF'}
+          </span>
+        </div>
+      </button>
+      <button
+        type="button"
+        title={onRemove ? 'Ta bort sida' : 'Minst en sida krävs'}
+        disabled={!onRemove}
+        onClick={(event) => {
+          event.stopPropagation();
+          onRemove?.();
+        }}
+        className={cn(
+          'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors',
+          onRemove
+            ? 'text-[var(--text-muted)] opacity-0 hover:bg-red-50 hover:text-red-500 group-hover:opacity-100'
+            : 'cursor-default text-[var(--text-muted)] opacity-0',
+        )}
+      >
+        <Trash size={12} />
+      </button>
     </div>
   );
 }

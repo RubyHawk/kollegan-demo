@@ -132,24 +132,24 @@ export default function TopToolbar() {
   }
 
   return (
-    <div className="border-b border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
+    <div className="border-b border-[var(--border)] bg-[var(--surface-1)] px-2 py-1">
       <div className="overflow-x-auto">
-        <div className="flex min-w-max items-center gap-2">
+        <div className="flex min-w-max items-center gap-1">
           <ToolbarGroup>
             <ToolbarIconButton title="Ångra (Ctrl+Z)" onClick={() => currentEditor.chain().focus().undo().run()} disabled={!currentEditor.can().undo()}>
-              <ArrowUUpLeft size={15} />
+              <ArrowUUpLeft size={14} />
             </ToolbarIconButton>
             <ToolbarIconButton title="Gör om (Ctrl+Shift+Z)" onClick={() => currentEditor.chain().focus().redo().run()} disabled={!currentEditor.can().redo()}>
-              <ArrowUUpRight size={15} />
+              <ArrowUUpRight size={14} />
             </ToolbarIconButton>
           </ToolbarGroup>
 
-          <ToolbarGroup className="gap-2 px-2.5">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Text</span>
+          <ToolbarGroup className="gap-0.5">
             <select
               value={activeStyle}
               onChange={(event) => applyStyle(STYLE_OPTIONS.find((option) => option.label === event.target.value)?.action ?? 'paragraph')}
-              className="rounded-full bg-[var(--surface-1)] px-3 py-1 text-xs font-medium text-[var(--text-primary)] focus:outline-none"
+              title="Textstil"
+              className="h-7 rounded bg-transparent px-1.5 text-[11px] font-medium text-[var(--text-primary)] focus:outline-none"
             >
               {STYLE_OPTIONS.map((option) => (
                 <option key={option.label} value={option.label}>{option.label}</option>
@@ -159,45 +159,48 @@ export default function TopToolbar() {
               value={activeFontSize}
               onChange={(event) => applyFontSize(event.target.value)}
               title="Teckenstorlek"
-              className="rounded-full bg-[var(--surface-1)] px-2 py-1 text-xs font-medium text-[var(--text-primary)] focus:outline-none"
+              className="h-7 rounded bg-transparent px-1 text-[11px] font-medium text-[var(--text-primary)] focus:outline-none"
             >
-              <option value="">Storlek</option>
+              <option value="">—</option>
               {FONT_SIZE_OPTIONS.map((size) => (
                 <option key={size} value={size}>{size}</option>
               ))}
             </select>
+          </ToolbarGroup>
+
+          <ToolbarGroup>
             <ToolbarIconButton title="Fet (Ctrl+B)" active={currentEditor.isActive('bold')} onClick={() => currentEditor.chain().focus().toggleBold().run()}>
-              <TextB size={15} weight="bold" />
+              <TextB size={14} weight="bold" />
             </ToolbarIconButton>
             <ToolbarIconButton title="Kursiv (Ctrl+I)" active={currentEditor.isActive('italic')} onClick={() => currentEditor.chain().focus().toggleItalic().run()}>
-              <TextItalic size={15} />
+              <TextItalic size={14} />
             </ToolbarIconButton>
             <ToolbarIconButton title="Understruken (Ctrl+U)" active={currentEditor.isActive('underline')} onClick={() => currentEditor.chain().focus().toggleUnderline().run()}>
-              <TextUnderline size={15} />
+              <TextUnderline size={14} />
             </ToolbarIconButton>
             <ToolbarIconButton title="Genomstruken" active={currentEditor.isActive('strike')} onClick={() => currentEditor.chain().focus().toggleStrike().run()}>
-              <TextStrikethrough size={15} />
+              <TextStrikethrough size={14} />
             </ToolbarIconButton>
             <ColorPickerButton activeColor={activeColor} onPick={applyColor} onClear={clearColor} />
           </ToolbarGroup>
 
           <ToolbarGroup>
             <ToolbarIconButton title="Vänsterställ" active={currentEditor.isActive({ textAlign: 'left' })} onClick={() => currentEditor.chain().focus().setTextAlign('left').run()}>
-              <TextAlignLeft size={15} />
+              <TextAlignLeft size={14} />
             </ToolbarIconButton>
             <ToolbarIconButton title="Centrera" active={currentEditor.isActive({ textAlign: 'center' })} onClick={() => currentEditor.chain().focus().setTextAlign('center').run()}>
-              <TextAlignCenter size={15} />
+              <TextAlignCenter size={14} />
             </ToolbarIconButton>
             <ToolbarIconButton title="Högerställ" active={currentEditor.isActive({ textAlign: 'right' })} onClick={() => currentEditor.chain().focus().setTextAlign('right').run()}>
-              <TextAlignRight size={15} />
+              <TextAlignRight size={14} />
             </ToolbarIconButton>
             <select
               value={activeLineHeight}
               onChange={(event) => applyLineHeight(event.target.value)}
               title="Radavstånd"
-              className="ml-1 rounded-full bg-[var(--surface-1)] px-2 py-1 text-xs font-medium text-[var(--text-primary)] focus:outline-none"
+              className="h-7 rounded bg-transparent px-1 text-[11px] font-medium text-[var(--text-primary)] focus:outline-none"
             >
-              <option value="">Radavstånd</option>
+              <option value="">Rad</option>
               {LINE_HEIGHT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
@@ -206,28 +209,28 @@ export default function TopToolbar() {
 
           <ToolbarGroup>
             <ToolbarIconButton title="Punktlista" active={currentEditor.isActive('bulletList')} onClick={() => currentEditor.chain().focus().toggleBulletList().run()}>
-              <ListBullets size={15} />
+              <ListBullets size={14} />
             </ToolbarIconButton>
             <ToolbarIconButton title="Numrerad lista" active={currentEditor.isActive('orderedList')} onClick={() => currentEditor.chain().focus().toggleOrderedList().run()}>
-              <ListNumbers size={15} />
+              <ListNumbers size={14} />
             </ToolbarIconButton>
             {!isDocumentPage && (
               <>
                 <ToolbarIconButton title="Avdelare" onClick={() => currentEditor.chain().focus().setHorizontalRule().run()}>
-                  <Minus size={15} />
+                  <Minus size={14} />
                 </ToolbarIconButton>
                 <ToolbarIconButton title="Tabell" onClick={() => currentEditor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>
-                  <Table size={15} />
+                  <Table size={14} />
                 </ToolbarIconButton>
               </>
             )}
             <LinkButton editor={currentEditor} />
           </ToolbarGroup>
 
-          <div className="ml-1 hidden items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-secondary)] md:flex">
-            {isDocumentPage ? <NotePencil size={14} /> : <TextColumns size={14} />}
+          <div className="ml-auto hidden items-center gap-1.5 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-[11px] text-[var(--text-secondary)] md:flex">
+            {isDocumentPage ? <NotePencil size={12} /> : <TextColumns size={12} />}
             <span className="font-medium text-[var(--text-primary)]">
-              {isDocumentPage ? 'Strukturerad offertsida' : 'Presentationssida'}
+              {isDocumentPage ? 'Offertsida' : 'Presentation'}
             </span>
           </div>
         </div>
@@ -244,7 +247,7 @@ function ToolbarGroup({
   className?: string;
 }) {
   return (
-    <div className={cn('flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1', className)}>
+    <div className={cn('flex items-center gap-0.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-1 py-0.5', className)}>
       {children}
     </div>
   );
@@ -270,7 +273,7 @@ function ToolbarIconButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-secondary)] transition-colors',
+        'inline-flex h-7 w-7 items-center justify-center rounded text-[var(--text-secondary)] transition-colors',
         active && 'bg-[var(--accent-subtle)] text-[var(--accent)]',
         !active && !disabled && 'hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]',
         disabled && 'cursor-default opacity-40'
@@ -315,16 +318,16 @@ function ColorPickerButton({
         type="button"
         title="Textfärg"
         onClick={() => setOpen((value) => !value)}
-        className="relative inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]"
+        className="relative inline-flex h-7 w-7 items-center justify-center rounded text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]"
       >
-        <span className="text-[13px] font-bold leading-none">A</span>
+        <span className="text-[11px] font-bold leading-none">A</span>
         <span
-          className="absolute bottom-1 left-1/2 h-[3px] w-4 -translate-x-1/2 rounded-sm"
+          className="absolute bottom-0.5 left-1/2 h-[2px] w-3 -translate-x-1/2 rounded-sm"
           style={{ backgroundColor: activeColor || '#0f172a' }}
         />
       </button>
       {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-30 w-[188px] rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">
+        <div className="absolute left-0 top-[calc(100%+4px)] z-30 w-[180px] rounded-md border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-[0_10px_28px_rgba(15,23,42,0.12)]">
           <div className="grid grid-cols-5 gap-1.5">
             {PRESET_COLORS.map((color) => (
               <button
@@ -424,7 +427,7 @@ function LinkButton({ editor }: { editor: NonNullable<ReturnType<typeof useTempl
         <LinkIcon size={15} />
       </ToolbarIconButton>
       {open && (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-30 w-[260px] rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">
+        <div className="absolute right-0 top-[calc(100%+4px)] z-30 w-[240px] rounded-md border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-[0_10px_28px_rgba(15,23,42,0.12)]">
           <div className="flex items-center gap-1">
             <input
               ref={inputRef}
