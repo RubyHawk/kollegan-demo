@@ -532,6 +532,23 @@ function fixOfferHtmlText(html: string): string {
 function injectDocumentPatchStyles(html: string): string {
   const patchStyles = `
 <style data-offer-document-patch>
+  @media screen {
+    .page-content--document {
+      min-height: 920px !important;
+    }
+    .offer-shell {
+      gap: 22px !important;
+    }
+    .offer-summary--below {
+      margin-top: 12px !important;
+    }
+    .offer-section--terms {
+      margin-top: 12px !important;
+    }
+    .offer-shell__footer {
+      margin-top: 18px !important;
+    }
+  }
   .offer-shell__meta {
     align-self: center !important;
     justify-items: end !important;
@@ -1264,7 +1281,7 @@ export function generateDocument(templateContent: string, offer: Offer, branding
       pointer-events: none;
     }
     .page-content--document { position: relative; z-index: 1; min-height: 1056px; }
-    .offer-shell { min-height: 100%; display: flex; flex-direction: column; gap: 28px; color: #0f172a; }
+    .offer-shell { min-height: 100%; display: flex; flex-direction: column; gap: 24px; color: #0f172a; }
     .offer-shell__header, .offer-shell__topline { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 256px); gap: 26px; align-items: flex-start; }
     .offer-shell__sender { display: flex; gap: 16px; align-items: flex-start; min-width: 0; }
     .offer-shell__logo { width: 54px; height: 54px; object-fit: contain; }
@@ -1326,8 +1343,8 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     .offer-summary__row strong { white-space: nowrap; color: #0f172a; }
     .offer-summary__row--total { margin-top: 8px; padding: 12px 16px; border-top: 1px solid #e8eef5; background: #f8fafc; font-size: 14px; font-weight: 700; color: #0f172a; }
     .offer-summary__row--total strong { color: #0f172a; font-size: 18px; }
-    .offer-section--terms { margin-top: 24px; }
-    .offer-shell__footer { display: grid; grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); gap: 18px; padding-top: 18px; margin-top: auto; border-top: 1px solid #dbe4ee; }
+    .offer-section--terms { margin-top: 14px; }
+    .offer-shell__footer { display: grid; grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); gap: 18px; padding-top: 18px; margin-top: 18px; border-top: 1px solid #dbe4ee; }
     .offer-shell__footer div { display: grid; gap: 6px; font-size: 13px; line-height: 1.6; color: #475569; }
     .doc-header { font-size: 12px; color: #64748b; margin-bottom: 0; }
     .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
