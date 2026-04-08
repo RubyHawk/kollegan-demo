@@ -121,6 +121,14 @@ function splitLineItemDescription(description: string): { title: string; detail?
   };
 }
 
+const DEFAULT_DOCUMENT_TERMS_HEADING = 'Juridiska villkor';
+const DEFAULT_DOCUMENT_TERMS_BODY = 'Offerten gäller till angivet datum. Arbetet utförs enligt överenskommen omfattning och faktureras enligt summeringen ovan. Eventuella ändringar eller tillägg hanteras som separat tilläggsbeställning.';
+const DEFAULT_DOCUMENT_NOTES_HEADING = 'Anteckningar';
+
+function renderRichPlainText(value: string): string {
+  return secureEscapeHtml(value).replace(/\r?\n/g, '<br />');
+}
+
 function resolveFreeImageRenderZIndex(zIndex: number): number {
   if (zIndex < 0) return 0;
   return 20 + zIndex;
@@ -1018,6 +1026,9 @@ interface V3PageDoc {
     showNotes?: boolean;
     showTerms?: boolean;
     showFooter?: boolean;
+    termsHeading?: string;
+    termsBody?: string;
+    notesHeading?: string;
     summaryPlacement?: 'right' | 'below';
   };
 }
@@ -1137,6 +1148,9 @@ function renderStructuredDocumentPage(
     showNotes: true,
     showTerms: true,
     showFooter: true,
+    termsHeading: DEFAULT_DOCUMENT_TERMS_HEADING,
+    termsBody: DEFAULT_DOCUMENT_TERMS_BODY,
+    notesHeading: DEFAULT_DOCUMENT_NOTES_HEADING,
     summaryPlacement: 'right',
     ...(page.document ?? {}),
   };
@@ -1167,7 +1181,12 @@ function renderStructuredDocumentPage(
   ]
     .filter(Boolean)
     .join('');
-  const noteHtml = offer.notes ? `<section class="offer-section"><h3>Anteckningar</h3><p>${secureEscapeHtml(offer.notes)}</p></section>` : '';
+  const noteHeading = (settings.notesHeading ?? DEFAULT_DOCUMENT_NOTES_HEADING).trim();
+  const termsHeading = (settings.termsHeading ?? DEFAULT_DOCUMENT_TERMS_HEADING).trim();
+  const termsBody = settings.termsBody ?? DEFAULT_DOCUMENT_TERMS_BODY;
+  const noteHtml = offer.notes
+    ? `<section class="offer-section"><h3>${escapeHtml(noteHeading || DEFAULT_DOCUMENT_NOTES_HEADING)}</h3><p>${renderRichPlainText(offer.notes)}</p></section>`
+    : '';
   const introReplacements: Record<string, string> = {
     ...replacements,
     '{{lineItems}}': '',
@@ -1253,8 +1272,8 @@ function renderStructuredDocumentPage(
           ${settings.showSummary && summaryPlacement !== 'right' ? summaryHtml : ''}
           ${settings.showTerms ? `
             <section class="offer-section offer-section--terms">
-              <h3>Juridiska villkor</h3>
-              <p>Offerten g\u00e4ller till angivet datum. Arbetet utf\u00f6rs enligt \u00f6verenskommen omfattning och faktureras enligt summeringen ovan. Eventuella \u00e4ndringar eller till\u00e4gg hanteras som separat till\u00e4ggsbest\u00e4llning.</p>
+              <h3>${escapeHtml(termsHeading || DEFAULT_DOCUMENT_TERMS_HEADING)}</h3>
+              <p>${renderRichPlainText(termsBody)}</p>
             </section>` : ''}
           ${settings.showNotes ? noteHtml : ''}
           ${settings.showFooter ? `

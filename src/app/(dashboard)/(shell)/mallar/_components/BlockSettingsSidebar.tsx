@@ -16,6 +16,11 @@ import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import type { HFCtxValue } from './header-footer-context';
 import { PRESENTATION_PAGE_HEIGHT, PRESENTATION_PAGE_WIDTH, syncPresentationPageHeightForActivePage } from './presentation-page-height';
+import {
+  DEFAULT_DOCUMENT_NOTES_HEADING,
+  DEFAULT_DOCUMENT_TERMS_BODY,
+  DEFAULT_DOCUMENT_TERMS_HEADING,
+} from './template-doc';
 import { uploadTemplateImage } from './template-image-upload';
 
 type ActiveBlock = 'image' | 'table' | 'signatureBlock' | 'variable' | null;
@@ -587,6 +592,9 @@ function PageSettings({ hf }: { hf: HFCtxValue }) {
                         showNotes: true,
                         showTerms: true,
                         showFooter: true,
+                        termsHeading: DEFAULT_DOCUMENT_TERMS_HEADING,
+                        termsBody: DEFAULT_DOCUMENT_TERMS_BODY,
+                        notesHeading: DEFAULT_DOCUMENT_NOTES_HEADING,
                         summaryPlacement: 'right',
                         ...document,
                       }
@@ -729,6 +737,8 @@ function PageSettings({ hf }: { hf: HFCtxValue }) {
                   ['showLogo', 'Logo'],
                   ['showCustomerBlock', 'Kundblock'],
                   ['showSummary', 'Summering'],
+                  ['showTerms', 'Juridik'],
+                  ['showNotes', 'Anteckningar'],
                   ['showFooter', 'Footer'],
                 ].map(([key, label]) => (
                   <label key={key} className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
@@ -741,6 +751,48 @@ function PageSettings({ hf }: { hf: HFCtxValue }) {
                     <span className="text-xs">{label}</span>
                   </label>
                 ))}
+              </div>
+
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-0)] px-3 py-3 space-y-3">
+                <div>
+                  <p className="text-[11px] font-semibold text-[var(--text-secondary)]">Textblock för offertsidan</p>
+                  <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
+                    Här styr du mallens standardtext för juridik och rubriken för eventuella offer-specifika anteckningar.
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Rubrik för juridik</Label>
+                  <input
+                    type="text"
+                    value={document.termsHeading ?? DEFAULT_DOCUMENT_TERMS_HEADING}
+                    onChange={(e) => patchActivePage({ document: { ...document, termsHeading: e.target.value } })}
+                    className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
+                    placeholder={DEFAULT_DOCUMENT_TERMS_HEADING}
+                  />
+                </div>
+
+                <div>
+                  <Label>Juridisk standardtext</Label>
+                  <textarea
+                    rows={5}
+                    value={document.termsBody ?? DEFAULT_DOCUMENT_TERMS_BODY}
+                    onChange={(e) => patchActivePage({ document: { ...document, termsBody: e.target.value } })}
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2.5 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)] resize-y"
+                    placeholder={DEFAULT_DOCUMENT_TERMS_BODY}
+                  />
+                </div>
+
+                <div>
+                  <Label>Rubrik för offer-specifik anteckning</Label>
+                  <input
+                    type="text"
+                    value={document.notesHeading ?? DEFAULT_DOCUMENT_NOTES_HEADING}
+                    onChange={(e) => patchActivePage({ document: { ...document, notesHeading: e.target.value } })}
+                    className="w-full px-2.5 py-1.5 text-sm bg-[var(--surface-0)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
+                    placeholder={DEFAULT_DOCUMENT_NOTES_HEADING}
+                  />
+                </div>
               </div>
             </div>
           </>

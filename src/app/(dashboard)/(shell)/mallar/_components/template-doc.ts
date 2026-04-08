@@ -43,6 +43,9 @@ export interface PageDoc {
     showNotes?: boolean;
     showTerms?: boolean;
     showFooter?: boolean;
+    termsHeading?: string;
+    termsBody?: string;
+    notesHeading?: string;
     summaryPlacement?: 'right' | 'below';
   };
 }
@@ -70,6 +73,10 @@ export const EMPTY_DOCUMENT_BODY: object = {
     },
   ],
 };
+
+export const DEFAULT_DOCUMENT_TERMS_HEADING = 'Juridiska villkor';
+export const DEFAULT_DOCUMENT_TERMS_BODY = 'Offerten gäller till angivet datum. Arbetet utförs enligt överenskommen omfattning och faktureras enligt summeringen ovan. Eventuella ändringar eller tillägg hanteras som separat tilläggsbeställning.';
+export const DEFAULT_DOCUMENT_NOTES_HEADING = 'Anteckningar';
 
 /** @legacy kept for backward compat — no longer used in the v3 doc format */
 export const DEFAULT_HF_SETTINGS: HFSettings = {
@@ -120,6 +127,9 @@ export function makeDocumentPage(label = 'Offertsida'): PageDoc {
       showNotes: true,
       showTerms: true,
       showFooter: true,
+      termsHeading: DEFAULT_DOCUMENT_TERMS_HEADING,
+      termsBody: DEFAULT_DOCUMENT_TERMS_BODY,
+      notesHeading: DEFAULT_DOCUMENT_NOTES_HEADING,
       summaryPlacement: 'right',
     },
   };
