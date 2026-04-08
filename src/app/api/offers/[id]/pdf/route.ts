@@ -12,6 +12,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@platform/auth/jwt';
 import { getOffer } from '@modules/supporting/offers';
+import { resolveOfferBrandingForOffer } from '@modules/supporting/offers/application/offer-branding-profile';
+import { sanitizeGeneratedOfferDocument } from '@modules/supporting/offers/application/document-generator';
 
 function extractToken(req: NextRequest): string {
   return req.headers.get('authorization')?.slice(7) ?? req.cookies.get('at')?.value ?? '';
@@ -157,7 +159,9 @@ export async function GET(
   }
 </style>`;
 
-  const html = offer.generatedDocument
+  const branding = await resolveOfferBrandingForOffer(offer);
+  const sanitizedDocument = sanitizeGeneratedOfferDocument(offer.generatedDocument, offer, branding);
+  const html = sanitizedDocument
     .replace('</head>', `${printStyles}\n</head>`)
     .replace('</body>', `${signatureScript}\n${printScript}\n</body>`);
 

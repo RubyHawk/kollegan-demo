@@ -24,6 +24,8 @@ import {
   signOffer,
   declineOfferByToken,
 } from '../../application/offers.service';
+import { resolveOfferBrandingForOffer } from '../../application/offer-branding-profile';
+import { sanitizeGeneratedOfferDocument } from '../../application/document-generator';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -86,7 +88,13 @@ export const handleGetPublicOffer = createHandler(
       throw Errors.notFound('Offer link has expired');
     }
 
-    return ok(toPublicOffer(offer as unknown as Record<string, unknown>));
+    const branding = await resolveOfferBrandingForOffer(offer);
+    const publicOffer = toPublicOffer(offer as unknown as Record<string, unknown>);
+    if (offer.generatedDocument) {
+      publicOffer.generatedDocument = sanitizeGeneratedOfferDocument(offer.generatedDocument, offer, branding);
+    }
+
+    return ok(publicOffer);
   },
 );
 

@@ -27,6 +27,8 @@ import {
   bulkSendOffers,
   sendOfferReminder,
 } from '../../application/offers.service';
+import { resolveOfferBrandingForOffer } from '../../application/offer-branding-profile';
+import { sanitizeGeneratedOfferDocument } from '../../application/document-generator';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -154,6 +156,10 @@ export const handleGetOffer = createHandler(
     if (!payload.orgId) throw Errors.forbidden('No organization context');
     const offer = await getOffer(id, payload.orgId);
     if (!offer) throw Errors.notFound('Offer not found');
+    if (offer.generatedDocument) {
+      const branding = await resolveOfferBrandingForOffer(offer);
+      offer.generatedDocument = sanitizeGeneratedOfferDocument(offer.generatedDocument, offer, branding);
+    }
     return ok(offer);
   },
 );

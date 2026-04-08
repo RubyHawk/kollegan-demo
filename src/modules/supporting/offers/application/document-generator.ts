@@ -468,9 +468,7 @@ const SIGNATURE_FIELD_HTML = `
  */
 export function buildReplacements(offer: Offer): Record<string, string> {
   const vatAmount = offer.totalIncVat - offer.totalExVat;
-  const offerNumberStr = offer.offerNumber
-    ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
-    : offer.id.slice(0, 8).toUpperCase();
+  const offerNumberStr = getOfferNumberString(offer);
 
   return {
     '{{offerTitle}}':       secureEscapeHtml(offer.title),
@@ -486,6 +484,12 @@ export function buildReplacements(offer: Offer): Record<string, string> {
     '{{vatAmount}}':        fmtSEK(vatAmount),
     '{{notes}}':            secureEscapeHtml(offer.notes ?? ''),
   };
+}
+
+function getOfferNumberString(offer: Pick<Offer, 'offerNumber' | 'createdAt' | 'id'>): string {
+  return offer.offerNumber
+    ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
+    : offer.id.slice(0, 8).toUpperCase();
 }
 
 /**
@@ -523,6 +527,88 @@ function fixOfferHtmlText(html: string): string {
     .replace(/ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·/g, '\u00b7')
     .replace(/Ãƒâ€šÃ‚Â·/g, '\u00b7')
     .replace(/ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â/g, '\u2014');
+}
+
+function injectDocumentPatchStyles(html: string): string {
+  const patchStyles = `
+<style data-offer-document-patch>
+  .offer-shell__meta {
+    align-self: center !important;
+    justify-items: end !important;
+    text-align: right !important;
+  }
+  .offer-shell__meta dl {
+    gap: 8px !important;
+    width: auto !important;
+    min-width: min(248px, 100%) !important;
+  }
+  .offer-shell__meta dl div {
+    grid-template-columns: minmax(108px, max-content) auto !important;
+    align-items: center !important;
+    column-gap: 12px !important;
+  }
+  .offer-shell__meta dt,
+  .offer-shell__meta dd {
+    justify-self: end !important;
+  }
+  .offer-shell__sender-copy {
+    gap: 4px !important;
+  }
+</style>`;
+
+  if (html.includes('data-offer-document-patch')) return html;
+  if (html.includes('</head>')) return html.replace('</head>', `${patchStyles}\n</head>`);
+  return `${patchStyles}\n${html}`;
+}
+
+function injectOrganizationNumber(
+  html: string,
+  organizationNumber?: string,
+): string {
+  if (!organizationNumber || /Org\.nr/i.test(html)) return html;
+
+  return html.replace(
+    /(<div class="offer-shell__sender-copy">[\s\S]*?<p class="offer-shell__sender-name"[^>]*>[\s\S]*?<\/p>)/i,
+    `$1\n<p>Org.nr ${escapeHtml(organizationNumber)}</p>`,
+  );
+}
+
+function normalizeLegacyOfferMeta(
+  html: string,
+  offerNumber: string,
+): string {
+  const metaRowPattern = /(<div>\s*<dt[^>]*>)\s*Offert(?:nummer| nr)?\s*#?\s*(<\/dt>\s*<dd[^>]*>)\s*#?([^<]+?)\s*(<\/dd>\s*<\/div>)/i;
+  if (metaRowPattern.test(html)) {
+    return html.replace(
+      metaRowPattern,
+      `$1Offertnummer$2${escapeHtml(offerNumber)}$4`,
+    );
+  }
+
+  return html
+    .replace(/(<dt[^>]*>)\s*Offert(?:nummer| nr)?\s*#?\s*(<\/dt>)/i, '$1Offertnummer$2')
+    .replace(/(<dd[^>]*>\s*)##?(?=\d{4}-\d+)/i, '$1');
+}
+
+function replaceLegacyLineItemsTable(html: string, offer: Offer): string {
+  if (!/\bclass="[^"]*\bline-items\b/i.test(html)) return html;
+  return html.replace(
+    /<table\b[^>]*class="[^"]*\bline-items\b[^"]*"[^>]*>[\s\S]*?<\/table>/gi,
+    buildStructuredLineItems(offer.lineItems, offer.priceDisplayMode),
+  );
+}
+
+export function sanitizeGeneratedOfferDocument(
+  documentHtml: string,
+  offer: Offer,
+  branding?: OfferBrandingProfile,
+): string {
+  let html = documentHtml;
+  html = replaceLegacyLineItemsTable(html, offer);
+  html = normalizeLegacyOfferMeta(html, getOfferNumberString(offer));
+  html = injectOrganizationNumber(html, branding?.organizationNumber);
+  html = injectDocumentPatchStyles(html);
+  return fixOfferHtmlText(html);
 }
 /**
  * Interpolates {{placeholder}} variables in a plain-text or HTML string.
@@ -849,9 +935,7 @@ function renderStructuredDocumentPage(
  * Used when an offer is sent without a linked template.
  */
 export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingProfile): string {
-  const offerNumberStr = offer.offerNumber
-    ? `${new Date(offer.createdAt).getFullYear()}-${String(offer.offerNumber).padStart(3, '0')}`
-    : offer.id.slice(0, 8).toUpperCase();
+  const offerNumberStr = getOfferNumberString(offer);
   const fallbackLineItemsHtml = buildStructuredLineItems(offer.lineItems, offer.priceDisplayMode);
   const fallbackSummaryHtml = renderDocumentSummary(offer, 'below');
   const companyName = branding?.companyName?.trim() || branding?.senderName?.trim() || 'Avs\u00e4ndare';
@@ -1004,7 +1088,7 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
 </body>
 </html>`;
 
-  return fixOfferHtmlText(html);
+  return sanitizeGeneratedOfferDocument(html, offer, branding);
 }
 
 /**
@@ -1147,7 +1231,7 @@ export function generateDocument(templateContent: string, offer: Offer, branding
 
   // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Wrap in a styled document shell ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-  return `<!DOCTYPE html>
+  return sanitizeGeneratedOfferDocument(`<!DOCTYPE html>
 <html lang="sv">
 <head>
   <meta charset="utf-8" />
@@ -1302,7 +1386,7 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     ${bodyHtml}
   </div>
 </body>
-</html>`;
+</html>`, offer, branding);
 }
 
 

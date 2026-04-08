@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { chromium } from 'playwright';
 import { viewOffer } from '@modules/supporting/offers';
+import { resolveOfferBrandingForOffer } from '@modules/supporting/offers/application/offer-branding-profile';
+import { sanitizeGeneratedOfferDocument } from '@modules/supporting/offers/application/document-generator';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -238,7 +240,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     return new NextResponse('Offer has no generated document yet.', { status: 422 });
   }
 
-  const html = buildPublicPdfHtml(offer.generatedDocument, req.nextUrl.origin, offer);
+  const branding = await resolveOfferBrandingForOffer(offer);
+  const sanitizedDocument = sanitizeGeneratedOfferDocument(offer.generatedDocument, offer, branding);
+  const html = buildPublicPdfHtml(sanitizedDocument, req.nextUrl.origin, offer);
   const browser = await chromium.launch({ headless: true });
 
   try {

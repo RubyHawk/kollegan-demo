@@ -4,6 +4,8 @@ import { notFound, redirect } from 'next/navigation';
 import { getSessionUser } from '@platform/auth/session';
 import { prisma } from '@platform/database/prisma';
 import { acceptOffer as acceptOfferByStaff, getOffer } from '@modules/supporting/offers/application/offers.service';
+import { resolveOfferBrandingForOffer } from '@modules/supporting/offers/application/offer-branding-profile';
+import { sanitizeGeneratedOfferDocument } from '@modules/supporting/offers/application/document-generator';
 import { summarizeOfferPricing } from '@modules/supporting/offers/domain/pricing';
 
 function fmtDate(iso?: string) {
@@ -49,6 +51,10 @@ export default async function OfferDetailsPage({
 
   const offer = await getOffer(id, orgId);
   if (!offer) notFound();
+  const branding = await resolveOfferBrandingForOffer(offer);
+  const renderedDocument = offer.generatedDocument
+    ? sanitizeGeneratedOfferDocument(offer.generatedDocument, offer, branding)
+    : null;
 
   async function acceptOnBehalfAction() {
     'use server';
@@ -188,9 +194,9 @@ export default async function OfferDetailsPage({
             </div>
           </div>
 
-          {offer.generatedDocument ? (
+          {renderedDocument ? (
             <iframe
-              srcDoc={offer.generatedDocument}
+              srcDoc={renderedDocument}
               title="Offertdokument"
               className="min-h-[720px] w-full rounded-2xl border border-[var(--border)] bg-white"
             />
