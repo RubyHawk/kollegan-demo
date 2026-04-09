@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { animate, motion, useMotionValue } from 'framer-motion';
 import Link from 'next/link';
 import { cn } from '@shared/lib/utils';
@@ -44,6 +44,8 @@ interface TrendBucket {
   count: number;
   accepted: number;
 }
+
+const OFFERS_PER_PAGE = 5;
 
 const stagger = {
   hidden: {},
@@ -296,15 +298,15 @@ function DashboardClock() {
   }, []);
 
   if (!time) {
-    return <div className="h-12 w-32 rounded-2xl bg-[var(--surface-1)]" aria-hidden="true" />;
+    return <div className="h-10 w-32 rounded-2xl bg-[var(--surface-1)]" aria-hidden="true" />;
   }
 
   return (
-    <div className="rounded-[22px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-4 py-3 shadow-[0_12px_30px_rgba(0,0,0,0.08)]">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--text-muted)]">
+    <div className="rounded-[18px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-3 py-2 shadow-[0_8px_20px_rgba(0,0,0,0.07)]">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted)]">
         Stockholm
       </p>
-      <p className="mt-1 font-mono text-[24px] font-semibold tracking-tight text-[var(--text-primary)] tabular-nums">
+      <p className="mt-0.5 font-mono text-[20px] font-semibold tracking-tight text-[var(--text-primary)] tabular-nums">
         {time}
       </p>
     </div>
@@ -367,9 +369,9 @@ function KpiCard({
   className?: string;
 }) {
   return (
-    <div className={cn('flex h-full items-start gap-3.5 rounded-[20px] px-3 py-3.5 sm:px-4', className)}>
+    <div className={cn('flex h-full items-start gap-3 rounded-[18px] px-3 py-3 sm:px-3.5', className)}>
       <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
         style={{
           background: tone,
           color: 'white',
@@ -382,10 +384,10 @@ function KpiCard({
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
           {label}
         </p>
-        <div className="mt-1.5 flex items-baseline gap-2 text-[var(--text-primary)]">
-          <p className="text-[21px] font-semibold leading-none tracking-tight tabular-nums">{value}</p>
+        <div className="mt-1 flex items-baseline gap-2 text-[var(--text-primary)]">
+          <p className="text-[19px] font-semibold leading-none tracking-tight tabular-nums">{value}</p>
         </div>
-        <p className="mt-1.5 text-[12px] leading-5 text-[var(--text-secondary)] sm:text-[13px]">
+        <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
           {sub}
         </p>
       </div>
@@ -544,6 +546,12 @@ function StatusDistributionCard({
   );
 }
 
+interface TooltipState {
+  x: number;
+  y: number;
+  bucket: TrendBucket;
+}
+
 function TrendChart({
   data,
   empty,
@@ -551,6 +559,9 @@ function TrendChart({
   data: TrendBucket[];
   empty: boolean;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+
   const maxValue = Math.max(...data.map((bucket) => bucket.count), 1);
   const width = 720;
   const height = 180;
@@ -569,8 +580,23 @@ function TrendChart({
     y: baseline - (bucket.accepted / maxValue) * chartHeight,
   }));
 
-  // Show at most 8 axis labels to keep things readable
   const labelStride = Math.max(1, Math.ceil(data.length / 8));
+
+  function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
+    const container = containerRef.current;
+    if (!container || data.length === 0) return;
+    const rect = container.getBoundingClientRect();
+    const relX = e.clientX - rect.left;
+    const relY = e.clientY - rect.top;
+    const svgX = (relX / rect.width) * width;
+    let closestIndex = 0;
+    let minDist = Infinity;
+    totalPoints.forEach((pt, i) => {
+      const dist = Math.abs(pt.x - svgX);
+      if (dist < minDist) { minDist = dist; closestIndex = i; }
+    });
+    setTooltip({ x: relX, y: relY, bucket: data[closestIndex] });
+  }
 
   if (empty) {
     return (
@@ -583,15 +609,34 @@ function TrendChart({
     );
   }
 
+  const hoveredIndex = tooltip
+    ? (() => {
+        const svgX = (tooltip.x / (containerRef.current?.getBoundingClientRect().width ?? 1)) * width;
+        let ci = 0;
+        let md = Infinity;
+        totalPoints.forEach((pt, i) => {
+          const d = Math.abs(pt.x - svgX);
+          if (d < md) { md = d; ci = i; }
+        });
+        return ci;
+      })()
+    : null;
+
   return (
     <div
-      className="rounded-[14px] border border-[var(--border)] px-2.5 py-2"
+      ref={containerRef}
+      className="relative rounded-[14px] border border-[var(--border)] px-2.5 py-2"
       style={{
         background:
           'linear-gradient(180deg,color-mix(in srgb, var(--accent) 3%, var(--surface-0)),var(--surface-0))',
       }}
+      onMouseLeave={() => setTooltip(null)}
     >
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-[140px] w-full">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-[140px] w-full cursor-crosshair"
+        onMouseMove={handleMouseMove}
+      >
         {[0, 1, 2, 3].map((index) => {
           const y = paddingTop + (chartHeight / 3) * index;
           return (
@@ -629,23 +674,38 @@ function TrendChart({
           strokeDasharray="6 6"
         />
 
+        {/* Crosshair on hover */}
+        {hoveredIndex !== null && (
+          <line
+            x1={totalPoints[hoveredIndex].x}
+            x2={totalPoints[hoveredIndex].x}
+            y1={paddingTop}
+            y2={baseline}
+            stroke="var(--accent)"
+            strokeWidth="1"
+            strokeDasharray="4 4"
+            opacity="0.5"
+          />
+        )}
+
         {data.map((bucket, index) => (
           <g key={bucket.longLabel}>
-            <title>{`${bucket.longLabel}: ${bucket.count} skapade, ${bucket.accepted} accepterade`}</title>
             <circle
               cx={totalPoints[index].x}
               cy={totalPoints[index].y}
-              r="3.5"
+              r={hoveredIndex === index ? 5.5 : 3.5}
               fill="var(--surface-0)"
               stroke="var(--accent)"
-              strokeWidth="2.5"
+              strokeWidth={hoveredIndex === index ? 3 : 2.5}
+              style={{ transition: 'r 0.1s, stroke-width 0.1s' }}
             />
             {bucket.accepted > 0 ? (
               <circle
                 cx={acceptedPoints[index].x}
                 cy={acceptedPoints[index].y}
-                r="2.75"
+                r={hoveredIndex === index ? 4 : 2.75}
                 fill="var(--status-accepted-text)"
+                style={{ transition: 'r 0.1s' }}
               />
             ) : null}
           </g>
@@ -659,14 +719,55 @@ function TrendChart({
               y={height - 4}
               textAnchor="middle"
               fontSize="10"
-              fill="var(--text-muted)"
+              fill={hoveredIndex === index ? 'var(--text-primary)' : 'var(--text-muted)'}
               fontFamily="Inter, system-ui, sans-serif"
+              fontWeight={hoveredIndex === index ? '600' : '400'}
             >
               {bucket.label}
             </text>
           ) : null,
         )}
       </svg>
+
+      {/* Tooltip */}
+      {tooltip && hoveredIndex !== null && (
+        <div
+          className="pointer-events-none absolute z-10 rounded-[12px] border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.14)]"
+          style={{
+            left: Math.min(
+              Math.max(tooltip.x - 64, 4),
+              (containerRef.current?.clientWidth ?? 200) - 134,
+            ),
+            top: Math.max(tooltip.y - 72, 4),
+          }}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+            {data[hoveredIndex].longLabel}
+          </p>
+          <div className="mt-1.5 flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ background: 'var(--accent)' }}
+              />
+              <span className="text-xs text-[var(--text-secondary)]">Skapade</span>
+              <span className="text-xs font-semibold tabular-nums text-[var(--text-primary)]">
+                {data[hoveredIndex].count}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ background: 'var(--status-accepted-text)' }}
+              />
+              <span className="text-xs text-[var(--text-secondary)]">Acc.</span>
+              <span className="text-xs font-semibold tabular-nums text-[var(--text-primary)]">
+                {data[hoveredIndex].accepted}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -784,46 +885,142 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
           </div>
         </div>
 
-        {rangePreset === 'custom' ? (
-          <div className="grid gap-2 sm:grid-cols-2">
-            <label className="rounded-xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                Från
-              </span>
-              <input
-                type="date"
-                value={customStart}
-                onChange={(event) => {
-                  const next = clampDateRange(event.target.value, customEnd);
-                  setCustomStart(next.startValue);
-                  setCustomEnd(next.endValue);
-                }}
-                className="mt-1 w-full bg-transparent text-xs font-medium text-[var(--text-primary)] outline-none"
-              />
-            </label>
+        {/* Always reserve space for date pickers to prevent chart from jumping */}
+        <div
+          className={cn(
+            'grid gap-2 sm:grid-cols-2 transition-opacity duration-150',
+            rangePreset !== 'custom' && 'pointer-events-none opacity-0',
+          )}
+          aria-hidden={rangePreset !== 'custom'}
+        >
+          <label className="rounded-xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              Från
+            </span>
+            <input
+              type="date"
+              value={customStart}
+              onChange={(event) => {
+                const next = clampDateRange(event.target.value, customEnd);
+                setCustomStart(next.startValue);
+                setCustomEnd(next.endValue);
+              }}
+              className="mt-1 w-full bg-transparent text-xs font-medium text-[var(--text-primary)] outline-none"
+              tabIndex={rangePreset !== 'custom' ? -1 : undefined}
+            />
+          </label>
 
-            <label className="rounded-xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                Till
-              </span>
-              <input
-                type="date"
-                value={customEnd}
-                min={customStart}
-                onChange={(event) => {
-                  const next = clampDateRange(customStart, event.target.value);
-                  setCustomStart(next.startValue);
-                  setCustomEnd(next.endValue);
-                }}
-                className="mt-1 w-full bg-transparent text-xs font-medium text-[var(--text-primary)] outline-none"
-              />
-            </label>
-          </div>
-        ) : null}
+          <label className="rounded-xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              Till
+            </span>
+            <input
+              type="date"
+              value={customEnd}
+              min={customStart}
+              onChange={(event) => {
+                const next = clampDateRange(customStart, event.target.value);
+                setCustomStart(next.startValue);
+                setCustomEnd(next.endValue);
+              }}
+              className="mt-1 w-full bg-transparent text-xs font-medium text-[var(--text-primary)] outline-none"
+              tabIndex={rangePreset !== 'custom' ? -1 : undefined}
+            />
+          </label>
+        </div>
 
         <TrendChart data={buckets} empty={createdTotal === 0} />
       </div>
     </motion.div>
+  );
+}
+
+function OffersPaginated({ offers }: { offers: RecentOffer[] }) {
+  const [page, setPage] = useState(0);
+  const totalPages = Math.ceil(offers.length / OFFERS_PER_PAGE);
+  const pageOffers = offers.slice(page * OFFERS_PER_PAGE, (page + 1) * OFFERS_PER_PAGE);
+
+  return (
+    <>
+      <motion.div variants={stagger} className="divide-y divide-[var(--border)]">
+        {pageOffers.map((offer) => (
+          <motion.div key={offer.id} variants={fadeIn}>
+            <Link
+              href={`/offerter/${offer.id}`}
+              className="grid gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--surface-hover)] md:grid-cols-[72px_minmax(0,1fr)_auto_120px_76px] md:items-center"
+            >
+              <div className="text-[11px] font-mono text-[var(--text-muted)] md:text-xs">
+                {offer.offerNumber ? `#${offer.offerNumber}` : '—'}
+              </div>
+
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{offer.title}</p>
+                <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">
+                  {[offer.recipientName, offer.recipientCompany].filter(Boolean).join(' · ') || 'Ingen mottagare ännu'}
+                </p>
+              </div>
+
+              <div className="md:justify-self-start">
+                <StatusBadge status={offer.status} />
+              </div>
+
+              <div className="text-sm font-semibold tabular-nums text-[var(--text-primary)] md:text-right">
+                {fmtSEK(offer.totalIncVat)}
+              </div>
+
+              <div className="text-sm text-[var(--text-muted)] md:text-right">
+                {fmtDate(offer.createdAt)}
+              </div>
+            </Link>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-[var(--border)] px-5 py-2.5">
+          <p className="text-[11px] text-[var(--text-muted)]">
+            {page * OFFERS_PER_PAGE + 1}–{Math.min((page + 1) * OFFERS_PER_PAGE, offers.length)} av {offers.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setPage(i)}
+                className={cn(
+                  'rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors',
+                  i === page
+                    ? 'bg-[var(--accent)] text-white'
+                    : 'border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]',
+                )}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page === totalPages - 1}
+              className="rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -843,70 +1040,72 @@ export default function DashboardView({
   const activePipeline = (countMap.sent ?? 0) + (countMap.viewed ?? 0);
 
   return (
-    <div className="mx-auto max-w-[1360px] px-4 py-5 sm:px-6 sm:py-6">
-      <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-5">
+    <div className="mx-auto max-w-[1360px] px-4 py-3 sm:px-6 sm:py-4">
+      <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-3">
+
+        {/* Compact greeting hero */}
         <motion.div
           variants={fadeUp}
-          className="overflow-hidden rounded-[30px] border border-[var(--border)] shadow-[0_22px_56px_rgba(0,0,0,0.11)]"
+          className="overflow-hidden rounded-[24px] border border-[var(--border)] shadow-[0_16px_40px_rgba(0,0,0,0.09)]"
           style={{
             background:
               'linear-gradient(145deg, color-mix(in srgb, var(--surface-0) 92%, var(--accent) 8%), var(--surface-0))',
           }}
         >
-          <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_300px]">
-            <div className="p-5 sm:p-6">
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-[color-mix(in_srgb,var(--accent)_28%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_12%,var(--surface-0))] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-primary)]">
+          <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_260px]">
+            <div className="px-5 py-4 sm:px-6">
+              <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                <span className="rounded-full border border-[color-mix(in_srgb,var(--accent)_28%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_12%,var(--surface-0))] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-primary)]">
                   {dateLabel}
                 </span>
-                <span className="rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <span className="rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   Översikt
                 </span>
               </div>
 
-              <h1 className="font-heading text-[30px] font-semibold tracking-tight text-[var(--text-primary)] sm:text-[36px]">
+              <h1 className="font-heading text-[22px] font-semibold tracking-tight text-[var(--text-primary)] sm:text-[26px]">
                 {greetingText}
               </h1>
-              <p className="mt-2.5 max-w-2xl text-[15px] leading-7 text-[var(--text-secondary)] sm:text-base">
+              <p className="mt-1.5 max-w-2xl text-[13px] leading-5 text-[var(--text-secondary)]">
                 {greetingSub}
               </p>
 
-              <div className="mt-5 grid gap-3 min-[520px]:grid-cols-2 xl:max-w-[620px]">
-                <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3">
+              <div className="mt-3 flex flex-wrap gap-2">
+                <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                     Aktiva just nu
                   </p>
-                  <p className="mt-1.5 text-lg font-semibold text-[var(--text-primary)]">
+                  <p className="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">
                     {activePipeline} offerter i rörelse
                   </p>
                 </div>
-                <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3">
+                <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                     Total överblick
                   </p>
-                  <p className="mt-1.5 text-lg font-semibold text-[var(--text-primary)]">
+                  <p className="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">
                     {total} offerter i systemet
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,color-mix(in srgb, var(--surface-1) 88%, transparent),var(--surface-1))] p-5 xl:border-l xl:border-t-0 xl:p-5">
-              <div className="flex h-full flex-col gap-3">
+            <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,color-mix(in srgb, var(--surface-1) 88%, transparent),var(--surface-1))] px-4 py-4 xl:border-l xl:border-t-0">
+              <div className="flex h-full flex-col gap-2.5">
                 <DashboardClock />
-                <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] px-4 py-4 shadow-[0_14px_34px_rgba(0,0,0,0.06)]">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-0)] px-3.5 py-3 shadow-[0_10px_26px_rgba(0,0,0,0.05)]">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                     Fokus idag
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                  <p className="mt-1.5 text-xs leading-5 text-[var(--text-secondary)]">
                     Håll koll på nya offerter, följ upp det som är visat och fånga upp sådant som snart löper ut.
                   </p>
                   <Link
                     href="/offerter/ny"
-                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-95 active:scale-[0.98] shadow-[0_16px_34px_rgba(0,0,0,0.16)]"
+                    className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 py-2 text-xs font-semibold text-white transition-all hover:opacity-95 active:scale-[0.98] shadow-[0_12px_26px_rgba(0,0,0,0.14)]"
                     style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, #e06b45 80%), color-mix(in srgb, var(--accent) 8%, #a34729 92%))' }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 5v14M5 12h14" />
                     </svg>
                     Ny offert
@@ -917,109 +1116,112 @@ export default function DashboardView({
           </div>
         </motion.div>
 
+        {/* KPI cards */}
         <motion.div
           variants={fadeUp}
-          className="rounded-[26px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-3 py-2.5 shadow-[0_14px_34px_rgba(0,0,0,0.06)] sm:px-4"
+          className="rounded-[22px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-2 py-1.5 shadow-[0_10px_28px_rgba(0,0,0,0.05)] sm:px-3"
         >
-          <div className="grid gap-1.5 min-[460px]:grid-cols-2 xl:grid-cols-4">
-          <KpiCard
-            className="min-w-0"
-            label="Pipeline"
-            value={pipelineValue > 0 ? <Counter to={pipelineValue} suffix=" kr" /> : <span className="text-[var(--text-muted)]">—</span>}
-            sub={`${activePipeline} aktiva offert${activePipeline === 1 ? '' : 'er'}`}
-            tone="linear-gradient(135deg, #1e5fb8, #1d8cff)"
-            icon={
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-              </svg>
-            }
-          />
+          <div className="grid gap-1 min-[460px]:grid-cols-2 xl:grid-cols-4">
+            <KpiCard
+              className="min-w-0"
+              label="Pipeline"
+              value={pipelineValue > 0 ? <Counter to={pipelineValue} suffix=" kr" /> : <span className="text-[var(--text-muted)]">—</span>}
+              sub={`${activePipeline} aktiva offert${activePipeline === 1 ? '' : 'er'}`}
+              tone="linear-gradient(135deg, #1e5fb8, #1d8cff)"
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+              }
+            />
 
-          <KpiCard
-            className="min-w-0"
-            label="Accepterat värde"
-            value={acceptedValue > 0 ? <Counter to={acceptedValue} suffix=" kr" /> : <span className="text-[var(--text-muted)]">—</span>}
-            sub={countMap.accepted ? `${countMap.accepted} affär${countMap.accepted === 1 ? '' : 'er'} vunna` : 'Inga accepterade offerter ännu'}
-            tone="linear-gradient(135deg, #0d7d4f, #19a266)"
-            icon={
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            }
-          />
+            <KpiCard
+              className="min-w-0"
+              label="Accepterat värde"
+              value={acceptedValue > 0 ? <Counter to={acceptedValue} suffix=" kr" /> : <span className="text-[var(--text-muted)]">—</span>}
+              sub={countMap.accepted ? `${countMap.accepted} affär${countMap.accepted === 1 ? '' : 'er'} vunna` : 'Inga accepterade offerter ännu'}
+              tone="linear-gradient(135deg, #0d7d4f, #19a266)"
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              }
+            />
 
-          <KpiCard
-            className="min-w-0"
-            label="Vinstgrad"
-            value={acceptanceRate !== null ? <><Counter to={acceptanceRate} /><span className="ml-1 text-lg">%</span></> : <span className="text-[var(--text-muted)]">—</span>}
-            sub={acceptanceRate !== null ? 'Andel accepterade av avslutade offerter' : 'Visas när du har avslutade offerter'}
-            tone="linear-gradient(135deg, #8a4f00, #d6851a)"
-            icon={
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 20V10M12 20V4M6 20v-6" />
-              </svg>
-            }
-          />
+            <KpiCard
+              className="min-w-0"
+              label="Vinstgrad"
+              value={acceptanceRate !== null ? <><Counter to={acceptanceRate} /><span className="ml-1 text-base">%</span></> : <span className="text-[var(--text-muted)]">—</span>}
+              sub={acceptanceRate !== null ? 'Andel accepterade av avslutade offerter' : 'Visas när du har avslutade offerter'}
+              tone="linear-gradient(135deg, #8a4f00, #d6851a)"
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 20V10M12 20V4M6 20v-6" />
+                </svg>
+              }
+            />
 
-          <KpiCard
-            className="min-w-0"
-            label="Utgår snart"
-            value={<Counter to={expiringSoon} />}
-            sub={expiringSoon > 0 ? `Offert${expiringSoon === 1 ? '' : 'er'} som löper ut inom 7 dagar` : 'Ingen offert behöver följas upp direkt'}
-            tone={expiringSoon > 0 ? 'linear-gradient(135deg, #c5543f, #ee7b5b)' : 'linear-gradient(135deg, #5f5a4d, #7f796c)'}
-            icon={
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-            }
-          />
+            <KpiCard
+              className="min-w-0"
+              label="Utgår snart"
+              value={<Counter to={expiringSoon} />}
+              sub={expiringSoon > 0 ? `Offert${expiringSoon === 1 ? '' : 'er'} som löper ut inom 7 dagar` : 'Ingen offert behöver följas upp direkt'}
+              tone={expiringSoon > 0 ? 'linear-gradient(135deg, #c5543f, #ee7b5b)' : 'linear-gradient(135deg, #5f5a4d, #7f796c)'}
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              }
+            />
           </div>
         </motion.div>
 
-        <motion.div variants={stagger} className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.95fr)]">
+        {/* Main content grid */}
+        <motion.div variants={stagger} className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.95fr)]">
+          {/* Offers list */}
           <motion.div
             variants={fadeUp}
-            className="overflow-hidden rounded-[26px] border border-[var(--border)] bg-[var(--surface-0)] shadow-[0_18px_45px_rgba(0,0,0,0.09)]"
+            className="overflow-hidden rounded-[22px] border border-[var(--border)] bg-[var(--surface-0)] shadow-[0_14px_36px_rgba(0,0,0,0.08)]"
           >
-            <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] px-5 py-4">
+            <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] px-5 py-3.5">
               <div>
-                <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">Senaste offerter</h2>
-                <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                  {recentOffers.length === 0 ? 'Här dyker dina senaste offerter upp när du kommit igång.' : `De ${recentOffers.length} senaste offerterna i systemet.`}
+                <h2 className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">Senaste offerter</h2>
+                <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                  {recentOffers.length === 0
+                    ? 'Här dyker dina senaste offerter upp när du kommit igång.'
+                    : `${recentOffers.length} offerter — bläddra med pilarna nedan.`}
                 </p>
               </div>
 
-              <Link href="/offerter" className="inline-flex items-center gap-1 text-sm font-medium text-[var(--accent)] hover:underline">
+              <Link href="/offerter" className="inline-flex items-center gap-1 text-xs font-medium text-[var(--accent)] hover:underline">
                 Visa alla
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </Link>
             </div>
 
             {recentOffers.length === 0 ? (
-              <motion.div variants={fadeIn} className="flex min-h-[280px] flex-col items-center justify-center px-6 py-8 text-center sm:px-8 sm:py-10">
-                <div className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-1),var(--surface-0))] px-8 py-8 shadow-[0_20px_50px_rgba(0,0,0,0.08)]">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--accent-subtle)] text-[var(--accent)]">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <motion.div variants={fadeIn} className="flex min-h-[240px] flex-col items-center justify-center px-6 py-8 text-center">
+                <div className="rounded-[24px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-1),var(--surface-0))] px-8 py-7 shadow-[0_16px_40px_rgba(0,0,0,0.07)]">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-3xl bg-[var(--accent-subtle)] text-[var(--accent)]">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
                       <rect x="9" y="3" width="6" height="4" rx="1" />
                       <path d="M9 12h6M9 16h4" />
                     </svg>
                   </div>
-
-                  <h3 className="mt-5 text-lg font-semibold tracking-tight text-[var(--text-primary)]">Inga offerter än</h3>
-                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[var(--text-secondary)]">
-                    Skapa din första offert för att börja fylla översikten med verklig aktivitet och tydligare uppföljning.
+                  <h3 className="mt-4 text-base font-semibold tracking-tight text-[var(--text-primary)]">Inga offerter än</h3>
+                  <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-[var(--text-secondary)]">
+                    Skapa din första offert för att börja fylla översikten med verklig aktivitet.
                   </p>
-
                   <Link
                     href="/offerter/ny"
-                    className="mt-6 inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-95 active:scale-[0.98] shadow-[0_14px_30px_rgba(0,0,0,0.14)]"
+                    className="mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-95 active:scale-[0.98] shadow-[0_12px_26px_rgba(0,0,0,0.13)]"
                     style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, #e06b45 80%), color-mix(in srgb, var(--accent) 8%, #a34729 92%))' }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 5v14M5 12h14" />
                     </svg>
                     Skapa första offerten
@@ -1027,43 +1229,12 @@ export default function DashboardView({
                 </div>
               </motion.div>
             ) : (
-              <motion.div variants={stagger} className="divide-y divide-[var(--border)]">
-                {recentOffers.map((offer) => (
-                  <motion.div key={offer.id} variants={fadeIn}>
-                    <Link
-                      href={`/offerter/${offer.id}`}
-                      className="grid gap-3 px-5 py-4 transition-colors hover:bg-[var(--surface-hover)] md:grid-cols-[72px_minmax(0,1fr)_auto_120px_76px] md:items-center"
-                    >
-                      <div className="text-[11px] font-mono text-[var(--text-muted)] md:text-xs">
-                        {offer.offerNumber ? `#${offer.offerNumber}` : '—'}
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{offer.title}</p>
-                        <p className="mt-1 truncate text-sm text-[var(--text-secondary)]">
-                          {[offer.recipientName, offer.recipientCompany].filter(Boolean).join(' · ') || 'Ingen mottagare ännu'}
-                        </p>
-                      </div>
-
-                      <div className="md:justify-self-start">
-                        <StatusBadge status={offer.status} />
-                      </div>
-
-                      <div className="text-sm font-semibold tabular-nums text-[var(--text-primary)] md:text-right">
-                        {fmtSEK(offer.totalIncVat)}
-                      </div>
-
-                      <div className="text-sm text-[var(--text-muted)] md:text-right">
-                        {fmtDate(offer.createdAt)}
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))}
-              </motion.div>
+              <OffersPaginated offers={recentOffers} />
             )}
           </motion.div>
 
-          <div className="space-y-5">
+          {/* Right sidebar */}
+          <div className="space-y-3">
             <StatusDistributionCard countMap={countMap} total={total} />
             <TrendCard activityData={activityData} />
           </div>
