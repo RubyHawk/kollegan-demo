@@ -305,35 +305,36 @@ function SortablePageCard({
     transition,
   };
 
+  function stopDnd(event: React.PointerEvent) {
+    event.stopPropagation();
+  }
+
   return (
     <div
       ref={setNodeRef}
       style={style}
+      onClick={onSelect}
+      {...attributes}
+      {...listeners}
       className={cn(
-        'group relative flex min-w-[156px] items-center gap-1 rounded-md border px-1.5 py-1 transition-all md:min-w-[172px]',
-        isActive
-          ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)]'
-          : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-active)]',
-        isDragging && 'z-10 opacity-80 shadow-[0_10px_24px_rgba(15,23,42,0.14)]',
+        'group relative flex min-w-[156px] touch-none select-none items-center gap-1 rounded-md border px-1.5 py-1 transition-colors md:min-w-[172px]',
+        isDragging
+          ? 'z-10 cursor-grabbing border-[var(--accent-border)] bg-[var(--accent-subtle)] shadow-[0_10px_24px_rgba(15,23,42,0.18)]'
+          : isActive
+            ? 'cursor-grab border-[var(--accent-border)] bg-[var(--accent-subtle)] active:cursor-grabbing'
+            : 'cursor-grab border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-active)] active:cursor-grabbing',
       )}
     >
-      <button
-        type="button"
-        title="Dra för att flytta"
+      <span
+        aria-hidden
         className={cn(
-          'inline-flex h-6 w-4 shrink-0 cursor-grab items-center justify-center rounded text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] active:cursor-grabbing',
-          isDragging && 'cursor-grabbing text-[var(--accent)]',
+          'flex h-5 w-3 shrink-0 items-center justify-center text-[var(--text-muted)]',
+          isDragging && 'text-[var(--accent)]',
         )}
-        {...attributes}
-        {...listeners}
       >
         <DotsSixVertical size={13} />
-      </button>
-      <button
-        type="button"
-        onClick={onSelect}
-        className="flex min-w-0 flex-1 flex-col text-left focus:outline-none"
-      >
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center gap-1">
           <span className="truncate text-xs font-semibold text-[var(--text-primary)]">{page.label}</span>
           <span className="shrink-0 text-[10px] text-[var(--text-muted)]">{index + 1}/{total}</span>
@@ -349,11 +350,12 @@ function SortablePageCard({
             {page.includeInCustomerPdf === false ? 'Intern' : 'PDF'}
           </span>
         </div>
-      </button>
+      </div>
       <button
         type="button"
         title={onRemove ? 'Ta bort sida' : 'Minst en sida krävs'}
         disabled={!onRemove}
+        onPointerDown={stopDnd}
         onClick={(event) => {
           event.stopPropagation();
           onRemove?.();
