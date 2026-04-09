@@ -128,21 +128,19 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
     emailHeaderConfig = branding.emailHeaderConfig;
   }
 
-  if (!existing.generatedDocument) {
-    if (existing.templateId) {
-      const template = await templatesRepository.findById(existing.templateId, orgId);
-      if (template) {
-        templateContent = template.content;
-        generatedDocument = generateDocument(template.content, sendSnapshot, branding);
-        if (!emailSubject && template.emailSubject) emailSubject = template.emailSubject;
-        if (!emailBody && template.emailBody) emailBody = template.emailBody;
-        if (!emailHeaderConfig && template.emailHeaderConfig) emailHeaderConfig = template.emailHeaderConfig;
-      }
+  if (existing.templateId) {
+    const template = await templatesRepository.findById(existing.templateId, orgId);
+    if (template) {
+      templateContent = template.content;
+      generatedDocument = generateDocument(template.content, sendSnapshot, branding);
+      if (!emailSubject && template.emailSubject) emailSubject = template.emailSubject;
+      if (!emailBody && template.emailBody) emailBody = template.emailBody;
+      if (!emailHeaderConfig && template.emailHeaderConfig) emailHeaderConfig = template.emailHeaderConfig;
     }
+  }
 
-    if (!generatedDocument) {
-      generatedDocument = generateFallbackDocument(sendSnapshot, branding);
-    }
+  if (!generatedDocument) {
+    generatedDocument = generateFallbackDocument(sendSnapshot, branding);
   }
 
   assertOfferReadyForSend({
