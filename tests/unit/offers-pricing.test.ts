@@ -1,5 +1,6 @@
 import {
   calculateOfferTotals,
+  formatVatRate,
   summarizeOfferPricing,
   summarizePersistedOfferPricing,
 } from '@modules/supporting/offers/domain/pricing';
@@ -35,5 +36,11 @@ describe('offer pricing', () => {
     expect(persisted.vatAmount).toBe(18031.12);
     expect(persisted.discountAmount).toBe(27387.54);
     expect(persisted.displayModeLabel).toBe('inkl. moms');
+  });
+
+  it('formats vat rates compactly for offer layouts', () => {
+    expect(formatVatRate(0.25)).toBe('25%');
+    expect(formatVatRate(25)).toBe('25%');
+    expect(formatVatRate(0)).toBe('Momsfri');
   });
 });
