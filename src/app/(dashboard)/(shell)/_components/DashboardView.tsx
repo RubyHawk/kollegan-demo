@@ -190,18 +190,18 @@ function DashboardClock() {
     return () => clearInterval(id);
   }, []);
 
-  if (!time) return <div className="h-8 w-28 animate-pulse rounded-xl bg-[var(--surface-2)]" />;
+  if (!time) return <div className="h-9 w-32 animate-pulse rounded-full bg-[var(--surface-2)]" />;
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-2)]">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
+    <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-3 py-1.5 shadow-[0_6px_16px_rgba(0,0,0,0.05)]">
+      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--surface-2)]">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
           <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
         </svg>
       </div>
-      <div>
+      <div className="flex items-baseline gap-2">
         <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Stockholm</p>
-        <p className="font-mono text-[15px] font-semibold tabular-nums leading-none text-[var(--text-primary)]">{time}</p>
+        <p className="font-mono text-[14px] font-semibold tabular-nums leading-none text-[var(--text-primary)]">{time}</p>
       </div>
     </div>
   );
@@ -259,11 +259,14 @@ function KpiItem({ label, value, sub, icon, tone }: {
 // ─── Status distribution ───────────────────────────────────────────────────────
 
 function StatusDistributionCard({ countMap, total }: { countMap: Record<string, number>; total: number }) {
+  const [activeStatus, setActiveStatus] = useState<string | null>(null);
   const rows = STATUS_ORDER.map(status => {
     const count = countMap[status] ?? 0;
     return { status, count, percent: total > 0 ? Math.round((count / total) * 100) : 0, ...STATUS_META[status] };
   });
   const populated = rows.filter(r => r.count > 0);
+  const highlightedStatus = activeStatus ?? populated[0]?.status ?? rows[0]?.status ?? null;
+  const highlightedRow = rows.find(r => r.status === highlightedStatus) ?? null;
   const radius = 52, circ = 2 * Math.PI * radius;
   const segments = populated.map((r, i) => ({
     ...r,
@@ -295,32 +298,84 @@ function StatusDistributionCard({ countMap, total }: { countMap: Record<string, 
             <svg viewBox="0 0 132 132" className="h-[108px] w-[108px] -rotate-90">
               <circle cx="66" cy="66" r={radius} fill="none" stroke="color-mix(in srgb, var(--border) 80%, transparent)" strokeWidth="16"/>
               {segments.map(r => (
-                <circle key={r.status} cx="66" cy="66" r={radius} fill="none" stroke={r.color}
-                  strokeLinecap="round" strokeWidth="16"
-                  strokeDasharray={`${r.segment} ${circ - r.segment}`} strokeDashoffset={-r.dashOffset}/>
+                <circle
+                  key={r.status}
+                  cx="66"
+                  cy="66"
+                  r={radius}
+                  fill="none"
+                  stroke={r.color}
+                  strokeLinecap="round"
+                  strokeWidth={highlightedStatus === r.status ? 18 : 14}
+                  opacity={highlightedStatus && highlightedStatus !== r.status ? 0.35 : 1}
+                  strokeDasharray={`${r.segment} ${circ - r.segment}`}
+                  strokeDashoffset={-r.dashOffset}
+                  className="cursor-pointer transition-all duration-150"
+                  onMouseEnter={() => setActiveStatus(r.status)}
+                  onMouseLeave={() => setActiveStatus(null)}
+                />
               ))}
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="text-[22px] font-semibold tabular-nums text-[var(--text-primary)]">{total}</span>
-              <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">offerter</span>
+              <span className="text-[22px] font-semibold tabular-nums text-[var(--text-primary)]">
+                {highlightedRow?.count ?? total}
+              </span>
+              <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                {highlightedRow ? highlightedRow.label : 'offerter'}
+              </span>
             </div>
           </div>
-          <div className="grid gap-x-4 gap-y-1.5 sm:grid-cols-2">
+          <div className="grid gap-2">
             {rows.map(r => (
-              <div key={r.status} className="flex items-center gap-2">
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: r.color }}/>
-                <span className="flex-1 truncate text-[11.5px] font-medium text-[var(--text-primary)]">{r.label}</span>
-                <span className="tabular-nums text-[11px] text-[var(--text-secondary)]">{r.percent}%</span>
-                <span className="w-5 text-right text-[12px] font-semibold tabular-nums text-[var(--text-primary)]">{r.count}</span>
-                <div className="h-1 w-12 shrink-0 overflow-hidden rounded-full" style={{ background: 'var(--surface-2)' }}>
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${r.percent}%` }} transition={{ duration: 0.45, ease: 'easeOut' }}
-                    className="h-full rounded-full" style={{ background: r.color }}/>
+              <button
+                key={r.status}
+                type="button"
+                onClick={() => setActiveStatus((current) => current === r.status ? null : r.status)}
+                onMouseEnter={() => setActiveStatus(r.status)}
+                onMouseLeave={() => setActiveStatus(null)}
+                className={cn(
+                  'grid w-full grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-all',
+                  highlightedStatus === r.status
+                    ? 'border-[color-mix(in_srgb,var(--accent)_32%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_6%,var(--surface-0))] shadow-[0_8px_18px_rgba(0,0,0,0.05)]'
+                    : 'border-[var(--border)] bg-[var(--surface-0)] hover:bg-[var(--surface-1)]',
+                )}
+                aria-pressed={highlightedStatus === r.status}
+              >
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: r.color }}/>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-[12px] font-medium text-[var(--text-primary)]">{r.label}</span>
+                    <span className="text-[10px] tabular-nums text-[var(--text-muted)]">{r.percent}%</span>
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${r.percent}%` }} transition={{ duration: 0.45, ease: 'easeOut' }}
+                      className="h-full rounded-full" style={{ background: r.color }}/>
+                  </div>
                 </div>
-              </div>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">antal</span>
+                <span className="text-right text-[13px] font-semibold tabular-nums text-[var(--text-primary)]">{r.count}</span>
+              </button>
             ))}
           </div>
         </div>
       )}
+
+      {highlightedRow ? (
+        <div className="mt-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3.5 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                Aktiv status
+              </p>
+              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{highlightedRow.label}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">andel</p>
+              <p className="mt-1 text-sm font-semibold tabular-nums text-[var(--text-primary)]">{highlightedRow.percent}%</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </motion.div>
   );
 }
@@ -373,7 +428,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
     <motion.div variants={fadeUp} className="rounded-[20px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-4 pt-4 pb-3 shadow-[0_14px_34px_rgba(0,0,0,0.06)]">
 
       {/* Header */}
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div>
           <h2 className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">Tidsöversikt</h2>
           <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">{fmtRangeLabel(start, end)}</p>
@@ -382,7 +437,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
           {[
             { lbl: 'Skapade', val: createdTotal },
             { lbl: 'Vunna',   val: acceptedTotal },
-            { lbl: 'Vinst',   val: `${successRate}%` },
+            { lbl: 'Vinstgrad',   val: `${successRate}%` },
           ].map((item, i, arr) => (
             <div key={item.lbl} className="flex items-center gap-1.5">
               {i > 0 && <span className="h-3 w-px bg-[var(--border)]"/>}
@@ -395,16 +450,16 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
 
       {/* Chart */}
       {createdTotal === 0 ? (
-        <div className="flex h-[200px] items-center justify-center rounded-[14px] border border-dashed border-[var(--border)] bg-[var(--surface-1)]">
+        <div className="flex h-[228px] items-center justify-center rounded-[14px] border border-dashed border-[var(--border)] bg-[var(--surface-1)]">
           <div className="text-center">
             <p className="text-xs font-medium text-[var(--text-primary)]">Inga offerter i vald period</p>
             <p className="mt-1 text-[11px] text-[var(--text-secondary)]">Prova ett längre intervall.</p>
           </div>
         </div>
       ) : (
-        <div className="rounded-[14px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--accent)_2%,var(--surface-0))] px-2 pt-3 pb-1">
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={chartData} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
+        <div className="rounded-[14px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--accent)_2%,var(--surface-0))] px-3 pt-3 pb-2">
+          <ResponsiveContainer width="100%" height={228}>
+            <AreaChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
               <defs>
                 <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%"  stopColor="var(--accent)" stopOpacity={0.22}/>
@@ -434,7 +489,15 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
-                width={24}
+                width={44}
+                label={{
+                  value: 'Antal',
+                  angle: -90,
+                  position: 'insideLeft',
+                  offset: -2,
+                  fill: 'var(--text-muted)',
+                  fontSize: 10,
+                }}
               />
               <Tooltip
                 content={<ChartTooltip/>}
@@ -465,7 +528,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
       )}
 
       {/* Bottom control bar — all on one line */}
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-2">
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
 
         {/* Legend */}
         <div className="flex items-center gap-2.5">
@@ -479,7 +542,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
           </div>
         </div>
 
-        <span className="h-3 w-px bg-[var(--border)]"/>
+        <span className="hidden h-3 w-px bg-[var(--border)] sm:block"/>
 
         {/* Range preset buttons */}
         <div className="flex items-center gap-1">
@@ -503,7 +566,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
         {/* Inline date inputs — reserve space always, hide with opacity */}
         <div
           className={cn(
-            'flex items-center gap-1.5 transition-opacity duration-150',
+            'ml-auto flex items-center gap-1.5 transition-opacity duration-150',
             range !== 'custom' && 'pointer-events-none opacity-0',
           )}
           aria-hidden={range !== 'custom'}
@@ -516,7 +579,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
               const n = clampDateRange(e.target.value, customEnd);
               setCustomStart(n.startValue); setCustomEnd(n.endValue);
             }}
-            className="w-[108px] rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-2 py-1 text-[10px] font-medium text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+            className="h-8 w-[128px] rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-3 text-[11px] font-medium text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
           />
           <span className="text-[10px] text-[var(--text-muted)]">→</span>
           <input
@@ -528,7 +591,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
               const n = clampDateRange(customStart, e.target.value);
               setCustomStart(n.startValue); setCustomEnd(n.endValue);
             }}
-            className="w-[108px] rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-2 py-1 text-[10px] font-medium text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+            className="h-8 w-[128px] rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-3 text-[11px] font-medium text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
           />
         </div>
       </div>
@@ -575,7 +638,7 @@ function OffersPaginated({ offers }: { offers: RecentOffer[] }) {
             {page * OFFERS_PER_PAGE + 1}–{Math.min((page+1)*OFFERS_PER_PAGE, offers.length)} av {offers.length}
           </p>
           <div className="flex items-center gap-1">
-            <button type="button" onClick={() => setPage(p => Math.max(0, p-1))} disabled={page===0}
+            <button type="button" aria-label="Föregående sida" onClick={() => setPage(p => Math.max(0, p-1))} disabled={page===0}
               className="rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-2.5 py-1.5 text-[11px] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
             </button>
@@ -586,7 +649,7 @@ function OffersPaginated({ offers }: { offers: RecentOffer[] }) {
                 {i+1}
               </button>
             ))}
-            <button type="button" onClick={() => setPage(p => Math.min(totalPages-1, p+1))} disabled={page===totalPages-1}
+            <button type="button" aria-label="Nästa sida" onClick={() => setPage(p => Math.min(totalPages-1, p+1))} disabled={page===totalPages-1}
               className="rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-2.5 py-1.5 text-[11px] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
             </button>
@@ -627,15 +690,15 @@ export default function DashboardView({
                   Översikt
                 </span>
               </div>
-              <h1 className="font-heading text-[22px] font-semibold tracking-tight text-[var(--text-primary)] sm:text-[26px]">
+              <DashboardClock/>
+              <h1 className="mt-2 font-heading text-[22px] font-semibold tracking-tight text-[var(--text-primary)] sm:text-[26px]">
                 {greetingText}
               </h1>
               <p className="mt-1.5 text-[13px] leading-5 text-[var(--text-secondary)]">{greetingSub}</p>
             </div>
 
-            {/* Clock + CTA */}
-            <div className="flex shrink-0 flex-col items-end gap-3">
-              <DashboardClock/>
+            {/* CTA */}
+            <div className="flex shrink-0 flex-col items-end gap-3 pt-0.5">
               <Link
                 href="/offerter/ny"
                 className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(0,0,0,0.16)] transition-all hover:opacity-95 active:scale-[0.98]"
