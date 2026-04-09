@@ -778,7 +778,17 @@ export default function PublicOfferPage() {
       if (customerName || customerEmail) {
         const customerRow = doc.createElement('div');
         customerRow.className = 'offer-shell__meta-row--recipient';
-        customerRow.innerHTML = `<dt>Offert till</dt><dd>${normalizeOfferText(customerName || '')}${customerEmail ? `<small>${normalizeOfferText(customerEmail)}</small>` : ''}</dd>`;
+        const customerLabel = doc.createElement('dt');
+        customerLabel.textContent = 'Offert till';
+        const customerValue = doc.createElement('dd');
+        customerValue.appendChild(doc.createTextNode(normalizeOfferText(customerName || '')));
+        if (customerEmail) {
+          const customerEmailText = doc.createElement('small');
+          customerEmailText.textContent = normalizeOfferText(customerEmail);
+          customerValue.appendChild(customerEmailText);
+        }
+        customerRow.appendChild(customerLabel);
+        customerRow.appendChild(customerValue);
         metaList.appendChild(customerRow);
       }
       customerCard.remove();
@@ -786,7 +796,7 @@ export default function PublicOfferPage() {
 
     if (offerTitleText) {
       const sectionHeading = Array.from(doc.querySelectorAll<HTMLElement>('.offer-section h2, .offer-table-header h2'))
-        .find((item) => item.textContent?.replace(/\s+/g, ' ').trim().toLocaleLowerCase('sv-SE') === 'produkter och tjänster');
+        .find((item) => normalizeOfferText(item.textContent ?? '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('sv-SE') === 'produkter och tjänster');
       if (sectionHeading) {
         sectionHeading.textContent = offerTitleText;
       }
