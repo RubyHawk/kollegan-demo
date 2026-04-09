@@ -139,7 +139,7 @@ function stripExcludedPages(nodes: ChildNode[]): void {
   }
 }
 
-function stripPublicOnlyPages(nodes: ChildNode[]): void {
+function stripPublicPdfPages(nodes: ChildNode[]): void {
   for (const node of [...nodes]) {
     if (isPdfExcludedPage(node) || isPromoPageBlock(node)) {
       removeAdjacentSeparator(node);
@@ -149,7 +149,7 @@ function stripPublicOnlyPages(nodes: ChildNode[]): void {
 
     const children = getNodeChildren(node);
     if (children && children.length > 0) {
-      stripPublicOnlyPages(children);
+      stripPublicPdfPages(children);
     }
   }
 }
@@ -305,7 +305,6 @@ export function sanitizePublicOfferDocument(
 ): string {
   const sanitizedHtml = sanitizeGeneratedOfferDocument(documentHtml, offer, branding);
   const document = parseDocument(sanitizedHtml, PARSE_OPTIONS);
-  stripPublicOnlyPages(document.children);
   compactStructuredLineItemTables(document);
   removeLeadBlurb(document);
   return cleanupPublicOfferHtml(
@@ -319,5 +318,13 @@ export function sanitizePublicPdfOfferDocument(
   offer: Offer,
   branding?: OfferBrandingProfile,
 ): string {
-  return sanitizePublicOfferDocument(documentHtml, offer, branding);
+  const sanitizedHtml = sanitizeGeneratedOfferDocument(documentHtml, offer, branding);
+  const document = parseDocument(sanitizedHtml, PARSE_OPTIONS);
+  stripPublicPdfPages(document.children);
+  compactStructuredLineItemTables(document);
+  removeLeadBlurb(document);
+  return cleanupPublicOfferHtml(
+    render(document.children, { encodeEntities: false }),
+    branding,
+  );
 }
