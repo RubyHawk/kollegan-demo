@@ -35,6 +35,8 @@ export default function BlocksSidebar() {
 
   const activePage = hf?.pages[hf.activeIdx];
   const isDocumentPage = activePage?.kind === 'document';
+  const isAppendixPage = activePage?.role === 'appendix' && !isDocumentPage;
+  const isPageReady = hf?.activePageReady ?? true;
 
   if (!editor || !hf) {
     return (
@@ -45,6 +47,10 @@ export default function BlocksSidebar() {
   async function insertImage(file: File) {
     const currentEditor = editor;
     if (!currentEditor) return;
+    if (!hf?.activePageReady) {
+      window.alert('Vänta ett ögonblick tills sidan är färdigladdad innan du lägger in bilden.');
+      return;
+    }
     try {
       const src = await uploadTemplateImage(file);
       insertTemplateImageIntoEditor(currentEditor, src);
@@ -69,17 +75,37 @@ export default function BlocksSidebar() {
           </div>
         ) : (
           <div className="space-y-3">
+            {!isPageReady && (
+              <div className="rounded-md border border-dashed border-[var(--accent-border)] bg-[var(--accent-subtle)] px-2.5 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+                Laddar rätt sida i editorn. Vänta en halv sekund innan du lägger in bild eller text.
+              </div>
+            )}
+
+            {isAppendixPage && (
+              <Section
+                title="Bildbilaga"
+                hint="Bilagor startar tomma med flit. Lägg in en eller flera bilder här i stället för att börja med en rubrik."
+              >
+                <InsertButton
+                  icon={<PhImage size={13} />}
+                  label="Ladda upp första bilden"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={!isPageReady}
+                />
+              </Section>
+            )}
+
             <Section title="Textblock">
-              <InsertButton icon={<TextHOne size={13} />} label="Rubrik 1" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} />
-              <InsertButton icon={<TextHTwo size={13} />} label="Rubrik 2" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} />
-              <InsertButton icon={<TextT size={13} />} label="Brödtext" onClick={() => editor.chain().focus().setParagraph().run()} />
-              <InsertButton icon={<ListBullets size={13} />} label="Punktlista" onClick={() => editor.chain().focus().toggleBulletList().run()} />
+              <InsertButton icon={<TextHOne size={13} />} label="Rubrik 1" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} disabled={!isPageReady} />
+              <InsertButton icon={<TextHTwo size={13} />} label="Rubrik 2" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} disabled={!isPageReady} />
+              <InsertButton icon={<TextT size={13} />} label="Brödtext" onClick={() => editor.chain().focus().setParagraph().run()} disabled={!isPageReady} />
+              <InsertButton icon={<ListBullets size={13} />} label="Punktlista" onClick={() => editor.chain().focus().toggleBulletList().run()} disabled={!isPageReady} />
             </Section>
 
             <Section title="Media & struktur">
-              <InsertButton icon={<PhImage size={13} />} label="Bild" onClick={() => fileRef.current?.click()} />
-              <InsertButton icon={<Table size={13} />} label="Tabell" onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
-              <InsertButton icon={<PhMinus size={13} />} label="Avdelare" onClick={() => editor.chain().focus().setHorizontalRule().run()} />
+              <InsertButton icon={<PhImage size={13} />} label={isAppendixPage ? 'Lägg till bild till bilagan' : 'Bild'} onClick={() => fileRef.current?.click()} disabled={!isPageReady} />
+              <InsertButton icon={<Table size={13} />} label="Tabell" onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} disabled={!isPageReady} />
+              <InsertButton icon={<PhMinus size={13} />} label="Avdelare" onClick={() => editor.chain().focus().setHorizontalRule().run()} disabled={!isPageReady} />
             </Section>
             <input
               ref={fileRef}
@@ -112,6 +138,7 @@ export default function BlocksSidebar() {
                       })
                       .run()
                   }
+                  disabled={!isPageReady}
                 />
               ))}
             </Section>
@@ -130,6 +157,7 @@ export default function BlocksSidebar() {
                     .insertContent({ type: 'signatureBlock', attrs: { fieldType: 'signature', label: 'Signatur' } })
                     .run()
                 }
+                disabled={!isPageReady}
               />
               <InsertButton
                 icon={<User size={13} />}
@@ -141,6 +169,7 @@ export default function BlocksSidebar() {
                     .insertContent({ type: 'signatureBlock', attrs: { fieldType: 'name', label: 'Fullständigt namn' } })
                     .run()
                 }
+                disabled={!isPageReady}
               />
               <InsertButton
                 icon={<CalendarBlank size={13} />}
@@ -152,6 +181,7 @@ export default function BlocksSidebar() {
                     .insertContent({ type: 'signatureBlock', attrs: { fieldType: 'date', label: 'Signeringsdatum' } })
                     .run()
                 }
+                disabled={!isPageReady}
               />
             </Section>
           </div>
@@ -187,16 +217,19 @@ function InsertButton({
   icon,
   label,
   onClick,
+  disabled = false,
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-left transition-colors hover:border-[var(--accent-border)] hover:bg-[var(--accent-subtle)]"
+      disabled={disabled}
+      className="flex w-full items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-left transition-colors hover:border-[var(--accent-border)] hover:bg-[var(--accent-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
     >
       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[var(--surface-2)] text-[var(--accent)]">
         {icon}
@@ -210,17 +243,20 @@ function VariableButton({
   label,
   tokenKey,
   onClick,
+  disabled = false,
 }: {
   label: string;
   tokenKey: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       title={`Infogar ${tokenKey}`}
-      className="flex w-full items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-left transition-colors hover:border-[var(--accent-border)] hover:bg-[var(--accent-subtle)]"
+      className="flex w-full items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-left transition-colors hover:border-[var(--accent-border)] hover:bg-[var(--accent-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
     >
       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-violet-50 text-violet-600">
         <BracketsCurly size={12} />

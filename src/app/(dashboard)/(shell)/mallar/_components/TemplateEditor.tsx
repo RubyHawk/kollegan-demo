@@ -17,7 +17,7 @@
  *   [BlocksSidebar 208px] | [TopToolbar + DocumentCanvas flex-1] | [BlockSettingsSidebar 256px]
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { CustomImage } from './extensions/custom-image.extension';
@@ -110,6 +110,7 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
   // ── Multi-page state ────────────────────────────────────────────────────────
   const [pages, setPages]       = useState<PageDoc[]>(initDoc.current.pages);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [activePageReady, setActivePageReady] = useState(true);
 
   // Active page header/footer display state (enabled / useDefault toggles)
   const [activeHeader, setActiveHeader] = useState(() => ({
@@ -256,6 +257,28 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, headerPageOverride, footerPageOverride]);
 
+  const hydrateEditorsForPage = useCallback((page: PageDoc) => {
+    if (!editor || !headerPageOverride || !footerPageOverride) return;
+
+    editor.commands.setContent(
+      EMPTY_DOC as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
+      { emitUpdate: false },
+    );
+    editor.commands.setContent(
+      page.body as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
+    );
+    headerPageOverride.commands.setContent(
+      page.header.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
+    );
+    footerPageOverride.commands.setContent(
+      page.footer.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
+    );
+    setActiveHeader({ enabled: page.header.enabled, useDefault: page.header.useDefault });
+    setActiveFooter({ enabled: page.footer.enabled, useDefault: page.footer.useDefault });
+    loadedPageIdRef.current = page.id;
+    setActivePageReady(true);
+  }, [editor, footerPageOverride, headerPageOverride]);
+
   // ── Page management callbacks ────────────────────────────────────────────────
 
   const switchPage = useCallback((newIdx: number) => {
@@ -269,9 +292,11 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
     if (!newPage) return;
 
     // 2. Commit state first. The page-specific editor content is hydrated by an
-    // effect after the correct canvas/wrapper has mounted. This avoids rendering
-    // presentation-image content inside the old document-page shell (and vice versa),
-    // which was causing flaky image nodeviews when jumping between page types.
+    // effect after the correct canvas/wrapper has mounted. Hydrating too early can
+    // attach image nodeviews to the previous page shell, which leaves behind empty
+    // image wrappers when the next image is inserted or resized.
+    loadedPageIdRef.current = null;
+    setActivePageReady(false);
     setPages(flushed);
     setActiveIdx(newIdx);
   }, [flushPage]);
@@ -298,6 +323,8 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
     const newPages  = [...flushed, newPage];
     const newIdx    = newPages.length - 1;
 
+    loadedPageIdRef.current = null;
+    setActivePageReady(false);
     setPages(newPages);
     setActiveIdx(newIdx);
   }, [flushPage]);
@@ -314,6 +341,11 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
       ? curIdx - 1
       : Math.min(curIdx, newPages.length - 1);
 
+    const targetPage = newPages[newIdx];
+    if (targetPage) {
+      loadedPageIdRef.current = null;
+      setActivePageReady(false);
+    }
     setPages(newPages);
     setActiveIdx(newIdx);
   }, [flushPage]);
@@ -387,25 +419,14 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
     onMigrationNotice?.(initDoc.current.migrationNotice ?? null);
   }, [onMigrationNotice]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!editor || !headerPageOverride || !footerPageOverride) return;
     const targetPage = pages[activeIdx];
     if (!targetPage) return;
     if (loadedPageIdRef.current === targetPage.id) return;
 
-    editor.commands.setContent(
-      targetPage.body as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
-    );
-    headerPageOverride.commands.setContent(
-      targetPage.header.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
-    );
-    footerPageOverride.commands.setContent(
-      targetPage.footer.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
-    );
-    setActiveHeader({ enabled: targetPage.header.enabled, useDefault: targetPage.header.useDefault });
-    setActiveFooter({ enabled: targetPage.footer.enabled, useDefault: targetPage.footer.useDefault });
-    loadedPageIdRef.current = targetPage.id;
-  }, [activeIdx, editor, footerPageOverride, headerPageOverride, pages]);
+    hydrateEditorsForPage(targetPage);
+  }, [activeIdx, hydrateEditorsForPage, pages]);
 
   // ── Expose handle to parent pages ────────────────────────────────────────────
 
@@ -431,9 +452,8 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
         const firstPage = doc.pages[0] ?? makeEmptyPage();
         headerDefault?.commands.setContent(doc.defaultHeader as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
         footerDefault?.commands.setContent(doc.defaultFooter as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
-        setActiveHeader({ enabled: firstPage.header.enabled, useDefault: firstPage.header.useDefault });
-        setActiveFooter({ enabled: firstPage.footer.enabled, useDefault: firstPage.footer.useDefault });
         loadedPageIdRef.current = null;
+        setActivePageReady(false);
         setPages(doc.pages);
         setActiveIdx(0);
       },
@@ -466,6 +486,7 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
         patchActiveFooter,
         docSettings,
         patchDocSettings,
+        activePageReady,
       }}>
         <div className="template-editor-light flex h-full overflow-hidden bg-[var(--surface-2)]">
           <BlocksSidebar />
