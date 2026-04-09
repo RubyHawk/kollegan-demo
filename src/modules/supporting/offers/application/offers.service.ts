@@ -23,10 +23,38 @@ import { dispatchCreatorNotification, dispatchOfferEmail, dispatchReminderEmail 
 import { prisma } from '@platform/database/prisma';
 import { computeOfferValidUntil } from '../domain/validity';
 import { assertOfferReadyForSend } from './publish-validation';
+import type { OfferBrandingProfile } from './company-branding';
 
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
 
 const TAG = 'OffersService';
+
+export function resolveGeneratedDocumentForSend(input: {
+  existingGeneratedDocument?: string;
+  templateContent?: string;
+  sendSnapshot: Offer;
+  branding: OfferBrandingProfile;
+}): { generatedDocument: string; usesCurrentTemplate: boolean } {
+  const storedSnapshot = input.existingGeneratedDocument?.trim();
+  if (storedSnapshot) {
+    return {
+      generatedDocument: input.existingGeneratedDocument!,
+      usesCurrentTemplate: false,
+    };
+  }
+
+  if (input.templateContent) {
+    return {
+      generatedDocument: generateDocument(input.templateContent, input.sendSnapshot, input.branding),
+      usesCurrentTemplate: true,
+    };
+  }
+
+  return {
+    generatedDocument: generateFallbackDocument(input.sendSnapshot, input.branding),
+    usesCurrentTemplate: false,
+  };
+}
 
 async function getOfferResponsibleUser(userId: string) {
   const user = await prisma.user.findUnique({
@@ -112,7 +140,10 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
     validUntil: validUntil.toISOString(),
   };
 
-  let generatedDocument: string | undefined;
+  let generatedDocument: string | undefined = existing.generatedDocument?.trim()
+    ? existing.generatedDocument
+    : undefined;
+  let generatedDocumentUsesCurrentTemplate = false;
   let emailSubject: string | undefined = existing.emailSubject;
   let emailBody: string | undefined = existing.emailBody;
   let emailHeaderConfig: string | undefined = existing.emailHeaderConfig;
@@ -132,7 +163,16 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
     const template = await templatesRepository.findById(existing.templateId, orgId);
     if (template) {
       templateContent = template.content;
-      generatedDocument = generateDocument(template.content, sendSnapshot, branding);
+      if (!generatedDocument) {
+        const resolvedDocument = resolveGeneratedDocumentForSend({
+          existingGeneratedDocument: existing.generatedDocument,
+          templateContent: template.content,
+          sendSnapshot,
+          branding,
+        });
+        generatedDocument = resolvedDocument.generatedDocument;
+        generatedDocumentUsesCurrentTemplate = resolvedDocument.usesCurrentTemplate;
+      }
       if (!emailSubject && template.emailSubject) emailSubject = template.emailSubject;
       if (!emailBody && template.emailBody) emailBody = template.emailBody;
       if (!emailHeaderConfig && template.emailHeaderConfig) emailHeaderConfig = template.emailHeaderConfig;
@@ -140,14 +180,20 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   }
 
   if (!generatedDocument) {
-    generatedDocument = generateFallbackDocument(sendSnapshot, branding);
+    const resolvedDocument = resolveGeneratedDocumentForSend({
+      existingGeneratedDocument: existing.generatedDocument,
+      sendSnapshot,
+      branding,
+    });
+    generatedDocument = resolvedDocument.generatedDocument;
+    generatedDocumentUsesCurrentTemplate = resolvedDocument.usesCurrentTemplate;
   }
 
   assertOfferReadyForSend({
     offer: sendSnapshot,
     branding,
     generatedDocument: generatedDocument ?? existing.generatedDocument ?? '',
-    templateContent,
+    templateContent: generatedDocumentUsesCurrentTemplate ? templateContent : undefined,
     company,
   });
 
