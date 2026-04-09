@@ -69,11 +69,19 @@ const SIG_FONTS = [
 function fmtSEK(n: number) {
   return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(n);
 }
+const SWEDISH_MONTHS_SHORT = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'] as const;
+
+function formatCompactSwedishDate(value: string | Date) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return `${date.getDate()} ${SWEDISH_MONTHS_SHORT[date.getMonth()]} ${date.getFullYear()}`;
+}
+
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'long', year: 'numeric' });
+  return formatCompactSwedishDate(iso);
 }
 function todaySv() {
-  return new Date().toLocaleDateString('sv-SE');
+  return formatCompactSwedishDate(new Date());
 }
 function getStatusLabel(status: OfferStatus) {
   const labels: Record<OfferStatus, string> = {
@@ -115,6 +123,33 @@ function normalizeOfferText(text: string): string {
     .replace(/Â /g, '\u00a0')
     .replace(/Â·/g, '·')
     .replace(/Â(?=[\u00a0 0-9%.,:;|kr])/g, '');
+}
+
+function compactDateText(value: string): string {
+  const trimmed = normalizeOfferText(value).trim();
+  const parts = trimmed.match(/^(\d{1,2})\s+([A-Za-zÅÄÖåäö.]+)\s+(\d{4})$/);
+  if (!parts) return trimmed;
+
+  const [, dayValue, monthValue, yearValue] = parts;
+  const normalizedMonth = monthValue.toLocaleLowerCase('sv-SE').replace(/\.$/, '');
+  const monthMap: Record<string, number> = {
+    januari: 0, jan: 0,
+    februari: 1, feb: 1,
+    mars: 2, mar: 2,
+    april: 3, apr: 3,
+    maj: 4,
+    juni: 5, jun: 5,
+    juli: 6, jul: 6,
+    augusti: 7, aug: 7,
+    september: 8, sep: 8,
+    oktober: 9, okt: 9,
+    november: 10, nov: 10,
+    december: 11, dec: 11,
+  };
+  const monthIndex = monthMap[normalizedMonth];
+  if (monthIndex == null) return trimmed;
+
+  return `${Number(dayValue)} ${SWEDISH_MONTHS_SHORT[monthIndex]} ${yearValue}`;
 }
 
 function isPromoPageBlock(pageBlock: HTMLElement): boolean {
@@ -442,7 +477,7 @@ export default function PublicOfferPage() {
     const responsiveStyle = doc.createElement('style');
     responsiveStyle.textContent = `
       html, body {
-        background: #edf2f8 !important;
+        background: #ffffff !important;
         color: #14263f !important;
         font-family: Aptos, "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
       }
@@ -452,22 +487,23 @@ export default function PublicOfferPage() {
       table { max-width: 100% !important; width: 100%; table-layout: fixed; }
       td, th { word-break: break-word; overflow-wrap: break-word; }
       pre, code { white-space: pre-wrap !important; word-break: break-word !important; overflow-x: hidden !important; }
-      .doc-wrapper { padding-bottom: 8px !important; }
+      .doc-wrapper { padding-bottom: 0 !important; background: #ffffff !important; }
       .page-separator { display: none !important; }
       .page-block {
-        margin: 0 0 18px !important;
+        margin: 0 !important;
         overflow: hidden !important;
+        background: #ffffff !important;
       }
       .page-content--document {
         min-height: 920px !important;
-        padding: 34px 38px 32px !important;
-        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+        padding: 36px 40px 34px !important;
+        background: #ffffff !important;
       }
       .page-block--document {
-        border: 1px solid #d7e2ee !important;
-        border-radius: 24px !important;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
-        box-shadow: 0 20px 44px rgba(15, 23, 42, 0.08) !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: #ffffff !important;
+        box-shadow: none !important;
       }
       .offer-shell {
         gap: 18px !important;
@@ -475,66 +511,72 @@ export default function PublicOfferPage() {
         font-family: Aptos, "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
       }
       .offer-shell__header, .offer-shell__topline { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(208px, 244px) !important; gap: 16px !important; align-items: flex-start !important; }
+      .offer-shell__header { padding-bottom: 18px !important; border-bottom: 1px solid #d9e3ee !important; }
       .offer-shell__sender { gap: 12px !important; align-items: flex-start !important; }
       .offer-shell__logo { width: 48px !important; height: 48px !important; }
       .offer-shell__sender-copy { display: grid !important; gap: 3px !important; font-size: 12.5px !important; line-height: 1.55 !important; color: #465a73 !important; }
       .offer-shell__sender-name { color: #10233b !important; font-weight: 700 !important; }
-      .offer-shell__meta { min-width: 0 !important; display: grid !important; gap: 10px !important; justify-items: end !important; text-align: right !important; }
-      .offer-shell__status { margin: 0 !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 6px 12px !important; border-radius: 999px !important; font-size: 11px !important; font-weight: 700 !important; box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.18) !important; }
+      .offer-shell__meta { min-width: 0 !important; display: grid !important; gap: 8px !important; justify-items: end !important; text-align: right !important; }
+      .offer-shell__status { display: none !important; }
       .offer-shell__status--draft { background: #e2e8f0 !important; color: #334155 !important; }
       .offer-shell__status--sent, .offer-shell__status--viewed { background: #dbeafe !important; color: #1d4ed8 !important; }
       .offer-shell__status--accepted { background: #dcfce7 !important; color: #166534 !important; }
       .offer-shell__status--declined { background: #fee2e2 !important; color: #b91c1c !important; }
       .offer-shell__status--expired { background: #f3f4f6 !important; color: #6b7280 !important; }
-      .offer-shell__meta dl { display: grid !important; gap: 7px !important; width: 100% !important; }
-      .offer-shell__meta dl div { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; justify-content: flex-end !important; gap: 10px !important; }
+      .offer-shell__meta dl { display: grid !important; gap: 6px !important; width: 100% !important; }
+      .offer-shell__meta dl div { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; justify-content: flex-end !important; gap: 10px !important; padding: 4px 0 !important; border-bottom: 1px solid #edf2f7 !important; }
+      .offer-shell__meta dl div:first-child { padding-top: 0 !important; }
+      .offer-shell__meta dl div:last-child { padding-bottom: 0 !important; border-bottom: none !important; }
       .offer-shell__meta dt { font-size: 10px !important; line-height: 1.35 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; color: #6b7e95 !important; }
-      .offer-shell__meta dd { font-size: 13px !important; line-height: 1.45 !important; font-weight: 700 !important; color: #10233b !important; }
-      .offer-shell__topline { padding-bottom: 16px !important; border-bottom: 1px solid #dce6f0 !important; }
-      .offer-shell__topline h1 { font-size: 20px !important; line-height: 1.25 !important; color: #10233b !important; }
+      .offer-shell__meta dd { font-size: 12.5px !important; line-height: 1.35 !important; font-weight: 700 !important; color: #10233b !important; white-space: nowrap !important; }
+      .offer-shell__meta dd small { display: block !important; margin-top: 2px !important; font-size: 11px !important; line-height: 1.35 !important; font-weight: 500 !important; color: #5f738a !important; }
+      .offer-shell__meta .offer-shell__meta-row--recipient dd { white-space: normal !important; }
+      .offer-shell__topline { padding-bottom: 18px !important; border-bottom: 1px solid #d9e3ee !important; }
+      .offer-shell__topline h1 { font-size: 22px !important; line-height: 1.22 !important; color: #10233b !important; letter-spacing: -0.02em !important; }
       .offer-shell__customer { min-width: 0 !important; display: grid !important; gap: 4px !important; padding-left: 14px !important; border-left: 1px solid #dce6f0 !important; font-size: 13px !important; line-height: 1.6 !important; color: #465a73 !important; }
       .offer-section { gap: 10px !important; }
-      .offer-section h2, .offer-section h3, .offer-table-header h2 { font-size: 12px !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; color: #6b7e95 !important; }
-      .offer-section p { font-size: 13.5px !important; line-height: 1.76 !important; color: #34485f !important; }
+      .offer-section h2, .offer-section h3 { font-size: 12px !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; color: #6b7e95 !important; }
+      .offer-table-header h2 { font-size: 24px !important; line-height: 1.18 !important; letter-spacing: -0.03em !important; text-transform: none !important; color: #10233b !important; }
+      .offer-section p { font-size: 14px !important; line-height: 1.8 !important; color: #34485f !important; }
       .offer-section--terms,
       .offer-section--notes {
         margin-top: 14px !important;
         padding: 16px 18px !important;
-        border: 1px solid #dce6f0 !important;
-        border-radius: 18px !important;
-        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+        border: 1px solid #d9e3ee !important;
+        border-radius: 14px !important;
+        background: #ffffff !important;
       }
-      .offer-summary { width: min(254px, 100%) !important; border: 1px solid #d7e2ee !important; border-radius: 18px !important; background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important; padding: 8px 0 !important; gap: 0 !important; overflow: hidden !important; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06) !important; }
-      .offer-summary--below { width: min(380px, 100%) !important; margin-top: 14px !important; margin-left: auto !important; }
-      .offer-summary__row { font-size: 13px !important; padding: 8px 16px !important; border-bottom: none !important; color: #465a73 !important; align-items: baseline !important; line-height: 1.55 !important; }
-      .offer-summary__row strong { color: #10233b !important; }
+      .offer-summary { width: min(272px, 100%) !important; border: 1px solid #d9e3ee !important; border-radius: 14px !important; background: #ffffff !important; padding: 0 !important; gap: 0 !important; overflow: hidden !important; box-shadow: none !important; }
+      .offer-summary--below { width: min(388px, 100%) !important; margin-top: 16px !important; margin-left: auto !important; }
+      .offer-summary__row { font-size: 13px !important; padding: 11px 16px !important; border-bottom: 1px solid #e5ecf3 !important; color: #465a73 !important; align-items: baseline !important; line-height: 1.55 !important; }
+      .offer-summary__row strong { color: #10233b !important; font-weight: 700 !important; }
       .offer-summary__row--total {
-        margin-top: 8px !important;
+        margin-top: 0 !important;
         padding: 14px 16px 13px !important;
-        border-top: none !important;
+        border-top: 1px solid #142742 !important;
         border-bottom: none !important;
         background: linear-gradient(135deg, #13233a 0%, #223b63 100%) !important;
         color: #eff6ff !important;
-        font-size: 14px !important;
+        font-size: 15px !important;
       }
       .offer-summary__row--total,
       .offer-summary__row--total strong,
       .offer-summary__row--total span {
         color: #ffffff !important;
       }
-      .offer-summary__row--total strong { font-size: 19px !important; letter-spacing: -0.02em !important; }
+      .offer-summary__row--total strong { font-size: 20px !important; letter-spacing: -0.02em !important; }
       .offer-shell__footer { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)) !important; gap: 14px !important; padding-top: 16px !important; margin-top: 18px !important; border-top: 1px solid #dce6f0 !important; }
       .offer-shell__footer div { font-size: 13px !important; line-height: 1.6 !important; color: #465a73 !important; }
       .offer-shell__footer strong { color: #10233b !important; }
       .offer-items { display: grid !important; gap: 14px !important; }
-      .offer-items__table { display: block !important; border: 1px solid #d7e2ee !important; border-radius: 20px !important; background: #ffffff !important; overflow: hidden !important; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05) !important; }
+      .offer-items__table { display: block !important; border: 1px solid #d9e3ee !important; border-radius: 14px !important; background: #ffffff !important; overflow: hidden !important; box-shadow: none !important; }
       .offer-items__head, .offer-item-row { display: grid !important; grid-template-columns: var(--offer-columns) !important; align-items: start !important; }
       .offer-items__head { gap: 14px !important; padding: 12px 16px !important; background: linear-gradient(180deg, #f7faff 0%, #edf3fb 100%) !important; border-bottom: 1px solid #d9e4ef !important; color: #6b7e95 !important; font-size: 10.5px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; }
       .offer-item-row { gap: 14px !important; padding: 16px !important; border-bottom: 1px solid #edf2f7 !important; }
       .offer-item-row:last-child { border-bottom: none !important; }
       .offer-item-row__product { display: grid !important; gap: 6px !important; min-width: 0 !important; }
-      .offer-item-row__title { font-size: 15.5px !important; line-height: 1.36 !important; font-weight: 700 !important; color: #10233b !important; }
-      .offer-item-row__detail { font-size: 13px !important; line-height: 1.72 !important; color: #5f738a !important; }
+      .offer-item-row__title { font-size: 16px !important; line-height: 1.36 !important; font-weight: 700 !important; color: #10233b !important; }
+      .offer-item-row__detail { font-size: 13px !important; line-height: 1.78 !important; color: #5f738a !important; }
       .offer-item-row__value { text-align: right !important; font-size: 14px !important; line-height: 1.55 !important; color: #42576f !important; }
       .offer-item-row__value--strong { font-weight: 700 !important; color: #10233b !important; }
       .offer-items__cards { display: none !important; }
@@ -558,80 +600,98 @@ export default function PublicOfferPage() {
       }
       .offer-item-card__metric--total dd { font-size: 18px !important; font-weight: 800 !important; letter-spacing: -0.02em !important; }
       html.offer-mobile, html.offer-mobile body {
-        background: #f4f7fb !important;
+        background: #ffffff !important;
       }
       html.offer-mobile .doc-wrapper { width: 100% !important; max-width: none !important; margin: 0 !important; border: none !important; border-radius: 0 !important; padding-bottom: 0 !important; }
-      html.offer-mobile .page-block { margin: 0 0 12px !important; min-height: 0 !important; height: auto !important; }
+      html.offer-mobile .page-block { margin: 0 !important; min-height: 0 !important; height: auto !important; }
       html.offer-mobile .page-content,
       html.offer-mobile .page-content--edge-to-edge,
       html.offer-mobile .page-content--document { min-height: 0 !important; height: auto !important; }
       html.offer-mobile .page-content--edge-to-edge > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; line-height: 0 !important; }
       html.offer-mobile .page-content--edge-to-edge > div[style*="position:absolute"] img { width: 100% !important; max-width: none !important; height: auto !important; object-fit: cover !important; border-radius: 0 !important; }
-      html.offer-mobile .page-block--document {
-        margin: 0 12px 16px !important;
-        border-radius: 22px !important;
-        box-shadow: 0 18px 34px rgba(15, 23, 42, 0.10) !important;
-      }
+      html.offer-mobile .page-block--document { margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
       html.offer-mobile .page-content--document {
-        padding: 22px 18px 20px !important;
+        padding: 20px 14px 18px !important;
       }
       html.offer-mobile .offer-shell {
         gap: 16px !important;
       }
-      html.offer-mobile .offer-shell__header, html.offer-mobile .offer-shell__topline { grid-template-columns: minmax(0, 1fr) 154px !important; gap: 12px !important; }
-      html.offer-mobile .offer-shell__meta { justify-items: end !important; text-align: right !important; }
-      html.offer-mobile .offer-shell__meta dl div { grid-template-columns: 1fr !important; gap: 2px !important; justify-items: end !important; }
-      html.offer-mobile .offer-shell__meta dt { font-size: 11.5px !important; line-height: 1.45 !important; }
-      html.offer-mobile .offer-shell__meta dd { font-size: 13px !important; line-height: 1.45 !important; white-space: normal !important; }
+      html.offer-mobile .offer-shell__header, html.offer-mobile .offer-shell__topline { grid-template-columns: 1fr !important; gap: 12px !important; }
+      html.offer-mobile .offer-shell__header { padding-bottom: 16px !important; }
+      html.offer-mobile .offer-shell__sender { gap: 10px !important; }
+      html.offer-mobile .offer-shell__logo { width: 44px !important; height: 44px !important; }
+      html.offer-mobile .offer-shell__meta { justify-items: stretch !important; text-align: left !important; padding: 14px !important; }
+      html.offer-mobile .offer-shell__meta dl div { grid-template-columns: minmax(0, 1fr) auto !important; gap: 8px !important; align-items: end !important; }
+      html.offer-mobile .offer-shell__meta .offer-shell__meta-row--recipient { grid-template-columns: 1fr !important; gap: 4px !important; }
+      html.offer-mobile .offer-shell__meta dt { font-size: 10.5px !important; line-height: 1.35 !important; }
+      html.offer-mobile .offer-shell__meta dd { font-size: 13px !important; line-height: 1.35 !important; text-align: right !important; white-space: nowrap !important; }
+      html.offer-mobile .offer-shell__meta dd small { font-size: 11px !important; }
+      html.offer-mobile .offer-shell__meta .offer-shell__meta-row--recipient dd { text-align: left !important; white-space: normal !important; }
       html.offer-mobile .offer-shell__customer { padding-left: 10px !important; font-size: 13px !important; line-height: 1.55 !important; }
-      html.offer-mobile .offer-shell__sender-copy { font-size: 13.5px !important; line-height: 1.58 !important; }
-      html.offer-mobile .offer-section p { font-size: 14px !important; line-height: 1.74 !important; }
-      html.offer-mobile .offer-item-card__title { font-size: 17px !important; line-height: 1.35 !important; }
-      html.offer-mobile .offer-item-card__detail { display: none !important; }
+      html.offer-mobile .offer-shell__sender-copy { font-size: 12.5px !important; line-height: 1.55 !important; }
+      html.offer-mobile .offer-section p { font-size: 14px !important; line-height: 1.76 !important; }
+      html.offer-mobile .offer-table-header h2 { font-size: 22px !important; line-height: 1.2 !important; }
+      html.offer-mobile .offer-item-card__top { gap: 4px !important; padding: 14px 14px 12px !important; }
+      html.offer-mobile .offer-item-card__eyebrow { font-size: 9.5px !important; }
+      html.offer-mobile .offer-item-card__title { font-size: 18px !important; line-height: 1.32 !important; }
+      html.offer-mobile .offer-item-card__detail { display: block !important; font-size: 12.5px !important; line-height: 1.62 !important; }
       html.offer-mobile .offer-items__table { display: none !important; }
       html.offer-mobile .offer-items__cards { display: grid !important; gap: 14px !important; }
-      html.offer-mobile .offer-item-card { border-color: #d2deeb !important; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08) !important; background: #ffffff !important; }
-      html.offer-mobile .offer-item-card__metric { background: #ffffff !important; }
+      html.offer-mobile .offer-item-card { border-color: #d9e3ee !important; box-shadow: none !important; background: #ffffff !important; }
+      html.offer-mobile .offer-item-card__metric { padding: 12px 14px !important; background: #ffffff !important; }
+      html.offer-mobile .offer-item-card__metric dt { font-size: 11px !important; }
+      html.offer-mobile .offer-item-card__metric dd { font-size: 14px !important; }
       html.offer-mobile .offer-item-card__metric:nth-child(even) { background: #fbfdff !important; }
       html.offer-mobile .offer-item-card__metric--total { border-top: 1px solid rgba(255,255,255,0.16) !important; }
       html.offer-mobile .offer-item-card__metric--total dd { font-size: 20px !important; font-weight: 800 !important; color: #ffffff !important; }
       html.offer-mobile .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
-      html.offer-mobile .offer-summary { width: 100% !important; border-radius: 18px !important; padding: 8px 0 !important; margin-top: 18px !important; border-color: #d2deeb !important; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08) !important; }
+      html.offer-mobile .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 0 !important; margin-top: 18px !important; border-color: #d9e3ee !important; box-shadow: none !important; }
       html.offer-mobile .offer-summary--below { width: 100% !important; margin-top: 18px !important; }
-      html.offer-mobile .offer-summary__row { font-size: 14px !important; padding: 9px 14px !important; line-height: 1.55 !important; }
+      html.offer-mobile .offer-summary__row { font-size: 13.5px !important; padding: 11px 14px !important; line-height: 1.55 !important; border-bottom: 1px solid #e5ecf3 !important; }
       html.offer-mobile .offer-summary__row--total { font-size: 16px !important; padding: 13px 14px !important; }
-      html.offer-mobile .offer-summary__row--total strong { font-size: 20px !important; color: #ffffff !important; }
+      html.offer-mobile .offer-summary__row--total strong { font-size: 22px !important; color: #ffffff !important; }
       html.offer-mobile .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
       @media (max-width: 640px) {
-        .page-block { margin: 0 0 12px !important; min-height: 0 !important; height: auto !important; }
+        .page-block { margin: 0 !important; min-height: 0 !important; height: auto !important; }
         .page-content,
         .page-content--edge-to-edge,
         .page-content--document { min-height: 0 !important; height: auto !important; }
-        .page-block--document { margin: 0 12px 16px !important; border-radius: 22px !important; }
-        .page-content--document { padding: 22px 18px 20px !important; }
-        .offer-shell__header, .offer-shell__topline { grid-template-columns: minmax(0, 1fr) 154px !important; gap: 12px !important; }
-        .offer-shell__meta { justify-items: end !important; text-align: right !important; }
-        .offer-shell__meta dl div { grid-template-columns: 1fr !important; gap: 2px !important; justify-items: end !important; }
-        .offer-shell__meta dt { font-size: 11.5px !important; line-height: 1.45 !important; }
-        .offer-shell__meta dd { font-size: 13px !important; line-height: 1.45 !important; white-space: normal !important; }
+        .page-block--document { margin: 0 !important; border-radius: 0 !important; }
+        .page-content--document { padding: 20px 14px 18px !important; }
+        .offer-shell__header, .offer-shell__topline { grid-template-columns: 1fr !important; gap: 12px !important; }
+        .offer-shell__header { padding-bottom: 16px !important; }
+        .offer-shell__sender { gap: 10px !important; }
+        .offer-shell__logo { width: 44px !important; height: 44px !important; }
+        .offer-shell__meta { justify-items: stretch !important; text-align: left !important; padding: 14px !important; }
+        .offer-shell__meta dl div { grid-template-columns: minmax(0, 1fr) auto !important; gap: 8px !important; align-items: end !important; }
+        .offer-shell__meta .offer-shell__meta-row--recipient { grid-template-columns: 1fr !important; gap: 4px !important; }
+        .offer-shell__meta dt { font-size: 10.5px !important; line-height: 1.35 !important; }
+        .offer-shell__meta dd { font-size: 13px !important; line-height: 1.35 !important; text-align: right !important; white-space: nowrap !important; }
+        .offer-shell__meta dd small { font-size: 11px !important; }
+        .offer-shell__meta .offer-shell__meta-row--recipient dd { text-align: left !important; white-space: normal !important; }
         .offer-shell__customer { padding-left: 10px !important; font-size: 13px !important; line-height: 1.55 !important; }
-        .offer-shell__sender-copy { font-size: 13.5px !important; line-height: 1.58 !important; }
-        .offer-section p { font-size: 14px !important; line-height: 1.74 !important; }
-        .offer-item-card__title { font-size: 17px !important; line-height: 1.35 !important; }
-        .offer-item-card__detail { display: none !important; }
+        .offer-shell__sender-copy { font-size: 12.5px !important; line-height: 1.55 !important; }
+        .offer-section p { font-size: 14px !important; line-height: 1.76 !important; }
+        .offer-table-header h2 { font-size: 22px !important; line-height: 1.2 !important; }
+        .offer-item-card__top { gap: 4px !important; padding: 14px 14px 12px !important; }
+        .offer-item-card__eyebrow { font-size: 9.5px !important; }
+        .offer-item-card__title { font-size: 18px !important; line-height: 1.32 !important; }
+        .offer-item-card__detail { display: block !important; font-size: 12.5px !important; line-height: 1.62 !important; }
         .offer-items__table { display: none !important; }
         .offer-items__cards { display: grid !important; gap: 14px !important; }
-        .offer-item-card { border-color: #d2deeb !important; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08) !important; background: #ffffff !important; }
-        .offer-item-card__metric { background: #ffffff !important; }
+        .offer-item-card { border-color: #d9e3ee !important; box-shadow: none !important; background: #ffffff !important; }
+        .offer-item-card__metric { padding: 12px 14px !important; background: #ffffff !important; }
+        .offer-item-card__metric dt { font-size: 11px !important; }
+        .offer-item-card__metric dd { font-size: 14px !important; }
         .offer-item-card__metric:nth-child(even) { background: #fbfdff !important; }
         .offer-item-card__metric--total { border-top: 1px solid rgba(255,255,255,0.16) !important; }
         .offer-item-card__metric--total dd { font-size: 20px !important; font-weight: 800 !important; color: #ffffff !important; }
         .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
-        .offer-summary { width: 100% !important; border-radius: 18px !important; padding: 8px 0 !important; margin-top: 18px !important; border-color: #d2deeb !important; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08) !important; }
+        .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 0 !important; margin-top: 18px !important; border-color: #d9e3ee !important; box-shadow: none !important; }
         .offer-summary--below { width: 100% !important; margin-top: 18px !important; }
-        .offer-summary__row { font-size: 14px !important; padding: 9px 14px !important; line-height: 1.55 !important; }
+        .offer-summary__row { font-size: 13.5px !important; padding: 11px 14px !important; line-height: 1.55 !important; border-bottom: 1px solid #e5ecf3 !important; }
         .offer-summary__row--total { font-size: 16px !important; padding: 13px 14px !important; }
-        .offer-summary__row--total strong { font-size: 20px !important; color: #ffffff !important; }
+        .offer-summary__row--total strong { font-size: 22px !important; color: #ffffff !important; }
         .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
       }
     `;
@@ -701,6 +761,46 @@ export default function PublicOfferPage() {
       if (label === 'prisvisning') item.remove();
     });
 
+    doc.querySelectorAll<HTMLElement>('.offer-shell__status, .offer-shell__title').forEach((item) => item.remove());
+
+    const offerTitleHeading = doc.querySelector<HTMLElement>('.offer-shell__topline h1');
+    const offerTitleText = offerTitleHeading?.textContent?.trim() ?? '';
+    const customerCard = doc.querySelector<HTMLElement>('.offer-shell__customer-card');
+    const metaList = doc.querySelector<HTMLElement>('.offer-shell__meta dl');
+    if (customerCard && metaList) {
+      const customerName = customerCard.querySelector<HTMLElement>('.offer-shell__customer-primary, .offer-shell__customer-name')?.textContent?.trim()
+        ?? customerCard.querySelector('p')?.textContent?.trim()
+        ?? '';
+      const customerEmail = Array.from(customerCard.querySelectorAll('p, span'))
+        .map((line) => line.textContent?.trim() ?? '')
+        .find((line) => line.includes('@')) ?? '';
+
+      if (customerName || customerEmail) {
+        const customerRow = doc.createElement('div');
+        customerRow.className = 'offer-shell__meta-row--recipient';
+        customerRow.innerHTML = `<dt>Offert till</dt><dd>${normalizeOfferText(customerName || '')}${customerEmail ? `<small>${normalizeOfferText(customerEmail)}</small>` : ''}</dd>`;
+        metaList.appendChild(customerRow);
+      }
+      customerCard.remove();
+    }
+
+    if (offerTitleText) {
+      const sectionHeading = Array.from(doc.querySelectorAll<HTMLElement>('.offer-section h2, .offer-table-header h2'))
+        .find((item) => item.textContent?.replace(/\s+/g, ' ').trim().toLocaleLowerCase('sv-SE') === 'produkter och tjänster');
+      if (sectionHeading) {
+        sectionHeading.textContent = offerTitleText;
+      }
+    }
+
+    doc.querySelectorAll<HTMLElement>('.offer-shell__topline').forEach((item) => item.remove());
+
+    doc.querySelectorAll<HTMLElement>('.offer-shell__meta dd').forEach((item) => {
+      const text = item.childNodes.length === 1 ? (item.textContent?.trim() ?? '') : '';
+      if (!text) return;
+      const compact = compactDateText(text);
+      if (compact !== text) item.textContent = compact;
+    });
+
     stripLegacyLineItemTables(doc);
 
     const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
@@ -711,13 +811,6 @@ export default function PublicOfferPage() {
       if (normalized !== value) node.nodeValue = normalized;
     }
 
-    const legacyMetaTitle = doc.querySelector<HTMLElement>('.offer-shell__title');
-    if (legacyMetaTitle && offer) {
-      legacyMetaTitle.textContent = getStatusLabel(offer.status);
-      legacyMetaTitle.className = offer.status === 'accepted' || offer.status === 'declined' || offer.status === 'expired'
-        ? `offer-shell__status offer-shell__status--${offer.status}`
-        : 'offer-shell__title';
-    }
 
     // ── Viewport scaling ───────────────────────────────────────────────────────
     // The document is authored at 816 px. On narrower viewports we scale the
