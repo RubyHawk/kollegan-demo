@@ -26,7 +26,7 @@ import {
   TrashIcon,
 } from '@shared/ui/icons';
 import { BrandMark } from '@shared/ui/brand';
-import { summarizeOfferPricing } from '@modules/supporting/offers/domain/pricing';
+import { summarizePersistedOfferPricing } from '@modules/supporting/offers/domain/pricing';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -349,11 +349,9 @@ export default function PublicOfferPage() {
   const [sigFont, setSigFont] = useState<typeof SIG_FONTS[number]['id']>(SIG_FONTS[0].id);
   const [typedSig, setTypedSig] = useState('');
 
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [documentReady, setDocumentReady] = useState(false);
   const [offerSectionOffset, setOfferSectionOffset] = useState(0);
   const [promoPageCount, setPromoPageCount] = useState(0);
-  const [jumpScrollBuffer, setJumpScrollBuffer] = useState(0);
 
   const sigRef = useRef<SignatureCanvas>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
@@ -408,7 +406,6 @@ export default function PublicOfferPage() {
   useEffect(() => {
     setDocumentReady(false);
     setOfferSectionOffset(0);
-    setJumpScrollBuffer(0);
   }, [iframeDocumentHtml]);
 
   // The app shell uses a globally locked viewport, but the public signing page
@@ -433,25 +430,6 @@ export default function PublicOfferPage() {
   }, []);
 
   // ── Scroll progress ──────────────────────────────────────────────────────────
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollRoot = document.documentElement;
-      const total = scrollRoot.scrollHeight - window.innerHeight;
-      if (total <= 0) {
-        setScrollProgress(100);
-        return;
-      }
-      setScrollProgress(Math.min(100, Math.max(0, Math.round((window.scrollY / total) * 100))));
-    };
-
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
-    };
-  }, []);
 
   // ── Iframe setup ─────────────────────────────────────────────────────────────
   const handleIframeLoad = useCallback(() => {
@@ -1010,7 +988,7 @@ export default function PublicOfferPage() {
 
   if (!offer) return null;
   const isDecline = state === 'declining';
-  const pricing = summarizeOfferPricing(offer.lineItems, offer.priceDisplayMode);
+  const pricing = summarizePersistedOfferPricing(offer);
 
   return (
     <motion.div
@@ -1088,7 +1066,7 @@ export default function PublicOfferPage() {
       >
         <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
 
-        {false && (
+        {promoPageCount > 0 && offerSectionOffset > 0 && (
           <div className="px-4 pb-4 pt-4 sm:px-0 sm:pt-0">
             <motion.div
               initial={{ opacity: 0, y: 8 }}

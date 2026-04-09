@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { chromium } from 'playwright';
 import { viewOffer } from '@modules/supporting/offers';
 import { resolveOfferBrandingForOffer } from '@modules/supporting/offers/application/offer-branding-profile';
-import { sanitizeGeneratedOfferDocument } from '@modules/supporting/offers/application/document-generator';
+import { sanitizePublicPdfOfferDocument } from '@modules/supporting/offers/application/public-offer-document';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -154,14 +154,6 @@ function buildPublicPdfHtml(
         : 'offer-shell__title',
     )};
 
-    document.querySelectorAll('.page-block[data-customer-pdf="false"]').forEach(function (block) {
-      var prev = block.previousElementSibling;
-      var next = block.nextElementSibling;
-      if (prev && prev.classList && prev.classList.contains('page-separator')) prev.remove();
-      else if (next && next.classList && next.classList.contains('page-separator')) next.remove();
-      block.remove();
-    });
-
     document.querySelectorAll('.offer-section--intro').forEach(function (section) {
       var text = (section.textContent || '').replace(/\\u00a0/g, ' ').trim();
       if (!text && !section.querySelector('img, hr, table, ul, ol')) section.remove();
@@ -243,7 +235,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   let documentHtml = offer.generatedDocument;
   try {
     const branding = await resolveOfferBrandingForOffer(offer);
-    documentHtml = sanitizeGeneratedOfferDocument(offer.generatedDocument, offer, branding);
+    documentHtml = sanitizePublicPdfOfferDocument(offer.generatedDocument, offer, branding);
   } catch {
     documentHtml = offer.generatedDocument;
   }

@@ -24,6 +24,7 @@ export interface OfferLineItem {
   unitPrice: number;
   vatRate: number;
   discount?: number;
+  sortOrder?: number;
 }
 
 export interface Offer {

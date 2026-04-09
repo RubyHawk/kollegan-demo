@@ -98,7 +98,7 @@ const LineItemSchema = z.object({
   unitPrice: z.number().min(0),
   vatRate: z.number().min(0).max(1).default(0.25),
   discount: z.number().min(0).max(100).default(0),
-  sortOrder: z.number().int().default(0),
+  sortOrder: z.number().int().optional(),
 });
 
 const VALID_VALIDITY_DAYS = [7, 14, 30, 60, 90] as const;

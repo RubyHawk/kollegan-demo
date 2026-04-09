@@ -392,7 +392,12 @@ export default function OffersPage() {
         recipientCompany: form.recipientCompany || undefined,
         notes:            form.notes || undefined,
         validityDays:     form.validityDays,
-        lineItems:        form.lineItems.filter((i) => i.description.trim() && i.quantity > 0),
+        lineItems:        form.lineItems
+          .filter((i) => i.description.trim() && i.quantity > 0)
+          .map((item, idx) => ({
+            ...item,
+            sortOrder: idx,
+          })),
       };
       if (form.templateId)    body.templateId   = form.templateId;
       if (form.contactId)     body.customerId   = form.contactId;
@@ -436,7 +441,19 @@ export default function OffersPage() {
       const res = await fetchWithRefresh(`/api/offers/${id}?action=${action}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
       });
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({})) as {
+          detail?: string;
+          blockingErrors?: Array<{ message?: string }>;
+        };
+        const blockingDetails = (payload.blockingErrors ?? [])
+          .map((issue) => issue.message?.trim())
+          .filter(Boolean);
+        const message = blockingDetails.length > 0
+          ? blockingDetails.join('\n')
+          : payload.detail ?? `Fel ${res.status}`;
+        throw new Error(message);
+      }
       await Promise.all([load(true), loadCounts()]);
     } catch (e) {
       setError((e as Error).message);
