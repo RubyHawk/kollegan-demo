@@ -12,6 +12,7 @@
  *   posY     — top  offset in px relative to the A4 page div (free mode)
  *   wrapText — text wrapping in free mode: 'none' | 'left' | 'right'
  *              When left/right the image uses float+margin instead of absolute
+ *   background — marks a free image as a background layer behind text
  *
  * All attributes are round-tripped through data-* HTML attributes so they
  * survive save/load and document-generator rendering.
@@ -133,6 +134,12 @@ export const CustomImage = Image.extend({
         default: 'none',
         parseHTML:  (el) => (el as HTMLElement).getAttribute('data-wraptext') ?? 'none',
         renderHTML: (attrs) => ({ 'data-wraptext': attrs.wrapText ?? 'none' }),
+      },
+
+      background: {
+        default: false,
+        parseHTML: (el) => (el as HTMLElement).getAttribute('data-background') === 'true',
+        renderHTML: (attrs) => (attrs.background ? { 'data-background': 'true' } : {}),
       },
     };
   },

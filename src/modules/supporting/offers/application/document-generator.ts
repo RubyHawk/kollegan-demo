@@ -129,8 +129,8 @@ function renderRichPlainText(value: string): string {
   return secureEscapeHtml(value).replace(/\r?\n/g, '<br />');
 }
 
-function resolveFreeImageRenderZIndex(zIndex: number): number {
-  if (zIndex < 0) return 0;
+function resolveFreeImageRenderZIndex(zIndex: number, background = false): number {
+  if (background || zIndex < 0) return 0;
   return 20 + zIndex;
 }
 
@@ -194,6 +194,7 @@ function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): st
       const posX     = Number(a.posX ?? 0);
       const posY     = Number(a.posY ?? 0);
       const zIdx     = Number(a.zIndex ?? 0);
+      const isBackground = a.background === true || a.background === 'true';
       const imgW     = a.width  ? Number(a.width)  : null;
       const imgH     = a.height ? Number(a.height) : null;
       const fit      = String(a.fit ?? (imgH ? 'cover' : 'contain'));
@@ -207,11 +208,11 @@ function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): st
           const ml = wrapText === 'left'  ? `margin-left:${posX}px;`                                              : '';
           const mr = wrapText === 'right' ? `margin-right:${Math.max(0, 816 - posX - (imgW ?? 200))}px;`          : '';
           const mt = posY > 0 ? `margin-top:${posY}px;` : '';
-          return `<div style="float:${wrapText};${ml}${mr}${mt}margin-bottom:8px;line-height:0;position:relative;z-index:${resolveFreeImageRenderZIndex(zIdx)};"><img src="${src}" alt="${alt}" title="${title}" style="${imgStyle}" /></div>`;
+          return `<div style="float:${wrapText};${ml}${mr}${mt}margin-bottom:8px;line-height:0;position:relative;z-index:${resolveFreeImageRenderZIndex(zIdx, isBackground)};"><img src="${src}" alt="${alt}" title="${title}" style="${imgStyle}" /></div>`;
         }
         // Pure overlay (absolute)
         const w = imgW ? `${imgW}px` : '200px';
-        return `<div style="position:absolute;left:${posX}px;top:${posY}px;width:${w};z-index:${resolveFreeImageRenderZIndex(zIdx)};line-height:0;"><img src="${src}" alt="${alt}" title="${title}" style="${imgStyle}" /></div>`;
+        return `<div style="position:absolute;left:${posX}px;top:${posY}px;width:${w};z-index:${resolveFreeImageRenderZIndex(zIdx, isBackground)};line-height:0;"><img src="${src}" alt="${alt}" title="${title}" style="${imgStyle}" /></div>`;
       }
 
       // Inline/float modes
