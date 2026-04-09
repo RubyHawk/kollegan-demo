@@ -242,9 +242,17 @@ export function buildPublicPdfHtml(
       if (customerName || customerEmail) {
         var customerRow = document.createElement('div');
         customerRow.className = 'offer-shell__meta-row--recipient';
-        var detailMarkup = normalizeOfferText(customerName || '');
-        if (customerEmail) detailMarkup += '<small>' + normalizeOfferText(customerEmail) + '</small>';
-        customerRow.innerHTML = '<dt>Offert till</dt><dd>' + detailMarkup + '</dd>';
+        var customerLabel = document.createElement('dt');
+        customerLabel.textContent = 'Offert till';
+        var customerValue = document.createElement('dd');
+        customerValue.appendChild(document.createTextNode(normalizeOfferText(customerName || '')));
+        if (customerEmail) {
+          var customerEmailText = document.createElement('small');
+          customerEmailText.textContent = normalizeOfferText(customerEmail);
+          customerValue.appendChild(customerEmailText);
+        }
+        customerRow.appendChild(customerLabel);
+        customerRow.appendChild(customerValue);
         metaList.appendChild(customerRow);
       }
       customerCard.remove();
@@ -252,8 +260,8 @@ export function buildPublicPdfHtml(
 
     if (offerTitleText) {
       Array.from(document.querySelectorAll('.offer-section h2, .offer-table-header h2')).some(function (heading) {
-        var normalizedHeading = (heading.textContent || '').replace(/\\s+/g, ' ').trim().toLocaleLowerCase('sv-SE');
-        if (normalizedHeading === 'produkter och tjÃ¤nster') {
+        var normalizedHeading = normalizeOfferText(heading.textContent || '').replace(/\\s+/g, ' ').trim().toLocaleLowerCase('sv-SE');
+        if (normalizedHeading === 'produkter och tjänster') {
           heading.textContent = offerTitleText;
           return true;
         }
