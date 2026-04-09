@@ -265,7 +265,7 @@ function StatusDistributionCard({ countMap, total }: { countMap: Record<string, 
     return { status, count, percent: total > 0 ? Math.round((count / total) * 100) : 0, ...STATUS_META[status] };
   });
   const populated = rows.filter(r => r.count > 0);
-  const highlightedStatus = activeStatus ?? populated[0]?.status ?? rows[0]?.status ?? null;
+  const highlightedStatus = activeStatus ?? populated[0]?.status ?? null;
   const highlightedRow = rows.find(r => r.status === highlightedStatus) ?? null;
   const radius = 52, circ = 2 * Math.PI * radius;
   const segments = populated.map((r, i) => ({
