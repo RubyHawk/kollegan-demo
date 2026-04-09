@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -17,7 +21,14 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 2222
           script: |
-            set -e
+            set -euo pipefail
             cd /var/www/offert
-            git reset --hard HEAD
-            /var/www/offert/deploy_kollegan.sh
+            git fetch origin
+            git rebase --abort || true
+            git reset --hard origin/main
+            pkill -f "next build" || true
+            rm -f .next/lock
+            npm ci --include=dev --no-audit
+            npx playwright install chromium
+            npm run build
+            sudo systemctl restart kollegan
