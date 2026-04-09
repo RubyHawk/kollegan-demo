@@ -105,6 +105,7 @@ async function insertImageFile(view: EditorView, file: File) {
 export default function TemplateEditor({ initialContent, editorRef, onUpdate, onMigrationNotice }: Props) {
   // Parse the full doc once (ref avoids re-parsing on every render)
   const initDoc = useRef(parseTemplateDoc(initialContent));
+  const loadedPageIdRef = useRef<string | null>(initDoc.current.pages[0]?.id ?? null);
 
   // ── Multi-page state ────────────────────────────────────────────────────────
   const [pages, setPages]       = useState<PageDoc[]>(initDoc.current.pages);
@@ -264,29 +265,16 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
 
     // 1. Flush current page
     const flushed = flushPage(curIdx, curPages);
-
-    // 2. Load new page body
     const newPage = flushed[newIdx];
-    if (!newPage || !editor) return;
-    editor.commands.setContent(newPage.body as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
+    if (!newPage) return;
 
-    // 3. Load new page override H/F content
-    headerPageOverride?.commands.setContent(
-      newPage.header.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
-    );
-    footerPageOverride?.commands.setContent(
-      newPage.footer.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
-    );
-
-    // 4. Load new page H/F display toggles
-    setActiveHeader({ enabled: newPage.header.enabled, useDefault: newPage.header.useDefault });
-    setActiveFooter({ enabled: newPage.footer.enabled, useDefault: newPage.footer.useDefault });
-
-    // 5. Commit state
+    // 2. Commit state first. The page-specific editor content is hydrated by an
+    // effect after the correct canvas/wrapper has mounted. This avoids rendering
+    // presentation-image content inside the old document-page shell (and vice versa),
+    // which was causing flaky image nodeviews when jumping between page types.
     setPages(flushed);
     setActiveIdx(newIdx);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, headerPageOverride, footerPageOverride, flushPage]);
+  }, [flushPage]);
 
   const addPage = useCallback((preset?: Partial<PageDoc>) => {
     const curIdx   = activeIdxRef.current;
@@ -310,17 +298,9 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
     const newPages  = [...flushed, newPage];
     const newIdx    = newPages.length - 1;
 
-    // Load new page content
-    editor?.commands.setContent(newPage.body as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
-    headerPageOverride?.commands.setContent(EMPTY_DOC as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
-    footerPageOverride?.commands.setContent(EMPTY_DOC as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
-    setActiveHeader({ enabled: false, useDefault: true });
-    setActiveFooter({ enabled: false, useDefault: true });
-
     setPages(newPages);
     setActiveIdx(newIdx);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, headerPageOverride, footerPageOverride, flushPage]);
+  }, [flushPage]);
 
   const removePage = useCallback((idx: number) => {
     const curIdx   = activeIdxRef.current;
@@ -333,22 +313,10 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
     const newIdx   = idx < curIdx
       ? curIdx - 1
       : Math.min(curIdx, newPages.length - 1);
-    const targetPage = newPages[newIdx];
-
-    editor?.commands.setContent(targetPage.body as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
-    headerPageOverride?.commands.setContent(
-      targetPage.header.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
-    );
-    footerPageOverride?.commands.setContent(
-      targetPage.footer.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
-    );
-    setActiveHeader({ enabled: targetPage.header.enabled, useDefault: targetPage.header.useDefault });
-    setActiveFooter({ enabled: targetPage.footer.enabled, useDefault: targetPage.footer.useDefault });
 
     setPages(newPages);
     setActiveIdx(newIdx);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, headerPageOverride, footerPageOverride, flushPage]);
+  }, [flushPage]);
 
   const renamePage = useCallback((idx: number, label: string) => {
     setPages((prev) => {
@@ -419,6 +387,26 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
     onMigrationNotice?.(initDoc.current.migrationNotice ?? null);
   }, [onMigrationNotice]);
 
+  useEffect(() => {
+    if (!editor || !headerPageOverride || !footerPageOverride) return;
+    const targetPage = pages[activeIdx];
+    if (!targetPage) return;
+    if (loadedPageIdRef.current === targetPage.id) return;
+
+    editor.commands.setContent(
+      targetPage.body as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
+    );
+    headerPageOverride.commands.setContent(
+      targetPage.header.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
+    );
+    footerPageOverride.commands.setContent(
+      targetPage.footer.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0],
+    );
+    setActiveHeader({ enabled: targetPage.header.enabled, useDefault: targetPage.header.useDefault });
+    setActiveFooter({ enabled: targetPage.footer.enabled, useDefault: targetPage.footer.useDefault });
+    loadedPageIdRef.current = targetPage.id;
+  }, [activeIdx, editor, footerPageOverride, headerPageOverride, pages]);
+
   // ── Expose handle to parent pages ────────────────────────────────────────────
 
   useEffect(() => {
@@ -441,13 +429,11 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
           typeof json === 'string' ? json : JSON.stringify(json),
         );
         const firstPage = doc.pages[0] ?? makeEmptyPage();
-        editor.commands.setContent(firstPage.body as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
         headerDefault?.commands.setContent(doc.defaultHeader as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
         footerDefault?.commands.setContent(doc.defaultFooter as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
-        headerPageOverride?.commands.setContent(firstPage.header.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
-        footerPageOverride?.commands.setContent(firstPage.footer.content as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
         setActiveHeader({ enabled: firstPage.header.enabled, useDefault: firstPage.header.useDefault });
         setActiveFooter({ enabled: firstPage.footer.enabled, useDefault: firstPage.footer.useDefault });
+        loadedPageIdRef.current = null;
         setPages(doc.pages);
         setActiveIdx(0);
       },
