@@ -374,7 +374,9 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
 
   // ── Layout styles ─────────────────────────────────────────────────────────────
 
-  const imgW = width ?? (isFree ? 200 : undefined);
+  // Defensive fallback: always provide a non-zero width so images never collapse
+  // when attrs are missing (e.g. legacy inserts before default-width was added).
+  const imgW = width ?? (isFree ? 360 : 360);
 
   const wrapperStyle: CSSProperties = isFreeWrapped
     ? {
@@ -421,7 +423,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
             marginLeft:     0,
           };
 
-  const containerWidth = imgW ? `${imgW}px` : (isFloating || isFreeWrapped) ? '200px' : undefined;
+  const containerWidth = `${imgW}px`;
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
@@ -604,26 +606,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
           }} />
         )}
 
-        {/* Free-mode coordinate badge */}
-        {selected && isFree && (
-          <div
-            contentEditable={false}
-            style={{
-              position: 'absolute', bottom: -28, left: '50%',
-              transform: 'translateX(-50%)',
-              fontSize: 12, color: '#ffffff',
-              fontFamily: 'ui-monospace,monospace',
-              whiteSpace: 'nowrap', pointerEvents: 'none',
-              background: 'rgba(15,23,42,0.82)',
-              padding: '3px 10px', borderRadius: 6,
-              letterSpacing: '0.01em',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-            }}
-          >
-            X: {Math.round(posX)}  Y: {Math.round(posY)}
-            {layerTotal > 1 && <span style={{ opacity: 0.65, marginLeft: 8 }}>lager {layerRank}/{layerTotal}</span>}
-          </div>
-        )}
+        {/* Coordinate/position hint lives in the right sidebar now — no on-canvas badge. */}
 
         <img
           src={src}

@@ -2,8 +2,10 @@ import type { Editor } from '@tiptap/core';
 import type { EditorView } from '@tiptap/pm/view';
 import { NodeSelection } from '@tiptap/pm/state';
 
+const DEFAULT_IMAGE_WIDTH = 360;
+
 function createImageNode(state: Editor['state'] | EditorView['state'], src: string) {
-  return state.schema.nodes.image?.create({ src }) ?? null;
+  return state.schema.nodes.image?.create({ src, width: DEFAULT_IMAGE_WIDTH }) ?? null;
 }
 
 export function insertTemplateImageIntoEditor(editor: Editor, src: string): void {
@@ -20,7 +22,11 @@ export function insertTemplateImageIntoEditor(editor: Editor, src: string): void
     return;
   }
 
-  editor.chain().focus().setImage({ src }).run();
+  editor
+    .chain()
+    .focus()
+    .insertContent({ type: 'image', attrs: { src, width: DEFAULT_IMAGE_WIDTH } })
+    .run();
 }
 
 export function insertTemplateImageIntoView(view: EditorView, src: string): void {

@@ -5,6 +5,7 @@ import { EditorContent } from '@tiptap/react';
 import { NodeSelection } from '@tiptap/pm/state';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
+import { PRESENTATION_PAGE_HEIGHT, PRESENTATION_PAGE_WIDTH } from './presentation-page-height';
 import { cn } from '@shared/lib/utils';
 import { Link as LinkIcon } from '@phosphor-icons/react';
 
@@ -36,11 +37,15 @@ export default function DocumentCanvas() {
     <div className="flex-1 overflow-hidden bg-[var(--surface-2)]">
       <BubbleFormattingMenu />
 
-      <div className="h-full overflow-auto px-3 py-2 md:px-4 md:py-3">
-        <div className="mx-auto w-full max-w-[820px]">
+      <div className="h-full overflow-auto px-3 py-4 md:px-4 md:py-6">
+        <div
+          className="mx-auto w-full"
+          style={{ maxWidth: isDocumentPage ? 820 : PRESENTATION_PAGE_WIDTH }}
+        >
           <div
+            data-a4-page={!isDocumentPage ? 'presentation' : undefined}
             className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-[0_8px_28px_rgba(15,23,42,0.08)]"
-            style={{ minHeight: 540 }}
+            style={{ minHeight: isDocumentPage ? 840 : PRESENTATION_PAGE_HEIGHT }}
           >
             {!isDocumentPage && headerEditor && (
               <HFZone
@@ -155,6 +160,61 @@ export default function DocumentCanvas() {
         .hf-editor .ProseMirror {
           min-height: 60px !important;
           outline: none !important;
+        }
+
+        /* Image NodeView toolbar */
+        .img-tb-btn {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 26px;
+          height: 26px;
+          border: none;
+          background: transparent;
+          color: #475569;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: background 0.12s ease, color 0.12s ease;
+          padding: 0;
+        }
+        .img-tb-btn:hover:not(:disabled) {
+          background: #f1f5f9;
+          color: #0f172a;
+        }
+        .img-tb-btn[data-active='true'] {
+          background: #e0edff;
+          color: #1d4ed8;
+        }
+        .img-tb-btn[data-danger='true']:hover:not(:disabled) {
+          background: #fef2f2;
+          color: #dc2626;
+        }
+        .img-tb-btn:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
+        .img-tb-btn[data-tooltip]::after {
+          content: attr(data-tooltip);
+          position: absolute;
+          bottom: calc(100% + 6px);
+          left: 50%;
+          transform: translateX(-50%);
+          background: #0f172a;
+          color: white;
+          font-size: 11px;
+          font-family: system-ui, -apple-system, sans-serif;
+          font-weight: 500;
+          padding: 4px 8px;
+          border-radius: 5px;
+          white-space: nowrap;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.1s ease;
+          z-index: 500;
+        }
+        .img-tb-btn[data-tooltip]:hover:not(:disabled)::after {
+          opacity: 1;
         }
       `}</style>
     </div>
