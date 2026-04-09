@@ -102,4 +102,54 @@ describe('public offer PDF sanitizing', () => {
     expect(sanitized).toContain('--offer-columns:minmax(0,1.9fr) 44px 86px 56px 56px 92px');
     expect(sanitized).toContain('data-public-offer-cleanup');
   });
+
+  it('simplifies the company block in every page footer', () => {
+    const html = `<!DOCTYPE html>
+<html lang="sv">
+  <head></head>
+  <body>
+    <div class="doc-wrapper">
+      <div class="page-block page-block--document" data-page="1">
+        <div class="page-content page-content--document">
+          <footer class="offer-shell__footer">
+            <div><strong>Soleria</strong><span>Org.nr 556523-5454</span><span>www.soleria.se</span></div>
+            <div><strong>Ansvarig</strong><span>Malek</span></div>
+          </footer>
+        </div>
+      </div>
+      <hr class="page-separator" />
+      <div class="page-block page-block--document" data-page="2">
+        <div class="page-content page-content--document">
+          <footer class="offer-shell__footer">
+            <div><strong>Soleria</strong><span>Org.nr 556523-5454</span><span>www.soleria.se</span></div>
+            <div><strong>Ansvarig</strong><span>Malek</span></div>
+          </footer>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>`;
+
+    const sanitized = sanitizePublicOfferDocument(html, {
+      id: 'offer-2',
+      title: 'Test 2',
+      status: 'viewed',
+      createdAt: '2026-04-09T12:00:00.000Z',
+      offerNumber: 36,
+      recipientName: 'Ali',
+      recipientEmail: 'ali@example.com',
+      recipientCompany: 'Soleria',
+      validUntil: '2026-05-08T00:00:00.000Z',
+      totalExVat: 6800,
+      totalIncVat: 8500,
+      priceDisplayMode: 'inclusive',
+      notes: '',
+      lineItems: [],
+    } as never, {
+      website: 'https://www.soleria.se',
+    } as never);
+
+    expect((sanitized.match(/href="https:\/\/www\.soleria\.se"/g) ?? []).length).toBe(2);
+    expect(sanitized).not.toContain('Org.nr 556523-5454');
+  });
 });

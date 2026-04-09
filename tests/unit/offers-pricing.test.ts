@@ -39,8 +39,8 @@ describe('offer pricing', () => {
   });
 
   it('formats vat rates compactly for offer layouts', () => {
-    expect(formatVatRate(0.25)).toBe('25%');
-    expect(formatVatRate(25)).toBe('25%');
+    expect(formatVatRate(0.25)).toBe('25% moms');
+    expect(formatVatRate(25)).toBe('25% moms');
     expect(formatVatRate(0)).toBe('Momsfri');
   });
 });

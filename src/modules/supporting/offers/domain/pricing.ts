@@ -171,5 +171,5 @@ export function summarizePersistedOfferPricing(
 
 export function formatVatRate(rate: number): string {
   const normalizedRate = normalizeVatRate(rate);
-  return normalizedRate > 0 ? `${Math.round(normalizedRate * 100)}%` : 'Momsfri';
+  return normalizedRate > 0 ? `${Math.round(normalizedRate * 100)}% moms` : 'Momsfri';
 }

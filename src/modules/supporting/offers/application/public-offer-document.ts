@@ -228,7 +228,7 @@ function findFooterWebsite(companyBlockHtml: string, branding?: OfferBrandingPro
 
 function simplifyCompanyFooterBlock(html: string, branding?: OfferBrandingProfile): string {
   return html.replace(
-    /(<footer class="offer-shell__footer">\s*<div>)([\s\S]*?)(<\/div>)/i,
+    /(<footer class="offer-shell__footer">\s*<div>)([\s\S]*?)(<\/div>)/gi,
     (match, prefix: string, inner: string, suffix: string) => {
       const website = findFooterWebsite(inner, branding);
       if (!website) return match;
