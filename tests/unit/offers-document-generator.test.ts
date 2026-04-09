@@ -1,4 +1,8 @@
-import { generateDocument, generateFallbackDocument } from '@modules/supporting/offers/application/document-generator';
+import {
+  generateDocument,
+  generateFallbackDocument,
+  sanitizeGeneratedOfferDocument,
+} from '@modules/supporting/offers/application/document-generator';
 import type { Offer } from '@modules/supporting/offers/domain/offer.entity';
 
 describe('offer document generator', () => {
@@ -131,5 +135,31 @@ describe('offer document generator', () => {
     expect(html).toContain('<span>Storgatan 1</span>');
     expect(html).toContain('<span>111 22 Stockholm</span>');
     expect(html).toContain('<span>www.soleria.se</span>');
+  });
+
+  it('re-injects missing sender branding details into legacy generated snapshots', () => {
+    const legacyHtml = `<!DOCTYPE html>
+<html lang="sv">
+  <body>
+    <div class="offer-shell__sender">
+      <div class="offer-shell__sender-copy">
+        <p class="offer-shell__sender-name">Soleria - Malek</p>
+      </div>
+    </div>
+  </body>
+</html>`;
+
+    const sanitized = sanitizeGeneratedOfferDocument(legacyHtml, offer, {
+      ...branding,
+      logoUrl: 'https://cdn.example.com/soleria-logo.png',
+    });
+
+    expect(sanitized).toContain('class="offer-shell__logo"');
+    expect(sanitized).toContain('https://cdn.example.com/soleria-logo.png');
+    expect(sanitized).toContain('<p class="offer-shell__sender-name">Soleria</p>');
+    expect(sanitized).toContain('<p>Org.nr 556123-4567</p>');
+    expect(sanitized).toContain('<p>Storgatan 1</p>');
+    expect(sanitized).toContain('<p>111 22 Stockholm</p>');
+    expect(sanitized).toContain('<p>www.soleria.se</p>');
   });
 });
