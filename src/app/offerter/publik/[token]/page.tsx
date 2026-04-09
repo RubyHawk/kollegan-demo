@@ -1019,17 +1019,21 @@ export default function PublicOfferPage() {
       className="min-h-screen"
     >
       {/* ─── Sticky header ─── */}
-      <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/96 backdrop-blur-md">
-        <div className="flex h-13 items-center gap-3 px-4 sm:h-14 sm:px-6">
+      <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/96 backdrop-blur-md sm:border-b-0 sm:bg-transparent sm:px-6 sm:pt-4 sm:backdrop-blur-none">
+        <div className="sm:mx-auto sm:max-w-[900px] sm:overflow-hidden sm:rounded-[28px] sm:border sm:border-slate-200/80 sm:bg-white/92 sm:shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:backdrop-blur-xl">
+        <div className="flex min-h-14 items-center gap-3 px-4 py-2.5 sm:min-h-0 sm:gap-4 sm:px-5 sm:py-4">
 
           {/* Left: title + recipient */}
-          <div className="flex min-w-0 flex-1 items-center gap-2.5">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-              <BrandMark size={18} alt="" />
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+              <BrandMark size={20} alt="" />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-sm font-semibold leading-tight text-slate-900">{offer.title}</h1>
-              <p className="truncate text-[11px] leading-tight text-slate-400">
+              <p className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:block">
+                Offert
+              </p>
+              <h1 className="truncate text-sm font-semibold leading-tight text-slate-900 sm:text-[15px]">{offer.title}</h1>
+              <p className="truncate text-[11px] leading-tight text-slate-500 sm:mt-1 sm:text-[12px]">
                 {offer.recipientName}
                 {offer.recipientCompany ? ` · ${offer.recipientCompany}` : ''}
               </p>
@@ -1037,17 +1041,23 @@ export default function PublicOfferPage() {
           </div>
 
           {/* Right: price + PDF */}
-          <div className="flex shrink-0 items-center gap-2">
-            <div className="hidden sm:flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
-              <span className="text-sm font-bold tabular-nums text-slate-900">{fmtSEK(pricing.totalAmount)}</span>
-              <span className="h-3.5 w-px bg-slate-300" />
+          <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
+            <div className="hidden sm:flex min-w-[260px] items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-slate-50/90 px-4 py-2.5">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  Total
+                </p>
+                <p className="mt-0.5 text-base font-semibold tabular-nums text-slate-950">
+                  {fmtSEK(pricing.totalAmount)}
+                </p>
+              </div>
               <span className="text-[12px] text-slate-500">{pricing.displayModeLabel} · Giltig till {fmtDate(offer.validUntil)}</span>
             </div>
             {/* PDF download */}
             <button
               onClick={() => void handleDownloadPdf()}
               disabled={downloading || !offer.generatedDocument}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow active:scale-[0.97] disabled:opacity-40"
+              className="flex h-10 items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow active:scale-[0.97] disabled:opacity-40 sm:h-11 sm:px-4"
               title="Ladda ner som PDF"
             >
               {downloading ? (
@@ -1057,7 +1067,7 @@ export default function PublicOfferPage() {
               ) : (
                 <FileTextIcon size={13} />
               )}
-              <span className="hidden sm:inline">{downloading ? 'Genererar...' : 'PDF'}</span>
+              <span>{downloading ? 'Genererar...' : 'PDF'}</span>
             </button>
           </div>
         </div>
@@ -1065,25 +1075,26 @@ export default function PublicOfferPage() {
         {/* Progress bar */}
         {offer.generatedDocument && (
           downloading ? (
-            <div className="h-0.5 w-full overflow-hidden bg-slate-100">
+            <div className="h-1 w-full overflow-hidden bg-slate-100/90">
               <div className="h-full w-1/3 bg-slate-800 animate-[slide-indeterminate_1.4s_ease-in-out_infinite]" />
               <style>{`@keyframes slide-indeterminate{0%{transform:translateX(-100%);width:40%}50%{transform:translateX(150%);width:60%}100%{transform:translateX(300%);width:40%}}`}</style>
             </div>
           ) : (
-            <div className="h-0.5 w-full bg-slate-100">
+            <div className="h-1 w-full bg-slate-100/90">
               <div className="h-full bg-slate-800 transition-[width] duration-75" style={{ width: `${scrollProgress}%` }} />
             </div>
           )
         )}
+        </div>
       </header>
 
       {/* ─── Content ─── */}
       <main
         ref={mainRef}
-        className="h-[calc(100dvh-57px)] overflow-y-auto bg-slate-50"
+        className="h-[calc(100dvh-61px)] overflow-y-auto bg-slate-50 sm:h-[calc(100dvh-108px)]"
         style={{ paddingBottom: `${64 + jumpScrollBuffer}px` }}
       >
-        <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-8">
+        <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-5">
 
         {offer.generatedDocument && documentReady && promoPageCount > 0 && (
           <div className="px-4 pb-4 pt-4 sm:px-0 sm:pt-0">
