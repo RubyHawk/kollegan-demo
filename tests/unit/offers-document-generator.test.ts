@@ -15,7 +15,7 @@ describe('offer document generator', () => {
     lineItems: [
       {
         id: 'line-3',
-        description: 'Gamma Service - Sist i alfabetet men först i ordningen',
+        description: 'Gamma Service - Sist i alfabetet men fÃ¶rst i ordningen',
         quantity: 1,
         unitPrice: 100,
         vatRate: 0.25,
@@ -24,7 +24,7 @@ describe('offer document generator', () => {
       },
       {
         id: 'line-1',
-        description: 'Alpha Service - Förskjuten ordning',
+        description: 'Alpha Service - FÃ¶rskjuten ordning',
         quantity: 1,
         unitPrice: 200,
         vatRate: 0.25,
@@ -66,10 +66,52 @@ describe('offer document generator', () => {
     expect(html).toContain('--offer-columns:minmax(220px, 1.85fr)');
   });
 
-  it('stacks split pricing layouts instead of squeezing the line-item table', () => {
-    const html = generateDocument('Detta är en fallback-mall', offer);
+  it('renders summary below the pricing section and before legal terms even for legacy right placement', () => {
+    const template = JSON.stringify({
+      _v: 4,
+      pages: [
+        {
+          id: 'page-1',
+          label: 'Offertsida',
+          kind: 'document',
+          role: 'offer',
+          includeInCustomerPdf: true,
+          body: {
+            type: 'doc',
+            content: [
+              {
+                type: 'paragraph',
+                content: [{ type: 'text', text: 'Introduktion' }],
+              },
+            ],
+          },
+          header: { enabled: false, useDefault: true, content: { type: 'doc', content: [] } },
+          footer: { enabled: false, useDefault: true, content: { type: 'doc', content: [] } },
+          document: {
+            showIntro: true,
+            showLineItems: true,
+            showSummary: true,
+            showTerms: true,
+            showNotes: false,
+            showFooter: false,
+            summaryPlacement: 'right',
+          },
+        },
+      ],
+      defaultHeader: { type: 'doc', content: [] },
+      defaultFooter: { type: 'doc', content: [] },
+    });
 
-    expect(html).toMatch(/\.offer-pricing-layout--split\s*\{\s*grid-template-columns: minmax\(0, 1fr\) !important;/);
-    expect(html).toMatch(/\.offer-pricing-layout__summary\s*\{\s*align-self: start !important;\s*width: min\(332px, 100%\) !important;/);
+    const html = generateDocument(template, offer);
+
+    const pricingIndex = html.indexOf('Produkter och tjÃ¤nster');
+    const pricingIndexResolved = Math.max(pricingIndex, html.indexOf('<h2>Produkter och tjänster</h2>'));
+    const summaryIndex = html.indexOf('<aside class="offer-summary offer-summary--below">');
+    const termsIndex = html.indexOf('<section class="offer-section offer-section--terms">');
+
+    expect(pricingIndexResolved).toBeGreaterThan(-1);
+    expect(summaryIndex).toBeGreaterThan(pricingIndexResolved);
+    expect(termsIndex).toBeGreaterThan(summaryIndex);
+    expect(html).not.toContain('offer-pricing-layout--split');
   });
 });

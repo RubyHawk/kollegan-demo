@@ -49,5 +49,7 @@ yarn-error.log*
 next-env.d.ts
 .claude/
 .codex-artifacts/
+.codex-*.log
+/public/uploads/
 /test-results/
 /playwright-report/

@@ -113,19 +113,8 @@ function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
       >
         <div className="space-y-2">
           <Field label="Summering">
-            <div className="grid grid-cols-2 gap-2">
-              <ChoiceButton
-                active={(document.summaryPlacement ?? 'right') === 'right'}
-                onClick={() => hf.patchActivePage({ document: { ...document, summaryPlacement: 'right' } })}
-              >
-                Till höger
-              </ChoiceButton>
-              <ChoiceButton
-                active={(document.summaryPlacement ?? 'right') === 'below'}
-                onClick={() => hf.patchActivePage({ document: { ...document, summaryPlacement: 'below' } })}
-              >
-                Under prisdel
-              </ChoiceButton>
+            <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+              Summeringen visas alltid som en smal box under prisdelen och ovanför juridiska villkor.
             </div>
           </Field>
 
@@ -379,6 +368,8 @@ function DocumentDefaultsInspector({ hf }: { hf: HFCtxValue }) {
   );
 }
 
+// Legacy inspector kept temporarily for reference during the new image-panel rollout.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function LegacyImageInspector({ editor }: { editor: Editor }) {
   const attrs = editor.getAttributes('image');
   const width = Number(attrs.width ?? 360);

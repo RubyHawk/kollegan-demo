@@ -47,7 +47,11 @@ export interface OfferPageSettings {
   termsHeading?: string;
   termsBody?: string;
   notesHeading?: string;
-  summaryPlacement?: 'right' | 'below';
+  summaryPlacement?: 'below';
+}
+
+function normalizeSummaryPlacement(): 'below' {
+  return 'below';
 }
 
 export interface PageDoc {
@@ -190,7 +194,7 @@ function buildDefaultOfferSettings(): OfferPageSettings {
     termsHeading: DEFAULT_DOCUMENT_TERMS_HEADING,
     termsBody: DEFAULT_DOCUMENT_TERMS_BODY,
     notesHeading: DEFAULT_DOCUMENT_NOTES_HEADING,
-    summaryPlacement: 'right',
+    summaryPlacement: 'below',
   };
 }
 
@@ -219,7 +223,11 @@ function normalizePage(
     header: page?.header ?? { enabled: false, useDefault: true, content: EMPTY_DOC },
     footer: page?.footer ?? { enabled: false, useDefault: true, content: EMPTY_DOC },
     document: inferredKind === 'document'
-      ? { ...buildDefaultOfferSettings(), ...(page?.document ?? {}) }
+      ? {
+          ...buildDefaultOfferSettings(),
+          ...(page?.document ?? {}),
+          summaryPlacement: normalizeSummaryPlacement(),
+        }
       : page?.document,
   };
 }
