@@ -292,15 +292,14 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
     if (!newPage) return;
 
     // 2. Commit state first. The page-specific editor content is hydrated by an
-    // effect after the correct canvas/wrapper has mounted. This avoids rendering
-    // presentation-image content inside the old document-page shell (and vice versa),
-    // which was causing flaky image nodeviews when jumping between page types.
+    // effect after the correct canvas/wrapper has mounted. Hydrating too early can
+    // attach image nodeviews to the previous page shell, which leaves behind empty
+    // image wrappers when the next image is inserted or resized.
     loadedPageIdRef.current = null;
     setActivePageReady(false);
-    hydrateEditorsForPage(newPage);
     setPages(flushed);
     setActiveIdx(newIdx);
-  }, [flushPage, hydrateEditorsForPage]);
+  }, [flushPage]);
 
   const addPage = useCallback((preset?: Partial<PageDoc>) => {
     const curIdx   = activeIdxRef.current;
@@ -326,10 +325,9 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
 
     loadedPageIdRef.current = null;
     setActivePageReady(false);
-    hydrateEditorsForPage(newPage);
     setPages(newPages);
     setActiveIdx(newIdx);
-  }, [flushPage, hydrateEditorsForPage]);
+  }, [flushPage]);
 
   const removePage = useCallback((idx: number) => {
     const curIdx   = activeIdxRef.current;
@@ -347,11 +345,10 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
     if (targetPage) {
       loadedPageIdRef.current = null;
       setActivePageReady(false);
-      hydrateEditorsForPage(targetPage);
     }
     setPages(newPages);
     setActiveIdx(newIdx);
-  }, [flushPage, hydrateEditorsForPage]);
+  }, [flushPage]);
 
   const renamePage = useCallback((idx: number, label: string) => {
     setPages((prev) => {
@@ -457,7 +454,6 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
         footerDefault?.commands.setContent(doc.defaultFooter as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
         loadedPageIdRef.current = null;
         setActivePageReady(false);
-        hydrateEditorsForPage(firstPage);
         setPages(doc.pages);
         setActiveIdx(0);
       },
@@ -465,7 +461,7 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
 
     return () => { if (editorRef.current) editorRef.current = null; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, headerDefault, footerDefault, headerPageOverride, footerPageOverride, flushPage, hydrateEditorsForPage]);
+  }, [editor, headerDefault, footerDefault, headerPageOverride, footerPageOverride, flushPage]);
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
