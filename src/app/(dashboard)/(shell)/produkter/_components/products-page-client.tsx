@@ -524,50 +524,55 @@ export function ProductsPageClient() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="space-y-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <h1 className="text-base font-semibold text-[var(--text-primary)]">Produktbibliotek</h1>
-            <div className="flex flex-wrap items-center gap-1">
-              <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-0.5 text-xs text-[var(--text-muted)]">
-                {products.length} produkter
-              </span>
-              <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-0.5 text-xs text-[var(--text-muted)]">
-                {activeCount} aktiva
-              </span>
-              <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-0.5 text-xs text-[var(--text-muted)]">
-                {totalVisible} visas
-              </span>
+        {/* KPI header card */}
+        <div className="overflow-hidden rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm">
+          <div className="flex flex-col gap-0 sm:flex-row sm:items-stretch sm:divide-x sm:divide-[var(--border)]">
+            <div className="flex items-center px-5 py-4">
+              <h1 className="text-sm font-semibold text-[var(--text-primary)]">Produktbibliotek</h1>
             </div>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {companies.length > 1 && (
-              <select
-                value={selectedCompanyId}
-                onChange={(e) => setSelectedCompanyId(e.target.value)}
-                className="h-9 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
-              >
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            )}
-            {companyLoading && (
-              <span className="text-xs text-[var(--text-muted)]">Laddar…</span>
-            )}
-            {companyError && (
-              <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
-                {companyError}
-              </span>
-            )}
-            <Button type="button" variant="outline" onClick={() => setCategoryManagerOpen(true)} className="h-9 rounded-xl px-3">
-              <Folders size={15} weight="bold" />
-              <span className="hidden sm:inline">Hantera kategorier</span>
-            </Button>
-            <Button type="button" onClick={openCreate} className="h-9 rounded-xl px-3">
-              <Plus size={15} weight="bold" />
-              Ny produkt
-            </Button>
+            <div className="flex divide-x divide-[var(--border)]">
+              <div className="flex flex-col justify-center px-5 py-3">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-muted)]">Produkter</span>
+                <span className="mt-0.5 text-xl font-semibold text-[var(--text-primary)]">{products.length}</span>
+              </div>
+              <div className="flex flex-col justify-center px-5 py-3">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-muted)]">Aktiva</span>
+                <span className="mt-0.5 text-xl font-semibold text-[var(--text-primary)]">{activeCount}</span>
+              </div>
+              <div className="flex flex-col justify-center px-5 py-3">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-muted)]">Visas nu</span>
+                <span className="mt-0.5 text-xl font-semibold text-[var(--text-primary)]">{totalVisible}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-1 items-center justify-end gap-2 px-4 py-3">
+              {companies.length > 1 && (
+                <select
+                  value={selectedCompanyId}
+                  onChange={(e) => setSelectedCompanyId(e.target.value)}
+                  className="h-9 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                >
+                  {companies.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              )}
+              {companyLoading && <span className="text-xs text-[var(--text-muted)]">Laddar…</span>}
+              {companyError && (
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-800">
+                  {companyError}
+                </span>
+              )}
+              <Button type="button" variant="outline" onClick={() => setCategoryManagerOpen(true)} className="h-9 rounded-xl px-3">
+                <Folders size={15} weight="bold" />
+                <span className="hidden sm:inline">Hantera kategorier</span>
+              </Button>
+              <Button type="button" onClick={openCreate} className="h-9 rounded-xl px-3">
+                <Plus size={15} weight="bold" />
+                Ny produkt
+              </Button>
+            </div>
           </div>
         </div>
 
