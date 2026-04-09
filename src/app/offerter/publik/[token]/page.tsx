@@ -525,6 +525,11 @@ export default function PublicOfferPage() {
       .offer-item-card__metric--total { background: #f8fafc !important; }
       .offer-item-card__metric--total dt { color: #475569 !important; }
       .offer-item-card__metric--total dd { font-size: 18px !important; font-weight: 800 !important; letter-spacing: -0.02em !important; color: #0f172a !important; }
+      html.offer-has-promo .page-block[data-promo-lead="true"] { min-height: 0 !important; overflow: hidden !important; background: transparent !important; }
+      html.offer-has-promo .page-block[data-promo-lead="true"] .page-content,
+      html.offer-has-promo .page-block[data-promo-lead="true"] .page-content--edge-to-edge { padding: 0 !important; background: transparent !important; }
+      html.offer-has-promo .page-block[data-promo-lead="true"] .page-content--edge-to-edge > div[style*="position:absolute"] { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; line-height: 0 !important; }
+      html.offer-has-promo .page-block[data-promo-lead="true"] .page-content--edge-to-edge > div[style*="position:absolute"] img { width: 100% !important; max-width: none !important; height: 100% !important; object-fit: cover !important; border-radius: 0 !important; }
       html.offer-mobile .doc-wrapper { width: 100% !important; max-width: none !important; margin: 0 !important; border: none !important; border-radius: 0 !important; }
       html.offer-mobile .page-content--edge-to-edge > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; line-height: 0 !important; }
       html.offer-mobile .page-content--edge-to-edge > div[style*="position:absolute"] img { width: 100% !important; max-width: none !important; height: auto !important; object-fit: cover !important; border-radius: 0 !important; }
@@ -609,6 +614,11 @@ export default function PublicOfferPage() {
     const firstDocumentPage = pageBlocks[firstDocumentIndex] ?? pageBlocks[0] ?? null;
     const firstOfferAnchor = findOfferAnchor(firstDocumentPage);
     setPromoPageCount(Math.max(0, firstDocumentIndex));
+    doc.documentElement.classList.toggle('offer-has-promo', firstDocumentIndex > 0);
+    pageBlocks.forEach((pageBlock, index) => {
+      if (index < firstDocumentIndex) pageBlock.setAttribute('data-promo-lead', 'true');
+      else pageBlock.removeAttribute('data-promo-lead');
+    });
 
     doc.querySelectorAll<HTMLElement>('.offer-section--intro').forEach((section) => {
       const text = section.textContent?.replace(/\u00a0/g, ' ').trim() ?? '';
@@ -1010,9 +1020,9 @@ export default function PublicOfferPage() {
       className="min-h-screen bg-slate-50"
     >
       {/* ─── Sticky header ─── */}
-      <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/96 backdrop-blur-md sm:border-b-0 sm:bg-transparent sm:px-6 sm:pt-3 sm:backdrop-blur-none">
-        <div className="sm:mx-auto sm:max-w-[900px] sm:overflow-hidden sm:rounded-[24px] sm:border sm:border-slate-200/80 sm:bg-white/95 sm:shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
-        <div className="flex min-h-14 items-center gap-3 px-4 py-2.5 sm:min-h-0 sm:gap-3 sm:px-4 sm:py-2.5">
+      <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/96 backdrop-blur-md sm:border-b-0 sm:bg-transparent sm:px-6 sm:pt-2 sm:backdrop-blur-none">
+        <div className="sm:mx-auto sm:max-w-[900px] sm:overflow-hidden sm:rounded-[22px] sm:border sm:border-slate-200/80 sm:bg-white/95 sm:shadow-[0_8px_22px_rgba(15,23,42,0.07)]">
+        <div className="flex min-h-14 items-center gap-3 px-4 py-2.5 sm:min-h-0 sm:gap-3 sm:px-3.5 sm:py-2">
 
           {/* Left: title + recipient */}
           <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -1033,7 +1043,7 @@ export default function PublicOfferPage() {
 
           {/* Right: price + PDF */}
           <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
-            <div className="hidden sm:flex min-w-[228px] items-center justify-between gap-3 rounded-[18px] border border-slate-200/80 bg-slate-50/90 px-3.5 py-2">
+            <div className="hidden sm:flex min-w-[214px] items-center justify-between gap-3 rounded-[16px] border border-slate-200/80 bg-slate-50/90 px-3 py-1.5">
               <div>
                 <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                   Total
@@ -1042,23 +1052,27 @@ export default function PublicOfferPage() {
                   {fmtSEK(pricing.totalAmount)}
                 </p>
               </div>
-              <span className="text-[12px] text-slate-500">{pricing.displayModeLabel} · Giltig till {fmtDate(offer.validUntil)}</span>
+              <span className="text-[11px] text-slate-500">{pricing.displayModeLabel} · Giltig till {fmtDate(offer.validUntil)}</span>
             </div>
             {/* PDF download */}
             <button
               onClick={() => void handleDownloadPdf()}
               disabled={downloading || !offer.generatedDocument}
-              className="flex h-10 items-center gap-1.5 rounded-[18px] border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow active:scale-[0.97] disabled:opacity-40"
-              title="Ladda ner som PDF"
+              className="flex h-9 items-center gap-1.5 rounded-[16px] border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow active:scale-[0.97] disabled:opacity-40"
+              title="Ladda ner PDF"
             >
               {downloading ? (
                 <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                 </svg>
               ) : (
-                <FileTextIcon size={13} />
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 3v11" />
+                  <path d="m7 11 5 5 5-5" />
+                  <path d="M5 21h14" />
+                </svg>
               )}
-              <span>{downloading ? 'Genererar...' : 'PDF'}</span>
+              <span>{downloading ? 'Genererar...' : 'Ladda ner'}</span>
             </button>
           </div>
         </div>
@@ -1108,7 +1122,9 @@ export default function PublicOfferPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.04 }}
-            className="mb-5 overflow-hidden bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] sm:rounded-2xl sm:border sm:border-slate-200/60"
+            className={promoPageCount > 0
+              ? 'mb-5 overflow-hidden bg-transparent shadow-none sm:rounded-[26px]'
+              : 'mb-5 overflow-hidden bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] sm:rounded-2xl sm:border sm:border-slate-200/60'}
           >
             <iframe
               ref={iframeRef}
