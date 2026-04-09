@@ -716,15 +716,6 @@ export default function PublicOfferPage() {
         const scaledOfferOffset = effectiveScale < 1 ? rawOfferOffset * effectiveScale : rawOfferOffset;
         const nextOfferOffset = Math.max(0, Math.round(scaledOfferOffset));
         setOfferSectionOffset(nextOfferOffset);
-        const documentSection = documentSectionRef.current;
-        if (documentSection) {
-          const targetTop = Math.max(0, documentSection.offsetTop + nextOfferOffset - 20);
-          const maxScrollTop = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-          const requiredBuffer = Math.max(0, targetTop - maxScrollTop);
-          if (requiredBuffer > 0) {
-            setJumpScrollBuffer((prev) => Math.max(prev, Math.ceil(requiredBuffer + 24)));
-          }
-        }
         setDocumentReady(true);
       });
     };
@@ -1079,7 +1070,7 @@ export default function PublicOfferPage() {
       <main
         ref={mainRef}
         className="bg-slate-50"
-        style={{ paddingBottom: `${64 + jumpScrollBuffer}px` }}
+        style={{ paddingBottom: '64px' }}
       >
         <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
 
