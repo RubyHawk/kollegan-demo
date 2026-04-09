@@ -63,7 +63,7 @@ async function getDashboardData(orgId: string) {
     prisma.offer.findMany({
       where: { organizationId: orgId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
-      take: 8,
+      take: 30,
       select: {
         id: true, title: true, status: true, offerNumber: true,
         recipientName: true, recipientCompany: true,
