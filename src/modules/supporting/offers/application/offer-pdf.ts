@@ -11,6 +11,7 @@ export interface OfferPdfVariant {
 }
 
 const PDF_CACHE_MAX_ENTRIES = 24;
+export const PUBLIC_OFFER_PDF_RENDERER_VERSION = '2026-04-09-print-lite-v1';
 const pdfCache = new Map<string, Uint8Array>();
 let browserPromise: Promise<Browser> | null = null;
 
@@ -94,7 +95,7 @@ function buildSignatureHydrationScript(offer: OfferPdfVariant): string {
 </script>`;
 }
 
-function buildPublicPdfHtml(
+export function buildPublicPdfHtml(
   documentHtml: string,
   origin: string,
   offer: OfferPdfVariant,
@@ -191,10 +192,71 @@ function buildPublicPdfHtml(
   @page { size: A4; margin: 0; }
   html, body { margin: 0; padding: 0; background: #ffffff; }
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  *, *::before, *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
   .doc-wrapper { margin: 0 !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; max-width: none !important; }
   .page-separator { display: none !important; }
   .page-block { page-break-after: always; break-after: page; }
   .page-block:last-child { page-break-after: auto; break-after: auto; }
+  .page-block--document::before {
+    content: none !important;
+    background: none !important;
+    background-image: none !important;
+    display: none !important;
+  }
+  .page-content--document,
+  .offer-shell,
+  .offer-shell__header,
+  .offer-shell__topline,
+  .offer-shell__meta,
+  .offer-shell__customer-card,
+  .offer-items__table,
+  .offer-items__head,
+  .offer-item-card,
+  .offer-item-card__top,
+  .offer-item-card__metric,
+  .offer-item-card__metric--total,
+  .offer-summary,
+  .offer-summary__row,
+  .offer-summary__row--total,
+  .offer-shell__status {
+    background: #ffffff !important;
+    background-image: none !important;
+  }
+  .offer-shell__meta,
+  .offer-shell__customer-card,
+  .offer-items__table,
+  .offer-item-card,
+  .offer-summary,
+  .offer-shell__status {
+    border-radius: 8px !important;
+  }
+  .offer-shell__status {
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+  }
+  .offer-summary__row--total,
+  .offer-item-card__metric--total {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+  }
+  .offer-summary__row--total strong,
+  .offer-item-card__metric--total dd {
+    color: #0f172a !important;
+  }
+  .offer-item-card__metric:nth-child(even) {
+    background: #ffffff !important;
+  }
+  .offer-shell__logo,
+  img {
+    image-rendering: auto !important;
+  }
 </style>`;
 
   return documentHtml
@@ -269,6 +331,8 @@ export function buildPublicOfferPdfFingerprint(
   offer: OfferPdfVariant,
 ): string {
   return createHash('sha1')
+    .update(PUBLIC_OFFER_PDF_RENDERER_VERSION)
+    .update('\n')
     .update(origin)
     .update('\n')
     .update(documentHtml)
