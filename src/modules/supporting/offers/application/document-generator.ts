@@ -1155,6 +1155,14 @@ function renderStructuredDocumentPage(
   ]
     .filter(Boolean)
     .join('');
+  const footerCompanyDetailsHtml = [
+    `<strong>${escapeHtml(companyName)}</strong>`,
+    organizationNumber ? `<span>Org.nr ${escapeHtml(organizationNumber)}</span>` : '',
+    ...addressLines.map((line) => `<span>${escapeHtml(line)}</span>`),
+    senderWebsite ? `<span>${escapeHtml(senderWebsite)}</span>` : '',
+  ]
+    .filter(Boolean)
+    .join('');
   const noteHeading = (settings.notesHeading ?? DEFAULT_DOCUMENT_NOTES_HEADING).trim();
   const termsHeading = (settings.termsHeading ?? DEFAULT_DOCUMENT_TERMS_HEADING).trim();
   const termsBody = settings.termsBody ?? DEFAULT_DOCUMENT_TERMS_BODY;
@@ -1245,7 +1253,7 @@ function renderStructuredDocumentPage(
           ${settings.showNotes ? noteHtml : ''}
           ${settings.showFooter ? `
             <footer class="offer-shell__footer">
-              <div><strong>${escapeHtml(companyName)}</strong><span>${escapeHtml(senderWebsite || '-')}</span></div>
+              <div>${footerCompanyDetailsHtml || `<strong>${escapeHtml(companyName)}</strong><span>-</span>`}</div>
               <div><strong>Ansvarig</strong><span>${escapeHtml(responsibleName || responsibleEmail || '-')}</span></div>
               <div><strong>Kontakt</strong><span>${escapeHtml(responsibleEmail || '-')}</span></div>
             </footer>` : ''}
@@ -1281,6 +1289,14 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
     organizationNumber ? `<p style="margin:2px 0 0 0;color:#64748b;">Org.nr ${escapeHtml(organizationNumber)}</p>` : '',
     ...fallbackAddressLines.map((line) => `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(line)}</p>`),
     senderWebsite ? `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(senderWebsite)}</p>` : '',
+  ]
+    .filter(Boolean)
+    .join('');
+  const fallbackFooterCompanyHtml = [
+    `<strong>${escapeHtml(companyName)}</strong>`,
+    organizationNumber ? `<span>${escapeHtml(`Org.nr ${organizationNumber}`)}</span>` : '',
+    ...fallbackAddressLines.map((line) => `<span>${escapeHtml(line)}</span>`),
+    senderWebsite ? `<span>${escapeHtml(senderWebsite)}</span>` : '',
   ]
     .filter(Boolean)
     .join('');
@@ -1400,9 +1416,12 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
     <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;margin:0 0 8px 0;">Anteckningar</p>
     <p style="color:#334155;margin:0;">${escapeHtml(offer.notes)}</p>` : ''}
 
-    ${(responsibleName || responsibleEmail) ? `
+    ${(fallbackFooterCompanyHtml || responsibleName || responsibleEmail) ? `
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;"/>
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+    <div style="display:grid;grid-template-columns:minmax(0,1.35fr) repeat(2,minmax(0,1fr));gap:16px;">
+      <div style="display:grid;gap:4px;font-size:12px;color:#475569;">
+        ${fallbackFooterCompanyHtml || '<strong>Företag</strong><span>—</span>'}
+      </div>
       <div style="display:grid;gap:4px;font-size:12px;color:#475569;">
         <strong>Ansvarig</strong>
         <span>${escapeHtml(responsibleName || responsibleEmail || '—')}</span>

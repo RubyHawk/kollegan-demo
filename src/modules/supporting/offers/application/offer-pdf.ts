@@ -204,11 +204,97 @@ export function buildPublicPdfHtml(
   .page-separator { display: none !important; }
   .page-block { page-break-after: always; break-after: page; }
   .page-block:last-child { page-break-after: auto; break-after: auto; }
+  .page-block--document {
+    min-height: auto !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
   .page-block--document::before {
     content: none !important;
     background: none !important;
     background-image: none !important;
     display: none !important;
+  }
+  .page-content--document {
+    min-height: auto !important;
+    padding: 28px 34px 24px !important;
+  }
+  .offer-shell {
+    gap: 14px !important;
+  }
+  .offer-shell__header,
+  .offer-shell__topline {
+    grid-template-columns: minmax(0, 1fr) minmax(184px, 216px) !important;
+    gap: 16px !important;
+  }
+  .offer-shell__topline {
+    padding-bottom: 12px !important;
+  }
+  .offer-shell__topline h1 {
+    font-size: 18px !important;
+    line-height: 1.15 !important;
+  }
+  .offer-shell__lead {
+    display: none !important;
+  }
+  .offer-shell__sender {
+    gap: 12px !important;
+  }
+  .offer-shell__logo {
+    width: 58px !important;
+    height: 58px !important;
+    object-fit: contain !important;
+  }
+  .offer-shell__sender-copy {
+    gap: 2px !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+    color: #334155 !important;
+  }
+  .offer-shell__sender-name {
+    color: #0f172a !important;
+  }
+  .offer-shell__meta {
+    gap: 8px !important;
+  }
+  .offer-shell__meta dl {
+    gap: 6px !important;
+  }
+  .offer-shell__meta dl div {
+    gap: 8px !important;
+  }
+  .offer-shell__meta dt {
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+  }
+  .offer-shell__meta dd {
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+  }
+  .offer-shell__customer-card {
+    padding: 12px 14px !important;
+  }
+  .offer-shell__customer-card p {
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+  .offer-section {
+    gap: 8px !important;
+  }
+  .offer-section h2,
+  .offer-section h3,
+  .offer-table-header h2 {
+    font-size: 12px !important;
+  }
+  .offer-section p {
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+  .offer-table-header {
+    margin-bottom: 6px !important;
+  }
+  .offer-items {
+    gap: 10px !important;
   }
   .page-content--document,
   .offer-shell,
@@ -229,6 +315,24 @@ export function buildPublicPdfHtml(
     background: #ffffff !important;
     background-image: none !important;
   }
+  .offer-items__head {
+    gap: 12px !important;
+    padding: 9px 12px !important;
+    font-size: 10px !important;
+  }
+  .offer-item-row {
+    gap: 12px !important;
+    padding: 10px 12px !important;
+  }
+  .offer-item-row__title {
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+  }
+  .offer-item-row__detail,
+  .offer-item-row__value {
+    font-size: 11.5px !important;
+    line-height: 1.35 !important;
+  }
   .offer-shell__meta,
   .offer-shell__customer-card,
   .offer-items__table,
@@ -236,6 +340,19 @@ export function buildPublicPdfHtml(
   .offer-summary,
   .offer-shell__status {
     border-radius: 8px !important;
+  }
+  .offer-summary {
+    width: min(240px, 100%) !important;
+    padding: 6px 0 !important;
+  }
+  .offer-summary--below {
+    width: min(240px, 100%) !important;
+    margin-top: 10px !important;
+  }
+  .offer-summary__row {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
   }
   .offer-shell__status {
     border: 1px solid #cbd5e1 !important;
@@ -246,12 +363,34 @@ export function buildPublicPdfHtml(
     color: #0f172a !important;
     font-weight: 700 !important;
   }
+  .offer-summary__row--total {
+    margin-top: 4px !important;
+    padding: 8px 12px !important;
+  }
   .offer-summary__row--total strong,
   .offer-item-card__metric--total dd {
     color: #0f172a !important;
   }
+  .offer-summary__row--total strong {
+    font-size: 15px !important;
+  }
   .offer-item-card__metric:nth-child(even) {
     background: #ffffff !important;
+  }
+  .offer-section--terms,
+  .offer-section--notes {
+    margin-top: 4px !important;
+  }
+  .offer-shell__footer {
+    grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    padding-top: 10px !important;
+    margin-top: 8px !important;
+  }
+  .offer-shell__footer div {
+    gap: 2px !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
   }
   .offer-shell__logo,
   img {
