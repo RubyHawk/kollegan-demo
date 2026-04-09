@@ -525,11 +525,6 @@ export default function PublicOfferPage() {
       .offer-item-card__metric--total { background: #f8fafc !important; }
       .offer-item-card__metric--total dt { color: #475569 !important; }
       .offer-item-card__metric--total dd { font-size: 18px !important; font-weight: 800 !important; letter-spacing: -0.02em !important; color: #0f172a !important; }
-      html.offer-has-promo .page-block[data-promo-lead="true"] { min-height: 0 !important; overflow: hidden !important; background: transparent !important; }
-      html.offer-has-promo .page-block[data-promo-lead="true"] .page-content,
-      html.offer-has-promo .page-block[data-promo-lead="true"] .page-content--edge-to-edge { padding: 0 !important; background: transparent !important; }
-      html.offer-has-promo .page-block[data-promo-lead="true"] .page-content--edge-to-edge > div[style*="position:absolute"] { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; line-height: 0 !important; }
-      html.offer-has-promo .page-block[data-promo-lead="true"] .page-content--edge-to-edge > div[style*="position:absolute"] img { width: 100% !important; max-width: none !important; height: 100% !important; object-fit: cover !important; border-radius: 0 !important; }
       html.offer-mobile .doc-wrapper { width: 100% !important; max-width: none !important; margin: 0 !important; border: none !important; border-radius: 0 !important; }
       html.offer-mobile .page-content--edge-to-edge > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; line-height: 0 !important; }
       html.offer-mobile .page-content--edge-to-edge > div[style*="position:absolute"] img { width: 100% !important; max-width: none !important; height: auto !important; object-fit: cover !important; border-radius: 0 !important; }
@@ -614,11 +609,6 @@ export default function PublicOfferPage() {
     const firstDocumentPage = pageBlocks[firstDocumentIndex] ?? pageBlocks[0] ?? null;
     const firstOfferAnchor = findOfferAnchor(firstDocumentPage);
     setPromoPageCount(Math.max(0, firstDocumentIndex));
-    doc.documentElement.classList.toggle('offer-has-promo', firstDocumentIndex > 0);
-    pageBlocks.forEach((pageBlock, index) => {
-      if (index < firstDocumentIndex) pageBlock.setAttribute('data-promo-lead', 'true');
-      else pageBlock.removeAttribute('data-promo-lead');
-    });
 
     doc.querySelectorAll<HTMLElement>('.offer-section--intro').forEach((section) => {
       const text = section.textContent?.replace(/\u00a0/g, ' ').trim() ?? '';
@@ -896,7 +886,17 @@ export default function PublicOfferPage() {
     setDownloading(true);
     try {
       const url = `/api/offers/public/${token}/pdf`;
-      window.open(url, '_blank', 'noopener,noreferrer');
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('download_failed');
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `${offer.title || 'offert'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     } catch {
       setErrMsg('Kunde inte ladda ner PDF. Försök igen.');
     } finally {
