@@ -44,6 +44,7 @@ import type { NodeViewProps } from '@tiptap/react';
 import { useRef, useCallback, useState, useLayoutEffect } from 'react';
 import type { CSSProperties } from 'react';
 import { useHeaderFooter } from '../header-footer-context';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@shared/ui/tooltip';
 import {
   PRESENTATION_PAGE_HEIGHT,
   PRESENTATION_PAGE_WIDTH,
@@ -79,6 +80,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     posX,
     posY,
     wrapText,
+    background,
   } = node.attrs as {
     src:      string;
     alt:      string | null;
@@ -93,11 +95,13 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     posX:     number;
     posY:     number;
     wrapText: ImgWrapText;
+    background?: boolean;
   };
 
   const isFree        = imgPosition === 'free';
   const isFreeWrapped = isFree && (wrapText === 'left' || wrapText === 'right');
   const isFloating    = !isFree && (imgFloat === 'left' || imgFloat === 'right');
+  const isBackground  = Boolean(background) || (zIndex ?? 0) < 0;
   const applyImagePatch = useCallback((patch: Record<string, unknown>) => {
     updateAttributes(patch);
     syncPresentationPageHeightForActivePage(hf, editor?.getJSON() as object | undefined);
@@ -144,11 +148,21 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
   const buildStack = (): StackItem[] => {
     const items: StackItem[] = [];
     editor?.state.doc.descendants((n, pos) => {
-      if (n.type.name === 'image' && n.attrs.position === 'free') {
+      if (n.type.name === 'image' && n.attrs.position === 'free' && n.attrs.background !== true && (n.attrs.zIndex ?? 0) >= 0) {
         items.push({ pos, zIndex: n.attrs.zIndex ?? 0 });
       }
     });
     return items.sort((a, b) => a.zIndex - b.zIndex);
+  };
+
+  const getMaxForegroundZ = (): number => {
+    let maxZ = -1;
+    editor?.state.doc.descendants((n) => {
+      if (n.type.name === 'image' && n.attrs.position === 'free' && n.attrs.background !== true && (n.attrs.zIndex ?? 0) >= 0) {
+        maxZ = Math.max(maxZ, n.attrs.zIndex ?? 0);
+      }
+    });
+    return Math.max(0, maxZ);
   };
 
   /** Absolute document position of THIS node. */
@@ -176,7 +190,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
   let atBottom   = true;
   let atTop      = true;
 
-  if (isFree && editor) {
+  if (isFree && editor && !isBackground) {
     const stack = buildStack();
     const mp    = myDocPos();
     const idx   = mp !== null ? stack.findIndex(s => s.pos === mp) : -1;
@@ -343,21 +357,16 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
       }
     }
     // Place on top of existing free-image stack
-    let maxZ = -1;
-    editor?.state.doc.descendants((n) => {
-      if (n.type.name === 'image' && n.attrs.position === 'free') {
-        maxZ = Math.max(maxZ, n.attrs.zIndex ?? 0);
-      }
-    });
     applyImagePatch({
       position: 'free', float: null, posX: px, posY: py,
-      zIndex: Math.max(0, maxZ + 1),
+      background: false,
+      zIndex: getMaxForegroundZ() + 1,
     });
   };
 
   const toInline = () =>
     applyImagePatch({
-      position: 'inline', float: null, align: 'left', wrapText: 'none',
+      position: 'inline', float: null, align: 'left', wrapText: 'none', background: false,
     });
 
   const setWrapText = (w: ImgWrapText) =>
@@ -387,7 +396,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
         display:     'block',
         lineHeight:  0,
         width:       imgW ? `${imgW}px` : '200px',
-        zIndex:      zIndex ?? 0,
+        zIndex:      selected ? 25 : isBackground ? 0 : (zIndex ?? 0),
       }
     : isFree
       ? {
@@ -396,7 +405,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
           // See pmOffset comment above.
           left:       posX - pmOffset.x,
           top:        posY - pmOffset.y,
-          zIndex:     zIndex ?? 0,
+          zIndex:     selected ? 25 : isBackground ? 0 : (zIndex ?? 0),
           width:      imgW ? `${imgW}px` : '200px',
           display:    'block',
           lineHeight: 0,
@@ -443,6 +452,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
 
         {/* ── Floating toolbar — shown when selected ──────────────────────── */}
         {selected && (
+          <TooltipProvider delayDuration={120}>
           <div
             contentEditable={false}
             style={{
@@ -500,7 +510,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
             )}
 
             {/* Wrap-text controls — free mode only */}
-            {isFree && (
+            {isFree && !isBackground && (
               <>
                 <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
                 <span style={{ fontSize: 10, color: '#94a3b8', paddingRight: 1,
@@ -532,6 +542,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
                     width: PRESENTATION_PAGE_WIDTH,
                     height: PRESENTATION_PAGE_HEIGHT,
                     wrapText: 'none',
+                    background: false,
                   })}
                 >
                   <FillPageIcon />
@@ -540,7 +551,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
             )}
 
             {/* Layer controls — free mode only */}
-            {isFree && layerTotal > 1 && (
+            {isFree && !isBackground && layerTotal > 1 && (
               <>
                 <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
 
@@ -572,9 +583,13 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
               <>
                 <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
                 <ImgBtn
-                  active={(zIndex ?? 0) < 0}
-                  tooltip={(zIndex ?? 0) < 0 ? 'Bakgrundsbild — klicka för att flytta framåt' : 'Använd som bakgrundsbild (bakom text)'}
-                  onClick={() => applyImagePatch({ zIndex: (zIndex ?? 0) < 0 ? 1 : -1 })}
+                  active={isBackground}
+                  tooltip={isBackground ? 'Bakgrundsbild - klicka igen for att gora den vanlig' : 'Anvand som bakgrundsbild bakom texten'}
+                  onClick={() => applyImagePatch(
+                    isBackground
+                      ? { background: false, zIndex: getMaxForegroundZ() + 1 }
+                      : { position: 'free', wrapText: 'none', background: true, zIndex: 0 }
+                  )}
                 >
                   {/* Simple "image behind lines" icon */}
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -591,6 +606,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
               <TrashIcon />
             </ImgBtn>
           </div>
+          </TooltipProvider>
         )}
 
         {/* Blue selection ring */}
@@ -680,17 +696,32 @@ function ImgBtn({
   children: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      className="img-tb-btn"
-      disabled={disabled}
-      data-active={active ? 'true' : undefined}
-      data-danger={danger ? 'true' : undefined}
-      data-tooltip={tooltip}
-      onMouseDown={(e) => { e.preventDefault(); if (!disabled) onClick(); }}
-    >
-      {children}
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            if (!disabled) onClick();
+          }}
+          className={[
+            'inline-flex h-8 w-8 items-center justify-center rounded-md border text-slate-600 transition-colors',
+            disabled ? 'cursor-default border-slate-200 bg-slate-50 opacity-40' : '',
+            !disabled && active ? 'border-blue-200 bg-blue-50 text-blue-700 shadow-sm' : '',
+            !disabled && !active && danger ? 'border-red-200 bg-white text-red-500 hover:bg-red-50' : '',
+            !disabled && !active && !danger ? 'border-transparent bg-white hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900' : '',
+          ].join(' ')}
+        >
+          {children}
+        </button>
+      </TooltipTrigger>
+      {!disabled && (
+        <TooltipContent side="bottom" align="center">
+          {tooltip}
+        </TooltipContent>
+      )}
+    </Tooltip>
   );
 }
 
