@@ -16,6 +16,9 @@ describe('public offer pdf renderer', () => {
     expect(html).toContain('<base href="https://offert.soleria.se/" />');
     expect(html).toContain('box-shadow: none !important;');
     expect(html).toContain('filter: none !important;');
+    expect(html).toContain('.page-block--document {');
+    expect(html).toContain('padding: 28px 34px 24px !important;');
+    expect(html).toContain('.offer-shell__lead');
     expect(html).toContain('.page-block--document::before');
     expect(html).toContain('.offer-summary__row--total');
   });

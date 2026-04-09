@@ -52,9 +52,17 @@ describe('offer document generator', () => {
     signatureMethod: 'typed',
     publicToken: 'public-token',
   };
+  const branding = {
+    companyName: 'Soleria',
+    senderName: 'Soleria',
+    senderEmail: 'hello@soleria.se',
+    website: 'www.soleria.se',
+    organizationNumber: '556123-4567',
+    addressLines: ['Storgatan 1', '111 22 Stockholm'],
+  };
 
   it('keeps line items in supplied order and protects the description column', () => {
-    const html = generateFallbackDocument(offer);
+    const html = generateFallbackDocument(offer, branding);
 
     const gammaIndex = html.indexOf('Gamma Service');
     const alphaIndex = html.indexOf('Alpha Service');
@@ -102,7 +110,7 @@ describe('offer document generator', () => {
       defaultFooter: { type: 'doc', content: [] },
     });
 
-    const html = generateDocument(template, offer);
+    const html = generateDocument(template, offer, branding);
 
     const pricingIndex = html.indexOf('Produkter och tjÃ¤nster');
     const pricingIndexResolved = Math.max(pricingIndex, html.indexOf('<h2>Produkter och tjänster</h2>'));
@@ -113,5 +121,15 @@ describe('offer document generator', () => {
     expect(summaryIndex).toBeGreaterThan(pricingIndexResolved);
     expect(termsIndex).toBeGreaterThan(summaryIndex);
     expect(html).not.toContain('offer-pricing-layout--split');
+  });
+
+  it('includes company address details in the footer contact block', () => {
+    const html = generateFallbackDocument(offer, branding);
+
+    expect(html).toContain('<strong>Soleria</strong>');
+    expect(html).toContain('<span>Org.nr 556123-4567</span>');
+    expect(html).toContain('<span>Storgatan 1</span>');
+    expect(html).toContain('<span>111 22 Stockholm</span>');
+    expect(html).toContain('<span>www.soleria.se</span>');
   });
 });
