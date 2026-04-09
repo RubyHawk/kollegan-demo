@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FolderOpen, Sparkle, StackSimple } from '@phosphor-icons/react';
 import {
   Dialog,
@@ -40,6 +40,14 @@ export function ProductModal({
   onOpenCategoryManager,
 }: ProductModalProps) {
   const [form, setForm] = useState<ProductForm>(() => buildProductForm(product, categoryById));
+  const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const el = descriptionRef.current;
+    if (!el) return;
+    el.style.height = '0px';
+    el.style.height = `${Math.max(el.scrollHeight, 88)}px`;
+  }, [form.description, open]);
 
   const selectedMain = useMemo(
     () => categories.find((node) => node.main.id === form.mainCategoryId),
@@ -73,16 +81,17 @@ export function ProductModal({
       <DialogContent
         mobileVariant="fullscreen"
         showMobileClose
-        className="w-[min(100vw-1rem,1080px)] sm:max-w-[1080px] sm:max-h-none"
+        className="flex h-full w-[min(100vw-1rem,1080px)] flex-col sm:h-auto sm:max-h-[min(92dvh,920px)] sm:max-w-[1080px]"
       >
-        <div className="flex flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
           <DialogHeader className="border-b border-[var(--border)] px-5 pb-4 pt-5 pr-16">
             <DialogTitle className="text-base text-[var(--text-primary)]">
               {product ? 'Redigera produkt' : 'Ny produkt'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_260px]">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_260px]">
             {/* ── Form ── */}
             <div className="px-5 py-4">
               <div className="space-y-4">
@@ -100,11 +109,13 @@ export function ProductModal({
                   <div>
                     <label className={labelClass}>Beskrivning</label>
                     <textarea
+                      ref={descriptionRef}
                       value={form.description}
                       onChange={setField('description')}
-                      rows={2}
+                      rows={4}
                       placeholder="Kort beskrivning av vad kunden faktiskt köper."
-                      className={`${inputClass} resize-none`}
+                      className={`${inputClass} min-h-[88px] resize-none leading-6`}
+                      style={{ overflow: 'hidden' }}
                     />
                   </div>
                 </div>
@@ -336,9 +347,10 @@ export function ProductModal({
                 </button>
               </div>
             </aside>
+            </div>
           </div>
 
-          <DialogFooter className="gap-2 border-t border-[var(--border)] px-5 pb-5 pt-3">
+          <DialogFooter className="shrink-0 gap-2 border-t border-[var(--border)] bg-[var(--surface)] px-5 pb-5 pt-3">
             <Button type="button" variant="outline" onClick={onClose}>
               Avbryt
             </Button>

@@ -95,6 +95,7 @@ describe('public offer PDF sanitizing', () => {
     } as never);
 
     expect(sanitized).toContain('/promo.png');
+    expect(sanitized).toContain('/promo.png');
     expect(sanitized).not.toContain('Tydlig prisbild, giltighet och villkor samlade i en offert.');
     expect(sanitized).toContain('25%');
     expect(sanitized).not.toContain('25% moms');
