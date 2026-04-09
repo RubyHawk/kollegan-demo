@@ -350,7 +350,6 @@ export default function PublicOfferPage() {
   const [typedSig, setTypedSig] = useState('');
 
   const [documentReady, setDocumentReady] = useState(false);
-  const [offerSectionOffset, setOfferSectionOffset] = useState(0);
   const [promoPageCount, setPromoPageCount] = useState(0);
 
   const sigRef = useRef<SignatureCanvas>(null);
@@ -405,7 +404,6 @@ export default function PublicOfferPage() {
 
   useEffect(() => {
     setDocumentReady(false);
-    setOfferSectionOffset(0);
     setPromoPageCount(0);
   }, [iframeDocumentHtml]);
 
@@ -693,12 +691,6 @@ export default function PublicOfferPage() {
           ? Math.max(Math.ceil(naturalH * effectiveScale), Math.ceil(renderedH))
           : Math.max(naturalH, Math.ceil(renderedH));
         iframe.style.height = `${targetHeight}px`;
-        const rawOfferOffset = firstOfferAnchor
-          ? firstOfferAnchor.getBoundingClientRect().top - (doc.body?.getBoundingClientRect().top ?? 0)
-          : firstDocumentPage?.offsetTop ?? 0;
-        const scaledOfferOffset = effectiveScale < 1 ? rawOfferOffset * effectiveScale : rawOfferOffset;
-        const nextOfferOffset = Math.max(0, Math.round(scaledOfferOffset));
-        setOfferSectionOffset(nextOfferOffset);
         setDocumentReady(true);
       });
     };
@@ -887,21 +879,6 @@ export default function PublicOfferPage() {
     }
   };
 
-  const handleJumpToOffer = useCallback(() => {
-    const iframe = iframeRef.current;
-    const documentSection = documentSectionRef.current;
-    if (!iframe && !documentSection) return;
-
-    const sectionTop = documentSection
-      ? window.scrollY + documentSection.getBoundingClientRect().top
-      : 0;
-    const iframeTop = iframe
-      ? window.scrollY + iframe.getBoundingClientRect().top
-      : sectionTop;
-    const targetTop = Math.max(0, iframeTop + offerSectionOffset - 20);
-    window.scrollTo({ top: targetTop, behavior: 'smooth' });
-  }, [offerSectionOffset]);
-
   // ─── Derived state ───────────────────────────────────────────────────────────
   const selectedFont = SIG_FONTS.find((f) => f.id === sigFont) ?? SIG_FONTS[0];
 
@@ -1078,33 +1055,6 @@ export default function PublicOfferPage() {
         style={{ paddingBottom: '64px' }}
       >
         <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
-
-        {documentReady && promoPageCount > 0 && offerSectionOffset > 80 && (
-          <div className="px-4 pb-4 pt-4 sm:px-0 sm:pt-0">
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.24 }}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200/70 bg-white px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.05)]"
-            >
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                  Snabbare till offerten
-                </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  {promoPageCount} introduktionssida{promoPageCount === 1 ? '' : 'or'} visas först. Hoppa direkt till pris och detaljer.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleJumpToOffer}
-                className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
-              >
-                Hoppa till offert
-              </button>
-            </motion.div>
-          </div>
-        )}
 
         {/* Document iframe */}
         {offer.generatedDocument && (
