@@ -676,18 +676,7 @@ function injectDocumentPatchStyles(html: string): string {
     color: #334155 !important;
   }
   .offer-pricing-layout {
-    display: grid !important;
-    gap: 18px !important;
-  }
-  .offer-pricing-layout--split {
-    grid-template-columns: minmax(0, 1fr) !important;
-    align-items: start !important;
-  }
-  .offer-pricing-layout__summary {
-    align-self: start !important;
-    width: min(332px, 100%) !important;
-    margin-top: 14px !important;
-    margin-left: auto !important;
+    display: block !important;
   }
   .offer-items__table {
     border-radius: 20px !important;
@@ -733,6 +722,7 @@ function injectDocumentPatchStyles(html: string): string {
   .offer-summary--below {
     width: min(320px, 100%) !important;
     margin-top: 14px !important;
+    clear: both !important;
   }
   .offer-summary__row {
     padding: 10px 16px !important;
@@ -755,11 +745,15 @@ function injectDocumentPatchStyles(html: string): string {
     letter-spacing: -0.03em !important;
   }
   .offer-section--terms {
+    clear: both !important;
     gap: 8px !important;
     padding: 18px 20px !important;
     border: 1px solid #dbe4ee !important;
     border-radius: 18px !important;
     background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+  }
+  .offer-section--notes {
+    clear: both !important;
   }
   .offer-shell__footer {
     grid-template-columns: 1.2fr 1fr 1fr !important;
@@ -790,12 +784,6 @@ function injectDocumentPatchStyles(html: string): string {
     .offer-shell__topline h1 {
       font-size: 28px !important;
       max-width: none !important;
-    }
-    .offer-pricing-layout--split {
-      grid-template-columns: minmax(0, 1fr) !important;
-    }
-    .offer-pricing-layout__summary {
-      width: 100% !important;
     }
     .offer-summary {
       max-width: none !important;
@@ -1010,7 +998,7 @@ interface V3PageDoc {
     termsHeading?: string;
     termsBody?: string;
     notesHeading?: string;
-    summaryPlacement?: 'right' | 'below';
+    summaryPlacement?: 'below';
   };
 }
 
@@ -1081,9 +1069,9 @@ function extractLegacyDocumentIntroHtml(
   return stripLegacyStructuredIntroHtml(nodeToHtml({ type: 'doc', content: introNodes }, introReplacements));
 }
 
-function renderDocumentSummary(offer: Offer, placement: 'right' | 'below'): string {
+function renderDocumentSummary(offer: Offer): string {
   const summary = buildOfferSummary(offer);
-  const boxClass = placement === 'below' ? 'offer-summary offer-summary--below' : 'offer-summary';
+  const boxClass = 'offer-summary offer-summary--below';
   const discountRow = summary.discountAmount > 0 ? `
     <div class="offer-summary__row">
       <span>Rabatt</span>
@@ -1110,6 +1098,10 @@ function renderDocumentSummary(offer: Offer, placement: 'right' | 'below'): stri
     </aside>`;
 }
 
+function normalizeSummaryPlacement(): 'below' {
+  return 'below';
+}
+
 function renderStructuredDocumentPage(
   page: V3PageDoc,
   offer: Offer,
@@ -1133,8 +1125,8 @@ function renderStructuredDocumentPage(
     termsHeading: DEFAULT_DOCUMENT_TERMS_HEADING,
     termsBody: DEFAULT_DOCUMENT_TERMS_BODY,
     notesHeading: DEFAULT_DOCUMENT_NOTES_HEADING,
-    summaryPlacement: 'right',
     ...(page.document ?? {}),
+    summaryPlacement: normalizeSummaryPlacement(),
   };
 
   const offerNumber = replacements['{{offerNumber}}'];
@@ -1167,7 +1159,7 @@ function renderStructuredDocumentPage(
   const termsHeading = (settings.termsHeading ?? DEFAULT_DOCUMENT_TERMS_HEADING).trim();
   const termsBody = settings.termsBody ?? DEFAULT_DOCUMENT_TERMS_BODY;
   const noteHtml = offer.notes
-    ? `<section class="offer-section"><h3>${escapeHtml(noteHeading || DEFAULT_DOCUMENT_NOTES_HEADING)}</h3><p>${renderRichPlainText(offer.notes)}</p></section>`
+    ? `<section class="offer-section offer-section--notes"><h3>${escapeHtml(noteHeading || DEFAULT_DOCUMENT_NOTES_HEADING)}</h3><p>${renderRichPlainText(offer.notes)}</p></section>`
     : '';
   const introReplacements: Record<string, string> = {
     ...replacements,
@@ -1191,23 +1183,16 @@ function renderStructuredDocumentPage(
     .length > 0;
   const hasIntroContent = settings.showIntro && (hasIntroVisualContent || hasIntroTextContent);
   const tableHtml = buildStructuredLineItems(offer.lineItems, offer.priceDisplayMode);
-  const summaryPlacement = (settings.summaryPlacement ?? 'right') as 'right' | 'below';
-  const summaryHtml = renderDocumentSummary(
-    offer,
-    summaryPlacement,
-  );
+  const summaryHtml = renderDocumentSummary(offer);
   const pricingSectionHtml = settings.showLineItems
     ? `<section class="offer-section">
         <div class="offer-table-header">
           <h2>Produkter och tj\u00e4nster</h2>
         </div>
-        <div class="offer-pricing-layout${settings.showSummary && summaryPlacement === 'right' ? ' offer-pricing-layout--split' : ''}">
+        <div class="offer-pricing-layout">
           <div class="offer-pricing-layout__items">
             ${tableHtml}
           </div>
-          ${settings.showSummary && summaryPlacement === 'right'
-            ? `<div class="offer-pricing-layout__summary">${summaryHtml}</div>`
-            : ''}
         </div>
       </section>`
     : '';
@@ -1251,7 +1236,7 @@ function renderStructuredDocumentPage(
           ${hasIntroContent ? `<section class="offer-section offer-section--intro offer-section--intro-${settings.introLayout ?? 'compact'}">${introHtml}</section>` : ''}
 
           ${pricingSectionHtml}
-          ${settings.showSummary && summaryPlacement !== 'right' ? summaryHtml : ''}
+          ${settings.showSummary ? summaryHtml : ''}
           ${settings.showTerms ? `
             <section class="offer-section offer-section--terms">
               <h3>${escapeHtml(termsHeading || DEFAULT_DOCUMENT_TERMS_HEADING)}</h3>
@@ -1280,7 +1265,7 @@ function renderStructuredDocumentPage(
 export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingProfile): string {
   const offerNumberStr = getOfferNumberString(offer);
   const fallbackLineItemsHtml = buildStructuredLineItems(offer.lineItems, offer.priceDisplayMode);
-  const fallbackSummaryHtml = renderDocumentSummary(offer, 'below');
+  const fallbackSummaryHtml = renderDocumentSummary(offer);
   const companyName = branding?.companyName?.trim() || branding?.senderName?.trim() || 'Avs\u00e4ndare';
   const responsibleName = branding?.responsibleName?.trim() || branding?.senderName?.trim() || '';
   const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '';
@@ -1347,7 +1332,7 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
     .offer-item-card__metric--total dt { color: #475569; }
     .offer-item-card__metric--total dd { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; }
     .offer-summary { margin-left: auto; width: min(260px, 100%); border: 1px solid #dbe4ee; border-radius: 16px; background: #ffffff; padding: 10px 0; display: grid; gap: 0; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03); }
-    .offer-summary--below { width: min(332px, 100%); margin-top: 16px; margin-left: auto; }
+    .offer-summary--below { width: min(332px, 100%); margin-top: 16px; margin-left: auto; clear: both; }
     .offer-summary__row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 9px 16px; font-size: 13px; line-height: 1.6; color: #475569; }
     .offer-summary__row strong { white-space: nowrap; color: #0f172a; }
     .offer-summary__row--total { margin-top: 8px; padding: 12px 16px; border-top: 1px solid #e8eef5; background: #f8fafc; font-size: 14px; font-weight: 700; color: #0f172a; }
@@ -1673,7 +1658,8 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     .offer-summary__row strong { white-space: nowrap; color: #0f172a; }
     .offer-summary__row--total { margin-top: 8px; padding: 12px 16px; border-top: 1px solid #e8eef5; background: #f8fafc; font-size: 14px; font-weight: 700; color: #0f172a; }
     .offer-summary__row--total strong { color: #0f172a; font-size: 18px; }
-    .offer-section--terms { margin-top: 14px; }
+    .offer-section--terms { margin-top: 14px; clear: both; }
+    .offer-section--notes { clear: both; }
     .offer-shell__footer { display: grid; grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); gap: 18px; padding-top: 18px; margin-top: 18px; border-top: 1px solid #dbe4ee; }
     .offer-shell__footer div { display: grid; gap: 6px; font-size: 13px; line-height: 1.6; color: #475569; }
     .doc-header { font-size: 12px; color: #64748b; margin-bottom: 0; }

@@ -306,13 +306,13 @@ function StructuredOfferCanvas({
     showFooter?: boolean;
     termsHeading?: string;
     notesHeading?: string;
-    summaryPlacement?: 'right' | 'below';
+    summaryPlacement?: 'below';
   };
   fontFamily: string;
   pageReady: boolean;
 }) {
-  const summaryPlacement = settings?.summaryPlacement ?? 'right';
   const introLayout = settings?.introLayout ?? 'compact';
+  const showSummary = settings?.showSummary !== false;
 
   return (
     <div
@@ -403,11 +403,7 @@ function StructuredOfferCanvas({
           )}
         </section>
 
-        <section className={cn(
-          'grid gap-6',
-          summaryPlacement === 'right' && settings?.showSummary !== false ? 'lg:grid-cols-[minmax(0,1fr)_300px]' : 'grid-cols-1'
-        )}>
-          <div className="space-y-6">
+        <section className="space-y-6">
             {settings?.showIntro !== false && (
               <div className={cn(
                 'rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.05)]',
@@ -465,8 +461,14 @@ function StructuredOfferCanvas({
               </div>
             )}
 
+            {showSummary && (
+              <div className="clear-both flex justify-end">
+                <SummaryCard className="w-full max-w-[300px]" />
+              </div>
+            )}
+
             {settings?.showTerms !== false && (
-              <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+              <div className="clear-both rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Juridik</p>
                 <h3 className="mt-2 text-lg font-semibold text-slate-900">{settings?.termsHeading ?? 'Juridiska villkor'}</h3>
                 <p className="mt-3 max-w-[72ch] text-sm leading-7 text-slate-600">
@@ -476,23 +478,14 @@ function StructuredOfferCanvas({
             )}
 
             {settings?.showNotes !== false && (
-              <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/80 p-5">
+              <div className="clear-both rounded-[28px] border border-dashed border-slate-300 bg-white/80 p-5">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Anteckningar</p>
                 <p className="mt-2 text-sm leading-7 text-slate-600">
                   Rubriken för eventuella offertspecifika anteckningar sätts i högerspalten och används när en offert har egen kommentar.
                 </p>
               </div>
             )}
-          </div>
-
-          {summaryPlacement === 'right' && settings?.showSummary !== false && (
-            <SummaryCard />
-          )}
         </section>
-
-        {summaryPlacement === 'below' && settings?.showSummary !== false && (
-          <SummaryCard />
-        )}
 
         {settings?.showFooter !== false && (
           <footer className="grid gap-4 border-t border-slate-200 pt-5 text-sm text-slate-600 md:grid-cols-3">
@@ -522,9 +515,9 @@ function PresentationPageLoadingState({ role }: { role?: string }) {
   );
 }
 
-function SummaryCard() {
+function SummaryCard({ className }: { className?: string }) {
   return (
-    <aside className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+    <aside className={cn('rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]', className)}>
       <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Summering</p>
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-4">
