@@ -1016,7 +1016,7 @@ export default function PublicOfferPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen"
+      className="min-h-screen bg-slate-50"
     >
       {/* ─── Sticky header ─── */}
       <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/96 backdrop-blur-md sm:border-b-0 sm:bg-transparent sm:px-6 sm:pt-3 sm:backdrop-blur-none">
@@ -1072,19 +1072,6 @@ export default function PublicOfferPage() {
           </div>
         </div>
 
-        {/* Progress bar */}
-        {offer.generatedDocument && (
-          downloading ? (
-            <div className="h-1 w-full overflow-hidden bg-slate-100/90">
-              <div className="h-full w-1/3 bg-slate-800 animate-[slide-indeterminate_1.4s_ease-in-out_infinite]" />
-              <style>{`@keyframes slide-indeterminate{0%{transform:translateX(-100%);width:40%}50%{transform:translateX(150%);width:60%}100%{transform:translateX(300%);width:40%}}`}</style>
-            </div>
-          ) : (
-            <div className="h-1 w-full bg-slate-100/90">
-              <div className="h-full bg-slate-800 transition-[width] duration-75" style={{ width: `${scrollProgress}%` }} />
-            </div>
-          )
-        )}
         </div>
       </header>
 
@@ -1096,7 +1083,7 @@ export default function PublicOfferPage() {
       >
         <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
 
-        {offer.generatedDocument && documentReady && promoPageCount > 0 && (
+        {false && (
           <div className="px-4 pb-4 pt-4 sm:px-0 sm:pt-0">
             <motion.div
               initial={{ opacity: 0, y: 8 }}
