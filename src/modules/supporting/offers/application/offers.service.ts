@@ -56,6 +56,36 @@ export function resolveGeneratedDocumentForSend(input: {
   };
 }
 
+export function resolveOfferSendWindow(
+  existing: Offer,
+  now: Date = new Date(),
+): {
+  sentAt: Date;
+  validUntil: Date;
+  publicTokenExpiresAt: Date;
+} {
+  const hasStoredSnapshot = Boolean(existing.generatedDocument?.trim());
+
+  if (hasStoredSnapshot) {
+    const sentAt = existing.sentAt ? new Date(existing.sentAt) : now;
+    const validUntil = new Date(existing.validUntil);
+    return {
+      sentAt,
+      validUntil,
+      publicTokenExpiresAt: existing.publicTokenExpiresAt
+        ? new Date(existing.publicTokenExpiresAt)
+        : validUntil,
+    };
+  }
+
+  const sentAt = now;
+  const validUntil = computeOfferValidUntil(sentAt, existing.validityDays ?? 30);
+  return {
+    sentAt,
+    validUntil,
+    publicTokenExpiresAt: validUntil,
+  };
+}
 async function getOfferResponsibleUser(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -129,9 +159,8 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   if (!existing) return null;
 
   const offerNumber = await offersRepository.assignOfferNumber(id, orgId);
-  const sentAt = new Date();
-  const validUntil = computeOfferValidUntil(sentAt, existing.validityDays ?? 30);
-  const publicTokenExpiresAt = validUntil;
+  const sendWindow = resolveOfferSendWindow(existing);
+  const { sentAt, validUntil, publicTokenExpiresAt } = sendWindow;
 
   const sendSnapshot: Offer = {
     ...existing,
