@@ -24,9 +24,8 @@ jobs:
             set -euo pipefail
             cd /var/www/offert
             git fetch origin
-            git rebase --abort || true
+            git rebase --abort >/dev/null 2>&1 || true
             git reset --hard origin/main
-            pkill -f "next build" || true
             rm -f .next/lock
             npm ci --include=dev --no-audit
             npx playwright install chromium
