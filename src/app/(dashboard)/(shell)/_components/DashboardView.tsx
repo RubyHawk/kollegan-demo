@@ -441,119 +441,92 @@ function StatusDistributionCard({
   return (
     <motion.div
       variants={fadeUp}
-      className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] p-5 shadow-[0_16px_42px_rgba(0,0,0,0.08)]"
+      className="rounded-[20px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-4 py-3.5 shadow-[0_14px_34px_rgba(0,0,0,0.06)]"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">
             Statusfördelning
           </h2>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Hur pipeline och avslut ser ut just nu.
+          <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
+            Pipeline och avslut just nu
           </p>
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2 text-right">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
             Totalt
-          </p>
-          <p className="text-lg font-semibold tabular-nums text-[var(--text-primary)]">{total}</p>
+          </span>
+          <span className="text-base font-semibold tabular-nums text-[var(--text-primary)]">
+            {total}
+          </span>
         </div>
       </div>
 
       {total === 0 ? (
-        <div className="mt-6 rounded-[22px] border border-dashed border-[var(--border)] bg-[var(--surface-1)] px-5 py-8 text-center">
-          <p className="text-sm font-medium text-[var(--text-primary)]">Ingen status att visa ännu</p>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+        <div className="mt-3 rounded-[14px] border border-dashed border-[var(--border)] bg-[var(--surface-1)] px-4 py-6 text-center">
+          <p className="text-xs font-medium text-[var(--text-primary)]">Ingen status att visa ännu</p>
+          <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
             När offerter börjar skickas fylls fördelningen på automatiskt här.
           </p>
         </div>
       ) : (
-        <div className="mt-6 grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-          <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-1)] px-4 py-5">
-            <div className="mx-auto flex w-full max-w-[180px] items-center justify-center">
-              <div className="relative">
-                <svg viewBox="0 0 132 132" className="h-[164px] w-[164px] -rotate-90">
-                  <circle
-                    cx="66"
-                    cy="66"
-                    r={radius}
-                    fill="none"
-                    stroke="color-mix(in srgb, var(--border) 80%, transparent)"
-                    strokeWidth="14"
-                  />
-                  {donutSegments.map((row) => (
-                    <circle
-                      key={row.status}
-                      cx="66"
-                      cy="66"
-                      r={radius}
-                      fill="none"
-                      stroke={row.color}
-                      strokeLinecap="round"
-                      strokeWidth="14"
-                      strokeDasharray={`${row.segment} ${circumference - row.segment}`}
-                      strokeDashoffset={-row.dashOffset}
-                    />
-                  ))}
-                </svg>
-
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                    Totalt
-                  </span>
-                  <span className="mt-1 text-[34px] font-semibold leading-none tabular-nums text-[var(--text-primary)]">
-                    {total}
-                  </span>
-                  <span className="mt-1 text-xs text-[var(--text-secondary)]">offerter</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              {rows
-                .filter((row) => row.count > 0)
-                .slice(0, 4)
-                .map((row) => (
-                  <div
-                    key={row.status}
-                    className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2"
-                  >
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                      {row.label}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold tabular-nums text-[var(--text-primary)]">
-                      {row.percent}%
-                    </p>
-                  </div>
-                ))}
+        <div className="mt-3 grid items-center gap-4 sm:grid-cols-[116px_minmax(0,1fr)]">
+          <div className="relative mx-auto h-[108px] w-[108px] sm:mx-0">
+            <svg viewBox="0 0 132 132" className="h-[108px] w-[108px] -rotate-90">
+              <circle
+                cx="66"
+                cy="66"
+                r={radius}
+                fill="none"
+                stroke="color-mix(in srgb, var(--border) 80%, transparent)"
+                strokeWidth="16"
+              />
+              {donutSegments.map((row) => (
+                <circle
+                  key={row.status}
+                  cx="66"
+                  cy="66"
+                  r={radius}
+                  fill="none"
+                  stroke={row.color}
+                  strokeLinecap="round"
+                  strokeWidth="16"
+                  strokeDasharray={`${row.segment} ${circumference - row.segment}`}
+                  strokeDashoffset={-row.dashOffset}
+                />
+              ))}
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span className="text-[22px] font-semibold leading-none tabular-nums text-[var(--text-primary)]">
+                {total}
+              </span>
+              <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                offerter
+              </span>
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="grid gap-x-4 gap-y-1.5 sm:grid-cols-2">
             {rows.map((row) => (
-              <div
-                key={row.status}
-                className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ background: row.color }}
-                      aria-hidden="true"
-                    />
-                    <span className="truncate text-sm font-medium text-[var(--text-primary)]">
-                      {row.label}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="tabular-nums text-[var(--text-secondary)]">{row.percent}%</span>
-                    <span className="font-semibold tabular-nums text-[var(--text-primary)]">
-                      {row.count}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
+              <div key={row.status} className="flex items-center gap-2">
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ background: row.color }}
+                  aria-hidden="true"
+                />
+                <span className="flex-1 truncate text-[11.5px] font-medium text-[var(--text-primary)]">
+                  {row.label}
+                </span>
+                <span className="tabular-nums text-[11px] text-[var(--text-secondary)]">
+                  {row.percent}%
+                </span>
+                <span className="w-5 text-right text-[12px] font-semibold tabular-nums text-[var(--text-primary)]">
+                  {row.count}
+                </span>
+                <div
+                  className="h-1 w-12 shrink-0 overflow-hidden rounded-full"
+                  style={{ background: 'var(--surface-2)' }}
+                >
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${row.percent}%` }}
@@ -562,11 +535,6 @@ function StatusDistributionCard({
                     style={{ background: row.color }}
                   />
                 </div>
-                <p className="mt-2 text-xs text-[var(--text-muted)]">
-                  {row.count === 0
-                    ? 'Ingen aktivitet ännu'
-                    : `${row.count} offert${row.count === 1 ? '' : 'er'} i denna status`}
-                </p>
               </div>
             ))}
           </div>
@@ -585,10 +553,10 @@ function TrendChart({
 }) {
   const maxValue = Math.max(...data.map((bucket) => bucket.count), 1);
   const width = 720;
-  const height = 260;
+  const height = 180;
   const paddingX = 18;
-  const paddingTop = 16;
-  const paddingBottom = 30;
+  const paddingTop = 12;
+  const paddingBottom = 22;
   const chartHeight = height - paddingTop - paddingBottom;
   const baseline = height - paddingBottom;
   const step = data.length > 1 ? (width - paddingX * 2) / (data.length - 1) : 0;
@@ -601,11 +569,14 @@ function TrendChart({
     y: baseline - (bucket.accepted / maxValue) * chartHeight,
   }));
 
+  // Show at most 8 axis labels to keep things readable
+  const labelStride = Math.max(1, Math.ceil(data.length / 8));
+
   if (empty) {
     return (
-      <div className="rounded-[22px] border border-dashed border-[var(--border)] bg-[var(--surface-1)] px-5 py-10 text-center">
-        <p className="text-sm font-medium text-[var(--text-primary)]">Inga offerter i vald period</p>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
+      <div className="rounded-[14px] border border-dashed border-[var(--border)] bg-[var(--surface-1)] px-4 py-8 text-center">
+        <p className="text-xs font-medium text-[var(--text-primary)]">Inga offerter i vald period</p>
+        <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
           Prova ett längre intervall eller välj ett eget datumspann.
         </p>
       </div>
@@ -613,113 +584,89 @@ function TrendChart({
   }
 
   return (
-    <div className="rounded-[24px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-1),var(--surface-0))] p-4">
-      <div className="overflow-hidden rounded-[20px] border border-[var(--border)] bg-[linear-gradient(180deg,color-mix(in srgb, var(--accent) 4%, var(--surface-0)),var(--surface-0))] p-3">
-        <svg viewBox={`0 0 ${width} ${height}`} className="h-[280px] w-full">
-          {[0, 1, 2, 3].map((index) => {
-            const y = paddingTop + (chartHeight / 3) * index;
-            return (
-              <line
-                key={index}
-                x1={0}
-                x2={width}
-                y1={y}
-                y2={y}
-                stroke="color-mix(in srgb, var(--border) 70%, transparent)"
-                strokeDasharray="5 7"
-              />
-            );
-          })}
+    <div
+      className="rounded-[14px] border border-[var(--border)] px-2.5 py-2"
+      style={{
+        background:
+          'linear-gradient(180deg,color-mix(in srgb, var(--accent) 3%, var(--surface-0)),var(--surface-0))',
+      }}
+    >
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-[140px] w-full">
+        {[0, 1, 2, 3].map((index) => {
+          const y = paddingTop + (chartHeight / 3) * index;
+          return (
+            <line
+              key={index}
+              x1={0}
+              x2={width}
+              y1={y}
+              y2={y}
+              stroke="color-mix(in srgb, var(--border) 70%, transparent)"
+              strokeDasharray="5 7"
+            />
+          );
+        })}
 
-          <path
-            d={buildAreaPath(totalPoints, baseline)}
-            fill="color-mix(in srgb, var(--accent) 18%, transparent)"
-          />
-          <path
-            d={buildLinePath(totalPoints)}
-            fill="none"
-            stroke="var(--accent)"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d={buildLinePath(acceptedPoints)}
-            fill="none"
-            stroke="var(--status-accepted-text)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeDasharray="7 8"
-          />
+        <path
+          d={buildAreaPath(totalPoints, baseline)}
+          fill="color-mix(in srgb, var(--accent) 18%, transparent)"
+        />
+        <path
+          d={buildLinePath(totalPoints)}
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d={buildLinePath(acceptedPoints)}
+          fill="none"
+          stroke="var(--status-accepted-text)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeDasharray="6 6"
+        />
 
-          {data.map((bucket, index) => (
-            <g key={bucket.longLabel}>
+        {data.map((bucket, index) => (
+          <g key={bucket.longLabel}>
+            <title>{`${bucket.longLabel}: ${bucket.count} skapade, ${bucket.accepted} accepterade`}</title>
+            <circle
+              cx={totalPoints[index].x}
+              cy={totalPoints[index].y}
+              r="3.5"
+              fill="var(--surface-0)"
+              stroke="var(--accent)"
+              strokeWidth="2.5"
+            />
+            {bucket.accepted > 0 ? (
               <circle
-                cx={totalPoints[index].x}
-                cy={totalPoints[index].y}
-                r="4.5"
-                fill="var(--surface-0)"
-                stroke="var(--accent)"
-                strokeWidth="3"
+                cx={acceptedPoints[index].x}
+                cy={acceptedPoints[index].y}
+                r="2.75"
+                fill="var(--status-accepted-text)"
               />
-              {bucket.accepted > 0 ? (
-                <circle
-                  cx={acceptedPoints[index].x}
-                  cy={acceptedPoints[index].y}
-                  r="3.5"
-                  fill="var(--status-accepted-text)"
-                />
-              ) : null}
-            </g>
-          ))}
-        </svg>
-      </div>
-
-      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        {data.map((bucket) => (
-          <div
-            key={bucket.longLabel}
-            className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-3"
-            title={`${bucket.longLabel}: ${bucket.count} skapade, ${bucket.accepted} accepterade`}
-          >
-            <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-              {bucket.label}
-            </p>
-            <div className="mt-2 flex items-end justify-between gap-3">
-              <div>
-                <p className="text-lg font-semibold tabular-nums text-[var(--text-primary)]">{bucket.count}</p>
-                <p className="text-xs text-[var(--text-secondary)]">{bucket.accepted} accepterade</p>
-              </div>
-              <div className="h-10 w-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{
-                    height: `${Math.max((bucket.count / maxValue) * 100, bucket.count > 0 ? 12 : 0)}%`,
-                  }}
-                  transition={{ duration: 0.4, ease: 'easeOut' }}
-                  className="mt-auto w-full rounded-full"
-                  style={{ background: 'var(--accent)' }}
-                />
-              </div>
-            </div>
-          </div>
+            ) : null}
+          </g>
         ))}
-      </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-[var(--border)] pt-4">
-        <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" aria-hidden="true" />
-          <span className="text-xs text-[var(--text-secondary)]">Skapade</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span
-            className="h-2.5 w-2.5 rounded-full bg-[var(--status-accepted-text)]"
-            aria-hidden="true"
-          />
-          <span className="text-xs text-[var(--text-secondary)]">Accepterade</span>
-        </div>
-      </div>
+        {data.map((bucket, index) =>
+          index % labelStride === 0 ? (
+            <text
+              key={`${bucket.longLabel}-label`}
+              x={totalPoints[index].x}
+              y={height - 4}
+              textAnchor="middle"
+              fontSize="10"
+              fill="var(--text-muted)"
+              fontFamily="Inter, system-ui, sans-serif"
+            >
+              {bucket.label}
+            </text>
+          ) : null,
+        )}
+      </svg>
     </div>
   );
 }
@@ -738,10 +685,10 @@ function RangeButton({
       type="button"
       onClick={onClick}
       className={[
-        'rounded-full px-3.5 py-2 text-sm font-medium transition-all',
+        'rounded-full px-2.5 py-1 text-[11px] font-medium transition-all',
         active
-          ? 'bg-[var(--accent)] text-white shadow-[0_12px_24px_rgba(0,0,0,0.14)]'
-          : 'bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]',
+          ? 'bg-[var(--accent)] font-semibold text-white shadow-[0_6px_14px_rgba(0,0,0,0.12)]'
+          : 'border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]',
       ].join(' ')}
     >
       {label}
@@ -763,60 +710,84 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
   return (
     <motion.div
       variants={fadeUp}
-      className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] p-5 shadow-[0_16px_44px_rgba(0,0,0,0.08)]"
+      className="rounded-[20px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-4 py-3.5 shadow-[0_14px_34px_rgba(0,0,0,0.06)]"
     >
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h2 className="text-base font-semibold tracking-tight text-[var(--text-primary)]">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">
               Tidsöversikt
             </h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">{formatRangeLabel(start, end)}</p>
+            <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
+              {formatRangeLabel(start, end)}
+            </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                 Skapade
-              </p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">
+              </span>
+              <span className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">
                 {createdTotal}
-              </p>
+              </span>
             </div>
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <span className="h-4 w-px bg-[var(--border)]" aria-hidden />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                 Vunna
-              </p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">
+              </span>
+              <span className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">
                 {acceptedTotal}
-              </p>
+              </span>
             </div>
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                Vinstgrad
-              </p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">
+            <span className="h-4 w-px bg-[var(--border)]" aria-hidden />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                Vinst
+              </span>
+              <span className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">
                 {successRate}%
-              </p>
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {RANGE_OPTIONS.map((option) => (
-            <RangeButton
-              key={option.id}
-              active={rangePreset === option.id}
-              label={option.label}
-              onClick={() => setRangePreset(option.id)}
-            />
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <div className="flex flex-wrap gap-1">
+            {RANGE_OPTIONS.map((option) => (
+              <RangeButton
+                key={option.id}
+                active={rangePreset === option.id}
+                label={option.label}
+                onClick={() => setRangePreset(option.id)}
+              />
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ background: 'var(--accent)' }}
+                aria-hidden
+              />
+              <span className="text-[10px] text-[var(--text-secondary)]">Skapade</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ background: 'var(--status-accepted-text)' }}
+                aria-hidden
+              />
+              <span className="text-[10px] text-[var(--text-secondary)]">Accepterade</span>
+            </div>
+          </div>
         </div>
 
         {rangePreset === 'custom' ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-3">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <label className="rounded-xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                 Från
               </span>
               <input
@@ -827,12 +798,12 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
                   setCustomStart(next.startValue);
                   setCustomEnd(next.endValue);
                 }}
-                className="mt-2 w-full bg-transparent text-sm font-medium text-[var(--text-primary)] outline-none"
+                className="mt-1 w-full bg-transparent text-xs font-medium text-[var(--text-primary)] outline-none"
               />
             </label>
 
-            <label className="rounded-2xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-3">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <label className="rounded-xl border border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                 Till
               </span>
               <input
@@ -844,7 +815,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
                   setCustomStart(next.startValue);
                   setCustomEnd(next.endValue);
                 }}
-                className="mt-2 w-full bg-transparent text-sm font-medium text-[var(--text-primary)] outline-none"
+                className="mt-1 w-full bg-transparent text-xs font-medium text-[var(--text-primary)] outline-none"
               />
             </label>
           </div>
