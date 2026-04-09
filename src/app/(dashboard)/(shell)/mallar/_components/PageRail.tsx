@@ -31,7 +31,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@shared/lib/utils';
 import { useHeaderFooter } from './header-footer-context';
-import { PAGE_ROLE_LABELS, type PageDoc, type PageRole } from './template-doc';
+import { EMPTY_DOC, PAGE_ROLE_LABELS, type PageDoc, type PageRole } from './template-doc';
 
 type PageBlueprint = {
   key: string;
@@ -143,14 +143,9 @@ const PAGE_BLUEPRINTS: PageBlueprint[] = [
     role: 'appendix',
     kind: 'presentation',
     includeInCustomerPdf: true,
-    description: 'Avslutande bilaga eller extra material.',
+    description: 'Bildbilaga eller extra material som startar tomt.',
     icon: <FileArrowUp size={16} />,
-    body: {
-      type: 'doc',
-      content: [
-        { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Bilaga' }] },
-      ],
-    },
+    body: EMPTY_DOC,
   },
 ];
 

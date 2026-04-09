@@ -31,6 +31,7 @@ export default function DocumentCanvas() {
 
   const pagePadding = MARGIN_PRESETS[hf?.docSettings?.pageMargin ?? 'normal'];
   const docFont = hf?.docSettings?.defaultFont ?? 'Calibri';
+  const activePageReady = hf?.activePageReady ?? true;
 
   if (!editor || !activePage) return null;
 
@@ -65,6 +66,7 @@ export default function DocumentCanvas() {
                   title={activePage.label}
                   settings={documentSettings}
                   fontFamily={docFont}
+                  pageReady={activePageReady}
                 />
               ) : (
                 <div
@@ -72,11 +74,15 @@ export default function DocumentCanvas() {
                   className="presentation-page"
                   style={{ padding: `${pagePadding}px ${pagePadding}px`, fontFamily: `${docFont}, Arial, sans-serif` }}
                 >
-                  <EditorContent
-                    key={`presentation-editor:${pageRenderKey}`}
-                    editor={editor}
-                    className="doc-editor doc-editor--presentation"
-                  />
+                  {activePageReady ? (
+                    <EditorContent
+                      key={`presentation-editor:${pageRenderKey}`}
+                      editor={editor}
+                      className="doc-editor doc-editor--presentation"
+                    />
+                  ) : (
+                    <PresentationPageLoadingState role={activePage.role} />
+                  )}
                 </div>
               )}
             </div>
@@ -279,6 +285,7 @@ function StructuredOfferCanvas({
   title,
   settings,
   fontFamily,
+  pageReady,
 }: {
   pageKey: string;
   editor: NonNullable<ReturnType<typeof useTemplateEditor>>;
@@ -302,6 +309,7 @@ function StructuredOfferCanvas({
     summaryPlacement?: 'right' | 'below';
   };
   fontFamily: string;
+  pageReady: boolean;
 }) {
   const summaryPlacement = settings?.summaryPlacement ?? 'right';
   const introLayout = settings?.introLayout ?? 'compact';
@@ -418,7 +426,7 @@ function StructuredOfferCanvas({
                 </div>
                 <EditorContent
                   key={`structured-editor:${pageKey}`}
-                  editor={editor}
+                  editor={pageReady ? editor : null}
                   className="doc-editor doc-editor--structured"
                 />
               </div>
@@ -500,6 +508,16 @@ function StructuredOfferCanvas({
           </footer>
         )}
       </div>
+    </div>
+  );
+}
+
+function PresentationPageLoadingState({ role }: { role?: string }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-6 text-sm leading-6 text-slate-500">
+      {role === 'appendix'
+        ? 'Laddar bilagan. När sidan är klar kan du lägga in bilden från vänsterpanelen utan att den hamnar på fel sida.'
+        : 'Laddar sidans innehåll…'}
     </div>
   );
 }

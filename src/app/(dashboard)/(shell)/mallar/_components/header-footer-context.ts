@@ -50,6 +50,9 @@ export interface HFCtxValue {
     defaultFont: string;
   };
   patchDocSettings: (p: Partial<HFCtxValue['docSettings']>) => void;
+
+  // Whether the shared editor has finished hydrating the currently active page.
+  activePageReady: boolean;
 }
 
 export const HFCtx = createContext<HFCtxValue | null>(null);
