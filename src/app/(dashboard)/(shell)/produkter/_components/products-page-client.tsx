@@ -526,12 +526,14 @@ export function ProductsPageClient() {
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="space-y-6">
         {/* KPI header card */}
         <div className="overflow-hidden rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm">
-          <div className="flex flex-col gap-0 sm:flex-row sm:items-stretch sm:divide-x sm:divide-[var(--border)]">
-            <div className="flex items-center px-5 py-4">
-              <h1 className="text-sm font-semibold text-[var(--text-primary)]">Produktbibliotek</h1>
+          <div className="flex items-center">
+            {/* Title */}
+            <div className="border-r border-[var(--border)] px-5 py-4">
+              <h1 className="whitespace-nowrap text-sm font-semibold text-[var(--text-primary)]">Produktbibliotek</h1>
             </div>
 
-            <div className="flex divide-x divide-[var(--border)]">
+            {/* KPIs */}
+            <div className="flex items-stretch divide-x divide-[var(--border)] border-r border-[var(--border)]">
               <div className="flex flex-col justify-center px-5 py-3">
                 <span className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-muted)]">Produkter</span>
                 <span className="mt-0.5 text-xl font-semibold text-[var(--text-primary)]">{products.length}</span>
@@ -546,7 +548,8 @@ export function ProductsPageClient() {
               </div>
             </div>
 
-            <div className="flex flex-1 items-center justify-end gap-2 px-4 py-3">
+            {/* Actions — ml-auto keeps them tight to the right, no stretching gap */}
+            <div className="ml-auto flex items-center gap-2 px-4 py-3">
               {companies.length > 1 && (
                 <select
                   value={selectedCompanyId}
