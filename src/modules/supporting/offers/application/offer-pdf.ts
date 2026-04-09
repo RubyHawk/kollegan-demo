@@ -11,7 +11,7 @@ export interface OfferPdfVariant {
 }
 
 const PDF_CACHE_MAX_ENTRIES = 24;
-export const PUBLIC_OFFER_PDF_RENDERER_VERSION = '2026-04-09-print-lite-v2';
+export const PUBLIC_OFFER_PDF_RENDERER_VERSION = '2026-04-10-print-polish-v1';
 const pdfCache = new Map<string, Uint8Array>();
 let browserPromise: Promise<Browser> | null = null;
 
@@ -190,7 +190,13 @@ export function buildPublicPdfHtml(
   const printStyles = `
 <style>
   @page { size: A4; margin: 0; }
-  html, body { margin: 0; padding: 0; background: #ffffff; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: #14263f;
+    font-family: Aptos, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   *, *::before, *::after {
     box-shadow: none !important;
@@ -217,22 +223,26 @@ export function buildPublicPdfHtml(
   }
   .page-content--document {
     min-height: auto !important;
-    padding: 28px 34px 24px !important;
+    padding: 30px 36px 26px !important;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
   }
   .offer-shell {
-    gap: 14px !important;
+    gap: 15px !important;
+    color: #14263f !important;
   }
   .offer-shell__header,
   .offer-shell__topline {
-    grid-template-columns: minmax(0, 1fr) minmax(184px, 216px) !important;
-    gap: 16px !important;
+    grid-template-columns: minmax(0, 1fr) minmax(190px, 220px) !important;
+    gap: 18px !important;
   }
   .offer-shell__topline {
-    padding-bottom: 12px !important;
+    padding-bottom: 14px !important;
+    border-bottom: 1px solid #dce6f0 !important;
   }
   .offer-shell__topline h1 {
     font-size: 18px !important;
-    line-height: 1.15 !important;
+    line-height: 1.2 !important;
+    color: #10233b !important;
   }
   .offer-shell__lead {
     display: none !important;
@@ -246,37 +256,46 @@ export function buildPublicPdfHtml(
     object-fit: contain !important;
   }
   .offer-shell__sender-copy {
-    gap: 2px !important;
+    gap: 3px !important;
     font-size: 11px !important;
-    line-height: 1.35 !important;
-    color: #334155 !important;
+    line-height: 1.45 !important;
+    color: #465a73 !important;
   }
   .offer-shell__sender-name {
-    color: #0f172a !important;
+    color: #10233b !important;
   }
   .offer-shell__meta {
-    gap: 8px !important;
+    gap: 9px !important;
   }
   .offer-shell__meta dl {
-    gap: 6px !important;
+    gap: 7px !important;
   }
   .offer-shell__meta dl div {
     gap: 8px !important;
   }
   .offer-shell__meta dt {
     font-size: 10px !important;
-    line-height: 1.3 !important;
+    line-height: 1.35 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    color: #6b7e95 !important;
   }
   .offer-shell__meta dd {
     font-size: 12px !important;
-    line-height: 1.3 !important;
+    line-height: 1.35 !important;
+    color: #10233b !important;
+    font-weight: 700 !important;
   }
   .offer-shell__customer-card {
-    padding: 12px 14px !important;
+    padding: 13px 14px !important;
+    border-radius: 12px !important;
+    border-color: #d7e2ee !important;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
   }
   .offer-shell__customer-card p {
     font-size: 11px !important;
-    line-height: 1.35 !important;
+    line-height: 1.45 !important;
+    color: #465a73 !important;
   }
   .offer-section {
     gap: 8px !important;
@@ -285,10 +304,14 @@ export function buildPublicPdfHtml(
   .offer-section h3,
   .offer-table-header h2 {
     font-size: 12px !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    color: #6b7e95 !important;
   }
   .offer-section p {
     font-size: 12px !important;
-    line-height: 1.45 !important;
+    line-height: 1.55 !important;
+    color: #34485f !important;
   }
   .offer-table-header {
     margin-bottom: 6px !important;
@@ -317,21 +340,32 @@ export function buildPublicPdfHtml(
   }
   .offer-items__head {
     gap: 12px !important;
-    padding: 9px 12px !important;
+    padding: 10px 13px !important;
     font-size: 10px !important;
+    background: linear-gradient(180deg, #f7faff 0%, #edf3fb 100%) !important;
+    border-bottom: 1px solid #d9e4ef !important;
+    color: #6b7e95 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
   }
   .offer-item-row {
     gap: 12px !important;
-    padding: 10px 12px !important;
+    padding: 11px 13px !important;
+    border-bottom: 1px solid #edf2f7 !important;
+  }
+  .offer-item-row:last-child {
+    border-bottom: none !important;
   }
   .offer-item-row__title {
     font-size: 13px !important;
-    line-height: 1.3 !important;
+    line-height: 1.35 !important;
+    color: #10233b !important;
   }
   .offer-item-row__detail,
   .offer-item-row__value {
     font-size: 11.5px !important;
-    line-height: 1.35 !important;
+    line-height: 1.42 !important;
+    color: #465a73 !important;
   }
   .offer-shell__meta,
   .offer-shell__customer-card,
@@ -339,20 +373,23 @@ export function buildPublicPdfHtml(
   .offer-item-card,
   .offer-summary,
   .offer-shell__status {
-    border-radius: 8px !important;
+    border-radius: 12px !important;
   }
   .offer-summary {
-    width: min(240px, 100%) !important;
+    width: min(244px, 100%) !important;
     padding: 6px 0 !important;
+    border: 1px solid #d7e2ee !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05) !important;
   }
   .offer-summary--below {
-    width: min(240px, 100%) !important;
+    width: min(252px, 100%) !important;
     margin-top: 10px !important;
   }
   .offer-summary__row {
-    padding: 6px 12px !important;
+    padding: 7px 12px !important;
     font-size: 12px !important;
-    line-height: 1.35 !important;
+    line-height: 1.4 !important;
+    color: #465a73 !important;
   }
   .offer-shell__status {
     border: 1px solid #cbd5e1 !important;
@@ -365,32 +402,42 @@ export function buildPublicPdfHtml(
   }
   .offer-summary__row--total {
     margin-top: 4px !important;
-    padding: 8px 12px !important;
+    padding: 10px 12px !important;
+    border-top: none !important;
+    background: linear-gradient(135deg, #13233a 0%, #223b63 100%) !important;
+    color: #ffffff !important;
   }
   .offer-summary__row--total strong,
   .offer-item-card__metric--total dd {
-    color: #0f172a !important;
+    color: #ffffff !important;
   }
   .offer-summary__row--total strong {
-    font-size: 15px !important;
+    font-size: 16px !important;
+    letter-spacing: -0.02em !important;
   }
   .offer-item-card__metric:nth-child(even) {
     background: #ffffff !important;
   }
   .offer-section--terms,
   .offer-section--notes {
-    margin-top: 4px !important;
+    margin-top: 6px !important;
+    padding: 12px 14px !important;
+    border: 1px solid #dce6f0 !important;
+    border-radius: 14px !important;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
   }
   .offer-shell__footer {
     grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)) !important;
     gap: 10px !important;
-    padding-top: 10px !important;
-    margin-top: 8px !important;
+    padding-top: 12px !important;
+    margin-top: 10px !important;
+    border-top: 1px solid #dce6f0 !important;
   }
   .offer-shell__footer div {
     gap: 2px !important;
     font-size: 11px !important;
-    line-height: 1.35 !important;
+    line-height: 1.4 !important;
+    color: #465a73 !important;
   }
   .offer-shell__logo,
   img {
