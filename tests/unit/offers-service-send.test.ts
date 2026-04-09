@@ -1,4 +1,7 @@
-import { resolveGeneratedDocumentForSend } from '@modules/supporting/offers/application/offers.service';
+import {
+  resolveGeneratedDocumentForSend,
+  resolveOfferSendWindow,
+} from '@modules/supporting/offers/application/offers.service';
 import type { Offer } from '@modules/supporting/offers/domain/offer.entity';
 
 describe('offers service send snapshot handling', () => {
@@ -205,5 +208,27 @@ describe('offers service send snapshot handling', () => {
     expect(resolved.generatedDocument).toContain('<!DOCTYPE html>');
     expect(resolved.generatedDocument).toContain('Fresh template content');
     expect(resolved.usesCurrentTemplate).toBe(true);
+  });
+  it('preserves the original validity window when reusing a sent snapshot', () => {
+    const resolved = resolveOfferSendWindow(offer, new Date('2026-06-01T12:00:00.000Z'));
+
+    expect(resolved.sentAt.toISOString()).toBe('2026-04-09T01:00:00.000Z');
+    expect(resolved.validUntil.toISOString()).toBe('2026-05-09T00:00:00.000Z');
+    expect(resolved.publicTokenExpiresAt.toISOString()).toBe('2026-05-09T00:00:00.000Z');
+  });
+
+  it('computes a fresh validity window when no sent snapshot exists yet', () => {
+    const resolved = resolveOfferSendWindow(
+      {
+        ...offer,
+        generatedDocument: undefined,
+        sentAt: undefined,
+      },
+      new Date('2026-06-01T12:00:00.000Z'),
+    );
+
+    expect(resolved.sentAt.toISOString()).toBe('2026-06-01T12:00:00.000Z');
+    expect(resolved.validUntil.toISOString()).toBe('2026-06-30T12:00:00.000Z');
+    expect(resolved.publicTokenExpiresAt.toISOString()).toBe('2026-06-30T12:00:00.000Z');
   });
 });
