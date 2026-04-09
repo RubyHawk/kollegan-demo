@@ -18,6 +18,7 @@ export default function DocumentCanvas() {
   const activePage = hf?.pages[hf.activeIdx] ?? null;
   const isDocumentPage = activePage?.kind === 'document';
   const documentSettings = activePage?.document;
+  const pageRenderKey = activePage ? `${activePage.id}:${activePage.kind ?? 'presentation'}` : 'page';
 
   const activeHeader = hf?.activeHeader ?? { enabled: false, useDefault: true };
   const activeFooter = hf?.activeFooter ?? { enabled: false, useDefault: true };
@@ -43,6 +44,7 @@ export default function DocumentCanvas() {
           style={{ maxWidth: isDocumentPage ? 820 : PRESENTATION_PAGE_WIDTH }}
         >
           <div
+            key={pageRenderKey}
             data-a4-page={!isDocumentPage ? 'presentation' : undefined}
             className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-[0_8px_28px_rgba(15,23,42,0.08)]"
             style={{ minHeight: isDocumentPage ? 840 : PRESENTATION_PAGE_HEIGHT }}
@@ -58,6 +60,7 @@ export default function DocumentCanvas() {
             <div className={cn('relative', isDocumentPage ? 'p-5 md:p-8' : '')}>
               {isDocumentPage ? (
                 <StructuredOfferCanvas
+                  pageKey={pageRenderKey}
                   editor={editor}
                   title={activePage.label}
                   settings={documentSettings}
@@ -65,10 +68,15 @@ export default function DocumentCanvas() {
                 />
               ) : (
                 <div
+                  key={`presentation-shell:${pageRenderKey}`}
                   className="presentation-page"
                   style={{ padding: `${pagePadding}px ${pagePadding}px`, fontFamily: `${docFont}, Arial, sans-serif` }}
                 >
-                  <EditorContent editor={editor} className="doc-editor doc-editor--presentation" />
+                  <EditorContent
+                    key={`presentation-editor:${pageRenderKey}`}
+                    editor={editor}
+                    className="doc-editor doc-editor--presentation"
+                  />
                 </div>
               )}
             </div>
@@ -266,11 +274,13 @@ function BubbleFormattingMenu() {
 }
 
 function StructuredOfferCanvas({
+  pageKey,
   editor,
   title,
   settings,
   fontFamily,
 }: {
+  pageKey: string;
   editor: NonNullable<ReturnType<typeof useTemplateEditor>>;
   title: string;
   settings?: {
@@ -406,7 +416,11 @@ function StructuredOfferCanvas({
                     {introLayout === 'roomy' ? 'Rymlig' : 'Kompakt'}
                   </span>
                 </div>
-                <EditorContent editor={editor} className="doc-editor doc-editor--structured" />
+                <EditorContent
+                  key={`structured-editor:${pageKey}`}
+                  editor={editor}
+                  className="doc-editor doc-editor--structured"
+                />
               </div>
             )}
 
