@@ -586,9 +586,8 @@ export function ProductsPageClient() {
 
         <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
           <aside className="hidden h-fit rounded-[26px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-sm xl:block xl:sticky xl:top-6">
-            <div className="mb-4">
-              <p className="text-sm font-semibold text-[var(--text-primary)]">Filter och struktur</p>
-              <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">Filtrera på hierarki, fria etiketter och status utan att tappa överblicken.</p>
+            <div className="mb-3">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Filter</p>
             </div>
             {filterPanel}
           </aside>
@@ -596,12 +595,7 @@ export function ProductsPageClient() {
           <section className="order-1 overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm xl:order-2">
             <div className="border-b border-[var(--border)] px-4 py-4 sm:px-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-base font-semibold text-[var(--text-primary)]">Bibliotek</p>
-                  <p className="mt-1 text-sm text-[var(--text-muted)]">
-                    {hasActiveFilters ? 'Filtrerad vy av produkter som matchar din sökning eller valda kategori.' : 'Alla produkter och tjänster som kan läggas in i offertflödet.'}
-                  </p>
-                </div>
+                <p className="text-base font-semibold text-[var(--text-primary)]">Bibliotek</p>
                 <div className="flex flex-wrap gap-2">
                   {hasActiveFilters && (
                     <Button
@@ -662,15 +656,15 @@ export function ProductsPageClient() {
               </AnimatePresence>
             </div>
 
-            <div className="min-h-[420px] px-4 py-4 sm:px-5 sm:py-5">
+            <div className="min-h-[420px]">
               {loading ? (
-                <div className="space-y-3">
+                <div>
                   {[1, 2, 3, 4].map((item) => (
-                    <div key={item} className="h-28 animate-pulse rounded-[28px] bg-[var(--surface-alt)]" />
+                    <div key={item} className="h-14 animate-pulse border-b border-[var(--border)] last:border-b-0" />
                   ))}
                 </div>
               ) : filteredProducts.length === 0 ? (
-                  <motion.div initial={{ opacity: 0, scale: 0.985 }} animate={{ opacity: 1, scale: 1 }} className="flex min-h-[360px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-6 text-center">
+                  <motion.div initial={{ opacity: 0, scale: 0.985 }} animate={{ opacity: 1, scale: 1 }} className="flex min-h-[360px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-6 m-4 text-center">
                   <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[24px] bg-[var(--surface-0)] text-[var(--text-muted)]">
                     {hasActiveFilters ? <Sparkle size={24} weight="duotone" /> : <FolderOpen size={24} weight="duotone" />}
                   </div>
@@ -694,7 +688,7 @@ export function ProductsPageClient() {
                   </div>
                 </motion.div>
               ) : (
-                <motion.div layout className="space-y-3">
+                <motion.div layout>
                   <AnimatePresence initial={false}>
                     {filteredProducts.map((product) => (
                       <ProductRow

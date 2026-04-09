@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Folders, Plus, StackSimple, Trash } from '@phosphor-icons/react';
+import { Plus, Trash } from '@phosphor-icons/react';
 import type { CategoryComposerPayload, CategoryNode, CategorySupportState } from './product-library.types';
 import { Button } from '@shared/ui/button';
 import {
@@ -49,160 +49,149 @@ export function CategoryManagerDialog({
     [categories],
   );
 
+  const inputClass =
+    'w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent mobileVariant="fullscreen" showMobileClose className="w-[min(100vw-1rem,1040px)] sm:max-w-[1040px]">
+      <DialogContent mobileVariant="fullscreen" showMobileClose className="w-[min(100vw-1rem,960px)] sm:max-w-[960px]">
         <DialogHeader className="border-b border-[var(--border)] px-5 pb-4 pt-5 pr-16">
-          <DialogTitle>Strukturera biblioteket med huvud- och underkategorier</DialogTitle>
+          <DialogTitle>Kategorier</DialogTitle>
           <DialogDescription>
-            Huvudkategorier är bara ordning och navigation. Produkter och tjänster kopplas sedan till en vald underkategori.
+            {categories.length} huvud{categories.length === 1 ? 'kategori' : 'kategorier'} · {totalSubcategories} underkategori{totalSubcategories === 1 ? '' : 'er'}
+            {supportMessage && <span className="ml-2 text-amber-600 dark:text-amber-400">· {supportMessage}</span>}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[min(78dvh,820px)] space-y-4 overflow-y-auto px-5 pb-2 pt-5">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] p-3.5">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                <Folders size={14} />
-                Huvudkategorier
-              </div>
-              <div className="mt-2.5 text-xl font-semibold text-[var(--text-primary)]">{categories.length}</div>
-            </div>
-            <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] p-3.5">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                <StackSimple size={14} />
-                Underkategorier
-              </div>
-              <div className="mt-2.5 text-xl font-semibold text-[var(--text-primary)]">{totalSubcategories}</div>
-            </div>
-            <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] p-3.5">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Status</div>
-              <div className="mt-2.5 text-sm font-medium text-[var(--text-primary)]">
-                {supportState === 'available' ? 'Redo för struktur' : 'Väntar på databasuppdatering'}
-              </div>
-              {supportMessage && <p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">{supportMessage}</p>}
-            </div>
+        <div className="max-h-[min(76dvh,800px)] space-y-4 overflow-y-auto px-5 pb-2 pt-4">
+          {/* Add main category */}
+          <div className="flex gap-2">
+            <input
+              value={mainName}
+              onChange={(e) => setMainName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && mainName.trim() && supportState === 'available' && !saving) {
+                  void onCreateCategory({ name: mainName.trim() }).then(() => setMainName(''));
+                }
+              }}
+              placeholder="Ny huvudkategori…"
+              disabled={supportState !== 'available'}
+              className={inputClass}
+            />
+            <Button
+              type="button"
+              onClick={async () => {
+                if (!mainName.trim()) return;
+                await onCreateCategory({ name: mainName.trim() });
+                setMainName('');
+              }}
+              disabled={supportState !== 'available' || saving || !mainName.trim()}
+              className="h-9 shrink-0 rounded-xl px-3"
+            >
+              <Plus size={14} weight="bold" />
+              Lägg till
+            </Button>
           </div>
 
-          <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] p-3.5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-end">
-              <div className="flex-1">
-                <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Ny huvudkategori</label>
-                <input
-                  value={mainName}
-                  onChange={(event) => setMainName(event.target.value)}
-                  placeholder="Solfilm"
-                  disabled={supportState !== 'available'}
-                  className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
-                />
-              </div>
-              <Button
-                type="button"
-                onClick={async () => {
-                  if (!mainName.trim()) return;
-                  await onCreateCategory({ name: mainName.trim() });
-                  setMainName('');
-                }}
-                disabled={supportState !== 'available' || saving || !mainName.trim()}
-                className="h-10 rounded-xl px-4"
-              >
-                <Plus size={16} weight="bold" />
-                Lägg till huvudkategori
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            {categories.map((node, index) => (
-              <motion.section
-                key={node.main.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.18, delay: index * 0.03, ease: 'easeOut' }}
-                className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] p-3.5"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">{node.main.name}</p>
-                    <p className="mt-1 text-xs text-[var(--text-muted)]">
-                      {mainCounts.get(node.main.id) ?? 0} produkter direkt på huvudnivån • {node.children.length} underkategorier
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void onDeleteCategory(node.main.id)}
-                    disabled={supportState !== 'available' || deletingId === node.main.id || node.children.length > 0}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-red-950/30"
-                    title={node.children.length > 0 ? 'Ta bort underkategorierna först' : 'Ta bort huvudkategori'}
-                  >
-                    <Trash size={14} weight="bold" />
-                    {deletingId === node.main.id ? 'Tar bort…' : 'Ta bort'}
-                  </button>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  {node.children.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-[var(--border)] px-4 py-4 text-sm text-[var(--text-muted)]">
-                      Inga underkategorier ännu. Lägg till en eller flera för att göra produktvalet tydligare i offertflödet.
+          {/* Category grid */}
+          {categories.length > 0 && (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {categories.map((node, index) => (
+                <motion.section
+                  key={node.main.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.16, delay: index * 0.03, ease: 'easeOut' }}
+                  className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-0)] p-3"
+                >
+                  {/* Main category header */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{node.main.name}</p>
+                      <p className="mt-0.5 text-xs text-[var(--text-muted)]">
+                        {mainCounts.get(node.main.id) ?? 0} produkter · {node.children.length} underkategorier
+                      </p>
                     </div>
-                  ) : (
-                    node.children.map((child) => (
-                      <div
-                        key={child.id}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2.5"
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-[var(--text-primary)]">{child.name}</p>
-                          <p className="mt-1 text-xs text-[var(--text-muted)]">
-                            {subCounts.get(child.id) ?? 0} kopplade produkter
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => void onDeleteCategory(child.id)}
-                          disabled={supportState !== 'available' || deletingId === child.id}
-                          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--border)] px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-red-950/30"
-                        >
-                          <Trash size={14} weight="bold" />
-                          {deletingId === child.id ? 'Tar bort…' : 'Ta bort'}
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => void onDeleteCategory(node.main.id)}
+                      disabled={supportState !== 'available' || deletingId === node.main.id || node.children.length > 0}
+                      title={node.children.length > 0 ? 'Ta bort underkategorierna först' : 'Ta bort'}
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-red-950/30"
+                    >
+                      <Trash size={13} weight="bold" />
+                    </button>
+                  </div>
 
-                <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-end">
-                  <div className="flex-1">
-                    <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Ny underkategori</label>
+                  {/* Subcategory list */}
+                  {node.children.length > 0 && (
+                    <div className="mt-2.5 space-y-1">
+                      {node.children.map((child) => (
+                        <div
+                          key={child.id}
+                          className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1.5"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-medium text-[var(--text-primary)]">{child.name}</p>
+                            <p className="text-[10px] text-[var(--text-muted)]">
+                              {subCounts.get(child.id) ?? 0} produkter
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void onDeleteCategory(child.id)}
+                            disabled={supportState !== 'available' || deletingId === child.id}
+                            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-red-950/30"
+                          >
+                            <Trash size={12} weight="bold" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add subcategory */}
+                  <div className="mt-2.5 flex gap-2">
                     <input
                       value={subNames[node.main.id] ?? ''}
-                      onChange={(event) =>
-                        setSubNames((current) => ({ ...current, [node.main.id]: event.target.value }))
-                      }
-                      placeholder="Solfilm villa"
+                      onChange={(e) => setSubNames((c) => ({ ...c, [node.main.id]: e.target.value }))}
+                      onKeyDown={(e) => {
+                        const value = subNames[node.main.id]?.trim();
+                        if (e.key === 'Enter' && value && supportState === 'available' && !saving) {
+                          void onCreateCategory({ name: value, parentId: node.main.id }).then(() =>
+                            setSubNames((c) => ({ ...c, [node.main.id]: '' })),
+                          );
+                        }
+                      }}
+                      placeholder="Ny underkategori…"
                       disabled={supportState !== 'available'}
-                      className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                      className={inputClass}
                     />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={async () => {
+                        const value = subNames[node.main.id]?.trim();
+                        if (!value) return;
+                        await onCreateCategory({ name: value, parentId: node.main.id });
+                        setSubNames((c) => ({ ...c, [node.main.id]: '' }));
+                      }}
+                      disabled={supportState !== 'available' || saving || !(subNames[node.main.id] ?? '').trim()}
+                      className="h-9 shrink-0 rounded-xl px-3"
+                    >
+                      <Plus size={14} weight="bold" />
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={async () => {
-                      const value = subNames[node.main.id]?.trim();
-                      if (!value) return;
-                      await onCreateCategory({ name: value, parentId: node.main.id });
-                      setSubNames((current) => ({ ...current, [node.main.id]: '' }));
-                    }}
-                    disabled={supportState !== 'available' || saving || !(subNames[node.main.id] ?? '').trim()}
-                    className="h-10 rounded-xl px-4"
-                  >
-                    <Plus size={16} weight="bold" />
-                    Lägg till
-                  </Button>
-                </div>
-              </motion.section>
-            ))}
-          </div>
+                </motion.section>
+              ))}
+            </div>
+          )}
+
+          {categories.length === 0 && (
+            <div className="rounded-[18px] border border-dashed border-[var(--border)] px-4 py-8 text-center text-sm text-[var(--text-muted)]">
+              Inga kategorier än. Lägg till en huvudkategori ovan för att strukturera biblioteket.
+            </div>
+          )}
         </div>
 
         <DialogFooter className="border-t border-[var(--border)] px-5 pb-5 pt-3">
@@ -214,4 +203,3 @@ export function CategoryManagerDialog({
     </Dialog>
   );
 }
-
