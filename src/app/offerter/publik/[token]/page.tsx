@@ -406,6 +406,7 @@ export default function PublicOfferPage() {
   useEffect(() => {
     setDocumentReady(false);
     setOfferSectionOffset(0);
+    setPromoPageCount(0);
   }, [iframeDocumentHtml]);
 
   // The app shell uses a globally locked viewport, but the public signing page
@@ -587,6 +588,10 @@ export default function PublicOfferPage() {
     const firstDocumentPage = pageBlocks[firstDocumentIndex] ?? pageBlocks[0] ?? null;
     const firstOfferAnchor = findOfferAnchor(firstDocumentPage);
     setPromoPageCount(Math.max(0, firstDocumentIndex));
+    firstOfferAnchor?.setAttribute('data-public-offer-anchor', 'true');
+    if (!firstOfferAnchor && firstDocumentPage) {
+      firstDocumentPage.setAttribute('data-public-offer-anchor', 'true');
+    }
 
     doc.querySelectorAll<HTMLElement>('.offer-section--intro').forEach((section) => {
       const text = section.textContent?.replace(/\u00a0/g, ' ').trim() ?? '';
@@ -883,9 +888,17 @@ export default function PublicOfferPage() {
   };
 
   const handleJumpToOffer = useCallback(() => {
+    const iframe = iframeRef.current;
     const documentSection = documentSectionRef.current;
-    if (!documentSection) return;
-    const targetTop = Math.max(0, documentSection.offsetTop + offerSectionOffset - 20);
+    if (!iframe && !documentSection) return;
+
+    const sectionTop = documentSection
+      ? window.scrollY + documentSection.getBoundingClientRect().top
+      : 0;
+    const iframeTop = iframe
+      ? window.scrollY + iframe.getBoundingClientRect().top
+      : sectionTop;
+    const targetTop = Math.max(0, iframeTop + offerSectionOffset - 20);
     window.scrollTo({ top: targetTop, behavior: 'smooth' });
   }, [offerSectionOffset]);
 
@@ -1066,7 +1079,7 @@ export default function PublicOfferPage() {
       >
         <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
 
-        {promoPageCount > 0 && offerSectionOffset > 0 && (
+        {documentReady && promoPageCount > 0 && offerSectionOffset > 80 && (
           <div className="px-4 pb-4 pt-4 sm:px-0 sm:pt-0">
             <motion.div
               initial={{ opacity: 0, y: 8 }}

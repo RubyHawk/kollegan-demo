@@ -1,11 +1,16 @@
+import { createHash } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { chromium } from 'playwright';
+import { chromium, type Browser } from 'playwright';
 import { viewOffer } from '@modules/supporting/offers';
 import { resolveOfferBrandingForOffer } from '@modules/supporting/offers/application/offer-branding-profile';
 import { sanitizePublicPdfOfferDocument } from '@modules/supporting/offers/application/public-offer-document';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const PDF_CACHE_MAX_ENTRIES = 24;
+const pdfCache = new Map<string, Uint8Array>();
+let browserPromise: Promise<Browser> | null = null;
 
 function extractToken(req: NextRequest): string {
   const parts = req.nextUrl.pathname.split('/');
@@ -21,6 +26,64 @@ function slugify(value: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 60);
+}
+
+function getBrowser(): Promise<Browser> {
+  if (!browserPromise) {
+    browserPromise = chromium.launch({ headless: true })
+      .then((browser) => {
+        browser.on('disconnected', () => {
+          browserPromise = null;
+        });
+        return browser;
+      })
+      .catch((error) => {
+        browserPromise = null;
+        throw error;
+      });
+  }
+
+  return browserPromise;
+}
+
+function buildPdfCacheKey(documentHtml: string, offer: {
+  status: 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
+  signatureImage?: string | null;
+  signerName?: string | null;
+  acceptedAt?: string | Date | null;
+}): string {
+  return createHash('sha1')
+    .update(documentHtml)
+    .update('\n')
+    .update(JSON.stringify({
+      status: offer.status,
+      signatureImage: offer.signatureImage ?? '',
+      signerName: offer.signerName ?? '',
+      acceptedAt: offer.acceptedAt ? new Date(offer.acceptedAt).toISOString() : '',
+    }))
+    .digest('hex');
+}
+
+function getCachedPdf(key: string): Uint8Array | undefined {
+  const cached = pdfCache.get(key);
+  if (!cached) return undefined;
+
+  pdfCache.delete(key);
+  pdfCache.set(key, cached);
+  return cached;
+}
+
+function setCachedPdf(key: string, pdf: Uint8Array): void {
+  if (pdfCache.has(key)) {
+    pdfCache.delete(key);
+  }
+  pdfCache.set(key, pdf);
+
+  while (pdfCache.size > PDF_CACHE_MAX_ENTRIES) {
+    const oldestKey = pdfCache.keys().next().value;
+    if (!oldestKey) break;
+    pdfCache.delete(oldestKey);
+  }
 }
 
 function buildSignatureHydrationScript(offer: {
@@ -240,18 +303,47 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     documentHtml = offer.generatedDocument;
   }
   const html = buildPublicPdfHtml(documentHtml, req.nextUrl.origin, offer);
-  const browser = await chromium.launch({ headless: true });
+  const cacheKey = buildPdfCacheKey(html, offer);
+  const cachedPdf = getCachedPdf(cacheKey);
+  const filename = `offert-${slugify(offer.title || 'offert')}.pdf`;
+
+  if (cachedPdf) {
+    return new NextResponse(Buffer.from(cachedPdf), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `inline; filename="${filename}"`,
+        'Cache-Control': 'private, no-store',
+        'X-Soleria-Pdf-Cache': 'HIT',
+      },
+    });
+  }
+
+  const browser = await getBrowser();
+  const context = await browser.newContext({
+    viewport: { width: 816, height: 1200 },
+    deviceScaleFactor: 1,
+  });
 
   try {
-    const page = await browser.newPage({
-      viewport: { width: 816, height: 1200 },
-      deviceScaleFactor: 1,
-    });
-    await page.setContent(html, { waitUntil: 'load' });
-    await page.waitForLoadState('networkidle').catch(() => undefined);
+    const page = await context.newPage();
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
     await page.emulateMedia({ media: 'print' });
-    await page.evaluate(() => document.fonts?.ready ?? Promise.resolve());
-    await page.waitForTimeout(150);
+    await page.evaluate(async () => {
+      await (document.fonts?.ready ?? Promise.resolve());
+
+      const images = Array.from(document.images);
+      await Promise.all(
+        images.map((img) => (
+          img.complete
+            ? Promise.resolve()
+            : new Promise<void>((resolve) => {
+                img.addEventListener('load', () => resolve(), { once: true });
+                img.addEventListener('error', () => resolve(), { once: true });
+              })
+        )),
+      );
+    });
 
     const pdf = await page.pdf({
       format: 'A4',
@@ -259,17 +351,19 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       preferCSSPageSize: true,
       margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
     });
+    const pdfBytes = new Uint8Array(pdf);
+    setCachedPdf(cacheKey, pdfBytes);
 
-    const filename = `offert-${slugify(offer.title || 'offert')}.pdf`;
-    return new NextResponse(new Uint8Array(pdf), {
+    return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="${filename}"`,
         'Cache-Control': 'private, no-store',
+        'X-Soleria-Pdf-Cache': 'MISS',
       },
     });
   } finally {
-    await browser.close();
+    await context.close();
   }
 }
