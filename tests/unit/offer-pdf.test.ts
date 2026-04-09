@@ -17,10 +17,11 @@ describe('public offer pdf renderer', () => {
     expect(html).toContain('box-shadow: none !important;');
     expect(html).toContain('filter: none !important;');
     expect(html).toContain('.page-block--document {');
-    expect(html).toContain('padding: 28px 34px 24px !important;');
+    expect(html).toContain('padding: 30px 36px 26px !important;');
     expect(html).toContain('.offer-shell__lead');
     expect(html).toContain('.page-block--document::before');
     expect(html).toContain('.offer-summary__row--total');
+    expect(html).toContain('font-family: Aptos, "Segoe UI", "Helvetica Neue", Arial, sans-serif;');
   });
 
   it('includes the renderer version in the PDF fingerprint', () => {
