@@ -11,17 +11,20 @@ export interface OfferPdfVariant {
 }
 
 const PDF_CACHE_MAX_ENTRIES = 24;
-export const PUBLIC_OFFER_PDF_RENDERER_VERSION = '2026-04-10-print-polish-v1';
+const SWEDISH_MONTHS_SHORT = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'] as const;
+export const PUBLIC_OFFER_PDF_RENDERER_VERSION = '2026-04-10-print-polish-v2';
 const pdfCache = new Map<string, Uint8Array>();
 let browserPromise: Promise<Browser> | null = null;
 
+function formatCompactSwedishDate(value: string | Date): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return `${date.getDate()} ${SWEDISH_MONTHS_SHORT[date.getMonth()]} ${date.getFullYear()}`;
+}
+
 function buildSignatureHydrationScript(offer: OfferPdfVariant): string {
   const acceptedDate = offer.acceptedAt
-    ? new Date(offer.acceptedAt.toString()).toLocaleDateString('sv-SE', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      })
+    ? formatCompactSwedishDate(offer.acceptedAt)
     : '';
 
   return `
@@ -173,16 +176,106 @@ export function buildPublicPdfHtml(
       if (label === 'prisvisning') item.remove();
     });
 
+    function normalizeOfferText(text) {
+      return normalizeBrokenSwedish(text)
+        .replace(/Ãƒâ€¦/g, 'Ã…')
+        .replace(/Ãƒâ€ž/g, 'Ã„')
+        .replace(/Ãƒâ€“/g, 'Ã–')
+        .replace(/ÃƒÂ¥/g, 'Ã¥')
+        .replace(/ÃƒÂ¤/g, 'Ã¤')
+        .replace(/ÃƒÂ¶/g, 'Ã¶')
+        .replace(/Ã‚Â /g, '\\u00a0')
+        .replace(/Ã‚Â·/g, 'Â·')
+        .replace(/Ã‚(?=[\\u00a0 0-9%.,:;|kr])/g, '');
+    }
+
+    function compactDateText(value) {
+      var trimmed = normalizeOfferText(value).trim();
+      var parts = trimmed.match(/^(\\d{1,2})\\s+([A-Za-zÃ…Ã„Ã–Ã¥Ã¤Ã¶.]+)\\s+(\\d{4})$/);
+      if (!parts) return trimmed;
+
+      var monthValue = parts[2].toLocaleLowerCase('sv-SE').replace(/\\.$/, '');
+      var monthMap = {
+        januari: 0, jan: 0,
+        februari: 1, feb: 1,
+        mars: 2, mar: 2,
+        april: 3, apr: 3,
+        maj: 4,
+        juni: 5, jun: 5,
+        juli: 6, jul: 6,
+        augusti: 7, aug: 7,
+        september: 8, sep: 8,
+        oktober: 9, okt: 9,
+        november: 10, nov: 10,
+        december: 11, dec: 11
+      };
+      var monthIndex = monthMap[monthValue];
+      if (monthIndex == null) return trimmed;
+
+      var monthsShort = ${JSON.stringify(SWEDISH_MONTHS_SHORT)};
+      return String(Number(parts[1])) + ' ' + monthsShort[monthIndex] + ' ' + parts[3];
+    }
+
+    document.querySelectorAll('.offer-shell__status, .offer-shell__title').forEach(function (item) {
+      item.remove();
+    });
+
+    var offerTitleHeading = document.querySelector('.offer-shell__topline h1');
+    var offerTitleText = (offerTitleHeading && offerTitleHeading.textContent || '').trim();
+    var customerCard = document.querySelector('.offer-shell__customer-card');
+    var metaList = document.querySelector('.offer-shell__meta dl');
+    if (customerCard && metaList) {
+      var customerName = '';
+      var nameNode = customerCard.querySelector('.offer-shell__customer-primary, .offer-shell__customer-name');
+      if (nameNode && nameNode.textContent) customerName = nameNode.textContent.trim();
+      if (!customerName) {
+        var firstParagraph = customerCard.querySelector('p');
+        if (firstParagraph && firstParagraph.textContent) customerName = firstParagraph.textContent.trim();
+      }
+
+      var customerEmail = '';
+      customerCard.querySelectorAll('p, span').forEach(function (line) {
+        var text = (line.textContent || '').trim();
+        if (!customerEmail && text.indexOf('@') >= 0) customerEmail = text;
+      });
+
+      if (customerName || customerEmail) {
+        var customerRow = document.createElement('div');
+        customerRow.className = 'offer-shell__meta-row--recipient';
+        var detailMarkup = normalizeOfferText(customerName || '');
+        if (customerEmail) detailMarkup += '<small>' + normalizeOfferText(customerEmail) + '</small>';
+        customerRow.innerHTML = '<dt>Offert till</dt><dd>' + detailMarkup + '</dd>';
+        metaList.appendChild(customerRow);
+      }
+      customerCard.remove();
+    }
+
+    if (offerTitleText) {
+      Array.from(document.querySelectorAll('.offer-section h2, .offer-table-header h2')).some(function (heading) {
+        var normalizedHeading = (heading.textContent || '').replace(/\\s+/g, ' ').trim().toLocaleLowerCase('sv-SE');
+        if (normalizedHeading === 'produkter och tjÃ¤nster') {
+          heading.textContent = offerTitleText;
+          return true;
+        }
+        return false;
+      });
+    }
+
+    document.querySelectorAll('.offer-shell__topline').forEach(function (item) {
+      item.remove();
+    });
+
+    document.querySelectorAll('.offer-shell__meta dd').forEach(function (item) {
+      var text = item.childNodes.length === 1 ? (item.textContent || '').trim() : '';
+      if (!text) return;
+      var compact = compactDateText(text);
+      if (compact !== text) item.textContent = compact;
+    });
+
     var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {
       var node = walker.currentNode;
-      node.nodeValue = normalizeBrokenSwedish(node.nodeValue || '');
-    }
-
-    var legacyMetaTitle = document.querySelector('.offer-shell__title');
-    if (legacyMetaTitle) {
-      legacyMetaTitle.textContent = statusLabel;
-      legacyMetaTitle.className = statusClass;
+      node.nodeValue = normalizeOfferText(node.nodeValue || '');
     }
   })();
 </script>`;
@@ -224,16 +317,20 @@ export function buildPublicPdfHtml(
   .page-content--document {
     min-height: auto !important;
     padding: 30px 36px 26px !important;
-    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+    background: #ffffff !important;
   }
   .offer-shell {
-    gap: 15px !important;
+    gap: 16px !important;
     color: #14263f !important;
   }
   .offer-shell__header,
   .offer-shell__topline {
-    grid-template-columns: minmax(0, 1fr) minmax(190px, 220px) !important;
-    gap: 18px !important;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 250px) !important;
+    gap: 16px !important;
+  }
+  .offer-shell__header {
+    padding-bottom: 16px !important;
+    border-bottom: 1px solid #dce6f0 !important;
   }
   .offer-shell__topline {
     padding-bottom: 14px !important;
@@ -265,13 +362,31 @@ export function buildPublicPdfHtml(
     color: #10233b !important;
   }
   .offer-shell__meta {
-    gap: 9px !important;
+    gap: 8px !important;
+    justify-items: end !important;
+    text-align: right !important;
+    padding: 14px 16px !important;
+    border: 1px solid #d9e3ee !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
   }
   .offer-shell__meta dl {
-    gap: 7px !important;
+    gap: 6px !important;
+    width: 100% !important;
   }
   .offer-shell__meta dl div {
-    gap: 8px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 10px !important;
+    padding: 4px 0 !important;
+    border-bottom: 1px solid #edf2f7 !important;
+  }
+  .offer-shell__meta dl div:first-child {
+    padding-top: 0 !important;
+  }
+  .offer-shell__meta dl div:last-child {
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
   }
   .offer-shell__meta dt {
     font-size: 10px !important;
@@ -285,12 +400,28 @@ export function buildPublicPdfHtml(
     line-height: 1.35 !important;
     color: #10233b !important;
     font-weight: 700 !important;
+    white-space: nowrap !important;
+  }
+  .offer-shell__meta dd small {
+    display: block !important;
+    margin-top: 2px !important;
+    font-size: 10.5px !important;
+    line-height: 1.35 !important;
+    font-weight: 500 !important;
+    color: #5f738a !important;
+  }
+  .offer-shell__meta .offer-shell__meta-row--recipient dd {
+    white-space: normal !important;
+  }
+  .offer-shell__status,
+  .offer-shell__title {
+    display: none !important;
   }
   .offer-shell__customer-card {
     padding: 13px 14px !important;
     border-radius: 12px !important;
     border-color: #d7e2ee !important;
-    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+    background: #ffffff !important;
   }
   .offer-shell__customer-card p {
     font-size: 11px !important;
@@ -301,12 +432,18 @@ export function buildPublicPdfHtml(
     gap: 8px !important;
   }
   .offer-section h2,
-  .offer-section h3,
-  .offer-table-header h2 {
+  .offer-section h3 {
     font-size: 12px !important;
     letter-spacing: 0.08em !important;
     text-transform: uppercase !important;
     color: #6b7e95 !important;
+  }
+  .offer-table-header h2 {
+    font-size: 22px !important;
+    line-height: 1.18 !important;
+    letter-spacing: -0.03em !important;
+    text-transform: none !important;
+    color: #10233b !important;
   }
   .offer-section p {
     font-size: 12px !important;
@@ -372,28 +509,26 @@ export function buildPublicPdfHtml(
   .offer-items__table,
   .offer-item-card,
   .offer-summary,
-  .offer-shell__status {
+  .offer-shell__status,
+  .offer-shell__title {
     border-radius: 12px !important;
   }
   .offer-summary {
-    width: min(244px, 100%) !important;
-    padding: 6px 0 !important;
+    width: min(268px, 100%) !important;
+    padding: 0 !important;
     border: 1px solid #d7e2ee !important;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05) !important;
+    box-shadow: none !important;
   }
   .offer-summary--below {
-    width: min(252px, 100%) !important;
-    margin-top: 10px !important;
+    width: min(276px, 100%) !important;
+    margin-top: 12px !important;
   }
   .offer-summary__row {
-    padding: 7px 12px !important;
+    padding: 10px 14px !important;
     font-size: 12px !important;
-    line-height: 1.4 !important;
+    line-height: 1.45 !important;
     color: #465a73 !important;
-  }
-  .offer-shell__status {
-    border: 1px solid #cbd5e1 !important;
-    color: #0f172a !important;
+    border-bottom: 1px solid #e5ecf3 !important;
   }
   .offer-summary__row--total,
   .offer-item-card__metric--total {
@@ -401,9 +536,10 @@ export function buildPublicPdfHtml(
     font-weight: 700 !important;
   }
   .offer-summary__row--total {
-    margin-top: 4px !important;
-    padding: 10px 12px !important;
-    border-top: none !important;
+    margin-top: 0 !important;
+    padding: 12px 14px !important;
+    border-top: 1px solid #142742 !important;
+    border-bottom: none !important;
     background: linear-gradient(135deg, #13233a 0%, #223b63 100%) !important;
     color: #ffffff !important;
   }
@@ -424,7 +560,7 @@ export function buildPublicPdfHtml(
     padding: 12px 14px !important;
     border: 1px solid #dce6f0 !important;
     border-radius: 14px !important;
-    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+    background: #ffffff !important;
   }
   .offer-shell__footer {
     grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)) !important;
