@@ -865,16 +865,55 @@ function injectStructuredLineItemStyles(html: string): string {
   return `${lineItemStyles}\n${html}`;
 }
 
-function injectOrganizationNumber(
+function injectSenderBranding(
   html: string,
-  organizationNumber?: string,
+  branding?: OfferBrandingProfile,
 ): string {
-  if (!organizationNumber || /Org\.nr/i.test(html)) return html;
+  if (!branding) return html;
 
-  return html.replace(
-    /(<div class="offer-shell__sender-copy">[\s\S]*?<p class="offer-shell__sender-name"[^>]*>[\s\S]*?<\/p>)/i,
-    `$1\n<p>Org.nr ${escapeHtml(organizationNumber)}</p>`,
-  );
+  const companyName = branding.companyName?.trim() || branding.senderName?.trim() || '';
+  const organizationNumber = branding.organizationNumber?.trim() || '';
+  const website = branding.website?.trim()?.replace(/^https?:\/\//, '') || '';
+  const addressLines = branding.addressLines ?? [];
+  const logoUrl = branding.logoUrl?.trim() || '';
+
+  const detailLines = [
+    companyName ? `<p class="offer-shell__sender-name">${escapeHtml(companyName)}</p>` : '',
+    organizationNumber ? `<p>Org.nr ${escapeHtml(organizationNumber)}</p>` : '',
+    ...addressLines.map((line) => `<p>${escapeHtml(line)}</p>`),
+    website ? `<p>${escapeHtml(website)}</p>` : '',
+  ].filter(Boolean);
+
+  let nextHtml = html;
+
+  if (detailLines.length > 0) {
+    const senderCopyHtml = `<div class="offer-shell__sender-copy">${detailLines.join('')}</div>`;
+
+    if (/<div class="offer-shell__sender-copy">[\s\S]*?<\/div>/i.test(nextHtml)) {
+      nextHtml = nextHtml.replace(
+        /<div class="offer-shell__sender-copy">[\s\S]*?<\/div>/i,
+        senderCopyHtml,
+      );
+    } else if (/<div class="offer-shell__sender">/i.test(nextHtml)) {
+      nextHtml = nextHtml.replace(
+        /(<div class="offer-shell__sender">)/i,
+        `$1${senderCopyHtml}`,
+      );
+    }
+  }
+
+  if (
+    logoUrl
+    && !/<img[^>]*class="[^"]*\boffer-shell__logo\b/i.test(nextHtml)
+    && /<div class="offer-shell__sender">/i.test(nextHtml)
+  ) {
+    nextHtml = nextHtml.replace(
+      /(<div class="offer-shell__sender">)/i,
+      `$1<img class="offer-shell__logo" src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(companyName || 'Avsändare')}" />`,
+    );
+  }
+
+  return nextHtml;
 }
 
 function normalizeLegacyOfferMeta(
@@ -911,7 +950,7 @@ export function sanitizeGeneratedOfferDocument(
   html = replaceLegacyLineItemsTable(html, offer);
   html = injectStructuredLineItemStyles(html);
   html = normalizeLegacyOfferMeta(html, getOfferNumberString(offer));
-  html = injectOrganizationNumber(html, branding?.organizationNumber);
+  html = injectSenderBranding(html, branding);
   html = injectDocumentPatchStyles(html);
   return fixOfferHtmlText(html);
 }
