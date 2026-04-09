@@ -76,6 +76,7 @@ const fadeIn = {
 };
 
 const STATUS_ORDER = ['sent', 'viewed', 'accepted', 'draft', 'declined', 'expired'] as const;
+const STATUS_GRID_ORDER = ['sent', 'viewed', 'accepted', 'declined', 'draft', 'expired'] as const;
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   draft:    { label: 'Utkast',     color: 'var(--status-draft-text)',    bg: 'var(--status-draft-bg)' },
@@ -264,9 +265,11 @@ function StatusDistributionCard({ countMap, total }: { countMap: Record<string, 
     const count = countMap[status] ?? 0;
     return { status, count, percent: total > 0 ? Math.round((count / total) * 100) : 0, ...STATUS_META[status] };
   });
+  const compactRows = STATUS_GRID_ORDER.map((status) => rows.find((row) => row.status === status)).filter(Boolean) as typeof rows;
   const populated = rows.filter(r => r.count > 0);
   const highlightedStatus = activeStatus ?? populated[0]?.status ?? null;
   const highlightedRow = rows.find(r => r.status === highlightedStatus) ?? null;
+  const hoverRow = activeStatus ? rows.find(r => r.status === activeStatus) ?? null : null;
   const radius = 52, circ = 2 * Math.PI * radius;
   const segments = populated.map((r, i) => ({
     ...r,
@@ -293,40 +296,67 @@ function StatusDistributionCard({ countMap, total }: { countMap: Record<string, 
           <p className="mt-1 text-[11px] text-[var(--text-secondary)]">När offerter börjar skickas fylls fördelningen på automatiskt.</p>
         </div>
       ) : (
-        <div className="mt-3 grid items-center gap-4 sm:grid-cols-[116px_minmax(0,1fr)]">
-          <div className="relative mx-auto h-[108px] w-[108px] sm:mx-0">
-            <svg viewBox="0 0 132 132" className="h-[108px] w-[108px] -rotate-90">
-              <circle cx="66" cy="66" r={radius} fill="none" stroke="color-mix(in srgb, var(--border) 80%, transparent)" strokeWidth="16"/>
-              {segments.map(r => (
-                <circle
-                  key={r.status}
-                  cx="66"
-                  cy="66"
-                  r={radius}
-                  fill="none"
-                  stroke={r.color}
-                  strokeLinecap="round"
-                  strokeWidth={highlightedStatus === r.status ? 18 : 14}
-                  opacity={highlightedStatus && highlightedStatus !== r.status ? 0.35 : 1}
-                  strokeDasharray={`${r.segment} ${circ - r.segment}`}
-                  strokeDashoffset={-r.dashOffset}
-                  className="cursor-pointer transition-all duration-150"
-                  onMouseEnter={() => setActiveStatus(r.status)}
-                  onMouseLeave={() => setActiveStatus(null)}
-                />
-              ))}
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="text-[22px] font-semibold tabular-nums text-[var(--text-primary)]">
-                {highlightedRow?.count ?? total}
-              </span>
-              <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                {highlightedRow ? highlightedRow.label : 'offerter'}
-              </span>
+        <div className="mt-3 rounded-[16px] border border-[var(--border)] bg-[var(--surface-0)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] lg:grid lg:grid-cols-[156px_minmax(0,1fr)] lg:gap-4">
+          <div className="flex flex-col items-center gap-3 lg:items-start">
+            <div className="relative mx-auto h-[112px] w-[112px] lg:mx-0">
+              {hoverRow ? (
+                <div className="pointer-events-none absolute -top-2 left-1/2 z-10 -translate-x-1/2 rounded-full border border-[var(--border)] bg-[var(--surface-0)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text-primary)] shadow-[0_8px_18px_rgba(0,0,0,0.08)]">
+                  {hoverRow.label}
+                </div>
+              ) : null}
+              <svg viewBox="0 0 132 132" className="h-[112px] w-[112px] -rotate-90">
+                <circle cx="66" cy="66" r={radius} fill="none" stroke="color-mix(in srgb, var(--border) 80%, transparent)" strokeWidth="16"/>
+                {segments.map(r => (
+                  <circle
+                    key={r.status}
+                    cx="66"
+                    cy="66"
+                    r={radius}
+                    fill="none"
+                    stroke={r.color}
+                    strokeLinecap="round"
+                    strokeWidth={highlightedStatus === r.status ? 18 : 14}
+                    opacity={highlightedStatus && highlightedStatus !== r.status ? 0.35 : 1}
+                    strokeDasharray={`${r.segment} ${circ - r.segment}`}
+                    strokeDashoffset={-r.dashOffset}
+                    className="cursor-pointer transition-all duration-150"
+                    onMouseEnter={() => setActiveStatus(r.status)}
+                    onMouseLeave={() => setActiveStatus(null)}
+                  >
+                    <title>{`${r.label}: ${r.count} (${r.percent}%)`}</title>
+                  </circle>
+                ))}
+              </svg>
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-center">
+                <span className="text-[24px] font-semibold tabular-nums text-[var(--text-primary)]">
+                  {highlightedRow?.count ?? total}
+                </span>
+              </div>
             </div>
+
+            {highlightedRow ? (
+              <div className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3.5 py-3 shadow-[0_8px_18px_rgba(0,0,0,0.04)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                      Aktiv del
+                    </p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: highlightedRow.color }} />
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">{highlightedRow.label}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">andel</p>
+                    <p className="mt-1 text-sm font-semibold tabular-nums text-[var(--text-primary)]">{highlightedRow.percent}%</p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
-          <div className="grid gap-2">
-            {rows.map(r => (
+
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:mt-0">
+            {compactRows.map(r => (
               <button
                 key={r.status}
                 type="button"
@@ -334,7 +364,7 @@ function StatusDistributionCard({ countMap, total }: { countMap: Record<string, 
                 onMouseEnter={() => setActiveStatus(r.status)}
                 onMouseLeave={() => setActiveStatus(null)}
                 className={cn(
-                  'grid w-full grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-all',
+                  'grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-all',
                   highlightedStatus === r.status
                     ? 'border-[color-mix(in_srgb,var(--accent)_32%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_6%,var(--surface-0))] shadow-[0_8px_18px_rgba(0,0,0,0.05)]'
                     : 'border-[var(--border)] bg-[var(--surface-0)] hover:bg-[var(--surface-1)]',
@@ -343,8 +373,8 @@ function StatusDistributionCard({ countMap, total }: { countMap: Record<string, 
               >
                 <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: r.color }}/>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-[12px] font-medium text-[var(--text-primary)]">{r.label}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-[11px] font-medium text-[var(--text-primary)]">{r.label}</span>
                     <span className="text-[10px] tabular-nums text-[var(--text-muted)]">{r.percent}%</span>
                   </div>
                   <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
@@ -352,30 +382,15 @@ function StatusDistributionCard({ countMap, total }: { countMap: Record<string, 
                       className="h-full rounded-full" style={{ background: r.color }}/>
                   </div>
                 </div>
-                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">antal</span>
-                <span className="text-right text-[13px] font-semibold tabular-nums text-[var(--text-primary)]">{r.count}</span>
+                <div className="text-right">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">antal</p>
+                  <p className="text-[12px] font-semibold tabular-nums text-[var(--text-primary)]">{r.count}</p>
+                </div>
               </button>
             ))}
           </div>
         </div>
       )}
-
-      {highlightedRow ? (
-        <div className="mt-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3.5 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                Aktiv status
-              </p>
-              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{highlightedRow.label}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">andel</p>
-              <p className="mt-1 text-sm font-semibold tabular-nums text-[var(--text-primary)]">{highlightedRow.percent}%</p>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </motion.div>
   );
 }
@@ -433,7 +448,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
           <h2 className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">Tidsöversikt</h2>
           <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">{fmtRangeLabel(start, end)}</p>
         </div>
-        <div className="flex items-center gap-3 text-[11px]">
+        <div className="flex flex-wrap items-center gap-3 text-[11px]">
           {[
             { lbl: 'Skapade', val: createdTotal },
             { lbl: 'Vunna',   val: acceptedTotal },
@@ -450,16 +465,16 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
 
       {/* Chart */}
       {createdTotal === 0 ? (
-        <div className="flex h-[228px] items-center justify-center rounded-[14px] border border-dashed border-[var(--border)] bg-[var(--surface-1)]">
+        <div className="flex h-[320px] items-center justify-center rounded-[16px] border border-dashed border-[var(--border)] bg-[var(--surface-0)]">
           <div className="text-center">
             <p className="text-xs font-medium text-[var(--text-primary)]">Inga offerter i vald period</p>
             <p className="mt-1 text-[11px] text-[var(--text-secondary)]">Prova ett längre intervall.</p>
           </div>
         </div>
       ) : (
-        <div className="rounded-[14px] border border-[var(--border)] bg-[color-mix(in_srgb,var(--accent)_2%,var(--surface-0))] px-3 pt-3 pb-2">
-          <ResponsiveContainer width="100%" height={228}>
-            <AreaChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
+        <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-0)] px-3 pt-3 pb-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
+          <ResponsiveContainer width="100%" height={320}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 14, left: 2, bottom: 8 }}>
               <defs>
                 <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%"  stopColor="var(--accent)" stopOpacity={0.22}/>
@@ -579,7 +594,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
               const n = clampDateRange(e.target.value, customEnd);
               setCustomStart(n.startValue); setCustomEnd(n.endValue);
             }}
-            className="h-8 w-[128px] rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-3 text-[11px] font-medium text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+            className="h-8 w-[118px] rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-3 text-[11px] font-medium text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
           />
           <span className="text-[10px] text-[var(--text-muted)]">→</span>
           <input
@@ -591,7 +606,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
               const n = clampDateRange(customStart, e.target.value);
               setCustomStart(n.startValue); setCustomEnd(n.endValue);
             }}
-            className="h-8 w-[128px] rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-3 text-[11px] font-medium text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+            className="h-8 w-[118px] rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-3 text-[11px] font-medium text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
           />
         </div>
       </div>
@@ -747,7 +762,7 @@ export default function DashboardView({
         </motion.div>
 
         {/* ── Main grid ──────────────────────────────────────────────── */}
-        <motion.div variants={stagger} className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.95fr)]">
+        <motion.div variants={stagger} className="grid gap-3 xl:grid-cols-[minmax(0,1.08fr)_minmax(460px,1fr)]">
 
           {/* Offers */}
           <motion.div
