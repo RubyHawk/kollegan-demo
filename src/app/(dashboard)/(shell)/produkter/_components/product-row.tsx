@@ -128,8 +128,8 @@ export function ProductRow({
         </div>
       </div>
 
-      {/* Actions — fade in on row hover */}
-      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+      {/* Actions — always visible for reliable touch + desktop editing */}
+      <div className="flex shrink-0 items-center gap-0.5">
         <ActionBtn icon={PencilSimple} label="Redigera" onClick={() => onEdit(product)} />
         <ActionBtn
           icon={Power}
