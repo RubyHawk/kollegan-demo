@@ -434,21 +434,23 @@ export default function PublicOfferPage() {
 
   // ── Scroll progress ──────────────────────────────────────────────────────────
   useEffect(() => {
-    const scrollRoot = mainRef.current;
-    if (!scrollRoot) return;
-
     const handleScroll = () => {
-      const total = scrollRoot.scrollHeight - scrollRoot.clientHeight;
+      const scrollRoot = document.documentElement;
+      const total = scrollRoot.scrollHeight - window.innerHeight;
       if (total <= 0) {
         setScrollProgress(100);
         return;
       }
-      setScrollProgress(Math.min(100, Math.max(0, Math.round((scrollRoot.scrollTop / total) * 100))));
+      setScrollProgress(Math.min(100, Math.max(0, Math.round((window.scrollY / total) * 100))));
     };
 
     handleScroll();
-    scrollRoot.addEventListener('scroll', handleScroll, { passive: true });
-    return () => scrollRoot.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
   }, []);
 
   // ── Iframe setup ─────────────────────────────────────────────────────────────
@@ -714,11 +716,10 @@ export default function PublicOfferPage() {
         const scaledOfferOffset = effectiveScale < 1 ? rawOfferOffset * effectiveScale : rawOfferOffset;
         const nextOfferOffset = Math.max(0, Math.round(scaledOfferOffset));
         setOfferSectionOffset(nextOfferOffset);
-        const scrollRoot = mainRef.current;
         const documentSection = documentSectionRef.current;
-        if (scrollRoot && documentSection) {
-          const targetTop = Math.max(0, documentSection.offsetTop + nextOfferOffset - 12);
-          const maxScrollTop = Math.max(0, scrollRoot.scrollHeight - scrollRoot.clientHeight);
+        if (documentSection) {
+          const targetTop = Math.max(0, documentSection.offsetTop + nextOfferOffset - 20);
+          const maxScrollTop = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
           const requiredBuffer = Math.max(0, targetTop - maxScrollTop);
           if (requiredBuffer > 0) {
             setJumpScrollBuffer((prev) => Math.max(prev, Math.ceil(requiredBuffer + 24)));
@@ -903,11 +904,10 @@ export default function PublicOfferPage() {
   };
 
   const handleJumpToOffer = useCallback(() => {
-    const scrollRoot = mainRef.current;
     const documentSection = documentSectionRef.current;
-    if (!scrollRoot || !documentSection) return;
-    const targetTop = Math.max(0, documentSection.offsetTop + offerSectionOffset - 12);
-    scrollRoot.scrollTo({ top: targetTop, behavior: 'smooth' });
+    if (!documentSection) return;
+    const targetTop = Math.max(0, documentSection.offsetTop + offerSectionOffset - 20);
+    window.scrollTo({ top: targetTop, behavior: 'smooth' });
   }, [offerSectionOffset]);
 
   // ─── Derived state ───────────────────────────────────────────────────────────
@@ -1019,21 +1019,21 @@ export default function PublicOfferPage() {
       className="min-h-screen"
     >
       {/* ─── Sticky header ─── */}
-      <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/96 backdrop-blur-md sm:border-b-0 sm:bg-transparent sm:px-6 sm:pt-4 sm:backdrop-blur-none">
-        <div className="sm:mx-auto sm:max-w-[900px] sm:overflow-hidden sm:rounded-[28px] sm:border sm:border-slate-200/80 sm:bg-white/92 sm:shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:backdrop-blur-xl">
-        <div className="flex min-h-14 items-center gap-3 px-4 py-2.5 sm:min-h-0 sm:gap-4 sm:px-5 sm:py-4">
+      <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/96 backdrop-blur-md sm:border-b-0 sm:bg-transparent sm:px-6 sm:pt-3 sm:backdrop-blur-none">
+        <div className="sm:mx-auto sm:max-w-[900px] sm:overflow-hidden sm:rounded-[24px] sm:border sm:border-slate-200/80 sm:bg-white/95 sm:shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
+        <div className="flex min-h-14 items-center gap-3 px-4 py-2.5 sm:min-h-0 sm:gap-3 sm:px-4 sm:py-2.5">
 
           {/* Left: title + recipient */}
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-              <BrandMark size={20} alt="" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+              <BrandMark size={18} alt="" />
             </div>
             <div className="min-w-0">
-              <p className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:block">
+              <p className="hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:block">
                 Offert
               </p>
-              <h1 className="truncate text-sm font-semibold leading-tight text-slate-900 sm:text-[15px]">{offer.title}</h1>
-              <p className="truncate text-[11px] leading-tight text-slate-500 sm:mt-1 sm:text-[12px]">
+              <h1 className="truncate text-sm font-semibold leading-tight text-slate-900 sm:text-[14px]">{offer.title}</h1>
+              <p className="truncate text-[11px] leading-tight text-slate-500 sm:mt-0.5 sm:text-[11px]">
                 {offer.recipientName}
                 {offer.recipientCompany ? ` · ${offer.recipientCompany}` : ''}
               </p>
@@ -1042,12 +1042,12 @@ export default function PublicOfferPage() {
 
           {/* Right: price + PDF */}
           <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
-            <div className="hidden sm:flex min-w-[260px] items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-slate-50/90 px-4 py-2.5">
+            <div className="hidden sm:flex min-w-[228px] items-center justify-between gap-3 rounded-[18px] border border-slate-200/80 bg-slate-50/90 px-3.5 py-2">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                   Total
                 </p>
-                <p className="mt-0.5 text-base font-semibold tabular-nums text-slate-950">
+                <p className="mt-0.5 text-[15px] font-semibold tabular-nums text-slate-950">
                   {fmtSEK(pricing.totalAmount)}
                 </p>
               </div>
@@ -1057,7 +1057,7 @@ export default function PublicOfferPage() {
             <button
               onClick={() => void handleDownloadPdf()}
               disabled={downloading || !offer.generatedDocument}
-              className="flex h-10 items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow active:scale-[0.97] disabled:opacity-40 sm:h-11 sm:px-4"
+              className="flex h-10 items-center gap-1.5 rounded-[18px] border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow active:scale-[0.97] disabled:opacity-40"
               title="Ladda ner som PDF"
             >
               {downloading ? (
@@ -1091,10 +1091,10 @@ export default function PublicOfferPage() {
       {/* ─── Content ─── */}
       <main
         ref={mainRef}
-        className="h-[calc(100dvh-61px)] overflow-y-auto bg-slate-50 sm:h-[calc(100dvh-108px)]"
+        className="bg-slate-50"
         style={{ paddingBottom: `${64 + jumpScrollBuffer}px` }}
       >
-        <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-5">
+        <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
 
         {offer.generatedDocument && documentReady && promoPageCount > 0 && (
           <div className="px-4 pb-4 pt-4 sm:px-0 sm:pt-0">
