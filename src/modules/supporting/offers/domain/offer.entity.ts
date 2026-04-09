@@ -56,6 +56,8 @@ export interface Offer {
   totalIncVat: number;
   templateId?: string;
   generatedDocument?: string;
+  generatedPdf?: Uint8Array;
+  generatedPdfFingerprint?: string;
   emailSubject?: string;
   emailBody?: string;
   emailHeaderConfig?: string;

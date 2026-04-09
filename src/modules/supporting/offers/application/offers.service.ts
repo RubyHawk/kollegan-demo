@@ -24,6 +24,8 @@ import { prisma } from '@platform/database/prisma';
 import { computeOfferValidUntil } from '../domain/validity';
 import { assertOfferReadyForSend } from './publish-validation';
 import type { OfferBrandingProfile } from './company-branding';
+import { renderPublicOfferPdf, resolvePdfOrigin } from './offer-pdf';
+import { sanitizePublicPdfOfferDocument } from './public-offer-document';
 
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
 
@@ -103,6 +105,40 @@ async function getOfferResponsibleUser(userId: string) {
     name,
     email: user.email,
   };
+}
+
+async function persistPublicOfferPdfSnapshot(
+  offer: Offer,
+  branding?: OfferBrandingProfile,
+): Promise<void> {
+  if (!offer.generatedDocument?.trim()) return;
+
+  try {
+    const resolvedBranding = branding ?? await resolveOfferBrandingForOfferData(offer);
+    const sanitizedDocument = sanitizePublicPdfOfferDocument(offer.generatedDocument, offer, resolvedBranding);
+    const { pdfBytes, fingerprint } = await renderPublicOfferPdf({
+      documentHtml: sanitizedDocument,
+      origin: resolvePdfOrigin(),
+      offer,
+    });
+
+    await offersRepository.updateById(offer.id, {
+      generatedPdf: pdfBytes,
+      generatedPdfFingerprint: fingerprint,
+    });
+  } catch (err) {
+    logger.warn(TAG, 'Failed to persist public offer PDF snapshot', { offerId: offer.id, err });
+  }
+}
+
+async function resolveOfferBrandingForOfferData(offer: Offer): Promise<OfferBrandingProfile> {
+  const [org, company, responsible] = await Promise.all([
+    identityService.getOrg(offer.organizationId),
+    offer.companyId ? companiesRepository.getById(offer.companyId, offer.organizationId) : Promise.resolve(null),
+    getOfferResponsibleUser(offer.createdBy),
+  ]);
+
+  return resolveOfferBranding(company, org, responsible);
 }
 
 export async function createOffer(
@@ -271,6 +307,7 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   });
 
   logger.info(TAG, `Offer sent: ${id}`, { recipientEmail: updated.recipientEmail });
+  await persistPublicOfferPdfSnapshot(updated, branding);
   return updated;
 }
 
@@ -389,6 +426,7 @@ export async function signOffer(
   );
 
   logger.info(TAG, `Offer signed: ${final.id}`);
+  void persistPublicOfferPdfSnapshot(final);
   return final;
 }
 
@@ -493,6 +531,7 @@ export async function acceptOffer(id: string, orgId: string): Promise<Offer | nu
   );
 
   logger.info(TAG, `Offer accepted: ${id}`, { totalIncVat: updated.totalIncVat });
+  void persistPublicOfferPdfSnapshot(updated);
   return updated;
 }
 
