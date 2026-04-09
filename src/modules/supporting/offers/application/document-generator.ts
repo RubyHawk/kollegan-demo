@@ -20,10 +20,10 @@ import type { Offer, OfferLineItem } from '../domain/offer.entity';
 import {
   formatVatRate,
   getDisplayLineTotal,
-  getDisplayModeLabel,
   getDisplayUnitPrice,
   normalizeVatRate,
   summarizeOfferPricing,
+  summarizePersistedOfferPricing,
 } from '../domain/pricing';
 import type { OfferBrandingProfile } from './company-branding';
 import { sanitizeUrl, escapeHtml as secureEscapeHtml } from '@platform/security/sanitize';
@@ -49,7 +49,7 @@ function fmtSEKPrecise(n: number): string {
 }
 
 function buildOfferSummary(offer: Offer) {
-  return summarizeOfferPricing(offer.lineItems, offer.priceDisplayMode);
+  return summarizePersistedOfferPricing(offer);
 }
 
 function getOfferStatusLabel(status: Offer['status']): string {
@@ -94,31 +94,6 @@ function buildCustomerLines(offer: Offer): string[] {
       seen.add(key);
       return true;
     });
-}
-
-function formatOfferStatus(status: Offer['status']): string {
-  const labels: Record<Offer['status'], string> = {
-    draft: 'Utkast',
-    sent: 'Skickad',
-    viewed: 'Visad',
-    accepted: 'Accepterad',
-    declined: 'Avvisad',
-    expired: 'Utgången',
-  };
-  return labels[status] ?? 'Offert';
-}
-
-function splitLineItemDescription(description: string): { title: string; detail?: string } {
-  const value = description.trim();
-  const separator = [' — ', ' – ', ' - ', ' ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â '].find((candidate) => value.includes(candidate)) ?? '';
-  if (!separator) return { title: value };
-
-  const [title, ...rest] = value.split(separator);
-  const detail = rest.join(separator).trim();
-  return {
-    title: title.trim(),
-    detail: detail || undefined,
-  };
 }
 
 const DEFAULT_DOCUMENT_TERMS_HEADING = 'Juridiska villkor';
@@ -381,7 +356,7 @@ function buildStructuredLineItems(items: OfferLineItem[], mode: Offer['priceDisp
   const showVatColumn = pricing.hasVat;
   const showDiscountColumn = items.some((item) => (item.discount ?? 0) > 0);
   const gridTemplate = [
-    'minmax(0, 1.85fr)',
+    'minmax(220px, 1.85fr)',
     '72px',
     '112px',
     ...(showDiscountColumn ? ['92px'] : []),
@@ -705,11 +680,14 @@ function injectDocumentPatchStyles(html: string): string {
     gap: 18px !important;
   }
   .offer-pricing-layout--split {
-    grid-template-columns: minmax(0, 1fr) 278px !important;
+    grid-template-columns: minmax(0, 1fr) !important;
     align-items: start !important;
   }
   .offer-pricing-layout__summary {
     align-self: start !important;
+    width: min(332px, 100%) !important;
+    margin-top: 14px !important;
+    margin-left: auto !important;
   }
   .offer-items__table {
     border-radius: 20px !important;

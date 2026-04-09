@@ -9,6 +9,13 @@ interface PriceLineLike {
   discount?: number | null;
 }
 
+interface PersistedOfferPricingLike {
+  lineItems: PriceLineLike[];
+  priceDisplayMode: OfferPriceDisplayMode;
+  totalExVat: number;
+  totalIncVat: number;
+}
+
 export interface OfferPricingSummary {
   exVat: number;
   vatAmount: number;
@@ -25,6 +32,59 @@ export interface OfferPricingSummary {
 
 function roundCurrency(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+function getRawLineExVat(item: PriceLineLike): number {
+  return Math.max(0, item.quantity) * Math.max(0, item.unitPrice) * getDiscountFactor(item.discount);
+}
+
+function calculatePricingMetrics(items: PriceLineLike[]) {
+  let exVat = 0;
+  let vatAmount = 0;
+  let discountAmount = 0;
+  let hasVat = false;
+
+  for (const item of items) {
+    const vatRate = normalizeVatRate(item.vatRate);
+    const lineBase = Math.max(0, item.quantity) * Math.max(0, item.unitPrice);
+    const lineExVat = getRawLineExVat(item);
+    exVat += lineExVat;
+    discountAmount += Math.max(0, lineBase - lineExVat);
+    if (vatRate > 0) {
+      hasVat = true;
+      vatAmount += lineExVat * vatRate;
+    }
+  }
+
+  return {
+    exVat: roundCurrency(exVat),
+    vatAmount: roundCurrency(vatAmount),
+    incVat: roundCurrency(exVat + vatAmount),
+    discountAmount: roundCurrency(discountAmount),
+    hasVat,
+  };
+}
+
+function buildPricingSummary(
+  metrics: ReturnType<typeof calculatePricingMetrics> & {
+    priceDisplayMode: OfferPriceDisplayMode;
+  },
+): OfferPricingSummary {
+  const displayModeLabel = getDisplayModeLabel(metrics.hasVat, metrics.priceDisplayMode);
+
+  return {
+    exVat: metrics.exVat,
+    vatAmount: metrics.vatAmount,
+    incVat: metrics.incVat,
+    discountAmount: metrics.discountAmount,
+    hasVat: metrics.hasVat,
+    priceDisplayMode: metrics.priceDisplayMode,
+    subtotalLabel: 'Delsumma exkl. moms',
+    vatLabel: 'Moms',
+    totalLabel: metrics.hasVat ? 'Totalsumma inkl. moms' : 'Totalsumma exkl. moms',
+    totalAmount: metrics.hasVat ? metrics.incVat : metrics.exVat,
+    displayModeLabel,
+  };
 }
 
 export function normalizeVatRate(rate: number): number {
@@ -77,45 +137,36 @@ export function getDisplayModeLabel(hasVat: boolean, mode: OfferPriceDisplayMode
   return mode === 'inclusive' ? 'inkl. moms' : 'exkl. moms';
 }
 
+export function calculateOfferTotals(items: PriceLineLike[]): Pick<OfferPricingSummary, 'exVat' | 'vatAmount' | 'incVat' | 'discountAmount' | 'hasVat'> {
+  return calculatePricingMetrics(items);
+}
+
 export function summarizeOfferPricing(
   items: PriceLineLike[],
   mode: OfferPriceDisplayMode = DEFAULT_OFFER_PRICE_DISPLAY_MODE,
 ): OfferPricingSummary {
-  let exVat = 0;
-  let vatAmount = 0;
-  let discountAmount = 0;
-  let hasVat = false;
-
-  for (const item of items) {
-    const vatRate = normalizeVatRate(item.vatRate);
-    const lineBase = Math.max(0, item.quantity) * Math.max(0, item.unitPrice);
-    const lineExVat = getLineExVat(item);
-    exVat += lineExVat;
-    discountAmount += Math.max(0, lineBase - lineExVat);
-    if (vatRate > 0) {
-      hasVat = true;
-      vatAmount += lineExVat * vatRate;
-    }
-  }
-
-  const roundedExVat = roundCurrency(exVat);
-  const roundedVatAmount = roundCurrency(vatAmount);
-  const roundedIncVat = roundCurrency(roundedExVat + roundedVatAmount);
-  const displayModeLabel = getDisplayModeLabel(hasVat, mode);
-
-  return {
-    exVat: roundedExVat,
-    vatAmount: roundedVatAmount,
-    incVat: roundedIncVat,
-    discountAmount: roundCurrency(discountAmount),
-    hasVat,
+  return buildPricingSummary({
+    ...calculatePricingMetrics(items),
     priceDisplayMode: mode,
-    subtotalLabel: 'Delsumma exkl. moms',
-    vatLabel: 'Moms',
-    totalLabel: hasVat ? 'Totalsumma inkl. moms' : 'Totalsumma exkl. moms',
-    totalAmount: hasVat ? roundedIncVat : roundedExVat,
-    displayModeLabel,
-  };
+  });
+}
+
+export function summarizePersistedOfferPricing(
+  offer: PersistedOfferPricingLike,
+): OfferPricingSummary {
+  const metrics = calculatePricingMetrics(offer.lineItems);
+  const exVat = roundCurrency(offer.totalExVat);
+  const incVat = roundCurrency(offer.totalIncVat);
+  const vatAmount = metrics.hasVat ? roundCurrency(incVat - exVat) : 0;
+
+  return buildPricingSummary({
+    exVat,
+    vatAmount,
+    incVat,
+    discountAmount: metrics.discountAmount,
+    hasVat: metrics.hasVat,
+    priceDisplayMode: offer.priceDisplayMode,
+  });
 }
 
 export function formatVatRate(rate: number): string {

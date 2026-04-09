@@ -1,6 +1,6 @@
 import { prisma, Prisma } from '@platform/database/prisma';
 import type { Offer, OfferLineItem } from '../domain/offer.entity';
-import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '../domain/pricing';
+import { calculateOfferTotals, DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '../domain/pricing';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -89,6 +89,7 @@ function mapLineItem(r: Record<string, unknown>): OfferLineItem {
     unitPrice:   r.unitPrice as number,
     vatRate:     r.vatRate as number,
     discount:    (r.discount as number | null) ?? undefined,
+    sortOrder:   (r.sortOrder as number | null) ?? undefined,
   };
 }
 
@@ -139,19 +140,10 @@ function mapOffer(r: Record<string, unknown>): Offer {
 function computeTotals(
   lineItems: Array<{ quantity: number; unitPrice: number; vatRate: number; discount?: number | null }>
 ): { totalExVat: number; totalIncVat: number } {
-  let totalExVat = 0;
-  for (const item of lineItems) {
-    const discountFactor = 1 - ((item.discount ?? 0) / 100);
-    totalExVat += item.quantity * item.unitPrice * discountFactor;
-  }
-  const vatAmount = lineItems.reduce((sum, item) => {
-    const discountFactor = 1 - ((item.discount ?? 0) / 100);
-    const lineExVat = item.quantity * item.unitPrice * discountFactor;
-    return sum + lineExVat * item.vatRate;
-  }, 0);
+  const totals = calculateOfferTotals(lineItems);
   return {
-    totalExVat:  Math.round(totalExVat * 100) / 100,
-    totalIncVat: Math.round((totalExVat + vatAmount) * 100) / 100,
+    totalExVat: totals.exVat,
+    totalIncVat: totals.incVat,
   };
 }
 

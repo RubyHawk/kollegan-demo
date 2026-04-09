@@ -13,6 +13,7 @@ export interface LineItem {
   unitPrice:   number;
   vatRate:     number;
   discount:    number;
+  sortOrder?:  number;
 }
 
 export interface Offer {

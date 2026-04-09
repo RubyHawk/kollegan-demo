@@ -22,6 +22,7 @@ import { resolveOfferBranding } from './company-branding';
 import { dispatchCreatorNotification, dispatchOfferEmail, dispatchReminderEmail } from './offer-email-dispatch';
 import { prisma } from '@platform/database/prisma';
 import { computeOfferValidUntil } from '../domain/validity';
+import { assertOfferReadyForSend } from './publish-validation';
 
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
 
@@ -115,6 +116,7 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   let emailSubject: string | undefined = existing.emailSubject;
   let emailBody: string | undefined = existing.emailBody;
   let emailHeaderConfig: string | undefined = existing.emailHeaderConfig;
+  let templateContent: string | undefined;
   const [org, company, responsible] = await Promise.all([
     identityService.getOrg(orgId),
     existing.companyId ? companiesRepository.getById(existing.companyId, orgId) : Promise.resolve(null),
@@ -130,6 +132,7 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
     if (existing.templateId) {
       const template = await templatesRepository.findById(existing.templateId, orgId);
       if (template) {
+        templateContent = template.content;
         generatedDocument = generateDocument(template.content, sendSnapshot, branding);
         if (!emailSubject && template.emailSubject) emailSubject = template.emailSubject;
         if (!emailBody && template.emailBody) emailBody = template.emailBody;
@@ -141,6 +144,14 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
       generatedDocument = generateFallbackDocument(sendSnapshot, branding);
     }
   }
+
+  assertOfferReadyForSend({
+    offer: sendSnapshot,
+    branding,
+    generatedDocument: generatedDocument ?? existing.generatedDocument ?? '',
+    templateContent,
+    company,
+  });
 
   const interpolatedSubject = emailSubject ? interpolateEmailText(emailSubject, sendSnapshot) : undefined;
   const interpolatedBody = emailBody ? interpolateEmailText(emailBody, sendSnapshot) : undefined;

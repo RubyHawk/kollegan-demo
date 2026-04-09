@@ -128,35 +128,41 @@ function applyPersistedThemePreferences() {
   });
 }
 
-export function ThemeBootstrap() {
+export function shouldLoadThemeProfile(pathname: string | null | undefined): boolean {
+  return !(pathname ?? '').startsWith('/offerter/publik/');
+}
+
+export function ThemeBootstrap({ enableProfileSync = true }: { enableProfileSync?: boolean }) {
   useEffect(() => {
     applyPersistedThemePreferences();
 
-    void fetch('/api/auth/profile', { cache: 'no-store', credentials: 'include' })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        const payload = await response.json() as {
-          data?: {
-            themeMode?: string | null;
-            themeAccent?: string | null;
-            themeFontFamily?: string | null;
-            themeFontSize?: string | null;
+    if (enableProfileSync) {
+      void fetch('/api/auth/profile', { cache: 'no-store', credentials: 'include' })
+        .then(async (response) => {
+          if (!response.ok) return null;
+          const payload = await response.json() as {
+            data?: {
+              themeMode?: string | null;
+              themeAccent?: string | null;
+              themeFontFamily?: string | null;
+              themeFontSize?: string | null;
+            };
           };
-        };
-        return payload.data ?? null;
-      })
-      .then((profile) => {
-        if (!profile) return;
-        applyResolvedThemePreferences({
-          mode: profile.themeMode,
-          accent: profile.themeAccent,
-          fontFamily: profile.themeFontFamily,
-          fontSize: profile.themeFontSize,
+          return payload.data ?? null;
+        })
+        .then((profile) => {
+          if (!profile) return;
+          applyResolvedThemePreferences({
+            mode: profile.themeMode,
+            accent: profile.themeAccent,
+            fontFamily: profile.themeFontFamily,
+            fontSize: profile.themeFontSize,
+          });
+        })
+        .catch(() => {
+          // ignore auth/profile failures
         });
-      })
-      .catch(() => {
-        // ignore auth/profile failures
-      });
+    }
 
     const handlePageShow = () => applyPersistedThemePreferences();
     const handleStorage = () => applyPersistedThemePreferences();
@@ -174,7 +180,7 @@ export function ThemeBootstrap() {
       if (media?.removeEventListener) media.removeEventListener('change', handleMediaChange);
       else if (media?.removeListener) media.removeListener(handleMediaChange);
     };
-  }, []);
+  }, [enableProfileSync]);
 
   return null;
 }
