@@ -254,11 +254,7 @@ export function makeDocumentPage(label = 'Offertsida', role: PageRole = 'offer')
 export function makeNewDoc(): TemplateDoc {
   return {
     _v: 4,
-    pages: [
-      makeEmptyPage('Omslag', 'cover'),
-      makeEmptyPage('Introduktion', 'introduction'),
-      makeDocumentPage('Offertsida', 'offer'),
-    ],
+    pages: [makeEmptyPage('Sida 1', 'custom')],
     defaultHeader: EMPTY_DOC,
     defaultFooter: EMPTY_DOC,
     migrationNotice: null,
