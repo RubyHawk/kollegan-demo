@@ -54,7 +54,7 @@ export function CategoryManagerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent mobileVariant="fullscreen" showMobileClose className="w-[min(100vw-1rem,960px)] sm:max-w-[960px]">
+      <DialogContent mobileVariant="fullscreen" showMobileClose className="w-[min(100vw-1rem,960px)] sm:max-w-[960px] sm:max-h-none">
         <DialogHeader className="border-b border-[var(--border)] px-5 pb-4 pt-5 pr-16">
           <DialogTitle>Kategorier</DialogTitle>
           <DialogDescription>
@@ -63,7 +63,7 @@ export function CategoryManagerDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[min(76dvh,800px)] space-y-4 overflow-y-auto px-5 pb-2 pt-4">
+        <div className="space-y-4 px-5 pb-2 pt-4">
           {/* Add main category */}
           <div className="flex gap-2">
             <input

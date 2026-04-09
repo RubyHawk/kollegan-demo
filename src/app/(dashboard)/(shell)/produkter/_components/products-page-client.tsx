@@ -13,7 +13,6 @@ import {
 import type { OfferProduct, ProductCategory } from '@modules/supporting/offers';
 import { Button } from '@shared/ui/button';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
-import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
 import {
   Dialog,
   DialogContent,
@@ -49,7 +48,6 @@ type CategoryFilterKey = '' | 'uncategorized' | `main:${string}` | `sub:${string
 export function ProductsPageClient() {
   const {
     companies,
-    selectedCompany,
     selectedCompanyId,
     setSelectedCompanyId,
     loading: companyLoading,
@@ -524,84 +522,62 @@ export function ProductsPageClient() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="space-y-6">
-        <section className="overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm">
-          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="space-y-3.5 px-5 py-5 sm:px-6 sm:py-5">
-              <div className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                Produktbibliotek
-              </div>
-              <div>
-                <h1 className="max-w-3xl text-2xl font-semibold tracking-tight text-[var(--text-primary)] md:text-[2rem]">
-                  Håll biblioteket snabbt, tydligt och lätt att lita på.
-                </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-                  Produkter ska gå att hitta på några sekunder, filtrera utan friktion och kännas trygga att lägga in i offerten direkt.
-                </p>
-              </div>
-
-              <div className="grid max-w-xl grid-cols-3 gap-2">
-                <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-alt)] p-2.5 sm:p-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] sm:text-xs">Produkter</div>
-                  <div className="mt-1.5 text-lg font-semibold text-[var(--text-primary)] sm:text-xl">{products.length}</div>
-                </div>
-                <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-alt)] p-2.5 sm:p-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] sm:text-xs">Aktiva nu</div>
-                  <div className="mt-1.5 text-lg font-semibold text-[var(--text-primary)] sm:text-xl">{activeCount}</div>
-                </div>
-                <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-alt)] p-2.5 sm:p-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] sm:text-xs">Visas nu</div>
-                  <div className="mt-1.5 text-lg font-semibold text-[var(--text-primary)] sm:text-xl">{totalVisible}</div>
-                </div>
-              </div>
-
-              {companies.length > 0 && (
-                <CompanyScopeSelector
-                  companies={companies}
-                  selectedCompanyId={selectedCompanyId}
-                  onSelect={setSelectedCompanyId}
-                  compact
-                  title="Företagets bibliotek"
-                  description="Byt företag för att se rätt produkter och kategorier."
-                />
-              )}
-
-              {companyLoading && (
-                <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-muted)]">
-                  Läser in företagets bibliotek…
-                </div>
-              )}
-
-              {companyError && (
-                <div className="rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
-                  {companyError}
-                </div>
-              )}
+        {/* KPI header card */}
+        <div className="overflow-hidden rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm">
+          <div className="flex flex-col gap-0 sm:flex-row sm:items-stretch sm:divide-x sm:divide-[var(--border)]">
+            {/* Title */}
+            <div className="flex items-center px-5 py-4">
+              <h1 className="text-sm font-semibold text-[var(--text-primary)]">Produktbibliotek</h1>
             </div>
 
-            <aside className="border-t border-[var(--border)] bg-[var(--surface-alt)] px-5 py-5 sm:px-6 sm:py-5 lg:border-l lg:border-t-0">
-              <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Fokus just nu</p>
-                <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
-                  {selectedCompany
-                    ? `${selectedCompany.name} är valt just nu. Strukturera huvudkategorierna först och lägg sedan produkterna i rätt underkategori.`
-                    : 'Börja med huvudkategorierna först och koppla sedan produkterna till rätt underkategori.'}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button type="button" onClick={openCreate} className="h-10 rounded-xl px-3.5">
-                    <Plus size={16} weight="bold" />
-                    Ny produkt
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setCategoryManagerOpen(true)} className="h-10 rounded-xl px-3.5">
-                    <Folders size={16} weight="bold" />
-                    Hantera kategorier
-                  </Button>
-                </div>
+            {/* KPI metrics */}
+            <div className="flex divide-x divide-[var(--border)]">
+              <div className="flex flex-col justify-center px-5 py-3">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-muted)]">Produkter</span>
+                <span className="mt-0.5 text-xl font-semibold text-[var(--text-primary)]">{products.length}</span>
               </div>
-            </aside>
+              <div className="flex flex-col justify-center px-5 py-3">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-muted)]">Aktiva</span>
+                <span className="mt-0.5 text-xl font-semibold text-[var(--text-primary)]">{activeCount}</span>
+              </div>
+              <div className="flex flex-col justify-center px-5 py-3">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-[var(--text-muted)]">Visas nu</span>
+                <span className="mt-0.5 text-xl font-semibold text-[var(--text-primary)]">{totalVisible}</span>
+              </div>
+            </div>
+
+            {/* Actions — pushed to the right */}
+            <div className="flex flex-1 items-center justify-end gap-2 px-4 py-3">
+              {companies.length > 1 && (
+                <select
+                  value={selectedCompanyId}
+                  onChange={(e) => setSelectedCompanyId(e.target.value)}
+                  className="h-9 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                >
+                  {companies.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              )}
+              {companyLoading && <span className="text-xs text-[var(--text-muted)]">Laddar…</span>}
+              {companyError && (
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-800">
+                  {companyError}
+                </span>
+              )}
+              <Button type="button" variant="outline" onClick={() => setCategoryManagerOpen(true)} className="h-9 rounded-xl px-3">
+                <Folders size={15} weight="bold" />
+                <span className="hidden sm:inline">Hantera kategorier</span>
+              </Button>
+              <Button type="button" onClick={openCreate} className="h-9 rounded-xl px-3">
+                <Plus size={15} weight="bold" />
+                Ny produkt
+              </Button>
+            </div>
           </div>
-        </section>
+        </div>
 
         <AnimatePresence>
           {error && (

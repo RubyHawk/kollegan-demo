@@ -73,18 +73,18 @@ export function ProductModal({
       <DialogContent
         mobileVariant="fullscreen"
         showMobileClose
-        className="w-[min(100vw-1rem,1080px)] sm:max-w-[1080px]"
+        className="w-[min(100vw-1rem,1080px)] sm:max-w-[1080px] sm:max-h-none"
       >
-        <div className="flex h-full min-h-0 flex-col">
+        <div className="flex flex-col">
           <DialogHeader className="border-b border-[var(--border)] px-5 pb-4 pt-5 pr-16">
             <DialogTitle className="text-base text-[var(--text-primary)]">
               {product ? 'Redigera produkt' : 'Ny produkt'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[minmax(0,1fr)_260px]">
+          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_260px]">
             {/* ── Form ── */}
-            <div className="min-h-0 overflow-y-auto px-5 py-4">
+            <div className="px-5 py-4">
               <div className="space-y-4">
                 {/* Name + description */}
                 <div className="space-y-3">
@@ -102,7 +102,7 @@ export function ProductModal({
                     <textarea
                       value={form.description}
                       onChange={setField('description')}
-                      rows={3}
+                      rows={2}
                       placeholder="Kort beskrivning av vad kunden faktiskt köper."
                       className={`${inputClass} resize-none`}
                     />
