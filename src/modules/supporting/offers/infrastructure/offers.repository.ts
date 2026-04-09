@@ -20,6 +20,8 @@ export interface CreateOfferInput {
   companyId?:       string;
   templateId?:      string;
   generatedDocument?: string;
+  generatedPdf?:      Uint8Array;
+  generatedPdfFingerprint?: string;
   emailSubject?:      string;
   emailBody?:         string;
   emailHeaderConfig?: string;
@@ -52,6 +54,8 @@ export interface UpdateOfferInput {
   reminderCount?:        number;
   companyId?:            string;
   generatedDocument?:    string;
+  generatedPdf?:         Uint8Array;
+  generatedPdfFingerprint?: string | null;
   emailSubject?:         string;
   emailBody?:            string;
   emailHeaderConfig?:    string;
@@ -123,6 +127,8 @@ function mapOffer(r: Record<string, unknown>): Offer {
     totalIncVat:          r.totalIncVat as number,
     templateId:           (r.templateId as string | null) ?? undefined,
     generatedDocument:    (r.generatedDocument as string | null) ?? undefined,
+    generatedPdf:         (r.generatedPdf as Uint8Array | null) ?? undefined,
+    generatedPdfFingerprint: (r.generatedPdfFingerprint as string | null) ?? undefined,
     emailSubject:         (r.emailSubject as string | null) ?? undefined,
     emailBody:            (r.emailBody as string | null) ?? undefined,
     emailHeaderConfig:    (r.emailHeaderConfig as string | null) ?? undefined,
@@ -162,7 +168,7 @@ const OFFER_SELECT = {
   sentAt: true, viewedAt: true, acceptedAt: true, declinedAt: true,
   reminderSentAt: true, reminderCount: true,
   leadId: true, customerId: true, companyId: true,
-  templateId: true, generatedDocument: true, emailSubject: true, emailBody: true, emailHeaderConfig: true, signatureImage: true, signerName: true, signatureMethod: true,
+  templateId: true, generatedDocument: true, generatedPdf: true, generatedPdfFingerprint: true, emailSubject: true, emailBody: true, emailHeaderConfig: true, signatureImage: true, signerName: true, signatureMethod: true,
   publicToken: true, publicTokenExpiresAt: true,
   createdAt: true, updatedAt: true,
   lineItems: { select: LINE_ITEM_SELECT, orderBy: { sortOrder: 'asc' as const } },
@@ -208,6 +214,8 @@ export const offersRepository = {
         companyId:         input.companyId ?? null,
         templateId:        input.templateId ?? null,
         generatedDocument: input.generatedDocument ?? null,
+        generatedPdf:      input.generatedPdf ? Buffer.from(input.generatedPdf) : null,
+        generatedPdfFingerprint: input.generatedPdfFingerprint ?? null,
         emailSubject:      input.emailSubject ?? null,
         emailBody:         input.emailBody ?? null,
         emailHeaderConfig: input.emailHeaderConfig ?? null,
@@ -337,6 +345,8 @@ export const offersRepository = {
         ...(input.reminderCount        !== undefined ? { reminderCount: input.reminderCount }               : {}),
         ...(input.companyId            !== undefined ? { companyId: input.companyId || null }               : {}),
         ...(input.generatedDocument    !== undefined ? { generatedDocument: input.generatedDocument }       : {}),
+        ...(input.generatedPdf         !== undefined ? { generatedPdf: input.generatedPdf ? Buffer.from(input.generatedPdf) : null } : {}),
+        ...(input.generatedPdfFingerprint !== undefined ? { generatedPdfFingerprint: input.generatedPdfFingerprint } : {}),
         ...(input.emailSubject         !== undefined ? { emailSubject: input.emailSubject ?? null }         : {}),
         ...(input.emailBody            !== undefined ? { emailBody: input.emailBody ?? null }               : {}),
         ...(input.emailHeaderConfig    !== undefined ? { emailHeaderConfig: input.emailHeaderConfig ?? null } : {}),
@@ -478,6 +488,8 @@ export const offersRepository = {
         ...(input.signatureImage   !== undefined ? { signatureImage: input.signatureImage }                 : {}),
         ...(input.signerName           !== undefined ? { signerName: input.signerName }                       : {}),
         ...(input.generatedDocument    !== undefined ? { generatedDocument: input.generatedDocument }       : {}),
+        ...(input.generatedPdf         !== undefined ? { generatedPdf: input.generatedPdf ? Buffer.from(input.generatedPdf) : null } : {}),
+        ...(input.generatedPdfFingerprint !== undefined ? { generatedPdfFingerprint: input.generatedPdfFingerprint } : {}),
         ...(input.emailSubject         !== undefined ? { emailSubject: input.emailSubject ?? null }         : {}),
         ...(input.emailBody            !== undefined ? { emailBody: input.emailBody ?? null }               : {}),
         ...(input.publicTokenExpiresAt !== undefined ? { publicTokenExpiresAt: input.publicTokenExpiresAt } : {}),
