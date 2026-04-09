@@ -334,6 +334,44 @@ function GenericErrorBanner({ message, onDismiss, compact = false }: { message: 
   );
 }
 
+function AutoGrowTextarea({
+  value,
+  onChange,
+  onFocus,
+  placeholder,
+  className,
+  minRows = 2,
+}: {
+  value: string;
+  onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onFocus?: () => void;
+  placeholder?: string;
+  className?: string;
+  minRows?: number;
+}) {
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = '0px';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      rows={minRows}
+      onChange={onChange}
+      onFocus={onFocus}
+      placeholder={placeholder}
+      className={className}
+      style={{ overflow: 'hidden' }}
+    />
+  );
+}
+
 // ─── SortableRow — thin wrapper enabling drag-to-reorder for line items ────────
 
 function SortableRow({ id, children }: {
@@ -1833,7 +1871,9 @@ export default function OffersPage() {
                                         {idx + 1}
                                       </span>
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium text-[var(--text-primary)] truncate">{item.description}</p>
+                                        <p className="line-clamp-2 whitespace-pre-wrap break-words text-xs font-medium text-[var(--text-primary)]" title={item.description}>
+                                          {item.description}
+                                        </p>
                                         <p className="text-[10px] text-[var(--text-muted)] mt-0.5 tabular-nums">
                                           {item.quantity} × {fmtSEK(displayUnitPrice)}{item.discount > 0 ? ` − ${item.discount}%` : ''} · {formatVatRate(item.vatRate)}
                                         </p>
@@ -1860,7 +1900,14 @@ export default function OffersPage() {
                                         <div className="flex-1 space-y-1.5">
                                           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                                             <div className="flex-1 relative">
-                                              <input value={item.description} onChange={(e) => updateLine(idx, 'description', e.target.value)} onFocus={() => setActiveField('Rad ' + (idx + 1))} placeholder="Tjänst eller produkt" className={`w-full rounded-lg border bg-[var(--surface-alt)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all ${fieldErrors[`line_${idx}_description`] ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}/>
+                                              <AutoGrowTextarea
+                                                value={item.description}
+                                                onChange={(e) => updateLine(idx, 'description', e.target.value)}
+                                                onFocus={() => setActiveField('Rad ' + (idx + 1))}
+                                                placeholder="Tjänst eller produkt"
+                                                minRows={2}
+                                                className={`w-full rounded-lg border bg-[var(--surface-alt)] px-3 py-2 text-xs leading-5 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/15 transition-all resize-none ${fieldErrors[`line_${idx}_description`] ? 'border-red-400' : 'border-[var(--border)] focus:border-[var(--accent)]'}`}
+                                              />
                                             </div>
                                             {services.length > 0 && (
                                               <button
