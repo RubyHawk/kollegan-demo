@@ -752,117 +752,109 @@ export default function PublicOfferPage() {
         gap: 18px !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card {
-        border: 1px solid rgba(174, 191, 219, 0.26) !important;
-        border-radius: 30px !important;
-        background: rgba(255, 255, 255, 0.97) !important;
-        box-shadow: 0 18px 42px rgba(12, 24, 47, 0.08) !important;
-      }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child {
-        border-color: rgba(35, 70, 129, 0.08) !important;
-        background: linear-gradient(145deg, #162749 0%, #2f4a7f 100%) !important;
+        border: 1px solid #d7e3ef !important;
+        border-radius: 24px !important;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+        box-shadow: 0 18px 42px rgba(12, 24, 47, 0.10) !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__top {
-        gap: 8px !important;
-        padding: 20px 20px 0 !important;
-        background: transparent !important;
+        padding: 18px 18px 16px !important;
+        background: linear-gradient(160deg, #11253d 0%, #23466c 100%) !important;
         border-bottom: none !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__hero {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        gap: 12px !important;
+        align-items: start !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__hero-copy {
+        display: grid !important;
+        gap: 6px !important;
+        min-width: 0 !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__eyebrow {
         font-size: 10px !important;
         font-weight: 800 !important;
         letter-spacing: 0.14em !important;
-        color: #7c94ba !important;
+        text-transform: uppercase !important;
+        color: rgba(220, 232, 251, 0.72) !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__title {
-        font-size: 28px !important;
-        line-height: 1.02 !important;
-        letter-spacing: -0.04em !important;
-        color: #10203c !important;
+        font-size: 20px !important;
+        line-height: 1.18 !important;
+        letter-spacing: -0.03em !important;
+        color: #ffffff !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__detail {
         display: block !important;
-        font-size: 14px !important;
-        line-height: 1.7 !important;
-        color: #5e7293 !important;
+        font-size: 13px !important;
+        line-height: 1.62 !important;
+        color: rgba(241, 245, 249, 0.88) !important;
       }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__eyebrow,
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__detail {
-        color: rgba(220, 232, 251, 0.76) !important;
+      html.offer-mobile .public-offer-primary .offer-item-card__amount-chip {
+        display: grid !important;
+        gap: 3px !important;
+        min-width: 108px !important;
+        padding: 10px 12px !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(255, 255, 255, 0.18) !important;
+        background: rgba(255, 255, 255, 0.12) !important;
+        text-align: right !important;
       }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__title {
+      html.offer-mobile .public-offer-primary .offer-item-card__amount-chip span {
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.12em !important;
+        text-transform: uppercase !important;
+        color: rgba(226, 232, 240, 0.72) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__amount-chip strong {
+        font-size: 18px !important;
+        line-height: 1.1 !important;
+        letter-spacing: -0.03em !important;
         color: #ffffff !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__grid {
         display: grid !important;
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
         gap: 10px !important;
-        padding: 18px 20px 20px !important;
+        padding: 12px !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__metric {
-        display: grid !important;
-        align-content: start !important;
-        gap: 8px !important;
-        min-height: 92px !important;
-        padding: 14px !important;
-        border: 1px solid rgba(180, 196, 223, 0.28) !important;
-        border-bottom: 1px solid rgba(180, 196, 223, 0.28) !important;
-        border-radius: 22px !important;
-        background: #f6f9fd !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: baseline !important;
+        gap: 16px !important;
+        min-height: 0 !important;
+        padding: 12px 14px !important;
+        border: 1px solid #e3ecf5 !important;
+        border-radius: 16px !important;
+        background: rgba(255, 255, 255, 0.94) !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__metric dt {
         font-size: 10px !important;
         font-weight: 800 !important;
         letter-spacing: 0.14em !important;
+        text-transform: uppercase !important;
         color: #7d93b7 !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__metric dd {
-        text-align: left !important;
+        text-align: right !important;
         font-size: 15px !important;
         line-height: 1.35 !important;
         font-weight: 800 !important;
         color: #10203c !important;
       }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric {
-        border-color: rgba(255, 255, 255, 0.12) !important;
-        background: rgba(255, 255, 255, 0.08) !important;
+      html.offer-mobile .public-offer-primary .offer-item-card__metric--discount {
+        border-color: #f4d6d2 !important;
+        background: #fff6f5 !important;
       }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric dt {
-        color: rgba(220, 232, 251, 0.7) !important;
-      }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric dd {
-        color: #ffffff !important;
+      html.offer-mobile .public-offer-primary .offer-item-card__metric--discount dt,
+      html.offer-mobile .public-offer-primary .offer-item-card__metric--discount dd {
+        color: #b42318 !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__metric--total {
-        grid-column: 1 / -1 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 16px !important;
-        min-height: 0 !important;
-        margin-top: 2px !important;
-        padding: 18px 0 0 !important;
-        border: none !important;
-        border-radius: 0 !important;
-        border-top: 1px solid rgba(180, 196, 223, 0.24) !important;
-        background: transparent !important;
-      }
-      html.offer-mobile .public-offer-primary .offer-item-card__metric--total dt {
-        color: #586b88 !important;
-      }
-      html.offer-mobile .public-offer-primary .offer-item-card__metric--total dd {
-        text-align: left !important;
-        font-size: 22px !important;
-        letter-spacing: -0.04em !important;
-        color: #10203c !important;
-      }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric--total {
-        border-top-color: rgba(255, 255, 255, 0.12) !important;
-      }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric--total dt {
-        color: rgba(220, 232, 251, 0.78) !important;
-      }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric--total dd {
-        color: #ffffff !important;
+        display: none !important;
       }
     `;
     if (doc.head) doc.head.appendChild(responsiveStyle);
@@ -938,6 +930,7 @@ export default function PublicOfferPage() {
     });
 
     stripLegacyLineItemTables(doc);
+    enhanceOfferItemCards(doc);
 
     const legacyMetaTitle = doc.querySelector<HTMLElement>('.offer-shell__title');
     if (legacyMetaTitle && offer) {
