@@ -1145,6 +1145,9 @@ function extractLegacyDocumentIntroHtml(
 
 function renderDocumentSummary(offer: Offer): string {
   const summary = buildOfferSummary(offer);
+  const subtotalBeforeDiscount = summary.discountAmount > 0
+    ? offer.totalExVat + summary.discountAmount
+    : offer.totalExVat;
   const boxClass = 'offer-summary offer-summary--below';
   const discountRow = summary.discountAmount > 0 ? `
     <div class="offer-summary__row offer-summary__row--discount">
@@ -1161,7 +1164,7 @@ function renderDocumentSummary(offer: Offer): string {
     <aside class="${boxClass}">
       <div class="offer-summary__row offer-summary__row--subtotal">
         <span>${summary.subtotalLabel}</span>
-        <strong>${fmtSEKPrecise(offer.totalExVat)}</strong>
+        <strong>${fmtSEKPrecise(subtotalBeforeDiscount)}</strong>
       </div>
       ${discountRow}
       ${vatRow}

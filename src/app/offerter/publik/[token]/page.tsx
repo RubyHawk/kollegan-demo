@@ -1110,8 +1110,6 @@ export default function PublicOfferPage() {
       const objectUrl = URL.createObjectURL(blob);
       if (previewWindow && !previewWindow.closed) {
         previewWindow.location.href = objectUrl;
-      } else {
-        window.location.assign(objectUrl);
       }
       const link = document.createElement('a');
       link.href = objectUrl;
