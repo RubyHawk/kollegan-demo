@@ -12,7 +12,6 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import SignatureCanvas from 'react-signature-canvas';
 import {
@@ -70,78 +69,23 @@ const SIG_FONTS = [
 function fmtSEK(n: number) {
   return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(n);
 }
-const SWEDISH_MONTHS_SHORT = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'] as const;
-
-function formatCompactSwedishDate(value: string | Date) {
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return `${date.getDate()} ${SWEDISH_MONTHS_SHORT[date.getMonth()]} ${date.getFullYear()}`;
-}
-
 function fmtDate(iso: string) {
-  return formatCompactSwedishDate(iso);
+  return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 function todaySv() {
-  return formatCompactSwedishDate(new Date());
+  return new Date().toLocaleDateString('sv-SE');
 }
-
-function normalizeBrokenSwedish(text: string): string {
-  return text
-    .replace(/Ã…/g, 'Å')
-    .replace(/Ã„/g, 'Ä')
-    .replace(/Ã–/g, 'Ö')
-    .replace(/Ã¥/g, 'å')
-    .replace(/Ã¤/g, 'ä')
-    .replace(/Ã¶/g, 'ö')
-    .replace(/Â /g, '\u00a0')
-    .replace(/Â·/g, '·')
-    .replace(/â€”/g, '—')
-    .replace(/â€“/g, '–')
-    .replace(/â€œ/g, '“')
-    .replace(/â€\u009d/g, '”')
-    .replace(/â€™/g, '’');
-}
-
-function normalizeOfferText(text: string): string {
-  return normalizeBrokenSwedish(text)
-    .replace(/Ã…/g, 'Å')
-    .replace(/Ã„/g, 'Ä')
-    .replace(/Ã–/g, 'Ö')
-    .replace(/Ã¥/g, 'å')
-    .replace(/Ã¤/g, 'ä')
-    .replace(/Ã¶/g, 'ö')
-    .replace(/Â /g, '\u00a0')
-    .replace(/Â·/g, '·')
-    .replace(/Â(?=[\u00a0 0-9%.,:;|kr])/g, '');
-}
-
-function compactDateText(value: string): string {
-  const trimmed = normalizeOfferText(value).trim();
-  const parts = trimmed.match(/^(\d{1,2})\s+([A-Za-zÅÄÖåäö.]+)\s+(\d{4})$/);
-  if (!parts) return trimmed;
-
-  const [, dayValue, monthValue, yearValue] = parts;
-  const normalizedMonth = monthValue.toLocaleLowerCase('sv-SE').replace(/\.$/, '');
-  const monthMap: Record<string, number> = {
-    januari: 0, jan: 0,
-    februari: 1, feb: 1,
-    mars: 2, mar: 2,
-    april: 3, apr: 3,
-    maj: 4,
-    juni: 5, jun: 5,
-    juli: 6, jul: 6,
-    augusti: 7, aug: 7,
-    september: 8, sep: 8,
-    oktober: 9, okt: 9,
-    november: 10, nov: 10,
-    december: 11, dec: 11,
+function getStatusLabel(status: OfferStatus) {
+  const labels: Record<OfferStatus, string> = {
+    draft: 'Offert',
+    sent: 'Offert',
+    viewed: 'Offert',
+    accepted: 'Signerad',
+    declined: 'Avvisad',
+    expired: 'Utgången',
   };
-  const monthIndex = monthMap[normalizedMonth];
-  if (monthIndex == null) return trimmed;
-
-  return `${Number(dayValue)} ${SWEDISH_MONTHS_SHORT[monthIndex]} ${yearValue}`;
+  return labels[status] ?? 'Offert';
 }
-
 function isPromoPageBlock(pageBlock: HTMLElement): boolean {
   const pageContent = pageBlock.querySelector<HTMLElement>('.page-content') ?? pageBlock;
   const text = pageContent.innerText.replace(/\s+/g, ' ').trim();
@@ -321,7 +265,6 @@ function SuccessCheckmark() {
     </motion.div>
   );
 }
-
 function DeclineMark() {
   return (
     <motion.div
@@ -372,9 +315,7 @@ export default function PublicOfferPage() {
   const [capturedAt, setCapturedAt] = useState<string | null>(null);
   const [sigMode, setSigMode] = useState<SigMode>('type');
   const [sigFont, setSigFont] = useState<typeof SIG_FONTS[number]['id']>(SIG_FONTS[0].id);
-  const [drawnSignature, setDrawnSignature] = useState<string | null>(null);
-  const [drawModalOpen, setDrawModalOpen] = useState(false);
-  const [drawModalError, setDrawModalError] = useState('');
+  const [typedSig, setTypedSig] = useState('');
 
   const [documentReady, setDocumentReady] = useState(false);
   const [promoPageCount, setPromoPageCount] = useState(0);
@@ -424,6 +365,12 @@ export default function PublicOfferPage() {
   }, [offer?.generatedDocument]);
 
   useEffect(() => {
+    if (sigMode !== 'type') {
+      setSigMode('type');
+    }
+  }, [sigMode]);
+
+  useEffect(() => {
     setDocumentReady(false);
     setPromoPageCount(0);
   }, [iframeDocumentHtml]);
@@ -462,236 +409,460 @@ export default function PublicOfferPage() {
     // Inject base styles inside the iframe
     const responsiveStyle = doc.createElement('style');
     responsiveStyle.textContent = `
-      html, body {
-        background: #ffffff !important;
-        color: #14263f !important;
-        font-family: Aptos, "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
-      }
       *, *::before, *::after { box-sizing: border-box; }
       img { max-width: 100% !important; display: block; }
       img:not([style*="height:"]) { height: auto; }
       table { max-width: 100% !important; width: 100%; table-layout: fixed; }
       td, th { word-break: break-word; overflow-wrap: break-word; }
       pre, code { white-space: pre-wrap !important; word-break: break-word !important; overflow-x: hidden !important; }
-      .doc-wrapper { padding-bottom: 0 !important; background: #ffffff !important; }
-      .page-separator { display: none !important; }
-      .page-block {
-        margin: 0 !important;
-        overflow: hidden !important;
-        background: #ffffff !important;
-      }
-      .page-content--document {
-        min-height: 920px !important;
-        padding: 36px 40px 34px !important;
-        background: #ffffff !important;
-      }
-      .page-block--document {
-        border: none !important;
-        border-radius: 0 !important;
-        background: #ffffff !important;
-        box-shadow: none !important;
-      }
-      .offer-shell {
-        gap: 18px !important;
-        color: #14263f !important;
-        font-family: Aptos, "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
-      }
-      .offer-shell__header, .offer-shell__topline { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(208px, 244px) !important; gap: 16px !important; align-items: flex-start !important; }
-      .offer-shell__header { padding-bottom: 18px !important; border-bottom: 1px solid #d9e3ee !important; }
-      .offer-shell__sender { gap: 12px !important; align-items: flex-start !important; }
-      .offer-shell__logo { width: 48px !important; height: 48px !important; }
-      .offer-shell__sender-copy { display: grid !important; gap: 3px !important; font-size: 12.5px !important; line-height: 1.55 !important; color: #465a73 !important; }
-      .offer-shell__sender-name { color: #10233b !important; font-weight: 700 !important; }
+      .page-content--document { min-height: 920px !important; }
+      .offer-shell { gap: 16px !important; }
+      .offer-shell__header, .offer-shell__topline { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(196px, 232px) !important; gap: 14px !important; align-items: flex-start !important; }
+      .offer-shell__sender { gap: 10px !important; align-items: flex-start !important; }
+      .offer-shell__logo { width: 46px !important; height: 46px !important; }
+      .offer-shell__sender-copy { display: grid !important; gap: 2px !important; font-size: 12px !important; line-height: 1.45 !important; color: #475569 !important; }
       .offer-shell__meta { min-width: 0 !important; display: grid !important; gap: 8px !important; justify-items: end !important; text-align: right !important; }
-      .offer-shell__status { display: none !important; }
+      .offer-shell__status { margin: 0 !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 5px 11px !important; border-radius: 999px !important; font-size: 11px !important; font-weight: 700 !important; }
       .offer-shell__status--draft { background: #e2e8f0 !important; color: #334155 !important; }
       .offer-shell__status--sent, .offer-shell__status--viewed { background: #dbeafe !important; color: #1d4ed8 !important; }
       .offer-shell__status--accepted { background: #dcfce7 !important; color: #166534 !important; }
       .offer-shell__status--declined { background: #fee2e2 !important; color: #b91c1c !important; }
       .offer-shell__status--expired { background: #f3f4f6 !important; color: #6b7280 !important; }
       .offer-shell__meta dl { display: grid !important; gap: 6px !important; width: 100% !important; }
-      .offer-shell__meta dl div { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; justify-content: flex-end !important; gap: 10px !important; padding: 4px 0 !important; border-bottom: 1px solid #edf2f7 !important; }
-      .offer-shell__meta dl div:first-child { padding-top: 0 !important; }
-      .offer-shell__meta dl div:last-child { padding-bottom: 0 !important; border-bottom: none !important; }
-      .offer-shell__meta dt { font-size: 10px !important; line-height: 1.35 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; color: #6b7e95 !important; }
-      .offer-shell__meta dd { font-size: 12.5px !important; line-height: 1.35 !important; font-weight: 700 !important; color: #10233b !important; white-space: nowrap !important; }
-      .offer-shell__meta dd small { display: block !important; margin-top: 2px !important; font-size: 11px !important; line-height: 1.35 !important; font-weight: 500 !important; color: #5f738a !important; }
-      .offer-shell__meta .offer-shell__meta-row--recipient dd { white-space: normal !important; }
-      .offer-shell__topline { padding-bottom: 18px !important; border-bottom: 1px solid #d9e3ee !important; }
-      .offer-shell__topline h1 { font-size: 22px !important; line-height: 1.22 !important; color: #10233b !important; letter-spacing: -0.02em !important; }
-      .offer-shell__customer { min-width: 0 !important; display: grid !important; gap: 4px !important; padding-left: 14px !important; border-left: 1px solid #dce6f0 !important; font-size: 13px !important; line-height: 1.6 !important; color: #465a73 !important; }
-      .offer-section { gap: 10px !important; }
-      .offer-section h2, .offer-section h3 { font-size: 12px !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; color: #6b7e95 !important; }
-      .offer-table-header h2 { font-size: 24px !important; line-height: 1.18 !important; letter-spacing: -0.03em !important; text-transform: none !important; color: #10233b !important; }
-      .offer-section p { font-size: 14px !important; line-height: 1.8 !important; color: #34485f !important; }
-      .offer-section--terms,
-      .offer-section--notes {
-        margin-top: 14px !important;
-        padding: 16px 18px !important;
-        border: 1px solid #d9e3ee !important;
-        border-radius: 14px !important;
-        background: #ffffff !important;
-      }
-      .offer-summary { width: min(272px, 100%) !important; border: 1px solid #d9e3ee !important; border-radius: 14px !important; background: #ffffff !important; padding: 0 !important; gap: 0 !important; overflow: hidden !important; box-shadow: none !important; }
-      .offer-summary--below { width: min(388px, 100%) !important; margin-top: 16px !important; margin-left: auto !important; }
-      .offer-summary__row { font-size: 13px !important; padding: 12px 16px !important; border-bottom: 1px solid #e5ecf3 !important; color: #465a73 !important; align-items: baseline !important; line-height: 1.55 !important; }
-      .offer-summary__row span { font-weight: 600 !important; color: #5b7088 !important; }
-      .offer-summary__row strong { color: #10233b !important; font-weight: 700 !important; white-space: nowrap !important; }
-      .offer-summary__row--subtotal { background: linear-gradient(180deg, #f8fbff 0%, #fdfefe 100%) !important; }
-      .offer-summary__row--subtotal span,
-      .offer-summary__row--subtotal strong { color: #10233b !important; font-weight: 800 !important; }
-      .offer-summary__row--discount { background: #fff6f5 !important; }
-      .offer-summary__row--discount span,
-      .offer-summary__row--discount strong { color: #b42318 !important; }
-      .offer-summary__row--vat span { color: #42576f !important; }
-      .offer-summary__row--total {
-        margin-top: 0 !important;
-        padding: 15px 16px 14px !important;
-        border-top: 1px solid #142742 !important;
-        border-bottom: none !important;
-        background: linear-gradient(135deg, #13233a 0%, #223b63 100%) !important;
-        color: #eff6ff !important;
-        font-size: 15px !important;
-      }
-      .offer-summary__row--total,
-      .offer-summary__row--total strong,
-      .offer-summary__row--total span {
-        color: #ffffff !important;
-      }
-      .offer-summary__row--total span { font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.02em !important; text-transform: uppercase !important; }
-      .offer-summary__row--total strong { font-size: 22px !important; letter-spacing: -0.03em !important; }
-      .offer-shell__footer { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)) !important; gap: 14px !important; padding-top: 16px !important; margin-top: 18px !important; border-top: 1px solid #dce6f0 !important; }
-      .offer-shell__footer div { font-size: 13px !important; line-height: 1.6 !important; color: #465a73 !important; }
-      .offer-shell__footer strong { color: #10233b !important; }
-      .offer-items { display: grid !important; gap: 14px !important; }
-      .offer-items__table { display: block !important; border: 1px solid #d9e3ee !important; border-radius: 14px !important; background: #ffffff !important; overflow: hidden !important; box-shadow: none !important; }
+      .offer-shell__meta dl div { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; justify-content: flex-end !important; gap: 10px !important; }
+      .offer-shell__topline { padding-bottom: 14px !important; }
+      .offer-shell__topline h1 { font-size: 18px !important; line-height: 1.2 !important; }
+      .offer-shell__customer { min-width: 0 !important; display: grid !important; gap: 3px !important; padding-left: 12px !important; border-left: 1px solid #e2e8f0 !important; font-size: 13px !important; line-height: 1.5 !important; color: #475569 !important; }
+      .offer-section { gap: 8px !important; }
+      .offer-section p { font-size: 13px !important; line-height: 1.72 !important; }
+      .offer-summary { width: min(240px, 100%) !important; border: 1px solid #dbe4ee !important; border-radius: 14px !important; background: #ffffff !important; padding: 8px 0 !important; gap: 0 !important; overflow: hidden !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important; }
+      .offer-summary--below { width: min(360px, 100%) !important; margin-top: 12px !important; margin-left: auto !important; }
+      .offer-summary__row { font-size: 13px !important; padding: 7px 14px !important; border-bottom: none !important; color: #475569 !important; align-items: baseline !important; line-height: 1.5 !important; }
+      .offer-summary__row strong { color: #0f172a !important; }
+      .offer-summary__row--total { margin-top: 6px !important; padding: 11px 14px 10px !important; border-top: 1px solid #e8eef5 !important; border-bottom: none !important; background: #f8fafc !important; color: #0f172a !important; font-size: 14px !important; }
+      .offer-summary__row--total strong { color: #0f172a !important; font-size: 18px !important; }
+      .offer-section--terms { margin-top: 12px !important; }
+      .offer-shell__footer { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)) !important; gap: 12px !important; padding-top: 14px !important; margin-top: 18px !important; }
+      .offer-shell__footer div { font-size: 13px !important; line-height: 1.55 !important; }
+      .offer-items { display: grid !important; gap: 12px !important; }
+      .offer-items__table { display: block !important; border: 1px solid #dbe4ee !important; border-radius: 18px !important; background: #ffffff !important; overflow: hidden !important; }
       .offer-items__head, .offer-item-row { display: grid !important; grid-template-columns: var(--offer-columns) !important; align-items: start !important; }
-      .offer-items__head { gap: 14px !important; padding: 12px 16px !important; background: linear-gradient(180deg, #f7faff 0%, #edf3fb 100%) !important; border-bottom: 1px solid #d9e4ef !important; color: #6b7e95 !important; font-size: 10.5px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; }
-      .offer-item-row { gap: 14px !important; padding: 16px !important; border-bottom: 1px solid #edf2f7 !important; }
+      .offer-items__head { gap: 14px !important; padding: 11px 16px !important; background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%) !important; border-bottom: 1px solid #dbe4ee !important; color: #64748b !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; }
+      .offer-item-row { gap: 14px !important; padding: 16px !important; border-bottom: 1px solid #eef2f7 !important; }
       .offer-item-row:last-child { border-bottom: none !important; }
-      .offer-item-row__product { display: grid !important; gap: 6px !important; min-width: 0 !important; }
-      .offer-item-row__title { font-size: 16px !important; line-height: 1.36 !important; font-weight: 700 !important; color: #10233b !important; }
-      .offer-item-row__detail { font-size: 13px !important; line-height: 1.78 !important; color: #5f738a !important; }
-      .offer-item-row__value { text-align: right !important; font-size: 14px !important; line-height: 1.55 !important; color: #42576f !important; }
-      .offer-item-row__value--strong { font-weight: 700 !important; color: #10233b !important; }
+      .offer-item-row__product { display: grid !important; gap: 5px !important; min-width: 0 !important; }
+      .offer-item-row__title { font-size: 15px !important; line-height: 1.35 !important; font-weight: 700 !important; color: #0f172a !important; }
+      .offer-item-row__detail { font-size: 13px !important; line-height: 1.68 !important; color: #64748b !important; }
+      .offer-item-row__value { text-align: right !important; font-size: 14px !important; line-height: 1.5 !important; color: #334155 !important; }
+      .offer-item-row__value--strong { font-weight: 700 !important; color: #0f172a !important; }
       .offer-items__cards { display: none !important; }
-      .offer-item-card { border: 1px solid #d7e2ee !important; border-radius: 20px !important; background: #ffffff !important; overflow: hidden !important; box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06) !important; }
-      .offer-item-card__top { display: grid !important; gap: 6px !important; padding: 16px 16px 14px !important; background: linear-gradient(180deg, #fcfdff 0%, #f5f9ff 100%) !important; border-bottom: 1px solid #edf2f7 !important; }
-      .offer-item-card__eyebrow { font-size: 10px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; color: #7d90a6 !important; }
-      .offer-item-card__title { font-size: 16px !important; line-height: 1.35 !important; font-weight: 700 !important; color: #10233b !important; }
-      .offer-item-card__detail { font-size: 13px !important; line-height: 1.72 !important; color: #5f738a !important; }
+      .offer-item-card { border: 1px solid #dbe4ee !important; border-radius: 18px !important; background: #ffffff !important; overflow: hidden !important; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important; }
+      .offer-item-card__top { display: grid !important; gap: 6px !important; padding: 15px 16px 14px !important; background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%) !important; border-bottom: 1px solid #eef2f7 !important; }
+      .offer-item-card__eyebrow { font-size: 10px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; color: #94a3b8 !important; }
+      .offer-item-card__title { font-size: 16px !important; line-height: 1.3 !important; font-weight: 700 !important; color: #0f172a !important; }
+      .offer-item-card__detail { font-size: 13px !important; line-height: 1.7 !important; color: #64748b !important; }
       .offer-item-card__grid { display: grid !important; gap: 0 !important; margin: 0 !important; }
-      .offer-item-card__metric { display: flex !important; justify-content: space-between !important; gap: 16px !important; padding: 11px 16px !important; border-bottom: 1px solid #edf2f7 !important; }
+      .offer-item-card__metric { display: flex !important; justify-content: space-between !important; gap: 16px !important; padding: 11px 16px !important; border-bottom: 1px solid #eef2f7 !important; }
       .offer-item-card__metric:last-child { border-bottom: none !important; }
       .offer-item-card__metric dt, .offer-item-card__metric dd { margin: 0 !important; }
-      .offer-item-card__metric dt { font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; color: #7d90a6 !important; }
-      .offer-item-card__metric dd { text-align: right !important; font-size: 14px !important; font-weight: 600 !important; color: #10233b !important; }
-      .offer-item-card__metric--total {
-        background: linear-gradient(135deg, #13233a 0%, #223b63 100%) !important;
-      }
-      .offer-item-card__metric--total dt,
-      .offer-item-card__metric--total dd {
-        color: #ffffff !important;
-      }
-      .offer-item-card__metric--total dd { font-size: 18px !important; font-weight: 800 !important; letter-spacing: -0.02em !important; }
-      html.offer-mobile, html.offer-mobile body {
-        background: #ffffff !important;
-      }
-      html.offer-mobile .doc-wrapper { width: 100% !important; max-width: none !important; margin: 0 !important; border: none !important; border-radius: 0 !important; padding-bottom: 0 !important; }
-      html.offer-mobile .page-block { margin: 0 !important; min-height: 0 !important; height: auto !important; }
-      html.offer-mobile .page-content,
-      html.offer-mobile .page-content--edge-to-edge,
-      html.offer-mobile .page-content--document { min-height: 0 !important; height: auto !important; }
+      .offer-item-card__metric dt { font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; color: #94a3b8 !important; }
+      .offer-item-card__metric dd { text-align: right !important; font-size: 14px !important; font-weight: 600 !important; color: #0f172a !important; }
+      .offer-item-card__metric--total { background: #f8fafc !important; }
+      .offer-item-card__metric--total dt { color: #475569 !important; }
+      .offer-item-card__metric--total dd { font-size: 18px !important; font-weight: 800 !important; letter-spacing: -0.02em !important; color: #0f172a !important; }
+      html.offer-mobile .doc-wrapper { width: 100% !important; max-width: none !important; margin: 0 !important; border: none !important; border-radius: 0 !important; }
       html.offer-mobile .page-content--edge-to-edge > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; line-height: 0 !important; }
       html.offer-mobile .page-content--edge-to-edge > div[style*="position:absolute"] img { width: 100% !important; max-width: none !important; height: auto !important; object-fit: cover !important; border-radius: 0 !important; }
-      html.offer-mobile .page-block--document { margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
-      html.offer-mobile .page-content--document {
-        padding: 20px 14px 18px !important;
-      }
-      html.offer-mobile .offer-shell {
-        gap: 16px !important;
-      }
-      html.offer-mobile .offer-shell__header, html.offer-mobile .offer-shell__topline { grid-template-columns: 1fr !important; gap: 12px !important; }
-      html.offer-mobile .offer-shell__header { padding-bottom: 16px !important; }
-      html.offer-mobile .offer-shell__sender { gap: 10px !important; }
-      html.offer-mobile .offer-shell__logo { width: 44px !important; height: 44px !important; }
-      html.offer-mobile .offer-shell__meta { justify-items: stretch !important; text-align: left !important; padding: 14px !important; }
-      html.offer-mobile .offer-shell__meta dl div { grid-template-columns: minmax(0, 1fr) auto !important; gap: 8px !important; align-items: end !important; }
-      html.offer-mobile .offer-shell__meta .offer-shell__meta-row--recipient { grid-template-columns: 1fr !important; gap: 4px !important; }
-      html.offer-mobile .offer-shell__meta dt { font-size: 10.5px !important; line-height: 1.35 !important; }
-      html.offer-mobile .offer-shell__meta dd { font-size: 13px !important; line-height: 1.35 !important; text-align: right !important; white-space: nowrap !important; }
-      html.offer-mobile .offer-shell__meta dd small { font-size: 11px !important; }
-      html.offer-mobile .offer-shell__meta .offer-shell__meta-row--recipient dd { text-align: left !important; white-space: normal !important; }
-      html.offer-mobile .offer-shell__customer { padding-left: 10px !important; font-size: 13px !important; line-height: 1.55 !important; }
-      html.offer-mobile .offer-shell__sender-copy { font-size: 12.5px !important; line-height: 1.55 !important; }
-      html.offer-mobile .offer-section p { font-size: 14px !important; line-height: 1.76 !important; }
-      html.offer-mobile .offer-table-header h2 { font-size: 22px !important; line-height: 1.2 !important; }
-      html.offer-mobile .offer-item-card__top { gap: 4px !important; padding: 14px 14px 12px !important; }
-      html.offer-mobile .offer-item-card__eyebrow { font-size: 9.5px !important; }
-      html.offer-mobile .offer-item-card__title { font-size: 18px !important; line-height: 1.32 !important; }
-      html.offer-mobile .offer-item-card__detail { display: block !important; font-size: 12.5px !important; line-height: 1.62 !important; }
+      html.offer-mobile .offer-shell__header, html.offer-mobile .offer-shell__topline { grid-template-columns: minmax(0, 1fr) 168px !important; gap: 12px !important; }
+      html.offer-mobile .offer-shell__meta { justify-items: end !important; text-align: right !important; }
+      html.offer-mobile .offer-shell__meta dl div { grid-template-columns: 1fr !important; gap: 2px !important; justify-items: end !important; }
+      html.offer-mobile .offer-shell__meta dt { font-size: 12.5px !important; line-height: 1.5 !important; }
+      html.offer-mobile .offer-shell__meta dd { font-size: 14px !important; line-height: 1.5 !important; white-space: normal !important; }
+      html.offer-mobile .offer-shell__customer { padding-left: 10px !important; font-size: 14px !important; line-height: 1.55 !important; }
+      html.offer-mobile .offer-shell__sender-copy { font-size: 14px !important; line-height: 1.55 !important; }
+      html.offer-mobile .offer-section p { font-size: 14px !important; line-height: 1.78 !important; }
+      html.offer-mobile .offer-item-card__title { font-size: 17px !important; line-height: 1.35 !important; }
+      html.offer-mobile .offer-item-card__detail { display: none !important; }
       html.offer-mobile .offer-items__table { display: none !important; }
-      html.offer-mobile .offer-items__cards { display: grid !important; gap: 14px !important; }
-      html.offer-mobile .offer-item-card { border-color: #d9e3ee !important; box-shadow: none !important; background: #ffffff !important; }
-      html.offer-mobile .offer-item-card__metric { padding: 12px 14px !important; background: #ffffff !important; }
-      html.offer-mobile .offer-item-card__metric dt { font-size: 11px !important; }
-      html.offer-mobile .offer-item-card__metric dd { font-size: 14px !important; }
+      html.offer-mobile .offer-items__cards { display: grid !important; gap: 16px !important; }
+      html.offer-mobile .offer-item-card { border-color: #cfdbe8 !important; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important; background: #ffffff !important; }
+      html.offer-mobile .offer-item-card__metric { background: #ffffff !important; }
       html.offer-mobile .offer-item-card__metric:nth-child(even) { background: #fbfdff !important; }
-      html.offer-mobile .offer-item-card__metric--total { border-top: 1px solid rgba(255,255,255,0.16) !important; }
-      html.offer-mobile .offer-item-card__metric--total dd { font-size: 20px !important; font-weight: 800 !important; color: #ffffff !important; }
+      html.offer-mobile .offer-item-card__metric--total { background: linear-gradient(180deg, #eef5ff 0%, #e2eeff 100%) !important; border-top: 1px solid #c7d9ee !important; }
+      html.offer-mobile .offer-item-card__metric--total dd { font-size: 20px !important; font-weight: 800 !important; color: #0f172a !important; }
       html.offer-mobile .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
-      html.offer-mobile .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 0 !important; margin-top: 18px !important; border-color: #d9e3ee !important; box-shadow: none !important; }
+      html.offer-mobile .offer-summary { width: 100% !important; border-radius: 16px !important; padding: 8px 0 !important; margin-top: 18px !important; border-color: #cfdbe8 !important; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05) !important; }
       html.offer-mobile .offer-summary--below { width: 100% !important; margin-top: 18px !important; }
-      html.offer-mobile .offer-summary__row { font-size: 13.5px !important; padding: 12px 14px !important; line-height: 1.55 !important; border-bottom: 1px solid #e5ecf3 !important; }
-      html.offer-mobile .offer-summary__row span { font-weight: 600 !important; }
-      html.offer-mobile .offer-summary__row--total { font-size: 16px !important; padding: 14px !important; }
-      html.offer-mobile .offer-summary__row--total span { font-size: 11.5px !important; }
-      html.offer-mobile .offer-summary__row--total strong { font-size: 22px !important; color: #ffffff !important; }
+      html.offer-mobile .offer-summary__row { font-size: 14px !important; padding: 8px 12px !important; line-height: 1.55 !important; }
+      html.offer-mobile .offer-summary__row--total { font-size: 16px !important; padding: 12px !important; background: #0f172a !important; color: #f8fafc !important; }
+      html.offer-mobile .offer-summary__row--total strong { font-size: 19px !important; color: #ffffff !important; }
       html.offer-mobile .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
       @media (max-width: 640px) {
-        .page-block { margin: 0 !important; min-height: 0 !important; height: auto !important; }
-        .page-content,
-        .page-content--edge-to-edge,
-        .page-content--document { min-height: 0 !important; height: auto !important; }
-        .page-block--document { margin: 0 !important; border-radius: 0 !important; }
-        .page-content--document { padding: 20px 14px 18px !important; }
-        .offer-shell__header, .offer-shell__topline { grid-template-columns: 1fr !important; gap: 12px !important; }
-        .offer-shell__header { padding-bottom: 16px !important; }
-        .offer-shell__sender { gap: 10px !important; }
-        .offer-shell__logo { width: 44px !important; height: 44px !important; }
-        .offer-shell__meta { justify-items: stretch !important; text-align: left !important; padding: 14px !important; }
-        .offer-shell__meta dl div { grid-template-columns: minmax(0, 1fr) auto !important; gap: 8px !important; align-items: end !important; }
-        .offer-shell__meta .offer-shell__meta-row--recipient { grid-template-columns: 1fr !important; gap: 4px !important; }
-        .offer-shell__meta dt { font-size: 10.5px !important; line-height: 1.35 !important; }
-        .offer-shell__meta dd { font-size: 13px !important; line-height: 1.35 !important; text-align: right !important; white-space: nowrap !important; }
-        .offer-shell__meta dd small { font-size: 11px !important; }
-        .offer-shell__meta .offer-shell__meta-row--recipient dd { text-align: left !important; white-space: normal !important; }
-        .offer-shell__customer { padding-left: 10px !important; font-size: 13px !important; line-height: 1.55 !important; }
-        .offer-shell__sender-copy { font-size: 12.5px !important; line-height: 1.55 !important; }
-        .offer-section p { font-size: 14px !important; line-height: 1.76 !important; }
-        .offer-table-header h2 { font-size: 22px !important; line-height: 1.2 !important; }
-        .offer-item-card__top { gap: 4px !important; padding: 14px 14px 12px !important; }
-        .offer-item-card__eyebrow { font-size: 9.5px !important; }
-        .offer-item-card__title { font-size: 18px !important; line-height: 1.32 !important; }
-        .offer-item-card__detail { display: block !important; font-size: 12.5px !important; line-height: 1.62 !important; }
+        .offer-shell__header, .offer-shell__topline { grid-template-columns: minmax(0, 1fr) 168px !important; gap: 12px !important; }
+        .offer-shell__meta { justify-items: end !important; text-align: right !important; }
+        .offer-shell__meta dl div { grid-template-columns: 1fr !important; gap: 2px !important; justify-items: end !important; }
+        .offer-shell__meta dt { font-size: 12.5px !important; line-height: 1.5 !important; }
+        .offer-shell__meta dd { font-size: 14px !important; line-height: 1.5 !important; white-space: normal !important; }
+        .offer-shell__customer { padding-left: 10px !important; font-size: 14px !important; line-height: 1.55 !important; }
+        .offer-shell__sender-copy { font-size: 14px !important; line-height: 1.55 !important; }
+        .offer-section p { font-size: 14px !important; line-height: 1.78 !important; }
+        .offer-item-card__title { font-size: 17px !important; line-height: 1.35 !important; }
+        .offer-item-card__detail { display: none !important; }
         .offer-items__table { display: none !important; }
-        .offer-items__cards { display: grid !important; gap: 14px !important; }
-        .offer-item-card { border-color: #d9e3ee !important; box-shadow: none !important; background: #ffffff !important; }
-        .offer-item-card__metric { padding: 12px 14px !important; background: #ffffff !important; }
-        .offer-item-card__metric dt { font-size: 11px !important; }
-        .offer-item-card__metric dd { font-size: 14px !important; }
+        .offer-items__cards { display: grid !important; gap: 16px !important; }
+        .offer-item-card { border-color: #cfdbe8 !important; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important; background: #ffffff !important; }
+        .offer-item-card__metric { background: #ffffff !important; }
         .offer-item-card__metric:nth-child(even) { background: #fbfdff !important; }
-        .offer-item-card__metric--total { border-top: 1px solid rgba(255,255,255,0.16) !important; }
-        .offer-item-card__metric--total dd { font-size: 20px !important; font-weight: 800 !important; color: #ffffff !important; }
+        .offer-item-card__metric--total { background: linear-gradient(180deg, #eef5ff 0%, #e2eeff 100%) !important; border-top: 1px solid #c7d9ee !important; }
+        .offer-item-card__metric--total dd { font-size: 20px !important; font-weight: 800 !important; color: #0f172a !important; }
         .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
-        .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 0 !important; margin-top: 18px !important; border-color: #d9e3ee !important; box-shadow: none !important; }
+        .offer-summary { width: 100% !important; border-radius: 16px !important; padding: 8px 0 !important; margin-top: 18px !important; border-color: #cfdbe8 !important; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05) !important; }
         .offer-summary--below { width: 100% !important; margin-top: 18px !important; }
-        .offer-summary__row { font-size: 13.5px !important; padding: 12px 14px !important; line-height: 1.55 !important; border-bottom: 1px solid #e5ecf3 !important; }
-        .offer-summary__row span { font-weight: 600 !important; }
-        .offer-summary__row--total { font-size: 16px !important; padding: 14px !important; }
-        .offer-summary__row--total span { font-size: 11.5px !important; }
-        .offer-summary__row--total strong { font-size: 22px !important; color: #ffffff !important; }
+        .offer-summary__row { font-size: 14px !important; padding: 8px 12px !important; line-height: 1.55 !important; }
+        .offer-summary__row--total { font-size: 16px !important; padding: 12px !important; background: #0f172a !important; color: #f8fafc !important; }
+        .offer-summary__row--total strong { font-size: 19px !important; color: #ffffff !important; }
         .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
+      }
+      html.offer-mobile {
+        background:
+          radial-gradient(circle at top, #fefefe 0%, #eef3fb 46%, #e7eef8 100%) !important;
+      }
+      html.offer-mobile body {
+        background: transparent !important;
+      }
+      html.offer-mobile .doc-wrapper {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+      }
+      html.offer-mobile .page-block {
+        position: relative !important;
+      }
+      html.offer-mobile .public-offer-promo {
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        overflow: hidden !important;
+        background: #08162d !important;
+        box-shadow: none !important;
+      }
+      html.offer-mobile .public-offer-promo .page-content,
+      html.offer-mobile .public-offer-promo .page-content--edge-to-edge {
+        position: relative !important;
+        min-height: min(100dvh, 860px) !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+      }
+      html.offer-mobile .public-offer-promo .page-content::after,
+      html.offer-mobile .public-offer-promo .page-content--edge-to-edge::after {
+        content: '' !important;
+        position: absolute !important;
+        inset: 0 !important;
+        background:
+          linear-gradient(180deg, rgba(7, 18, 37, 0.26) 0%, rgba(7, 18, 37, 0.06) 28%, rgba(7, 18, 37, 0.72) 84%, rgba(7, 18, 37, 0.92) 100%) !important;
+        pointer-events: none !important;
+      }
+      html.offer-mobile .public-offer-promo .page-content > div[style*="position:absolute"],
+      html.offer-mobile .public-offer-promo .page-content--edge-to-edge > div[style*="position:absolute"] {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        line-height: 0 !important;
+      }
+      html.offer-mobile .public-offer-promo .page-content > div[style*="position:absolute"] img,
+      html.offer-mobile .public-offer-promo .page-content--edge-to-edge > div[style*="position:absolute"] img {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        object-fit: cover !important;
+        object-position: center !important;
+        border-radius: 0 !important;
+      }
+      html.offer-mobile .public-offer-primary {
+        position: relative !important;
+        z-index: 2 !important;
+        margin-top: -112px !important;
+      }
+      html.offer-mobile .public-offer-primary .page-content,
+      html.offer-mobile .public-offer-primary .page-content--document {
+        position: relative !important;
+        padding: 32px 18px 30px !important;
+        border-radius: 34px 34px 0 0 !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), #f6f9fd 100%) !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.92) !important;
+        box-shadow: 0 -18px 48px rgba(8, 21, 45, 0.16) !important;
+      }
+      html.offer-mobile .public-offer-primary .page-content::before,
+      html.offer-mobile .public-offer-primary .page-content--document::before {
+        content: '' !important;
+        position: absolute !important;
+        top: -18px !important;
+        left: 22px !important;
+        right: 22px !important;
+        height: 54px !important;
+        border-radius: 999px !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0)) !important;
+        opacity: 0.92 !important;
+        pointer-events: none !important;
+        filter: blur(6px) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell {
+        gap: 18px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__header,
+      html.offer-mobile .public-offer-primary .offer-shell__topline {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 14px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__sender {
+        gap: 12px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__logo {
+        width: 54px !important;
+        height: 54px !important;
+        border-radius: 16px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__sender-copy {
+        gap: 3px !important;
+        font-size: 14px !important;
+        line-height: 1.55 !important;
+        color: #5e7293 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta {
+        justify-items: start !important;
+        text-align: left !important;
+        gap: 10px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta dl {
+        width: 100% !important;
+        gap: 10px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta dl div {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        align-items: end !important;
+        gap: 10px !important;
+        padding-bottom: 10px !important;
+        border-bottom: 1px solid rgba(145, 166, 201, 0.18) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta dl div:last-child {
+        border-bottom: none !important;
+        padding-bottom: 0 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta dt {
+        font-size: 11px !important;
+        line-height: 1.4 !important;
+        letter-spacing: 0.14em !important;
+        text-transform: uppercase !important;
+        color: #8ca0c0 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta dd {
+        font-size: 15px !important;
+        line-height: 1.35 !important;
+        font-weight: 700 !important;
+        color: #10203c !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__topline {
+        padding-bottom: 16px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__topline h1 {
+        font-size: 30px !important;
+        line-height: 0.98 !important;
+        letter-spacing: -0.04em !important;
+        max-width: 11ch !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__customer {
+        display: grid !important;
+        gap: 4px !important;
+        padding-left: 0 !important;
+        border-left: none !important;
+        padding-top: 14px !important;
+        border-top: 1px solid rgba(145, 166, 201, 0.18) !important;
+        font-size: 14px !important;
+        line-height: 1.6 !important;
+        color: #5e7293 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-section {
+        gap: 10px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-section p {
+        font-size: 14px !important;
+        line-height: 1.78 !important;
+        color: #546783 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-section h2,
+      html.offer-mobile .public-offer-primary .offer-items > h2 {
+        font-size: 30px !important;
+        line-height: 1.02 !important;
+        letter-spacing: -0.04em !important;
+        color: #10203c !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary {
+        position: relative !important;
+        width: 100% !important;
+        margin-top: 20px !important;
+        margin-left: 0 !important;
+        padding: 14px 0 4px !important;
+        border: 1px solid rgba(174, 191, 219, 0.32) !important;
+        border-radius: 28px !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.96)) !important;
+        box-shadow: 0 22px 46px rgba(11, 24, 47, 0.1) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary::before {
+        content: 'Summering' !important;
+        display: block !important;
+        padding: 0 18px 10px !important;
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.14em !important;
+        text-transform: uppercase !important;
+        color: #7890b3 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary__row {
+        padding: 12px 18px !important;
+        font-size: 15px !important;
+        color: #5a6d8a !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary__row strong {
+        font-size: 17px !important;
+        color: #10203c !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary__row + .offer-summary__row {
+        border-top: 1px solid rgba(174, 191, 219, 0.18) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary__row--total {
+        margin-top: 10px !important;
+        padding: 16px 18px 18px !important;
+        background: #12213d !important;
+        color: #dce8fb !important;
+        border-top: none !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary__row--total strong {
+        font-size: 24px !important;
+        letter-spacing: -0.04em !important;
+        color: #ffffff !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-items {
+        gap: 18px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-items__cards {
+        gap: 18px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card {
+        border: 1px solid rgba(174, 191, 219, 0.26) !important;
+        border-radius: 30px !important;
+        background: rgba(255, 255, 255, 0.97) !important;
+        box-shadow: 0 18px 42px rgba(12, 24, 47, 0.08) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child {
+        border-color: rgba(35, 70, 129, 0.08) !important;
+        background: linear-gradient(145deg, #162749 0%, #2f4a7f 100%) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__top {
+        gap: 8px !important;
+        padding: 20px 20px 0 !important;
+        background: transparent !important;
+        border-bottom: none !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__eyebrow {
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.14em !important;
+        color: #7c94ba !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__title {
+        font-size: 28px !important;
+        line-height: 1.02 !important;
+        letter-spacing: -0.04em !important;
+        color: #10203c !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__detail {
+        display: block !important;
+        font-size: 14px !important;
+        line-height: 1.7 !important;
+        color: #5e7293 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__eyebrow,
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__detail {
+        color: rgba(220, 232, 251, 0.76) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__title {
+        color: #ffffff !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+        padding: 18px 20px 20px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric {
+        display: grid !important;
+        align-content: start !important;
+        gap: 8px !important;
+        min-height: 92px !important;
+        padding: 14px !important;
+        border: 1px solid rgba(180, 196, 223, 0.28) !important;
+        border-bottom: 1px solid rgba(180, 196, 223, 0.28) !important;
+        border-radius: 22px !important;
+        background: #f6f9fd !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric dt {
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.14em !important;
+        color: #7d93b7 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric dd {
+        text-align: left !important;
+        font-size: 15px !important;
+        line-height: 1.35 !important;
+        font-weight: 800 !important;
+        color: #10203c !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric {
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric dt {
+        color: rgba(220, 232, 251, 0.7) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric dd {
+        color: #ffffff !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric--total {
+        grid-column: 1 / -1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 16px !important;
+        min-height: 0 !important;
+        margin-top: 2px !important;
+        padding: 18px 0 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        border-top: 1px solid rgba(180, 196, 223, 0.24) !important;
+        background: transparent !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric--total dt {
+        color: #586b88 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric--total dd {
+        text-align: left !important;
+        font-size: 22px !important;
+        letter-spacing: -0.04em !important;
+        color: #10203c !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric--total {
+        border-top-color: rgba(255, 255, 255, 0.12) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric--total dt {
+        color: rgba(220, 232, 251, 0.78) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric--total dd {
+        color: #ffffff !important;
       }
     `;
     if (doc.head) doc.head.appendChild(responsiveStyle);
@@ -724,6 +895,12 @@ export default function PublicOfferPage() {
     const firstDocumentPage = pageBlocks[firstDocumentIndex] ?? pageBlocks[0] ?? null;
     const firstOfferAnchor = findOfferAnchor(firstDocumentPage);
     setPromoPageCount(Math.max(0, firstDocumentIndex));
+    pageBlocks.forEach((pageBlock, index) => {
+      const promoBlock = index < firstDocumentIndex && isPromoPageBlock(pageBlock);
+      pageBlock.classList.toggle('public-offer-promo', promoBlock);
+      pageBlock.classList.toggle('public-offer-primary', index === firstDocumentIndex);
+    });
+    wrapper?.classList.toggle('doc-wrapper--with-promo', firstDocumentIndex > 0);
     firstOfferAnchor?.setAttribute('data-public-offer-anchor', 'true');
     if (!firstOfferAnchor && firstDocumentPage) {
       firstDocumentPage.setAttribute('data-public-offer-anchor', 'true');
@@ -760,93 +937,15 @@ export default function PublicOfferPage() {
       if (label === 'prisvisning') item.remove();
     });
 
-    doc.querySelectorAll<HTMLElement>('.offer-summary__row').forEach((row) => {
-      const label = normalizeOfferText(row.querySelector('span')?.textContent ?? '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('sv-SE');
-      if (row.classList.contains('offer-summary__row--total')) return;
-      if (label.startsWith('delsumma')) row.classList.add('offer-summary__row--subtotal');
-      else if (label === 'rabatt') {
-        row.classList.add('offer-summary__row--discount');
-        const amount = row.querySelector('strong');
-        if (amount && !/^[−-]/.test(amount.textContent?.trim() ?? '')) {
-          amount.textContent = `− ${amount.textContent?.trim() ?? ''}`;
-        }
-      } else if (label.startsWith('moms')) row.classList.add('offer-summary__row--vat');
-    });
-
-    doc.querySelectorAll<HTMLElement>('.offer-summary').forEach((summary) => {
-      const rows = Array.from(summary.querySelectorAll<HTMLElement>(':scope > .offer-summary__row'));
-      const ordered = [
-        ...rows.filter((row) => row.classList.contains('offer-summary__row--subtotal')),
-        ...rows.filter((row) => row.classList.contains('offer-summary__row--discount')),
-        ...rows.filter((row) => row.classList.contains('offer-summary__row--vat')),
-        ...rows.filter((row) => row.classList.contains('offer-summary__row--total')),
-      ];
-
-      if (ordered.length === rows.length && ordered.some((row, index) => row !== rows[index])) {
-        ordered.forEach((row) => summary.appendChild(row));
-      }
-    });
-
-    doc.querySelectorAll<HTMLElement>('.offer-shell__status, .offer-shell__title').forEach((item) => item.remove());
-
-    const offerTitleHeading = doc.querySelector<HTMLElement>('.offer-shell__topline h1');
-    const offerTitleText = offerTitleHeading?.textContent?.trim() ?? '';
-    const customerCard = doc.querySelector<HTMLElement>('.offer-shell__customer-card');
-    const metaList = doc.querySelector<HTMLElement>('.offer-shell__meta dl');
-    if (customerCard && metaList) {
-      const customerName = customerCard.querySelector<HTMLElement>('.offer-shell__customer-primary, .offer-shell__customer-name')?.textContent?.trim()
-        ?? customerCard.querySelector('p')?.textContent?.trim()
-        ?? '';
-      const customerEmail = Array.from(customerCard.querySelectorAll('p, span'))
-        .map((line) => line.textContent?.trim() ?? '')
-        .find((line) => line.includes('@')) ?? '';
-
-      if (customerName || customerEmail) {
-        const customerRow = doc.createElement('div');
-        customerRow.className = 'offer-shell__meta-row--recipient';
-        const customerLabel = doc.createElement('dt');
-        customerLabel.textContent = 'Offert till';
-        const customerValue = doc.createElement('dd');
-        customerValue.appendChild(doc.createTextNode(normalizeOfferText(customerName || '')));
-        if (customerEmail) {
-          const customerEmailText = doc.createElement('small');
-          customerEmailText.textContent = normalizeOfferText(customerEmail);
-          customerValue.appendChild(customerEmailText);
-        }
-        customerRow.appendChild(customerLabel);
-        customerRow.appendChild(customerValue);
-        metaList.appendChild(customerRow);
-      }
-      customerCard.remove();
-    }
-
-    if (offerTitleText) {
-      const sectionHeading = Array.from(doc.querySelectorAll<HTMLElement>('.offer-section h2, .offer-table-header h2'))
-        .find((item) => normalizeOfferText(item.textContent ?? '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('sv-SE') === 'produkter och tjänster');
-      if (sectionHeading) {
-        sectionHeading.textContent = offerTitleText;
-      }
-    }
-
-    doc.querySelectorAll<HTMLElement>('.offer-shell__topline').forEach((item) => item.remove());
-
-    doc.querySelectorAll<HTMLElement>('.offer-shell__meta dd').forEach((item) => {
-      const text = item.childNodes.length === 1 ? (item.textContent?.trim() ?? '') : '';
-      if (!text) return;
-      const compact = compactDateText(text);
-      if (compact !== text) item.textContent = compact;
-    });
-
     stripLegacyLineItemTables(doc);
 
-    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      const value = node.nodeValue ?? '';
-      const normalized = normalizeOfferText(value);
-      if (normalized !== value) node.nodeValue = normalized;
+    const legacyMetaTitle = doc.querySelector<HTMLElement>('.offer-shell__title');
+    if (legacyMetaTitle && offer) {
+      legacyMetaTitle.textContent = getStatusLabel(offer.status);
+      legacyMetaTitle.className = offer.status === 'accepted' || offer.status === 'declined' || offer.status === 'expired'
+        ? `offer-shell__status offer-shell__status--${offer.status}`
+        : 'offer-shell__title';
     }
-
 
     // ── Viewport scaling ───────────────────────────────────────────────────────
     // The document is authored at 816 px. On narrower viewports we scale the
@@ -935,11 +1034,11 @@ export default function PublicOfferPage() {
     return () => {
       disposers.forEach((dispose) => dispose());
     };
-  }, [signatureFields]);
+  }, [offer, signatureFields]);
 
   // ── Draw canvas resize ───────────────────────────────────────────────────────
   useEffect(() => {
-    if (sigMode !== 'draw' || !drawModalOpen) return;
+    if (sigMode !== 'draw') return;
     const wrapper = canvasWrapperRef.current;
     if (!wrapper) return;
     const syncSize = () => {
@@ -947,11 +1046,9 @@ export default function PublicOfferPage() {
       if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
       const w = Math.floor(wrapper.getBoundingClientRect().width);
-      const h = 220;
+      const h = 120;
       if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
-        const prev = sigRef.current && !sigRef.current.isEmpty()
-          ? sigRef.current.getTrimmedCanvas().toDataURL('image/png')
-          : drawnSignature;
+        const prev = sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getTrimmedCanvas().toDataURL('image/png') : null;
         canvas.width = w * dpr; canvas.height = h * dpr;
         canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
         const ctx = canvas.getContext('2d');
@@ -963,7 +1060,7 @@ export default function PublicOfferPage() {
     const ro = new ResizeObserver(syncSize);
     ro.observe(wrapper);
     return () => { cancelAnimationFrame(raf); ro.disconnect(); };
-  }, [drawModalOpen, drawnSignature, sigMode, state]);
+  }, [sigMode, state]);
 
   // ── Fetch offer ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -977,6 +1074,7 @@ export default function PublicOfferPage() {
         const o = json.data;
         setOffer(o);
         setSignerName(o.recipientName ?? '');
+        setTypedSig(o.recipientName ?? '');
         if (o.status === 'accepted') setState('accepted');
         else if (o.status === 'declined') setState('declined');
         else if (o.publicTokenExpiresAt && new Date(o.publicTokenExpiresAt) < new Date()) setState('expired');
@@ -1007,48 +1105,15 @@ export default function PublicOfferPage() {
   }, [offer, token]);
 
   // ── Actions ──────────────────────────────────────────────────────────────────
-  const typedSignatureText = signerName.trim();
-
   const getSignatureImage = useCallback((): string | null => {
     if (sigMode === 'draw') {
-      return drawnSignature;
+      if (!sigRef.current || sigRef.current.isEmpty()) return null;
+      return sigRef.current.getTrimmedCanvas().toDataURL('image/png');
     }
-    if (!typedSignatureText) return null;
+    if (!typedSig.trim()) return null;
     const f = SIG_FONTS.find((x) => x.id === sigFont) ?? SIG_FONTS[0];
-    return textToSignatureImage(typedSignatureText, f.family);
-  }, [drawnSignature, sigFont, sigMode, typedSignatureText]);
-
-  const openDrawModal = useCallback(() => {
-    setSigMode('draw');
-    setDrawModalError('');
-    setDrawModalOpen(true);
-  }, []);
-
-  const closeDrawModal = useCallback(() => {
-    setDrawModalError('');
-    setDrawModalOpen(false);
-  }, []);
-
-  const clearSavedDrawSignature = useCallback(() => {
-    setDrawnSignature(null);
-    setDrawModalError('');
-  }, []);
-
-  const clearDrawCanvas = useCallback(() => {
-    sigRef.current?.clear();
-    setDrawModalError('');
-  }, []);
-
-  const saveDrawSignature = useCallback(() => {
-    if (!sigRef.current || sigRef.current.isEmpty()) {
-      setDrawModalError('Rita din namnteckning innan du sparar.');
-      return;
-    }
-
-    setDrawnSignature(sigRef.current.getTrimmedCanvas().toDataURL('image/png'));
-    setDrawModalError('');
-    setDrawModalOpen(false);
-  }, []);
+    return textToSignatureImage(typedSig.trim(), f.family);
+  }, [sigMode, typedSig, sigFont]);
 
   const handleSign = useCallback(async () => {
     if (!signerName.trim()) { setErrMsg('Ange ditt fullständiga namn.'); return; }
@@ -1101,25 +1166,20 @@ export default function PublicOfferPage() {
   const handleDownloadPdf = async () => {
     if (!offer?.generatedDocument) return;
     setDownloading(true);
-    const url = `/api/offers/public/${token}/pdf`;
-    const previewWindow = window.open('', '_blank');
     try {
+      const url = `/api/offers/public/${token}/pdf`;
       const response = await fetch(url);
       if (!response.ok) throw new Error('download_failed');
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
-      if (previewWindow && !previewWindow.closed) {
-        previewWindow.location.href = objectUrl;
-      }
       const link = document.createElement('a');
       link.href = objectUrl;
       link.download = `${offer.title || 'offert'}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     } catch {
-      previewWindow?.close();
       setErrMsg('Kunde inte ladda ner PDF. Försök igen.');
     } finally {
       window.setTimeout(() => setDownloading(false), 250);
@@ -1226,27 +1286,29 @@ export default function PublicOfferPage() {
   if (!offer) return null;
   const isDecline = state === 'declining';
   const pricing = summarizePersistedOfferPricing(offer);
+  const hasPromoHero = promoPageCount > 0;
+  const showMobileStickyBar = !isDecline && (!offer.generatedDocument || documentReady);
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen bg-slate-50"
+      className="min-h-screen bg-[radial-gradient(circle_at_top,_#ffffff_0%,_#edf3fb_42%,_#e8eef8_100%)]"
     >
       {/* ─── Sticky header ─── */}
-      <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/96 backdrop-blur-md sm:border-b-0 sm:bg-transparent sm:px-6 sm:pt-2 sm:backdrop-blur-none">
-        <div className="sm:mx-auto sm:max-w-[900px] sm:overflow-hidden sm:rounded-[22px] sm:border sm:border-slate-200/80 sm:bg-white/95 sm:shadow-[0_8px_22px_rgba(15,23,42,0.07)]">
+      <header className="sticky top-0 z-20 px-3 pt-3 sm:px-6 sm:pt-2">
+        <div className={`mx-auto overflow-hidden rounded-[24px] border backdrop-blur-xl transition-colors sm:max-w-[900px] sm:border-slate-200/80 sm:bg-white/95 sm:shadow-[0_8px_22px_rgba(15,23,42,0.07)] ${hasPromoHero ? 'border-white/18 bg-white/12 shadow-[0_18px_42px_rgba(9,18,35,0.18)]' : 'border-slate-200/80 bg-white/92 shadow-[0_12px_30px_rgba(15,23,42,0.08)]'}`}>
         <div className="flex min-h-14 items-center gap-3 px-4 py-2.5 sm:min-h-0 sm:gap-3 sm:px-3.5 sm:py-2">
 
           {/* Left: title + recipient */}
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-100 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] sm:h-8 sm:w-8 sm:rounded-xl">
               <BrandMark size={18} alt="" />
             </div>
             <div className="min-w-0">
-              <p className="hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:block">
-                Offert
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:block">
+                Publik offert
               </p>
               <h1 className="truncate text-sm font-semibold leading-tight text-slate-900 sm:text-[14px]">{offer.title}</h1>
               <p className="truncate text-[11px] leading-tight text-slate-500 sm:mt-0.5 sm:text-[11px]">
@@ -1273,7 +1335,7 @@ export default function PublicOfferPage() {
             <button
               onClick={() => void handleDownloadPdf()}
               disabled={downloading || !offer.generatedDocument}
-              className="flex h-9 items-center gap-1.5 rounded-[16px] border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow active:scale-[0.97] disabled:opacity-40"
+              className="flex h-10 items-center gap-1.5 rounded-[18px] border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-40 sm:h-9 sm:rounded-[16px] sm:px-3"
               title="Ladda ner PDF"
             >
               {downloading ? (
@@ -1298,8 +1360,8 @@ export default function PublicOfferPage() {
       {/* ─── Content ─── */}
       <main
         ref={mainRef}
-        className="bg-slate-50"
-        style={{ paddingBottom: '64px' }}
+        className="bg-transparent"
+        style={{ paddingBottom: showMobileStickyBar ? '188px' : '96px' }}
       >
         <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
 
@@ -1311,7 +1373,7 @@ export default function PublicOfferPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.04 }}
             className={promoPageCount > 0
-              ? 'mb-5 overflow-hidden bg-transparent shadow-none sm:rounded-[26px]'
+              ? 'mb-6 overflow-visible bg-transparent shadow-none sm:rounded-[26px]'
               : 'mb-5 overflow-hidden bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] sm:rounded-2xl sm:border sm:border-slate-200/60'}
           >
             <iframe
@@ -1330,7 +1392,7 @@ export default function PublicOfferPage() {
         {/* ─── Signing card ─── */}
         <div className="px-4 sm:px-0">
         {offer.generatedDocument && !documentReady && (
-          <div className="mb-4 flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white px-4 py-3 text-sm text-slate-500 shadow-[0_2px_12px_rgba(0,0,0,0.05)]">
+          <div className="mb-4 flex items-center justify-center rounded-[24px] border border-white/70 bg-white/88 px-4 py-3 text-sm text-slate-500 shadow-[0_10px_28px_rgba(15,23,42,0.08)] backdrop-blur">
             Anpassar offerten för din skärm...
           </div>
         )}
@@ -1342,13 +1404,13 @@ export default function PublicOfferPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)]"
+              className="overflow-hidden rounded-[30px] border border-white/70 bg-white/92 shadow-[0_18px_42px_rgba(15,23,42,0.08)] backdrop-blur"
             >
               {/* Header */}
-              <div className="border-b border-slate-100 px-4 py-3 sm:px-6 sm:py-4">
+              <div className="border-b border-slate-100/90 px-4 py-4 sm:px-6 sm:py-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-900">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]">
                       <ShieldIcon size={14} className="text-white" />
                     </div>
                     <div>
@@ -1356,7 +1418,7 @@ export default function PublicOfferPage() {
                       <p className="mt-0.5 text-[12px] leading-relaxed text-slate-500">Underteckna för att bekräfta offerten. Namn, datum och signatur sparas tillsammans med offerten.</p>
                     </div>
                   </div>
-                  <div className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-right sm:px-3 sm:py-1.5">
+                  <div className="hidden shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-right sm:block">
                     <p className="text-xs font-bold tabular-nums text-slate-800 sm:text-sm">{fmtSEK(pricing.totalAmount)}</p>
                     <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">{pricing.displayModeLabel}</p>
                   </div>
@@ -1421,29 +1483,8 @@ export default function PublicOfferPage() {
                     <EditIcon size={13} />
                     Signatur
                   </label>
-                  <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 p-1">
-                    <button
-                      type="button"
-                      onClick={() => setSigMode('type')}
-                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        sigMode === 'type'
-                          ? 'bg-white text-slate-900 shadow-sm'
-                          : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      Skriv
-                    </button>
-                    <button
-                      type="button"
-                      onClick={openDrawModal}
-                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        sigMode === 'draw'
-                          ? 'bg-white text-slate-900 shadow-sm'
-                          : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      Rita
-                    </button>
+                  <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                    Skriv
                   </div>
                 </div>
 
@@ -1474,20 +1515,16 @@ export default function PublicOfferPage() {
                           </button>
                         ))}
                       </div>
-                      <p className="mb-2 text-[11px] text-slate-500">
-                        Signaturen uppdateras automatiskt från fältet <span className="font-semibold text-slate-700">Fullständigt namn</span>.
-                      </p>
-                      <div className="flex min-h-[86px] items-center rounded-xl border border-slate-200 bg-white px-4 py-4">
-                        {typedSignatureText ? (
-                          <span
-                            className="block w-full text-[32px] leading-none text-slate-900"
-                            style={{ fontFamily: selectedFont.family }}
-                          >
-                            {typedSignatureText}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-slate-300">Ditt namn visas här när du fyllt i det ovan.</span>
-                        )}
+                      {/* Typed signature */}
+                      <div className="flex min-h-[68px] items-center rounded-lg border border-slate-200 bg-white px-4">
+                        <input
+                          type="text"
+                          value={typedSig}
+                          onChange={(e) => setTypedSig(e.target.value)}
+                          placeholder="Skriv ditt namn här..."
+                          className="w-full border-none bg-transparent p-0 text-[32px] text-slate-900 outline-none placeholder:text-slate-300"
+                          style={{ fontFamily: selectedFont.family }}
+                        />
                       </div>
                     </motion.div>
                   ) : (
@@ -1498,42 +1535,28 @@ export default function PublicOfferPage() {
                       exit={{ opacity: 0, x: -8 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <div className="rounded-xl border border-slate-200 bg-white p-4">
-                        <div className="flex min-h-[96px] items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-4">
-                          {drawnSignature ? (
-                            <Image
-                              src={drawnSignature}
-                              alt="Ritad signatur"
-                              width={260}
-                              height={72}
-                              unoptimized
-                              className="max-h-[72px] w-auto object-contain"
-                            />
-                          ) : (
-                            <div className="text-center">
-                              <p className="text-sm font-medium text-slate-700">Ingen ritad signatur sparad ännu</p>
-                              <p className="mt-1 text-xs text-slate-500">Tryck på knappen nedan för att öppna ritytan.</p>
-                            </div>
-                          )}
-                        </div>
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                          <button
-                            type="button"
-                            onClick={openDrawModal}
-                            className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-800"
-                          >
-                            {drawnSignature ? 'Rita om i modal' : 'Öppna rityta'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={clearSavedDrawSignature}
-                            disabled={!drawnSignature}
-                            className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            <TrashIcon size={11} />
-                            Rensa
-                          </button>
-                        </div>
+                      <div
+                        ref={canvasWrapperRef}
+                        className="relative h-[120px] overflow-hidden rounded-lg border border-slate-200 bg-white"
+                        style={{ touchAction: 'none' }}
+                      >
+                        <SignatureCanvas ref={sigRef} penColor="#0f172a" canvasProps={{ style: { display: 'block', touchAction: 'none' } }} />
+                        {/* Baseline */}
+                        <div className="pointer-events-none absolute bottom-7 left-5 right-5 border-b border-dashed border-slate-200" />
+                        {/* Hint */}
+                        <span className="pointer-events-none absolute right-3 top-2 text-[10px] tracking-wide text-slate-300">
+                          Rita din signatur
+                        </span>
+                      </div>
+                      <div className="mt-1.5 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => sigRef.current?.clear()}
+                          className="flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500 transition-colors hover:bg-slate-50"
+                        >
+                          <TrashIcon size={11} />
+                          Rensa
+                        </button>
                       </div>
                     </motion.div>
                   )}
@@ -1553,7 +1576,7 @@ export default function PublicOfferPage() {
                   type="button"
                   onClick={() => void handleSign()}
                   disabled={busy}
-                  className="flex items-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50"
+                  className="hidden items-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 sm:flex"
                 >
                   <CheckCircleIcon size={15} />
                   {busy ? 'Signerar...' : 'Signera offert'}
@@ -1568,7 +1591,7 @@ export default function PublicOfferPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 6 }}
               transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-              className="overflow-hidden rounded-2xl border border-red-200/70 bg-gradient-to-b from-red-50/75 to-white shadow-[0_2px_12px_rgba(0,0,0,0.07)]"
+              className="overflow-hidden rounded-[30px] border border-red-200/70 bg-gradient-to-b from-red-50/75 to-white shadow-[0_18px_42px_rgba(15,23,42,0.08)]"
             >
               <div className="border-b border-red-100 px-5 py-4 sm:px-7 sm:py-5">
                 <div className="flex items-center gap-3">
@@ -1625,91 +1648,6 @@ export default function PublicOfferPage() {
         </AnimatePresence>
         </div>
 
-        <AnimatePresence>
-          {drawModalOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-end bg-slate-950/55 p-3 sm:items-center sm:justify-center sm:p-6"
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 24, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 16, scale: 0.98 }}
-                transition={{ duration: 0.2 }}
-                className="w-full rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.28)] sm:max-w-2xl"
-              >
-                <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-base font-semibold text-slate-900">Rita din signatur</h3>
-                      <p className="mt-1 text-sm text-slate-500">Skriv under med finger eller mus och spara signaturen när den ser rätt ut.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={closeDrawModal}
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-500 transition-colors hover:bg-slate-50"
-                    >
-                      Stäng
-                    </button>
-                  </div>
-                </div>
-
-                <div className="px-4 py-4 sm:px-6">
-                  {drawModalError && (
-                    <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-                      {drawModalError}
-                    </div>
-                  )}
-                  <div
-                    ref={canvasWrapperRef}
-                    className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white"
-                    style={{ touchAction: 'none' }}
-                  >
-                    <SignatureCanvas
-                      ref={sigRef}
-                      penColor="#0f172a"
-                      canvasProps={{ style: { display: 'block', width: '100%', height: '220px', touchAction: 'none' } }}
-                    />
-                    <div className="pointer-events-none absolute bottom-10 left-6 right-6 border-b border-dashed border-slate-200" />
-                    <span className="pointer-events-none absolute right-4 top-3 text-[11px] tracking-wide text-slate-300">
-                      Rita här
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                  <button
-                    type="button"
-                    onClick={clearDrawCanvas}
-                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
-                  >
-                    <TrashIcon size={13} />
-                    Rensa
-                  </button>
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <button
-                      type="button"
-                      onClick={closeDrawModal}
-                      className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
-                    >
-                      Avbryt
-                    </button>
-                    <button
-                      type="button"
-                      onClick={saveDrawSignature}
-                      className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-                    >
-                      Spara signatur
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Mobile validity strip */}
         <div className="flex sm:hidden items-center justify-center gap-1.5 mt-4 px-4">
           <CalendarIcon size={11} className="text-slate-500" />
@@ -1722,6 +1660,29 @@ export default function PublicOfferPage() {
         </p>
         </div>
       </main>
+
+      {showMobileStickyBar && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] sm:hidden">
+          <div className="pointer-events-auto mx-auto flex max-w-[900px] items-center justify-between gap-3 rounded-[32px] border border-white/10 bg-slate-950/92 px-4 py-3.5 text-white shadow-[0_24px_70px_rgba(5,12,26,0.36)] backdrop-blur-xl">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+                Totalt att godkänna
+              </p>
+              <p className="mt-1.5 truncate text-[31px] font-extrabold leading-none tracking-[-0.05em] text-white">
+                {fmtSEK(pricing.totalAmount)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleSign()}
+              disabled={busy}
+              className="inline-flex h-[58px] shrink-0 items-center justify-center rounded-[24px] bg-gradient-to-br from-sky-400 via-blue-500 to-blue-600 px-6 text-base font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_10px_22px_rgba(37,99,235,0.28)] transition-all active:scale-[0.98] disabled:opacity-50"
+            >
+              {busy ? 'Signerar...' : 'Signera offert'}
+            </button>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

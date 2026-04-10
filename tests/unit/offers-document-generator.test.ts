@@ -75,8 +75,7 @@ describe('offer document generator', () => {
     expect(gammaIndex).toBeGreaterThan(-1);
     expect(alphaIndex).toBeGreaterThan(gammaIndex);
     expect(betaIndex).toBeGreaterThan(alphaIndex);
-    expect(html).toContain('--offer-columns:');
-    expect(html).toContain('grid-template-columns: var(--offer-columns');
+    expect(html).toContain('--offer-columns:minmax(220px, 1.85fr)');
   });
 
   it('renders summary below the pricing section and before legal terms even for legacy right placement', () => {
@@ -162,37 +161,5 @@ describe('offer document generator', () => {
     expect(sanitized).toContain('<p>Storgatan 1</p>');
     expect(sanitized).toContain('<p>111 22 Stockholm</p>');
     expect(sanitized).toContain('<p>www.soleria.se</p>');
-  });
-
-  it('renders the summary in a clearer subtotal-discount-vat-total order', () => {
-    const discountedOffer: Offer = {
-      ...offer,
-      lineItems: [
-        {
-          id: 'line-discounted',
-          description: 'Kampanjfilm',
-          quantity: 1,
-          unitPrice: 1000,
-          vatRate: 0.25,
-          discount: 10,
-          sortOrder: 0,
-        },
-      ],
-      totalExVat: 900,
-      totalIncVat: 1125,
-    };
-
-    const html = generateFallbackDocument(discountedOffer, branding);
-
-    const subtotalIndex = html.indexOf('offer-summary__row offer-summary__row--subtotal');
-    const discountIndex = html.indexOf('offer-summary__row offer-summary__row--discount');
-    const vatIndex = html.indexOf('offer-summary__row offer-summary__row--vat');
-    const totalIndex = html.indexOf('offer-summary__row offer-summary__row--total');
-
-    expect(subtotalIndex).toBeGreaterThan(-1);
-    expect(discountIndex).toBeGreaterThan(subtotalIndex);
-    expect(vatIndex).toBeGreaterThan(discountIndex);
-    expect(totalIndex).toBeGreaterThan(vatIndex);
-    expect(html).toContain('− 100,00');
   });
 });

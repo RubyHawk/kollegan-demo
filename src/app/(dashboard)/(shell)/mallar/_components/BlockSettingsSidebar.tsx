@@ -22,10 +22,9 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  ModalActionFooter,
-  ModalBody,
 } from '@shared/ui/dialog';
 import { CaretDown, PencilSimpleLine } from '@phosphor-icons/react';
 
@@ -357,14 +356,13 @@ function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
       </div>
 
       <Dialog open={dialogMode !== null} onOpenChange={(open) => !open && setDialogMode(null)}>
-        <DialogContent mobileVariant="sheet" size="md" showMobileClose>
-          <div className="flex min-h-0 flex-1 flex-col">
-          <DialogHeader className="border-b border-[var(--border)] pr-16">
+        <DialogContent mobileVariant="sheet" showMobileClose className="max-w-2xl p-0">
+          <DialogHeader className="border-b border-[var(--border)] pb-4">
             <DialogTitle>{getDialogTitle(dialogMode)}</DialogTitle>
             <DialogDescription>{getDialogDescription(dialogMode)}</DialogDescription>
           </DialogHeader>
 
-          <ModalBody className="space-y-4">
+          <div className="space-y-4 px-5 py-5">
             {dialogMode === 'pageLabel' && (
               <Field label={'Rubrik p\u00e5 sidan'}>
                 <input
@@ -428,9 +426,9 @@ function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
                 </div>
               </>
             )}
-          </ModalBody>
+          </div>
 
-          <ModalActionFooter>
+          <DialogFooter className="border-t border-[var(--border)]">
             <button
               type="button"
               onClick={() => setDialogMode(null)}
@@ -445,8 +443,7 @@ function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
             >
               Spara
             </button>
-          </ModalActionFooter>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

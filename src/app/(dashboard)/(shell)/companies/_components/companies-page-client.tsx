@@ -7,7 +7,14 @@ import type { Company } from '@modules/supporting/offers';
 import { fetchWithRefresh } from '@shared/lib/api-client';
 import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
-import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@shared/ui/dialog';
 import {
   CompanyMembersDialog,
   type AssignableUserRecord,
@@ -491,19 +498,45 @@ export function CompaniesPageClient() {
         />
       )}
 
-      <ConfirmDestructiveDialog
+      <Dialog
         open={Boolean(deleteCompany)}
         onOpenChange={(open) => {
           if (!open) setDeleteCompany(null);
         }}
-        title={deleteCompany ? `Ta bort ${deleteCompany.name}?` : 'Ta bort företag?'}
-        description="Företaget tas bort från registret och kan inte återställas automatiskt."
-        confirmLabel="Ta bort"
-        onConfirm={() => {
-          if (!deleteCompany) return;
-          void handleDelete(deleteCompany);
-        }}
-      />
+      >
+        <DialogContent mobileVariant="sheet" showMobileClose className="sm:max-w-xl">
+          <DialogHeader className="pr-16">
+            <DialogTitle>Ta bort företag?</DialogTitle>
+            <DialogDescription>
+              Företaget tas bort från registret och kan inte återställas automatiskt.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteCompany && (
+            <div className="mx-5 rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+              <p className="font-medium text-[var(--text-primary)]">{deleteCompany.name}</p>
+              {deleteCompany.website && <p className="mt-1">{deleteCompany.website.replace(/^https?:\/\//, '')}</p>}
+            </div>
+          )}
+
+          <DialogFooter className="mt-2">
+            <button
+              type="button"
+              onClick={() => setDeleteCompany(null)}
+              className="min-w-[120px] rounded-xl border border-[var(--border)] px-4 py-2.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)]"
+            >
+              Avbryt
+            </button>
+            <button
+              type="button"
+              onClick={() => deleteCompany && void handleDelete(deleteCompany)}
+              className="min-w-[120px] rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-95"
+            >
+              Ta bort
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
