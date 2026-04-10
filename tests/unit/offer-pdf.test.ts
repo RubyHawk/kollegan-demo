@@ -24,6 +24,19 @@ describe('public offer pdf renderer', () => {
     expect(html).toContain('font-family: Aptos, "Segoe UI", "Helvetica Neue", Arial, sans-serif;');
   });
 
+  it('uses safe recipient nodes and UTF-8 heading matching in the PDF cleanup script', () => {
+    const html = buildPublicPdfHtml(
+      '<!doctype html><html><head></head><body><div class="page-block page-block--document"><div class="offer-shell__meta"><dl></dl></div></div></body></html>',
+      'https://offert.soleria.se',
+      { status: 'viewed' },
+    );
+
+    expect(html).toContain("normalizedHeading === 'produkter och tjänster'");
+    expect(html).toContain("var customerValue = document.createElement('dd');");
+    expect(html).toContain("customerValue.appendChild(document.createTextNode(normalizeOfferText(customerName || '')));");
+    expect(html).not.toContain("customerRow.innerHTML = '<dt>Offert till</dt><dd>'");
+  });
+
   it('includes the renderer version in the PDF fingerprint', () => {
     const documentHtml = '<html><body><p>Offer</p></body></html>';
     const origin = 'https://offert.soleria.se';
