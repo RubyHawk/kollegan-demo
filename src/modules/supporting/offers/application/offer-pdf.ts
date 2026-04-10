@@ -12,7 +12,7 @@ export interface OfferPdfVariant {
 
 const PDF_CACHE_MAX_ENTRIES = 24;
 const SWEDISH_MONTHS_SHORT = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'] as const;
-export const PUBLIC_OFFER_PDF_RENDERER_VERSION = '2026-04-10-print-polish-v2';
+export const PUBLIC_OFFER_PDF_RENDERER_VERSION = '2026-04-10-print-polish-v3';
 const pdfCache = new Map<string, Uint8Array>();
 let browserPromise: Promise<Browser> | null = null;
 
@@ -268,6 +268,31 @@ export function buildPublicPdfHtml(
         return false;
       });
     }
+
+    document.querySelectorAll('.offer-summary__row').forEach(function (row) {
+      var label = normalizeOfferText((row.querySelector('span')?.textContent || '')).replace(/\\s+/g, ' ').trim().toLocaleLowerCase('sv-SE');
+      if (row.classList.contains('offer-summary__row--total')) return;
+      if (label.indexOf('delsumma') === 0) row.classList.add('offer-summary__row--subtotal');
+      else if (label === 'rabatt') {
+        row.classList.add('offer-summary__row--discount');
+        var amount = row.querySelector('strong');
+        if (amount && !/^[−-]/.test((amount.textContent || '').trim())) {
+          amount.textContent = '− ' + (amount.textContent || '').trim();
+        }
+      } else if (label.indexOf('moms') === 0) row.classList.add('offer-summary__row--vat');
+    });
+
+    document.querySelectorAll('.offer-summary').forEach(function (summary) {
+      var rows = Array.from(summary.querySelectorAll(':scope > .offer-summary__row'));
+      var ordered = rows
+        .filter(function (row) { return row.classList.contains('offer-summary__row--subtotal'); })
+        .concat(rows.filter(function (row) { return row.classList.contains('offer-summary__row--discount'); }))
+        .concat(rows.filter(function (row) { return row.classList.contains('offer-summary__row--vat'); }))
+        .concat(rows.filter(function (row) { return row.classList.contains('offer-summary__row--total'); }));
+      if (ordered.length === rows.length && ordered.some(function (row, index) { return row !== rows[index]; })) {
+        ordered.forEach(function (row) { summary.appendChild(row); });
+      }
+    });
 
     document.querySelectorAll('.offer-shell__topline').forEach(function (item) {
       item.remove();
@@ -532,23 +557,56 @@ export function buildPublicPdfHtml(
     margin-top: 12px !important;
   }
   .offer-summary__row {
-    padding: 10px 14px !important;
+    padding: 12px 14px !important;
     font-size: 12px !important;
-    line-height: 1.45 !important;
+    line-height: 1.5 !important;
     color: #465a73 !important;
     border-bottom: 1px solid #e5ecf3 !important;
   }
-  .offer-summary__row--total,
+  .offer-summary__row span {
+    font-weight: 600 !important;
+    color: #5b7088 !important;
+  }
+  .offer-summary__row strong {
+    color: #10233b !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+  }
+  .offer-summary__row--subtotal {
+    background: linear-gradient(180deg, #f8fbff 0%, #fdfefe 100%) !important;
+  }
+  .offer-summary__row--subtotal span,
+  .offer-summary__row--subtotal strong {
+    color: #10233b !important;
+    font-weight: 800 !important;
+  }
+  .offer-summary__row--discount {
+    background: #fff6f5 !important;
+  }
+  .offer-summary__row--discount span,
+  .offer-summary__row--discount strong {
+    color: #b42318 !important;
+  }
+  .offer-summary__row--vat span {
+    color: #42576f !important;
+  }
   .offer-item-card__metric--total {
     color: #0f172a !important;
     font-weight: 700 !important;
   }
   .offer-summary__row--total {
     margin-top: 0 !important;
-    padding: 12px 14px !important;
+    padding: 14px 14px 13px !important;
     border-top: 1px solid #142742 !important;
     border-bottom: none !important;
     background: linear-gradient(135deg, #13233a 0%, #223b63 100%) !important;
+    color: #ffffff !important;
+  }
+  .offer-summary__row--total span {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em !important;
+    text-transform: uppercase !important;
     color: #ffffff !important;
   }
   .offer-summary__row--total strong,
@@ -556,8 +614,8 @@ export function buildPublicPdfHtml(
     color: #ffffff !important;
   }
   .offer-summary__row--total strong {
-    font-size: 16px !important;
-    letter-spacing: -0.02em !important;
+    font-size: 18px !important;
+    letter-spacing: -0.03em !important;
   }
   .offer-item-card__metric:nth-child(even) {
     background: #ffffff !important;

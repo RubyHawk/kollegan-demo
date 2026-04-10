@@ -12,6 +12,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import SignatureCanvas from 'react-signature-canvas';
 import {
@@ -82,17 +83,6 @@ function fmtDate(iso: string) {
 }
 function todaySv() {
   return formatCompactSwedishDate(new Date());
-}
-function getStatusLabel(status: OfferStatus) {
-  const labels: Record<OfferStatus, string> = {
-    draft: 'Offert',
-    sent: 'Offert',
-    viewed: 'Offert',
-    accepted: 'Signerad',
-    declined: 'Avvisad',
-    expired: 'Utgången',
-  };
-  return labels[status] ?? 'Offert';
 }
 
 function normalizeBrokenSwedish(text: string): string {
@@ -382,7 +372,9 @@ export default function PublicOfferPage() {
   const [capturedAt, setCapturedAt] = useState<string | null>(null);
   const [sigMode, setSigMode] = useState<SigMode>('type');
   const [sigFont, setSigFont] = useState<typeof SIG_FONTS[number]['id']>(SIG_FONTS[0].id);
-  const [typedSig, setTypedSig] = useState('');
+  const [drawnSignature, setDrawnSignature] = useState<string | null>(null);
+  const [drawModalOpen, setDrawModalOpen] = useState(false);
+  const [drawModalError, setDrawModalError] = useState('');
 
   const [documentReady, setDocumentReady] = useState(false);
   const [promoPageCount, setPromoPageCount] = useState(0);
@@ -430,12 +422,6 @@ export default function PublicOfferPage() {
       ? offer.generatedDocument.replace('</head>', `<base href="${origin}/" />\n</head>`)
       : `<base href="${origin}/" />${offer.generatedDocument}`;
   }, [offer?.generatedDocument]);
-
-  useEffect(() => {
-    if (sigMode !== 'type') {
-      setSigMode('type');
-    }
-  }, [sigMode]);
 
   useEffect(() => {
     setDocumentReady(false);
@@ -548,11 +534,19 @@ export default function PublicOfferPage() {
       }
       .offer-summary { width: min(272px, 100%) !important; border: 1px solid #d9e3ee !important; border-radius: 14px !important; background: #ffffff !important; padding: 0 !important; gap: 0 !important; overflow: hidden !important; box-shadow: none !important; }
       .offer-summary--below { width: min(388px, 100%) !important; margin-top: 16px !important; margin-left: auto !important; }
-      .offer-summary__row { font-size: 13px !important; padding: 11px 16px !important; border-bottom: 1px solid #e5ecf3 !important; color: #465a73 !important; align-items: baseline !important; line-height: 1.55 !important; }
-      .offer-summary__row strong { color: #10233b !important; font-weight: 700 !important; }
+      .offer-summary__row { font-size: 13px !important; padding: 12px 16px !important; border-bottom: 1px solid #e5ecf3 !important; color: #465a73 !important; align-items: baseline !important; line-height: 1.55 !important; }
+      .offer-summary__row span { font-weight: 600 !important; color: #5b7088 !important; }
+      .offer-summary__row strong { color: #10233b !important; font-weight: 700 !important; white-space: nowrap !important; }
+      .offer-summary__row--subtotal { background: linear-gradient(180deg, #f8fbff 0%, #fdfefe 100%) !important; }
+      .offer-summary__row--subtotal span,
+      .offer-summary__row--subtotal strong { color: #10233b !important; font-weight: 800 !important; }
+      .offer-summary__row--discount { background: #fff6f5 !important; }
+      .offer-summary__row--discount span,
+      .offer-summary__row--discount strong { color: #b42318 !important; }
+      .offer-summary__row--vat span { color: #42576f !important; }
       .offer-summary__row--total {
         margin-top: 0 !important;
-        padding: 14px 16px 13px !important;
+        padding: 15px 16px 14px !important;
         border-top: 1px solid #142742 !important;
         border-bottom: none !important;
         background: linear-gradient(135deg, #13233a 0%, #223b63 100%) !important;
@@ -564,7 +558,8 @@ export default function PublicOfferPage() {
       .offer-summary__row--total span {
         color: #ffffff !important;
       }
-      .offer-summary__row--total strong { font-size: 20px !important; letter-spacing: -0.02em !important; }
+      .offer-summary__row--total span { font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.02em !important; text-transform: uppercase !important; }
+      .offer-summary__row--total strong { font-size: 22px !important; letter-spacing: -0.03em !important; }
       .offer-shell__footer { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)) !important; gap: 14px !important; padding-top: 16px !important; margin-top: 18px !important; border-top: 1px solid #dce6f0 !important; }
       .offer-shell__footer div { font-size: 13px !important; line-height: 1.6 !important; color: #465a73 !important; }
       .offer-shell__footer strong { color: #10233b !important; }
@@ -647,8 +642,10 @@ export default function PublicOfferPage() {
       html.offer-mobile .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
       html.offer-mobile .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 0 !important; margin-top: 18px !important; border-color: #d9e3ee !important; box-shadow: none !important; }
       html.offer-mobile .offer-summary--below { width: 100% !important; margin-top: 18px !important; }
-      html.offer-mobile .offer-summary__row { font-size: 13.5px !important; padding: 11px 14px !important; line-height: 1.55 !important; border-bottom: 1px solid #e5ecf3 !important; }
-      html.offer-mobile .offer-summary__row--total { font-size: 16px !important; padding: 13px 14px !important; }
+      html.offer-mobile .offer-summary__row { font-size: 13.5px !important; padding: 12px 14px !important; line-height: 1.55 !important; border-bottom: 1px solid #e5ecf3 !important; }
+      html.offer-mobile .offer-summary__row span { font-weight: 600 !important; }
+      html.offer-mobile .offer-summary__row--total { font-size: 16px !important; padding: 14px !important; }
+      html.offer-mobile .offer-summary__row--total span { font-size: 11.5px !important; }
       html.offer-mobile .offer-summary__row--total strong { font-size: 22px !important; color: #ffffff !important; }
       html.offer-mobile .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
       @media (max-width: 640px) {
@@ -689,8 +686,10 @@ export default function PublicOfferPage() {
         .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
         .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 0 !important; margin-top: 18px !important; border-color: #d9e3ee !important; box-shadow: none !important; }
         .offer-summary--below { width: 100% !important; margin-top: 18px !important; }
-        .offer-summary__row { font-size: 13.5px !important; padding: 11px 14px !important; line-height: 1.55 !important; border-bottom: 1px solid #e5ecf3 !important; }
-        .offer-summary__row--total { font-size: 16px !important; padding: 13px 14px !important; }
+        .offer-summary__row { font-size: 13.5px !important; padding: 12px 14px !important; line-height: 1.55 !important; border-bottom: 1px solid #e5ecf3 !important; }
+        .offer-summary__row span { font-weight: 600 !important; }
+        .offer-summary__row--total { font-size: 16px !important; padding: 14px !important; }
+        .offer-summary__row--total span { font-size: 11.5px !important; }
         .offer-summary__row--total strong { font-size: 22px !important; color: #ffffff !important; }
         .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
       }
@@ -759,6 +758,33 @@ export default function PublicOfferPage() {
     doc.querySelectorAll<HTMLElement>('.offer-shell__footer > div').forEach((item) => {
       const label = item.querySelector('strong')?.textContent?.trim().toLocaleLowerCase('sv-SE') ?? '';
       if (label === 'prisvisning') item.remove();
+    });
+
+    doc.querySelectorAll<HTMLElement>('.offer-summary__row').forEach((row) => {
+      const label = normalizeOfferText(row.querySelector('span')?.textContent ?? '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('sv-SE');
+      if (row.classList.contains('offer-summary__row--total')) return;
+      if (label.startsWith('delsumma')) row.classList.add('offer-summary__row--subtotal');
+      else if (label === 'rabatt') {
+        row.classList.add('offer-summary__row--discount');
+        const amount = row.querySelector('strong');
+        if (amount && !/^[−-]/.test(amount.textContent?.trim() ?? '')) {
+          amount.textContent = `− ${amount.textContent?.trim() ?? ''}`;
+        }
+      } else if (label.startsWith('moms')) row.classList.add('offer-summary__row--vat');
+    });
+
+    doc.querySelectorAll<HTMLElement>('.offer-summary').forEach((summary) => {
+      const rows = Array.from(summary.querySelectorAll<HTMLElement>(':scope > .offer-summary__row'));
+      const ordered = [
+        ...rows.filter((row) => row.classList.contains('offer-summary__row--subtotal')),
+        ...rows.filter((row) => row.classList.contains('offer-summary__row--discount')),
+        ...rows.filter((row) => row.classList.contains('offer-summary__row--vat')),
+        ...rows.filter((row) => row.classList.contains('offer-summary__row--total')),
+      ];
+
+      if (ordered.length === rows.length && ordered.some((row, index) => row !== rows[index])) {
+        ordered.forEach((row) => summary.appendChild(row));
+      }
     });
 
     doc.querySelectorAll<HTMLElement>('.offer-shell__status, .offer-shell__title').forEach((item) => item.remove());
@@ -909,11 +935,11 @@ export default function PublicOfferPage() {
     return () => {
       disposers.forEach((dispose) => dispose());
     };
-  }, [offer, signatureFields]);
+  }, [signatureFields]);
 
   // ── Draw canvas resize ───────────────────────────────────────────────────────
   useEffect(() => {
-    if (sigMode !== 'draw') return;
+    if (sigMode !== 'draw' || !drawModalOpen) return;
     const wrapper = canvasWrapperRef.current;
     if (!wrapper) return;
     const syncSize = () => {
@@ -921,9 +947,11 @@ export default function PublicOfferPage() {
       if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
       const w = Math.floor(wrapper.getBoundingClientRect().width);
-      const h = 120;
+      const h = 220;
       if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
-        const prev = sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getTrimmedCanvas().toDataURL('image/png') : null;
+        const prev = sigRef.current && !sigRef.current.isEmpty()
+          ? sigRef.current.getTrimmedCanvas().toDataURL('image/png')
+          : drawnSignature;
         canvas.width = w * dpr; canvas.height = h * dpr;
         canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
         const ctx = canvas.getContext('2d');
@@ -935,7 +963,7 @@ export default function PublicOfferPage() {
     const ro = new ResizeObserver(syncSize);
     ro.observe(wrapper);
     return () => { cancelAnimationFrame(raf); ro.disconnect(); };
-  }, [sigMode, state]);
+  }, [drawModalOpen, drawnSignature, sigMode, state]);
 
   // ── Fetch offer ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -949,7 +977,6 @@ export default function PublicOfferPage() {
         const o = json.data;
         setOffer(o);
         setSignerName(o.recipientName ?? '');
-        setTypedSig(o.recipientName ?? '');
         if (o.status === 'accepted') setState('accepted');
         else if (o.status === 'declined') setState('declined');
         else if (o.publicTokenExpiresAt && new Date(o.publicTokenExpiresAt) < new Date()) setState('expired');
@@ -980,15 +1007,48 @@ export default function PublicOfferPage() {
   }, [offer, token]);
 
   // ── Actions ──────────────────────────────────────────────────────────────────
+  const typedSignatureText = signerName.trim();
+
   const getSignatureImage = useCallback((): string | null => {
     if (sigMode === 'draw') {
-      if (!sigRef.current || sigRef.current.isEmpty()) return null;
-      return sigRef.current.getTrimmedCanvas().toDataURL('image/png');
+      return drawnSignature;
     }
-    if (!typedSig.trim()) return null;
+    if (!typedSignatureText) return null;
     const f = SIG_FONTS.find((x) => x.id === sigFont) ?? SIG_FONTS[0];
-    return textToSignatureImage(typedSig.trim(), f.family);
-  }, [sigMode, typedSig, sigFont]);
+    return textToSignatureImage(typedSignatureText, f.family);
+  }, [drawnSignature, sigFont, sigMode, typedSignatureText]);
+
+  const openDrawModal = useCallback(() => {
+    setSigMode('draw');
+    setDrawModalError('');
+    setDrawModalOpen(true);
+  }, []);
+
+  const closeDrawModal = useCallback(() => {
+    setDrawModalError('');
+    setDrawModalOpen(false);
+  }, []);
+
+  const clearSavedDrawSignature = useCallback(() => {
+    setDrawnSignature(null);
+    setDrawModalError('');
+  }, []);
+
+  const clearDrawCanvas = useCallback(() => {
+    sigRef.current?.clear();
+    setDrawModalError('');
+  }, []);
+
+  const saveDrawSignature = useCallback(() => {
+    if (!sigRef.current || sigRef.current.isEmpty()) {
+      setDrawModalError('Rita din namnteckning innan du sparar.');
+      return;
+    }
+
+    setDrawnSignature(sigRef.current.getTrimmedCanvas().toDataURL('image/png'));
+    setDrawModalError('');
+    setDrawModalOpen(false);
+  }, []);
 
   const handleSign = useCallback(async () => {
     if (!signerName.trim()) { setErrMsg('Ange ditt fullständiga namn.'); return; }
@@ -1041,20 +1101,27 @@ export default function PublicOfferPage() {
   const handleDownloadPdf = async () => {
     if (!offer?.generatedDocument) return;
     setDownloading(true);
+    const url = `/api/offers/public/${token}/pdf`;
+    const previewWindow = window.open('', '_blank');
     try {
-      const url = `/api/offers/public/${token}/pdf`;
       const response = await fetch(url);
       if (!response.ok) throw new Error('download_failed');
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
+      if (previewWindow && !previewWindow.closed) {
+        previewWindow.location.href = objectUrl;
+      } else {
+        window.location.assign(objectUrl);
+      }
       const link = document.createElement('a');
       link.href = objectUrl;
       link.download = `${offer.title || 'offert'}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
     } catch {
+      previewWindow?.close();
       setErrMsg('Kunde inte ladda ner PDF. Försök igen.');
     } finally {
       window.setTimeout(() => setDownloading(false), 250);
@@ -1356,8 +1423,29 @@ export default function PublicOfferPage() {
                     <EditIcon size={13} />
                     Signatur
                   </label>
-                  <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-                    Skriv
+                  <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setSigMode('type')}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        sigMode === 'type'
+                          ? 'bg-white text-slate-900 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Skriv
+                    </button>
+                    <button
+                      type="button"
+                      onClick={openDrawModal}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        sigMode === 'draw'
+                          ? 'bg-white text-slate-900 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Rita
+                    </button>
                   </div>
                 </div>
 
@@ -1388,16 +1476,20 @@ export default function PublicOfferPage() {
                           </button>
                         ))}
                       </div>
-                      {/* Typed signature */}
-                      <div className="flex min-h-[68px] items-center rounded-lg border border-slate-200 bg-white px-4">
-                        <input
-                          type="text"
-                          value={typedSig}
-                          onChange={(e) => setTypedSig(e.target.value)}
-                          placeholder="Skriv ditt namn här..."
-                          className="w-full border-none bg-transparent p-0 text-[32px] text-slate-900 outline-none placeholder:text-slate-300"
-                          style={{ fontFamily: selectedFont.family }}
-                        />
+                      <p className="mb-2 text-[11px] text-slate-500">
+                        Signaturen uppdateras automatiskt från fältet <span className="font-semibold text-slate-700">Fullständigt namn</span>.
+                      </p>
+                      <div className="flex min-h-[86px] items-center rounded-xl border border-slate-200 bg-white px-4 py-4">
+                        {typedSignatureText ? (
+                          <span
+                            className="block w-full text-[32px] leading-none text-slate-900"
+                            style={{ fontFamily: selectedFont.family }}
+                          >
+                            {typedSignatureText}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-slate-300">Ditt namn visas här när du fyllt i det ovan.</span>
+                        )}
                       </div>
                     </motion.div>
                   ) : (
@@ -1408,28 +1500,42 @@ export default function PublicOfferPage() {
                       exit={{ opacity: 0, x: -8 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <div
-                        ref={canvasWrapperRef}
-                        className="relative h-[120px] overflow-hidden rounded-lg border border-slate-200 bg-white"
-                        style={{ touchAction: 'none' }}
-                      >
-                        <SignatureCanvas ref={sigRef} penColor="#0f172a" canvasProps={{ style: { display: 'block', touchAction: 'none' } }} />
-                        {/* Baseline */}
-                        <div className="pointer-events-none absolute bottom-7 left-5 right-5 border-b border-dashed border-slate-200" />
-                        {/* Hint */}
-                        <span className="pointer-events-none absolute right-3 top-2 text-[10px] tracking-wide text-slate-300">
-                          Rita din signatur
-                        </span>
-                      </div>
-                      <div className="mt-1.5 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => sigRef.current?.clear()}
-                          className="flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500 transition-colors hover:bg-slate-50"
-                        >
-                          <TrashIcon size={11} />
-                          Rensa
-                        </button>
+                      <div className="rounded-xl border border-slate-200 bg-white p-4">
+                        <div className="flex min-h-[96px] items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-4">
+                          {drawnSignature ? (
+                            <Image
+                              src={drawnSignature}
+                              alt="Ritad signatur"
+                              width={260}
+                              height={72}
+                              unoptimized
+                              className="max-h-[72px] w-auto object-contain"
+                            />
+                          ) : (
+                            <div className="text-center">
+                              <p className="text-sm font-medium text-slate-700">Ingen ritad signatur sparad ännu</p>
+                              <p className="mt-1 text-xs text-slate-500">Tryck på knappen nedan för att öppna ritytan.</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={openDrawModal}
+                            className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-800"
+                          >
+                            {drawnSignature ? 'Rita om i modal' : 'Öppna rityta'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={clearSavedDrawSignature}
+                            disabled={!drawnSignature}
+                            className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <TrashIcon size={11} />
+                            Rensa
+                          </button>
+                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -1520,6 +1626,91 @@ export default function PublicOfferPage() {
           ))}
         </AnimatePresence>
         </div>
+
+        <AnimatePresence>
+          {drawModalOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end bg-slate-950/55 p-3 sm:items-center sm:justify-center sm:p-6"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 24, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 16, scale: 0.98 }}
+                transition={{ duration: 0.2 }}
+                className="w-full rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.28)] sm:max-w-2xl"
+              >
+                <div className="border-b border-slate-100 px-4 py-4 sm:px-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-base font-semibold text-slate-900">Rita din signatur</h3>
+                      <p className="mt-1 text-sm text-slate-500">Skriv under med finger eller mus och spara signaturen när den ser rätt ut.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeDrawModal}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-500 transition-colors hover:bg-slate-50"
+                    >
+                      Stäng
+                    </button>
+                  </div>
+                </div>
+
+                <div className="px-4 py-4 sm:px-6">
+                  {drawModalError && (
+                    <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                      {drawModalError}
+                    </div>
+                  )}
+                  <div
+                    ref={canvasWrapperRef}
+                    className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                    style={{ touchAction: 'none' }}
+                  >
+                    <SignatureCanvas
+                      ref={sigRef}
+                      penColor="#0f172a"
+                      canvasProps={{ style: { display: 'block', width: '100%', height: '220px', touchAction: 'none' } }}
+                    />
+                    <div className="pointer-events-none absolute bottom-10 left-6 right-6 border-b border-dashed border-slate-200" />
+                    <span className="pointer-events-none absolute right-4 top-3 text-[11px] tracking-wide text-slate-300">
+                      Rita här
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                  <button
+                    type="button"
+                    onClick={clearDrawCanvas}
+                    className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                  >
+                    <TrashIcon size={13} />
+                    Rensa
+                  </button>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={closeDrawModal}
+                      className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                    >
+                      Avbryt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveDrawSignature}
+                      className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                    >
+                      Spara signatur
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Mobile validity strip */}
         <div className="flex sm:hidden items-center justify-center gap-1.5 mt-4 px-4">
