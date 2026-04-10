@@ -356,12 +356,12 @@ function buildStructuredLineItems(items: OfferLineItem[], mode: Offer['priceDisp
   const showVatColumn = pricing.hasVat;
   const showDiscountColumn = items.some((item) => (item.discount ?? 0) > 0);
   const gridTemplate = [
-    'minmax(220px, 1.85fr)',
-    '72px',
-    '112px',
-    ...(showDiscountColumn ? ['92px'] : []),
-    ...(showVatColumn ? ['92px'] : []),
-    '116px',
+    'minmax(0, 1.9fr)',
+    '44px',
+    '86px',
+    ...(showDiscountColumn ? ['56px'] : []),
+    ...(showVatColumn ? ['56px'] : []),
+    '92px',
   ].join(' ');
 
   const headerCells = [
@@ -1361,15 +1361,15 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
     .offer-items { display: grid; gap: 18px; }
     .offer-items__table { display: block; border: 1px solid #dbe4ee; border-radius: 18px; background: #ffffff; overflow: hidden; }
     .offer-items__head, .offer-item-row { display: grid; grid-template-columns: var(--offer-columns); align-items: start; }
-    .offer-items__head { gap: 18px; padding: 14px 20px; background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%); border-bottom: 1px solid #dbe4ee; color: #64748b; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .offer-items__head { gap: 12px; padding: 12px 16px; background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%); border-bottom: 1px solid #dbe4ee; color: #64748b; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
     .offer-items__head span:first-child { text-align: left; }
     .offer-items__head span:not(:first-child) { text-align: right; }
-    .offer-item-row { gap: 18px; padding: 20px; border-bottom: 1px solid #eef2f7; }
+    .offer-item-row { gap: 12px; padding: 16px; border-bottom: 1px solid #eef2f7; }
     .offer-item-row:last-child { border-bottom: none; }
     .offer-item-row__product { display: grid; gap: 7px; min-width: 0; }
     .offer-item-row__title { font-size: 16px; line-height: 1.4; font-weight: 700; color: #0f172a; }
     .offer-item-row__detail { font-size: 13px; line-height: 1.68; color: #64748b; }
-    .offer-item-row__value { text-align: right; font-size: 14px; line-height: 1.5; color: #334155; }
+    .offer-item-row__value { text-align: right; font-size: 13px; line-height: 1.45; color: #334155; white-space: nowrap; }
     .offer-item-row__value--strong { font-weight: 700; color: #0f172a; }
     .offer-items__cards { display: none; }
     .offer-item-card { border: 1px solid #dbe4ee; border-radius: 18px; background: #ffffff; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }

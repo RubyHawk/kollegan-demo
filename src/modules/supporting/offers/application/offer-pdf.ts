@@ -11,7 +11,7 @@ export interface OfferPdfVariant {
 }
 
 const PDF_CACHE_MAX_ENTRIES = 24;
-export const PUBLIC_OFFER_PDF_RENDERER_VERSION = '2026-04-09-print-lite-v1';
+export const PUBLIC_OFFER_PDF_RENDERER_VERSION = '2026-04-09-print-lite-v2';
 const pdfCache = new Map<string, Uint8Array>();
 let browserPromise: Promise<Browser> | null = null;
 

@@ -217,8 +217,15 @@ function renderHeader(h: EmailDesignConfig['header']): string {
   return `<div style="background:${h.bgColor};padding:28px 24px 20px;text-align:${h.alignment};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">${logo}${name}${tag}${divider}</div>`;
 }
 
-function renderCta(cta: EmailDesignConfig['cta'], url: string): string {
-  return `<a href="${url}" style="display:inline-block;background:${cta.bgColor};color:${cta.textColor};text-decoration:none;padding:12px 28px;border-radius:${cta.borderRadius}px;font-weight:600;font-size:15px;">${escapeHtml(cta.label || 'Visa & signera offert')} &rarr;</a>`;
+export function renderCta(cta: EmailDesignConfig['cta'], url: string): string {
+  return `
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 auto;">
+      <tr>
+        <td bgcolor="${cta.bgColor}" style="border-radius:${cta.borderRadius}px;text-align:center;">
+          <a href="${url}" target="_blank" rel="noopener noreferrer" lang="sv" dir="ltr" translate="no" style="display:block;background:${cta.bgColor};color:${cta.textColor};text-decoration:none;padding:12px 28px;border-radius:${cta.borderRadius}px;font-weight:600;font-size:15px;line-height:1.2;white-space:nowrap;">${escapeHtml(cta.label || 'Visa & signera offert')} &rarr;</a>
+        </td>
+      </tr>
+    </table>`;
 }
 
 function renderFooter(f: EmailDesignConfig['footer']): string {
@@ -251,7 +258,46 @@ function renderFooter(f: EmailDesignConfig['footer']): string {
   return `<div style="background:${f.bgColor};padding:20px 24px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">${parts.join('')}</div>`;
 }
 
-function sendToRecipientHtml(p: SendToRecipientPayload): string {
+function wrapEmailDocument(content: string, backgroundColor: string, previewText: string): string {
+  return `<!doctype html>
+<html lang="sv" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Language" content="sv" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <title>Soleria offert</title>
+    <style>
+      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+      table { border-collapse: collapse !important; }
+      body { margin: 0 !important; padding: 0 !important; width: 100% !important; background: ${backgroundColor}; }
+      a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+    </style>
+  </head>
+  <body lang="sv" dir="ltr" style="margin:0;padding:0;background:${backgroundColor};">
+    <div lang="sv" dir="ltr" style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+      ${escapeHtml(previewText)}
+    </div>
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" lang="sv" dir="ltr" style="width:100%;background:${backgroundColor};">
+      <tr>
+        <td align="center" style="padding:0;">
+          <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="width:100%;max-width:600px;margin:0 auto;">
+            <tr>
+              <td style="padding:0;">
+                ${content}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
+export function sendToRecipientHtml(p: SendToRecipientPayload): string {
   const d = parseDesignConfig(p.emailHeaderConfig);
   const b = d?.body ?? DESIGN_DEFAULTS.body;
   const c = d?.cta ?? DESIGN_DEFAULTS.cta;
@@ -259,10 +305,10 @@ function sendToRecipientHtml(p: SendToRecipientPayload): string {
   const headerHtml = renderHeader((d ?? DESIGN_DEFAULTS).header);
   const footerHtml = renderFooter((d ?? DESIGN_DEFAULTS).footer);
   const ctaHtml = renderCta(c, p.publicUrl);
-  const fallbackLink = `<p style="margin:24px 0 0 0;font-size:12px;color:${b.mutedColor};">Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/><a href="${p.publicUrl}" style="color:${b.mutedColor};">${p.publicUrl}</a></p>`;
+  const fallbackLink = `<p style="margin:24px 0 0 0;font-size:12px;color:${b.mutedColor};">Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/><a href="${p.publicUrl}" target="_blank" rel="noopener noreferrer" lang="sv" dir="ltr" translate="no" style="color:${b.mutedColor};word-break:break-all;"><span translate="no">${p.publicUrl}</span></a></p>`;
 
   if (p.emailBody) {
-    return `
+    return wrapEmailDocument(`
     <div style="max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:${b.bgColor};">
       ${headerHtml}
       <div style="padding:32px 24px;">
@@ -273,10 +319,10 @@ function sendToRecipientHtml(p: SendToRecipientPayload): string {
         </div>
       </div>
       ${footerHtml}
-    </div>`;
+    </div>`, b.bgColor, `Offert ${p.offerTitle} från Soleria`);
   }
 
-  return `
+  return wrapEmailDocument(`
     <div style="max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:${b.bgColor};">
       ${headerHtml}
       <div style="padding:32px 24px;">
@@ -293,15 +339,15 @@ function sendToRecipientHtml(p: SendToRecipientPayload): string {
         </div>
       </div>
       ${footerHtml}
-    </div>`;
+    </div>`, b.bgColor, `Ny offert ${p.offerTitle}. Giltig till ${fmtDate(p.validUntil)}.`);
 }
 
-function notifyCreatorHtml(p: NotifyCreatorPayload): string {
+export function notifyCreatorHtml(p: NotifyCreatorPayload): string {
   if (p.event === 'signed') {
     const pricing = emailPricing(p);
     const offerRef = p.offerNumber ? `#${p.offerNumber}` : p.offerTitle;
     const signedAt = p.acceptedAt ? fmtDate(p.acceptedAt) : '';
-    return `
+    return wrapEmailDocument(`
       <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;background:#f8fafc;">
         <div style="background:#0f172a;padding:28px 24px;text-align:center;">
           <h1 style="margin:0;font-size:20px;font-weight:700;color:#ffffff;">Offert signerad ✅</h1>
@@ -333,19 +379,19 @@ function notifyCreatorHtml(p: NotifyCreatorPayload): string {
           </div>
           <p style="font-size:13px;color:#64748b;margin:20px 0 0;text-align:center;">Logga in på plattformen för att se signaturen och ladda ner dokumentet.</p>
         </div>
-      </div>`;
+      </div>`, '#f8fafc', `Offert signerad: ${p.offerTitle}`);
   }
 
-  return `
+  return wrapEmailDocument(`
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1e293b;">
       <h2 style="margin:0 0 8px 0;font-size:22px;">Offert avvisad ❌</h2>
       <p style="color:#64748b;margin:0 0 24px 0;">Din offert har avvisats.</p>
       <p style="margin:0 0 8px 0;"><strong>${p.offerTitle}</strong> avvisades av <strong>${p.recipientName}</strong>.</p>
       ${p.comment ? `<p style="margin:8px 0;padding:12px 16px;background:#fef2f2;border-radius:8px;color:#991b1b;font-size:14px;"><strong>Anledning:</strong> ${escapeHtml(p.comment)}</p>` : ''}
-    </div>`;
+    </div>`, '#ffffff', `Offert avvisad: ${p.offerTitle}`);
 }
 
-function reminderHtml(p: ReminderPayload): string {
+export function reminderHtml(p: ReminderPayload): string {
   const d = parseDesignConfig(p.emailHeaderConfig);
   const b = d?.body ?? DESIGN_DEFAULTS.body;
   const c = d?.cta ?? DESIGN_DEFAULTS.cta;
@@ -354,10 +400,10 @@ function reminderHtml(p: ReminderPayload): string {
   const headerHtml = renderHeader((d ?? DESIGN_DEFAULTS).header);
   const footerHtml = renderFooter((d ?? DESIGN_DEFAULTS).footer);
   const ctaHtml = renderCta(c, p.publicUrl);
-  const fallbackLink = `<p style="margin:24px 0 0 0;font-size:12px;color:${b.mutedColor};">Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/><a href="${p.publicUrl}" style="color:${b.mutedColor};">${p.publicUrl}</a></p>`;
+  const fallbackLink = `<p style="margin:24px 0 0 0;font-size:12px;color:${b.mutedColor};">Om du inte kan klicka på knappen, kopiera och klistra in denna länk i din webbläsare:<br/><a href="${p.publicUrl}" target="_blank" rel="noopener noreferrer" lang="sv" dir="ltr" translate="no" style="color:${b.mutedColor};word-break:break-all;"><span translate="no">${p.publicUrl}</span></a></p>`;
 
   if (p.emailBody) {
-    return `
+    return wrapEmailDocument(`
     <div style="max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:${b.bgColor};">
       ${headerHtml}
       <div style="padding:32px 24px;">
@@ -368,10 +414,10 @@ function reminderHtml(p: ReminderPayload): string {
         </div>
       </div>
       ${footerHtml}
-    </div>`;
+    </div>`, b.bgColor, `Påminnelse om offert ${p.offerTitle}`);
   }
 
-  return `
+  return wrapEmailDocument(`
     <div style="max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:${b.bgColor};">
       ${headerHtml}
       <div style="padding:32px 24px;">
@@ -389,7 +435,7 @@ function reminderHtml(p: ReminderPayload): string {
         </div>
       </div>
       ${footerHtml}
-    </div>`;
+    </div>`, b.bgColor, `Påminnelse: ${p.offerTitle}. Giltig till ${fmtDate(p.validUntil)}.`);
 }
 
 export async function dispatchOfferEmail(payload: SendToRecipientPayload): Promise<void> {

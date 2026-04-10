@@ -25,7 +25,7 @@ import {
   declineOfferByToken,
 } from '../../application/offers.service';
 import { resolveOfferBrandingForOffer } from '../../application/offer-branding-profile';
-import { sanitizeGeneratedOfferDocument } from '../../application/document-generator';
+import { sanitizePublicOfferDocument } from '../../application/public-offer-document';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -91,7 +91,7 @@ export const handleGetPublicOffer = createHandler(
     const branding = await resolveOfferBrandingForOffer(offer);
     const publicOffer = toPublicOffer(offer as unknown as Record<string, unknown>);
     if (offer.generatedDocument) {
-      publicOffer.generatedDocument = sanitizeGeneratedOfferDocument(offer.generatedDocument, offer, branding);
+      publicOffer.generatedDocument = sanitizePublicOfferDocument(offer.generatedDocument, offer, branding);
     }
 
     return ok(publicOffer);
