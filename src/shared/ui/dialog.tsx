@@ -23,7 +23,7 @@ const DialogOverlay = React.forwardRef<
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
-type DialogMobileVariant = 'center' | 'sheet' | 'fullscreen';
+type DialogMobileVariant = 'center' | 'sheet' | 'fullscreen' | 'right-panel';
 
 interface DialogContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
@@ -39,6 +39,8 @@ const MOBILE_VARIANT_CLASSES: Record<DialogMobileVariant, string> = {
     'fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[88dvh] translate-y-0 rounded-t-[28px] rounded-b-none sm:left-[50%] sm:top-[50%] sm:max-h-[min(88dvh,780px)] sm:w-full sm:max-w-xl sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[24px]',
   fullscreen:
     'fixed inset-0 z-50 grid h-dvh w-screen rounded-none sm:left-[50%] sm:top-[50%] sm:h-auto sm:max-h-[min(92dvh,920px)] sm:w-full sm:max-w-5xl sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[28px]',
+  'right-panel':
+    'fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[88dvh] rounded-t-[28px] rounded-b-none sm:inset-y-0 sm:right-0 sm:left-auto sm:bottom-auto sm:top-0 sm:h-screen sm:max-h-full sm:max-w-[540px] sm:w-[540px] sm:rounded-none sm:rounded-l-[24px] sm:translate-x-0 sm:translate-y-0',
 };
 
 const DialogContent = React.forwardRef<
@@ -56,8 +58,10 @@ const DialogContent = React.forwardRef<
           ? 'data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-4 data-[state=open]:slide-in-from-bottom-4 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]'
           : mobileVariant === 'sheet'
             ? 'data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-8 data-[state=open]:slide-in-from-bottom-8 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]'
-            : 'data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
-        mobileVariant !== 'center' && 'pb-[env(safe-area-inset-bottom)]',
+            : mobileVariant === 'right-panel'
+              ? 'data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-8 data-[state=open]:slide-in-from-bottom-8 sm:data-[state=closed]:slide-out-to-right-full sm:data-[state=open]:slide-in-from-right-full'
+              : 'data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
+        (mobileVariant === 'sheet' || mobileVariant === 'fullscreen') && 'pb-[env(safe-area-inset-bottom)]',
         className,
       )}
       {...props}

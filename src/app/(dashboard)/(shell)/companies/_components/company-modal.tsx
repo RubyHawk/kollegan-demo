@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Buildings, FileText, Globe, IdentificationCard, MapPinLine, NotePencil } from '@phosphor-icons/react';
+import { Buildings, Globe, IdentificationCard, MapPinLine } from '@phosphor-icons/react';
 import type { Company } from '@modules/supporting/offers';
 import {
   Dialog,
@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@shared/ui/dialog';
+import { Button } from '@shared/ui/button';
 import { CompanyLogoUpload } from './company-logo-upload';
 
 export interface CompanyForm {
@@ -103,7 +104,7 @@ export function CompanyModal({
       <DialogContent
         mobileVariant="fullscreen"
         showMobileClose
-        className="w-[min(100vw-1.5rem,1320px)] sm:max-w-[1320px]"
+        className="w-[min(100vw-1.5rem,1020px)] sm:max-w-[1020px]"
       >
         <DialogHeader className="border-b border-[var(--border)] px-5 pb-4 pt-5 pr-16 sm:px-6">
           <DialogTitle className="text-xl text-[var(--text-primary)]">
@@ -115,7 +116,7 @@ export function CompanyModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[min(86dvh,980px)] overflow-y-auto px-5 py-5 sm:px-6">
+        <div className="max-h-[min(88dvh,860px)] overflow-y-auto px-5 py-5 sm:px-6">
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_340px]">
             <div className="space-y-5">
               <section className={cardCls}>
@@ -156,32 +157,40 @@ export function CompanyModal({
                   </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-3">
+                  {/* Street */}
                   <div>
-                    <label className={labelCls}>Adressrad 1</label>
+                    <label className={labelCls}>Gatuadress</label>
                     <input value={form.addressLine1} onChange={set('addressLine1')} placeholder="Testgatan 42" className={inputCls} />
                   </div>
                   <div>
                     <label className={labelCls}>Adressrad 2</label>
-                    <input value={form.addressLine2} onChange={set('addressLine2')} placeholder="Lokal 2 eller våning" className={inputCls} />
+                    <input value={form.addressLine2} onChange={set('addressLine2')} placeholder="Lokal 2, c/o" className={inputCls} />
                   </div>
+                  {/* Postal + City */}
+                  <div className="grid grid-cols-[120px_1fr] gap-3">
+                    <div>
+                      <label className={labelCls}>Postnummer</label>
+                      <input value={form.postalCode} onChange={set('postalCode')} placeholder="702 24" className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Stad</label>
+                      <input value={form.city} onChange={set('city')} placeholder="Örebro" className={inputCls} />
+                    </div>
+                  </div>
+                  {/* Region + Country */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={labelCls}>Län / region</label>
+                      <input value={form.region} onChange={set('region')} placeholder="Örebro län" className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Land</label>
+                      <input value={form.country} onChange={set('country')} placeholder="Sverige" className={inputCls} />
+                    </div>
+                  </div>
+                  {/* Website */}
                   <div>
-                    <label className={labelCls}>Postnummer</label>
-                    <input value={form.postalCode} onChange={set('postalCode')} placeholder="702 24" className={inputCls} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Stad</label>
-                    <input value={form.city} onChange={set('city')} placeholder="Örebro" className={inputCls} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Län / region</label>
-                    <input value={form.region} onChange={set('region')} placeholder="Örebro län" className={inputCls} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Land</label>
-                    <input value={form.country} onChange={set('country')} placeholder="Sverige" className={inputCls} />
-                  </div>
-                  <div className="md:col-span-2">
                     <label className={labelCls}>Webbplats</label>
                     <input type="url" value={form.website} onChange={set('website')} placeholder="soleria.se" className={inputCls} />
                   </div>
@@ -237,58 +246,21 @@ export function CompanyModal({
                 />
               </section>
 
-              <section className={cardCls}>
-                <div className="mb-4 flex items-start gap-3">
-                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                    <FileText size={18} weight="duotone" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">Juridiska villkor och textblock</p>
-                    <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
-                      Den juridiska delen ändras i offertmallarna, inte här i företagskortet.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-alt)] p-4 text-sm leading-6 text-[var(--text-secondary)]">
-                  <p>
-                    Öppna <span className="font-semibold text-[var(--text-primary)]">Mallar</span> och redigera blocket
-                    för offertdokumentet om du vill ändra texten under <span className="font-semibold text-[var(--text-primary)]">Juridiska villkor</span>.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onOpenTemplates();
-                  }}
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--border)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
-                >
-                  <NotePencil size={16} weight="duotone" />
-                  Öppna mallar för juridik
-                </button>
-              </section>
             </aside>
           </div>
         </div>
 
         <DialogFooter className="gap-2 border-t border-[var(--border)] px-5 pb-5 pt-3 sm:px-6">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)]"
-          >
+          <Button type="button" variant="outline" onClick={onClose}>
             Avbryt
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => onSave(form)}
             disabled={saving || !form.name.trim()}
-            className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-light)] disabled:pointer-events-none disabled:opacity-50"
           >
-            {saving ? 'Sparar...' : company ? 'Spara ändringar' : 'Skapa företag'}
-          </button>
+            {saving ? 'Sparar…' : company ? 'Spara ändringar' : 'Skapa företag'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

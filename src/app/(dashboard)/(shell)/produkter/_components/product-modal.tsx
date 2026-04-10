@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FolderOpen, Sparkle, StackSimple } from '@phosphor-icons/react';
+import { cn } from '@shared/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -81,12 +82,12 @@ export function ProductModal({
       <DialogContent
         mobileVariant="fullscreen"
         showMobileClose
-        className="flex h-full w-[min(100vw-1rem,1080px)] flex-col sm:h-auto sm:max-h-[min(92dvh,920px)] sm:max-w-[1080px]"
+        className="w-[min(100vw-1.5rem,1020px)] sm:max-w-[1020px]"
       >
         <div className="flex min-h-0 flex-1 flex-col">
           <DialogHeader className="border-b border-[var(--border)] px-5 pb-4 pt-5 pr-16">
-            <DialogTitle className="text-base text-[var(--text-primary)]">
-              {product ? 'Redigera produkt' : 'Ny produkt'}
+            <DialogTitle className="text-xl text-[var(--text-primary)]">
+              {product ? 'Redigera produkt eller tjänst' : 'Skapa produkt eller tjänst'}
             </DialogTitle>
           </DialogHeader>
 
@@ -120,9 +121,22 @@ export function ProductModal({
                   </div>
                 </div>
 
-                {/* Price / VAT / Unit / SKU — 4-col grid */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <div className="sm:col-span-1">
+                  <div className="md:col-span-2">
+                    <label className={labelClass}>Bild-URL</label>
+                    <div className="flex items-start gap-3">
+                      <input value={form.imageUrl} onChange={setField('imageUrl')} placeholder="https://…" className={`${inputClass} flex-1`} />
+                      {form.imageUrl.trim() && (
+                        <img
+                          src={form.imageUrl}
+                          alt=""
+                          className="h-[42px] w-[42px] shrink-0 rounded-xl border border-[var(--border)] object-cover"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Price / VAT / Unit / SKU */}
+                  <div>
                     <label className={labelClass}>Pris exkl. moms</label>
                     <input
                       type="number"
@@ -152,62 +166,49 @@ export function ProductModal({
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>SKU</label>
-                    <input
-                      value={form.sku}
-                      onChange={setField('sku')}
-                      placeholder="SOL-001"
-                      className={inputClass}
-                    />
+                    <label className={labelClass}>SKU / artikelnr</label>
+                    <input value={form.sku} onChange={setField('sku')} placeholder="SOL-001" className={inputClass} />
                   </div>
-                </div>
-
-                {/* Image URL */}
-                <div>
-                  <label className={labelClass}>Bild-URL</label>
-                  <input
-                    value={form.imageUrl}
-                    onChange={setField('imageUrl')}
-                    placeholder="https://…"
-                    className={inputClass}
-                  />
                 </div>
 
                 {/* Category */}
                 <div>
-                  <div className="mb-2.5 flex items-center justify-between gap-3">
-                    <span className="text-xs font-medium text-[var(--text-secondary)]">Kategori</span>
-                    {/* Segmented toggle */}
-                    <div className="inline-flex rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] p-0.5">
+                  <div className="mt-3 flex gap-4 border-b border-[var(--border)]">
+                    {(
+                      [
+                        { value: 'hierarchy', label: 'Hierarki', icon: <StackSimple size={14} weight="bold" /> },
+                        { value: 'custom', label: 'Fri etikett', icon: <Sparkle size={14} weight="bold" /> },
+                      ] as const
+                    ).map(({ value, label, icon }) => (
                       <button
+                        key={value}
                         type="button"
+                        role="tab"
+                        aria-selected={form.categoryMode === value}
                         onClick={() =>
-                          setForm((c) => ({ ...c, categoryMode: 'hierarchy', customCategory: '' }))
+                          setForm((current) => ({
+                            ...current,
+                            categoryMode: value,
+                            ...(value === 'hierarchy' ? { customCategory: '' } : { mainCategoryId: '', subCategoryId: '' }),
+                          }))
                         }
-                        className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                          form.categoryMode === 'hierarchy'
-                            ? 'bg-[var(--surface-0)] text-[var(--text-primary)] shadow-sm'
-                            : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-                        }`}
+                        className={cn(
+                          'relative flex items-center gap-1.5 pb-2.5 text-sm font-medium transition-colors',
+                          form.categoryMode === value
+                            ? 'text-[var(--text-primary)]'
+                            : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
+                        )}
                       >
-                        <StackSimple size={11} weight="bold" />
-                        Hierarki
+                        {icon}
+                        {label}
+                        <span
+                          className={cn(
+                            'absolute inset-x-0 bottom-0 h-0.5 rounded-full transition-all',
+                            form.categoryMode === value ? 'bg-[var(--accent)]' : 'bg-transparent',
+                          )}
+                        />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setForm((c) => ({ ...c, categoryMode: 'custom', mainCategoryId: '', subCategoryId: '' }))
-                        }
-                        className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                          form.categoryMode === 'custom'
-                            ? 'bg-[var(--surface-0)] text-[var(--text-primary)] shadow-sm'
-                            : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-                        }`}
-                      >
-                        <Sparkle size={11} weight="bold" />
-                        Fri etikett
-                      </button>
-                    </div>
+                    ))}
                   </div>
 
                   {form.categoryMode === 'hierarchy' ? (
