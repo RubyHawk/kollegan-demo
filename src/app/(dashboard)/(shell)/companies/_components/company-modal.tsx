@@ -104,29 +104,34 @@ export function CompanyModal({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-      <DialogContent mobileVariant="fullscreen" size="xl" showMobileClose>
+      <DialogContent
+        mobileVariant="fullscreen"
+        size="xl"
+        showMobileClose
+        className="sm:max-h-[96dvh] sm:max-w-[1160px]"
+      >
         <div className="flex min-h-0 flex-1 flex-col">
-          <DialogHeader className="border-b border-[var(--border)] pr-16">
+          <DialogHeader className="border-b border-[var(--border)] pr-16 sm:gap-1 sm:pb-3">
             <DialogTitle className="text-xl">
               {company ? 'Redigera företag' : 'Nytt företag'}
             </DialogTitle>
-            <DialogDescription className="max-w-3xl">
+            <DialogDescription className="max-w-2xl sm:leading-5">
               Samla företagets identitet, adress och logotyp i ett mer läsbart flöde. Huvudformuläret ligger till
               vänster och offertförhandsvisningen håller sig lugnare i stödkolumnen.
             </DialogDescription>
           </DialogHeader>
 
-          <ModalBody>
-            <ModalFormGrid columns="sidebar" className="items-start gap-5">
-              <div className="space-y-5">
-                <ModalSection tone="card">
+          <ModalBody className="sm:py-4">
+            <ModalFormGrid columns="sidebar" className="items-start gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+              <div className="space-y-4">
+                <ModalSection tone="card" className="sm:space-y-3.5 sm:p-4">
                   <div className="flex items-start gap-3">
                     <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
                       <Buildings size={18} weight="duotone" />
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-[var(--text-primary)]">Företagsidentitet</p>
-                      <p className="text-sm leading-6 text-[var(--text-muted)]">
+                      <p className="text-sm leading-5 text-[var(--text-muted)]">
                         Det här visas i offertens avsändarblock och i företagets dokumentmallar.
                       </p>
                     </div>
@@ -149,20 +154,20 @@ export function CompanyModal({
                   </ModalFormGrid>
                 </ModalSection>
 
-                <ModalSection tone="card">
+                <ModalSection tone="card" className="sm:space-y-3.5 sm:p-4">
                   <div className="flex items-start gap-3">
                     <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
                       <MapPinLine size={18} weight="duotone" />
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-[var(--text-primary)]">Adress och kontakt</p>
-                      <p className="text-sm leading-6 text-[var(--text-muted)]">
+                      <p className="text-sm leading-5 text-[var(--text-muted)]">
                         Fyll i de uppgifter som ska synas i dokument, PDF och företagsprofil.
                       </p>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3.5">
                     <div>
                       <label className={labelCls}>Gatuadress</label>
                       <input
@@ -235,15 +240,15 @@ export function CompanyModal({
                 </ModalSection>
               </div>
 
-              <div className="space-y-5 xl:sticky xl:top-0">
-                <ModalSection tone="card">
+              <div className="space-y-4 xl:sticky xl:top-0">
+                <ModalSection tone="card" className="sm:space-y-3.5 sm:p-4">
                   <div className="flex items-start gap-3">
                     <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
                       <IdentificationCard size={18} weight="duotone" />
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-[var(--text-primary)]">Så syns företaget i offerten</p>
-                      <p className="text-sm leading-6 text-[var(--text-muted)]">
+                      <p className="text-sm leading-5 text-[var(--text-muted)]">
                         Förhandsvisningen motsvarar innehållet i offertens övre vänsterdel.
                       </p>
                     </div>
@@ -264,14 +269,14 @@ export function CompanyModal({
                   </ModalMetaCard>
                 </ModalSection>
 
-                <ModalSection tone="card">
+                <ModalSection tone="card" className="sm:space-y-3.5 sm:p-4">
                   <div className="flex items-start gap-3">
                     <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
                       <Globe size={18} weight="duotone" />
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-[var(--text-primary)]">Logga och profil</p>
-                      <p className="text-sm leading-6 text-[var(--text-muted)]">
+                      <p className="text-sm leading-5 text-[var(--text-muted)]">
                         Loggan används i offert, PDF och vissa mejlhuvuden.
                       </p>
                     </div>
@@ -290,7 +295,7 @@ export function CompanyModal({
             </ModalFormGrid>
           </ModalBody>
 
-          <ModalActionFooter>
+          <ModalActionFooter className="sm:pb-4 sm:pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Avbryt
             </Button>
