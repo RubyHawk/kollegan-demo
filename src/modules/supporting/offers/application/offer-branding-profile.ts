@@ -26,9 +26,13 @@ async function getOfferResponsibleUser(userId: string) {
 export async function resolveOfferBrandingForOffer(
   offer: Pick<Offer, 'organizationId' | 'companyId' | 'createdBy'>,
 ) {
+  const companyPromise = offer.companyId
+    ? companiesRepository.getById(offer.companyId, offer.organizationId)
+    : companiesRepository.list(offer.organizationId).then((companies) => companies.length === 1 ? companies[0] : null);
+
   const [org, company, responsible] = await Promise.all([
     identityService.getOrg(offer.organizationId),
-    offer.companyId ? companiesRepository.getById(offer.companyId, offer.organizationId) : Promise.resolve(null),
+    companyPromise,
     getOfferResponsibleUser(offer.createdBy),
   ]);
 

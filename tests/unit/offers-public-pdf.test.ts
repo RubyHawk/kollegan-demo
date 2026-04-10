@@ -28,7 +28,7 @@ describe('public offer PDF sanitizing', () => {
     expect((sanitized.match(/page-separator/g) ?? []).length).toBe(1);
   });
 
-  it('keeps promo pages in the public offer while simplifying the offer document', () => {
+  it('removes promo pages from the public offer while simplifying the offer document', () => {
     const html = `<!DOCTYPE html>
 <html lang="sv">
   <head></head>
@@ -94,7 +94,8 @@ describe('public offer PDF sanitizing', () => {
       website: 'https://www.soleria.se',
     } as never);
 
-    expect(sanitized).toContain('/promo.png');
+    expect(sanitized).not.toContain('/promo.png');
+    expect(sanitized).not.toContain('data-customer-pdf="false"');
     expect(sanitized).not.toContain('Tydlig prisbild, giltighet och villkor samlade i en offert.');
     expect(sanitized).toContain('25%');
     expect(sanitized).not.toContain('25% moms');
@@ -102,6 +103,9 @@ describe('public offer PDF sanitizing', () => {
     expect(sanitized).not.toContain('Org.nr 556523-5454');
     expect(sanitized).toContain('--offer-columns:minmax(0,2.1fr) 92px 136px 86px 86px 152px');
     expect(sanitized).toContain('data-public-offer-cleanup');
+    const cleanupStyle = sanitized.match(/<style data-public-offer-cleanup>([\s\S]*?)<\/style>/i)?.[1] ?? '';
+    expect(cleanupStyle).not.toContain('offer-summary__row--total');
+    expect(cleanupStyle).not.toContain('offer-summary__row');
   });
 
   it('removes promo pages from the downloaded public PDF', () => {
