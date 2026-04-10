@@ -19,7 +19,7 @@ describe('offer document generator', () => {
     lineItems: [
       {
         id: 'line-3',
-        description: 'Gamma Service - Sist i alfabetet men fÃ¶rst i ordningen',
+        description: 'Gamma Service - Sist i alfabetet men först i ordningen',
         quantity: 1,
         unitPrice: 100,
         vatRate: 0.25,
@@ -28,7 +28,7 @@ describe('offer document generator', () => {
       },
       {
         id: 'line-1',
-        description: 'Alpha Service - FÃ¶rskjuten ordning',
+        description: 'Alpha Service - Förskjuten ordning',
         quantity: 1,
         unitPrice: 200,
         vatRate: 0.25,
@@ -65,7 +65,7 @@ describe('offer document generator', () => {
     addressLines: ['Storgatan 1', '111 22 Stockholm'],
   };
 
-  it('keeps line items in supplied order and protects the description column', () => {
+  it('keeps line items in supplied order and uses the approved wider product grid', () => {
     const html = generateFallbackDocument(offer, branding);
 
     const gammaIndex = html.indexOf('Gamma Service');
@@ -75,7 +75,7 @@ describe('offer document generator', () => {
     expect(gammaIndex).toBeGreaterThan(-1);
     expect(alphaIndex).toBeGreaterThan(gammaIndex);
     expect(betaIndex).toBeGreaterThan(alphaIndex);
-    expect(html).toContain('--offer-columns:minmax(220px, 1.85fr)');
+    expect(html).toContain('--offer-columns:minmax(0, 2.1fr) 92px 136px 86px 152px');
   });
 
   it('renders summary below the pricing section and before legal terms even for legacy right placement', () => {
@@ -116,25 +116,25 @@ describe('offer document generator', () => {
 
     const html = generateDocument(template, offer, branding);
 
-    const pricingIndex = html.indexOf('Produkter och tjÃ¤nster');
-    const pricingIndexResolved = Math.max(pricingIndex, html.indexOf('<h2>Produkter och tjänster</h2>'));
+    const pricingIndex = html.indexOf('<section class="offer-section offer-section--pricing">');
     const summaryIndex = html.indexOf('<aside class="offer-summary offer-summary--below">');
     const termsIndex = html.indexOf('<section class="offer-section offer-section--terms">');
 
-    expect(pricingIndexResolved).toBeGreaterThan(-1);
-    expect(summaryIndex).toBeGreaterThan(pricingIndexResolved);
+    expect(pricingIndex).toBeGreaterThan(-1);
+    expect(summaryIndex).toBeGreaterThan(pricingIndex);
     expect(termsIndex).toBeGreaterThan(summaryIndex);
     expect(html).not.toContain('offer-pricing-layout--split');
   });
 
-  it('includes company address details in the footer contact block', () => {
+  it('renders the centered footer with website, responsible and contact details', () => {
     const html = generateFallbackDocument(offer, branding);
 
-    expect(html).toContain('<strong>Soleria</strong>');
-    expect(html).toContain('<span>Org.nr 556123-4567</span>');
-    expect(html).toContain('<span>Storgatan 1</span>');
-    expect(html).toContain('<span>111 22 Stockholm</span>');
-    expect(html).toContain('<span>www.soleria.se</span>');
+    expect(html).toContain('<footer class="offer-shell__footer">');
+    expect(html).toContain('class="offer-shell__footer-icon"');
+    expect(html).toContain('href="https://www.soleria.se"');
+    expect(html).toContain('<span>Ansvarig</span>');
+    expect(html).toContain('<span>Kontakt</span>');
+    expect(html).toContain('<span>hello@soleria.se</span>');
   });
 
   it('re-injects missing sender branding details into legacy generated snapshots', () => {
@@ -160,6 +160,6 @@ describe('offer document generator', () => {
     expect(sanitized).toContain('<p>Org.nr 556123-4567</p>');
     expect(sanitized).toContain('<p>Storgatan 1</p>');
     expect(sanitized).toContain('<p>111 22 Stockholm</p>');
-    expect(sanitized).toContain('<p>www.soleria.se</p>');
+    expect(sanitized).not.toContain('Soleria - Malek');
   });
 });
