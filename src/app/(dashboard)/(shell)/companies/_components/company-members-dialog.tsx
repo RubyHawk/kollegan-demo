@@ -124,26 +124,31 @@ export function CompanyMembersDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent mobileVariant="fullscreen" size="xl" showMobileClose>
+        <DialogContent
+          mobileVariant="fullscreen"
+          size="xl"
+          showMobileClose
+          className="sm:max-h-[96dvh] sm:max-w-[1180px]"
+        >
           <div className="flex min-h-0 flex-1 flex-col">
-            <DialogHeader className="border-b border-[var(--border)] pr-16">
+            <DialogHeader className="border-b border-[var(--border)] pr-16 sm:gap-1 sm:pb-3">
               <DialogTitle className="text-xl">Koppla användare till {companyName}</DialogTitle>
-              <DialogDescription className="max-w-3xl">
+              <DialogDescription className="max-w-2xl sm:leading-5">
                 Lägg till befintliga användare eller skapa nya konton direkt i samma flöde. Högerkolumnen visar
                 aktuella kopplingar utan extra scrollande listor inuti formuläret.
               </DialogDescription>
             </DialogHeader>
 
-            <ModalBody>
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
-                <ModalSection tone="card">
+            <ModalBody className="sm:py-4">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.88fr)]">
+                <ModalSection tone="card" className="sm:space-y-3.5 sm:p-4">
                   <div className="flex items-start gap-3">
                     <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
                       <Buildings size={18} weight="duotone" />
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-[var(--text-primary)]">Ny koppling</p>
-                      <p className="text-sm leading-6 text-[var(--text-muted)]">
+                      <p className="text-sm leading-5 text-[var(--text-muted)]">
                         Koppla ett befintligt konto eller skapa ett nytt direkt med rätt roll från start.
                       </p>
                     </div>
@@ -159,7 +164,7 @@ export function CompanyMembersDialog({
                   </div>
 
                   {mode === 'existing' ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3.5">
                       <div>
                         <label className={labelCls}>Användare</label>
                         <Select value={userId} onValueChange={setUserId}>
@@ -209,8 +214,8 @@ export function CompanyMembersDialog({
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-3.5">
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <div>
                           <label className={labelCls}>Förnamn</label>
                           <input
@@ -298,7 +303,7 @@ export function CompanyMembersDialog({
                   )}
                 </ModalSection>
 
-                <ModalSection tone="card" className="overflow-hidden">
+                <ModalSection tone="card" className="overflow-hidden sm:space-y-3.5 sm:p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
@@ -306,7 +311,7 @@ export function CompanyMembersDialog({
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm font-semibold text-[var(--text-primary)]">Kopplade användare</p>
-                        <p className="text-sm leading-6 text-[var(--text-muted)]">
+                        <p className="text-sm leading-5 text-[var(--text-muted)]">
                           Nuvarande teammedlemmar med tillgång till företagets mallar, produkter och branding.
                         </p>
                       </div>
@@ -330,7 +335,7 @@ export function CompanyMembersDialog({
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                       {members.map((member) => {
                         const name = formatUserName(member.user);
                         const isAdmin = member.role === 'admin';
@@ -378,7 +383,7 @@ export function CompanyMembersDialog({
               </div>
             </ModalBody>
 
-            <ModalActionFooter>
+            <ModalActionFooter className="sm:pb-4 sm:pt-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Stäng
               </Button>
