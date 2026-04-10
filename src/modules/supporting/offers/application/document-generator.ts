@@ -48,6 +48,31 @@ function fmtSEKPrecise(n: number): string {
   }).format(n);
 }
 
+function fmtQuantity(n: number): string {
+  return new Intl.NumberFormat('sv-SE', {
+    minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
+    maximumFractionDigits: Number.isInteger(n) ? 0 : 2,
+  }).format(n);
+}
+
+function formatLineItemUnitHtml(unit: string): string {
+  const normalized = unit.trim().toLocaleLowerCase('sv-SE');
+  if (!normalized) return '';
+  if (['m2', 'm^2', 'm²', 'kvm'].includes(normalized)) return 'm&sup2;';
+  if (['m3', 'm^3', 'm³'].includes(normalized)) return 'm&sup3;';
+  return escapeHtml(unit.trim());
+}
+
+function formatOfferLineItemQuantityHtml(item: OfferLineItem): string {
+  const quantity = fmtQuantity(item.quantity);
+  const maybeUnit = typeof (item as OfferLineItem & { unit?: unknown }).unit === 'string'
+    ? String((item as OfferLineItem & { unit?: unknown }).unit).trim()
+    : '';
+
+  if (!maybeUnit) return quantity;
+  return `${quantity} ${formatLineItemUnitHtml(maybeUnit)}`;
+}
+
 function buildOfferSummary(offer: Offer) {
   return summarizePersistedOfferPricing(offer);
 }
@@ -356,12 +381,12 @@ function buildStructuredLineItems(items: OfferLineItem[], mode: Offer['priceDisp
   const showVatColumn = pricing.hasVat;
   const showDiscountColumn = items.some((item) => (item.discount ?? 0) > 0);
   const gridTemplate = [
-    'minmax(0, 1.9fr)',
-    '44px',
-    '86px',
-    ...(showDiscountColumn ? ['56px'] : []),
-    ...(showVatColumn ? ['56px'] : []),
+    'minmax(0, 2.1fr)',
     '92px',
+    '136px',
+    ...(showDiscountColumn ? ['86px'] : []),
+    ...(showVatColumn ? ['86px'] : []),
+    '152px',
   ].join(' ');
 
   const headerCells = [
@@ -383,7 +408,7 @@ function buildStructuredLineItems(items: OfferLineItem[], mode: Offer['priceDisp
           <div class="offer-item-row__title">${escapeHtml(description.title)}</div>
           ${description.detail ? `<div class="offer-item-row__detail">${escapeHtml(description.detail)}</div>` : ''}
         </div>
-        <div class="offer-item-row__value">${item.quantity}</div>
+        <div class="offer-item-row__value">${formatOfferLineItemQuantityHtml(item)}</div>
         <div class="offer-item-row__value">${fmtSEKPrecise(displayUnitPrice)}</div>
         ${showDiscountColumn ? `<div class="offer-item-row__value">${item.discount ? `${item.discount}%` : '—'}</div>` : ''}
         ${showVatColumn ? `<div class="offer-item-row__value">${formatVatRate(item.vatRate)}</div>` : ''}
@@ -399,7 +424,7 @@ function buildStructuredLineItems(items: OfferLineItem[], mode: Offer['priceDisp
       ? `${Math.round(normalizeVatRate(item.vatRate) * 100)}%`
       : 'Momsfri';
     const mobileRows = [
-      `<div class="offer-item-card__metric"><dt>Antal</dt><dd>${item.quantity}</dd></div>`,
+      `<div class="offer-item-card__metric"><dt>Antal</dt><dd>${formatOfferLineItemQuantityHtml(item)}</dd></div>`,
       `<div class="offer-item-card__metric"><dt>&Aring;-pris</dt><dd>${fmtSEKPrecise(displayUnitPrice)}</dd></div>`,
       ...(showDiscountColumn ? [`<div class="offer-item-card__metric"><dt>Rabatt</dt><dd>${item.discount ? `${item.discount}%` : '—'}</dd></div>`] : []),
       ...(showVatColumn ? [`<div class="offer-item-card__metric"><dt>Moms</dt><dd>${mobileVatLabel}</dd></div>`] : []),
@@ -513,231 +538,224 @@ function fixOfferHtmlText(html: string): string {
     .replace(/ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â/g, '\u2014');
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function upsertStyleTag(html: string, marker: string, styleTag: string): string {
+  const existingPattern = new RegExp(`<style[^>]*${escapeRegExp(marker)}[^>]*>[\\s\\S]*?<\\/style>`, 'i');
+  if (existingPattern.test(html)) {
+    return html.replace(existingPattern, styleTag);
+  }
+  if (html.includes('</head>')) return html.replace('</head>', `${styleTag}\n</head>`);
+  return `${styleTag}\n${html}`;
+}
+
 function injectDocumentPatchStyles(html: string): string {
   const patchStyles = `
 <style data-offer-document-patch>
-  @media screen {
-    .page-content--document {
-      min-height: 900px !important;
-    }
-    .offer-shell {
-      gap: 24px !important;
-    }
-    .offer-section--terms {
-      margin-top: 12px !important;
-    }
-    .offer-shell__footer {
-      margin-top: 14px !important;
-    }
-  }
   body {
     font-family: "Aptos", "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
-    color: #0f172a !important;
+    color: #1f335b !important;
   }
   .page-content--document {
-    padding: 42px 46px 36px !important;
-    background:
-      linear-gradient(180deg, rgba(248, 251, 255, 0.92) 0px, rgba(255, 255, 255, 0) 180px),
-      #ffffff !important;
+    min-height: 960px !important;
+    padding: 52px 52px 44px !important;
+    background: #ffffff !important;
   }
   .offer-shell {
-    gap: 26px !important;
-    color: #0f172a !important;
+    gap: 28px !important;
+    color: #1f335b !important;
   }
   .offer-shell__header {
-    gap: 28px !important;
-    align-items: stretch !important;
-    padding-bottom: 20px !important;
-    border-bottom: 1px solid #dbe4ee !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.9fr) !important;
+    gap: 36px !important;
+    align-items: center !important;
+    padding-bottom: 30px !important;
+    border-bottom: 2px solid #dbe5f1 !important;
   }
   .offer-shell__sender {
+    gap: 18px !important;
     align-items: flex-start !important;
-    gap: 14px !important;
   }
   .offer-shell__logo {
-    width: 58px !important;
-    height: 58px !important;
-    border-radius: 14px !important;
-  }
-  .offer-shell__meta {
-    align-self: start !important;
-    justify-items: stretch !important;
-    text-align: left !important;
-    padding: 16px 18px !important;
-    border: 1px solid #dbe4ee !important;
-    border-radius: 20px !important;
-    background: linear-gradient(180deg, #fbfdff 0%, #f3f8ff 100%) !important;
-    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06) !important;
-  }
-  .offer-shell__meta dl {
-    gap: 10px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-  .offer-shell__meta dl div {
-    grid-template-columns: minmax(104px, max-content) minmax(0, 1fr) !important;
-    align-items: center !important;
-    column-gap: 12px !important;
-  }
-  .offer-shell__meta dt {
-    justify-self: start !important;
-    color: #64748b !important;
-  }
-  .offer-shell__meta dd {
-    justify-self: end !important;
-    text-align: right !important;
-    white-space: normal !important;
-    overflow-wrap: anywhere !important;
-  }
-  .offer-shell__status {
-    justify-self: end !important;
-    margin: 0 0 6px auto !important;
-    background: linear-gradient(180deg, #eef3ff 0%, #e2ebff 100%) !important;
-    color: #1e3a8a !important;
-    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.12) !important;
+    width: 92px !important;
+    height: 92px !important;
+    border-radius: 24px !important;
+    object-fit: cover !important;
+    box-shadow: 0 10px 28px rgba(142, 169, 205, 0.22) !important;
   }
   .offer-shell__sender-copy {
-    gap: 4px !important;
-    color: #475569 !important;
-    overflow-wrap: anywhere !important;
+    display: grid !important;
+    gap: 6px !important;
+    color: #111827 !important;
+    font-size: 15px !important;
+    line-height: 1.38 !important;
+  }
+  .offer-shell__sender-copy p {
+    margin: 0 !important;
   }
   .offer-shell__sender-name {
-    color: #0f172a !important;
-    font-size: 15px !important;
+    margin-bottom: 8px !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #1f335b !important;
+  }
+  .offer-shell__meta {
+    display: grid !important;
+    justify-items: stretch !important;
+    text-align: center !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .offer-shell__status {
+    display: none !important;
+  }
+  .offer-shell__meta dl {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  .offer-shell__meta dl div {
+    display: grid !important;
+    gap: 8px !important;
+    padding: 0 18px !important;
+    border-left: 1px solid #dbe5f1 !important;
+  }
+  .offer-shell__meta dl div:first-child {
+    border-left: none !important;
+    padding-left: 0 !important;
+  }
+  .offer-shell__meta dl div:last-child {
+    padding-right: 0 !important;
+  }
+  .offer-shell__meta dt {
+    margin: 0 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    color: #657b9c !important;
+  }
+  .offer-shell__meta dd {
+    margin: 0 !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    color: #1f335b !important;
+    white-space: nowrap !important;
   }
   .offer-shell__topline {
+    display: grid !important;
     grid-template-columns: minmax(0, 1fr) minmax(220px, 280px) !important;
     gap: 28px !important;
-    align-items: start !important;
-    border-bottom: 0 !important;
+    align-items: end !important;
     padding-bottom: 0 !important;
+    border-bottom: 0 !important;
+  }
+  .offer-shell__eyebrow,
+  .offer-shell__lead,
+  .offer-shell__customer-label {
+    display: none !important;
   }
   .offer-shell__topline h1 {
-    font-size: 36px !important;
-    line-height: 1.06 !important;
-    letter-spacing: -0.035em !important;
     margin: 0 !important;
-    max-width: 12ch !important;
-    text-wrap: balance !important;
-  }
-  .offer-shell__eyebrow {
-    margin: 0 0 8px 0 !important;
-    font-size: 11px !important;
-    font-weight: 800 !important;
-    letter-spacing: 0.14em !important;
-    text-transform: uppercase !important;
-    color: #64748b !important;
-  }
-  .offer-shell__lead {
-    margin: 10px 0 0 0 !important;
-    max-width: 44ch !important;
-    font-size: 13px !important;
-    line-height: 1.65 !important;
-    color: #475569 !important;
+    font-family: "Times New Roman", Times, serif !important;
+    font-size: 76px !important;
+    font-weight: 700 !important;
+    line-height: 0.95 !important;
+    letter-spacing: -0.03em !important;
+    color: #1e3158 !important;
   }
   .offer-shell__customer-card {
     display: grid !important;
-    gap: 6px !important;
-    padding: 16px 18px !important;
-    border: 1px solid #dbe4ee !important;
-    border-radius: 18px !important;
-    background: #ffffff !important;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05) !important;
+    gap: 10px !important;
     min-width: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-align: right !important;
+    justify-self: end !important;
+    align-self: center !important;
   }
   .offer-shell__customer-card p {
     margin: 0 !important;
-    overflow-wrap: anywhere !important;
-  }
-  .offer-shell__customer-label {
-    font-size: 11px !important;
-    font-weight: 800 !important;
-    letter-spacing: 0.12em !important;
-    text-transform: uppercase !important;
-    color: #64748b !important;
   }
   .offer-shell__customer-primary {
-    font-size: 16px !important;
-    line-height: 1.35 !important;
+    font-size: 18px !important;
+    line-height: 1.2 !important;
     font-weight: 700 !important;
-    color: #0f172a !important;
+    color: #1f335b !important;
   }
   .offer-shell__customer-secondary {
     font-size: 13px !important;
-    line-height: 1.6 !important;
-    color: #475569 !important;
+    line-height: 1.4 !important;
+    color: #334b70 !important;
   }
-  .offer-section h2,
-  .offer-section h3 {
-    letter-spacing: 0.09em !important;
-    color: #334155 !important;
-  }
-  .offer-section p {
-    color: #334155 !important;
+  .offer-table-header {
+    display: none !important;
   }
   .offer-pricing-layout {
     display: block !important;
   }
-  .offer-items__table {
-    border-radius: 20px !important;
-    border-color: #d7e3f1 !important;
-    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.04) !important;
-  }
-  .offer-items__head {
-    gap: 16px !important;
-    padding: 14px 18px !important;
-    background: linear-gradient(180deg, #f8fbff 0%, #edf4fc 100%) !important;
-    border-bottom-color: #d7e3f1 !important;
-    font-size: 10.5px !important;
-  }
-  .offer-item-row {
-    gap: 16px !important;
-    padding: 18px !important;
-  }
-  .offer-item-row__title,
-  .offer-item-row__detail,
-  .offer-item-row__value {
-    overflow-wrap: anywhere !important;
-  }
-  .offer-item-row__title {
-    font-size: 15px !important;
-    line-height: 1.36 !important;
-  }
-  .offer-item-row__detail {
-    font-size: 12.5px !important;
-    line-height: 1.62 !important;
-  }
-  .offer-item-row__value {
-    font-size: 13.5px !important;
-    font-variant-numeric: tabular-nums !important;
-  }
   .offer-summary {
-    width: 100% !important;
-    max-width: 278px !important;
-    border-radius: 18px !important;
-    border-color: #d7e3f1 !important;
-    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.07) !important;
-    overflow: hidden !important;
+    width: min(380px, 100%) !important;
+    max-width: none !important;
+    margin-left: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    gap: 6px !important;
+    overflow: visible !important;
   }
   .offer-summary--below {
-    width: min(320px, 100%) !important;
-    margin-top: 14px !important;
+    width: min(380px, 100%) !important;
+    margin-top: 26px !important;
+    margin-left: auto !important;
     clear: both !important;
   }
   .offer-summary__row {
-    padding: 12px 16px !important;
-    font-size: 13px !important;
-    line-height: 1.55 !important;
-    border-bottom: 1px solid #e5ecf3 !important;
-  }
-  .offer-summary__row span {
-    font-weight: 600 !important;
-    color: #5b7088 !important;
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 18px !important;
+    padding: 11px 16px !important;
+    background: #f4f7fb !important;
+    color: #1f335b !important;
+    font-size: 14px !important;
+    line-height: 1.35 !important;
+    border-radius: 0 !important;
   }
   .offer-summary__row strong {
-    color: #10233b !important;
+    color: #1f335b !important;
+    font-size: 14px !important;
     font-weight: 700 !important;
+    font-variant-numeric: tabular-nums !important;
     white-space: nowrap !important;
+  }
+  .offer-summary__row--discount {
+    background: #fff1f1 !important;
+    color: #be3d35 !important;
+  }
+  .offer-summary__row--discount::before {
+    content: '' !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 8px !important;
+    bottom: 8px !important;
+    width: 4px !important;
+    border-radius: 999px !important;
+    background: #c83d35 !important;
   }
   .offer-summary__row--subtotal {
     background: linear-gradient(180deg, #f8fbff 0%, #fdfefe 100%) !important;
@@ -758,123 +776,257 @@ function injectDocumentPatchStyles(html: string): string {
     color: #42576f !important;
   }
   .offer-summary__row--total {
-    margin-top: 0 !important;
-    padding: 15px 16px 14px !important;
-    border-top: 1px solid #142742 !important;
-    border-bottom: none !important;
-    background: linear-gradient(135deg, #0f172a 0%, #1d3b7a 100%) !important;
-    color: #f8fafc !important;
+    margin-top: 10px !important;
+    padding: 16px 18px !important;
+    background: #2d4a83 !important;
+    color: #ffffff !important;
   }
   .offer-summary__row--total strong,
   .offer-summary__row--total span {
     color: #ffffff !important;
   }
-  .offer-summary__row--total span {
-    font-size: 12px !important;
+  .offer-summary__total-copy {
+    display: grid !important;
+    gap: 4px !important;
+  }
+  .offer-summary__total-label {
+    font-size: 22px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.02em !important;
-    text-transform: uppercase !important;
+    line-height: 1 !important;
+  }
+  .offer-summary__total-subcopy {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1.1 !important;
   }
   .offer-summary__row--total strong {
-    font-size: 24px !important;
-    letter-spacing: -0.03em !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
   }
-  .offer-section--terms {
-    clear: both !important;
-    gap: 8px !important;
-    padding: 18px 20px !important;
-    border: 1px solid #dbe4ee !important;
-    border-radius: 18px !important;
-    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
-  }
+  .offer-section--terms,
   .offer-section--notes {
     clear: both !important;
   }
-  .offer-shell__footer {
-    grid-template-columns: 1.2fr 1fr 1fr !important;
+  .offer-section--terms {
     gap: 16px !important;
-    padding-top: 16px !important;
-    border-top-color: #dbe4ee !important;
+    margin-top: 28px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+  .offer-section--terms h3,
+  .offer-section--notes h3 {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+    margin: 0 !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    color: #1f335b !important;
+  }
+  .offer-section--terms h3::after,
+  .offer-section--notes h3::after {
+    content: '' !important;
+    flex: 1 1 auto !important;
+    height: 1px !important;
+    background: #dbe5f1 !important;
+  }
+  .offer-section--terms p,
+  .offer-section--notes p,
+  .offer-section--terms li,
+  .offer-section--notes li {
+    font-size: 14px !important;
+    line-height: 1.72 !important;
+    color: #334b70 !important;
+  }
+  .offer-section--terms ul,
+  .offer-section--notes ul {
+    display: grid !important;
+    gap: 12px !important;
+    margin: 0 !important;
+    padding-left: 28px !important;
+  }
+  .offer-section--terms li::marker,
+  .offer-section--notes li::marker {
+    color: #a8b9d4 !important;
+  }
+  .offer-shell__footer {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 28px !important;
+    padding-top: 28px !important;
+    margin-top: 42px !important;
+    border-top: 1px solid #dbe5f1 !important;
   }
   .offer-shell__footer div {
-    gap: 4px !important;
-    font-size: 12.5px !important;
-    overflow-wrap: anywhere !important;
+    display: grid !important;
+    justify-items: center !important;
+    gap: 10px !important;
+    text-align: center !important;
+    color: #334b70 !important;
+    font-size: 14px !important;
+    line-height: 1.35 !important;
   }
   .offer-shell__footer strong {
-    color: #334155 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    color: #1f335b !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+  }
+  .offer-shell__footer-icon {
+    width: 17px !important;
+    height: 17px !important;
+    stroke: currentColor !important;
+    fill: none !important;
+    stroke-width: 16 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    flex: 0 0 17px !important;
+  }
+  .offer-shell__footer a {
+    color: #2563eb !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
   }
   @media (max-width: 640px) {
     .page-content--document {
-      padding: 22px 16px 20px !important;
+      padding: 26px 18px 24px !important;
     }
-    .offer-shell__header {
-      grid-template-columns: minmax(0, 1fr) !important;
-      gap: 14px !important;
-    }
+    .offer-shell__header,
     .offer-shell__topline {
       grid-template-columns: minmax(0, 1fr) !important;
+      gap: 20px !important;
+    }
+    .offer-shell__meta dl {
+      grid-template-columns: 1fr !important;
       gap: 14px !important;
     }
+    .offer-shell__meta dl div {
+      padding: 0 !important;
+      border-left: 0 !important;
+      border-top: 1px solid #dbe5f1 !important;
+      padding-top: 14px !important;
+    }
+    .offer-shell__meta dl div:first-child {
+      border-top: 0 !important;
+      padding-top: 0 !important;
+    }
     .offer-shell__topline h1 {
-      font-size: 28px !important;
-      max-width: none !important;
+      font-size: 54px !important;
     }
-    .offer-summary {
-      max-width: none !important;
+    .offer-shell__customer-card {
+      justify-self: start !important;
+      text-align: left !important;
     }
-    .offer-summary__row--total strong {
-      font-size: 21px !important;
+    .offer-summary,
+    .offer-summary--below {
+      width: 100% !important;
+      margin-top: 18px !important;
     }
     .offer-shell__footer {
       grid-template-columns: 1fr !important;
+      gap: 18px !important;
     }
   }
 </style>`;
 
-  if (html.includes('data-offer-document-patch')) return html;
-  if (html.includes('</head>')) return html.replace('</head>', `${patchStyles}\n</head>`);
-  return `${patchStyles}\n${html}`;
+  return upsertStyleTag(html, 'data-offer-document-patch', patchStyles);
 }
 
 function injectStructuredLineItemStyles(html: string): string {
   if (!html.includes('class="offer-items"')) return html;
-  if (html.includes('data-offer-line-item-patch')) return html;
 
   const lineItemStyles = `
 <style data-offer-line-item-patch>
   .offer-items { display: grid; gap: 18px; }
-  .offer-items__table { display: block; border: 1px solid #dbe4ee; border-radius: 18px; background: #ffffff; overflow: hidden; }
+  .offer-items__table {
+    display: block;
+    border: 1px solid #d4e2f1;
+    border-radius: 28px;
+    background: #ffffff;
+    overflow: hidden;
+    box-shadow: 8px 8px 0 #e8eff8;
+  }
   .offer-items__head,
   .offer-item-row {
     display: grid;
-    grid-template-columns: var(--offer-columns, minmax(0, 1.85fr) 72px 112px 92px 116px);
+    grid-template-columns: var(--offer-columns, minmax(0, 2.1fr) 92px 136px 86px 86px 152px);
     align-items: start;
   }
   .offer-items__head {
-    gap: 18px;
-    padding: 14px 20px;
-    background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
-    border-bottom: 1px solid #dbe4ee;
-    color: #64748b;
-    font-size: 11px;
+    gap: 0;
+    padding: 18px 22px 12px;
+    background: #ffffff;
+    color: #1f335b;
+    font-size: 16px;
     font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
   }
-  .offer-items__head span:first-child { text-align: left; }
-  .offer-items__head span:not(:first-child) { text-align: right; }
+  .offer-items__head span {
+    display: flex;
+    min-height: 46px;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 14px;
+    border-left: 1px solid #dbe5f1;
+  }
+  .offer-items__head span:first-child {
+    justify-content: flex-start;
+    padding-left: 0;
+    border-left: none;
+  }
+  .offer-items__body {
+    border-top: 1px solid #dbe5f1;
+  }
   .offer-item-row {
-    gap: 18px;
-    padding: 20px;
-    border-bottom: 1px solid #eef2f7;
+    gap: 0;
+    padding: 24px 22px 26px;
+    border-bottom: 0;
   }
   .offer-item-row:last-child { border-bottom: none; }
-  .offer-item-row__product { display: grid; gap: 7px; min-width: 0; }
-  .offer-item-row__title { font-size: 16px; line-height: 1.4; font-weight: 700; color: #0f172a; }
-  .offer-item-row__detail { font-size: 13px; line-height: 1.68; color: #64748b; }
-  .offer-item-row__value { text-align: right; font-size: 14px; line-height: 1.5; color: #334155; }
-  .offer-item-row__value--strong { font-weight: 700; color: #0f172a; }
+  .offer-item-row__product {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    padding-right: 18px;
+  }
+  .offer-item-row__title {
+    font-size: 18px;
+    line-height: 1.22;
+    font-weight: 700;
+    color: #1f335b;
+  }
+  .offer-item-row__detail {
+    max-width: 30ch;
+    font-size: 12px;
+    line-height: 1.46;
+    color: #3d557b;
+  }
+  .offer-item-row__value {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 8px 14px 0;
+    text-align: right;
+    font-size: 15px;
+    line-height: 1.2;
+    font-weight: 700;
+    color: #1f335b;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .offer-item-row__value--strong {
+    font-size: 17px;
+    font-weight: 800;
+  }
   .offer-items__cards { display: none; }
   .offer-item-card { border: 1px solid #dbe4ee; border-radius: 18px; background: #ffffff; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
   .offer-item-card__top { display: grid; gap: 6px; padding: 15px 16px 14px; background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%); border-bottom: 1px solid #eef2f7; }
@@ -896,8 +1048,7 @@ function injectStructuredLineItemStyles(html: string): string {
   }
 </style>`;
 
-  if (html.includes('</head>')) return html.replace('</head>', `${lineItemStyles}\n</head>`);
-  return `${lineItemStyles}\n${html}`;
+  return upsertStyleTag(html, 'data-offer-line-item-patch', lineItemStyles);
 }
 
 function injectSenderBranding(
@@ -908,15 +1059,13 @@ function injectSenderBranding(
 
   const companyName = branding.companyName?.trim() || branding.senderName?.trim() || '';
   const organizationNumber = branding.organizationNumber?.trim() || '';
-  const website = branding.website?.trim()?.replace(/^https?:\/\//, '') || '';
-  const addressLines = branding.addressLines ?? [];
+  const addressLines = getCompactBrandingAddressLines(branding.addressLines ?? []);
   const logoUrl = branding.logoUrl?.trim() || '';
 
   const detailLines = [
     companyName ? `<p class="offer-shell__sender-name">${escapeHtml(companyName)}</p>` : '',
-    organizationNumber ? `<p>Org.nr ${escapeHtml(organizationNumber)}</p>` : '',
     ...addressLines.map((line) => `<p>${escapeHtml(line)}</p>`),
-    website ? `<p>${escapeHtml(website)}</p>` : '',
+    organizationNumber ? `<p>Org.nr ${escapeHtml(organizationNumber)}</p>` : '',
   ].filter(Boolean);
 
   let nextHtml = html;
@@ -1143,7 +1292,7 @@ function extractLegacyDocumentIntroHtml(
   return stripLegacyStructuredIntroHtml(nodeToHtml({ type: 'doc', content: introNodes }, introReplacements));
 }
 
-function renderDocumentSummary(offer: Offer): string {
+export function renderPublicOfferSummaryHtml(offer: Offer): string {
   const summary = buildOfferSummary(offer);
   const subtotalBeforeDiscount = summary.discountAmount > 0
     ? offer.totalExVat + summary.discountAmount
@@ -1152,7 +1301,7 @@ function renderDocumentSummary(offer: Offer): string {
   const discountRow = summary.discountAmount > 0 ? `
     <div class="offer-summary__row offer-summary__row--discount">
       <span>Rabatt</span>
-      <strong>− ${fmtSEKPrecise(summary.discountAmount)}</strong>
+      <strong>- ${fmtSEKPrecise(summary.discountAmount).replace(/^-+\s*/, '')}</strong>
     </div>` : '';
   const vatRow = summary.hasVat ? `
     <div class="offer-summary__row offer-summary__row--vat">
@@ -1169,14 +1318,71 @@ function renderDocumentSummary(offer: Offer): string {
       ${discountRow}
       ${vatRow}
       <div class="offer-summary__row offer-summary__row--total">
-        <span>${summary.totalLabel}</span>
+        <span class="offer-summary__total-copy">
+          <span class="offer-summary__total-label">Totalsumma</span>
+          <span class="offer-summary__total-subcopy">inkl. moms</span>
+        </span>
         <strong>${fmtSEKPrecise(summary.totalAmount)}</strong>
       </div>
     </aside>`;
 }
 
+function renderFooterIcon(kind: 'website' | 'user' | 'mail'): string {
+  const pathByKind = {
+    website: '<circle cx="128" cy="128" r="84"></circle><path d="M44 96h168"></path><path d="M44 160h168"></path><path d="M128 44c22 22 36 52 36 84s-14 62-36 84c-22-22-36-52-36-84s14-62 36-84z"></path>',
+    user: '<circle cx="128" cy="96" r="36"></circle><path d="M60 204c12-34 40-52 68-52s56 18 68 52"></path>',
+    mail: '<rect x="44" y="68" width="168" height="120" rx="18"></rect><path d="m56 84 72 56 72-56"></path>',
+  } as const;
+
+  return `
+    <svg class="offer-shell__footer-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false">
+      ${pathByKind[kind]}
+    </svg>`;
+}
+
+export function renderPublicOfferFooterHtml(branding?: OfferBrandingProfile): string {
+  const companyName = branding?.companyName?.trim() || branding?.senderName?.trim() || 'Soleria';
+  const website = branding?.website?.trim() || '';
+  const responsibleName = branding?.responsibleName?.trim() || branding?.senderName?.trim() || '-';
+  const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '-';
+  const websiteHref = website ? sanitizeUrl(/^https?:\/\//i.test(website) ? website : `https://${website}`) : '';
+  const websiteLabel = website
+    ? escapeHtml(website.replace(/^https?:\/\//i, '').replace(/\/+$/, ''))
+    : '-';
+
+  return `
+    <footer class="offer-shell__footer">
+      <div>
+        <strong>${renderFooterIcon('website')}<span>${escapeHtml(companyName)}</span></strong>
+        ${websiteHref ? `<a href="${websiteHref}" target="_blank" rel="noreferrer noopener">${websiteLabel}</a>` : '<span>-</span>'}
+      </div>
+      <div>
+        <strong>${renderFooterIcon('user')}<span>Ansvarig</span></strong>
+        <span>${escapeHtml(responsibleName)}</span>
+      </div>
+      <div>
+        <strong>${renderFooterIcon('mail')}<span>Kontakt</span></strong>
+        <span>${escapeHtml(responsibleEmail)}</span>
+      </div>
+    </footer>`;
+}
+
 function normalizeSummaryPlacement(): 'below' {
   return 'below';
+}
+
+function getCompactBrandingAddressLines(addressLines: string[] = []): string[] {
+  const seen = new Set<string>();
+  return addressLines
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .filter((line) => !/^(sverige|sweden)$/i.test(line))
+    .filter((line) => {
+      const key = line.toLocaleLowerCase('sv-SE');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 function renderStructuredDocumentPage(
@@ -1210,33 +1416,21 @@ function renderStructuredDocumentPage(
   const companyName = branding?.companyName?.trim() || branding?.senderName?.trim() || 'Avs\u00e4ndare';
   const responsibleName = branding?.responsibleName?.trim() || branding?.senderName?.trim() || '';
   const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '';
-  const senderWebsite = branding?.website?.trim()?.replace(/^https?:\/\//, '') || '';
   const organizationNumber = branding?.organizationNumber?.trim() || '';
   const logoUrl = branding?.logoUrl?.trim() || '';
-  const statusLabel = getOfferStatusLabel(offer.status);
   const customerLines = buildCustomerLines(offer);
-  const addressLines = branding?.addressLines ?? [];
+  const addressLines = getCompactBrandingAddressLines(branding?.addressLines ?? []);
   const isLegacyDocumentPage = !page.kind && !page.document;
   const customerCardHtml = settings.showCustomerBlock && customerLines.length > 0
     ? `<aside class="offer-shell__customer-card">
-        <p class="offer-shell__customer-label">Offert till</p>
         <p class="offer-shell__customer-primary">${escapeHtml(customerLines[0] ?? '')}</p>
         ${customerLines.slice(1).map((line) => `<p class="offer-shell__customer-secondary">${escapeHtml(line)}</p>`).join('')}
       </aside>`
     : '';
   const headerSenderDetailsHtml = [
     `<p class="offer-shell__sender-name">${escapeHtml(companyName)}</p>`,
-    organizationNumber ? `<p>Org.nr ${escapeHtml(organizationNumber)}</p>` : '',
     ...addressLines.map((line) => `<p>${escapeHtml(line)}</p>`),
-    senderWebsite ? `<p>${escapeHtml(senderWebsite)}</p>` : '',
-  ]
-    .filter(Boolean)
-    .join('');
-  const footerCompanyDetailsHtml = [
-    `<strong>${escapeHtml(companyName)}</strong>`,
-    organizationNumber ? `<span>Org.nr ${escapeHtml(organizationNumber)}</span>` : '',
-    ...addressLines.map((line) => `<span>${escapeHtml(line)}</span>`),
-    senderWebsite ? `<span>${escapeHtml(senderWebsite)}</span>` : '',
+    organizationNumber ? `<p>Org.nr ${escapeHtml(organizationNumber)}</p>` : '',
   ]
     .filter(Boolean)
     .join('');
@@ -1268,12 +1462,9 @@ function renderStructuredDocumentPage(
     .length > 0;
   const hasIntroContent = settings.showIntro && (hasIntroVisualContent || hasIntroTextContent);
   const tableHtml = buildStructuredLineItems(offer.lineItems, offer.priceDisplayMode);
-  const summaryHtml = renderDocumentSummary(offer);
+  const summaryHtml = renderPublicOfferSummaryHtml(offer);
   const pricingSectionHtml = settings.showLineItems
-    ? `<section class="offer-section">
-        <div class="offer-table-header">
-          <h2>Produkter och tj\u00e4nster</h2>
-        </div>
+    ? `<section class="offer-section offer-section--pricing">
         <div class="offer-pricing-layout">
           <div class="offer-pricing-layout__items">
             ${tableHtml}
@@ -1300,7 +1491,6 @@ function renderStructuredDocumentPage(
                 </div>` : ''}
             </div>
             <div class="offer-shell__meta">
-              <p class="offer-shell__status offer-shell__status--${offer.status}">${escapeHtml(statusLabel)}</p>
               <dl>
                 <div><dt>Offertnummer</dt><dd>${offerNumber}</dd></div>
                 <div><dt>Offertdatum</dt><dd>${replacements['{{createdDate}}']}</dd></div>
@@ -1311,9 +1501,7 @@ function renderStructuredDocumentPage(
 
           <section class="offer-shell__topline${isLegacyDocumentPage ? ' offer-shell__topline--legacy' : ''}">
             <div>
-              <p class="offer-shell__eyebrow">Offert</p>
               <h1>${escapeHtml(offer.title)}</h1>
-              <p class="offer-shell__lead">Tydlig prisbild, giltighet och villkor samlade i en offert som \u00e4r enkel att granska och godk\u00e4nna.</p>
             </div>
             ${customerCardHtml}
           </section>
@@ -1328,12 +1516,14 @@ function renderStructuredDocumentPage(
               <p>${renderRichPlainText(termsBody)}</p>
             </section>` : ''}
           ${settings.showNotes ? noteHtml : ''}
-          ${settings.showFooter ? `
-            <footer class="offer-shell__footer">
-              <div>${footerCompanyDetailsHtml || `<strong>${escapeHtml(companyName)}</strong><span>-</span>`}</div>
-              <div><strong>Ansvarig</strong><span>${escapeHtml(responsibleName || responsibleEmail || '-')}</span></div>
-              <div><strong>Kontakt</strong><span>${escapeHtml(responsibleEmail || '-')}</span></div>
-            </footer>` : ''}
+          ${settings.showFooter ? renderPublicOfferFooterHtml({
+            ...branding,
+            companyName,
+            senderName: branding?.senderName ?? companyName,
+            responsibleName,
+            responsibleEmail,
+            website: branding?.website,
+          }) : ''}
         </section>
       </div>
     </div>`;
@@ -1350,33 +1540,41 @@ function renderStructuredDocumentPage(
 export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingProfile): string {
   const offerNumberStr = getOfferNumberString(offer);
   const fallbackLineItemsHtml = buildStructuredLineItems(offer.lineItems, offer.priceDisplayMode);
-  const fallbackSummaryHtml = renderDocumentSummary(offer);
+  const fallbackSummaryHtml = renderPublicOfferSummaryHtml(offer);
   const companyName = branding?.companyName?.trim() || branding?.senderName?.trim() || 'Avs\u00e4ndare';
   const responsibleName = branding?.responsibleName?.trim() || branding?.senderName?.trim() || '';
   const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '';
-  const senderWebsite = branding?.website?.trim()?.replace(/^https?:\/\//, '') || '';
   const organizationNumber = branding?.organizationNumber?.trim() || '';
   const logoUrl = branding?.logoUrl?.trim() || '';
-  const statusLabel = getOfferStatusLabel(offer.status);
   const customerLines = buildCustomerLines(offer);
-
-  const fallbackAddressLines = branding?.addressLines ?? [];
+  const fallbackAddressLines = getCompactBrandingAddressLines(branding?.addressLines ?? []);
   const headerSenderBlockHtml = [
-    `<p style="margin:0;font-weight:700;color:#0f172a;">${escapeHtml(companyName)}</p>`,
-    organizationNumber ? `<p style="margin:2px 0 0 0;color:#64748b;">Org.nr ${escapeHtml(organizationNumber)}</p>` : '',
-    ...fallbackAddressLines.map((line) => `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(line)}</p>`),
-    senderWebsite ? `<p style="margin:2px 0 0 0;color:#64748b;">${escapeHtml(senderWebsite)}</p>` : '',
+    `<p class="offer-shell__sender-name">${escapeHtml(companyName)}</p>`,
+    ...fallbackAddressLines.map((line) => `<p>${escapeHtml(line)}</p>`),
+    organizationNumber ? `<p>Org.nr ${escapeHtml(organizationNumber)}</p>` : '',
   ]
     .filter(Boolean)
     .join('');
-  const fallbackFooterCompanyHtml = [
-    `<strong>${escapeHtml(companyName)}</strong>`,
-    organizationNumber ? `<span>${escapeHtml(`Org.nr ${organizationNumber}`)}</span>` : '',
-    ...fallbackAddressLines.map((line) => `<span>${escapeHtml(line)}</span>`),
-    senderWebsite ? `<span>${escapeHtml(senderWebsite)}</span>` : '',
-  ]
-    .filter(Boolean)
-    .join('');
+  const customerCardHtml = customerLines.length > 0
+    ? `<aside class="offer-shell__customer-card">
+        <p class="offer-shell__customer-primary">${escapeHtml(customerLines[0] ?? '')}</p>
+        ${customerLines.slice(1).map((line) => `<p class="offer-shell__customer-secondary">${escapeHtml(line)}</p>`).join('')}
+      </aside>`
+    : '';
+  const noteHtml = offer.notes
+    ? `<section class="offer-section offer-section--notes">
+        <h3>${DEFAULT_DOCUMENT_NOTES_HEADING}</h3>
+        <p>${renderRichPlainText(offer.notes)}</p>
+      </section>`
+    : '';
+  const footerHtml = renderPublicOfferFooterHtml({
+    ...branding,
+    companyName,
+    senderName: branding?.senderName ?? companyName,
+    responsibleName,
+    responsibleEmail,
+    website: branding?.website,
+  });
 
   const html = `<!DOCTYPE html>
 <html lang="sv">
@@ -1461,64 +1659,47 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
 </head>
 <body>
   <div class="doc-wrapper">
-    ${(logoUrl || companyName || responsibleName || responsibleEmail || senderWebsite || fallbackAddressLines.length > 0) ? `
-    <div style="display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:28px;">
-      <div style="display:flex;gap:14px;align-items:flex-start;">
-        ${logoUrl ? `<img src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(companyName)}" style="width:54px;height:54px;object-fit:contain;border-radius:12px;"/>` : ''}
-        <div>${headerSenderBlockHtml}</div>
+    <div class="page-block page-block--document" data-page="1">
+      <div class="page-content page-content--document">
+        <section class="offer-shell">
+          <header class="offer-shell__header">
+            <div class="offer-shell__sender">
+              ${logoUrl ? `<img class="offer-shell__logo" src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(companyName)}" />` : ''}
+              <div class="offer-shell__sender-copy">
+                ${headerSenderBlockHtml}
+              </div>
+            </div>
+            <div class="offer-shell__meta">
+              <dl>
+                <div><dt>Offertnummer</dt><dd>${escapeHtml(offerNumberStr)}</dd></div>
+                <div><dt>Offertdatum</dt><dd>${fmtDate(offer.createdAt)}</dd></div>
+                <div><dt>Giltig till</dt><dd>${fmtDate(offer.validUntil)}</dd></div>
+              </dl>
+            </div>
+          </header>
+
+          <section class="offer-shell__topline">
+            <div>
+              <h1>${escapeHtml(offer.title)}</h1>
+            </div>
+            ${customerCardHtml}
+          </section>
+
+          <section class="offer-section offer-section--pricing">
+            <div class="offer-pricing-layout">
+              <div class="offer-pricing-layout__items">
+                ${fallbackLineItemsHtml}
+              </div>
+            </div>
+          </section>
+
+          ${fallbackSummaryHtml}
+          ${noteHtml}
+          ${footerHtml}
+          ${SIGNATURE_FIELD_HTML}
+        </section>
       </div>
-      <div style="min-width:220px;text-align:right;display:grid;gap:8px;">
-        <p style="margin:0 0 4px auto;display:inline-flex;align-items:center;justify-content:center;padding:6px 12px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:700;">${escapeHtml(statusLabel)}</p>
-        <div style="display:grid;gap:6px;">
-          <p style="margin:0;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Offertnummer</p>
-              <p style="margin:0;color:#0f172a;font-weight:700;">${escapeHtml(offerNumberStr)}</p>
-          <p style="margin:4px 0 0 0;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Offertdatum</p>
-          <p style="margin:0;color:#0f172a;font-weight:600;">${fmtDate(offer.createdAt)}</p>
-          <p style="margin:4px 0 0 0;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">Giltig till</p>
-          <p style="margin:0;color:#0f172a;font-weight:600;">${fmtDate(offer.validUntil)}</p>
-        </div>
-      </div>
-    </div>` : ''}
-    <h1 style="font-size:1.8em;font-weight:700;margin:0 0 6px 0;">${escapeHtml(offer.title)}</h1>
-          <p style="color:#64748b;font-size:13px;margin:0 0 32px 0;">Offert ${escapeHtml(offerNumberStr)} &middot; Giltig till ${fmtDate(offer.validUntil)}</p>
-
-    <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;margin:0 0 4px 0;">Till</p>
-    ${customerLines.map((line: string, index: number) => `<p style="margin:0 0 2px 0;${index === 0 ? 'font-weight:600;color:#0f172a;' : 'color:#64748b;'}">${escapeHtml(line)}</p>`).join('')}
-    <div style="height:30px;"></div>
-
-    <hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 24px 0;"/>
-
-    <section class="offer-section">
-      <div class="offer-table-header">
-        <h2>Produkter och tj\u00e4nster</h2>
-      </div>
-      ${fallbackLineItemsHtml}
-    </section>
-
-    ${fallbackSummaryHtml}
-
-    ${offer.notes ? `
-    <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;"/>
-    <p style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;margin:0 0 8px 0;">Anteckningar</p>
-    <p style="color:#334155;margin:0;">${escapeHtml(offer.notes)}</p>` : ''}
-
-    ${(fallbackFooterCompanyHtml || responsibleName || responsibleEmail) ? `
-    <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;"/>
-    <div style="display:grid;grid-template-columns:minmax(0,1.35fr) repeat(2,minmax(0,1fr));gap:16px;">
-      <div style="display:grid;gap:4px;font-size:12px;color:#475569;">
-        ${fallbackFooterCompanyHtml || '<strong>Företag</strong><span>—</span>'}
-      </div>
-      <div style="display:grid;gap:4px;font-size:12px;color:#475569;">
-        <strong>Ansvarig</strong>
-        <span>${escapeHtml(responsibleName || responsibleEmail || '—')}</span>
-      </div>
-      <div style="display:grid;gap:4px;font-size:12px;color:#475569;">
-        <strong>Kontakt</strong>
-        <span>${escapeHtml(responsibleEmail || '—')}</span>
-      </div>
-    </div>` : ''}
-
-    ${SIGNATURE_FIELD_HTML}
+    </div>
   </div>
 </body>
 </html>`;
