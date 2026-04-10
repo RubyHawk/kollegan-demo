@@ -4,7 +4,11 @@ import { removeElement } from 'domutils';
 import { isTag, isText, type AnyNode, type ChildNode, type Element } from 'domhandler';
 import type { Offer } from '../domain/offer.entity';
 import type { OfferBrandingProfile } from './company-branding';
-import { sanitizeGeneratedOfferDocument } from './document-generator';
+import {
+  renderPublicOfferFooterHtml,
+  renderPublicOfferSummaryHtml,
+  sanitizeGeneratedOfferDocument,
+} from './document-generator';
 
 const PARSE_OPTIONS = {
   decodeEntities: false,
@@ -167,13 +171,13 @@ function upsertStyleDeclaration(style: string | undefined, property: string, val
 
 function resolveCompactGridTemplate(columnCount: number): string | null {
   if (columnCount >= 6) {
-    return 'minmax(0,1.9fr) 44px 86px 56px 56px 92px';
+    return 'minmax(0,2.1fr) 92px 136px 86px 86px 152px';
   }
   if (columnCount === 5) {
-    return 'minmax(0,1.95fr) 44px 86px 56px 92px';
+    return 'minmax(0,2.1fr) 92px 136px 86px 152px';
   }
   if (columnCount === 4) {
-    return 'minmax(0,2.1fr) 44px 88px 96px';
+    return 'minmax(0,2.15fr) 96px 140px 156px';
   }
   return null;
 }
@@ -243,6 +247,41 @@ function simplifyCompanyFooterBlock(html: string, branding?: OfferBrandingProfil
   );
 }
 
+function stripPricingHeading(html: string): string {
+  return html.replace(/<div class="offer-table-header">[\s\S]*?<\/div>/gi, '');
+}
+
+function replaceSummaryBlock(html: string, offer: Offer): string {
+  return html.replace(/<aside class="offer-summary[^"]*">[\s\S]*?<\/aside>/i, renderPublicOfferSummaryHtml(offer));
+}
+
+function replaceFooterBlock(html: string, branding?: OfferBrandingProfile): string {
+  if (!/<footer class="offer-shell__footer">/i.test(html)) return html;
+  return html.replace(/<footer class="offer-shell__footer">[\s\S]*?<\/footer>/i, renderPublicOfferFooterHtml(branding));
+}
+
+function normalizeTermsMarkup(html: string): string {
+  const withBoldCancellation = html.replace(
+    /(?:<strong>)?(Avbokningsvillkor:)(?:<\/strong>)?/giu,
+    '<strong>$1</strong>',
+  );
+
+  return withBoldCancellation.replace(
+    /(<section class="offer-section offer-section--terms">[\s\S]*?<h3>[\s\S]*?<\/h3>)\s*<p>([\s\S]*?)<\/p>\s*<\/section>/i,
+    (match, prefix: string, body: string) => {
+      const items = body
+        .split(/<br\s*\/?>/i)
+        .map((line) => line.replace(/^\s*\*\s*/u, '').trim())
+        .filter((line) => line.length > 0);
+
+      if (items.length < 2) return match;
+
+      const listHtml = items.map((item) => `<li>${item}</li>`).join('');
+      return `${prefix}<ul class="offer-terms-list">${listHtml}</ul></section>`;
+    },
+  );
+}
+
 function injectPublicCleanupStyles(html: string): string {
   const styleTag = `
 <style data-public-offer-cleanup>
@@ -268,21 +307,36 @@ function injectPublicCleanupStyles(html: string): string {
     display: none !important;
   }
   .offer-shell__footer a {
-    color: inherit !important;
+    color: #2563eb !important;
     text-decoration: none !important;
     font-weight: 500 !important;
   }
 </style>`;
+
+  const existingPattern = /<style[^>]*data-public-offer-cleanup[^>]*>[\s\S]*?<\/style>/i;
+  if (existingPattern.test(html)) {
+    return html.replace(existingPattern, styleTag);
+  }
 
   return html.includes('</head>')
     ? html.replace('</head>', `${styleTag}\n</head>`)
     : `${styleTag}${html}`;
 }
 
-function cleanupPublicOfferHtml(html: string, branding?: OfferBrandingProfile): string {
+function cleanupPublicOfferHtml(html: string, offer: Offer, branding?: OfferBrandingProfile): string {
   return injectPublicCleanupStyles(
-    simplifyCompanyFooterBlock(
-      html.replace(/(\b\d{1,2}\s*%)\s*moms\b/giu, '$1'),
+    replaceFooterBlock(
+      replaceSummaryBlock(
+        normalizeTermsMarkup(
+          stripPricingHeading(
+            simplifyCompanyFooterBlock(
+              html.replace(/(\b\d{1,2}\s*%)\s*moms\b/giu, '$1'),
+              branding,
+            ),
+          ),
+        ),
+        offer,
+      ),
       branding,
     ),
   );
@@ -309,6 +363,7 @@ export function sanitizePublicOfferDocument(
   removeLeadBlurb(document);
   return cleanupPublicOfferHtml(
     render(document.children, { encodeEntities: false }),
+    offer,
     branding,
   );
 }
@@ -325,6 +380,7 @@ export function sanitizePublicPdfOfferDocument(
   removeLeadBlurb(document);
   return cleanupPublicOfferHtml(
     render(document.children, { encodeEntities: false }),
+    offer,
     branding,
   );
 }

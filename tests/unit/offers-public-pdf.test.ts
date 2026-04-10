@@ -100,7 +100,7 @@ describe('public offer PDF sanitizing', () => {
     expect(sanitized).not.toContain('25% moms');
     expect(sanitized).toContain('href="https://www.soleria.se"');
     expect(sanitized).not.toContain('Org.nr 556523-5454');
-    expect(sanitized).toContain('--offer-columns:minmax(0,1.9fr) 44px 86px 56px 56px 92px');
+    expect(sanitized).toContain('--offer-columns:minmax(0,2.1fr) 92px 136px 86px 86px 152px');
     expect(sanitized).toContain('data-public-offer-cleanup');
   });
 
@@ -123,9 +123,9 @@ describe('public offer PDF sanitizing', () => {
             <div class="offer-items">
               <div class="offer-items__table">
                 <div class="offer-items__head" style="--offer-columns:minmax(220px, 1.85fr) 72px 112px 92px 92px 116px">
-                  <span>Produkt eller tjÃ¤nst</span>
+                  <span>Produkt eller tjänst</span>
                   <span>Antal</span>
-                  <span>Ã…-pris</span>
+                  <span>Å-pris</span>
                   <span>Rabatt</span>
                   <span>Moms</span>
                   <span>Belopp</span>
@@ -219,6 +219,7 @@ describe('public offer PDF sanitizing', () => {
     } as never);
 
     expect((sanitized.match(/href="https:\/\/www\.soleria\.se"/g) ?? []).length).toBe(2);
+    expect((sanitized.match(/offer-shell__footer-icon/g) ?? []).length).toBeGreaterThanOrEqual(2);
     expect(sanitized).not.toContain('Org.nr 556523-5454');
   });
 });

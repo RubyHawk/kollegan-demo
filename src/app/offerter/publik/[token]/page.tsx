@@ -84,7 +84,6 @@ function fmtDate(iso: string) {
 function todaySv() {
   return formatCompactSwedishDate(new Date());
 }
-
 function normalizeBrokenSwedish(text: string): string {
   return text
     .replace(/Ã…/g, 'Å')
@@ -321,7 +320,6 @@ function SuccessCheckmark() {
     </motion.div>
   );
 }
-
 function DeclineMark() {
   return (
     <motion.div
@@ -980,6 +978,627 @@ export default function PublicOfferPage() {
         .offer-summary__row--total strong { font-size: 22px !important; color: #ffffff !important; }
         .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
       }
+      html.offer-mobile {
+        background:
+          radial-gradient(circle at top, #fefefe 0%, #eef3fb 46%, #e7eef8 100%) !important;
+      }
+      html.offer-mobile body {
+        background: transparent !important;
+      }
+      html.offer-mobile .doc-wrapper {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+      }
+      html.offer-mobile .page-block {
+        position: relative !important;
+      }
+      html.offer-mobile .public-offer-promo {
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        overflow: hidden !important;
+        background: #08162d !important;
+        box-shadow: none !important;
+      }
+      html.offer-mobile .public-offer-promo .page-content,
+      html.offer-mobile .public-offer-promo .page-content--edge-to-edge {
+        position: relative !important;
+        min-height: min(100dvh, 860px) !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+      }
+      html.offer-mobile .public-offer-promo .page-content::after,
+      html.offer-mobile .public-offer-promo .page-content--edge-to-edge::after {
+        content: '' !important;
+        position: absolute !important;
+        inset: 0 !important;
+        background:
+          linear-gradient(180deg, rgba(7, 18, 37, 0.26) 0%, rgba(7, 18, 37, 0.06) 28%, rgba(7, 18, 37, 0.72) 84%, rgba(7, 18, 37, 0.92) 100%) !important;
+        pointer-events: none !important;
+      }
+      html.offer-mobile .public-offer-promo .page-content > div[style*="position:absolute"],
+      html.offer-mobile .public-offer-promo .page-content--edge-to-edge > div[style*="position:absolute"] {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        line-height: 0 !important;
+      }
+      html.offer-mobile .public-offer-promo .page-content > div[style*="position:absolute"] img,
+      html.offer-mobile .public-offer-promo .page-content--edge-to-edge > div[style*="position:absolute"] img {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        object-fit: cover !important;
+        object-position: center !important;
+        border-radius: 0 !important;
+      }
+      html.offer-mobile .public-offer-primary {
+        position: relative !important;
+        z-index: 2 !important;
+        margin-top: -112px !important;
+      }
+      html.offer-mobile .public-offer-primary .page-content,
+      html.offer-mobile .public-offer-primary .page-content--document {
+        position: relative !important;
+        padding: 32px 18px 30px !important;
+        border-radius: 34px 34px 0 0 !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), #f6f9fd 100%) !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.92) !important;
+        box-shadow: 0 -18px 48px rgba(8, 21, 45, 0.16) !important;
+      }
+      html.offer-mobile .public-offer-primary .page-content::before,
+      html.offer-mobile .public-offer-primary .page-content--document::before {
+        content: '' !important;
+        position: absolute !important;
+        top: -18px !important;
+        left: 22px !important;
+        right: 22px !important;
+        height: 54px !important;
+        border-radius: 999px !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0)) !important;
+        opacity: 0.92 !important;
+        pointer-events: none !important;
+        filter: blur(6px) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell {
+        gap: 18px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__header,
+      html.offer-mobile .public-offer-primary .offer-shell__topline {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 14px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__sender {
+        gap: 12px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__logo {
+        width: 54px !important;
+        height: 54px !important;
+        border-radius: 16px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__sender-copy {
+        gap: 3px !important;
+        font-size: 14px !important;
+        line-height: 1.55 !important;
+        color: #5e7293 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta {
+        justify-items: start !important;
+        text-align: left !important;
+        gap: 10px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta dl {
+        width: 100% !important;
+        gap: 10px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta dl div {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        align-items: end !important;
+        gap: 10px !important;
+        padding-bottom: 10px !important;
+        border-bottom: 1px solid rgba(145, 166, 201, 0.18) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta dl div:last-child {
+        border-bottom: none !important;
+        padding-bottom: 0 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta dt {
+        font-size: 11px !important;
+        line-height: 1.4 !important;
+        letter-spacing: 0.14em !important;
+        text-transform: uppercase !important;
+        color: #8ca0c0 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta dd {
+        font-size: 15px !important;
+        line-height: 1.35 !important;
+        font-weight: 700 !important;
+        color: #10203c !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__topline {
+        padding-bottom: 16px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__topline h1 {
+        font-size: 30px !important;
+        line-height: 0.98 !important;
+        letter-spacing: -0.04em !important;
+        max-width: 11ch !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__customer {
+        display: grid !important;
+        gap: 4px !important;
+        padding-left: 0 !important;
+        border-left: none !important;
+        padding-top: 14px !important;
+        border-top: 1px solid rgba(145, 166, 201, 0.18) !important;
+        font-size: 14px !important;
+        line-height: 1.6 !important;
+        color: #5e7293 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-section {
+        gap: 10px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-section p {
+        font-size: 14px !important;
+        line-height: 1.78 !important;
+        color: #546783 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-section h2,
+      html.offer-mobile .public-offer-primary .offer-items > h2 {
+        font-size: 30px !important;
+        line-height: 1.02 !important;
+        letter-spacing: -0.04em !important;
+        color: #10203c !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary {
+        position: relative !important;
+        width: 100% !important;
+        margin-top: 20px !important;
+        margin-left: 0 !important;
+        padding: 14px 0 4px !important;
+        border: 1px solid rgba(174, 191, 219, 0.32) !important;
+        border-radius: 28px !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.96)) !important;
+        box-shadow: 0 22px 46px rgba(11, 24, 47, 0.1) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary::before {
+        content: 'Summering' !important;
+        display: block !important;
+        padding: 0 18px 10px !important;
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.14em !important;
+        text-transform: uppercase !important;
+        color: #7890b3 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary__row {
+        padding: 12px 18px !important;
+        font-size: 15px !important;
+        color: #5a6d8a !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary__row strong {
+        font-size: 17px !important;
+        color: #10203c !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary__row + .offer-summary__row {
+        border-top: 1px solid rgba(174, 191, 219, 0.18) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary__row--total {
+        margin-top: 10px !important;
+        padding: 16px 18px 18px !important;
+        background: #12213d !important;
+        color: #dce8fb !important;
+        border-top: none !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary__row--total strong {
+        font-size: 24px !important;
+        letter-spacing: -0.04em !important;
+        color: #ffffff !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-items {
+        gap: 18px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-items__cards {
+        gap: 18px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card {
+        border: 1px solid rgba(174, 191, 219, 0.26) !important;
+        border-radius: 30px !important;
+        background: rgba(255, 255, 255, 0.97) !important;
+        box-shadow: 0 18px 42px rgba(12, 24, 47, 0.08) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child {
+        border-color: rgba(35, 70, 129, 0.08) !important;
+        background: linear-gradient(145deg, #162749 0%, #2f4a7f 100%) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__top {
+        gap: 8px !important;
+        padding: 20px 20px 0 !important;
+        background: transparent !important;
+        border-bottom: none !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__eyebrow {
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.14em !important;
+        color: #7c94ba !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__title {
+        font-size: 28px !important;
+        line-height: 1.02 !important;
+        letter-spacing: -0.04em !important;
+        color: #10203c !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__detail {
+        display: block !important;
+        font-size: 14px !important;
+        line-height: 1.7 !important;
+        color: #5e7293 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__eyebrow,
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__detail {
+        color: rgba(220, 232, 251, 0.76) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__title {
+        color: #ffffff !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+        padding: 18px 20px 20px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric {
+        display: grid !important;
+        align-content: start !important;
+        gap: 8px !important;
+        min-height: 92px !important;
+        padding: 14px !important;
+        border: 1px solid rgba(180, 196, 223, 0.28) !important;
+        border-bottom: 1px solid rgba(180, 196, 223, 0.28) !important;
+        border-radius: 22px !important;
+        background: #f6f9fd !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric dt {
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.14em !important;
+        color: #7d93b7 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric dd {
+        text-align: left !important;
+        font-size: 15px !important;
+        line-height: 1.35 !important;
+        font-weight: 800 !important;
+        color: #10203c !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric {
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric dt {
+        color: rgba(220, 232, 251, 0.7) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric dd {
+        color: #ffffff !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric--total {
+        grid-column: 1 / -1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 16px !important;
+        min-height: 0 !important;
+        margin-top: 2px !important;
+        padding: 18px 0 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        border-top: 1px solid rgba(180, 196, 223, 0.24) !important;
+        background: transparent !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric--total dt {
+        color: #586b88 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric--total dd {
+        text-align: left !important;
+        font-size: 22px !important;
+        letter-spacing: -0.04em !important;
+        color: #10203c !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric--total {
+        border-top-color: rgba(255, 255, 255, 0.12) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric--total dt {
+        color: rgba(220, 232, 251, 0.78) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric--total dd {
+        color: #ffffff !important;
+      }
+      html:not(.offer-mobile) .offer-shell {
+        gap: 28px !important;
+      }
+      html:not(.offer-mobile) .offer-shell__header {
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.9fr) !important;
+        gap: 36px !important;
+        align-items: center !important;
+        padding-bottom: 30px !important;
+        border-bottom: 2px solid #dbe5f1 !important;
+      }
+      html:not(.offer-mobile) .offer-shell__sender {
+        gap: 18px !important;
+      }
+      html:not(.offer-mobile) .offer-shell__logo {
+        width: 92px !important;
+        height: 92px !important;
+        border-radius: 24px !important;
+      }
+      html:not(.offer-mobile) .offer-shell__sender-copy {
+        gap: 6px !important;
+        font-size: 15px !important;
+        line-height: 1.38 !important;
+        color: #111827 !important;
+      }
+      html:not(.offer-mobile) .offer-shell__meta {
+        justify-items: stretch !important;
+        text-align: center !important;
+        gap: 0 !important;
+      }
+      html:not(.offer-mobile) .offer-shell__status,
+      html:not(.offer-mobile) .offer-shell__eyebrow,
+      html:not(.offer-mobile) .offer-shell__lead,
+      html:not(.offer-mobile) .offer-shell__customer-label {
+        display: none !important;
+      }
+      html:not(.offer-mobile) .offer-shell__meta dl {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 0 !important;
+      }
+      html:not(.offer-mobile) .offer-shell__meta dl div {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+        padding: 0 18px !important;
+        border-left: 1px solid #dbe5f1 !important;
+      }
+      html:not(.offer-mobile) .offer-shell__meta dl div:first-child {
+        border-left: none !important;
+        padding-left: 0 !important;
+      }
+      html:not(.offer-mobile) .offer-shell__meta dl div:last-child {
+        padding-right: 0 !important;
+      }
+      html:not(.offer-mobile) .offer-shell__meta dt {
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0 !important;
+        text-transform: none !important;
+        text-align: center !important;
+        color: #657b9c !important;
+      }
+      html:not(.offer-mobile) .offer-shell__meta dd {
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        text-align: center !important;
+        color: #1f335b !important;
+        white-space: nowrap !important;
+      }
+      html:not(.offer-mobile) .offer-shell__topline {
+        grid-template-columns: minmax(0, 1fr) minmax(220px, 280px) !important;
+        gap: 28px !important;
+        align-items: end !important;
+        padding-bottom: 0 !important;
+        border-bottom: 0 !important;
+      }
+      html:not(.offer-mobile) .offer-shell__topline h1 {
+        font-family: 'Times New Roman', Times, serif !important;
+        font-size: 76px !important;
+        line-height: 0.95 !important;
+        letter-spacing: -0.03em !important;
+        color: #1e3158 !important;
+      }
+      html:not(.offer-mobile) .offer-shell__customer,
+      html:not(.offer-mobile) .offer-shell__customer-card {
+        display: grid !important;
+        gap: 10px !important;
+        padding: 0 !important;
+        border: 0 !important;
+        min-width: 0 !important;
+        text-align: right !important;
+        justify-self: end !important;
+        color: #334b70 !important;
+      }
+      html:not(.offer-mobile) .offer-shell__customer-primary,
+      html:not(.offer-mobile) .offer-shell__customer-name {
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        color: #1f335b !important;
+      }
+      html:not(.offer-mobile) .offer-shell__customer-secondary,
+      html:not(.offer-mobile) .offer-shell__customer p:not(.offer-shell__customer-name) {
+        font-size: 13px !important;
+        line-height: 1.4 !important;
+        color: #334b70 !important;
+      }
+      html:not(.offer-mobile) .offer-table-header {
+        display: none !important;
+      }
+      html:not(.offer-mobile) .offer-items__table {
+        border-color: #d4e2f1 !important;
+        border-radius: 28px !important;
+        box-shadow: 8px 8px 0 #e8eff8 !important;
+      }
+      html:not(.offer-mobile) .offer-items__head,
+      html:not(.offer-mobile) .offer-item-row {
+        gap: 0 !important;
+      }
+      html:not(.offer-mobile) .offer-items__head {
+        padding: 18px 22px 12px !important;
+        background: #ffffff !important;
+        color: #1f335b !important;
+        font-size: 16px !important;
+        letter-spacing: 0 !important;
+        text-transform: none !important;
+      }
+      html:not(.offer-mobile) .offer-items__head span {
+        display: flex !important;
+        min-height: 46px !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        padding: 0 14px !important;
+        border-left: 1px solid #dbe5f1 !important;
+      }
+      html:not(.offer-mobile) .offer-items__head span:first-child {
+        justify-content: flex-start !important;
+        padding-left: 0 !important;
+        border-left: none !important;
+      }
+      html:not(.offer-mobile) .offer-items__body {
+        border-top: 1px solid #dbe5f1 !important;
+      }
+      html:not(.offer-mobile) .offer-item-row {
+        padding: 24px 22px 26px !important;
+        border-bottom: 0 !important;
+      }
+      html:not(.offer-mobile) .offer-item-row__product {
+        gap: 12px !important;
+        padding-right: 18px !important;
+      }
+      html:not(.offer-mobile) .offer-item-row__title {
+        font-size: 18px !important;
+        line-height: 1.22 !important;
+        color: #1f335b !important;
+      }
+      html:not(.offer-mobile) .offer-item-row__detail {
+        max-width: 30ch !important;
+        font-size: 12px !important;
+        line-height: 1.46 !important;
+        color: #3d557b !important;
+      }
+      html:not(.offer-mobile) .offer-item-row__value {
+        display: flex !important;
+        align-items: flex-start !important;
+        justify-content: flex-end !important;
+        padding: 8px 14px 0 !important;
+        font-size: 15px !important;
+        line-height: 1.2 !important;
+        font-weight: 700 !important;
+        color: #1f335b !important;
+        white-space: nowrap !important;
+      }
+      html:not(.offer-mobile) .offer-item-row__value--strong {
+        font-size: 17px !important;
+        font-weight: 800 !important;
+      }
+      html:not(.offer-mobile) .offer-summary,
+      html:not(.offer-mobile) .offer-summary--below {
+        width: min(380px, 100%) !important;
+        max-width: none !important;
+        margin-left: auto !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      html:not(.offer-mobile) .offer-summary--below {
+        margin-top: 26px !important;
+      }
+      html:not(.offer-mobile) .offer-summary__row {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        align-items: center !important;
+        gap: 18px !important;
+        padding: 11px 16px !important;
+        background: #f4f7fb !important;
+        color: #1f335b !important;
+        font-size: 14px !important;
+        line-height: 1.35 !important;
+      }
+      html:not(.offer-mobile) .offer-summary__row strong {
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        color: #1f335b !important;
+      }
+      html:not(.offer-mobile) .offer-summary__row--discount {
+        background: #fff1f1 !important;
+        color: #be3d35 !important;
+      }
+      html:not(.offer-mobile) .offer-summary__row--discount strong {
+        color: #be3d35 !important;
+      }
+      html:not(.offer-mobile) .offer-summary__row--total {
+        margin-top: 10px !important;
+        padding: 16px 18px !important;
+        background: #2d4a83 !important;
+        color: #ffffff !important;
+      }
+      html:not(.offer-mobile) .offer-summary__row--total strong,
+      html:not(.offer-mobile) .offer-summary__row--total span {
+        color: #ffffff !important;
+      }
+      html:not(.offer-mobile) .offer-summary__total-copy {
+        display: grid !important;
+        gap: 4px !important;
+      }
+      html:not(.offer-mobile) .offer-summary__total-label {
+        font-size: 22px !important;
+        font-weight: 700 !important;
+        line-height: 1 !important;
+      }
+      html:not(.offer-mobile) .offer-summary__total-subcopy {
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        line-height: 1.1 !important;
+      }
+      html:not(.offer-mobile) .offer-summary__row--total strong {
+        font-size: 18px !important;
+        letter-spacing: -0.02em !important;
+      }
+      html:not(.offer-mobile) .offer-section--terms {
+        margin-top: 28px !important;
+      }
+      html:not(.offer-mobile) .offer-shell__footer {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 28px !important;
+        padding-top: 28px !important;
+        margin-top: 42px !important;
+        border-top: 1px solid #dbe5f1 !important;
+      }
+      html:not(.offer-mobile) .offer-shell__footer div {
+        justify-items: center !important;
+        text-align: center !important;
+        gap: 10px !important;
+        font-size: 14px !important;
+        line-height: 1.35 !important;
+      }
+      html:not(.offer-mobile) .offer-shell__footer strong {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        color: #1f335b !important;
+        font-size: 13px !important;
+      }
+      html:not(.offer-mobile) .offer-shell__footer-icon {
+        width: 17px !important;
+        height: 17px !important;
+        stroke: currentColor !important;
+        fill: none !important;
+        stroke-width: 16 !important;
+        stroke-linecap: round !important;
+        stroke-linejoin: round !important;
+        flex: 0 0 17px !important;
+      }
+      html:not(.offer-mobile) .offer-shell__footer a {
+        color: #2563eb !important;
+        text-decoration: none !important;
+      }
     `;
     if (doc.head) doc.head.appendChild(responsiveStyle);
     else if (doc.body) doc.body.insertBefore(responsiveStyle, doc.body.firstChild);
@@ -1012,7 +1631,7 @@ export default function PublicOfferPage() {
     const firstOfferAnchor = findOfferAnchor(firstDocumentPage);
     setPromoPageCount(Math.max(0, firstDocumentIndex));
     pageBlocks.forEach((pageBlock, index) => {
-      const promoBlock = index < firstDocumentIndex;
+      const promoBlock = index < firstDocumentIndex && isPromoPageBlock(pageBlock);
       pageBlock.classList.toggle('public-offer-promo', promoBlock);
       pageBlock.classList.toggle('public-offer-primary', index === firstDocumentIndex);
     });
@@ -1139,7 +1758,6 @@ export default function PublicOfferPage() {
       const normalized = normalizeOfferText(value);
       if (normalized !== value) node.nodeValue = normalized;
     }
-
 
     // ── Viewport scaling ───────────────────────────────────────────────────────
     // The document is authored at 816 px. On narrower viewports we scale the
@@ -1519,27 +2137,29 @@ export default function PublicOfferPage() {
   if (!offer) return null;
   const isDecline = state === 'declining';
   const pricing = summarizePersistedOfferPricing(offer);
+  const hasPromoHero = promoPageCount > 0;
+  const showMobileStickyBar = !isDecline && (!offer.generatedDocument || documentReady);
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen bg-slate-50"
+      className="min-h-screen bg-[radial-gradient(circle_at_top,_#ffffff_0%,_#edf3fb_42%,_#e8eef8_100%)]"
     >
       {/* ─── Sticky header ─── */}
-      <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/96 backdrop-blur-md sm:border-b-0 sm:bg-transparent sm:px-6 sm:pt-2 sm:backdrop-blur-none">
-        <div className="sm:mx-auto sm:max-w-[900px] sm:overflow-hidden sm:rounded-[22px] sm:border sm:border-slate-200/80 sm:bg-white/95 sm:shadow-[0_8px_22px_rgba(15,23,42,0.07)]">
+      <header className="sticky top-0 z-20 px-3 pt-3 sm:px-6 sm:pt-2">
+        <div className={`mx-auto overflow-hidden rounded-[24px] border backdrop-blur-xl transition-colors sm:max-w-[900px] sm:border-slate-200/80 sm:bg-white/95 sm:shadow-[0_8px_22px_rgba(15,23,42,0.07)] ${hasPromoHero ? 'border-white/18 bg-white/12 shadow-[0_18px_42px_rgba(9,18,35,0.18)]' : 'border-slate-200/80 bg-white/92 shadow-[0_12px_30px_rgba(15,23,42,0.08)]'}`}>
         <div className="flex min-h-14 items-center gap-3 px-4 py-2.5 sm:min-h-0 sm:gap-3 sm:px-3.5 sm:py-2">
 
           {/* Left: title + recipient */}
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-100 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] sm:h-8 sm:w-8 sm:rounded-xl">
               <BrandMark size={18} alt="" />
             </div>
             <div className="min-w-0">
-              <p className="hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:block">
-                Offert
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:block">
+                Publik offert
               </p>
               <h1 className="truncate text-sm font-semibold leading-tight text-slate-900 sm:text-[14px]">{offer.title}</h1>
               <p className="truncate text-[11px] leading-tight text-slate-500 sm:mt-0.5 sm:text-[11px]">
@@ -1566,7 +2186,7 @@ export default function PublicOfferPage() {
             <button
               onClick={() => void handleDownloadPdf()}
               disabled={downloading || !offer.generatedDocument}
-              className="flex h-9 items-center gap-1.5 rounded-[16px] border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow active:scale-[0.97] disabled:opacity-40"
+              className="flex h-10 items-center gap-1.5 rounded-[18px] border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-40 sm:h-9 sm:rounded-[16px] sm:px-3"
               title="Ladda ner PDF"
             >
               {downloading ? (
@@ -1591,8 +2211,8 @@ export default function PublicOfferPage() {
       {/* ─── Content ─── */}
       <main
         ref={mainRef}
-        className="bg-slate-50"
-        style={{ paddingBottom: '64px' }}
+        className="bg-transparent"
+        style={{ paddingBottom: showMobileStickyBar ? '188px' : '96px' }}
       >
         <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
 
@@ -1604,7 +2224,7 @@ export default function PublicOfferPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.04 }}
             className={promoPageCount > 0
-              ? 'mb-5 overflow-hidden bg-transparent shadow-none sm:rounded-[26px]'
+              ? 'mb-6 overflow-visible bg-transparent shadow-none sm:rounded-[26px]'
               : 'mb-5 overflow-hidden bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] sm:rounded-2xl sm:border sm:border-slate-200/60'}
           >
             <iframe
@@ -1623,7 +2243,7 @@ export default function PublicOfferPage() {
         {/* ─── Signing card ─── */}
         <div className="px-4 sm:px-0">
         {offer.generatedDocument && !documentReady && (
-          <div className="mb-4 flex items-center justify-center rounded-2xl border border-slate-200/70 bg-white px-4 py-3 text-sm text-slate-500 shadow-[0_2px_12px_rgba(0,0,0,0.05)]">
+          <div className="mb-4 flex items-center justify-center rounded-[24px] border border-white/70 bg-white/88 px-4 py-3 text-sm text-slate-500 shadow-[0_10px_28px_rgba(15,23,42,0.08)] backdrop-blur">
             Anpassar offerten för din skärm...
           </div>
         )}
@@ -1635,13 +2255,13 @@ export default function PublicOfferPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)]"
+              className="overflow-hidden rounded-[30px] border border-white/70 bg-white/92 shadow-[0_18px_42px_rgba(15,23,42,0.08)] backdrop-blur"
             >
               {/* Header */}
-              <div className="border-b border-slate-100 px-4 py-3 sm:px-6 sm:py-4">
+              <div className="border-b border-slate-100/90 px-4 py-4 sm:px-6 sm:py-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-900">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]">
                       <ShieldIcon size={14} className="text-white" />
                     </div>
                     <div>
@@ -1649,7 +2269,7 @@ export default function PublicOfferPage() {
                       <p className="mt-0.5 text-[12px] leading-relaxed text-slate-500">Underteckna för att bekräfta offerten. Namn, datum och signatur sparas tillsammans med offerten.</p>
                     </div>
                   </div>
-                  <div className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-right sm:px-3 sm:py-1.5">
+                  <div className="hidden shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-right sm:block">
                     <p className="text-xs font-bold tabular-nums text-slate-800 sm:text-sm">{fmtSEK(pricing.totalAmount)}</p>
                     <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">{pricing.displayModeLabel}</p>
                   </div>
@@ -1846,7 +2466,7 @@ export default function PublicOfferPage() {
                   type="button"
                   onClick={() => void handleSign()}
                   disabled={busy}
-                  className="flex items-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50"
+                  className="hidden items-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 sm:flex"
                 >
                   <CheckCircleIcon size={15} />
                   {busy ? 'Signerar...' : 'Signera offert'}
@@ -1861,7 +2481,7 @@ export default function PublicOfferPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 6 }}
               transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-              className="overflow-hidden rounded-2xl border border-red-200/70 bg-gradient-to-b from-red-50/75 to-white shadow-[0_2px_12px_rgba(0,0,0,0.07)]"
+              className="overflow-hidden rounded-[30px] border border-red-200/70 bg-gradient-to-b from-red-50/75 to-white shadow-[0_18px_42px_rgba(15,23,42,0.08)]"
             >
               <div className="border-b border-red-100 px-5 py-4 sm:px-7 sm:py-5">
                 <div className="flex items-center gap-3">
@@ -2015,6 +2635,29 @@ export default function PublicOfferPage() {
         </p>
         </div>
       </main>
+
+      {showMobileStickyBar && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] sm:hidden">
+          <div className="pointer-events-auto mx-auto flex max-w-[900px] items-center justify-between gap-3 rounded-[32px] border border-white/10 bg-slate-950/92 px-4 py-3.5 text-white shadow-[0_24px_70px_rgba(5,12,26,0.36)] backdrop-blur-xl">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+                Totalt att godkänna
+              </p>
+              <p className="mt-1.5 truncate text-[31px] font-extrabold leading-none tracking-[-0.05em] text-white">
+                {fmtSEK(pricing.totalAmount)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleSign()}
+              disabled={busy}
+              className="inline-flex h-[58px] shrink-0 items-center justify-center rounded-[24px] bg-gradient-to-br from-sky-400 via-blue-500 to-blue-600 px-6 text-base font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_10px_22px_rgba(37,99,235,0.28)] transition-all active:scale-[0.98] disabled:opacity-50"
+            >
+              {busy ? 'Signerar...' : 'Signera offert'}
+            </button>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }
