@@ -1,15 +1,26 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { Buildings, CaretDown, Plus, Trash } from '@phosphor-icons/react';
+import { useMemo, useState } from 'react';
+import { Buildings, Eye, EyeSlash, Plus, Users } from '@phosphor-icons/react';
+import { Button } from '@shared/ui/button';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  ModalActionFooter,
+  ModalBody,
+  ModalSection,
 } from '@shared/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@shared/ui/select';
 
 export interface CompanyMemberRecord {
   id: string;
@@ -56,28 +67,18 @@ interface CompanyMembersDialogProps {
   onRemoveMember: (userId: string) => Promise<void>;
 }
 
-function StyledSelect({ className, children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { className?: string }) {
-  return (
-    <div className={`relative ${className ?? ''}`}>
-      <select
-        {...props}
-        className="h-12 w-full appearance-none rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] pl-4 pr-10 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)]"
-      >
-        {children}
-      </select>
-      <CaretDown
-        size={14}
-        weight="bold"
-        className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
-      />
-    </div>
-  );
-}
-
 function formatUserName(user: { firstName?: string | null; lastName?: string | null; email: string }) {
   const fullName = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
   return fullName || user.email;
 }
+
+function userInitials(name: string) {
+  return name.split(' ').map((n) => n[0] ?? '').join('').slice(0, 2).toUpperCase();
+}
+
+const inputCls =
+  'w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--accent)] focus:outline-none';
+const labelCls = 'mb-1.5 block text-xs font-medium text-[var(--text-secondary)]';
 
 export function CompanyMembersDialog({
   open,
@@ -99,196 +100,311 @@ export function CompanyMembersDialog({
     password: '',
     firstName: '',
     lastName: '',
-    role: 'admin',
+    role: 'staff',
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
 
   const selectableUsers = useMemo(() => {
     const existing = new Set(members.map((member) => member.userId));
     return availableUsers.filter((user) => !existing.has(user.id));
   }, [availableUsers, members]);
 
+  const pendingMember = useMemo(
+    () => members.find((member) => member.userId === pendingRemoveId),
+    [members, pendingRemoveId],
+  );
+
   const canCreateAccount = newAccount.email.trim().length > 0 && newAccount.password.trim().length >= 8;
+  const tabClass = (active: boolean) =>
+    active
+      ? 'rounded-full bg-[var(--surface)] px-3.5 py-2 text-sm font-medium text-[var(--text-primary)] shadow-sm ring-1 ring-inset ring-[var(--border)]'
+      : 'rounded-full px-3.5 py-2 text-sm font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)]';
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent mobileVariant="fullscreen" showMobileClose className="w-[min(100vw-1.5rem,1200px)] sm:max-w-[1200px]">
-        <DialogHeader className="border-b border-[var(--border)] pr-16">
-          <DialogTitle>Koppla användare till {companyName}</DialogTitle>
-          <DialogDescription>
-            De här användarna kan arbeta med företagets mallar, produkter och branding. Företagsadmin får även hantera kopplingar och skapa nya konton för sitt företag.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          mobileVariant="fullscreen"
+          size="xl"
+          showMobileClose
+          className="sm:max-h-[96dvh] sm:max-w-[1180px]"
+        >
+          <div className="flex min-h-0 flex-1 flex-col">
+            <DialogHeader className="border-b border-[var(--border)] pr-16 sm:gap-1 sm:pb-3">
+              <DialogTitle className="text-xl">Koppla användare till {companyName}</DialogTitle>
+              <DialogDescription className="max-w-2xl sm:leading-5">
+                Lägg till befintliga användare eller skapa nya konton direkt i samma flöde. Högerkolumnen visar
+                aktuella kopplingar utan extra scrollande listor inuti formuläret.
+              </DialogDescription>
+            </DialogHeader>
 
-        <div className="max-h-[min(84dvh,900px)] overflow-y-auto px-6 py-6">
-          <div className="grid gap-5 xl:grid-cols-[minmax(340px,0.9fr)_minmax(0,1.2fr)]">
-          <section className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-            <div className="flex items-start gap-3">
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] text-[var(--accent)]">
-                <Buildings size={18} weight="duotone" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-[var(--text-primary)]">Ny koppling</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
-                  Koppla ett befintligt konto eller skapa ett nytt staff-konto direkt för företaget.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setMode('existing')}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${mode === 'existing' ? 'bg-[var(--accent)] text-white' : 'border border-[var(--border)] bg-[var(--surface-0)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]'}`}
-              >
-                Koppla befintligt konto
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode('create')}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${mode === 'create' ? 'bg-[var(--accent)] text-white' : 'border border-[var(--border)] bg-[var(--surface-0)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]'}`}
-              >
-                Skapa nytt konto
-              </button>
-            </div>
-
-            {mode === 'existing' ? (
-              <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
-                <StyledSelect value={userId} onChange={(event) => setUserId(event.target.value)}>
-                  <option value="">Välj användare</option>
-                  {selectableUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {formatUserName(user as AssignableUserRecord)}
-                    </option>
-                  ))}
-                </StyledSelect>
-
-                <StyledSelect value={role} onChange={(event) => setRole(event.target.value as 'staff' | 'admin')}>
-                  <option value="staff">Företagsstaff</option>
-                  <option value="admin">Företagsadmin</option>
-                </StyledSelect>
-
-                <button
-                  type="button"
-                  disabled={!userId || saving}
-                  onClick={async () => {
-                    if (!userId) return;
-                    await onAddMember(userId, role);
-                    setUserId('');
-                    setRole('staff');
-                  }}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-95 disabled:pointer-events-none disabled:opacity-50"
-                >
-                  <Plus size={16} weight="bold" />
-                  Lägg till
-                </button>
-              </div>
-            ) : (
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <input
-                  value={newAccount.firstName}
-                  onChange={(event) => setNewAccount((current) => ({ ...current, firstName: event.target.value }))}
-                  placeholder="Förnamn"
-                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-                />
-                <input
-                  value={newAccount.lastName}
-                  onChange={(event) => setNewAccount((current) => ({ ...current, lastName: event.target.value }))}
-                  placeholder="Efternamn"
-                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-                />
-                <input
-                  type="email"
-                  value={newAccount.email}
-                  onChange={(event) => setNewAccount((current) => ({ ...current, email: event.target.value }))}
-                  placeholder="namn@foretag.se"
-                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none md:col-span-2"
-                />
-                <input
-                  type="password"
-                  value={newAccount.password}
-                  onChange={(event) => setNewAccount((current) => ({ ...current, password: event.target.value }))}
-                  placeholder="Tillfälligt lösenord"
-                  className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-                />
-                <StyledSelect value={newAccount.role} onChange={(event) => setNewAccount((current) => ({ ...current, role: event.target.value as 'staff' | 'admin' }))}>
-                  <option value="staff">Företagsstaff</option>
-                  <option value="admin">Företagsadmin</option>
-                </StyledSelect>
-                <button
-                  type="button"
-                  disabled={!canCreateAccount || saving}
-                  onClick={async () => {
-                    await onCreateMemberAccount(newAccount);
-                    setNewAccount({
-                      email: '',
-                      password: '',
-                      firstName: '',
-                      lastName: '',
-                      role: 'admin',
-                    });
-                  }}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-95 disabled:pointer-events-none disabled:opacity-50 md:col-span-2"
-                >
-                  <Plus size={16} weight="bold" />
-                  Skapa konto och koppla
-                </button>
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)]">
-            <div className="border-b border-[var(--border)] px-4 py-3">
-              <p className="text-sm font-semibold text-[var(--text-primary)]">Kopplade användare</p>
-            </div>
-
-            {loading ? (
-              <div className="px-4 py-8 text-sm text-[var(--text-muted)]">Laddar kopplingar...</div>
-            ) : members.length === 0 ? (
-              <div className="px-4 py-8 text-sm text-[var(--text-muted)]">
-                Inga användare är kopplade ännu. Lägg till minst en ansvarig användare för att göra företaget aktivt i flödet.
-              </div>
-            ) : (
-              <div className="divide-y divide-[var(--border)]">
-                {members.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between gap-4 px-4 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-[var(--text-primary)]">
-                        {formatUserName(member.user)}
-                      </p>
-                      <p className="truncate text-xs text-[var(--text-muted)]">{member.user.email}</p>
+            <ModalBody className="sm:py-4">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.88fr)]">
+                <ModalSection tone="card" className="sm:space-y-3.5 sm:p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
+                      <Buildings size={18} weight="duotone" />
                     </div>
-
-                    <div className="flex items-center gap-3">
-                      <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                        {member.role === 'admin' ? 'Admin' : 'Staff'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => void onRemoveMember(member.userId)}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30"
-                        title="Ta bort koppling"
-                      >
-                        <Trash size={14} weight="bold" />
-                      </button>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">Ny koppling</p>
+                      <p className="text-sm leading-5 text-[var(--text-muted)]">
+                        Koppla ett befintligt konto eller skapa ett nytt direkt med rätt roll från start.
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
-          </div>
-        </div>
 
-        <DialogFooter>
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)]"
-          >
-            Stäng
-          </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+                  <div className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface-alt)] p-1">
+                    <button type="button" onClick={() => setMode('existing')} className={tabClass(mode === 'existing')}>
+                      Befintligt konto
+                    </button>
+                    <button type="button" onClick={() => setMode('create')} className={tabClass(mode === 'create')}>
+                      Skapa nytt konto
+                    </button>
+                  </div>
+
+                  {mode === 'existing' ? (
+                    <div className="space-y-3.5">
+                      <div>
+                        <label className={labelCls}>Användare</label>
+                        <Select value={userId} onValueChange={setUserId}>
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Välj användare..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectableUsers.length === 0 ? (
+                              <div className="px-4 py-3 text-sm text-[var(--text-muted)]">Inga tillgängliga användare</div>
+                            ) : (
+                              selectableUsers.map((user) => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  {formatUserName(user)}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className={labelCls}>Roll</label>
+                        <Select value={role} onValueChange={(value) => setRole(value as 'staff' | 'admin')}>
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="staff">Företagsstaff</SelectItem>
+                            <SelectItem value="admin">Företagsadmin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <Button
+                        type="button"
+                        disabled={!userId || saving}
+                        onClick={async () => {
+                          if (!userId) return;
+                          await onAddMember(userId, role);
+                          setUserId('');
+                          setRole('staff');
+                        }}
+                        className="w-full"
+                      >
+                        <Plus size={15} weight="bold" />
+                        Lägg till användare
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3.5">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <label className={labelCls}>Förnamn</label>
+                          <input
+                            value={newAccount.firstName}
+                            onChange={(event) => setNewAccount((current) => ({ ...current, firstName: event.target.value }))}
+                            placeholder="Ali"
+                            className={inputCls}
+                          />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Efternamn</label>
+                          <input
+                            value={newAccount.lastName}
+                            onChange={(event) => setNewAccount((current) => ({ ...current, lastName: event.target.value }))}
+                            placeholder="Zeytoun"
+                            className={inputCls}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className={labelCls}>E-post</label>
+                        <input
+                          type="email"
+                          value={newAccount.email}
+                          onChange={(event) => setNewAccount((current) => ({ ...current, email: event.target.value }))}
+                          placeholder="namn@foretag.se"
+                          className={inputCls}
+                        />
+                      </div>
+
+                      <div>
+                        <label className={labelCls}>Tillfälligt lösenord</label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            value={newAccount.password}
+                            onChange={(event) => setNewAccount((current) => ({ ...current, password: event.target.value }))}
+                            placeholder="Minst 8 tecken"
+                            className={`${inputCls} pr-11`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword((value) => !value)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
+                            aria-label={showPassword ? 'Dölj lösenord' : 'Visa lösenord'}
+                          >
+                            {showPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className={labelCls}>Roll</label>
+                        <Select
+                          value={newAccount.role}
+                          onValueChange={(value) =>
+                            setNewAccount((current) => ({ ...current, role: value as 'staff' | 'admin' }))
+                          }
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="staff">Företagsstaff</SelectItem>
+                            <SelectItem value="admin">Företagsadmin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <Button
+                        type="button"
+                        disabled={!canCreateAccount || saving}
+                        onClick={async () => {
+                          await onCreateMemberAccount(newAccount);
+                          setNewAccount({ email: '', password: '', firstName: '', lastName: '', role: 'staff' });
+                          setShowPassword(false);
+                        }}
+                        className="w-full"
+                      >
+                        <Plus size={15} weight="bold" />
+                        Skapa konto och koppla
+                      </Button>
+                    </div>
+                  )}
+                </ModalSection>
+
+                <ModalSection tone="card" className="overflow-hidden sm:space-y-3.5 sm:p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
+                        <Users size={18} weight="duotone" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">Kopplade användare</p>
+                        <p className="text-sm leading-5 text-[var(--text-muted)]">
+                          Nuvarande teammedlemmar med tillgång till företagets mallar, produkter och branding.
+                        </p>
+                      </div>
+                    </div>
+                    {!loading && members.length > 0 ? (
+                      <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-xs font-semibold text-[var(--text-muted)]">
+                        {members.length}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  {loading ? (
+                    <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-8 text-center text-sm text-[var(--text-muted)]">
+                      Laddar kopplingar…
+                    </div>
+                  ) : members.length === 0 ? (
+                    <div className="rounded-[20px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-6 py-10 text-center">
+                      <p className="text-sm font-medium text-[var(--text-primary)]">Inga kopplade användare än</p>
+                      <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
+                        Lägg till minst en ansvarig för att aktivera företaget i det dagliga flödet.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {members.map((member) => {
+                        const name = formatUserName(member.user);
+                        const isAdmin = member.role === 'admin';
+                        return (
+                          <div
+                            key={member.id}
+                            className="flex items-center gap-3 rounded-[18px] border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3"
+                          >
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-xs font-semibold text-[var(--text-secondary)]">
+                              {userInitials(name)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-[var(--text-primary)]">{name}</p>
+                              <p className="truncate text-sm text-[var(--text-muted)]">{member.user.email}</p>
+                            </div>
+                            <span
+                              className={
+                                isAdmin
+                                  ? 'rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--accent)] ring-1 ring-inset ring-[var(--accent)]/20'
+                                  : 'rounded-full border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-muted)]'
+                              }
+                            >
+                              {isAdmin ? 'Admin' : 'Staff'}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setPendingRemoveId(member.userId)}
+                              className="h-9 w-9 shrink-0 rounded-xl text-[var(--text-muted)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+                              title="Ta bort koppling"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                <path d="M10 11v6M14 11v6" />
+                              </svg>
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </ModalSection>
+              </div>
+            </ModalBody>
+
+            <ModalActionFooter className="sm:pb-4 sm:pt-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Stäng
+              </Button>
+            </ModalActionFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDestructiveDialog
+        open={!!pendingRemoveId}
+        onOpenChange={(next) => { if (!next) setPendingRemoveId(null); }}
+        title={`Ta bort ${pendingMember ? formatUserName(pendingMember.user) : 'användaren'}?`}
+        description="Användaren förlorar åtkomst till företagets mallar, produkter och branding. Det går inte att ångra."
+        confirmLabel="Ta bort"
+        loading={saving && !!pendingRemoveId}
+        onConfirm={async () => {
+          if (!pendingRemoveId) return;
+          await onRemoveMember(pendingRemoveId);
+          setPendingRemoveId(null);
+        }}
+      />
+    </>
   );
 }
