@@ -54,6 +54,9 @@ import type { OfferStatus, OfferPriceDisplayMode, LineItem, Offer, OfferTemplate
 import { EMPTY_LINE, EMPTY_FORM } from './_store/types';
 import { OfferTemplateCard } from './_components/offer-template-card';
 import { OfferTemplatePreviewModal } from './_components/offer-template-preview-modal';
+import { SendOfferDialog } from './_components/send-offer-dialog';
+import { OfferPreviewDialog } from './_components/offer-preview-dialog';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -2682,57 +2685,19 @@ export default function OffersPage() {
       )}
 
       {/* Send confirmation modal */}
-      {confirmSend && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmSend(null)}>
-          <div className="relative w-full max-w-sm bg-[var(--surface)] rounded-xl shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-[var(--border)]">
-              <h2 className="text-sm font-semibold text-[var(--text-primary)]">Bekräfta utskick</h2>
-            </div>
-            <div className="px-6 py-5 space-y-4">
-              <p className="text-sm text-[var(--text-secondary)]">
-                Offerten skickas via e-post och kan inte redigeras efter utskick.
-              </p>
-              <div className="rounded-xl bg-[var(--surface-alt)] border border-[var(--border)] p-4 space-y-2 text-sm">
-                <div className="flex justify-between gap-4">
-                  <span className="text-[var(--text-muted)]">Mottagare</span>
-                  <span className="font-medium text-[var(--text-primary)] text-right">{confirmSend.recipientName}</span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span className="text-[var(--text-muted)]">E-post</span>
-                  <span className="text-[var(--text-primary)] text-right">{confirmSend.recipientEmail}</span>
-                </div>
-                {confirmSend.recipientCompany && (
-                  <div className="flex justify-between gap-4">
-                    <span className="text-[var(--text-muted)]">Företag</span>
-                    <span className="text-[var(--text-primary)] text-right">{confirmSend.recipientCompany}</span>
-                  </div>
-                )}
-                <div className="pt-2 border-t border-[var(--border)]">
-                  <p className="text-[12px] leading-5 text-[var(--text-muted)]">
-                    Mottagaren får ett mejl med en knapp till den säkra offertvyn där pris, villkor och signering visas.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="px-6 pb-5 flex gap-2">
-              <button
-                onClick={() => { void doAction(confirmSend.id, 'send'); setConfirmSend(null); }}
-                disabled={acting === confirmSend.id}
-                className="flex-1 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
-              >
-                Skicka offert
-              </button>
-              <button
-                onClick={() => setConfirmSend(null)}
-                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors"
-              >
-                Avbryt
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SendOfferDialog
+        open={Boolean(confirmSend)}
+        onClose={() => setConfirmSend(null)}
+        recipientName={confirmSend?.recipientName ?? ''}
+        recipientEmail={confirmSend?.recipientEmail ?? ''}
+        recipientCompany={confirmSend?.recipientCompany}
+        loading={confirmSend ? acting === confirmSend.id : false}
+        onConfirm={() => {
+          if (!confirmSend) return;
+          void doAction(confirmSend.id, 'send');
+          setConfirmSend(null);
+        }}
+      />
 
       {/* Template preview modal */}
       <OfferTemplatePreviewModal
@@ -2741,78 +2706,26 @@ export default function OffersPage() {
         loading={tplPreview?.loading ?? false}
         onClose={() => setTplPreview(null)}
       />
-      {false && tplPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setTplPreview(null)}>
-          <div className="relative w-full max-w-4xl max-h-[90vh] bg-[var(--surface-0)] rounded-xl shadow-2xl overflow-hidden flex flex-col border border-[var(--border)]"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)] bg-[var(--surface-alt)] shrink-0">
-              <span className="text-sm font-semibold text-[var(--text-primary)]">Förhandsvisning av mall</span>
-              <button onClick={() => setTplPreview(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto relative">
-              {tplPreview?.loading ? (
-                <div className="flex items-center justify-center h-64 text-[var(--text-muted)] text-sm">Laddar förhandsvisning…</div>
-              ) : (
-                <iframe srcDoc={tplPreview?.html ?? ''} title="Mallförhandsvisning" className="w-full h-full min-h-[70vh] border-0"/>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Delete offer confirmation modal */}
-      {confirmDeleteOffer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmDeleteOffer(null)}>
-          <div className="relative w-full max-w-sm bg-[var(--surface-0)] rounded-xl shadow-2xl border border-[var(--border)] p-6 flex flex-col gap-4"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start gap-3">
-              <div className="shrink-0 w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600 dark:text-red-400">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1">Ta bort offert?</h3>
-                <p className="text-xs text-[var(--text-secondary)]">Offerten tas bort permanent och kan inte återställas.</p>
-              </div>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button type="button" onClick={() => setConfirmDeleteOffer(null)}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-active)] transition-colors">
-                Avbryt
-              </button>
-              <button type="button" onClick={() => void deleteOffer(confirmDeleteOffer)}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors">
-                Ta bort
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDestructiveDialog
+        open={Boolean(confirmDeleteOffer)}
+        onOpenChange={(open) => { if (!open) setConfirmDeleteOffer(null); }}
+        title="Ta bort offert?"
+        description="Offerten tas bort permanent och kan inte återställas."
+        confirmLabel="Ta bort"
+        onConfirm={() => {
+          if (!confirmDeleteOffer) return;
+          void deleteOffer(confirmDeleteOffer);
+          setConfirmDeleteOffer(null);
+        }}
+      />
 
       {/* Document preview modal */}
-      {previewDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setPreviewDoc(null)}>
-          <div className="relative w-full max-w-4xl max-h-[90vh] bg-[var(--surface-0)] rounded-xl shadow-2xl overflow-hidden flex flex-col border border-[var(--border)]"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)] bg-[var(--surface-alt)] shrink-0">
-              <span className="text-sm font-semibold text-[var(--text-primary)]">Förhandsvisning av offertdokument</span>
-              <button onClick={() => setPreviewDoc(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto">
-              <iframe srcDoc={previewDoc} title="Offertdokument" className="w-full h-full min-h-[70vh] border-0"/>
-            </div>
-          </div>
-        </div>
-      )}
+      <OfferPreviewDialog
+        open={Boolean(previewDoc)}
+        onClose={() => setPreviewDoc(null)}
+        srcDoc={previewDoc ?? ''}
+      />
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
