@@ -1,14 +1,16 @@
 'use client';
 
+import { Button } from '@shared/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  ModalActionFooter,
+  ModalBody,
+  ModalMetaCard,
 } from '@shared/ui/dialog';
-import { Button } from '@shared/ui/button';
 
 interface SendOfferDialogProps {
   open: boolean;
@@ -31,48 +33,49 @@ export function SendOfferDialog({
 }: SendOfferDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent mobileVariant="center" className="max-w-[420px]">
-        <DialogHeader className="px-6 pb-2 pt-5">
-          <DialogTitle className="text-base">Bekräfta utskick</DialogTitle>
-          <DialogDescription>
-            Offerten skickas via e-post och kan inte redigeras efter utskick.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent mobileVariant="center" size="md">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <DialogHeader>
+            <DialogTitle>Bekräfta utskick</DialogTitle>
+            <DialogDescription>
+              Offerten skickas via e-post och öppnas sedan i den säkra offertvyn där pris, villkor och signering visas.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="px-6 pb-4">
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-            <dl className="space-y-2 text-sm">
-              <div className="flex items-baseline justify-between gap-4">
-                <dt className="shrink-0 text-[var(--text-muted)]">Mottagare</dt>
-                <dd className="text-right font-medium text-[var(--text-primary)]">{recipientName}</dd>
-              </div>
-              <div className="flex items-baseline justify-between gap-4">
-                <dt className="shrink-0 text-[var(--text-muted)]">E-post</dt>
-                <dd className="text-right text-[var(--text-primary)]">{recipientEmail}</dd>
-              </div>
-              {recipientCompany && (
-                <div className="flex items-baseline justify-between gap-4">
-                  <dt className="shrink-0 text-[var(--text-muted)]">Företag</dt>
-                  <dd className="text-right text-[var(--text-primary)]">{recipientCompany}</dd>
+          <ModalBody className="pt-2">
+            <ModalMetaCard>
+              <dl className="space-y-3 text-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <dt className="text-[var(--text-muted)]">Mottagare</dt>
+                  <dd className="text-right font-medium text-[var(--text-primary)]">{recipientName}</dd>
                 </div>
-              )}
-              <div className="border-t border-[var(--border)] pt-2">
-                <p className="text-xs leading-5 text-[var(--text-muted)]">
-                  Mottagaren får ett mejl med en knapp till den säkra offertvyn där pris, villkor och signering visas.
-                </p>
-              </div>
-            </dl>
-          </div>
-        </div>
+                <div className="flex items-start justify-between gap-4">
+                  <dt className="text-[var(--text-muted)]">E-post</dt>
+                  <dd className="break-all text-right text-[var(--text-primary)]">{recipientEmail}</dd>
+                </div>
+                {recipientCompany ? (
+                  <div className="flex items-start justify-between gap-4">
+                    <dt className="text-[var(--text-muted)]">Företag</dt>
+                    <dd className="text-right text-[var(--text-primary)]">{recipientCompany}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            </ModalMetaCard>
 
-        <DialogFooter className="gap-2 border-t border-[var(--border)] px-6 pb-5 pt-3">
-          <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-            Avbryt
-          </Button>
-          <Button type="button" onClick={onConfirm} disabled={loading}>
-            {loading ? 'Skickar…' : 'Skicka offert'}
-          </Button>
-        </DialogFooter>
+            <div className="mt-4 rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-100">
+              Kontrollera mottagaren noggrant. Efter utskick är det kundens länkade offertvy som blir den aktiva källan.
+            </div>
+          </ModalBody>
+
+          <ModalActionFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+              Avbryt
+            </Button>
+            <Button type="button" onClick={onConfirm} disabled={loading}>
+              {loading ? 'Skickar…' : 'Skicka offert'}
+            </Button>
+          </ModalActionFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

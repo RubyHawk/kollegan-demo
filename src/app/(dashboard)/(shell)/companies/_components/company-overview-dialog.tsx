@@ -9,18 +9,21 @@ import {
   Globe,
   NotePencil,
   Package,
-  Users,
 } from '@phosphor-icons/react';
 import type { Company } from '@modules/supporting/offers';
 import { fetchWithRefresh } from '@shared/lib/api-client';
+import { Button } from '@shared/ui/button';
 import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
+  ModalBody,
+  ModalMetaCard,
+  ModalSection,
 } from '@shared/ui/dialog';
-import { Button } from '@shared/ui/button';
 
 interface CompanyOverviewDialogProps {
   open: boolean;
@@ -89,8 +92,51 @@ function getCompanyAddress(company: Company) {
     .filter(Boolean);
 }
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-lg bg-[var(--surface-alt)] ${className ?? ''}`} />;
+function SummaryList({
+  title,
+  count,
+  loading,
+  empty,
+  actionLabel,
+  onAction,
+  children,
+}: {
+  title: string;
+  count: number;
+  loading: boolean;
+  empty: string;
+  actionLabel: string;
+  onAction: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <ModalSection tone="subtle" className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
+          {!loading ? (
+            <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-2 py-0.5 text-xs font-semibold text-[var(--text-muted)]">
+              {count}
+            </span>
+          ) : null}
+        </div>
+        <Button type="button" variant="ghost" size="sm" onClick={onAction}>
+          {actionLabel}
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">
+          <div className="h-12 animate-pulse rounded-xl bg-[var(--surface)]" />
+          <div className="h-12 animate-pulse rounded-xl bg-[var(--surface)]" />
+        </div>
+      ) : count === 0 ? (
+        <p className="text-sm text-[var(--text-muted)]">{empty}</p>
+      ) : (
+        <div className="space-y-2">{children}</div>
+      )}
+    </ModalSection>
+  );
 }
 
 export function CompanyOverviewDialog({
@@ -137,7 +183,13 @@ export function CompanyOverviewDialog({
         });
       } catch (error) {
         if (cancelled) return;
-        setState({ loading: false, error: (error as Error).message, members: [], templates: [], products: [] });
+        setState({
+          loading: false,
+          error: (error as Error).message,
+          members: [],
+          templates: [],
+          products: [],
+        });
       }
     })();
 
@@ -155,57 +207,72 @@ export function CompanyOverviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent mobileVariant="right-panel" showMobileClose>
+      <DialogContent mobileVariant="right-panel" size="right-panel" showMobileClose>
         <div className="flex h-full flex-col overflow-hidden">
-          {/* Header */}
-          <DialogHeader className="shrink-0 border-b border-[var(--border)] px-5 py-4 pr-12">
+          <DialogHeader className="border-b border-[var(--border)] pr-12">
             <div className="flex items-start gap-3">
               {company.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={company.logoUrl}
                   alt={company.name}
-                  className="h-10 w-10 shrink-0 rounded-xl border border-[var(--border)] object-cover"
+                  className="h-11 w-11 shrink-0 rounded-xl border border-[var(--border)] object-cover"
                 />
               ) : (
-                <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
+                <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
                   <Buildings size={18} weight="duotone" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <DialogTitle className="truncate text-base">{company.name}</DialogTitle>
-                <div className="mt-1 flex flex-wrap gap-1.5">
+                <DialogTitle className="truncate">{company.name}</DialogTitle>
+                <DialogDescription className="mt-1">
+                  Snabb överblick över företagets profil, användare, mallar och produkter.
+                </DialogDescription>
+                <div className="mt-3 flex flex-wrap gap-2">
                   <span
-                    className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                    className={
                       brandingReady
-                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300'
-                        : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300'
-                    }`}
+                        ? 'rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300'
+                        : 'rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300'
+                    }
                   >
                     {brandingReady ? 'Branding redo' : 'Branding saknas'}
                   </span>
-                  {company.orgNumber && (
-                    <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-0.5 text-[11px] text-[var(--text-muted)]">
+                  {company.orgNumber ? (
+                    <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-[11px] text-[var(--text-muted)]">
                       {company.orgNumber}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>
           </DialogHeader>
 
-          {/* Scrollable body */}
-          <div className="min-h-0 flex-1 overflow-y-auto">
-
-            {/* Company identity section */}
-            <section className="border-b border-[var(--border)] px-5 py-4">
-              {addressLines.length > 0 && (
-                <div className="mb-3 space-y-0.5 text-sm leading-6 text-[var(--text-secondary)]">
-                  {addressLines.map((line) => <p key={line}>{line}</p>)}
+          <ModalBody className="space-y-4">
+            <ModalMetaCard>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                      Företagsprofil
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--text-primary)]">Adress, webbplats och snabba genvägar.</p>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={() => onEdit(company)}>
+                    <NotePencil size={14} weight="duotone" />
+                    Redigera
+                  </Button>
                 </div>
-              )}
-              <div className="flex flex-wrap gap-2">
-                {company.website && (
+
+                {addressLines.length > 0 ? (
+                  <div className="space-y-1 text-sm leading-6 text-[var(--text-secondary)]">
+                    {addressLines.map((line) => <p key={line}>{line}</p>)}
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--text-muted)]">Ingen adress tillagd ännu.</p>
+                )}
+
+                {company.website ? (
                   <Link
                     href={company.website}
                     target="_blank"
@@ -216,152 +283,89 @@ export function CompanyOverviewDialog({
                     {company.website.replace(/^https?:\/\//, '')}
                     <ArrowSquareOut size={12} />
                   </Link>
-                )}
+                ) : null}
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-3"
-                onClick={() => onEdit(company)}
-              >
-                <NotePencil size={14} weight="duotone" />
-                Redigera företag
-              </Button>
-            </section>
+            </ModalMetaCard>
 
-            {/* Members section */}
-            <section className="border-b border-[var(--border)] px-5 py-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Users size={15} weight="duotone" className="text-[var(--accent)]" />
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Användare</p>
-                  {!state.loading && (
-                    <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-1.5 py-0.5 text-xs font-semibold text-[var(--text-muted)]">
-                      {state.members.length}
-                    </span>
-                  )}
-                </div>
-                <Button type="button" variant="ghost" size="sm" onClick={() => onManageMembers(company)}>
-                  Hantera
-                </Button>
-              </div>
-
-              <div className="mt-3 space-y-1.5">
-                {state.loading ? (
-                  <>
-                    <Skeleton className="h-9" />
-                    <Skeleton className="h-9" />
-                    <Skeleton className="h-9 w-3/4" />
-                  </>
-                ) : state.members.length === 0 ? (
-                  <p className="text-sm text-[var(--text-muted)]">Inga kopplade användare.</p>
-                ) : (
-                  state.members.slice(0, 5).map((member) => {
-                    const isAdmin = member.role === 'admin';
-                    return (
-                      <div key={member.id} className="flex items-center justify-between gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-[var(--text-primary)]">{getDisplayName(member.user)}</p>
-                          <p className="truncate text-xs text-[var(--text-muted)]">{member.user.email}</p>
-                        </div>
-                        <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                            isAdmin
-                              ? 'bg-[var(--accent)]/10 text-[var(--accent)] ring-1 ring-inset ring-[var(--accent)]/20'
-                              : 'border border-[var(--border)] text-[var(--text-muted)]'
-                          }`}
-                        >
-                          {isAdmin ? 'Admin' : 'Staff'}
-                        </span>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </section>
-
-            {/* Templates section */}
-            <section className="border-b border-[var(--border)] px-5 py-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <FileText size={15} weight="duotone" className="text-[var(--accent)]" />
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Mallar</p>
-                  {!state.loading && (
-                    <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-1.5 py-0.5 text-xs font-semibold text-[var(--text-muted)]">
-                      {state.templates.length}
-                    </span>
-                  )}
-                </div>
-                <Button type="button" variant="ghost" size="sm" onClick={() => onOpenTemplates(company)}>
-                  Öppna mallar
-                </Button>
-              </div>
-
-              <div className="mt-3 space-y-1.5">
-                {state.loading ? (
-                  <>
-                    <Skeleton className="h-9" />
-                    <Skeleton className="h-9 w-4/5" />
-                  </>
-                ) : state.templates.length === 0 ? (
-                  <p className="text-sm text-[var(--text-muted)]">Inga företagsspecifika mallar.</p>
-                ) : (
-                  state.templates.slice(0, 5).map((template) => (
-                    <div key={template.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2">
-                      <p className="truncate text-sm font-medium text-[var(--text-primary)]">{template.name}</p>
+            <SummaryList
+              title="Användare"
+              count={state.members.length}
+              loading={state.loading}
+              empty="Inga kopplade användare."
+              actionLabel="Hantera"
+              onAction={() => onManageMembers(company)}
+            >
+              {state.members.slice(0, 4).map((member) => {
+                const isAdmin = member.role === 'admin';
+                return (
+                  <div key={member.id} className="flex items-center justify-between gap-3 rounded-xl bg-[var(--surface)] px-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-[var(--text-primary)]">{getDisplayName(member.user)}</p>
+                      <p className="truncate text-xs text-[var(--text-muted)]">{member.user.email}</p>
                     </div>
-                  ))
-                )}
-              </div>
-            </section>
-
-            {/* Products section */}
-            <section className="px-5 py-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Package size={15} weight="duotone" className="text-[var(--accent)]" />
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Produkter</p>
-                  {!state.loading && (
-                    <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-1.5 py-0.5 text-xs font-semibold text-[var(--text-muted)]">
-                      {state.products.length}
+                    <span
+                      className={
+                        isAdmin
+                          ? 'rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--accent)] ring-1 ring-inset ring-[var(--accent)]/20'
+                          : 'rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-muted)]'
+                      }
+                    >
+                      {isAdmin ? 'Admin' : 'Staff'}
                     </span>
-                  )}
-                </div>
-                <Button type="button" variant="ghost" size="sm" onClick={() => onOpenProducts(company)}>
-                  Öppna bibliotek
-                </Button>
-              </div>
+                  </div>
+                );
+              })}
+            </SummaryList>
 
-              <div className="mt-3 space-y-1.5">
-                {state.loading ? (
-                  <>
-                    <Skeleton className="h-9" />
-                    <Skeleton className="h-9" />
-                    <Skeleton className="h-9 w-2/3" />
-                  </>
-                ) : state.products.length === 0 ? (
-                  <p className="text-sm text-[var(--text-muted)]">Inga produkter kopplade.</p>
-                ) : (
-                  state.products.slice(0, 5).map((product) => (
-                    <div key={product.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2">
+            <SummaryList
+              title="Mallar"
+              count={state.templates.length}
+              loading={state.loading}
+              empty="Inga företagsspecifika mallar."
+              actionLabel="Öppna"
+              onAction={() => onOpenTemplates(company)}
+            >
+              {state.templates.slice(0, 4).map((template) => (
+                <div key={template.id} className="rounded-xl bg-[var(--surface)] px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <FileText size={14} weight="duotone" className="text-[var(--accent)]" />
+                    <p className="truncate text-sm font-medium text-[var(--text-primary)]">{template.name}</p>
+                  </div>
+                </div>
+              ))}
+            </SummaryList>
+
+            <SummaryList
+              title="Produkter"
+              count={state.products.length}
+              loading={state.loading}
+              empty="Inga produkter kopplade."
+              actionLabel="Öppna"
+              onAction={() => onOpenProducts(company)}
+            >
+              {state.products.slice(0, 4).map((product) => (
+                <div key={product.id} className="rounded-xl bg-[var(--surface)] px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <Package size={14} weight="duotone" className="text-[var(--accent)]" />
+                    <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-[var(--text-primary)]">{product.name}</p>
-                      {product.category && <p className="truncate text-xs text-[var(--text-muted)]">{product.category}</p>}
+                      {product.category ? (
+                        <p className="truncate text-xs text-[var(--text-muted)]">{product.category}</p>
+                      ) : null}
                     </div>
-                  ))
-                )}
-              </div>
-
-              {state.error && (
-                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300">
-                  {state.error}
+                  </div>
                 </div>
-              )}
-            </section>
-          </div>
+              ))}
+            </SummaryList>
 
-          {/* Footer */}
-          <div className="shrink-0 border-t border-[var(--border)] px-5 py-3">
+            {state.error ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300">
+                {state.error}
+              </div>
+            ) : null}
+          </ModalBody>
+
+          <div className="shrink-0 border-t border-[var(--border)] px-4 py-3 sm:px-6">
             <DialogClose asChild>
               <Button type="button" variant="outline" className="w-full">
                 Stäng

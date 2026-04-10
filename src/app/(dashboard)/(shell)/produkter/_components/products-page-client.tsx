@@ -12,16 +12,9 @@ import {
 } from '@phosphor-icons/react';
 import type { OfferProduct, ProductCategory } from '@modules/supporting/offers';
 import { Button } from '@shared/ui/button';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@shared/ui/dialog';
 import { fetchWithRefresh } from '@shared/lib/api-client';
 import { cn } from '@shared/lib/utils';
 import { CategoryManagerDialog } from './category-manager-dialog';
@@ -36,7 +29,6 @@ import type {
 import {
   buildCategoryTree,
   buildStructuredCategoryLabel,
-  formatSek,
   getProductCategoryMeta,
   normalizeSearch,
   readApiError,
@@ -49,7 +41,6 @@ type CategoryFilterKey = '' | 'uncategorized' | `main:${string}` | `sub:${string
 export function ProductsPageClient() {
   const {
     companies,
-    selectedCompany,
     selectedCompanyId,
     setSelectedCompanyId,
     loading: companyLoading,
@@ -750,48 +741,19 @@ export function ProductsPageClient() {
         deletingId={deletingCategoryId}
       />
 
-      <Dialog open={Boolean(deleteProduct)} onOpenChange={(open) => { if (!open) setDeleteProduct(null); }}>
-        <DialogContent mobileVariant="sheet" showMobileClose className="sm:max-w-xl">
-          <DialogHeader className="pr-16">
-            <DialogTitle>Ta bort produkt?</DialogTitle>
-            <DialogDescription>
-              Produkten försvinner från biblioteket och visas inte längre i offertflödet.
-            </DialogDescription>
-          </DialogHeader>
-
-          {deleteProduct && (
-            <div className="mx-5 rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] p-3.5">
-              <p className="text-sm font-semibold text-[var(--text-primary)]">{deleteProduct.name}</p>
-              <div className="mt-2 flex flex-wrap gap-2 text-xs text-[var(--text-muted)]">
-                {productMetas.get(deleteProduct.id)?.label && (
-                  <span className="rounded-full bg-[var(--surface-3)] px-2 py-1">
-                    {productMetas.get(deleteProduct.id)?.label}
-                  </span>
-                )}
-                <span className="rounded-full bg-[var(--surface-3)] px-2 py-1">{formatSek(deleteProduct.unitPrice)}</span>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => setDeleteProduct(null)}>
-              Avbryt
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={!deleteProduct || deletingId === deleteProduct.id}
-              onClick={() => {
-                if (deleteProduct) {
-                  void handleDeleteProduct(deleteProduct);
-                }
-              }}
-            >
-              {deleteProduct && deletingId === deleteProduct.id ? 'Tar bort…' : 'Ta bort'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDestructiveDialog
+        open={Boolean(deleteProduct)}
+        onOpenChange={(open) => { if (!open) setDeleteProduct(null); }}
+        title={deleteProduct ? `Ta bort ${deleteProduct.name}?` : 'Ta bort produkt?'}
+        description="Produkten försvinner från biblioteket och visas inte längre i offertflödet."
+        confirmLabel="Ta bort"
+        loading={!!deleteProduct && deletingId === deleteProduct.id}
+        onConfirm={() => {
+          if (deleteProduct) {
+            void handleDeleteProduct(deleteProduct);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -2,18 +2,21 @@
 
 import { useMemo, useState } from 'react';
 import { FolderOpen, Folders, Plus, StackSimple, Trash } from '@phosphor-icons/react';
-import type { CategoryComposerPayload, CategoryNode, CategorySupportState } from './product-library.types';
 import { Button } from '@shared/ui/button';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import { cn } from '@shared/lib/utils';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  ModalActionFooter,
+  ModalBody,
+  ModalSection,
 } from '@shared/ui/dialog';
-import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@shared/ui/tooltip';
+import type { CategoryComposerPayload, CategoryNode, CategorySupportState } from './product-library.types';
 
 interface CategoryManagerDialogProps {
   open: boolean;
@@ -61,159 +64,160 @@ export function CategoryManagerDialog({
     [categories, selectedMainId],
   );
 
-  // If selected category was deleted, clear selection
-  const resolvedNode = selectedNode ?? (categories.length > 0 && !selectedMainId ? null : null);
-  void resolvedNode;
-
   const isAvailable = supportState === 'available';
 
   return (
     <>
-      <TooltipProvider delayDuration={300}>
+      <TooltipProvider delayDuration={250}>
         <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent mobileVariant="fullscreen" showMobileClose className="w-[min(100vw-1.5rem,920px)] sm:max-w-[920px]">
-            <div className="flex h-full min-h-0 flex-col">
-              <DialogHeader className="border-b border-[var(--border)] px-5 pb-4 pt-5 pr-16">
-                <DialogTitle>Produktkategorier</DialogTitle>
-                <DialogDescription>
-                  Skapa och organisera kategoristrukturen. Välj en huvudkategori till vänster för att hantera dess underkategorier.
-                  {supportMessage && <span className="ml-1 text-amber-600 dark:text-amber-400">{supportMessage}</span>}
+          <DialogContent mobileVariant="fullscreen" size="xl" showMobileClose>
+            <div className="flex min-h-0 flex-1 flex-col">
+              <DialogHeader className="border-b border-[var(--border)] pr-16">
+                <DialogTitle className="text-xl">Produktkategorier</DialogTitle>
+                <DialogDescription className="max-w-3xl">
+                  Hantera huvudkategorier och underkategorier i samma vy. Välj en huvudkategori till vänster för att
+                  arbeta vidare med dess undernivåer.
                 </DialogDescription>
+                {supportMessage ? (
+                  <p className="text-sm text-amber-600 dark:text-amber-400">{supportMessage}</p>
+                ) : null}
               </DialogHeader>
 
-              {/* Two-panel body */}
-              <div className="flex min-h-0 flex-1 divide-x divide-[var(--border)]">
-
-                {/* Left panel — Main categories */}
-                <div className="flex w-[260px] shrink-0 flex-col">
-                  <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)]">
-                      <Folders size={14} />
-                      Huvudkategorier
+              <ModalBody>
+                <div className="grid min-h-0 gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
+                  <ModalSection tone="card" className="min-h-0">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Folders size={16} weight="duotone" className="text-[var(--accent)]" />
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">Huvudkategorier</p>
+                      </div>
+                      <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-xs font-semibold text-[var(--text-muted)]">
+                        {categories.length}
+                      </span>
                     </div>
-                    <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-0.5 text-xs font-semibold text-[var(--text-muted)]">
-                      {categories.length}
-                    </span>
-                  </div>
 
-                  <div className="min-h-0 flex-1 overflow-y-auto p-2">
                     {categories.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center">
-                        <FolderOpen size={24} weight="duotone" className="text-[var(--text-muted)]" />
-                        <p className="text-xs text-[var(--text-muted)]">Inga kategorier ännu</p>
+                      <div className="rounded-[20px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-4 py-8 text-center">
+                        <FolderOpen size={24} weight="duotone" className="mx-auto text-[var(--text-muted)]" />
+                        <p className="mt-3 text-sm text-[var(--text-muted)]">Inga kategorier ännu.</p>
                       </div>
                     ) : (
-                      categories.map((node) => {
-                        const isSelected = selectedMainId === node.main.id;
-                        const hasChildren = node.children.length > 0;
-                        return (
-                          <div key={node.main.id} className="group/row flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedMainId(node.main.id)}
-                              className={`flex-1 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+                      <div className="space-y-2">
+                        {categories.map((node) => {
+                          const isSelected = selectedMainId === node.main.id;
+                          const hasChildren = node.children.length > 0;
+
+                          return (
+                            <div
+                              key={node.main.id}
+                              className={cn(
+                                'group rounded-[18px] border px-3 py-3 transition-colors',
                                 isSelected
-                                  ? 'bg-[var(--accent)]/8 font-semibold text-[var(--text-primary)] ring-1 ring-inset ring-[var(--accent)]/20'
-                                  : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]'
-                              }`}
-                            >
-                              <span className="block truncate">{node.main.name}</span>
-                              <span className="block text-xs text-[var(--text-muted)]">
-                                {node.children.length} underkategorier
-                              </span>
-                            </button>
-
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="inline-flex">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setPendingDelete({ id: node.main.id, name: node.main.name, type: 'main' })
-                                    }
-                                    disabled={!isAvailable || deletingId === node.main.id || hasChildren}
-                                    className="hidden h-7 w-7 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-40 group-hover/row:flex dark:hover:bg-red-950/30 dark:hover:text-red-400"
-                                  >
-                                    <Trash size={13} weight="bold" />
-                                  </button>
-                                </span>
-                              </TooltipTrigger>
-                              {hasChildren && (
-                                <TooltipContent side="right">
-                                  Ta bort underkategorierna först
-                                </TooltipContent>
+                                  ? 'border-[var(--accent)]/20 bg-[var(--accent)]/6'
+                                  : 'border-[var(--border)] bg-[var(--surface-alt)]',
                               )}
-                            </Tooltip>
-                          </div>
-                        );
-                      })
+                            >
+                              <div className="flex items-start gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedMainId(node.main.id)}
+                                  className="min-w-0 flex-1 text-left"
+                                >
+                                  <p className="truncate text-sm font-medium text-[var(--text-primary)]">{node.main.name}</p>
+                                  <p className="mt-1 text-xs text-[var(--text-muted)]">
+                                    {node.children.length} underkategorier
+                                  </p>
+                                </button>
+
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="inline-flex">
+                                      <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        onClick={() => setPendingDelete({ id: node.main.id, name: node.main.name, type: 'main' })}
+                                        disabled={!isAvailable || deletingId === node.main.id || hasChildren}
+                                        className="h-8 w-8 rounded-xl text-[var(--text-muted)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+                                      >
+                                        <Trash size={14} weight="bold" />
+                                      </Button>
+                                    </span>
+                                  </TooltipTrigger>
+                                  {hasChildren ? (
+                                    <TooltipContent side="right">Ta bort underkategorierna först</TooltipContent>
+                                  ) : null}
+                                </Tooltip>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
-                  </div>
 
-                  {/* Add main category */}
-                  <div className="border-t border-[var(--border)] p-3">
-                    <div className="flex gap-2">
-                      <input
-                        value={mainName}
-                        onChange={(e) => setMainName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && mainName.trim() && isAvailable && !saving) {
-                            void onCreateCategory({ name: mainName.trim() }).then(() => setMainName(''));
-                          }
-                        }}
-                        placeholder="Ny kategori…"
-                        disabled={!isAvailable}
-                        className={`${inputCls} text-xs`}
-                      />
-                      <Button
-                        type="button"
-                        size="icon"
-                        onClick={async () => {
-                          if (!mainName.trim()) return;
-                          await onCreateCategory({ name: mainName.trim() });
-                          setMainName('');
-                        }}
-                        disabled={!isAvailable || saving || !mainName.trim()}
-                        className="shrink-0"
-                        title="Lägg till huvudkategori"
-                      >
-                        <Plus size={15} weight="bold" />
-                      </Button>
+                    <div className="space-y-2 border-t border-[var(--border)] pt-4">
+                      <label className="block text-xs font-medium text-[var(--text-secondary)]">Ny huvudkategori</label>
+                      <div className="flex gap-2">
+                        <input
+                          value={mainName}
+                          onChange={(event) => setMainName(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' && mainName.trim() && isAvailable && !saving) {
+                              void onCreateCategory({ name: mainName.trim() }).then(() => setMainName(''));
+                            }
+                          }}
+                          placeholder="Ny kategori..."
+                          disabled={!isAvailable}
+                          className={inputCls}
+                        />
+                        <Button
+                          type="button"
+                          size="icon"
+                          onClick={async () => {
+                            if (!mainName.trim()) return;
+                            await onCreateCategory({ name: mainName.trim() });
+                            setMainName('');
+                          }}
+                          disabled={!isAvailable || saving || !mainName.trim()}
+                          className="shrink-0"
+                        >
+                          <Plus size={15} weight="bold" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </ModalSection>
 
-                {/* Right panel — Subcategories */}
-                <div className="flex min-w-0 flex-1 flex-col">
-                  {selectedNode ? (
-                    <>
-                      <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
-                        <div>
-                          <p className="text-sm font-semibold text-[var(--text-primary)]">{selectedNode.main.name}</p>
-                          <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                            <StackSimple size={12} />
-                            {selectedNode.children.length} underkategorier
-                            {(mainCounts.get(selectedNode.main.id) ?? 0) > 0 && (
-                              <span>• {mainCounts.get(selectedNode.main.id)} direktkopplade produkter</span>
-                            )}
+                  <ModalSection tone="card" className="min-h-0">
+                    {selectedNode ? (
+                      <div className="space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--text-primary)]">{selectedNode.main.name}</p>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
+                              <span className="inline-flex items-center gap-1">
+                                <StackSimple size={12} />
+                                {selectedNode.children.length} underkategorier
+                              </span>
+                              {(mainCounts.get(selectedNode.main.id) ?? 0) > 0 ? (
+                                <span>{mainCounts.get(selectedNode.main.id)} direktkopplade produkter</span>
+                              ) : null}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="min-h-0 flex-1 overflow-y-auto p-3">
                         {selectedNode.children.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--border)] px-6 py-8 text-center">
-                            <p className="text-sm text-[var(--text-muted)]">Inga underkategorier</p>
-                            <p className="text-xs text-[var(--text-muted)]">
+                          <div className="rounded-[20px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-6 py-10 text-center">
+                            <p className="text-sm font-medium text-[var(--text-primary)]">Inga underkategorier ännu</p>
+                            <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
                               Lägg till underkategorier för att strukturera produkterna under {selectedNode.main.name}.
                             </p>
                           </div>
                         ) : (
-                          <div className="space-y-1.5">
+                          <div className="space-y-2">
                             {selectedNode.children.map((child) => (
                               <div
                                 key={child.id}
-                                className="group/sub flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-0)] px-3.5 py-2.5"
+                                className="flex items-center justify-between gap-3 rounded-[18px] border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3"
                               >
                                 <div className="min-w-0">
                                   <p className="truncate text-sm font-medium text-[var(--text-primary)]">{child.name}</p>
@@ -221,76 +225,79 @@ export function CategoryManagerDialog({
                                     {subCounts.get(child.id) ?? 0} kopplade produkter
                                   </p>
                                 </div>
-                                <button
+                                <Button
                                   type="button"
+                                  size="icon"
+                                  variant="ghost"
                                   onClick={() => setPendingDelete({ id: child.id, name: child.name, type: 'sub' })}
                                   disabled={!isAvailable || deletingId === child.id}
-                                  className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-40 group-hover/sub:flex dark:hover:bg-red-950/30 dark:hover:text-red-400"
+                                  className="h-8 w-8 shrink-0 rounded-xl text-[var(--text-muted)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
                                 >
-                                  <Trash size={13} weight="bold" />
-                                </button>
+                                  <Trash size={14} weight="bold" />
+                                </Button>
                               </div>
                             ))}
                           </div>
                         )}
-                      </div>
 
-                      {/* Add subcategory */}
-                      <div className="border-t border-[var(--border)] p-3">
-                        <div className="flex gap-2">
-                          <input
-                            value={subName}
-                            onChange={(e) => setSubName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && subName.trim() && isAvailable && !saving) {
-                                void onCreateCategory({ name: subName.trim(), parentId: selectedNode.main.id }).then(
-                                  () => setSubName(''),
-                                );
-                              }
-                            }}
-                            placeholder={`Underkategori för ${selectedNode.main.name}…`}
-                            disabled={!isAvailable}
-                            className={`${inputCls} text-xs`}
-                          />
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="secondary"
-                            onClick={async () => {
-                              if (!subName.trim()) return;
-                              await onCreateCategory({ name: subName.trim(), parentId: selectedNode.main.id });
-                              setSubName('');
-                            }}
-                            disabled={!isAvailable || saving || !subName.trim()}
-                            className="shrink-0"
-                            title="Lägg till underkategori"
-                          >
-                            <Plus size={15} weight="bold" />
-                          </Button>
+                        <div className="space-y-2 border-t border-[var(--border)] pt-4">
+                          <label className="block text-xs font-medium text-[var(--text-secondary)]">
+                            Ny underkategori för {selectedNode.main.name}
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              value={subName}
+                              onChange={(event) => setSubName(event.target.value)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter' && subName.trim() && isAvailable && !saving) {
+                                  void onCreateCategory({ name: subName.trim(), parentId: selectedNode.main.id }).then(
+                                    () => setSubName(''),
+                                  );
+                                }
+                              }}
+                              placeholder="Underkategori..."
+                              disabled={!isAvailable}
+                              className={inputCls}
+                            />
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="icon"
+                              onClick={async () => {
+                                if (!subName.trim()) return;
+                                await onCreateCategory({ name: subName.trim(), parentId: selectedNode.main.id });
+                                setSubName('');
+                              }}
+                              disabled={!isAvailable || saving || !subName.trim()}
+                              className="shrink-0"
+                            >
+                              <Plus size={15} weight="bold" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </>
-                  ) : (
-                    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 py-12 text-center">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-muted)]">
-                        <Folders size={22} weight="duotone" />
+                    ) : (
+                      <div className="flex h-full min-h-[280px] flex-col items-center justify-center gap-3 rounded-[20px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-8 py-12 text-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]">
+                          <Folders size={22} weight="duotone" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-[var(--text-primary)]">Välj en huvudkategori</p>
+                          <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
+                            Klicka på en kategori till vänster för att hantera dess underkategorier här.
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-[var(--text-primary)]">Välj en kategori</p>
-                        <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
-                          Klicka på en huvudkategori i listan till vänster för att hantera dess underkategorier.
-                        </p>
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </ModalSection>
                 </div>
-              </div>
+              </ModalBody>
 
-              <DialogFooter className="border-t border-[var(--border)] px-5 pb-5 pt-3">
+              <ModalActionFooter>
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Stäng
                 </Button>
-              </DialogFooter>
+              </ModalActionFooter>
             </div>
           </DialogContent>
         </Dialog>

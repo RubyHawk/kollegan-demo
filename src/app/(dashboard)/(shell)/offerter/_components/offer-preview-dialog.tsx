@@ -1,13 +1,15 @@
 'use client';
 
+import { Button } from '@shared/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
+  ModalActionFooter,
+  ModalBody,
 } from '@shared/ui/dialog';
-import { Button } from '@shared/ui/button';
 
 interface OfferPreviewDialogProps {
   open: boolean;
@@ -24,29 +26,34 @@ export function OfferPreviewDialog({
 }: OfferPreviewDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent
-        mobileVariant="fullscreen"
-        showMobileClose
-        className="sm:max-w-[900px] sm:max-h-[92dvh]"
-      >
+      <DialogContent mobileVariant="fullscreen" size="xl" showMobileClose>
         <div className="flex h-full min-h-0 flex-col">
-          <DialogHeader className="shrink-0 border-b border-[var(--border)] bg-[var(--surface-alt)] px-5 pb-3.5 pt-4 pr-16 sm:pr-5">
-            <DialogTitle className="text-sm">{title}</DialogTitle>
+          <DialogHeader className="border-b border-[var(--border)] pr-16">
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>
+              Förhandsgranskningen använder samma dokumentyta som kundens offertvy, men utan extra dekor runt omkring.
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="min-h-0 flex-1 overflow-auto">
-            <iframe
-              srcDoc={srcDoc}
-              title="Offertdokument"
-              className="h-full min-h-[60dvh] w-full border-0"
-            />
-          </div>
+          <ModalBody className="bg-[var(--surface-alt)]">
+            <div className="mx-auto w-full max-w-[1040px] overflow-hidden rounded-[24px] border border-[var(--border)] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
+              <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-medium text-[var(--text-muted)]">
+                <span>Kundvy</span>
+                <span>Offertdokument</span>
+              </div>
+              <iframe
+                srcDoc={srcDoc}
+                title="Offertdokument"
+                className="h-[68dvh] min-h-[60dvh] w-full border-0 bg-white"
+              />
+            </div>
+          </ModalBody>
 
-          <DialogFooter className="shrink-0 border-t border-[var(--border)] px-5 pb-5 pt-3">
+          <ModalActionFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Stäng
             </Button>
-          </DialogFooter>
+          </ModalActionFooter>
         </div>
       </DialogContent>
     </Dialog>
