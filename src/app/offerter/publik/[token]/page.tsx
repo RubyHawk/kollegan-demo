@@ -204,6 +204,65 @@ function stripLegacyLineItemTables(root: ParentNode): void {
   });
 }
 
+function enhanceOfferItemCards(root: ParentNode): void {
+  root.querySelectorAll<HTMLElement>('.offer-item-card').forEach((card) => {
+    if (card.dataset.mobilePolished === 'true') return;
+    card.dataset.mobilePolished = 'true';
+
+    const doc = card.ownerDocument;
+    const top = card.querySelector<HTMLElement>('.offer-item-card__top');
+    const totalMetric = card.querySelector<HTMLElement>('.offer-item-card__metric--total');
+    const totalValue = normalizeOfferText(totalMetric?.querySelector('dd')?.textContent ?? '').trim();
+
+    if (top) {
+      const eyebrow = top.querySelector<HTMLElement>('.offer-item-card__eyebrow');
+      const title = top.querySelector<HTMLElement>('.offer-item-card__title');
+      const detail = top.querySelector<HTMLElement>('.offer-item-card__detail');
+
+      if (title && !top.querySelector('.offer-item-card__hero')) {
+        const hero = doc.createElement('div');
+        hero.className = 'offer-item-card__hero';
+
+        const heroCopy = doc.createElement('div');
+        heroCopy.className = 'offer-item-card__hero-copy';
+        if (eyebrow) heroCopy.appendChild(eyebrow);
+        heroCopy.appendChild(title);
+        if (detail) heroCopy.appendChild(detail);
+        hero.appendChild(heroCopy);
+
+        if (totalValue) {
+          const amountChip = doc.createElement('div');
+          amountChip.className = 'offer-item-card__amount-chip';
+
+          const amountLabel = doc.createElement('span');
+          amountLabel.textContent = 'Belopp';
+
+          const amountValue = doc.createElement('strong');
+          amountValue.textContent = totalValue;
+
+          amountChip.appendChild(amountLabel);
+          amountChip.appendChild(amountValue);
+          hero.appendChild(amountChip);
+        }
+
+        top.replaceChildren(hero);
+      }
+    }
+
+    card.querySelectorAll<HTMLElement>('.offer-item-card__metric').forEach((metric) => {
+      const label = normalizeOfferText(metric.querySelector('dt')?.textContent ?? '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLocaleLowerCase('sv-SE');
+
+      if (label === 'rabatt') metric.classList.add('offer-item-card__metric--discount');
+      else if (label.startsWith('moms')) metric.classList.add('offer-item-card__metric--vat');
+      else if (label.startsWith('antal')) metric.classList.add('offer-item-card__metric--quantity');
+      else if (label.includes('pris')) metric.classList.add('offer-item-card__metric--price');
+    });
+  });
+}
+
 function textToSignatureImage(text: string, fontFamily: string): string {
   const canvas = document.createElement('canvas');
   canvas.width = 600; canvas.height = 150;
@@ -595,58 +654,234 @@ export default function PublicOfferPage() {
       }
       .offer-item-card__metric--total dd { font-size: 18px !important; font-weight: 800 !important; letter-spacing: -0.02em !important; }
       html.offer-mobile, html.offer-mobile body {
-        background: #ffffff !important;
+        background: #eef3f8 !important;
       }
-      html.offer-mobile .doc-wrapper { width: 100% !important; max-width: none !important; margin: 0 !important; border: none !important; border-radius: 0 !important; padding-bottom: 0 !important; }
-      html.offer-mobile .page-block { margin: 0 !important; min-height: 0 !important; height: auto !important; }
+      html.offer-mobile .doc-wrapper {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding-bottom: 0 !important;
+        background: transparent !important;
+      }
+      html.offer-mobile .page-block {
+        margin: 0 !important;
+        min-height: 0 !important;
+        height: auto !important;
+        background: transparent !important;
+      }
       html.offer-mobile .page-content,
       html.offer-mobile .page-content--edge-to-edge,
-      html.offer-mobile .page-content--document { min-height: 0 !important; height: auto !important; }
-      html.offer-mobile .page-content--edge-to-edge > div[style*="position:absolute"] { position: relative !important; left: auto !important; top: auto !important; width: 100% !important; line-height: 0 !important; }
-      html.offer-mobile .page-content--edge-to-edge > div[style*="position:absolute"] img { width: 100% !important; max-width: none !important; height: auto !important; object-fit: cover !important; border-radius: 0 !important; }
-      html.offer-mobile .page-block--document { margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
       html.offer-mobile .page-content--document {
-        padding: 20px 14px 18px !important;
+        min-height: 0 !important;
+        height: auto !important;
+      }
+      html.offer-mobile .page-block--promo,
+      html.offer-mobile .page-block--promo .page-content,
+      html.offer-mobile .page-block--promo .page-content--edge-to-edge {
+        background: transparent !important;
+      }
+      html.offer-mobile .page-block--promo .page-content--edge-to-edge,
+      html.offer-mobile .page-block--promo .page-content {
+        padding: 0 !important;
+      }
+      html.offer-mobile .page-block--promo .page-content > p,
+      html.offer-mobile .page-block--promo .page-content--edge-to-edge > p {
+        display: none !important;
+      }
+      html.offer-mobile .page-block--promo .page-promo__media,
+      html.offer-mobile .page-block--promo .page-content--edge-to-edge > div[style*="position:absolute"] {
+        position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        width: calc(100% + 32px) !important;
+        margin: 0 -16px !important;
+        line-height: 0 !important;
+      }
+      html.offer-mobile .page-block--promo .page-promo__media img,
+      html.offer-mobile .page-block--promo .page-content--edge-to-edge > div[style*="position:absolute"] img {
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        object-fit: cover !important;
+        border-radius: 0 !important;
+      }
+      html.offer-mobile.offer-has-promo-pages .page-block--document-entry {
+        margin-top: -18px !important;
+        border-radius: 28px 28px 0 0 !important;
+        background: linear-gradient(180deg, #f4f8fc 0%, #ffffff 17%) !important;
+        box-shadow: 0 -18px 44px rgba(15, 23, 42, 0.12) !important;
+        position: relative !important;
+        z-index: 2 !important;
+      }
+      html.offer-mobile .page-block--document {
+        margin: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
+      html.offer-mobile .page-content--document {
+        padding: 24px 16px 20px !important;
+        background: transparent !important;
       }
       html.offer-mobile .offer-shell {
-        gap: 16px !important;
+        gap: 20px !important;
       }
-      html.offer-mobile .offer-shell__header, html.offer-mobile .offer-shell__topline { grid-template-columns: 1fr !important; gap: 12px !important; }
-      html.offer-mobile .offer-shell__header { padding-bottom: 16px !important; }
-      html.offer-mobile .offer-shell__sender { gap: 10px !important; }
-      html.offer-mobile .offer-shell__logo { width: 44px !important; height: 44px !important; }
-      html.offer-mobile .offer-shell__meta { justify-items: stretch !important; text-align: left !important; padding: 14px !important; }
-      html.offer-mobile .offer-shell__meta dl div { grid-template-columns: minmax(0, 1fr) auto !important; gap: 8px !important; align-items: end !important; }
-      html.offer-mobile .offer-shell__meta .offer-shell__meta-row--recipient { grid-template-columns: 1fr !important; gap: 4px !important; }
+      html.offer-mobile .offer-shell__header,
+      html.offer-mobile .offer-shell__topline {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+      }
+      html.offer-mobile .offer-shell__header {
+        padding-bottom: 0 !important;
+        border-bottom: none !important;
+      }
+      html.offer-mobile .offer-shell__sender {
+        gap: 12px !important;
+        padding: 18px 16px !important;
+        border: 1px solid #dbe5ef !important;
+        border-radius: 22px !important;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06) !important;
+      }
+      html.offer-mobile .offer-shell__logo { width: 46px !important; height: 46px !important; }
+      html.offer-mobile .offer-shell__sender-copy { font-size: 13px !important; line-height: 1.62 !important; }
+      html.offer-mobile .offer-shell__meta {
+        justify-items: stretch !important;
+        text-align: left !important;
+        padding: 16px !important;
+        border: 1px solid #dbe5ef !important;
+        border-radius: 22px !important;
+        background: #ffffff !important;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05) !important;
+        gap: 10px !important;
+      }
+      html.offer-mobile .offer-shell__meta dl div {
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        gap: 12px !important;
+        align-items: end !important;
+      }
+      html.offer-mobile .offer-shell__meta .offer-shell__meta-row--recipient { grid-template-columns: 1fr !important; gap: 5px !important; }
       html.offer-mobile .offer-shell__meta dt { font-size: 10.5px !important; line-height: 1.35 !important; }
-      html.offer-mobile .offer-shell__meta dd { font-size: 13px !important; line-height: 1.35 !important; text-align: right !important; white-space: nowrap !important; }
+      html.offer-mobile .offer-shell__meta dd { font-size: 13px !important; line-height: 1.4 !important; text-align: right !important; white-space: nowrap !important; }
       html.offer-mobile .offer-shell__meta dd small { font-size: 11px !important; }
       html.offer-mobile .offer-shell__meta .offer-shell__meta-row--recipient dd { text-align: left !important; white-space: normal !important; }
       html.offer-mobile .offer-shell__customer { padding-left: 10px !important; font-size: 13px !important; line-height: 1.55 !important; }
-      html.offer-mobile .offer-shell__sender-copy { font-size: 12.5px !important; line-height: 1.55 !important; }
+      html.offer-mobile .offer-section { gap: 12px !important; }
       html.offer-mobile .offer-section p { font-size: 14px !important; line-height: 1.76 !important; }
-      html.offer-mobile .offer-table-header h2 { font-size: 22px !important; line-height: 1.2 !important; }
-      html.offer-mobile .offer-item-card__top { gap: 4px !important; padding: 14px 14px 12px !important; }
-      html.offer-mobile .offer-item-card__eyebrow { font-size: 9.5px !important; }
-      html.offer-mobile .offer-item-card__title { font-size: 18px !important; line-height: 1.32 !important; }
-      html.offer-mobile .offer-item-card__detail { display: block !important; font-size: 12.5px !important; line-height: 1.62 !important; }
+      html.offer-mobile .offer-table-header h2 {
+        font-size: 28px !important;
+        line-height: 1.08 !important;
+        letter-spacing: -0.04em !important;
+      }
       html.offer-mobile .offer-items__table { display: none !important; }
-      html.offer-mobile .offer-items__cards { display: grid !important; gap: 14px !important; }
-      html.offer-mobile .offer-item-card { border-color: #d9e3ee !important; box-shadow: none !important; background: #ffffff !important; }
-      html.offer-mobile .offer-item-card__metric { padding: 12px 14px !important; background: #ffffff !important; }
-      html.offer-mobile .offer-item-card__metric dt { font-size: 11px !important; }
-      html.offer-mobile .offer-item-card__metric dd { font-size: 14px !important; }
-      html.offer-mobile .offer-item-card__metric:nth-child(even) { background: #fbfdff !important; }
-      html.offer-mobile .offer-item-card__metric--total { border-top: 1px solid rgba(255,255,255,0.16) !important; }
-      html.offer-mobile .offer-item-card__metric--total dd { font-size: 20px !important; font-weight: 800 !important; color: #ffffff !important; }
+      html.offer-mobile .offer-items__cards { display: grid !important; gap: 16px !important; }
+      html.offer-mobile .offer-item-card {
+        border: 1px solid #d7e3ef !important;
+        border-radius: 24px !important;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.10) !important;
+      }
+      html.offer-mobile .offer-item-card__top {
+        padding: 18px 18px 16px !important;
+        background: linear-gradient(160deg, #11253d 0%, #23466c 100%) !important;
+        border-bottom: none !important;
+      }
+      html.offer-mobile .offer-item-card__hero {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        gap: 12px !important;
+        align-items: start !important;
+      }
+      html.offer-mobile .offer-item-card__hero-copy {
+        display: grid !important;
+        gap: 6px !important;
+        min-width: 0 !important;
+      }
+      html.offer-mobile .offer-item-card__eyebrow {
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.14em !important;
+        text-transform: uppercase !important;
+        color: rgba(226, 232, 240, 0.74) !important;
+      }
+      html.offer-mobile .offer-item-card__title {
+        font-size: 20px !important;
+        line-height: 1.2 !important;
+        color: #ffffff !important;
+      }
+      html.offer-mobile .offer-item-card__detail {
+        display: block !important;
+        font-size: 13px !important;
+        line-height: 1.62 !important;
+        color: rgba(241, 245, 249, 0.88) !important;
+      }
+      html.offer-mobile .offer-item-card__amount-chip {
+        display: grid !important;
+        gap: 3px !important;
+        min-width: 108px !important;
+        padding: 10px 12px !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(255, 255, 255, 0.18) !important;
+        background: rgba(255, 255, 255, 0.12) !important;
+        text-align: right !important;
+      }
+      html.offer-mobile .offer-item-card__amount-chip span {
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.12em !important;
+        text-transform: uppercase !important;
+        color: rgba(226, 232, 240, 0.72) !important;
+      }
+      html.offer-mobile .offer-item-card__amount-chip strong {
+        font-size: 18px !important;
+        line-height: 1.1 !important;
+        letter-spacing: -0.03em !important;
+        color: #ffffff !important;
+      }
+      html.offer-mobile .offer-item-card__grid {
+        display: grid !important;
+        gap: 10px !important;
+        padding: 12px !important;
+      }
+      html.offer-mobile .offer-item-card__metric {
+        padding: 12px 14px !important;
+        border: 1px solid #e3ecf5 !important;
+        border-bottom: 1px solid #e3ecf5 !important;
+        border-radius: 16px !important;
+        background: rgba(255, 255, 255, 0.94) !important;
+      }
+      html.offer-mobile .offer-item-card__metric dt { font-size: 10px !important; letter-spacing: 0.14em !important; }
+      html.offer-mobile .offer-item-card__metric dd { font-size: 15px !important; font-weight: 700 !important; }
+      html.offer-mobile .offer-item-card__metric--discount {
+        border-color: #f4d6d2 !important;
+        background: #fff6f5 !important;
+      }
+      html.offer-mobile .offer-item-card__metric--discount dt,
+      html.offer-mobile .offer-item-card__metric--discount dd {
+        color: #b42318 !important;
+      }
+      html.offer-mobile .offer-item-card__metric--total { display: none !important; }
       html.offer-mobile .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
-      html.offer-mobile .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 0 !important; margin-top: 18px !important; border-color: #d9e3ee !important; box-shadow: none !important; }
-      html.offer-mobile .offer-summary--below { width: 100% !important; margin-top: 18px !important; }
-      html.offer-mobile .offer-summary__row { font-size: 13.5px !important; padding: 12px 14px !important; line-height: 1.55 !important; border-bottom: 1px solid #e5ecf3 !important; }
-      html.offer-mobile .offer-summary__row span { font-weight: 600 !important; }
-      html.offer-mobile .offer-summary__row--total { font-size: 16px !important; padding: 14px !important; }
-      html.offer-mobile .offer-summary__row--total span { font-size: 11.5px !important; }
-      html.offer-mobile .offer-summary__row--total strong { font-size: 22px !important; color: #ffffff !important; }
+      html.offer-mobile .offer-summary {
+        width: 100% !important;
+        margin-top: 20px !important;
+        border-radius: 24px !important;
+        border-color: #d7e3ef !important;
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08) !important;
+      }
+      html.offer-mobile .offer-summary--below { width: 100% !important; margin-top: 20px !important; }
+      html.offer-mobile .offer-summary__row {
+        font-size: 14px !important;
+        padding: 14px 16px !important;
+        line-height: 1.55 !important;
+        border-bottom: 1px solid #e5ecf3 !important;
+      }
+      html.offer-mobile .offer-summary__row span { font-weight: 700 !important; }
+      html.offer-mobile .offer-summary__row strong { font-size: 15px !important; }
+      html.offer-mobile .offer-summary__row--total { font-size: 16px !important; padding: 16px !important; }
+      html.offer-mobile .offer-summary__row--total span { font-size: 11px !important; }
+      html.offer-mobile .offer-summary__row--total strong { font-size: 24px !important; color: #ffffff !important; }
       html.offer-mobile .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
       @media (max-width: 640px) {
         .page-block { margin: 0 !important; min-height: 0 !important; height: auto !important; }
@@ -724,6 +959,11 @@ export default function PublicOfferPage() {
     const firstDocumentPage = pageBlocks[firstDocumentIndex] ?? pageBlocks[0] ?? null;
     const firstOfferAnchor = findOfferAnchor(firstDocumentPage);
     setPromoPageCount(Math.max(0, firstDocumentIndex));
+    doc.documentElement?.classList.toggle('offer-has-promo-pages', firstDocumentIndex > 0);
+    pageBlocks.forEach((pageBlock, index) => {
+      pageBlock.classList.toggle('page-block--promo', index < firstDocumentIndex);
+    });
+    firstDocumentPage?.classList.add('page-block--document-entry');
     firstOfferAnchor?.setAttribute('data-public-offer-anchor', 'true');
     if (!firstOfferAnchor && firstDocumentPage) {
       firstDocumentPage.setAttribute('data-public-offer-anchor', 'true');
@@ -838,6 +1078,7 @@ export default function PublicOfferPage() {
     });
 
     stripLegacyLineItemTables(doc);
+    enhanceOfferItemCards(doc);
 
     const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {
@@ -1232,7 +1473,7 @@ export default function PublicOfferPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen bg-slate-50"
+      className="min-h-screen bg-white sm:bg-slate-50"
     >
       {/* ─── Sticky header ─── */}
       <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/96 backdrop-blur-md sm:border-b-0 sm:bg-transparent sm:px-6 sm:pt-2 sm:backdrop-blur-none">
@@ -1298,7 +1539,7 @@ export default function PublicOfferPage() {
       {/* ─── Content ─── */}
       <main
         ref={mainRef}
-        className="bg-slate-50"
+        className="bg-white sm:bg-slate-50"
         style={{ paddingBottom: '64px' }}
       >
         <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
