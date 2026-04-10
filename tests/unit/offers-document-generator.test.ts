@@ -1,6 +1,7 @@
 import {
   generateDocument,
   generateFallbackDocument,
+  renderPublicOfferSummaryHtml,
   sanitizeGeneratedOfferDocument,
 } from '@modules/supporting/offers/application/document-generator';
 import type { Offer } from '@modules/supporting/offers/domain/offer.entity';
@@ -193,5 +194,30 @@ describe('offer document generator', () => {
     expect(vatIndex).toBeGreaterThan(discountIndex);
     expect(totalIndex).toBeGreaterThan(vatIndex);
     expect(html).toContain('- 100,00');
+  });
+
+  it('uses the correct VAT subcopy for momsfri totalsummor', () => {
+    const vatFreeSummary = renderPublicOfferSummaryHtml({
+      ...offer,
+      priceDisplayMode: 'inclusive',
+      totalExVat: 600,
+      totalIncVat: 600,
+      lineItems: [
+        {
+          id: 'line-vat-free',
+          description: 'Momsfri tjänst',
+          quantity: 1,
+          unitPrice: 600,
+          vatRate: 0,
+          discount: 0,
+          sortOrder: 0,
+        },
+      ],
+    });
+
+    expect(vatFreeSummary).toContain('Totalsumma');
+    expect(vatFreeSummary).toContain('exkl. moms');
+    expect(vatFreeSummary).not.toContain('inkl. moms');
+    expect(vatFreeSummary).not.toContain('offer-summary__row--vat');
   });
 });
