@@ -2,15 +2,27 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowSquareOut, Buildings, FileText, Globe, Package, Palette, Users } from '@phosphor-icons/react';
+import {
+  ArrowSquareOut,
+  Buildings,
+  FileText,
+  Globe,
+  NotePencil,
+  Package,
+} from '@phosphor-icons/react';
 import type { Company } from '@modules/supporting/offers';
 import { fetchWithRefresh } from '@shared/lib/api-client';
+import { Button } from '@shared/ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  ModalBody,
+  ModalMetaCard,
+  ModalSection,
 } from '@shared/ui/dialog';
 
 interface CompanyOverviewDialogProps {
@@ -80,6 +92,53 @@ function getCompanyAddress(company: Company) {
     .filter(Boolean);
 }
 
+function SummaryList({
+  title,
+  count,
+  loading,
+  empty,
+  actionLabel,
+  onAction,
+  children,
+}: {
+  title: string;
+  count: number;
+  loading: boolean;
+  empty: string;
+  actionLabel: string;
+  onAction: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <ModalSection tone="subtle" className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
+          {!loading ? (
+            <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-2 py-0.5 text-xs font-semibold text-[var(--text-muted)]">
+              {count}
+            </span>
+          ) : null}
+        </div>
+        <Button type="button" variant="ghost" size="sm" onClick={onAction}>
+          {actionLabel}
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">
+          <div className="h-12 animate-pulse rounded-xl bg-[var(--surface)]" />
+          <div className="h-12 animate-pulse rounded-xl bg-[var(--surface)]" />
+        </div>
+      ) : count === 0 ? (
+        <p className="text-sm text-[var(--text-muted)]">{empty}</p>
+      ) : (
+        <div className="space-y-2">{children}</div>
+      )}
+    </ModalSection>
+  );
+}
+
 export function CompanyOverviewDialog({
   open,
   company,
@@ -109,9 +168,7 @@ export function CompanyOverviewDialog({
         if (!templatesRes.ok) throw new Error(`Kunde inte hämta mallar (${templatesRes.status})`);
         if (!productsRes.ok) throw new Error(`Kunde inte hämta produkter (${productsRes.status})`);
 
-        const membersJson = (await membersRes.json()) as {
-          data: { members: MemberSummary[] };
-        };
+        const membersJson = (await membersRes.json()) as { data: { members: MemberSummary[] } };
         const templatesJson = (await templatesRes.json()) as { data?: TemplateSummary[] };
         const productsJson = (await productsRes.json()) as { data?: { products?: ProductSummary[] } };
 
@@ -136,9 +193,7 @@ export function CompanyOverviewDialog({
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [company, open]);
 
   const brandingReady = useMemo(() => {
@@ -152,265 +207,171 @@ export function CompanyOverviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        mobileVariant="fullscreen"
-        showMobileClose
-        className="w-[min(100vw-1.5rem,1320px)] sm:max-w-[1320px]"
-      >
-        <DialogHeader className="border-b border-[var(--border)] pr-16">
-          <DialogTitle>Företagsöversikt</DialogTitle>
-          <DialogDescription>
-            Se branding, kopplade medlemmar, mallar och produkter för {company.name}. Här blir det också tydligt vad som
-            styr offertens topp och var du ändrar juridiska textblock.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="max-h-[min(84dvh,920px)] space-y-5 overflow-y-auto px-6 py-6">
-          <section className="overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)]">
-            <div className="grid gap-0 xl:grid-cols-[1.25fr_0.95fr]">
-              <div className="border-b border-[var(--border)] p-5 xl:border-b-0 xl:border-r">
-                <div className="flex items-start gap-4">
-                  {company.logoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={company.logoUrl}
-                      alt={company.name}
-                      className="h-16 w-16 rounded-[24px] border border-[var(--border)] object-cover"
-                    />
-                  ) : (
-                    <div className="inline-flex h-16 w-16 items-center justify-center rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                      <Buildings size={26} weight="duotone" />
-                    </div>
-                  )}
-
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                      Aktivt företagskort
-                    </p>
-                    <h2 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">{company.name}</h2>
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-[var(--text-muted)]">
-                      <span className={`rounded-full border px-2.5 py-1 ${brandingReady ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300' : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300'}`}>
-                        {brandingReady ? 'Branding redo' : 'Branding saknas delvis'}
-                      </span>
-                      {company.orgNumber && (
-                        <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1">
-                          Org.nr {company.orgNumber}
-                        </span>
-                      )}
-                    </div>
-                    {addressLines.length > 0 && (
-                      <div className="mt-4 space-y-1 text-sm leading-6 text-[var(--text-secondary)]">
-                        {addressLines.map((line) => (
-                          <p key={line}>{line}</p>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+      <DialogContent mobileVariant="right-panel" size="right-panel" showMobileClose>
+        <div className="flex h-full flex-col overflow-hidden">
+          <DialogHeader className="border-b border-[var(--border)] pr-12">
+            <div className="flex items-start gap-3">
+              {company.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={company.logoUrl}
+                  alt={company.name}
+                  className="h-11 w-11 shrink-0 rounded-xl border border-[var(--border)] object-cover"
+                />
+              ) : (
+                <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
+                  <Buildings size={18} weight="duotone" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <DialogTitle className="truncate">{company.name}</DialogTitle>
+                <DialogDescription className="mt-1">
+                  Snabb överblick över företagets profil, användare, mallar och produkter.
+                </DialogDescription>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span
+                    className={
+                      brandingReady
+                        ? 'rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300'
+                        : 'rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300'
+                    }
+                  >
+                    {brandingReady ? 'Branding redo' : 'Branding saknas'}
+                  </span>
+                  {company.orgNumber ? (
+                    <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-[11px] text-[var(--text-muted)]">
+                      {company.orgNumber}
+                    </span>
+                  ) : null}
                 </div>
               </div>
+            </div>
+          </DialogHeader>
 
-              <div className="p-5">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-                    <div className="flex items-center gap-2 text-[var(--text-muted)]">
-                      <Palette size={16} weight="duotone" />
-                      <span className="text-xs font-semibold uppercase tracking-[0.16em]">Offerttoppen</span>
-                    </div>
-                    <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">{company.name}</p>
-                    <p className="mt-1 text-xs text-[var(--text-muted)]">
-                      {company.orgNumber ? `Org.nr ${company.orgNumber}` : 'Organisationsnummer saknas'}
+          <ModalBody className="space-y-4">
+            <ModalMetaCard>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                      Företagsprofil
                     </p>
+                    <p className="mt-1 text-sm text-[var(--text-primary)]">Adress, webbplats och snabba genvägar.</p>
                   </div>
+                  <Button type="button" variant="outline" size="sm" onClick={() => onEdit(company)}>
+                    <NotePencil size={14} weight="duotone" />
+                    Redigera
+                  </Button>
+                </div>
 
-                  <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-                    <div className="flex items-center gap-2 text-[var(--text-muted)]">
-                      <Globe size={16} weight="duotone" />
-                      <span className="text-xs font-semibold uppercase tracking-[0.16em]">Kontakt</span>
-                    </div>
-                    <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">
-                      {company.website?.replace(/^https?:\/\//, '') || 'Ingen webbplats'}
-                    </p>
-                    <p className="mt-1 text-xs text-[var(--text-muted)]">Logga och webbadress används i mallar och mejl.</p>
+                {addressLines.length > 0 ? (
+                  <div className="space-y-1 text-sm leading-6 text-[var(--text-secondary)]">
+                    {addressLines.map((line) => <p key={line}>{line}</p>)}
                   </div>
+                ) : (
+                  <p className="text-sm text-[var(--text-muted)]">Ingen adress tillagd ännu.</p>
+                )}
 
-                  <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-alt)] p-4 sm:col-span-2">
-                    <div className="flex items-center gap-2 text-[var(--text-muted)]">
-                      <FileText size={16} weight="duotone" />
-                      <span className="text-xs font-semibold uppercase tracking-[0.16em]">Juridik i offert</span>
+                {company.website ? (
+                  <Link
+                    href={company.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm text-[var(--accent)] hover:underline"
+                  >
+                    <Globe size={14} />
+                    {company.website.replace(/^https?:\/\//, '')}
+                    <ArrowSquareOut size={12} />
+                  </Link>
+                ) : null}
+              </div>
+            </ModalMetaCard>
+
+            <SummaryList
+              title="Användare"
+              count={state.members.length}
+              loading={state.loading}
+              empty="Inga kopplade användare."
+              actionLabel="Hantera"
+              onAction={() => onManageMembers(company)}
+            >
+              {state.members.slice(0, 4).map((member) => {
+                const isAdmin = member.role === 'admin';
+                return (
+                  <div key={member.id} className="flex items-center justify-between gap-3 rounded-xl bg-[var(--surface)] px-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-[var(--text-primary)]">{getDisplayName(member.user)}</p>
+                      <p className="truncate text-xs text-[var(--text-muted)]">{member.user.email}</p>
                     </div>
-                    <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">Redigeras i Mallar</p>
-                    <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
-                      Juridiska villkor och andra fasta textblock styrs i offertmallarna, inte i företagskortet.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => onOpenTemplates(company)}
-                      className="mt-3 inline-flex rounded-2xl border border-[var(--border)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-0)]"
+                    <span
+                      className={
+                        isAdmin
+                          ? 'rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--accent)] ring-1 ring-inset ring-[var(--accent)]/20'
+                          : 'rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-muted)]'
+                      }
                     >
-                      Öppna mallar för juridik
-                    </button>
+                      {isAdmin ? 'Admin' : 'Staff'}
+                    </span>
+                  </div>
+                );
+              })}
+            </SummaryList>
+
+            <SummaryList
+              title="Mallar"
+              count={state.templates.length}
+              loading={state.loading}
+              empty="Inga företagsspecifika mallar."
+              actionLabel="Öppna"
+              onAction={() => onOpenTemplates(company)}
+            >
+              {state.templates.slice(0, 4).map((template) => (
+                <div key={template.id} className="rounded-xl bg-[var(--surface)] px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <FileText size={14} weight="duotone" className="text-[var(--accent)]" />
+                    <p className="truncate text-sm font-medium text-[var(--text-primary)]">{template.name}</p>
                   </div>
                 </div>
-              </div>
-            </div>
-          </section>
+              ))}
+            </SummaryList>
 
-          <section className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-[1.1fr_1fr_1fr]">
-            <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Medlemmar</p>
-                  <p className="mt-1 text-sm text-[var(--text-muted)]">Vem som får arbeta i företagets scope.</p>
-                </div>
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                  <Users size={18} weight="duotone" />
-                </div>
-              </div>
-
-              {state.loading ? (
-                <div className="mt-4 text-sm text-[var(--text-muted)]">Laddar översikt...</div>
-              ) : (
-                <>
-                  <p className="mt-4 text-2xl font-semibold text-[var(--text-primary)]">{state.members.length}</p>
-                  <div className="mt-4 space-y-2">
-                    {state.members.slice(0, 4).map((member) => (
-                      <div key={member.id} className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-[var(--text-primary)]">{getDisplayName(member.user)}</p>
-                          <p className="truncate text-xs text-[var(--text-muted)]">{member.user.email}</p>
-                        </div>
-                        <span className="shrink-0 rounded-full border border-[var(--border)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                          {member.role}
-                        </span>
-                      </div>
-                    ))}
-                    {state.members.length === 0 && <p className="text-sm text-[var(--text-muted)]">Inga medlemmar kopplade ännu.</p>}
+            <SummaryList
+              title="Produkter"
+              count={state.products.length}
+              loading={state.loading}
+              empty="Inga produkter kopplade."
+              actionLabel="Öppna"
+              onAction={() => onOpenProducts(company)}
+            >
+              {state.products.slice(0, 4).map((product) => (
+                <div key={product.id} className="rounded-xl bg-[var(--surface)] px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <Package size={14} weight="duotone" className="text-[var(--accent)]" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-[var(--text-primary)]">{product.name}</p>
+                      {product.category ? (
+                        <p className="truncate text-xs text-[var(--text-muted)]">{product.category}</p>
+                      ) : null}
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onManageMembers(company)}
-                    className="mt-4 inline-flex rounded-2xl border border-[var(--border)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
-                  >
-                    Hantera medlemmar
-                  </button>
-                </>
-              )}
-            </div>
+                </div>
+              ))}
+            </SummaryList>
 
-            <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Mallar</p>
-                  <p className="mt-1 text-sm text-[var(--text-muted)]">De mallar som används när du skapar offerter.</p>
-                </div>
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                  <FileText size={18} weight="duotone" />
-                </div>
+            {state.error ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300">
+                {state.error}
               </div>
+            ) : null}
+          </ModalBody>
 
-              {state.loading ? (
-                <div className="mt-4 text-sm text-[var(--text-muted)]">Laddar mallar...</div>
-              ) : (
-                <>
-                  <p className="mt-4 text-2xl font-semibold text-[var(--text-primary)]">{state.templates.length}</p>
-                  <div className="mt-4 space-y-2">
-                    {state.templates.slice(0, 4).map((template) => (
-                      <div key={template.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2">
-                        <p className="truncate text-sm font-medium text-[var(--text-primary)]">{template.name}</p>
-                      </div>
-                    ))}
-                    {state.templates.length === 0 && <p className="text-sm text-[var(--text-muted)]">Inga företagsspecifika mallar ännu.</p>}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onOpenTemplates(company)}
-                    className="mt-4 inline-flex rounded-2xl border border-[var(--border)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
-                  >
-                    Öppna mallar
-                  </button>
-                </>
-              )}
-            </div>
-
-            <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Produkter</p>
-                  <p className="mt-1 text-sm text-[var(--text-muted)]">Katalogen som används i offertflödet.</p>
-                </div>
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                  <Package size={18} weight="duotone" />
-                </div>
-              </div>
-
-              {state.loading ? (
-                <div className="mt-4 text-sm text-[var(--text-muted)]">Laddar produkter...</div>
-              ) : (
-                <>
-                  <p className="mt-4 text-2xl font-semibold text-[var(--text-primary)]">{state.products.length}</p>
-                  <div className="mt-4 space-y-2">
-                    {state.products.slice(0, 4).map((product) => (
-                      <div key={product.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2">
-                        <p className="truncate text-sm font-medium text-[var(--text-primary)]">{product.name}</p>
-                        {product.category && <p className="truncate text-xs text-[var(--text-muted)]">{product.category}</p>}
-                      </div>
-                    ))}
-                    {state.products.length === 0 && <p className="text-sm text-[var(--text-muted)]">Inga produkter kopplade ännu.</p>}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onOpenProducts(company)}
-                    className="mt-4 inline-flex rounded-2xl border border-[var(--border)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
-                  >
-                    Öppna produktbibliotek
-                  </button>
-                </>
-              )}
-            </div>
-          </section>
-
-          {state.error && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300">
-              {state.error}
-            </div>
-          )}
-
-          <section className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-5">
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => onEdit(company)}
-                className="inline-flex rounded-2xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-95"
-              >
-                Redigera företag
-              </button>
-              <button
-                type="button"
-                onClick={() => onManageMembers(company)}
-                className="inline-flex rounded-2xl border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
-              >
-                Hantera användare
-              </button>
-              <button
-                type="button"
-                onClick={() => onOpenTemplates(company)}
-                className="inline-flex rounded-2xl border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
-              >
-                Redigera juridik i mallar
-              </button>
-              {company.website && (
-                <Link
-                  href={company.website}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
-                >
-                  <ArrowSquareOut size={15} weight="duotone" />
-                  Besök webbplats
-                </Link>
-              )}
-            </div>
-          </section>
+          <div className="shrink-0 border-t border-[var(--border)] px-4 py-3 sm:px-6">
+            <DialogClose asChild>
+              <Button type="button" variant="outline" className="w-full">
+                Stäng
+              </Button>
+            </DialogClose>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

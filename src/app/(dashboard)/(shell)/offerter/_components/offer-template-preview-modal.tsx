@@ -1,10 +1,22 @@
 'use client';
 
+import { Button } from '@shared/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  ModalActionFooter,
+  ModalBody,
+} from '@shared/ui/dialog';
+
 type OfferTemplatePreviewModalProps = {
   open: boolean;
   html: string | null;
   loading: boolean;
   onClose: () => void;
+  templateName?: string;
 };
 
 export function OfferTemplatePreviewModal({
@@ -12,66 +24,28 @@ export function OfferTemplatePreviewModal({
   html,
   loading,
   onClose,
+  templateName,
 }: OfferTemplatePreviewModalProps) {
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="relative flex max-h-[94vh] w-full max-w-[1180px] flex-col overflow-hidden rounded-[26px] border border-[var(--border)] bg-[var(--surface-0)] shadow-[0_32px_90px_rgba(0,0,0,0.34)]"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] bg-[var(--surface-alt)] px-5 py-3.5">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted)]">
-              Mallpreview
-            </p>
-            <h3 className="mt-1 text-base font-semibold text-[var(--text-primary)]">
-              Förhandsvisning av mall
-            </h3>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">
-              Kontrollera strukturen innan du väljer mallen för offerten.
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2 text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+      <DialogContent mobileVariant="fullscreen" size="xl" showMobileClose>
+        <div className="flex h-full min-h-0 flex-col">
+          <DialogHeader className="border-b border-[var(--border)] pr-16">
+            <DialogTitle>{templateName ?? 'Förhandsvisning av mall'}</DialogTitle>
+            <DialogDescription>
+              Kontrollera dokumentets struktur innan du väljer mallen för offerten.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="relative flex-1 overflow-auto bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.96),_rgba(236,240,248,0.9)_48%,_rgba(226,232,240,0.88)_100%)] p-5">
-          <div className="mx-auto w-full max-w-[1040px] rounded-[28px] border border-white/70 bg-white/55 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.08)] backdrop-blur">
-            <div className="mb-3 flex items-center justify-between gap-4 text-[11px] text-slate-500">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-[var(--accent)]/70" />
-                <span className="h-2 w-2 rounded-full bg-[var(--accent)]/35" />
-                <span className="h-2 w-2 rounded-full bg-[var(--accent)]/18" />
+          <ModalBody className="bg-[var(--surface-alt)]">
+            <div className="mx-auto w-full max-w-[1040px] overflow-hidden rounded-[24px] border border-[var(--border)] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
+              <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-xs font-medium text-[var(--text-muted)]">
+                <span>Kundvy</span>
+                <span>Mallförhandsvisning</span>
               </div>
-              <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 font-medium">
-                Kundvy
-              </span>
-            </div>
 
-            <div className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
               {loading ? (
-                <div className="flex h-64 items-center justify-center gap-2 text-sm text-[var(--text-muted)]">
+                <div className="flex h-[60dvh] items-center justify-center gap-2 text-sm text-[var(--text-muted)]">
                   <svg
                     width="16"
                     height="16"
@@ -91,13 +65,19 @@ export function OfferTemplatePreviewModal({
                 <iframe
                   srcDoc={html ?? ''}
                   title="Mallförhandsvisning"
-                  className="min-h-[74vh] w-full border-0 bg-white"
+                  className="h-[68dvh] min-h-[60dvh] w-full border-0 bg-white"
                 />
               )}
             </div>
-          </div>
+          </ModalBody>
+
+          <ModalActionFooter>
+            <Button variant="outline" onClick={onClose}>
+              Stäng
+            </Button>
+          </ModalActionFooter>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
