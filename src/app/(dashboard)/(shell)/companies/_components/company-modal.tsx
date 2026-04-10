@@ -1,15 +1,20 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Buildings, FileText, Globe, IdentificationCard, MapPinLine, NotePencil } from '@phosphor-icons/react';
+import { Buildings, Globe, IdentificationCard, MapPinLine } from '@phosphor-icons/react';
 import type { Company } from '@modules/supporting/offers';
+import { Button } from '@shared/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  ModalActionFooter,
+  ModalBody,
+  ModalFormGrid,
+  ModalMetaCard,
+  ModalSection,
 } from '@shared/ui/dialog';
 import { CompanyLogoUpload } from './company-logo-upload';
 
@@ -75,15 +80,14 @@ export function CompanyModal({
 }: CompanyModalProps) {
   const [form, setForm] = useState<CompanyForm>(() => formFromCompany(company));
 
-  const set =
+  const setField =
     (key: keyof CompanyForm) =>
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((current) => ({ ...current, [key]: event.target.value }));
 
   const inputCls =
-    'w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--accent)] focus:outline-none';
-  const labelCls = 'mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]';
-  const cardCls = 'rounded-[26px] border border-[var(--border)] bg-[var(--surface-0)] p-4 sm:p-5';
+    'w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--accent)] focus:outline-none';
+  const labelCls = 'mb-1.5 block text-xs font-medium text-[var(--text-secondary)]';
 
   const companyPreviewLines = useMemo(() => {
     return [
@@ -100,196 +104,201 @@ export function CompanyModal({
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-      <DialogContent
-        mobileVariant="fullscreen"
-        showMobileClose
-        className="w-[min(100vw-1.5rem,1320px)] sm:max-w-[1320px]"
-      >
-        <DialogHeader className="border-b border-[var(--border)] px-5 pb-4 pt-5 pr-16 sm:px-6">
-          <DialogTitle className="text-xl text-[var(--text-primary)]">
-            {company ? 'Redigera företag' : 'Nytt företag'}
-          </DialogTitle>
-          <DialogDescription className="max-w-3xl leading-6">
-            Samla företagets identitet, adress och logga på ett ställe. Det här används i offertens avsändarblock,
-            i mallar och i företagets egna produkt- och mallscope.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent mobileVariant="fullscreen" size="xl" showMobileClose>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <DialogHeader className="border-b border-[var(--border)] pr-16">
+            <DialogTitle className="text-xl">
+              {company ? 'Redigera företag' : 'Nytt företag'}
+            </DialogTitle>
+            <DialogDescription className="max-w-3xl">
+              Samla företagets identitet, adress och logotyp i ett mer läsbart flöde. Huvudformuläret ligger till
+              vänster och offertförhandsvisningen håller sig lugnare i stödkolumnen.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="max-h-[min(86dvh,980px)] overflow-y-auto px-5 py-5 sm:px-6">
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_340px]">
-            <div className="space-y-5">
-              <section className={cardCls}>
-                <div className="mb-4 flex items-start gap-3">
-                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                    <Buildings size={18} weight="duotone" />
+          <ModalBody>
+            <ModalFormGrid columns="sidebar" className="items-start gap-5">
+              <div className="space-y-5">
+                <ModalSection tone="card">
+                  <div className="flex items-start gap-3">
+                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
+                      <Buildings size={18} weight="duotone" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">Företagsidentitet</p>
+                      <p className="text-sm leading-6 text-[var(--text-muted)]">
+                        Det här visas i offertens avsändarblock och i företagets dokumentmallar.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">Företagsidentitet</p>
-                    <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
-                      Namn och organisationsnummer visas i offertens avsändarblock uppe till vänster.
-                    </p>
-                  </div>
-                </div>
 
-                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(220px,0.75fr)]">
-                  <div>
-                    <label className={labelCls}>Namn *</label>
-                    <input value={form.name} onChange={set('name')} placeholder="Soleria AB" className={inputCls} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Organisationsnummer</label>
-                    <input value={form.orgNumber} onChange={set('orgNumber')} placeholder="556677-8899" className={inputCls} />
-                  </div>
-                </div>
-              </section>
+                  <ModalFormGrid columns="two">
+                    <div>
+                      <label className={labelCls}>Namn *</label>
+                      <input value={form.name} onChange={setField('name')} placeholder="Soleria AB" className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Organisationsnummer</label>
+                      <input
+                        value={form.orgNumber}
+                        onChange={setField('orgNumber')}
+                        placeholder="556677-8899"
+                        className={inputCls}
+                      />
+                    </div>
+                  </ModalFormGrid>
+                </ModalSection>
 
-              <section className={cardCls}>
-                <div className="mb-4 flex items-start gap-3">
-                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                    <MapPinLine size={18} weight="duotone" />
+                <ModalSection tone="card">
+                  <div className="flex items-start gap-3">
+                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
+                      <MapPinLine size={18} weight="duotone" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">Adress och kontakt</p>
+                      <p className="text-sm leading-6 text-[var(--text-muted)]">
+                        Fyll i de uppgifter som ska synas i dokument, PDF och företagsprofil.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">Adress och kontakt</p>
-                    <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
-                      Fyll i det som ska synas i dokument, PDF och företagsprofil. Du kan lämna resten tomt tills vidare.
-                    </p>
-                  </div>
-                </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label className={labelCls}>Adressrad 1</label>
-                    <input value={form.addressLine1} onChange={set('addressLine1')} placeholder="Testgatan 42" className={inputCls} />
+                  <div className="space-y-4">
+                    <div>
+                      <label className={labelCls}>Gatuadress</label>
+                      <input
+                        value={form.addressLine1}
+                        onChange={setField('addressLine1')}
+                        placeholder="Testgatan 42"
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Adressrad 2</label>
+                      <input
+                        value={form.addressLine2}
+                        onChange={setField('addressLine2')}
+                        placeholder="Lokal 2, c/o"
+                        className={inputCls}
+                      />
+                    </div>
+                    <ModalFormGrid columns="three">
+                      <div>
+                        <label className={labelCls}>Postnummer</label>
+                        <input
+                          value={form.postalCode}
+                          onChange={setField('postalCode')}
+                          placeholder="702 24"
+                          className={inputCls}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className={labelCls}>Stad</label>
+                        <input
+                          value={form.city}
+                          onChange={setField('city')}
+                          placeholder="Örebro"
+                          className={inputCls}
+                        />
+                      </div>
+                    </ModalFormGrid>
+                    <ModalFormGrid columns="two">
+                      <div>
+                        <label className={labelCls}>Län / region</label>
+                        <input
+                          value={form.region}
+                          onChange={setField('region')}
+                          placeholder="Örebro län"
+                          className={inputCls}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Land</label>
+                        <input
+                          value={form.country}
+                          onChange={setField('country')}
+                          placeholder="Sverige"
+                          className={inputCls}
+                        />
+                      </div>
+                    </ModalFormGrid>
+                    <div>
+                      <label className={labelCls}>Webbplats</label>
+                      <input
+                        type="url"
+                        value={form.website}
+                        onChange={setField('website')}
+                        placeholder="soleria.se"
+                        className={inputCls}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className={labelCls}>Adressrad 2</label>
-                    <input value={form.addressLine2} onChange={set('addressLine2')} placeholder="Lokal 2 eller våning" className={inputCls} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Postnummer</label>
-                    <input value={form.postalCode} onChange={set('postalCode')} placeholder="702 24" className={inputCls} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Stad</label>
-                    <input value={form.city} onChange={set('city')} placeholder="Örebro" className={inputCls} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Län / region</label>
-                    <input value={form.region} onChange={set('region')} placeholder="Örebro län" className={inputCls} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Land</label>
-                    <input value={form.country} onChange={set('country')} placeholder="Sverige" className={inputCls} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className={labelCls}>Webbplats</label>
-                    <input type="url" value={form.website} onChange={set('website')} placeholder="soleria.se" className={inputCls} />
-                  </div>
-                </div>
-              </section>
-            </div>
+                </ModalSection>
+              </div>
 
-            <aside className="space-y-5 xl:sticky xl:top-0 xl:self-start">
-              <section className={cardCls}>
-                <div className="mb-4 flex items-start gap-3">
-                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                    <IdentificationCard size={18} weight="duotone" />
+              <div className="space-y-5 xl:sticky xl:top-0">
+                <ModalSection tone="card">
+                  <div className="flex items-start gap-3">
+                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
+                      <IdentificationCard size={18} weight="duotone" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">Så syns företaget i offerten</p>
+                      <p className="text-sm leading-6 text-[var(--text-muted)]">
+                        Förhandsvisningen motsvarar innehållet i offertens övre vänsterdel.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">Så syns företaget i offerten</p>
-                    <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
-                      Förhandsvisningen nedan motsvarar innehållet i offertens övre vänsterdel.
-                    </p>
-                  </div>
-                </div>
 
-                <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-                  <div className="space-y-1.5 text-sm leading-6 text-[var(--text-secondary)]">
-                    {companyPreviewLines.length > 0 ? (
-                      companyPreviewLines.map((line) => (
-                        <p key={line} className={line === form.name.trim() ? 'font-semibold text-[var(--text-primary)]' : ''}>
-                          {line}
-                        </p>
-                      ))
-                    ) : (
-                      <p>Fyll i företagsnamn, org.nr och adress för att se hur toppen av offerten fylls.</p>
-                    )}
-                  </div>
-                </div>
-              </section>
+                  <ModalMetaCard className="shadow-none">
+                    <div className="space-y-1.5 text-sm leading-6 text-[var(--text-secondary)]">
+                      {companyPreviewLines.length > 0 ? (
+                        companyPreviewLines.map((line) => (
+                          <p key={line} className={line === form.name.trim() ? 'font-semibold text-[var(--text-primary)]' : ''}>
+                            {line}
+                          </p>
+                        ))
+                      ) : (
+                        <p>Fyll i företagsnamn, org.nr och adress för att se hur toppen av offerten fylls.</p>
+                      )}
+                    </div>
+                  </ModalMetaCard>
+                </ModalSection>
 
-              <section className={cardCls}>
-                <div className="mb-4 flex items-start gap-3">
-                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                    <Globe size={18} weight="duotone" />
+                <ModalSection tone="card">
+                  <div className="flex items-start gap-3">
+                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
+                      <Globe size={18} weight="duotone" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">Logga och profil</p>
+                      <p className="text-sm leading-6 text-[var(--text-muted)]">
+                        Loggan används i offert, PDF och vissa mejlhuvuden.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">Logga och profil</p>
-                    <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
-                      Loggan används i offert, PDF och vissa mejlhuvuden.
-                    </p>
-                  </div>
-                </div>
 
-                <CompanyLogoUpload
-                  value={form.logoUrl}
-                  onChange={(logoUrl) => setForm((current) => ({ ...current, logoUrl }))}
-                />
-              </section>
+                  <CompanyLogoUpload
+                    value={form.logoUrl}
+                    onChange={(logoUrl) => setForm((current) => ({ ...current, logoUrl }))}
+                  />
 
-              <section className={cardCls}>
-                <div className="mb-4 flex items-start gap-3">
-                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                    <FileText size={18} weight="duotone" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">Juridiska villkor och textblock</p>
-                    <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
-                      Den juridiska delen ändras i offertmallarna, inte här i företagskortet.
-                    </p>
-                  </div>
-                </div>
+                  <Button type="button" variant="ghost" className="w-full justify-start" onClick={onOpenTemplates}>
+                    Öppna mallar för företagets dokument
+                  </Button>
+                </ModalSection>
+              </div>
+            </ModalFormGrid>
+          </ModalBody>
 
-                <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-alt)] p-4 text-sm leading-6 text-[var(--text-secondary)]">
-                  <p>
-                    Öppna <span className="font-semibold text-[var(--text-primary)]">Mallar</span> och redigera blocket
-                    för offertdokumentet om du vill ändra texten under <span className="font-semibold text-[var(--text-primary)]">Juridiska villkor</span>.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onOpenTemplates();
-                  }}
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--border)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
-                >
-                  <NotePencil size={16} weight="duotone" />
-                  Öppna mallar för juridik
-                </button>
-              </section>
-            </aside>
-          </div>
+          <ModalActionFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Avbryt
+            </Button>
+            <Button type="button" onClick={() => onSave(form)} disabled={saving || !form.name.trim()}>
+              {saving ? 'Sparar…' : company ? 'Spara ändringar' : 'Skapa företag'}
+            </Button>
+          </ModalActionFooter>
         </div>
-
-        <DialogFooter className="gap-2 border-t border-[var(--border)] px-5 pb-5 pt-3 sm:px-6">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-alt)]"
-          >
-            Avbryt
-          </button>
-          <button
-            type="button"
-            onClick={() => onSave(form)}
-            disabled={saving || !form.name.trim()}
-            className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-light)] disabled:pointer-events-none disabled:opacity-50"
-          >
-            {saving ? 'Sparar...' : company ? 'Spara ändringar' : 'Skapa företag'}
-          </button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
