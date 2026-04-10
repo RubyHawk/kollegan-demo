@@ -18,8 +18,8 @@ export function resolveOfferBranding(
   org: { name: string; senderEmail?: string; senderName?: string; emailHeaderConfig?: string } | null | undefined,
   responsible?: { name?: string; email?: string } | null,
 ) : OfferBrandingProfile {
-  const companyName = company?.name?.trim() || org?.senderName?.trim() || org?.name?.trim() || 'Offert';
-  const senderName = company?.senderName?.trim() || companyName || org?.senderName?.trim() || org?.name?.trim() || 'Offert';
+  const companyName = company?.name?.trim() || org?.name?.trim() || org?.senderName?.trim() || 'Offert';
+  const senderName = company?.senderName?.trim() || company?.name?.trim() || org?.senderName?.trim() || org?.name?.trim() || 'Offert';
   const responsibleName = responsible?.name?.trim() || undefined;
   const responsibleEmail = responsible?.email?.trim() || undefined;
   const addressLines = [

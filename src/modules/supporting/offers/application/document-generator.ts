@@ -1280,6 +1280,7 @@ function extractLegacyDocumentIntroHtml(
 export function renderPublicOfferSummaryHtml(offer: Offer): string {
   const summary = buildOfferSummary(offer);
   const boxClass = 'offer-summary offer-summary--below';
+  const totalSubcopy = summary.displayModeLabel;
   const discountRow = summary.discountAmount > 0 ? `
     <div class="offer-summary__row offer-summary__row--discount">
       <span>Rabatt</span>
@@ -1302,7 +1303,7 @@ export function renderPublicOfferSummaryHtml(offer: Offer): string {
       <div class="offer-summary__row offer-summary__row--total">
         <span class="offer-summary__total-copy">
           <span class="offer-summary__total-label">Totalsumma</span>
-          <span class="offer-summary__total-subcopy">inkl. moms</span>
+          <span class="offer-summary__total-subcopy">${escapeHtml(totalSubcopy)}</span>
         </span>
         <strong>${fmtSEKPrecise(summary.totalAmount)}</strong>
       </div>

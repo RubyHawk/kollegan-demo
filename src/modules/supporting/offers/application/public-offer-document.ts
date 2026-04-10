@@ -296,10 +296,7 @@ function injectPublicCleanupStyles(html: string): string {
   .offer-shell,
   .offer-shell__header,
   .offer-shell__topline,
-  .offer-items__table,
-  .offer-summary,
-  .offer-summary__row,
-  .offer-summary__row--total {
+  .offer-items__table {
     background: #ffffff !important;
     background-image: none !important;
   }
@@ -359,6 +356,7 @@ export function sanitizePublicOfferDocument(
 ): string {
   const sanitizedHtml = sanitizeGeneratedOfferDocument(documentHtml, offer, branding);
   const document = parseDocument(sanitizedHtml, PARSE_OPTIONS);
+  stripPublicPdfPages(document.children);
   compactStructuredLineItemTables(document);
   removeLeadBlurb(document);
   return cleanupPublicOfferHtml(
