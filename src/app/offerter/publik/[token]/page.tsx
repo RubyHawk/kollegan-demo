@@ -2097,8 +2097,6 @@ export default function PublicOfferPage() {
   const isDecline = state === 'declining';
   const pricing = summarizePersistedOfferPricing(offer);
   const hasPromoHero = promoPageCount > 0;
-  const showMobileStickyBar = !isDecline && (!offer.generatedDocument || documentReady);
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -2171,7 +2169,7 @@ export default function PublicOfferPage() {
       <main
         ref={mainRef}
         className="bg-transparent"
-        style={{ paddingBottom: showMobileStickyBar ? '188px' : '96px' }}
+        style={{ paddingBottom: '96px' }}
       >
         <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
 
@@ -2184,7 +2182,7 @@ export default function PublicOfferPage() {
             transition={{ duration: 0.35, delay: 0.04 }}
             className={promoPageCount > 0
               ? 'mb-6 overflow-visible bg-transparent shadow-none sm:rounded-[26px]'
-              : 'mb-5 overflow-hidden bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] sm:rounded-2xl sm:border sm:border-slate-200/60'}
+              : 'mb-5 mx-3 overflow-hidden rounded-xl border border-slate-200/60 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] sm:mx-0 sm:rounded-2xl'}
           >
             <iframe
               ref={iframeRef}
@@ -2228,7 +2226,7 @@ export default function PublicOfferPage() {
                       <p className="mt-0.5 text-[12px] leading-relaxed text-slate-500">Underteckna för att bekräfta offerten. Namn, datum och signatur sparas tillsammans med offerten.</p>
                     </div>
                   </div>
-                  <div className="hidden shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-right sm:block">
+                  <div className="shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-right">
                     <p className="text-xs font-bold tabular-nums text-slate-800 sm:text-sm">{fmtSEK(pricing.totalAmount)}</p>
                     <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">{pricing.displayModeLabel}</p>
                   </div>
@@ -2425,7 +2423,7 @@ export default function PublicOfferPage() {
                   type="button"
                   onClick={() => void handleSign()}
                   disabled={busy}
-                  className="hidden items-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 sm:flex"
+                  className="flex items-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50"
                 >
                   <CheckCircleIcon size={15} />
                   {busy ? 'Signerar...' : 'Signera offert'}
@@ -2595,28 +2593,6 @@ export default function PublicOfferPage() {
         </div>
       </main>
 
-      {showMobileStickyBar && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] sm:hidden">
-          <div className="pointer-events-auto mx-auto flex max-w-[900px] items-center justify-between gap-3 rounded-[32px] border border-white/10 bg-slate-950/92 px-4 py-3.5 text-white shadow-[0_24px_70px_rgba(5,12,26,0.36)] backdrop-blur-xl">
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-300">
-                Totalt att godkänna
-              </p>
-              <p className="mt-1.5 truncate text-[31px] font-extrabold leading-none tracking-[-0.05em] text-white">
-                {fmtSEK(pricing.totalAmount)}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => void handleSign()}
-              disabled={busy}
-              className="inline-flex h-[58px] shrink-0 items-center justify-center rounded-[24px] bg-gradient-to-br from-sky-400 via-blue-500 to-blue-600 px-6 text-base font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_10px_22px_rgba(37,99,235,0.28)] transition-all active:scale-[0.98] disabled:opacity-50"
-            >
-              {busy ? 'Signerar...' : 'Signera offert'}
-            </button>
-          </div>
-        </div>
-      )}
     </motion.div>
   );
 }
