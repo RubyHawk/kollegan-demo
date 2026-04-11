@@ -355,6 +355,7 @@ function stripLegacyLineItemTables(html: string): string {
 
   return html.replace(/<table\b[^>]*>[\s\S]*?<\/table>/gi, (tableHtml) => {
     const normalizedText = tableHtml
+      .replace(/&Agrave;/gi, 'À')
       .replace(/&Aring;/gi, 'Å')
       .replace(/&nbsp;/gi, ' ')
       .replace(/<[^>]+>/g, ' ')
@@ -366,7 +367,7 @@ function stripLegacyLineItemTables(html: string): string {
       normalizedText.includes('BESKRIVNING')
       || normalizedText.includes('PRODUKT ELLER TJÄNST')
     ) && normalizedText.includes('ANTAL')
-      && (normalizedText.includes('Å-PRIS') || normalizedText.includes('A-PRIS'))
+      && (normalizedText.includes('À-PRIS') || normalizedText.includes('Å-PRIS') || normalizedText.includes('A-PRIS'))
       && normalizedText.includes('MOMS')
       && normalizedText.includes('BELOPP');
 
@@ -392,7 +393,7 @@ function buildStructuredLineItems(items: OfferLineItem[], mode: Offer['priceDisp
   const headerCells = [
     '<span>Produkt eller tj\u00e4nst</span>',
     '<span>Antal</span>',
-    '<span>&Aring;-pris</span>',
+    '<span>&Agrave;-pris</span>',
     ...(showDiscountColumn ? ['<span>Rabatt</span>'] : []),
     ...(showVatColumn ? ['<span>Moms</span>'] : []),
     '<span>Belopp</span>',
@@ -425,7 +426,7 @@ function buildStructuredLineItems(items: OfferLineItem[], mode: Offer['priceDisp
       : 'Momsfri';
     const mobileRows = [
       `<div class="offer-item-card__metric"><dt>Antal</dt><dd>${formatOfferLineItemQuantityHtml(item)}</dd></div>`,
-      `<div class="offer-item-card__metric"><dt>&Aring;-pris</dt><dd>${fmtSEKPrecise(displayUnitPrice)}</dd></div>`,
+      `<div class="offer-item-card__metric"><dt>&Agrave;-pris</dt><dd>${fmtSEKPrecise(displayUnitPrice)}</dd></div>`,
       ...(showDiscountColumn ? [`<div class="offer-item-card__metric"><dt>Rabatt</dt><dd>${item.discount ? `${item.discount}%` : '—'}</dd></div>`] : []),
       ...(showVatColumn ? [`<div class="offer-item-card__metric"><dt>Moms</dt><dd>${mobileVatLabel}</dd></div>`] : []),
       `<div class="offer-item-card__metric offer-item-card__metric--total"><dt>Belopp</dt><dd>${fmtSEKPrecise(displayLineTotal)}</dd></div>`,
@@ -519,8 +520,11 @@ function fixOfferHtmlText(html: string): string {
     .replace(/Produkter och tjÃƒÆ’Ã‚Â¤nster/g, 'Produkter och tj\u00e4nster')
     .replace(/Produkter och tjÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤nster/g, 'Produkter och tj\u00e4nster')
     .replace(/UtgÃƒÆ’Ã‚Â¥ngen/g, 'Utg\u00e5ngen')
-    .replace(/ÃƒÆ’Ã¢â‚¬Â¦-pris/g, '\u00c5-pris')
-    .replace(/ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦-pris/g, '\u00c5-pris')
+    .replace(/&Aring;-pris/gi, '&Agrave;-pris')
+    .replace(/\u00c5-pris/g, '\u00c0-pris')
+    .replace(/\bA-pris\b/g, '\u00c0-pris')
+    .replace(/ÃƒÆ’Ã¢â‚¬Â¦-pris/g, '\u00c0-pris')
+    .replace(/ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦-pris/g, '\u00c0-pris')
     .replace(/gÃƒÆ’Ã‚Â¤ller/g, 'g\u00e4ller')
     .replace(/gÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¤ller/g, 'g\u00e4ller')
     .replace(/utfÃƒÆ’Ã‚Â¶rs/g, 'utf\u00f6rs')

@@ -12,7 +12,7 @@ export interface OfferPdfVariant {
 
 const PDF_CACHE_MAX_ENTRIES = 24;
 const SWEDISH_MONTHS_SHORT = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'] as const;
-export const PUBLIC_OFFER_PDF_RENDERER_VERSION = '2026-04-11-print-approved-layout-v4';
+export const PUBLIC_OFFER_PDF_RENDERER_VERSION = '2026-04-11-print-approved-layout-v5-hide-item-details-apris';
 const pdfCache = new Map<string, Uint8Array>();
 let browserPromise: Promise<Browser> | null = null;
 
@@ -178,6 +178,8 @@ export function buildPublicPdfHtml(
 
     function normalizeOfferText(text) {
       return normalizeBrokenSwedish(text)
+        .replace(/Å-pris/g, 'À-pris')
+        .replace(/\bA-pris\b/g, 'À-pris')
         .replace(/Ãƒâ€¦/g, 'Ã…')
         .replace(/Ãƒâ€ž/g, 'Ã„')
         .replace(/Ãƒâ€“/g, 'Ã–')
@@ -501,6 +503,10 @@ export function buildPublicPdfHtml(
     font-size: 13px !important;
     line-height: 1.35 !important;
     color: #10233b !important;
+  }
+  .offer-item-row__detail,
+  .offer-item-card__detail {
+    display: none !important;
   }
   .offer-item-row__detail,
   .offer-item-row__value {
