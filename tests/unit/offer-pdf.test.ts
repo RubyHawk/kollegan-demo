@@ -24,17 +24,18 @@ describe('public offer pdf renderer', () => {
     expect(html).toContain('font-family: Aptos, "Segoe UI", "Helvetica Neue", Arial, sans-serif;');
   });
 
-  it('uses safe recipient nodes and UTF-8 heading matching in the PDF cleanup script', () => {
+  it('preserves the approved title and customer layout in the PDF cleanup script', () => {
     const html = buildPublicPdfHtml(
       '<!doctype html><html><head></head><body><div class="page-block page-block--document"><div class="offer-shell__meta"><dl></dl></div></div></body></html>',
       'https://offert.soleria.se',
       { status: 'viewed' },
     );
 
-    expect(html).toContain("normalizedHeading === 'produkter och tjänster'");
-    expect(html).toContain("var customerValue = document.createElement('dd');");
-    expect(html).toContain("customerValue.appendChild(document.createTextNode(normalizeOfferText(customerName || '')));");
-    expect(html).not.toContain("customerRow.innerHTML = '<dt>Offert till</dt><dd>'");
+    expect(html).not.toContain("normalizedHeading === 'produkter och tjänster'");
+    expect(html).not.toContain("customerRow.className = 'offer-shell__meta-row--recipient';");
+    expect(html).not.toContain("document.querySelectorAll('.offer-shell__topline').forEach(function (item) {");
+    expect(html).toContain('font-family: "Times New Roman", Times, serif !important;');
+    expect(html).toContain('.offer-shell__customer-card {');
   });
 
   it('includes the renderer version in the PDF fingerprint', () => {

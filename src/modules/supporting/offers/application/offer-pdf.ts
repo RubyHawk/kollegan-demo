@@ -12,7 +12,7 @@ export interface OfferPdfVariant {
 
 const PDF_CACHE_MAX_ENTRIES = 24;
 const SWEDISH_MONTHS_SHORT = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'] as const;
-export const PUBLIC_OFFER_PDF_RENDERER_VERSION = '2026-04-10-print-polish-v3';
+export const PUBLIC_OFFER_PDF_RENDERER_VERSION = '2026-04-11-print-approved-layout-v4';
 const pdfCache = new Map<string, Uint8Array>();
 let browserPromise: Promise<Browser> | null = null;
 
@@ -220,55 +220,6 @@ export function buildPublicPdfHtml(
       item.remove();
     });
 
-    var offerTitleHeading = document.querySelector('.offer-shell__topline h1');
-    var offerTitleText = (offerTitleHeading && offerTitleHeading.textContent || '').trim();
-    var customerCard = document.querySelector('.offer-shell__customer-card');
-    var metaList = document.querySelector('.offer-shell__meta dl');
-    if (customerCard && metaList) {
-      var customerName = '';
-      var nameNode = customerCard.querySelector('.offer-shell__customer-primary, .offer-shell__customer-name');
-      if (nameNode && nameNode.textContent) customerName = nameNode.textContent.trim();
-      if (!customerName) {
-        var firstParagraph = customerCard.querySelector('p');
-        if (firstParagraph && firstParagraph.textContent) customerName = firstParagraph.textContent.trim();
-      }
-
-      var customerEmail = '';
-      customerCard.querySelectorAll('p, span').forEach(function (line) {
-        var text = (line.textContent || '').trim();
-        if (!customerEmail && text.indexOf('@') >= 0) customerEmail = text;
-      });
-
-      if (customerName || customerEmail) {
-        var customerRow = document.createElement('div');
-        customerRow.className = 'offer-shell__meta-row--recipient';
-        var customerLabel = document.createElement('dt');
-        customerLabel.textContent = 'Offert till';
-        var customerValue = document.createElement('dd');
-        customerValue.appendChild(document.createTextNode(normalizeOfferText(customerName || '')));
-        if (customerEmail) {
-          var customerEmailText = document.createElement('small');
-          customerEmailText.textContent = normalizeOfferText(customerEmail);
-          customerValue.appendChild(customerEmailText);
-        }
-        customerRow.appendChild(customerLabel);
-        customerRow.appendChild(customerValue);
-        metaList.appendChild(customerRow);
-      }
-      customerCard.remove();
-    }
-
-    if (offerTitleText) {
-      Array.from(document.querySelectorAll('.offer-section h2, .offer-table-header h2')).some(function (heading) {
-        var normalizedHeading = normalizeOfferText(heading.textContent || '').replace(/\\s+/g, ' ').trim().toLocaleLowerCase('sv-SE');
-        if (normalizedHeading === 'produkter och tjänster') {
-          heading.textContent = offerTitleText;
-          return true;
-        }
-        return false;
-      });
-    }
-
     document.querySelectorAll('.offer-summary__row').forEach(function (row) {
       var label = normalizeOfferText((row.querySelector('span')?.textContent || '')).replace(/\\s+/g, ' ').trim().toLocaleLowerCase('sv-SE');
       if (row.classList.contains('offer-summary__row--total')) return;
@@ -292,10 +243,6 @@ export function buildPublicPdfHtml(
       if (ordered.length === rows.length && ordered.some(function (row, index) { return row !== rows[index]; })) {
         ordered.forEach(function (row) { summary.appendChild(row); });
       }
-    });
-
-    document.querySelectorAll('.offer-shell__topline').forEach(function (item) {
-      item.remove();
     });
 
     document.querySelectorAll('.offer-shell__meta dd').forEach(function (item) {
@@ -353,113 +300,137 @@ export function buildPublicPdfHtml(
     background: #ffffff !important;
   }
   .offer-shell {
-    gap: 16px !important;
-    color: #14263f !important;
-  }
-  .offer-shell__header,
-  .offer-shell__topline {
-    grid-template-columns: minmax(0, 1fr) minmax(220px, 250px) !important;
-    gap: 16px !important;
+    gap: 24px !important;
+    color: #1f335b !important;
   }
   .offer-shell__header {
-    padding-bottom: 16px !important;
-    border-bottom: 1px solid #dce6f0 !important;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.9fr) !important;
+    gap: 28px !important;
+    align-items: center !important;
+    padding-bottom: 22px !important;
+    border-bottom: 1px solid #dbe5f1 !important;
   }
   .offer-shell__topline {
-    padding-bottom: 14px !important;
-    border-bottom: 1px solid #dce6f0 !important;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 260px) !important;
+    gap: 24px !important;
+    align-items: end !important;
+    padding-bottom: 0 !important;
+    border-bottom: 0 !important;
   }
   .offer-shell__topline h1 {
-    font-size: 18px !important;
-    line-height: 1.2 !important;
-    color: #10233b !important;
-  }
-  .offer-shell__lead {
-    display: none !important;
-  }
-  .offer-shell__sender {
-    gap: 12px !important;
-  }
-  .offer-shell__logo {
-    width: 58px !important;
-    height: 58px !important;
-    object-fit: contain !important;
-  }
-  .offer-shell__sender-copy {
-    gap: 3px !important;
-    font-size: 11px !important;
-    line-height: 1.45 !important;
-    color: #465a73 !important;
-  }
-  .offer-shell__sender-name {
-    color: #10233b !important;
-  }
-  .offer-shell__meta {
-    gap: 8px !important;
-    justify-items: end !important;
-    text-align: right !important;
-    padding: 14px 16px !important;
-    border: 1px solid #d9e3ee !important;
-    border-radius: 12px !important;
-    background: #ffffff !important;
-  }
-  .offer-shell__meta dl {
-    gap: 6px !important;
-    width: 100% !important;
-  }
-  .offer-shell__meta dl div {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto !important;
-    gap: 10px !important;
-    padding: 4px 0 !important;
-    border-bottom: 1px solid #edf2f7 !important;
-  }
-  .offer-shell__meta dl div:first-child {
-    padding-top: 0 !important;
-  }
-  .offer-shell__meta dl div:last-child {
-    padding-bottom: 0 !important;
-    border-bottom: none !important;
-  }
-  .offer-shell__meta dt {
-    font-size: 10px !important;
-    line-height: 1.35 !important;
-    letter-spacing: 0.08em !important;
-    text-transform: uppercase !important;
-    color: #6b7e95 !important;
-  }
-  .offer-shell__meta dd {
-    font-size: 12px !important;
-    line-height: 1.35 !important;
-    color: #10233b !important;
+    margin: 0 !important;
+    font-family: "Times New Roman", Times, serif !important;
+    font-size: 54px !important;
     font-weight: 700 !important;
-    white-space: nowrap !important;
+    line-height: 0.95 !important;
+    letter-spacing: -0.03em !important;
+    color: #1e3158 !important;
   }
-  .offer-shell__meta dd small {
-    display: block !important;
-    margin-top: 2px !important;
-    font-size: 10.5px !important;
-    line-height: 1.35 !important;
-    font-weight: 500 !important;
-    color: #5f738a !important;
-  }
-  .offer-shell__meta .offer-shell__meta-row--recipient dd {
-    white-space: normal !important;
-  }
+  .offer-shell__lead,
+  .offer-shell__eyebrow,
+  .offer-shell__customer-label,
   .offer-shell__status,
   .offer-shell__title {
     display: none !important;
   }
+  .offer-shell__sender {
+    gap: 16px !important;
+    align-items: flex-start !important;
+  }
+  .offer-shell__logo {
+    width: 72px !important;
+    height: 72px !important;
+    border-radius: 20px !important;
+    object-fit: cover !important;
+    box-shadow: 0 8px 22px rgba(142, 169, 205, 0.2) !important;
+  }
+  .offer-shell__sender-copy {
+    display: grid !important;
+    gap: 4px !important;
+    font-size: 13px !important;
+    line-height: 1.38 !important;
+    color: #111827 !important;
+  }
+  .offer-shell__sender-name {
+    margin-bottom: 6px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #1f335b !important;
+  }
+  .offer-shell__meta {
+    display: grid !important;
+    justify-items: stretch !important;
+    text-align: center !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+  .offer-shell__meta dl {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  .offer-shell__meta dl div {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+    padding: 0 14px !important;
+    border-left: 1px solid #dbe5f1 !important;
+    border-bottom: none !important;
+  }
+  .offer-shell__meta dl div:first-child {
+    border-left: none !important;
+    padding-left: 0 !important;
+  }
+  .offer-shell__meta dl div:last-child {
+    padding-right: 0 !important;
+  }
+  .offer-shell__meta dt {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    text-align: center !important;
+    color: #657b9c !important;
+  }
+  .offer-shell__meta dd {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    color: #1f335b !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+  }
   .offer-shell__customer-card {
-    padding: 13px 14px !important;
-    border-radius: 12px !important;
-    border-color: #d7e2ee !important;
-    background: #ffffff !important;
+    display: grid !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    text-align: right !important;
+    justify-self: end !important;
+    align-self: center !important;
   }
   .offer-shell__customer-card p {
+    margin: 0 !important;
+  }
+  .offer-shell__customer-primary {
+    font-size: 15px !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+    color: #1f335b !important;
+  }
+  .offer-shell__customer-secondary {
     font-size: 11px !important;
-    line-height: 1.45 !important;
-    color: #465a73 !important;
+    line-height: 1.4 !important;
+    color: #334b70 !important;
   }
   .offer-section {
     gap: 8px !important;
@@ -547,29 +518,46 @@ export function buildPublicPdfHtml(
     border-radius: 12px !important;
   }
   .offer-summary {
-    width: min(268px, 100%) !important;
+    width: min(332px, 100%) !important;
+    max-width: none !important;
+    margin-left: auto !important;
     padding: 0 !important;
-    border: 1px solid #d7e2ee !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
     box-shadow: none !important;
+    gap: 6px !important;
+    overflow: visible !important;
   }
   .offer-summary--below {
-    width: min(276px, 100%) !important;
-    margin-top: 12px !important;
+    width: min(332px, 100%) !important;
+    margin-top: 18px !important;
+    margin-left: auto !important;
+    clear: both !important;
   }
   .offer-summary__row {
-    padding: 12px 14px !important;
-    font-size: 12px !important;
-    line-height: 1.5 !important;
-    color: #465a73 !important;
-    border-bottom: 1px solid #e5ecf3 !important;
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 18px !important;
+    padding: 11px 16px !important;
+    background: #f4f7fb !important;
+    color: #1f335b !important;
+    font-size: 13px !important;
+    line-height: 1.35 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
   }
   .offer-summary__row span {
     font-weight: 600 !important;
-    color: #5b7088 !important;
+    color: #445a7a !important;
   }
   .offer-summary__row strong {
-    color: #10233b !important;
+    color: #1f335b !important;
+    font-size: 13px !important;
     font-weight: 700 !important;
+    font-variant-numeric: tabular-nums !important;
     white-space: nowrap !important;
   }
   .offer-summary__row--subtotal {
@@ -581,7 +569,18 @@ export function buildPublicPdfHtml(
     font-weight: 800 !important;
   }
   .offer-summary__row--discount {
-    background: #fff6f5 !important;
+    background: #fff1f1 !important;
+    color: #be3d35 !important;
+  }
+  .offer-summary__row--discount::before {
+    content: '' !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 8px !important;
+    bottom: 8px !important;
+    width: 4px !important;
+    border-radius: 999px !important;
+    background: #c83d35 !important;
   }
   .offer-summary__row--discount span,
   .offer-summary__row--discount strong {
@@ -595,27 +594,37 @@ export function buildPublicPdfHtml(
     font-weight: 700 !important;
   }
   .offer-summary__row--total {
-    margin-top: 0 !important;
-    padding: 14px 14px 13px !important;
-    border-top: 1px solid #142742 !important;
-    border-bottom: none !important;
-    background: linear-gradient(135deg, #13233a 0%, #223b63 100%) !important;
+    margin-top: 10px !important;
+    padding: 15px 18px !important;
+    background: #2d4a83 !important;
     color: #ffffff !important;
   }
   .offer-summary__row--total span {
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.02em !important;
-    text-transform: uppercase !important;
     color: #ffffff !important;
+  }
+  .offer-summary__total-copy {
+    display: grid !important;
+    gap: 4px !important;
+  }
+  .offer-summary__total-label {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+  }
+  .offer-summary__total-subcopy {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    text-transform: uppercase !important;
   }
   .offer-summary__row--total strong,
   .offer-item-card__metric--total dd {
     color: #ffffff !important;
   }
   .offer-summary__row--total strong {
-    font-size: 18px !important;
-    letter-spacing: -0.03em !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
   }
   .offer-item-card__metric:nth-child(even) {
     background: #ffffff !important;

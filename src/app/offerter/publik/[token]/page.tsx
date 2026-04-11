@@ -1701,47 +1701,6 @@ export default function PublicOfferPage() {
 
     doc.querySelectorAll<HTMLElement>('.offer-shell__status, .offer-shell__title').forEach((item) => item.remove());
 
-    const offerTitleHeading = doc.querySelector<HTMLElement>('.offer-shell__topline h1');
-    const offerTitleText = offerTitleHeading?.textContent?.trim() ?? '';
-    const customerCard = doc.querySelector<HTMLElement>('.offer-shell__customer-card');
-    const metaList = doc.querySelector<HTMLElement>('.offer-shell__meta dl');
-    if (customerCard && metaList) {
-      const customerName = customerCard.querySelector<HTMLElement>('.offer-shell__customer-primary, .offer-shell__customer-name')?.textContent?.trim()
-        ?? customerCard.querySelector('p')?.textContent?.trim()
-        ?? '';
-      const customerEmail = Array.from(customerCard.querySelectorAll('p, span'))
-        .map((line) => line.textContent?.trim() ?? '')
-        .find((line) => line.includes('@')) ?? '';
-
-      if (customerName || customerEmail) {
-        const customerRow = doc.createElement('div');
-        customerRow.className = 'offer-shell__meta-row--recipient';
-        const customerLabel = doc.createElement('dt');
-        customerLabel.textContent = 'Offert till';
-        const customerValue = doc.createElement('dd');
-        customerValue.appendChild(doc.createTextNode(normalizeOfferText(customerName || '')));
-        if (customerEmail) {
-          const customerEmailText = doc.createElement('small');
-          customerEmailText.textContent = normalizeOfferText(customerEmail);
-          customerValue.appendChild(customerEmailText);
-        }
-        customerRow.appendChild(customerLabel);
-        customerRow.appendChild(customerValue);
-        metaList.appendChild(customerRow);
-      }
-      customerCard.remove();
-    }
-
-    if (offerTitleText) {
-      const sectionHeading = Array.from(doc.querySelectorAll<HTMLElement>('.offer-section h2, .offer-table-header h2'))
-        .find((item) => normalizeOfferText(item.textContent ?? '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('sv-SE') === 'produkter och tjänster');
-      if (sectionHeading) {
-        sectionHeading.textContent = offerTitleText;
-      }
-    }
-
-    doc.querySelectorAll<HTMLElement>('.offer-shell__topline').forEach((item) => item.remove());
-
     doc.querySelectorAll<HTMLElement>('.offer-shell__meta dd').forEach((item) => {
       const text = item.childNodes.length === 1 ? (item.textContent?.trim() ?? '') : '';
       if (!text) return;
