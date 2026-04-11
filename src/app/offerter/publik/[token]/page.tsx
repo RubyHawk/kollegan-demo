@@ -968,7 +968,10 @@ export default function PublicOfferPage() {
         .offer-item-card__metric:nth-child(even) { background: #fbfdff !important; }
         .offer-item-card__metric--total { border-top: 1px solid rgba(255,255,255,0.16) !important; }
         .offer-item-card__metric--total dd { font-size: 20px !important; font-weight: 800 !important; color: #ffffff !important; }
-        .offer-shell__footer { grid-template-columns: 1fr !important; gap: 10px !important; }
+        .offer-shell__footer { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 10px !important; text-align: center !important; }
+        .offer-shell__footer div { font-size: 11.5px !important; gap: 6px !important; }
+        .offer-shell__footer-icon { width: 14px !important; height: 14px !important; flex: 0 0 14px !important; }
+        .offer-shell__footer-logo { width: 36px !important; height: 36px !important; border-radius: 9px !important; }
         .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 0 !important; margin-top: 18px !important; border-color: #d9e3ee !important; box-shadow: none !important; }
         .offer-summary--below { width: 100% !important; margin-top: 18px !important; }
         .offer-summary__row { font-size: 13.5px !important; padding: 12px 14px !important; line-height: 1.55 !important; border-bottom: 1px solid #e5ecf3 !important; }
@@ -1318,6 +1321,39 @@ export default function PublicOfferPage() {
       }
       html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric--total dd {
         color: #ffffff !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__footer {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+        text-align: center !important;
+        padding-top: 14px !important;
+        margin-top: 14px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__footer div {
+        justify-items: center !important;
+        font-size: 11px !important;
+        gap: 5px !important;
+        line-height: 1.4 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__footer strong {
+        gap: 4px !important;
+        font-size: 11px !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__footer-icon {
+        width: 13px !important;
+        height: 13px !important;
+        flex: 0 0 13px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__footer-logo {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 9px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__footer a {
+        word-break: break-all !important;
+        font-size: 10.5px !important;
       }
       html:not(.offer-mobile) .offer-shell {
         gap: 28px !important;

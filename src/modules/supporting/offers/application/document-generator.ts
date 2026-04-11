@@ -899,6 +899,14 @@ function injectDocumentPatchStyles(html: string): string {
     text-decoration: none !important;
     font-weight: 500 !important;
   }
+  .offer-shell__footer-logo {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 11px !important;
+    object-fit: cover !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.10) !important;
+    margin-bottom: 2px !important;
+  }
   @media (max-width: 640px) {
     .page-content--document {
       padding: 26px 18px 24px !important;
@@ -935,8 +943,23 @@ function injectDocumentPatchStyles(html: string): string {
       margin-top: 18px !important;
     }
     .offer-shell__footer {
-      grid-template-columns: 1fr !important;
-      gap: 18px !important;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      gap: 10px !important;
+      text-align: center !important;
+    }
+    .offer-shell__footer div {
+      font-size: 11.5px !important;
+      gap: 6px !important;
+    }
+    .offer-shell__footer-icon {
+      width: 14px !important;
+      height: 14px !important;
+      flex: 0 0 14px !important;
+    }
+    .offer-shell__footer-logo {
+      width: 36px !important;
+      height: 36px !important;
+      border-radius: 9px !important;
     }
   }
 </style>`;
@@ -1350,6 +1373,7 @@ export function renderPublicOfferFooterHtml(branding?: OfferBrandingProfile): st
   const website = branding?.website?.trim() || '';
   const responsibleName = branding?.responsibleName?.trim() || branding?.senderName?.trim() || '-';
   const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '-';
+  const logoUrl = branding?.logoUrl?.trim() || '';
   const websiteHref = website ? sanitizeUrl(/^https?:\/\//i.test(website) ? website : `https://${website}`) : '';
   const websiteLabel = website
     ? escapeHtml(website.replace(/^https?:\/\//i, '').replace(/\/+$/, ''))
@@ -1358,6 +1382,7 @@ export function renderPublicOfferFooterHtml(branding?: OfferBrandingProfile): st
   return `
     <footer class="offer-shell__footer">
       <div>
+        ${logoUrl ? `<img class="offer-shell__footer-logo" src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(companyName)}" />` : ''}
         <strong>${renderFooterIcon('website')}<span>${escapeHtml(companyName)}</span></strong>
         ${websiteHref ? `<a href="${websiteHref}" target="_blank" rel="noreferrer noopener">${websiteLabel}</a>` : '<span>-</span>'}
       </div>
