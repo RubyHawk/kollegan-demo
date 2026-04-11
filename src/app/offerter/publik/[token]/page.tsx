@@ -179,7 +179,7 @@ function looksLikeLegacyLineItemTableText(text: string): boolean {
 
   const hasHeader = normalized.includes('BESKRIVNING') || normalized.includes('PRODUKT ELLER TJÄNST');
   const hasColumns = normalized.includes('ANTAL')
-    && (normalized.includes('Å-PRIS') || normalized.includes('A-PRIS'))
+    && (normalized.includes('À-PRIS') || normalized.includes('Å-PRIS') || normalized.includes('A-PRIS'))
     && normalized.includes('MOMS')
     && normalized.includes('BELOPP');
 

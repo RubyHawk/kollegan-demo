@@ -79,6 +79,23 @@ describe('offer document generator', () => {
     expect(html).toContain('--offer-columns:minmax(0, 2.1fr) 92px 136px 86px 152px');
   });
 
+  it('uses À-pris in both fresh and sanitized legacy line item labels', () => {
+    const fallbackHtml = generateFallbackDocument(offer, branding);
+    const sanitizedLegacyHtml = sanitizeGeneratedOfferDocument(`
+      <div class="offer-items__head">
+        <span>Produkt eller tjänst</span>
+        <span>Antal</span>
+        <span>Å-pris</span>
+        <span>Moms</span>
+        <span>Belopp</span>
+      </div>
+    `, offer, branding);
+
+    expect(fallbackHtml).toContain('&Agrave;-pris');
+    expect(sanitizedLegacyHtml).toContain('À-pris');
+    expect(sanitizedLegacyHtml).not.toContain('Å-pris');
+  });
+
   it('renders summary below the pricing section and before legal terms even for legacy right placement', () => {
     const template = JSON.stringify({
       _v: 4,

@@ -21,6 +21,8 @@ describe('public offer pdf renderer', () => {
     expect(html).toContain('.offer-shell__lead');
     expect(html).toContain('.page-block--document::before');
     expect(html).toContain('.offer-summary__row--total');
+    expect(html).toContain('.offer-item-row__detail,');
+    expect(html).toContain('display: none !important;');
     expect(html).toContain('font-family: Aptos, "Segoe UI", "Helvetica Neue", Arial, sans-serif;');
   });
 
