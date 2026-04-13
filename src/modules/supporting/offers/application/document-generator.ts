@@ -910,14 +910,6 @@ function injectDocumentPatchStyles(html: string): string {
     text-decoration: none !important;
     font-weight: 500 !important;
   }
-  .offer-shell__footer-logo {
-    width: 44px !important;
-    height: 44px !important;
-    border-radius: 11px !important;
-    object-fit: cover !important;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.10) !important;
-    margin-bottom: 2px !important;
-  }
   @media (max-width: 640px) {
     .page-content--document {
       padding: 26px 18px 24px !important;
@@ -964,29 +956,9 @@ function injectDocumentPatchStyles(html: string): string {
       font-size: 12px !important;
       gap: 6px !important;
     }
-    .offer-shell__footer-item--company {
-      grid-column: 1 / -1 !important;
-      grid-template-columns: auto minmax(0, 1fr) !important;
-      grid-template-areas:
-        'logo title'
-        'logo link' !important;
-      align-items: center !important;
-      column-gap: 12px !important;
-      row-gap: 4px !important;
-    }
-    .offer-shell__footer-item--company .offer-shell__footer-logo {
-      grid-area: logo !important;
-      margin-bottom: 0 !important;
-    }
-    .offer-shell__footer-item--company strong {
-      grid-area: title !important;
-      justify-content: flex-start !important;
-    }
-    .offer-shell__footer-item--company > a,
-    .offer-shell__footer-item--company > span:last-child {
-      grid-area: link !important;
-      overflow-wrap: anywhere !important;
-    }
+    .offer-shell__footer-item--company { grid-column: 1 / -1 !important; grid-template-columns: minmax(0, 1fr) !important; row-gap: 4px !important; align-items: start !important; }
+    .offer-shell__footer-item--company strong { justify-content: flex-start !important; }
+    .offer-shell__footer-item--company > a, .offer-shell__footer-item--company > span:last-child { overflow-wrap: anywhere !important; }
     .offer-shell__footer-item--responsible,
     .offer-shell__footer-item--contact {
       padding-top: 10px !important;
@@ -996,11 +968,6 @@ function injectDocumentPatchStyles(html: string): string {
       width: 14px !important;
       height: 14px !important;
       flex: 0 0 14px !important;
-    }
-    .offer-shell__footer-logo {
-      width: 36px !important;
-      height: 36px !important;
-      border-radius: 9px !important;
     }
   }
 </style>`;
@@ -1419,7 +1386,6 @@ export function renderPublicOfferFooterHtml(branding?: OfferBrandingProfile): st
   const website = branding?.website?.trim() || '';
   const responsibleName = branding?.responsibleName?.trim() || branding?.senderName?.trim() || '-';
   const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '-';
-  const logoUrl = branding?.logoUrl?.trim() || '';
   const websiteHref = website ? sanitizeUrl(/^https?:\/\//i.test(website) ? website : `https://${website}`) : '';
   const websiteLabel = website
     ? escapeHtml(website.replace(/^https?:\/\//i, '').replace(/\/+$/, ''))
@@ -1428,7 +1394,6 @@ export function renderPublicOfferFooterHtml(branding?: OfferBrandingProfile): st
   return `
     <footer class="offer-shell__footer">
       <div class="offer-shell__footer-item offer-shell__footer-item--company">
-        ${logoUrl ? `<img class="offer-shell__footer-logo" src="${sanitizeUrl(logoUrl)}" alt="${escapeHtml(companyName)}" />` : ''}
         <strong>${renderFooterIcon('website')}<span>${escapeHtml(companyName)}</span></strong>
         ${websiteHref ? `<a href="${websiteHref}" target="_blank" rel="noreferrer noopener">${websiteLabel}</a>` : '<span>-</span>'}
       </div>
@@ -1732,10 +1697,9 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
       .offer-summary__row--total strong { font-size: 20px; color: #ffffff; }
       .offer-shell__footer { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
       .offer-shell__footer div { justify-items: start; text-align: left; }
-      .offer-shell__footer-item--company { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'logo title' 'logo link'; column-gap: 12px; row-gap: 4px; align-items: center; }
-      .offer-shell__footer-item--company .offer-shell__footer-logo { grid-area: logo; margin-bottom: 0; }
-      .offer-shell__footer-item--company strong { grid-area: title; justify-content: flex-start; }
-      .offer-shell__footer-item--company > a, .offer-shell__footer-item--company > span:last-child { grid-area: link; overflow-wrap: anywhere; }
+      .offer-shell__footer-item--company { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr); row-gap: 4px; align-items: start; }
+      .offer-shell__footer-item--company strong { justify-content: flex-start; }
+      .offer-shell__footer-item--company > a, .offer-shell__footer-item--company > span:last-child { overflow-wrap: anywhere; }
       .offer-shell__footer-item--responsible, .offer-shell__footer-item--contact { padding-top: 10px; border-top: 1px solid #e2e8f0; }
     }
     @media print { .doc-wrapper { margin: 0; padding: 0; border: none; } }
@@ -2084,10 +2048,9 @@ export function generateDocument(templateContent: string, offer: Offer, branding
       .offer-summary__row--total span { font-size: 11px; }
       .offer-summary__row--total strong { font-size: 20px; color: #ffffff; }
       .offer-shell__footer div { justify-items: start; text-align: left; font-size: 13px; line-height: 1.6; }
-      .offer-shell__footer-item--company { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'logo title' 'logo link'; column-gap: 12px; row-gap: 4px; align-items: center; }
-      .offer-shell__footer-item--company .offer-shell__footer-logo { grid-area: logo; margin-bottom: 0; }
-      .offer-shell__footer-item--company strong { grid-area: title; justify-content: flex-start; }
-      .offer-shell__footer-item--company > a, .offer-shell__footer-item--company > span:last-child { grid-area: link; overflow-wrap: anywhere; }
+      .offer-shell__footer-item--company { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr); row-gap: 4px; align-items: start; }
+      .offer-shell__footer-item--company strong { justify-content: flex-start; }
+      .offer-shell__footer-item--company > a, .offer-shell__footer-item--company > span:last-child { overflow-wrap: anywhere; }
       .offer-shell__footer-item--responsible, .offer-shell__footer-item--contact { padding-top: 10px; border-top: 1px solid #e2e8f0; }
     }
     @media print {
