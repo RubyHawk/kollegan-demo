@@ -76,7 +76,7 @@ describe('offer document generator', () => {
     expect(gammaIndex).toBeGreaterThan(-1);
     expect(alphaIndex).toBeGreaterThan(gammaIndex);
     expect(betaIndex).toBeGreaterThan(alphaIndex);
-    expect(html).toContain('--offer-columns:minmax(0, 2.1fr) 92px 136px 86px 152px');
+    expect(html).toContain('--offer-columns:minmax(0, 3.15fr) 76px 112px 72px 138px');
   });
 
   it('keeps product detail copy in the mobile offer cards', () => {

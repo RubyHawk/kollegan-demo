@@ -1548,11 +1548,11 @@ export default function PublicOfferPage() {
         gap: 28px !important;
       }
       html:not(.offer-mobile) .offer-shell__header {
-        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.9fr) !important;
-        gap: 36px !important;
-        align-items: center !important;
-        padding-bottom: 30px !important;
-        border-bottom: 2px solid #dbe5f1 !important;
+        grid-template-columns: minmax(0, 1.04fr) minmax(340px, 0.96fr) !important;
+        gap: 44px !important;
+        align-items: start !important;
+        padding-bottom: 26px !important;
+        border-bottom: 1px solid #dbe5f1 !important;
       }
       html:not(.offer-mobile) .offer-shell__sender {
         gap: 18px !important;
@@ -1570,8 +1570,9 @@ export default function PublicOfferPage() {
       }
       html:not(.offer-mobile) .offer-shell__meta {
         justify-items: stretch !important;
-        text-align: center !important;
+        text-align: left !important;
         gap: 0 !important;
+        align-self: center !important;
       }
       html:not(.offer-mobile) .offer-shell__status,
       html:not(.offer-mobile) .offer-shell__eyebrow,
@@ -1584,9 +1585,10 @@ export default function PublicOfferPage() {
         gap: 0 !important;
       }
       html:not(.offer-mobile) .offer-shell__meta dl div {
-        grid-template-columns: 1fr !important;
-        gap: 8px !important;
-        padding: 0 18px !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 6px !important;
+        min-width: 0 !important;
+        padding: 0 0 0 22px !important;
         border-left: 1px solid #dbe5f1 !important;
       }
       html:not(.offer-mobile) .offer-shell__meta dl div:first-child {
@@ -1597,19 +1599,20 @@ export default function PublicOfferPage() {
         padding-right: 0 !important;
       }
       html:not(.offer-mobile) .offer-shell__meta dt {
-        font-size: 12px !important;
+        font-size: 11px !important;
         font-weight: 700 !important;
-        letter-spacing: 0 !important;
-        text-transform: none !important;
-        text-align: center !important;
+        letter-spacing: 0.12em !important;
+        text-transform: uppercase !important;
+        text-align: left !important;
         color: #657b9c !important;
       }
       html:not(.offer-mobile) .offer-shell__meta dd {
-        font-size: 18px !important;
+        font-size: 17px !important;
         font-weight: 700 !important;
-        text-align: center !important;
+        text-align: left !important;
         color: #1f335b !important;
-        white-space: nowrap !important;
+        white-space: normal !important;
+        line-height: 1.22 !important;
       }
       html:not(.offer-mobile) .offer-shell__topline {
         grid-template-columns: minmax(0, 1fr) minmax(220px, 280px) !important;
@@ -1620,8 +1623,8 @@ export default function PublicOfferPage() {
       }
       html:not(.offer-mobile) .offer-shell__topline h1 {
         font-family: 'Times New Roman', Times, serif !important;
-        font-size: 76px !important;
-        line-height: 0.95 !important;
+        font-size: 72px !important;
+        line-height: 0.97 !important;
         letter-spacing: -0.03em !important;
         color: #1e3158 !important;
       }
@@ -1654,15 +1657,15 @@ export default function PublicOfferPage() {
       }
       html:not(.offer-mobile) .offer-items__table {
         border-color: #d4e2f1 !important;
-        border-radius: 28px !important;
-        box-shadow: 8px 8px 0 #e8eff8 !important;
+        border-radius: 26px !important;
+        box-shadow: 10px 10px 0 #e8eff8 !important;
       }
       html:not(.offer-mobile) .offer-items__head,
       html:not(.offer-mobile) .offer-item-row {
         gap: 0 !important;
       }
       html:not(.offer-mobile) .offer-items__head {
-        padding: 18px 22px 12px !important;
+        padding: 18px 24px 14px !important;
         background: #ffffff !important;
         color: #1f335b !important;
         font-size: 16px !important;
@@ -1686,42 +1689,42 @@ export default function PublicOfferPage() {
         border-top: 1px solid #dbe5f1 !important;
       }
       html:not(.offer-mobile) .offer-item-row {
-        padding: 24px 22px 26px !important;
+        padding: 21px 24px 22px !important;
         border-bottom: 0 !important;
       }
       html:not(.offer-mobile) .offer-item-row__product {
-        gap: 12px !important;
-        padding-right: 18px !important;
+        gap: 10px !important;
+        padding-right: 22px !important;
       }
       html:not(.offer-mobile) .offer-item-row__title {
-        font-size: 18px !important;
-        line-height: 1.22 !important;
+        font-size: 16px !important;
+        line-height: 1.28 !important;
         color: #1f335b !important;
       }
       html:not(.offer-mobile) .offer-item-row__detail {
-        max-width: 30ch !important;
-        font-size: 12px !important;
-        line-height: 1.46 !important;
-        color: #3d557b !important;
+        max-width: none !important;
+        font-size: 13px !important;
+        line-height: 1.58 !important;
+        color: #4c6182 !important;
       }
       html:not(.offer-mobile) .offer-item-row__value {
         display: flex !important;
         align-items: flex-start !important;
         justify-content: flex-end !important;
-        padding: 8px 14px 0 !important;
-        font-size: 15px !important;
-        line-height: 1.2 !important;
+        padding: 4px 12px 0 !important;
+        font-size: 14px !important;
+        line-height: 1.3 !important;
         font-weight: 700 !important;
         color: #1f335b !important;
         white-space: nowrap !important;
       }
       html:not(.offer-mobile) .offer-item-row__value--strong {
-        font-size: 17px !important;
+        font-size: 16px !important;
         font-weight: 800 !important;
       }
       html:not(.offer-mobile) .offer-summary,
       html:not(.offer-mobile) .offer-summary--below {
-        width: min(380px, 100%) !important;
+        width: min(396px, 100%) !important;
         max-width: none !important;
         margin-left: auto !important;
         padding: 0 !important;
@@ -1732,14 +1735,14 @@ export default function PublicOfferPage() {
         overflow: visible !important;
       }
       html:not(.offer-mobile) .offer-summary--below {
-        margin-top: 26px !important;
+        margin-top: 18px !important;
       }
       html:not(.offer-mobile) .offer-summary__row {
         display: grid !important;
         grid-template-columns: minmax(0, 1fr) auto !important;
         align-items: center !important;
-        gap: 18px !important;
-        padding: 11px 16px !important;
+        gap: 16px !important;
+        padding: 12px 18px !important;
         background: #f4f7fb !important;
         color: #1f335b !important;
         font-size: 14px !important;
@@ -1758,8 +1761,8 @@ export default function PublicOfferPage() {
         color: #be3d35 !important;
       }
       html:not(.offer-mobile) .offer-summary__row--total {
-        margin-top: 10px !important;
-        padding: 16px 18px !important;
+        margin-top: 8px !important;
+        padding: 17px 20px !important;
         background: #2d4a83 !important;
         color: #ffffff !important;
       }
@@ -1772,7 +1775,7 @@ export default function PublicOfferPage() {
         gap: 4px !important;
       }
       html:not(.offer-mobile) .offer-summary__total-label {
-        font-size: 22px !important;
+        font-size: 21px !important;
         font-weight: 700 !important;
         line-height: 1 !important;
       }
@@ -1782,7 +1785,7 @@ export default function PublicOfferPage() {
         line-height: 1.1 !important;
       }
       html:not(.offer-mobile) .offer-summary__row--total strong {
-        font-size: 18px !important;
+        font-size: 20px !important;
         letter-spacing: -0.02em !important;
       }
       html:not(.offer-mobile) .offer-section--terms {
@@ -1790,17 +1793,17 @@ export default function PublicOfferPage() {
       }
       html:not(.offer-mobile) .offer-shell__footer {
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 28px !important;
-        padding-top: 28px !important;
-        margin-top: 42px !important;
+        gap: 30px !important;
+        padding-top: 24px !important;
+        margin-top: 36px !important;
         border-top: 1px solid #dbe5f1 !important;
       }
       html:not(.offer-mobile) .offer-shell__footer div {
         justify-items: center !important;
         text-align: center !important;
-        gap: 10px !important;
+        gap: 8px !important;
         font-size: 14px !important;
-        line-height: 1.35 !important;
+        line-height: 1.42 !important;
       }
       html:not(.offer-mobile) .offer-shell__footer strong {
         display: inline-flex !important;
@@ -1808,7 +1811,7 @@ export default function PublicOfferPage() {
         justify-content: center !important;
         gap: 8px !important;
         color: #1f335b !important;
-        font-size: 13px !important;
+        font-size: 14px !important;
       }
       html:not(.offer-mobile) .offer-shell__footer-icon {
         width: 17px !important;
@@ -2348,20 +2351,20 @@ export default function PublicOfferPage() {
       className="min-h-screen bg-[radial-gradient(circle_at_top,_#ffffff_0%,_#edf3fb_42%,_#e8eef8_100%)]"
     >
       {/* ─── Sticky header ─── */}
-      <header className="sticky top-0 z-20 px-3 pt-3 sm:px-6 sm:pt-2">
-        <div className={`mx-auto overflow-hidden rounded-[24px] border backdrop-blur-xl transition-colors sm:max-w-[900px] sm:border-slate-200/80 sm:bg-white/95 sm:shadow-[0_8px_22px_rgba(15,23,42,0.07)] ${hasPromoHero ? 'border-white/18 bg-white/12 shadow-[0_18px_42px_rgba(9,18,35,0.18)]' : 'border-slate-200/80 bg-white/92 shadow-[0_12px_30px_rgba(15,23,42,0.08)]'}`}>
-          <div className="px-4 py-3 sm:px-3.5 sm:py-2">
-            <div className="flex items-center gap-3 sm:min-h-0">
-              <div className="hidden min-w-0 flex-1 items-center gap-3 sm:flex">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] border border-slate-200 bg-gradient-to-br from-white to-slate-100 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] sm:h-8 sm:w-8 sm:rounded-xl">
+      <header className="sticky top-0 z-20 px-3 pt-3 sm:px-6 sm:pt-3">
+        <div className={`mx-auto overflow-hidden rounded-[24px] border backdrop-blur-xl transition-colors sm:max-w-[920px] sm:border-slate-200/80 sm:bg-white/95 sm:shadow-[0_8px_22px_rgba(15,23,42,0.07)] ${hasPromoHero ? 'border-white/18 bg-white/12 shadow-[0_18px_42px_rgba(9,18,35,0.18)]' : 'border-slate-200/80 bg-white/92 shadow-[0_12px_30px_rgba(15,23,42,0.08)]'}`}>
+          <div className="px-4 py-3 sm:px-5 sm:py-2.5">
+            <div className="flex items-center gap-3 sm:min-h-0 sm:gap-4">
+              <div className="hidden min-w-0 flex-1 items-center gap-3.5 sm:flex">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] border border-slate-200 bg-gradient-to-br from-white to-slate-100 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] sm:h-9 sm:w-9 sm:rounded-[14px]">
                   <BrandMark size={18} alt="" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                     Publik offert
                   </p>
-                  <h1 className="truncate text-[15px] font-semibold leading-[1.1] text-slate-900 sm:text-[14px]">{offer.title}</h1>
-                  <p className="truncate text-[12px] leading-tight text-slate-500 sm:mt-0.5 sm:text-[11px]">
+                  <h1 className="truncate text-[15px] font-semibold leading-[1.1] text-slate-900 sm:text-[17px]">{offer.title}</h1>
+                  <p className="truncate text-[12px] leading-tight text-slate-500 sm:mt-0.5 sm:text-[12.5px]">
                     {offer.recipientName}
                     {offer.recipientCompany ? ` · ${offer.recipientCompany}` : ''}
                   </p>
@@ -2402,22 +2405,25 @@ export default function PublicOfferPage() {
                 </button>
               </div>
 
-              <div className="hidden shrink-0 items-center gap-2 sm:flex sm:gap-2.5">
-                <div className="hidden sm:flex min-w-[214px] items-center justify-between gap-3 rounded-[16px] border border-slate-200/80 bg-slate-50/90 px-3 py-1.5">
+              <div className="hidden shrink-0 items-center gap-3 sm:flex">
+                <div className="hidden min-w-[244px] items-center justify-between gap-4 rounded-[16px] border border-slate-200/85 bg-slate-50/92 px-4 py-2 sm:flex">
                   <div>
                     <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                       Total
                     </p>
-                    <p className="mt-0.5 text-[15px] font-semibold tabular-nums text-slate-950">
+                    <p className="mt-0.5 text-[18px] font-semibold tabular-nums leading-none text-slate-950">
                       {fmtSEK(pricing.totalAmount)}
                     </p>
                   </div>
-                  <span className="text-[11px] text-slate-500">{pricing.displayModeLabel} · Giltig till {fmtDate(offer.validUntil)}</span>
+                  <div className="grid justify-items-end gap-1 text-right">
+                    <span className="text-[11px] font-medium text-slate-500">{pricing.displayModeLabel}</span>
+                    <span className="text-[11px] text-slate-500">Giltig till {fmtDate(offer.validUntil)}</span>
+                  </div>
                 </div>
                 <button
                   onClick={() => void handleDownloadPdf()}
                   disabled={downloading || !offer.generatedDocument}
-                  className="flex h-9 items-center gap-2 rounded-[16px] border border-slate-200/90 bg-white px-3 text-[13px] font-semibold text-slate-700 shadow-[0_6px_16px_rgba(15,23,42,0.06)] transition-all duration-200 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-40 sm:text-xs"
+                  className="flex h-10 items-center gap-2 rounded-[16px] border border-slate-200/90 bg-white px-4 text-[13px] font-semibold text-slate-700 shadow-[0_6px_16px_rgba(15,23,42,0.06)] transition-all duration-200 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-40"
                   title="Ladda ner PDF"
                 >
                   {downloading ? (
