@@ -1,4 +1,5 @@
 import {
+  applyProductUnitsToOffer,
   resolveGeneratedDocumentForSend,
   resolveOfferSendWindow,
 } from '@modules/supporting/offers/application/offers.service';
@@ -95,6 +96,42 @@ describe('offers service send snapshot handling', () => {
 
     expect(resolved.generatedDocument).toBe(offer.generatedDocument);
     expect(resolved.usesCurrentTemplate).toBe(false);
+  });
+
+  it('inherits line item units from matching product names', () => {
+    const resolved = applyProductUnitsToOffer(offer, [
+      { name: 'Facade wash', unit: 'm²' },
+      { name: 'Window polish', unit: 'st' },
+    ]);
+
+    expect(resolved.lineItems[0]?.unit).toBe('m²');
+  });
+
+  it('does not overwrite an explicit line item unit', () => {
+    const resolved = applyProductUnitsToOffer({
+      ...offer,
+      lineItems: [{ ...offer.lineItems[0]!, unit: 'lpm' }],
+    }, [
+      { name: 'Facade wash', unit: 'm²' },
+    ]);
+
+    expect(resolved.lineItems[0]?.unit).toBe('lpm');
+  });
+
+  it('falls back to product family matching when the exact variant name differs', () => {
+    const resolved = applyProductUnitsToOffer({
+      ...offer,
+      lineItems: [
+        {
+          ...offer.lineItems[0]!,
+          description: 'Soleria SL 15 + X — Premium film for solar control',
+        },
+      ],
+    }, [
+      { name: 'Soleria SL 22 + X', unit: 'm²' },
+    ]);
+
+    expect(resolved.lineItems[0]?.unit).toBe('m²');
   });
 
   it('renders from the current template when no stored snapshot exists yet', () => {

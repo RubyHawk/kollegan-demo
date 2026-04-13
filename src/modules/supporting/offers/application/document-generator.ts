@@ -55,18 +55,26 @@ function fmtQuantity(n: number): string {
   }).format(n);
 }
 
+function normalizeLineItemUnit(unit: string): string {
+  return unit
+    .trim()
+    .replace(/\u00c2(?=[\u00b2\u00b3])/g, '')
+    .toLocaleLowerCase('sv-SE');
+}
+
 function formatLineItemUnitHtml(unit: string): string {
-  const normalized = unit.trim().toLocaleLowerCase('sv-SE');
+  const cleanedUnit = unit.trim().replace(/\u00c2(?=[\u00b2\u00b3])/g, '');
+  const normalized = normalizeLineItemUnit(cleanedUnit);
   if (!normalized) return '';
   if (['m2', 'm^2', 'm²', 'kvm'].includes(normalized)) return 'm&sup2;';
   if (['m3', 'm^3', 'm³'].includes(normalized)) return 'm&sup3;';
-  return escapeHtml(unit.trim());
+  return escapeHtml(cleanedUnit);
 }
 
 function formatOfferLineItemQuantityHtml(item: OfferLineItem): string {
   const quantity = fmtQuantity(item.quantity);
   const maybeUnit = typeof (item as OfferLineItem & { unit?: unknown }).unit === 'string'
-    ? String((item as OfferLineItem & { unit?: unknown }).unit).trim()
+    ? String((item as OfferLineItem & { unit?: unknown }).unit).trim().replace(/\u00c2(?=[\u00b2\u00b3])/g, '')
     : '';
 
   if (!maybeUnit) return `${quantity} st`;
@@ -1153,6 +1161,36 @@ function replaceLegacyLineItemsTable(html: string, offer: Offer): string {
   );
 }
 
+function syncStructuredLineItemQuantities(html: string, offer: Offer): string {
+  let desktopIndex = 0;
+  let syncedHtml = html.replace(
+    /<article\b[^>]*class="[^"]*\boffer-item-row\b[^"]*"[^>]*>[\s\S]*?<\/article>/gi,
+    (rowHtml) => {
+      const item = offer.lineItems[desktopIndex++];
+      if (!item) return rowHtml;
+      return rowHtml.replace(
+        /(<div\b[^>]*class="[^"]*\boffer-item-row__value\b[^"]*"[^>]*>)[\s\S]*?(<\/div>)/i,
+        `$1${formatOfferLineItemQuantityHtml(item)}$2`,
+      );
+    },
+  );
+
+  let mobileIndex = 0;
+  syncedHtml = syncedHtml.replace(
+    /<article\b[^>]*class="[^"]*\boffer-item-card\b[^"]*"[^>]*>[\s\S]*?<\/article>/gi,
+    (cardHtml) => {
+      const item = offer.lineItems[mobileIndex++];
+      if (!item) return cardHtml;
+      return cardHtml.replace(
+        /(<div\b[^>]*class="[^"]*\boffer-item-card__metric\b[^"]*"[^>]*>\s*<dt>\s*Antal\s*<\/dt>\s*<dd>)[\s\S]*?(<\/dd>)/i,
+        `$1${formatOfferLineItemQuantityHtml(item)}$2`,
+      );
+    },
+  );
+
+  return syncedHtml;
+}
+
 export function sanitizeGeneratedOfferDocument(
   documentHtml: string,
   offer: Offer,
@@ -1161,6 +1199,7 @@ export function sanitizeGeneratedOfferDocument(
   let html = documentHtml;
   html = replaceLegacyLineItemsTable(html, offer);
   html = injectStructuredLineItemStyles(html);
+  html = syncStructuredLineItemQuantities(html, offer);
   html = normalizeLegacyOfferMeta(html, getOfferNumberString(offer));
   html = injectSenderBranding(html, branding);
   html = injectDocumentPatchStyles(html);
