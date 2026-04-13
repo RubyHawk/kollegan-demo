@@ -1547,11 +1547,17 @@ export default function PublicOfferPage() {
       html:not(.offer-mobile) .offer-shell {
         gap: 28px !important;
       }
+      html:not(.offer-mobile) .doc-wrapper {
+        max-width: 1000px !important;
+      }
+      html:not(.offer-mobile) .page-content--document {
+        padding: 42px 34px 38px !important;
+      }
       html:not(.offer-mobile) .offer-shell__header {
-        grid-template-columns: minmax(0, 1.04fr) minmax(340px, 0.96fr) !important;
-        gap: 44px !important;
-        align-items: start !important;
-        padding-bottom: 26px !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        gap: 52px !important;
+        align-items: center !important;
+        padding-bottom: 24px !important;
         border-bottom: 1px solid #dbe5f1 !important;
       }
       html:not(.offer-mobile) .offer-shell__sender {
@@ -1569,7 +1575,7 @@ export default function PublicOfferPage() {
         color: #111827 !important;
       }
       html:not(.offer-mobile) .offer-shell__meta {
-        justify-items: stretch !important;
+        justify-items: end !important;
         text-align: left !important;
         gap: 0 !important;
         align-self: center !important;
@@ -1581,14 +1587,16 @@ export default function PublicOfferPage() {
         display: none !important;
       }
       html:not(.offer-mobile) .offer-shell__meta dl {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        width: auto !important;
+        grid-template-columns: repeat(3, minmax(124px, max-content)) !important;
+        justify-content: end !important;
         gap: 0 !important;
       }
       html:not(.offer-mobile) .offer-shell__meta dl div {
         grid-template-columns: minmax(0, 1fr) !important;
         gap: 6px !important;
         min-width: 0 !important;
-        padding: 0 0 0 22px !important;
+        padding: 0 0 0 24px !important;
         border-left: 1px solid #dbe5f1 !important;
       }
       html:not(.offer-mobile) .offer-shell__meta dl div:first-child {
@@ -1607,12 +1615,12 @@ export default function PublicOfferPage() {
         color: #657b9c !important;
       }
       html:not(.offer-mobile) .offer-shell__meta dd {
-        font-size: 17px !important;
+        font-size: 16px !important;
         font-weight: 700 !important;
         text-align: left !important;
         color: #1f335b !important;
-        white-space: normal !important;
-        line-height: 1.22 !important;
+        white-space: nowrap !important;
+        line-height: 1.2 !important;
       }
       html:not(.offer-mobile) .offer-shell__topline {
         grid-template-columns: minmax(0, 1fr) minmax(220px, 280px) !important;
@@ -1665,10 +1673,10 @@ export default function PublicOfferPage() {
         gap: 0 !important;
       }
       html:not(.offer-mobile) .offer-items__head {
-        padding: 18px 24px 14px !important;
+        padding: 17px 20px 14px !important;
         background: #ffffff !important;
         color: #1f335b !important;
-        font-size: 16px !important;
+        font-size: 15px !important;
         letter-spacing: 0 !important;
         text-transform: none !important;
       }
@@ -1677,7 +1685,7 @@ export default function PublicOfferPage() {
         min-height: 46px !important;
         align-items: center !important;
         justify-content: flex-end !important;
-        padding: 0 14px !important;
+        padding: 0 10px !important;
         border-left: 1px solid #dbe5f1 !important;
       }
       html:not(.offer-mobile) .offer-items__head span:first-child {
@@ -1689,12 +1697,12 @@ export default function PublicOfferPage() {
         border-top: 1px solid #dbe5f1 !important;
       }
       html:not(.offer-mobile) .offer-item-row {
-        padding: 21px 24px 22px !important;
+        padding: 20px 20px 21px !important;
         border-bottom: 0 !important;
       }
       html:not(.offer-mobile) .offer-item-row__product {
         gap: 10px !important;
-        padding-right: 22px !important;
+        padding-right: 14px !important;
       }
       html:not(.offer-mobile) .offer-item-row__title {
         font-size: 16px !important;
@@ -1711,7 +1719,7 @@ export default function PublicOfferPage() {
         display: flex !important;
         align-items: flex-start !important;
         justify-content: flex-end !important;
-        padding: 4px 12px 0 !important;
+        padding: 4px 8px 0 !important;
         font-size: 14px !important;
         line-height: 1.3 !important;
         font-weight: 700 !important;
@@ -1724,7 +1732,7 @@ export default function PublicOfferPage() {
       }
       html:not(.offer-mobile) .offer-summary,
       html:not(.offer-mobile) .offer-summary--below {
-        width: min(396px, 100%) !important;
+        width: min(408px, 100%) !important;
         max-width: none !important;
         margin-left: auto !important;
         padding: 0 !important;
@@ -2352,7 +2360,7 @@ export default function PublicOfferPage() {
     >
       {/* ─── Sticky header ─── */}
       <header className="sticky top-0 z-20 px-3 pt-3 sm:px-6 sm:pt-3">
-        <div className={`mx-auto overflow-hidden rounded-[24px] border backdrop-blur-xl transition-colors sm:max-w-[920px] sm:border-slate-200/80 sm:bg-white/95 sm:shadow-[0_8px_22px_rgba(15,23,42,0.07)] ${hasPromoHero ? 'border-white/18 bg-white/12 shadow-[0_18px_42px_rgba(9,18,35,0.18)]' : 'border-slate-200/80 bg-white/92 shadow-[0_12px_30px_rgba(15,23,42,0.08)]'}`}>
+        <div className={`mx-auto overflow-hidden rounded-[24px] border backdrop-blur-xl transition-colors sm:max-w-[1040px] sm:border-slate-200/80 sm:bg-white/95 sm:shadow-[0_8px_22px_rgba(15,23,42,0.07)] ${hasPromoHero ? 'border-white/18 bg-white/12 shadow-[0_18px_42px_rgba(9,18,35,0.18)]' : 'border-slate-200/80 bg-white/92 shadow-[0_12px_30px_rgba(15,23,42,0.08)]'}`}>
           <div className="px-4 py-3 sm:px-5 sm:py-2.5">
             <div className="flex items-center gap-3 sm:min-h-0 sm:gap-4">
               <div className="hidden min-w-0 flex-1 items-center gap-3.5 sm:flex">
@@ -2406,19 +2414,17 @@ export default function PublicOfferPage() {
               </div>
 
               <div className="hidden shrink-0 items-center gap-3 sm:flex">
-                <div className="hidden min-w-[244px] items-center justify-between gap-4 rounded-[16px] border border-slate-200/85 bg-slate-50/92 px-4 py-2 sm:flex">
-                  <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                <div className="hidden min-w-[320px] rounded-[18px] border border-slate-200/85 bg-slate-50/92 px-5 py-3 sm:block">
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
                       Total
                     </p>
-                    <p className="mt-0.5 text-[18px] font-semibold tabular-nums leading-none text-slate-950">
-                      {fmtSEK(pricing.totalAmount)}
-                    </p>
-                  </div>
-                  <div className="grid justify-items-end gap-1 text-right">
                     <span className="text-[11px] font-medium text-slate-500">{pricing.displayModeLabel}</span>
-                    <span className="text-[11px] text-slate-500">Giltig till {fmtDate(offer.validUntil)}</span>
                   </div>
+                  <p className="mt-1.5 text-[28px] font-semibold tabular-nums leading-none text-slate-950">
+                    {fmtSEK(pricing.totalAmount)}
+                  </p>
+                  <p className="mt-2 text-[11px] text-slate-500">Giltig till {fmtDate(offer.validUntil)}</p>
                 </div>
                 <button
                   onClick={() => void handleDownloadPdf()}
@@ -2449,7 +2455,7 @@ export default function PublicOfferPage() {
         ref={mainRef}
         className="bg-transparent pb-8 sm:pb-24"
       >
-        <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
+        <div className="mx-auto max-w-[1040px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
 
         {/* Document iframe */}
         {offer.generatedDocument && (

@@ -370,12 +370,12 @@ function buildStructuredLineItems(items: OfferLineItem[], mode: Offer['priceDisp
   const showVatColumn = pricing.hasVat;
   const showDiscountColumn = items.some((item) => (item.discount ?? 0) > 0);
   const gridTemplate = [
-    'minmax(0, 3.15fr)',
-    '76px',
-    '112px',
-    ...(showDiscountColumn ? ['72px'] : []),
-    ...(showVatColumn ? ['72px'] : []),
-    '138px',
+    'minmax(0, 1fr)',
+    '64px',
+    '104px',
+    ...(showDiscountColumn ? ['64px'] : []),
+    ...(showVatColumn ? ['64px'] : []),
+    '132px',
   ].join(' ');
 
   const headerCells = [
