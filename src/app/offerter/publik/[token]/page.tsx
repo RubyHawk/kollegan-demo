@@ -1008,7 +1008,6 @@ export default function PublicOfferPage() {
         .offer-shell__footer { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 10px !important; text-align: center !important; }
         .offer-shell__footer div { font-size: 11.5px !important; gap: 6px !important; }
         .offer-shell__footer-icon { width: 14px !important; height: 14px !important; flex: 0 0 14px !important; }
-        .offer-shell__footer-logo { width: 36px !important; height: 36px !important; border-radius: 9px !important; }
         .offer-summary { width: 100% !important; border-radius: 14px !important; padding: 0 !important; margin-top: 18px !important; border-color: #d9e3ee !important; box-shadow: none !important; }
         .offer-summary--below { width: 100% !important; margin-top: 18px !important; }
         .offer-summary__row { font-size: 13.5px !important; padding: 12px 14px !important; line-height: 1.55 !important; border-bottom: 1px solid #e5ecf3 !important; }
@@ -1085,30 +1084,20 @@ export default function PublicOfferPage() {
         margin-top: -72px !important;
       }
       html.offer-mobile .doc-wrapper:not(.doc-wrapper--with-promo) .public-offer-primary {
-        margin-top: -18px !important;
+        margin-top: 0 !important;
       }
       html.offer-mobile .public-offer-primary .page-content,
       html.offer-mobile .public-offer-primary .page-content--document {
         position: relative !important;
-        padding: 34px 18px 32px !important;
-        border-radius: 30px 30px 0 0 !important;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), #f4f8fd 100%) !important;
-        border-top: 1px solid rgba(255, 255, 255, 0.92) !important;
-        box-shadow: 0 -14px 40px rgba(15, 23, 42, 0.1) !important;
+        padding: 28px 18px 20px !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        border-top: none !important;
+        box-shadow: none !important;
       }
       html.offer-mobile .doc-wrapper.doc-wrapper--with-promo .public-offer-primary .page-content::before,
       html.offer-mobile .doc-wrapper.doc-wrapper--with-promo .public-offer-primary .page-content--document::before {
-        content: '' !important;
-        position: absolute !important;
-        top: -16px !important;
-        left: 22px !important;
-        right: 22px !important;
-        height: 46px !important;
-        border-radius: 999px !important;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0)) !important;
-        opacity: 0.9 !important;
-        pointer-events: none !important;
-        filter: blur(6px) !important;
+        content: none !important;
       }
       html.offer-mobile .doc-wrapper:not(.doc-wrapper--with-promo) .public-offer-primary .page-content::before,
       html.offer-mobile .doc-wrapper:not(.doc-wrapper--with-promo) .public-offer-primary .page-content--document::before {
@@ -1503,11 +1492,6 @@ export default function PublicOfferPage() {
         height: 14px !important;
         flex: 0 0 14px !important;
       }
-      html.offer-mobile .public-offer-primary .offer-shell__footer-logo {
-        width: 38px !important;
-        height: 38px !important;
-        border-radius: 10px !important;
-      }
       html.offer-mobile .public-offer-primary .offer-shell__footer a {
         word-break: break-word !important;
         overflow-wrap: anywhere !important;
@@ -1515,24 +1499,16 @@ export default function PublicOfferPage() {
       }
       html.offer-mobile .public-offer-primary .offer-shell__footer-item--company {
         grid-column: 1 / -1 !important;
-        grid-template-columns: auto minmax(0, 1fr) !important;
-        grid-template-areas:
-          'logo title'
-          'logo link' !important;
-        column-gap: 12px !important;
+        grid-template-columns: minmax(0, 1fr) !important;
         row-gap: 4px !important;
-        align-items: center !important;
-      }
-      html.offer-mobile .public-offer-primary .offer-shell__footer-item--company .offer-shell__footer-logo {
-        grid-area: logo !important;
-        margin-bottom: 0 !important;
+        align-items: start !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__footer-item--company strong {
-        grid-area: title !important;
+        justify-content: flex-start !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__footer-item--company > a,
       html.offer-mobile .public-offer-primary .offer-shell__footer-item--company > span:last-child {
-        grid-area: link !important;
+        overflow-wrap: anywhere !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__footer-item--responsible,
       html.offer-mobile .public-offer-primary .offer-shell__footer-item--contact {
@@ -2465,8 +2441,7 @@ export default function PublicOfferPage() {
       {/* ─── Content ─── */}
       <main
         ref={mainRef}
-        className="bg-transparent"
-        style={{ paddingBottom: '96px' }}
+        className="bg-transparent pb-8 sm:pb-24"
       >
         <div className="mx-auto max-w-[900px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
 
@@ -2479,7 +2454,7 @@ export default function PublicOfferPage() {
             transition={{ duration: 0.35, delay: 0.04 }}
             className={promoPageCount > 0
               ? 'mb-6 overflow-visible bg-transparent shadow-none sm:rounded-[26px]'
-              : 'mb-6 mx-3 overflow-hidden rounded-[26px] border border-white/75 bg-white/92 shadow-[0_20px_42px_rgba(15,23,42,0.08)] sm:mx-0 sm:rounded-[28px]'}
+              : 'mb-6 overflow-visible bg-transparent shadow-none sm:mx-0 sm:overflow-hidden sm:rounded-[28px] sm:border sm:border-white/75 sm:bg-white/92 sm:shadow-[0_20px_42px_rgba(15,23,42,0.08)]'}
           >
             <iframe
               ref={iframeRef}

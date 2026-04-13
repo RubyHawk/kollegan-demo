@@ -195,6 +195,7 @@ describe('offer document generator', () => {
     expect(html).toContain('<span>Ansvarig</span>');
     expect(html).toContain('<span>Kontakt</span>');
     expect(html).toContain('<span>hello@soleria.se</span>');
+    expect(html).not.toContain('<img class="offer-shell__footer-logo"');
   });
 
   it('re-injects missing sender branding details into legacy generated snapshots', () => {
