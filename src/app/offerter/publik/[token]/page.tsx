@@ -16,7 +16,6 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import SignatureCanvas from 'react-signature-canvas';
 import {
-  FileTextIcon,
   UserIcon,
   CalendarIcon,
   EditIcon,
@@ -43,7 +42,7 @@ interface PublicOffer {
   recipientCompany?: string;
   totalExVat: number;
   totalIncVat: number;
-  lineItems: Array<{ quantity: number; unitPrice: number; vatRate: number; discount?: number }>;
+  lineItems: Array<{ quantity: number; unit?: string; unitPrice: number; vatRate: number; discount?: number }>;
   validUntil: string;
   notes?: string;
   generatedDocument?: string;
@@ -65,10 +64,41 @@ const SIG_FONTS = [
   { id: 'mono',     family: "'Courier New', monospace",                     label: 'Maskin' },
 ] as const;
 
+function PdfBadgePill({
+  className = '',
+  labelClassName = '',
+}: {
+  className?: string;
+  labelClassName?: string;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`inline-flex min-w-[34px] items-center justify-center rounded-full bg-red-600 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] leading-none text-white ${className}`}
+    >
+      <span className={labelClassName}>PDF</span>
+    </span>
+  );
+}
+
 // ─── Utilities ─────────────────────────────────────────────────────────────────
 
 function fmtSEK(n: number) {
   return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(n);
+}
+function fmtQuantityWithUnit(quantity: number, unit?: string) {
+  const formattedQuantity = new Intl.NumberFormat('sv-SE', {
+    minimumFractionDigits: Number.isInteger(quantity) ? 0 : 2,
+    maximumFractionDigits: Number.isInteger(quantity) ? 0 : 2,
+  }).format(quantity);
+  const trimmedUnit = unit?.trim() ?? '';
+  const normalizedUnit = trimmedUnit.toLocaleLowerCase('sv-SE');
+  const displayUnit = (
+    ['m2', 'm^2', 'm²', 'kvm'].includes(normalizedUnit) ? 'm²'
+      : ['m3', 'm^3', 'm³'].includes(normalizedUnit) ? 'm³'
+        : trimmedUnit || 'st'
+  );
+  return `${formattedQuantity} ${displayUnit}`;
 }
 const SWEDISH_MONTHS_SHORT = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'] as const;
 
@@ -578,13 +608,20 @@ export default function PublicOfferPage() {
       .offer-item-card__eyebrow { font-size: 10px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; color: #7d90a6 !important; }
       .offer-item-card__title { font-size: 16px !important; line-height: 1.35 !important; font-weight: 700 !important; color: #10233b !important; }
       .offer-item-card__detail { font-size: 13px !important; line-height: 1.72 !important; color: #5f738a !important; }
-      .offer-item-card__grid { display: grid !important; gap: 0 !important; margin: 0 !important; }
-      .offer-item-card__metric { display: flex !important; justify-content: space-between !important; gap: 16px !important; padding: 11px 16px !important; border-bottom: 1px solid #edf2f7 !important; }
-      .offer-item-card__metric:last-child { border-bottom: none !important; }
+      .offer-item-card__grid { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0 !important; margin: 0 !important; }
+      .offer-item-card__metric { display: grid !important; justify-items: center !important; align-content: center !important; gap: 7px !important; min-height: 78px !important; padding: 14px 12px 13px !important; text-align: center !important; background: #ffffff !important; }
       .offer-item-card__metric dt, .offer-item-card__metric dd { margin: 0 !important; }
-      .offer-item-card__metric dt { font-size: 12px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; color: #7d90a6 !important; }
-      .offer-item-card__metric dd { text-align: right !important; font-size: 14px !important; font-weight: 600 !important; color: #10233b !important; }
+      .offer-item-card__metric dt { font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; color: #7d90a6 !important; }
+      .offer-item-card__metric dd { text-align: center !important; font-size: 14px !important; font-weight: 700 !important; color: #10233b !important; }
+      .offer-item-card__metric:not(.offer-item-card__metric--total):not(.offer-item-card__metric--full):nth-child(odd) { border-right: 1px solid #edf2f7 !important; }
+      .offer-item-card__metric:nth-child(n + 3):not(.offer-item-card__metric--total) { border-top: 1px solid #edf2f7 !important; }
+      .offer-item-card__metric--full { grid-column: 1 / -1 !important; border-top: 1px solid #edf2f7 !important; }
       .offer-item-card__metric--total {
+        grid-column: 1 / -1 !important;
+        gap: 8px !important;
+        min-height: 0 !important;
+        padding: 16px 14px 15px !important;
+        border-top: 1px solid #142742 !important;
         background: linear-gradient(135deg, #13233a 0%, #223b63 100%) !important;
       }
       .offer-item-card__metric--total dt,
@@ -977,9 +1014,9 @@ export default function PublicOfferPage() {
         .offer-summary__row { font-size: 13.5px !important; padding: 12px 14px !important; line-height: 1.55 !important; border-bottom: 1px solid #e5ecf3 !important; }
         .offer-summary__row span { font-weight: 600 !important; }
         .offer-summary__row--total { font-size: 16px !important; padding: 14px !important; }
-        .offer-summary__row--total span { font-size: 11.5px !important; }
-        .offer-summary__row--total strong { font-size: 22px !important; color: #ffffff !important; }
-        .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
+      .offer-summary__row--total span { font-size: 11.5px !important; }
+      .offer-summary__row--total strong { font-size: 22px !important; color: #ffffff !important; }
+      .offer-shell__footer div { font-size: 14px !important; line-height: 1.6 !important; }
       }
       html.offer-mobile {
         background:
@@ -1043,150 +1080,227 @@ export default function PublicOfferPage() {
       html.offer-mobile .public-offer-primary {
         position: relative !important;
         z-index: 2 !important;
-        margin-top: -112px !important;
+      }
+      html.offer-mobile .doc-wrapper.doc-wrapper--with-promo .public-offer-primary {
+        margin-top: -72px !important;
+      }
+      html.offer-mobile .doc-wrapper:not(.doc-wrapper--with-promo) .public-offer-primary {
+        margin-top: -18px !important;
       }
       html.offer-mobile .public-offer-primary .page-content,
       html.offer-mobile .public-offer-primary .page-content--document {
         position: relative !important;
-        padding: 32px 18px 30px !important;
-        border-radius: 34px 34px 0 0 !important;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), #f6f9fd 100%) !important;
+        padding: 34px 18px 32px !important;
+        border-radius: 30px 30px 0 0 !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), #f4f8fd 100%) !important;
         border-top: 1px solid rgba(255, 255, 255, 0.92) !important;
-        box-shadow: 0 -18px 48px rgba(8, 21, 45, 0.16) !important;
+        box-shadow: 0 -14px 40px rgba(15, 23, 42, 0.1) !important;
       }
-      html.offer-mobile .public-offer-primary .page-content::before,
-      html.offer-mobile .public-offer-primary .page-content--document::before {
+      html.offer-mobile .doc-wrapper.doc-wrapper--with-promo .public-offer-primary .page-content::before,
+      html.offer-mobile .doc-wrapper.doc-wrapper--with-promo .public-offer-primary .page-content--document::before {
         content: '' !important;
         position: absolute !important;
-        top: -18px !important;
+        top: -16px !important;
         left: 22px !important;
         right: 22px !important;
-        height: 54px !important;
+        height: 46px !important;
         border-radius: 999px !important;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0)) !important;
-        opacity: 0.92 !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0)) !important;
+        opacity: 0.9 !important;
         pointer-events: none !important;
         filter: blur(6px) !important;
       }
-      html.offer-mobile .public-offer-primary .offer-shell {
-        gap: 18px !important;
+      html.offer-mobile .doc-wrapper:not(.doc-wrapper--with-promo) .public-offer-primary .page-content::before,
+      html.offer-mobile .doc-wrapper:not(.doc-wrapper--with-promo) .public-offer-primary .page-content--document::before {
+        content: none !important;
       }
-      html.offer-mobile .public-offer-primary .offer-shell__header,
-      html.offer-mobile .public-offer-primary .offer-shell__topline {
-        grid-template-columns: minmax(0, 1fr) !important;
+      html.offer-mobile .public-offer-primary .offer-shell {
+        gap: 24px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__header {
+        grid-template-columns: minmax(0, 1.14fr) minmax(118px, 0.86fr) !important;
         gap: 14px !important;
+        align-items: start !important;
+        padding: 16px 16px 15px !important;
+        border: 1px solid rgba(178, 194, 219, 0.34) !important;
+        border-radius: 22px !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 253, 0.94)) !important;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.05) !important;
+        backdrop-filter: blur(10px) !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__sender {
-        gap: 12px !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        min-width: 0 !important;
+        align-items: flex-start !important;
+        align-content: start !important;
+        gap: 8px !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__logo {
-        width: 54px !important;
-        height: 54px !important;
-        border-radius: 16px !important;
+        display: block !important;
+        width: 46px !important;
+        height: 46px !important;
+        border-radius: 14px !important;
+        object-fit: cover !important;
+        box-shadow: 0 10px 22px rgba(125, 148, 178, 0.18) !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__sender-copy {
         gap: 3px !important;
-        font-size: 14px !important;
-        line-height: 1.55 !important;
-        color: #5e7293 !important;
+        font-size: 13.5px !important;
+        line-height: 1.36 !important;
+        color: #5b6f88 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__sender-name {
+        font-size: 15.5px !important;
+        line-height: 1.22 !important;
+        color: #142846 !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__meta {
-        justify-items: start !important;
+        align-self: stretch !important;
+        justify-items: stretch !important;
         text-align: left !important;
-        gap: 10px !important;
+        gap: 0 !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__meta dl {
         width: 100% !important;
-        gap: 10px !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 0 !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__meta dl div {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        align-items: end !important;
-        gap: 10px !important;
-        padding-bottom: 10px !important;
-        border-bottom: 1px solid rgba(145, 166, 201, 0.18) !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        align-items: start !important;
+        gap: 3px !important;
+        padding: 8px 0 9px !important;
+        border-top: 1px solid rgba(145, 166, 201, 0.16) !important;
+        border-bottom: none !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta dl div:first-child {
+        padding-top: 0 !important;
+        border-top: none !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__meta dl div:nth-child(3) {
+        grid-column: auto !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__meta dl div:last-child {
-        border-bottom: none !important;
         padding-bottom: 0 !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__meta dt {
-        font-size: 11px !important;
-        line-height: 1.4 !important;
-        letter-spacing: 0.14em !important;
+        font-size: 10.5px !important;
+        line-height: 1.28 !important;
+        letter-spacing: 0.05em !important;
         text-transform: uppercase !important;
-        color: #8ca0c0 !important;
+        color: #7e94b2 !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__meta dd {
-        font-size: 15px !important;
-        line-height: 1.35 !important;
+        font-size: 14px !important;
+        line-height: 1.2 !important;
         font-weight: 700 !important;
-        color: #10203c !important;
+        color: #142846 !important;
+        white-space: normal !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__topline {
-        padding-bottom: 16px !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 14px !important;
+        padding: 2px 2px 6px !important;
+        border-bottom: none !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__topline h1 {
-        font-size: 30px !important;
-        line-height: 0.98 !important;
+        font-family: 'Times New Roman', Times, serif !important;
+        font-size: 32px !important;
+        line-height: 0.96 !important;
         letter-spacing: -0.04em !important;
-        max-width: 11ch !important;
+        max-width: none !important;
+        color: #19355d !important;
       }
-      html.offer-mobile .public-offer-primary .offer-shell__customer {
+      html.offer-mobile .public-offer-primary .offer-shell__customer,
+      html.offer-mobile .public-offer-primary .offer-shell__customer-card {
         display: grid !important;
-        gap: 4px !important;
+        gap: 5px !important;
         padding-left: 0 !important;
         border-left: none !important;
-        padding-top: 14px !important;
-        border-top: 1px solid rgba(145, 166, 201, 0.18) !important;
-        font-size: 14px !important;
-        line-height: 1.6 !important;
-        color: #5e7293 !important;
+        padding-top: 0 !important;
+        border-top: none !important;
+        min-width: 0 !important;
+        justify-self: start !important;
+        text-align: left !important;
+        font-size: 15px !important;
+        line-height: 1.62 !important;
+        color: #5b6f88 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__customer-primary,
+      html.offer-mobile .public-offer-primary .offer-shell__customer-name {
+        font-size: 19px !important;
+        line-height: 1.25 !important;
+        font-weight: 700 !important;
+        color: #142846 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__customer-secondary,
+      html.offer-mobile .public-offer-primary .offer-shell__customer p:not(.offer-shell__customer-name) {
+        font-size: 15px !important;
+        line-height: 1.58 !important;
+        color: #5b6f88 !important;
       }
       html.offer-mobile .public-offer-primary .offer-section {
-        gap: 10px !important;
+        gap: 12px !important;
       }
       html.offer-mobile .public-offer-primary .offer-section p {
-        font-size: 14px !important;
+        font-size: 15px !important;
         line-height: 1.78 !important;
         color: #546783 !important;
       }
+      html.offer-mobile .public-offer-primary .offer-section--terms,
+      html.offer-mobile .public-offer-primary .offer-section--notes {
+        padding: 18px 18px 19px !important;
+        border: 1px solid rgba(178, 194, 219, 0.3) !important;
+        border-radius: 22px !important;
+        background: rgba(255, 255, 255, 0.94) !important;
+        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.05) !important;
+      }
       html.offer-mobile .public-offer-primary .offer-section h2,
       html.offer-mobile .public-offer-primary .offer-items > h2 {
-        font-size: 30px !important;
+        font-family: 'Times New Roman', Times, serif !important;
+        font-size: 31px !important;
         line-height: 1.02 !important;
         letter-spacing: -0.04em !important;
-        color: #10203c !important;
+        color: #19355d !important;
       }
       html.offer-mobile .public-offer-primary .offer-summary {
         position: relative !important;
         width: 100% !important;
-        margin-top: 20px !important;
+        margin-top: 24px !important;
         margin-left: 0 !important;
-        padding: 14px 0 4px !important;
-        border: 1px solid rgba(174, 191, 219, 0.32) !important;
-        border-radius: 28px !important;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.96)) !important;
-        box-shadow: 0 22px 46px rgba(11, 24, 47, 0.1) !important;
+        padding: 12px 0 0 !important;
+        border: 1px solid rgba(174, 191, 219, 0.28) !important;
+        border-radius: 24px !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 254, 0.95)) !important;
+        box-shadow: 0 18px 34px rgba(15, 23, 42, 0.06) !important;
       }
       html.offer-mobile .public-offer-primary .offer-summary::before {
         content: 'Summering' !important;
         display: block !important;
         padding: 0 18px 10px !important;
-        font-size: 11px !important;
-        font-weight: 800 !important;
-        letter-spacing: 0.14em !important;
+        font-size: 11.5px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.08em !important;
         text-transform: uppercase !important;
-        color: #7890b3 !important;
+        color: #7c91ae !important;
       }
       html.offer-mobile .public-offer-primary .offer-summary__row {
-        padding: 12px 18px !important;
+        padding: 14px 18px !important;
         font-size: 15px !important;
-        color: #5a6d8a !important;
+        line-height: 1.55 !important;
+        color: #5b6f88 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-summary__row span {
+        font-weight: 600 !important;
+        color: #5f738d !important;
       }
       html.offer-mobile .public-offer-primary .offer-summary__row strong {
         font-size: 17px !important;
-        color: #10203c !important;
+        color: #142846 !important;
+        font-variant-numeric: tabular-nums !important;
       }
       html.offer-mobile .public-offer-primary .offer-summary__row + .offer-summary__row {
         border-top: 1px solid rgba(174, 191, 219, 0.18) !important;
@@ -1194,166 +1308,265 @@ export default function PublicOfferPage() {
       html.offer-mobile .public-offer-primary .offer-summary__row--total {
         margin-top: 10px !important;
         padding: 16px 18px 18px !important;
-        background: #12213d !important;
-        color: #dce8fb !important;
+        background: linear-gradient(135deg, #13233a 0%, #223b63 100%) !important;
+        color: #e8f0fc !important;
         border-top: none !important;
       }
+      html.offer-mobile .public-offer-primary .offer-summary__row--total span {
+        font-size: 11.5px !important;
+        letter-spacing: 0.08em !important;
+        text-transform: uppercase !important;
+        color: rgba(232, 240, 252, 0.78) !important;
+      }
       html.offer-mobile .public-offer-primary .offer-summary__row--total strong {
-        font-size: 24px !important;
+        font-size: 23px !important;
         letter-spacing: -0.04em !important;
         color: #ffffff !important;
       }
       html.offer-mobile .public-offer-primary .offer-items {
-        gap: 18px !important;
+        gap: 20px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-items__table {
+        display: none !important;
       }
       html.offer-mobile .public-offer-primary .offer-items__cards {
+        display: grid !important;
         gap: 18px !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card {
         border: 1px solid rgba(174, 191, 219, 0.26) !important;
-        border-radius: 30px !important;
-        background: rgba(255, 255, 255, 0.97) !important;
-        box-shadow: 0 18px 42px rgba(12, 24, 47, 0.08) !important;
+        border-radius: 24px !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+        box-shadow: 0 18px 34px rgba(15, 23, 42, 0.06) !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card:first-child {
-        border-color: rgba(35, 70, 129, 0.08) !important;
-        background: linear-gradient(145deg, #162749 0%, #2f4a7f 100%) !important;
+        border-color: rgba(174, 191, 219, 0.26) !important;
+        background: rgba(255, 255, 255, 0.98) !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__top {
-        gap: 8px !important;
-        padding: 20px 20px 0 !important;
-        background: transparent !important;
-        border-bottom: none !important;
+        gap: 10px !important;
+        padding: 20px 20px 18px !important;
+        background: linear-gradient(180deg, #fcfdff 0%, #f4f8fd 100%) !important;
+        border-bottom: 1px solid rgba(174, 191, 219, 0.18) !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__eyebrow {
-        font-size: 10px !important;
-        font-weight: 800 !important;
-        letter-spacing: 0.14em !important;
-        color: #7c94ba !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.08em !important;
+        color: #7e94b2 !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__title {
-        font-size: 28px !important;
-        line-height: 1.02 !important;
-        letter-spacing: -0.04em !important;
-        color: #10203c !important;
+        font-family: 'Times New Roman', Times, serif !important;
+        font-size: 24px !important;
+        line-height: 1.06 !important;
+        letter-spacing: -0.03em !important;
+        color: #19355d !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__detail {
         display: block !important;
-        font-size: 14px !important;
-        line-height: 1.7 !important;
-        color: #5e7293 !important;
+        font-size: 14.5px !important;
+        line-height: 1.72 !important;
+        color: #5b6f88 !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__eyebrow,
       html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__detail {
-        color: rgba(220, 232, 251, 0.76) !important;
+        color: #5b6f88 !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__title {
-        color: #ffffff !important;
+        color: #19355d !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__grid {
         display: grid !important;
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 10px !important;
-        padding: 18px 20px 20px !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0 !important;
+        margin: 0 20px 18px !important;
+        padding: 6px 0 0 !important;
+        border-top: 1px solid rgba(174, 191, 219, 0.18) !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__metric {
-        display: grid !important;
-        align-content: start !important;
-        gap: 8px !important;
-        min-height: 92px !important;
-        padding: 14px !important;
-        border: 1px solid rgba(180, 196, 223, 0.28) !important;
-        border-bottom: 1px solid rgba(180, 196, 223, 0.28) !important;
-        border-radius: 22px !important;
-        background: #f6f9fd !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        min-height: 0 !important;
+        padding: 14px 10px 16px !important;
+        border: none !important;
+        border-bottom: 1px solid rgba(180, 196, 223, 0.22) !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        text-align: center !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric:not(.offer-item-card__metric--total):nth-child(odd) {
+        border-right: 1px solid rgba(180, 196, 223, 0.18) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric:not(.offer-item-card__metric--total):nth-child(n+3) {
+        border-top: 1px solid rgba(180, 196, 223, 0.18) !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__metric dt {
-        font-size: 10px !important;
-        font-weight: 800 !important;
-        letter-spacing: 0.14em !important;
-        color: #7d93b7 !important;
+        display: flex !important;
+        width: 100% !important;
+        justify-content: center !important;
+        font-size: 10.5px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.08em !important;
+        text-transform: uppercase !important;
+        color: #7e94b2 !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card__metric dd {
-        text-align: left !important;
-        font-size: 15px !important;
-        line-height: 1.35 !important;
+        display: flex !important;
+        width: 100% !important;
+        justify-content: center !important;
+        align-items: center !important;
+        text-align: center !important;
+        font-size: 14px !important;
+        line-height: 1.25 !important;
         font-weight: 800 !important;
-        color: #10203c !important;
+        color: #142846 !important;
       }
       html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric {
-        border-color: rgba(255, 255, 255, 0.12) !important;
-        background: rgba(255, 255, 255, 0.08) !important;
-      }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric dt {
-        color: rgba(220, 232, 251, 0.7) !important;
-      }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric dd {
-        color: #ffffff !important;
-      }
-      html.offer-mobile .public-offer-primary .offer-item-card__metric--total {
-        grid-column: 1 / -1 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 16px !important;
-        min-height: 0 !important;
-        margin-top: 2px !important;
-        padding: 18px 0 0 !important;
-        border: none !important;
-        border-radius: 0 !important;
-        border-top: 1px solid rgba(180, 196, 223, 0.24) !important;
         background: transparent !important;
       }
-      html.offer-mobile .public-offer-primary .offer-item-card__metric--total dt {
-        color: #586b88 !important;
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric dt {
+        color: #7e94b2 !important;
       }
-      html.offer-mobile .public-offer-primary .offer-item-card__metric--total dd {
-        text-align: left !important;
-        font-size: 22px !important;
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric dd {
+        color: #142846 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric.offer-item-card__metric--total {
+        grid-column: 1 / -1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 7px !important;
+        min-height: 0 !important;
+        margin-top: 12px !important;
+        padding: 14px 18px 16px !important;
+        border: 1px solid rgba(22, 41, 73, 0.12) !important;
+        border-radius: 18px !important;
+        background: linear-gradient(135deg, #13233a 0%, #223b63 100%) !important;
+        background-color: #13233a !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        text-align: center !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric.offer-item-card__metric--total dt {
+        width: 100% !important;
+        justify-content: center !important;
+        font-size: 10px !important;
+        letter-spacing: 0.1em !important;
+        color: rgba(232, 240, 252, 0.82) !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-item-card__metric.offer-item-card__metric--total dd {
+        width: 100% !important;
+        justify-content: center !important;
+        text-align: center !important;
+        font-size: 18px !important;
         letter-spacing: -0.04em !important;
-        color: #10203c !important;
+        color: #ffffff !important;
+        font-variant-numeric: tabular-nums !important;
       }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric--total {
-        border-top-color: rgba(255, 255, 255, 0.12) !important;
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric.offer-item-card__metric--total {
+        border-color: rgba(22, 41, 73, 0.12) !important;
+        background: linear-gradient(135deg, #13233a 0%, #223b63 100%) !important;
+        background-color: #13233a !important;
       }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric--total dt {
-        color: rgba(220, 232, 251, 0.78) !important;
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric.offer-item-card__metric--total dt {
+        color: rgba(232, 240, 252, 0.78) !important;
       }
-      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric--total dd {
+      html.offer-mobile .public-offer-primary .offer-item-card:first-child .offer-item-card__metric.offer-item-card__metric--total dd {
         color: #ffffff !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__footer {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 10px !important;
-        text-align: center !important;
-        padding-top: 14px !important;
-        margin-top: 14px !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 14px 18px !important;
+        text-align: left !important;
+        padding-top: 18px !important;
+        margin-top: 18px !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__footer div {
-        justify-items: center !important;
-        font-size: 11px !important;
-        gap: 5px !important;
-        line-height: 1.4 !important;
+        justify-items: start !important;
+        font-size: 13.5px !important;
+        gap: 6px !important;
+        line-height: 1.58 !important;
+        color: #5b6f88 !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__footer strong {
-        gap: 4px !important;
-        font-size: 11px !important;
+        gap: 6px !important;
+        font-size: 12px !important;
         flex-wrap: wrap !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
+        color: #142846 !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__footer-icon {
-        width: 13px !important;
-        height: 13px !important;
-        flex: 0 0 13px !important;
+        width: 14px !important;
+        height: 14px !important;
+        flex: 0 0 14px !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__footer-logo {
-        width: 36px !important;
-        height: 36px !important;
-        border-radius: 9px !important;
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 10px !important;
       }
       html.offer-mobile .public-offer-primary .offer-shell__footer a {
-        word-break: break-all !important;
-        font-size: 10.5px !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        font-size: 13px !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__footer-item--company {
+        grid-column: 1 / -1 !important;
+        grid-template-columns: auto minmax(0, 1fr) !important;
+        grid-template-areas:
+          'logo title'
+          'logo link' !important;
+        column-gap: 12px !important;
+        row-gap: 4px !important;
+        align-items: center !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__footer-item--company .offer-shell__footer-logo {
+        grid-area: logo !important;
+        margin-bottom: 0 !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__footer-item--company strong {
+        grid-area: title !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__footer-item--company > a,
+      html.offer-mobile .public-offer-primary .offer-shell__footer-item--company > span:last-child {
+        grid-area: link !important;
+      }
+      html.offer-mobile .public-offer-primary .offer-shell__footer-item--responsible,
+      html.offer-mobile .public-offer-primary .offer-shell__footer-item--contact {
+        padding-top: 10px !important;
+        border-top: 1px solid rgba(174, 191, 219, 0.18) !important;
+      }
+      @media (max-width: 360px) {
+        html.offer-mobile .public-offer-primary .offer-shell__header {
+          grid-template-columns: minmax(0, 1.08fr) minmax(108px, 0.92fr) !important;
+          gap: 12px !important;
+          padding: 14px 14px 13px !important;
+        }
+        html.offer-mobile .public-offer-primary .offer-shell__logo {
+          width: 42px !important;
+          height: 42px !important;
+          border-radius: 12px !important;
+        }
+        html.offer-mobile .public-offer-primary .offer-shell__sender-copy {
+          font-size: 13.5px !important;
+          line-height: 1.38 !important;
+        }
+        html.offer-mobile .public-offer-primary .offer-shell__meta dd {
+          font-size: 13.5px !important;
+        }
+        html.offer-mobile .public-offer-primary .offer-item-card__grid {
+          grid-template-columns: 1fr !important;
+          margin: 6px 18px 18px !important;
+        }
+        html.offer-mobile .public-offer-primary .offer-item-card__metric:not(.offer-item-card__metric--total):nth-child(odd) {
+          border-right: none !important;
+        }
+        html.offer-mobile .public-offer-primary .offer-item-card__metric:not(.offer-item-card__metric--total):nth-child(n+3) {
+          border-top: none !important;
+        }
       }
       html:not(.offer-mobile) .offer-shell {
         gap: 28px !important;
@@ -1744,6 +1957,24 @@ export default function PublicOfferPage() {
       if (compact !== text) item.textContent = compact;
     });
 
+    const quantityValues = offer?.lineItems.map((item) => fmtQuantityWithUnit(item.quantity, item.unit)) ?? [];
+    doc.querySelectorAll<HTMLElement>('.offer-item-row').forEach((row, index) => {
+      const quantityValue = quantityValues[index];
+      if (!quantityValue) return;
+      const quantityCell = row.querySelector<HTMLElement>('.offer-item-row__value');
+      if (quantityCell) quantityCell.textContent = quantityValue;
+    });
+    doc.querySelectorAll<HTMLElement>('.offer-item-card').forEach((card, index) => {
+      const quantityValue = quantityValues[index];
+      if (!quantityValue) return;
+      const quantityMetric = Array.from(card.querySelectorAll<HTMLElement>('.offer-item-card__metric')).find((metric) => {
+        const label = normalizeOfferText(metric.querySelector('dt')?.textContent ?? '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('sv-SE');
+        return label === 'antal';
+      });
+      const valueNode = quantityMetric?.querySelector<HTMLElement>('dd');
+      if (valueNode) valueNode.textContent = quantityValue;
+    });
+
     stripLegacyLineItemTables(doc);
 
     const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
@@ -1841,7 +2072,7 @@ export default function PublicOfferPage() {
     return () => {
       disposers.forEach((dispose) => dispose());
     };
-  }, [signatureFields]);
+  }, [offer?.lineItems, signatureFields]);
 
   // ── Draw canvas resize ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -2100,8 +2331,8 @@ export default function PublicOfferPage() {
                   disabled={downloading}
                   className="mt-6 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md active:scale-[0.97] disabled:opacity-50"
                 >
-                  <FileTextIcon size={15} />
                   {downloading ? 'Laddar ner...' : 'Ladda ner som PDF'}
+                  <PdfBadgePill />
                 </button>
               </motion.div>
             )}
@@ -2143,61 +2374,91 @@ export default function PublicOfferPage() {
       {/* ─── Sticky header ─── */}
       <header className="sticky top-0 z-20 px-3 pt-3 sm:px-6 sm:pt-2">
         <div className={`mx-auto overflow-hidden rounded-[24px] border backdrop-blur-xl transition-colors sm:max-w-[900px] sm:border-slate-200/80 sm:bg-white/95 sm:shadow-[0_8px_22px_rgba(15,23,42,0.07)] ${hasPromoHero ? 'border-white/18 bg-white/12 shadow-[0_18px_42px_rgba(9,18,35,0.18)]' : 'border-slate-200/80 bg-white/92 shadow-[0_12px_30px_rgba(15,23,42,0.08)]'}`}>
-        <div className="flex min-h-14 items-center gap-3 px-4 py-2.5 sm:min-h-0 sm:gap-3 sm:px-3.5 sm:py-2">
-
-          {/* Left: title + recipient */}
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-100 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] sm:h-8 sm:w-8 sm:rounded-xl">
-              <BrandMark size={18} alt="" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:block">
-                Publik offert
-              </p>
-              <h1 className="truncate text-sm font-semibold leading-tight text-slate-900 sm:text-[14px]">{offer.title}</h1>
-              <p className="truncate text-[11px] leading-tight text-slate-500 sm:mt-0.5 sm:text-[11px]">
-                {offer.recipientName}
-                {offer.recipientCompany ? ` · ${offer.recipientCompany}` : ''}
-              </p>
-            </div>
-          </div>
-
-          {/* Right: price + PDF */}
-          <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
-            <div className="hidden sm:flex min-w-[214px] items-center justify-between gap-3 rounded-[16px] border border-slate-200/80 bg-slate-50/90 px-3 py-1.5">
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                  Total
-                </p>
-                <p className="mt-0.5 text-[15px] font-semibold tabular-nums text-slate-950">
-                  {fmtSEK(pricing.totalAmount)}
-                </p>
+          <div className="px-4 py-3 sm:px-3.5 sm:py-2">
+            <div className="flex items-center gap-3 sm:min-h-0">
+              <div className="hidden min-w-0 flex-1 items-center gap-3 sm:flex">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] border border-slate-200 bg-gradient-to-br from-white to-slate-100 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] sm:h-8 sm:w-8 sm:rounded-xl">
+                  <BrandMark size={18} alt="" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                    Publik offert
+                  </p>
+                  <h1 className="truncate text-[15px] font-semibold leading-[1.1] text-slate-900 sm:text-[14px]">{offer.title}</h1>
+                  <p className="truncate text-[12px] leading-tight text-slate-500 sm:mt-0.5 sm:text-[11px]">
+                    {offer.recipientName}
+                    {offer.recipientCompany ? ` · ${offer.recipientCompany}` : ''}
+                  </p>
+                </div>
               </div>
-              <span className="text-[11px] text-slate-500">{pricing.displayModeLabel} · Giltig till {fmtDate(offer.validUntil)}</span>
-            </div>
-            {/* PDF download */}
-            <button
-              onClick={() => void handleDownloadPdf()}
-              disabled={downloading || !offer.generatedDocument}
-              className="flex h-10 items-center gap-1.5 rounded-[18px] border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-40 sm:h-9 sm:rounded-[16px] sm:px-3"
-              title="Ladda ner PDF"
-            >
-              {downloading ? (
-                <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                </svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 3v11" />
-                  <path d="m7 11 5 5 5-5" />
-                  <path d="M5 21h14" />
-                </svg>
-              )}
-              <span>{downloading ? 'Genererar...' : 'Ladda ner'}</span>
-            </button>
-          </div>
-        </div>
 
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-3 sm:hidden">
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Total
+                    </p>
+                    <span className="text-[11px] font-medium text-slate-500">{pricing.displayModeLabel}</span>
+                  </div>
+                  <p className="mt-1 text-[19px] font-semibold tabular-nums leading-none text-slate-950">
+                    {fmtSEK(pricing.totalAmount)}
+                  </p>
+                  <p className="mt-1 text-[11px] text-slate-500">Giltig till {fmtDate(offer.validUntil)}</p>
+                </div>
+                <button
+                  onClick={() => void handleDownloadPdf()}
+                  disabled={downloading || !offer.generatedDocument}
+                  className="flex h-9 shrink-0 items-center gap-2 rounded-[16px] border border-slate-200/90 bg-white px-3 text-[13px] font-semibold text-slate-700 shadow-[0_6px_16px_rgba(15,23,42,0.06)] transition-all duration-200 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-40"
+                  title="Ladda ner PDF"
+                  aria-label={downloading ? 'Genererar PDF' : 'Ladda ner PDF'}
+                >
+                  {downloading ? (
+                    <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                  ) : (
+                    <>
+                      <span>Ladda ner</span>
+                      <PdfBadgePill />
+                    </>
+                  )}
+                  {downloading ? <span>Genererar...</span> : null}
+                </button>
+              </div>
+
+              <div className="hidden shrink-0 items-center gap-2 sm:flex sm:gap-2.5">
+                <div className="hidden sm:flex min-w-[214px] items-center justify-between gap-3 rounded-[16px] border border-slate-200/80 bg-slate-50/90 px-3 py-1.5">
+                  <div>
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                      Total
+                    </p>
+                    <p className="mt-0.5 text-[15px] font-semibold tabular-nums text-slate-950">
+                      {fmtSEK(pricing.totalAmount)}
+                    </p>
+                  </div>
+                  <span className="text-[11px] text-slate-500">{pricing.displayModeLabel} · Giltig till {fmtDate(offer.validUntil)}</span>
+                </div>
+                <button
+                  onClick={() => void handleDownloadPdf()}
+                  disabled={downloading || !offer.generatedDocument}
+                  className="flex h-9 items-center gap-2 rounded-[16px] border border-slate-200/90 bg-white px-3 text-[13px] font-semibold text-slate-700 shadow-[0_6px_16px_rgba(15,23,42,0.06)] transition-all duration-200 hover:bg-slate-50 active:scale-[0.97] disabled:opacity-40 sm:text-xs"
+                  title="Ladda ner PDF"
+                >
+                  {downloading ? (
+                    <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                  ) : (
+                    <>
+                      <span>Ladda ner</span>
+                      <PdfBadgePill className="min-w-[32px] px-2 py-[4px] text-[8px]" />
+                    </>
+                  )}
+                  {downloading ? <span>Genererar...</span> : null}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -2218,7 +2479,7 @@ export default function PublicOfferPage() {
             transition={{ duration: 0.35, delay: 0.04 }}
             className={promoPageCount > 0
               ? 'mb-6 overflow-visible bg-transparent shadow-none sm:rounded-[26px]'
-              : 'mb-5 mx-3 overflow-hidden rounded-xl border border-slate-200/60 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] sm:mx-0 sm:rounded-2xl'}
+              : 'mb-6 mx-3 overflow-hidden rounded-[26px] border border-white/75 bg-white/92 shadow-[0_20px_42px_rgba(15,23,42,0.08)] sm:mx-0 sm:rounded-[28px]'}
           >
             <iframe
               ref={iframeRef}
@@ -2236,7 +2497,7 @@ export default function PublicOfferPage() {
         {/* ─── Signing card ─── */}
         <div className="px-4 sm:px-0">
         {offer.generatedDocument && !documentReady && (
-          <div className="mb-4 flex items-center justify-center rounded-[24px] border border-white/70 bg-white/88 px-4 py-3 text-sm text-slate-500 shadow-[0_10px_28px_rgba(15,23,42,0.08)] backdrop-blur">
+          <div className="mb-4 flex items-center justify-center rounded-[20px] border border-slate-200/70 bg-white/95 px-4 py-3 text-sm text-slate-500 shadow-[0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur">
             Anpassar offerten för din skärm...
           </div>
         )}
@@ -2248,23 +2509,24 @@ export default function PublicOfferPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="overflow-hidden rounded-[30px] border border-white/70 bg-white/92 shadow-[0_18px_42px_rgba(15,23,42,0.08)] backdrop-blur"
+              className="overflow-hidden rounded-[24px] border border-slate-200/70 bg-white/95 shadow-[0_18px_40px_rgba(15,23,42,0.06)] backdrop-blur"
             >
               {/* Header */}
-              <div className="border-b border-slate-100/90 px-4 py-4 sm:px-6 sm:py-4">
-                <div className="flex items-start justify-between gap-3">
+              <div className="border-b border-slate-200/60 px-4 py-4 sm:px-6 sm:py-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]">
+                    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-gradient-to-br from-slate-900 to-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]">
                       <ShieldIcon size={14} className="text-white" />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-slate-900">Godkännande och underskrift</h2>
-                      <p className="mt-0.5 text-[12px] leading-relaxed text-slate-500">Underteckna för att bekräfta offerten. Namn, datum och signatur sparas tillsammans med offerten.</p>
+                      <h2 className="text-[15px] font-bold text-slate-900 sm:text-sm">Godkännande och underskrift</h2>
+                      <p className="mt-1 text-[12px] leading-relaxed text-slate-500">Underteckna för att bekräfta offerten. Namn, datum och signatur sparas tillsammans med offerten.</p>
                     </div>
                   </div>
-                  <div className="shrink-0 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-right">
-                    <p className="text-xs font-bold tabular-nums text-slate-800 sm:text-sm">{fmtSEK(pricing.totalAmount)}</p>
-                    <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">{pricing.displayModeLabel}</p>
+                  <div className="self-start rounded-[16px] border border-slate-200 bg-slate-50/90 px-3 py-2 text-left sm:text-right">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">Total</p>
+                    <p className="mt-1 text-sm font-bold tabular-nums text-slate-800">{fmtSEK(pricing.totalAmount)}</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-slate-500">{pricing.displayModeLabel}</p>
                   </div>
                 </div>
               </div>
@@ -2447,11 +2709,11 @@ export default function PublicOfferPage() {
               </div>
 
               {/* Action bar */}
-              <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/60 px-4 py-3 sm:px-6">
+              <div className="flex flex-col-reverse gap-2 border-t border-slate-200/70 bg-slate-50/50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <button
                   type="button"
                   onClick={() => setState('declining')}
-                  className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500 sm:w-auto sm:py-2"
                 >
                   Avvisa
                 </button>
@@ -2459,7 +2721,7 @@ export default function PublicOfferPage() {
                   type="button"
                   onClick={() => void handleSign()}
                   disabled={busy}
-                  className="flex items-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 sm:w-auto sm:min-w-[210px] sm:py-2.5"
                 >
                   <CheckCircleIcon size={15} />
                   {busy ? 'Signerar...' : 'Signera offert'}
