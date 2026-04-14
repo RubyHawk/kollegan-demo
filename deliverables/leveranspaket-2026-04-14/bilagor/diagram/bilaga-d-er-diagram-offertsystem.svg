@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="960" viewBox="0 0 1600 960">
+  <defs>
+    <style>
+      .title { font: 700 28px "Segoe UI", Arial, sans-serif; fill: #132238; }
+      .subtitle { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #48607a; }
+      .box-title { font: 700 18px "Segoe UI", Arial, sans-serif; fill: #0f2742; }
+      .box-text { font: 400 14px "Segoe UI", Arial, sans-serif; fill: #334e68; }
+      .line { stroke: #54708b; stroke-width: 2.5; fill: none; }
+      .label { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #274c77; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#54708b" />
+    </marker>
+  </defs>
+
+  <rect width="1600" height="960" fill="#f5f8fc" />
+  <text x="60" y="64" class="title">Bilaga D - ER-diagram för offertsystemet</text>
+  <text x="60" y="92" class="subtitle">Förenklad modell baserad på Prisma-schemat för organisation, företag, offerter, mallar, produkter och medlemskap.</text>
+
+  <g transform="translate(70 150)">
+    <rect width="240" height="150" rx="20" fill="#eaf4ff" stroke="#8eb8e8" stroke-width="2"/>
+    <text x="18" y="34" class="box-title">Organization</text>
+    <text x="18" y="62" class="box-text">id (PK)</text>
+    <text x="18" y="84" class="box-text">name</text>
+    <text x="18" y="106" class="box-text">slug</text>
+    <text x="18" y="128" class="box-text">senderEmail / senderName</text>
+  </g>
+
+  <g transform="translate(380 150)">
+    <rect width="260" height="190" rx="20" fill="#f1fbf4" stroke="#93d3a2" stroke-width="2"/>
+    <text x="18" y="34" class="box-title">Company</text>
+    <text x="18" y="62" class="box-text">id (PK)</text>
+    <text x="18" y="84" class="box-text">organizationId (FK)</text>
+    <text x="18" y="106" class="box-text">name</text>
+    <text x="18" y="128" class="box-text">orgNumber</text>
+    <text x="18" y="150" class="box-text">address / website / logo</text>
+    <text x="18" y="172" class="box-text">senderEmail / senderName</text>
+  </g>
+
+  <g transform="translate(730 150)">
+    <rect width="290" height="180" rx="20" fill="#fff8e9" stroke="#e4c97b" stroke-width="2"/>
+    <text x="18" y="34" class="box-title">OfferTemplate</text>
+    <text x="18" y="62" class="box-text">id (PK)</text>
+    <text x="18" y="84" class="box-text">organizationId (FK)</text>
+    <text x="18" y="106" class="box-text">companyId (FK, optional)</text>
+    <text x="18" y="128" class="box-text">name</text>
+    <text x="18" y="150" class="box-text">content / emailSubject / emailBody</text>
+  </g>
+
+  <g transform="translate(1080 120)">
+    <rect width="340" height="310" rx="20" fill="#fff1f2" stroke="#e1a1aa" stroke-width="2"/>
+    <text x="18" y="34" class="box-title">Offer</text>
+    <text x="18" y="62" class="box-text">id (PK)</text>
+    <text x="18" y="84" class="box-text">organizationId (FK)</text>
+    <text x="18" y="106" class="box-text">companyId (FK, optional)</text>
+    <text x="18" y="128" class="box-text">templateId (FK, optional)</text>
+    <text x="18" y="150" class="box-text">title / recipientName / recipientEmail</text>
+    <text x="18" y="172" class="box-text">status / validUntil / validityDays</text>
+    <text x="18" y="194" class="box-text">totalExVat / totalIncVat / offerNumber</text>
+    <text x="18" y="216" class="box-text">generatedDocument / generatedPdf</text>
+    <text x="18" y="238" class="box-text">publicToken / signatureImage / signerName</text>
+    <text x="18" y="260" class="box-text">leadId / customerId</text>
+    <text x="18" y="282" class="box-text">sentAt / viewedAt / acceptedAt / declinedAt</text>
+  </g>
+
+  <g transform="translate(1120 520)">
+    <rect width="300" height="170" rx="20" fill="#eef7ff" stroke="#8eb8e8" stroke-width="2"/>
+    <text x="18" y="34" class="box-title">OfferLineItem</text>
+    <text x="18" y="62" class="box-text">id (PK)</text>
+    <text x="18" y="84" class="box-text">offerId (FK)</text>
+    <text x="18" y="106" class="box-text">description</text>
+    <text x="18" y="128" class="box-text">quantity / unitPrice / vatRate</text>
+    <text x="18" y="150" class="box-text">discount / sortOrder</text>
+  </g>
+
+  <g transform="translate(360 470)">
+    <rect width="290" height="170" rx="20" fill="#f4f1ff" stroke="#b49be5" stroke-width="2"/>
+    <text x="18" y="34" class="box-title">ProductCategory</text>
+    <text x="18" y="62" class="box-text">id (PK)</text>
+    <text x="18" y="84" class="box-text">organizationId (FK)</text>
+    <text x="18" y="106" class="box-text">companyId (FK, optional)</text>
+    <text x="18" y="128" class="box-text">name</text>
+    <text x="18" y="150" class="box-text">parentId (self reference)</text>
+  </g>
+
+  <g transform="translate(720 470)">
+    <rect width="300" height="200" rx="20" fill="#eefcf6" stroke="#8fcba3" stroke-width="2"/>
+    <text x="18" y="34" class="box-title">OfferProduct</text>
+    <text x="18" y="62" class="box-text">id (PK)</text>
+    <text x="18" y="84" class="box-text">organizationId (FK)</text>
+    <text x="18" y="106" class="box-text">companyId (FK, optional)</text>
+    <text x="18" y="128" class="box-text">categoryId (FK, optional)</text>
+    <text x="18" y="150" class="box-text">name / description / unitPrice</text>
+    <text x="18" y="172" class="box-text">vatRate / unit / sku / isActive</text>
+  </g>
+
+  <g transform="translate(90 500)">
+    <rect width="220" height="140" rx="20" fill="#fff8e9" stroke="#e4c97b" stroke-width="2"/>
+    <text x="18" y="34" class="box-title">CompanyMember</text>
+    <text x="18" y="62" class="box-text">id (PK)</text>
+    <text x="18" y="84" class="box-text">companyId (FK)</text>
+    <text x="18" y="106" class="box-text">userId (FK)</text>
+    <text x="18" y="128" class="box-text">role / grantedBy</text>
+  </g>
+
+  <line x1="310" y1="225" x2="380" y2="225" class="line" marker-end="url(#arrow)"/>
+  <text x="326" y="212" class="label">1..n</text>
+
+  <line x1="640" y1="225" x2="730" y2="225" class="line" marker-end="url(#arrow)"/>
+  <text x="668" y="212" class="label">1..n</text>
+
+  <line x1="640" y1="260" x2="1080" y2="260" class="line" marker-end="url(#arrow)"/>
+  <text x="842" y="248" class="label">Company owns many offers</text>
+
+  <line x1="1020" y1="240" x2="1080" y2="240" class="line" marker-end="url(#arrow)"/>
+  <text x="1010" y="220" class="label">Template -> Offer</text>
+
+  <line x1="1245" y1="430" x2="1245" y2="520" class="line" marker-end="url(#arrow)"/>
+  <text x="1260" y="480" class="label">1..n line items</text>
+
+  <line x1="640" y1="560" x2="720" y2="560" class="line" marker-end="url(#arrow)"/>
+  <text x="658" y="545" class="label">1..n</text>
+
+  <path d="M510 470 C510 420 540 400 580 400 C650 400 650 470 650 470" class="line" marker-end="url(#arrow)"/>
+  <text x="520" y="392" class="label">self reference via parentId</text>
+
+  <line x1="310" y1="560" x2="360" y2="560" class="line" marker-end="url(#arrow)"/>
+  <text x="292" y="545" class="label">members</text>
+
+  <line x1="190" y1="300" x2="190" y2="500" class="line" marker-end="url(#arrow)"/>
+  <text x="206" y="410" class="label">org -> company members via company</text>
+
+  <line x1="190" y1="300" x2="190" y2="760" class="line"/>
+  <line x1="190" y1="760" x2="1250" y2="760" class="line"/>
+  <line x1="1250" y1="760" x2="1250" y2="690" class="line" marker-end="url(#arrow)"/>
+  <text x="430" y="748" class="label">Organization scopes companies, templates, products, categories and offers</text>
+</svg>

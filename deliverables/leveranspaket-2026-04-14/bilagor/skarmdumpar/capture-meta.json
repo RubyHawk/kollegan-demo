@@ -1,0 +1,9 @@
+﻿{
+  "updatedAt": "2026-04-14",
+  "sources": {
+    "bilaga-a-skapa-offert.png": ".codex-artifacts/offer-ui-real/offer-new-real.png",
+    "bilaga-b-lista-offerter.png": ".codex-artifacts/live-verify/offerter-list-before-accept.png",
+    "bilaga-c-kundvy.png": "deliveries/public-offer-local-final-check.png"
+  },
+  "note": "Bilagorna valdes från befintliga QA- och leveransbilder för att visa systemets centrala vyer tydligt i rapportmaterialet."
+}
