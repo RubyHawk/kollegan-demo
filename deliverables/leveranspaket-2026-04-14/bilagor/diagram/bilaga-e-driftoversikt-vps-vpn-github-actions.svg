@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="920" viewBox="0 0 1600 920">
+  <defs>
+    <style>
+      .title { font: 700 28px "Segoe UI", Arial, sans-serif; fill: #132238; }
+      .subtitle { font: 400 15px "Segoe UI", Arial, sans-serif; fill: #48607a; }
+      .node-title { font: 700 20px "Segoe UI", Arial, sans-serif; fill: #0f2742; }
+      .node-text { font: 400 14px "Segoe UI", Arial, sans-serif; fill: #334e68; }
+      .label { font: 600 13px "Segoe UI", Arial, sans-serif; fill: #274c77; }
+      .line { stroke: #567792; stroke-width: 3; fill: none; }
+      .dashed { stroke-dasharray: 12 10; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#567792" />
+    </marker>
+  </defs>
+
+  <rect width="1600" height="920" fill="#f5f8fc" />
+  <text x="60" y="64" class="title">Bilaga E - Driftöversikt för VPS, VPN och GitHub Actions</text>
+  <text x="60" y="92" class="subtitle">Förenklad översikt över deployflöde, servermiljö och privat nätverkskoppling för interna tjänster.</text>
+
+  <g transform="translate(70 170)">
+    <rect width="280" height="170" rx="22" fill="#eef7ff" stroke="#8eb8e8" stroke-width="2"/>
+    <text x="20" y="38" class="node-title">GitHub</text>
+    <text x="20" y="66" class="node-text">Repository</text>
+    <text x="20" y="88" class="node-text">Branches / pull requests</text>
+    <text x="20" y="110" class="node-text">Source of truth for code</text>
+    <text x="20" y="132" class="node-text">Triggers workflows on push</text>
+  </g>
+
+  <g transform="translate(420 170)">
+    <rect width="320" height="200" rx="22" fill="#f1fbf4" stroke="#93d3a2" stroke-width="2"/>
+    <text x="20" y="38" class="node-title">GitHub Actions / Workflows</text>
+    <text x="20" y="66" class="node-text">Automated deploy pipeline</text>
+    <text x="20" y="88" class="node-text">Fetch latest code from main</text>
+    <text x="20" y="110" class="node-text">Install dependencies</text>
+    <text x="20" y="132" class="node-text">Build Next.js application</text>
+    <text x="20" y="154" class="node-text">Run Prisma migrate deploy</text>
+    <text x="20" y="176" class="node-text">Restart service on VPS</text>
+  </g>
+
+  <g transform="translate(810 150)">
+    <rect width="280" height="130" rx="22" fill="#fff8e9" stroke="#e4c97b" stroke-width="2"/>
+    <text x="20" y="38" class="node-title">VPN / WireGuard</text>
+    <text x="20" y="66" class="node-text">Private tunnel for admin and CI/CD traffic</text>
+    <text x="20" y="88" class="node-text">Used to keep internal services off the public edge</text>
+  </g>
+
+  <g transform="translate(1180 120)">
+    <rect width="330" height="300" rx="24" fill="#fff1f2" stroke="#e1a1aa" stroke-width="2"/>
+    <text x="20" y="38" class="node-title">VPS</text>
+    <text x="20" y="66" class="node-text">Application host / deployment target</text>
+    <text x="20" y="92" class="node-text">Runs Docker-based services</text>
+
+    <rect x="20" y="120" width="290" height="56" rx="14" fill="#ffffff" stroke="#c8d5e2"/>
+    <text x="38" y="152" class="node-text">Caddy reverse proxy + HTTPS/TLS</text>
+
+    <rect x="20" y="190" width="290" height="56" rx="14" fill="#ffffff" stroke="#c8d5e2"/>
+    <text x="38" y="222" class="node-text">Next.js application / Kollegan offertsystem</text>
+
+    <rect x="20" y="260" width="135" height="24" rx="12" fill="#eef7ff" />
+    <text x="34" y="277" class="node-text">Public web access</text>
+    <rect x="175" y="260" width="135" height="24" rx="12" fill="#f1fbf4" />
+    <text x="192" y="277" class="node-text">Private ops access</text>
+  </g>
+
+  <g transform="translate(1130 560)">
+    <rect width="180" height="120" rx="20" fill="#eef7ff" stroke="#8eb8e8" stroke-width="2"/>
+    <text x="18" y="36" class="node-title">PostgreSQL</text>
+    <text x="18" y="66" class="node-text">Persistent data</text>
+    <text x="18" y="88" class="node-text">Prisma migrations</text>
+  </g>
+
+  <g transform="translate(1330 560)">
+    <rect width="180" height="120" rx="20" fill="#eefcf6" stroke="#8fcba3" stroke-width="2"/>
+    <text x="18" y="36" class="node-title">Redis</text>
+    <text x="18" y="66" class="node-text">Cache / sessions</text>
+    <text x="18" y="88" class="node-text">Runtime support</text>
+  </g>
+
+  <g transform="translate(70 560)">
+    <rect width="320" height="150" rx="22" fill="#ffffff" stroke="#c8d5e2" stroke-width="2"/>
+    <text x="20" y="38" class="node-title">Nuvarande deployflöde i repo</text>
+    <text x="20" y="68" class="node-text">`.github/workflows/deploy.yml` deployar till VPS</text>
+    <text x="20" y="92" class="node-text">via automatiserat workflow på push till `main`.</text>
+    <text x="20" y="116" class="node-text">Flödet kör fetch, build, migrering och restart.</text>
+  </g>
+
+  <g transform="translate(430 560)">
+    <rect width="420" height="150" rx="22" fill="#ffffff" stroke="#c8d5e2" stroke-width="2"/>
+    <text x="20" y="38" class="node-title">Säkerhetsmotiv</text>
+    <text x="20" y="68" class="node-text">Interna tjänster som databas och Redis ska inte exponeras publikt.</text>
+    <text x="20" y="92" class="node-text">VPN/WireGuard används eller planeras som privat transportlager för</text>
+    <text x="20" y="116" class="node-text">administrativ åtkomst och CI/CD-trafik mot VPS-miljön.</text>
+  </g>
+
+  <line x1="350" y1="255" x2="420" y2="255" class="line" marker-end="url(#arrow)"/>
+  <text x="370" y="240" class="label">push / trigger</text>
+
+  <line x1="740" y1="255" x2="810" y2="255" class="line dashed" marker-end="url(#arrow)"/>
+  <text x="748" y="240" class="label">säkrad transport</text>
+
+  <line x1="1090" y1="230" x2="1180" y2="230" class="line" marker-end="url(#arrow)"/>
+  <text x="1114" y="214" class="label">deploy / access</text>
+
+  <line x1="1345" y1="420" x2="1220" y2="560" class="line" marker-end="url(#arrow)"/>
+  <text x="1260" y="505" class="label">database access</text>
+
+  <line x1="1390" y1="420" x2="1420" y2="560" class="line" marker-end="url(#arrow)"/>
+  <text x="1402" y="505" class="label">cache</text>
+
+  <path d="M1510 220 C1560 220 1560 480 1500 480 L1500 510" class="line"/>
+  <text x="1460" y="470" class="label">public HTTPS via Caddy</text>
+</svg>
