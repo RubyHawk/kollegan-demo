@@ -55,18 +55,26 @@ function fmtQuantity(n: number): string {
   }).format(n);
 }
 
+function normalizeLineItemUnit(unit: string): string {
+  return unit
+    .trim()
+    .replace(/\u00c2(?=[\u00b2\u00b3])/g, '')
+    .toLocaleLowerCase('sv-SE');
+}
+
 function formatLineItemUnitHtml(unit: string): string {
-  const normalized = unit.trim().toLocaleLowerCase('sv-SE');
+  const cleanedUnit = unit.trim().replace(/\u00c2(?=[\u00b2\u00b3])/g, '');
+  const normalized = normalizeLineItemUnit(cleanedUnit);
   if (!normalized) return '';
   if (['m2', 'm^2', 'm²', 'kvm'].includes(normalized)) return 'm&sup2;';
   if (['m3', 'm^3', 'm³'].includes(normalized)) return 'm&sup3;';
-  return escapeHtml(unit.trim());
+  return escapeHtml(cleanedUnit);
 }
 
 function formatOfferLineItemQuantityHtml(item: OfferLineItem): string {
   const quantity = fmtQuantity(item.quantity);
   const maybeUnit = typeof (item as OfferLineItem & { unit?: unknown }).unit === 'string'
-    ? String((item as OfferLineItem & { unit?: unknown }).unit).trim()
+    ? String((item as OfferLineItem & { unit?: unknown }).unit).trim().replace(/\u00c2(?=[\u00b2\u00b3])/g, '')
     : '';
 
   if (!maybeUnit) return `${quantity} st`;
@@ -75,18 +83,6 @@ function formatOfferLineItemQuantityHtml(item: OfferLineItem): string {
 
 function buildOfferSummary(offer: Offer) {
   return summarizePersistedOfferPricing(offer);
-}
-
-function getOfferStatusLabel(status: Offer['status']): string {
-  const labels: Record<Offer['status'], string> = {
-    draft: 'Offert',
-    sent: 'Offert',
-    viewed: 'Offert',
-    accepted: 'Signerad',
-    declined: 'Avvisad',
-    expired: 'Utgången',
-  };
-  return labels[status] ?? 'Offert';
 }
 
 function getOfferLineItemDescription(description: string): { title: string; detail?: string } {
@@ -382,12 +378,12 @@ function buildStructuredLineItems(items: OfferLineItem[], mode: Offer['priceDisp
   const showVatColumn = pricing.hasVat;
   const showDiscountColumn = items.some((item) => (item.discount ?? 0) > 0);
   const gridTemplate = [
-    'minmax(0, 2.1fr)',
-    '92px',
-    '136px',
-    ...(showDiscountColumn ? ['86px'] : []),
-    ...(showVatColumn ? ['86px'] : []),
-    '152px',
+    'minmax(0, 1fr)',
+    '64px',
+    '104px',
+    ...(showDiscountColumn ? ['64px'] : []),
+    ...(showVatColumn ? ['64px'] : []),
+    '132px',
   ].join(' ');
 
   const headerCells = [
@@ -1165,6 +1161,36 @@ function replaceLegacyLineItemsTable(html: string, offer: Offer): string {
   );
 }
 
+function syncStructuredLineItemQuantities(html: string, offer: Offer): string {
+  let desktopIndex = 0;
+  let syncedHtml = html.replace(
+    /<article\b[^>]*class="[^"]*\boffer-item-row\b[^"]*"[^>]*>[\s\S]*?<\/article>/gi,
+    (rowHtml) => {
+      const item = offer.lineItems[desktopIndex++];
+      if (!item) return rowHtml;
+      return rowHtml.replace(
+        /(<div\b[^>]*class="[^"]*\boffer-item-row__value\b[^"]*"[^>]*>)[\s\S]*?(<\/div>)/i,
+        `$1${formatOfferLineItemQuantityHtml(item)}$2`,
+      );
+    },
+  );
+
+  let mobileIndex = 0;
+  syncedHtml = syncedHtml.replace(
+    /<article\b[^>]*class="[^"]*\boffer-item-card\b[^"]*"[^>]*>[\s\S]*?<\/article>/gi,
+    (cardHtml) => {
+      const item = offer.lineItems[mobileIndex++];
+      if (!item) return cardHtml;
+      return cardHtml.replace(
+        /(<div\b[^>]*class="[^"]*\boffer-item-card__metric\b[^"]*"[^>]*>\s*<dt>\s*Antal\s*<\/dt>\s*<dd>)[\s\S]*?(<\/dd>)/i,
+        `$1${formatOfferLineItemQuantityHtml(item)}$2`,
+      );
+    },
+  );
+
+  return syncedHtml;
+}
+
 export function sanitizeGeneratedOfferDocument(
   documentHtml: string,
   offer: Offer,
@@ -1173,6 +1199,7 @@ export function sanitizeGeneratedOfferDocument(
   let html = documentHtml;
   html = replaceLegacyLineItemsTable(html, offer);
   html = injectStructuredLineItemStyles(html);
+  html = syncStructuredLineItemQuantities(html, offer);
   html = normalizeLegacyOfferMeta(html, getOfferNumberString(offer));
   html = injectSenderBranding(html, branding);
   html = injectDocumentPatchStyles(html);
@@ -1644,8 +1671,8 @@ export function generateFallbackDocument(offer: Offer, branding?: OfferBrandingP
     .offer-item-row { gap: 12px; padding: 16px; border-bottom: 1px solid #eef2f7; }
     .offer-item-row:last-child { border-bottom: none; }
     .offer-item-row__product { display: grid; gap: 7px; min-width: 0; }
-    .offer-item-row__title { font-size: 16px; line-height: 1.4; font-weight: 700; color: #0f172a; }
-    .offer-item-row__detail { font-size: 13px; line-height: 1.68; color: #64748b; }
+    .offer-item-row__title { font-size: 15px; line-height: 1.45; font-weight: 700; color: #0f172a; }
+    .offer-item-row__detail { max-width: none; font-size: 13px; line-height: 1.62; color: #556a89; }
     .offer-item-row__value { text-align: right; font-size: 13px; line-height: 1.45; color: #334155; white-space: nowrap; }
     .offer-item-row__value--strong { font-weight: 700; color: #0f172a; }
     .offer-items__cards { display: none; }
@@ -1991,7 +2018,7 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     .offer-item-card__metric--total dt, .offer-item-card__metric--total dd { color: #ffffff; }
     .offer-item-card__metric--total dd { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
     .offer-summary { margin-left: auto; width: min(260px, 100%); border: 1px solid #dbe4ee; border-radius: 16px; background: #ffffff; padding: 0; display: grid; gap: 0; overflow: hidden; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03); }
-    .offer-summary--below { width: min(332px, 100%); margin-top: 16px; margin-left: auto; }
+    .offer-summary--below { width: min(360px, 100%); margin-top: 14px; margin-left: auto; }
     .offer-summary__row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 12px 16px; font-size: 13px; line-height: 1.55; color: #475569; border-bottom: 1px solid #e5ecf3; }
     .offer-summary__row span { font-weight: 600; color: #5b7088; }
     .offer-summary__row strong { white-space: nowrap; color: #10233b; font-weight: 700; }
@@ -2006,8 +2033,8 @@ export function generateDocument(templateContent: string, offer: Offer, branding
     .offer-summary__row--total strong { font-size: 22px; letter-spacing: -0.03em; }
     .offer-section--terms { margin-top: 14px; clear: both; }
     .offer-section--notes { clear: both; }
-    .offer-shell__footer { display: grid; grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); gap: 18px; padding-top: 18px; margin-top: 18px; border-top: 1px solid #dbe4ee; }
-    .offer-shell__footer div { display: grid; gap: 6px; font-size: 13px; line-height: 1.6; color: #475569; }
+    .offer-shell__footer { display: grid; grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); gap: 22px; padding-top: 20px; margin-top: 22px; border-top: 1px solid #dbe4ee; }
+    .offer-shell__footer div { display: grid; gap: 7px; font-size: 14px; line-height: 1.55; color: #475569; }
     .doc-header { font-size: 12px; color: #64748b; margin-bottom: 0; }
     .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
     .doc-divider { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }

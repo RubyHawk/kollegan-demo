@@ -76,7 +76,7 @@ describe('offer document generator', () => {
     expect(gammaIndex).toBeGreaterThan(-1);
     expect(alphaIndex).toBeGreaterThan(gammaIndex);
     expect(betaIndex).toBeGreaterThan(alphaIndex);
-    expect(html).toContain('--offer-columns:minmax(0, 2.1fr) 92px 136px 86px 152px');
+    expect(html).toContain('--offer-columns:minmax(0, 1fr) 64px 104px 64px 132px');
   });
 
   it('keeps product detail copy in the mobile offer cards', () => {
@@ -222,6 +222,48 @@ describe('offer document generator', () => {
     expect(sanitized).toContain('<p>Storgatan 1</p>');
     expect(sanitized).toContain('<p>111 22 Stockholm</p>');
     expect(sanitized).not.toContain('Soleria - Malek');
+  });
+
+  it('replaces legacy structured quantity values with the stored unit', () => {
+    const sanitized = sanitizeGeneratedOfferDocument(`<!DOCTYPE html>
+<html lang="sv">
+  <body>
+    <div class="offer-items">
+      <article class="offer-item-row">
+        <div class="offer-item-row__product"><div class="offer-item-row__title">Solfilm</div></div>
+        <div class="offer-item-row__value">3 st</div>
+        <div class="offer-item-row__value">1 200,00 kr</div>
+        <div class="offer-item-row__value">25%</div>
+        <div class="offer-item-row__value offer-item-row__value--strong">2 880,00 kr</div>
+      </article>
+      <article class="offer-item-card">
+        <div class="offer-item-card__top"><div class="offer-item-card__title">Solfilm</div></div>
+        <dl class="offer-item-card__grid">
+          <div class="offer-item-card__metric"><dt>Antal</dt><dd>3 st</dd></div>
+          <div class="offer-item-card__metric"><dt>Moms</dt><dd>25%</dd></div>
+          <div class="offer-item-card__metric offer-item-card__metric--total"><dt>Belopp</dt><dd>2 880,00 kr</dd></div>
+        </dl>
+      </article>
+    </div>
+  </body>
+</html>`, {
+      ...offer,
+      lineItems: [
+        {
+          id: 'line-unit-legacy',
+          description: 'Solfilm',
+          quantity: 3,
+          unit: 'm²',
+          unitPrice: 1200,
+          vatRate: 0.25,
+          discount: 0,
+          sortOrder: 0,
+        },
+      ],
+    }, branding);
+
+    expect(sanitized).toContain('<div class="offer-item-row__value">3 m&sup2;</div>');
+    expect(sanitized).toContain('<div class="offer-item-card__metric"><dt>Antal</dt><dd>3 m&sup2;</dd></div>');
   });
 
   it('renders the summary in a clearer subtotal-discount-vat-total order', () => {
