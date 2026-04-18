@@ -163,8 +163,9 @@ CREATE TABLE "proc_purchase_order_line_items" (
 ALTER TABLE "off_line_items" ADD COLUMN IF NOT EXISTS "productId" TEXT;
 ALTER TABLE "off_line_items" ADD COLUMN IF NOT EXISTS "unit" TEXT;
 
--- Preserve existing contact links before crm_customers becomes the canonical Customer table.
--- Existing offers/leads may point at demo_hotel_customers from the old contact picker.
+-- Preserve existing offer/lead contact links without coupling ERP customers to demo modules.
+-- The hotel demo remains isolated in demo_hotel_customers; CRM customers are derived only
+-- from ERP-owned offer/lead fields.
 INSERT INTO "crm_customers" (
   "id",
   "organizationId",
@@ -176,23 +177,66 @@ INSERT INTO "crm_customers" (
   "createdAt",
   "updatedAt"
 )
-SELECT DISTINCT ON (refs."customerId")
-  c."id",
-  refs."organizationId",
-  COALESCE(c."name", c."email", c."phone", 'Kund') AS "name",
-  c."email",
-  c."phone",
-  c."company",
-  c."notes",
-  COALESCE(c."firstSeen", CURRENT_TIMESTAMP) AS "createdAt",
-  COALESCE(c."lastSeen", CURRENT_TIMESTAMP) AS "updatedAt"
-FROM (
-  SELECT "customerId", "organizationId" FROM "off_offers" WHERE "customerId" IS NOT NULL
-  UNION
-  SELECT "customerId", "organizationId" FROM "lead_leads" WHERE "customerId" IS NOT NULL
-) refs
-JOIN "demo_hotel_customers" c ON c."id" = refs."customerId"
+SELECT DISTINCT ON ("customerId")
+  "customerId" AS "id",
+  "organizationId",
+  COALESCE(NULLIF("recipientName", ''), NULLIF("recipientEmail", ''), 'Kund') AS "name",
+  LOWER(NULLIF("recipientEmail", '')) AS "email",
+  NULL AS "phone",
+  NULLIF("recipientCompany", '') AS "company",
+  NULL AS "notes",
+  COALESCE("createdAt", CURRENT_TIMESTAMP) AS "createdAt",
+  COALESCE("updatedAt", CURRENT_TIMESTAMP) AS "updatedAt"
+FROM "off_offers"
+WHERE "customerId" IS NOT NULL
+ORDER BY "customerId", "updatedAt" DESC
 ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "crm_customers" (
+  "id",
+  "organizationId",
+  "name",
+  "email",
+  "phone",
+  "company",
+  "notes",
+  "convertedFromLeadId",
+  "createdAt",
+  "updatedAt"
+)
+SELECT DISTINCT ON ("customerId")
+  "customerId" AS "id",
+  "organizationId",
+  COALESCE(NULLIF("name", ''), NULLIF("email", ''), 'Kund') AS "name",
+  LOWER(NULLIF("email", '')) AS "email",
+  NULLIF("phone", '') AS "phone",
+  NULLIF("company", '') AS "company",
+  "notes",
+  CASE WHEN "convertedAt" IS NOT NULL THEN "id" ELSE NULL END AS "convertedFromLeadId",
+  COALESCE("createdAt", CURRENT_TIMESTAMP) AS "createdAt",
+  COALESCE("updatedAt", CURRENT_TIMESTAMP) AS "updatedAt"
+FROM "lead_leads"
+WHERE "customerId" IS NOT NULL
+ORDER BY "customerId", "updatedAt" DESC
+ON CONFLICT ("id") DO NOTHING;
+
+WITH ranked_customer_emails AS (
+  SELECT
+    "id",
+    ROW_NUMBER() OVER (
+      PARTITION BY "organizationId", "email"
+      ORDER BY "updatedAt" DESC, "id"
+    ) AS rn
+  FROM "crm_customers"
+  WHERE "email" IS NOT NULL
+)
+UPDATE "crm_customers"
+SET "email" = NULL
+WHERE "id" IN (
+  SELECT "id"
+  FROM ranked_customer_emails
+  WHERE rn > 1
+);
 
 CREATE UNIQUE INDEX "crm_customers_organizationId_email_key" ON "crm_customers"("organizationId", "email");
 CREATE UNIQUE INDEX "crm_customers_convertedFromLeadId_key" ON "crm_customers"("convertedFromLeadId");
