@@ -24,7 +24,7 @@ model Organization {
 
   // Back-relations — defined in their respective schema files
   customers   Customer[]
-  hotelCustomers HotelCustomer[]
+  demoHotelGuests DemoHotelGuest[]
   bookings    HotelBooking[]
   transcripts CallTranscript[]
   crmRecords  CrmRecord[]

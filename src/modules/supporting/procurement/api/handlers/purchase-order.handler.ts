@@ -68,6 +68,7 @@ export const handleCreateProjectPurchaseOrder = createHandler(
     } catch (err) {
       if ((err as { code?: string }).code === 'PROJECT_NOT_FOUND') throw Errors.notFound('Project not found');
       if ((err as { code?: string }).code === 'SUPPLIER_NOT_FOUND') throw Errors.notFound('Supplier not found');
+      if ((err as { code?: string }).code === 'PROJECT_LINE_ITEM_NOT_FOUND') throw Errors.notFound('Project line item not found');
       throw err;
     }
   },
@@ -84,19 +85,25 @@ export const handleSubmitPurchaseOrder = createHandler(
   async (ctx) => {
     const { body, req } = ctx as { body: z.infer<typeof SubmitBodySchema>; req: NextRequest };
     const payload = await requireStaff(req);
-    const purchaseOrder = await markPurchaseOrderSubmitted(
-      extractPurchaseOrderId(req),
-      extractProjectId(req),
-      payload.orgId!,
-      payload.sub,
-      {
-        supplierReference: body.supplierReference,
-        expectedDeliveryDate: body.expectedDeliveryDate ? new Date(body.expectedDeliveryDate) : null,
-        notes: body.notes,
-      },
-    );
-    if (!purchaseOrder) throw Errors.notFound('Purchase order not found');
-    return ok({ purchaseOrder });
+    try {
+      const purchaseOrder = await markPurchaseOrderSubmitted(
+        extractPurchaseOrderId(req),
+        extractProjectId(req),
+        payload.orgId!,
+        payload.sub,
+        {
+          supplierReference: body.supplierReference,
+          expectedDeliveryDate: body.expectedDeliveryDate ? new Date(body.expectedDeliveryDate) : null,
+          notes: body.notes,
+        },
+      );
+      if (!purchaseOrder) throw Errors.notFound('Purchase order not found');
+      return ok({ purchaseOrder });
+    } catch (err) {
+      if ((err as { code?: string }).code === 'PO_ALREADY_RECEIVED') throw Errors.unprocessable((err as Error).message);
+      if ((err as { code?: string }).code === 'PO_CANCELLED') throw Errors.unprocessable((err as Error).message);
+      throw err;
+    }
   },
 );
 
@@ -113,15 +120,23 @@ export const handleReceivePurchaseOrder = createHandler(
   async (ctx) => {
     const { body, req } = ctx as { body: z.infer<typeof ReceiveBodySchema>; req: NextRequest };
     const payload = await requireStaff(req);
-    const purchaseOrder = await markPurchaseOrderReceived(
-      extractPurchaseOrderId(req),
-      extractProjectId(req),
-      payload.orgId!,
-      payload.sub,
-      body.receivedItems,
-      body.notes,
-    );
-    if (!purchaseOrder) throw Errors.notFound('Purchase order not found');
-    return ok({ purchaseOrder });
+    try {
+      const purchaseOrder = await markPurchaseOrderReceived(
+        extractPurchaseOrderId(req),
+        extractProjectId(req),
+        payload.orgId!,
+        payload.sub,
+        body.receivedItems,
+        body.notes,
+      );
+      if (!purchaseOrder) throw Errors.notFound('Purchase order not found');
+      return ok({ purchaseOrder });
+    } catch (err) {
+      if ((err as { code?: string }).code === 'PO_LINE_ITEM_NOT_FOUND') throw Errors.notFound('Purchase order line item not found');
+      if ((err as { code?: string }).code === 'INVALID_RECEIPT_QUANTITY') throw Errors.unprocessable((err as Error).message);
+      if ((err as { code?: string }).code === 'PO_NOT_SUBMITTED') throw Errors.unprocessable((err as Error).message);
+      if ((err as { code?: string }).code === 'PO_CANCELLED') throw Errors.unprocessable((err as Error).message);
+      throw err;
+    }
   },
 );

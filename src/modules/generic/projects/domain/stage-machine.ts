@@ -29,7 +29,10 @@ export function validateStageTransition(project: Project, toStage: ProjectStage)
 
   if (project.stage === 'ordered' && toStage === 'arrived') {
     if (activePurchaseOrders.length === 0) return 'Projektet saknar inköpsorder.';
-    const allReceived = activePurchaseOrders.every((po) => po.status === 'received');
+    const allReceived = activePurchaseOrders.every((po) =>
+      po.status === 'received' &&
+      (po.lineItems ?? []).every((item) => item.receivedQuantity >= item.quantity)
+    );
     if (!allReceived) return 'Alla aktiva inköpsorder måste vara mottagna innan projektet kan markeras som ankommet.';
   }
 

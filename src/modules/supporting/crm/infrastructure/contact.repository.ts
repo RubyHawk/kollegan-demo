@@ -8,7 +8,7 @@ export type CustomerWithHistory = Awaited<ReturnType<typeof findCustomerByPhone>
  * Find customer by phone number including recent bookings and transcripts.
  */
 export async function findCustomerByPhone(phone: string) {
-  return prisma.hotelCustomer.findFirst({
+  return prisma.demoHotelGuest.findFirst({
     where: { phone },
     include: {
       bookings:    { orderBy: { createdAt: 'desc' }, take: 10 },
@@ -21,7 +21,7 @@ export async function findCustomerByPhone(phone: string) {
  * Find customer by name (case-insensitive, partial match).
  */
 export async function findCustomerByName(name: string) {
-  return prisma.hotelCustomer.findFirst({
+  return prisma.demoHotelGuest.findFirst({
     where: { name: { contains: name, mode: 'insensitive' } },
     include: {
       bookings:    { orderBy: { createdAt: 'desc' }, take: 10 },
@@ -46,7 +46,7 @@ export interface UpsertCustomerData {
 export async function upsertCustomer(data: UpsertCustomerData) {
   // No unique key available — create a new record
   if (!data.phone && !data.email) {
-    return prisma.hotelCustomer.create({
+    return prisma.demoHotelGuest.create({
       data: { ...data, callCount: 1 },
     });
   }
@@ -54,7 +54,7 @@ export async function upsertCustomer(data: UpsertCustomerData) {
   // Upsert by phone (preferred) or email
   const whereKey = data.phone ? { phone: data.phone } : { phone: data.email ?? '' };
 
-  return prisma.hotelCustomer.upsert({
+  return prisma.demoHotelGuest.upsert({
     where:  whereKey,
     create: { ...data, callCount: 1 },
     update: {

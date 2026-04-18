@@ -38,9 +38,10 @@ function fmtDate(iso: string | null) {
 
 function poSummary(project: Project) {
   const orders = project.purchaseOrders ?? [];
-  if (!orders.length) return { text: 'Ingen inköpsorder', blocked: project.stage === 'details' };
-  if (orders.some((po) => po.status === 'draft')) return { text: 'Utkast till inköpsorder', blocked: project.stage === 'details' };
-  if (orders.every((po) => po.status === 'received' || po.status === 'cancelled')) return { text: 'Material ankommet', blocked: false };
+  const activeOrders = orders.filter((po) => po.status !== 'cancelled');
+  if (!activeOrders.length) return { text: 'Ingen inköpsorder', blocked: project.stage === 'details' || project.stage === 'ordered' };
+  if (activeOrders.some((po) => po.status === 'draft')) return { text: 'Utkast till inköpsorder', blocked: project.stage === 'details' };
+  if (activeOrders.every((po) => po.status === 'received')) return { text: 'Material ankommet', blocked: false };
   return { text: 'Inköpsorder skickad', blocked: project.stage === 'ordered' };
 }
 

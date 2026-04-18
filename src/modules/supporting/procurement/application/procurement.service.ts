@@ -87,11 +87,13 @@ export async function markPurchaseOrderReceived(
 ): Promise<PurchaseOrder | null> {
   const po = await procurementRepository.receivePurchaseOrder(poId, projectId, orgId, actorId, receivedItems, notes);
   if (!po) return null;
-  eventBus.publish({
-    type: PURCHASE_ORDER_RECEIVED,
-    orgId,
-    occurredAt: new Date().toISOString(),
-    payload: { purchaseOrderId: po.id, projectId: po.projectId, supplierId: po.supplierId, actorId },
-  });
+  if (po.status === 'received') {
+    eventBus.publish({
+      type: PURCHASE_ORDER_RECEIVED,
+      orgId,
+      occurredAt: new Date().toISOString(),
+      payload: { purchaseOrderId: po.id, projectId: po.projectId, supplierId: po.supplierId, actorId },
+    });
+  }
   return po;
 }

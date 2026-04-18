@@ -56,19 +56,26 @@ export async function createProjectFromOffer(offerId: string, orgId: string): Pr
     leadId: offer.leadId,
   });
 
-  const project = await projectsRepository.createFromOffer({
-    organizationId: orgId,
-    customerId: customer.id,
-    offerId: offer.id,
-    name: offer.title || `Projekt - ${customer.name}`,
-    offerNumber: offer.offerNumber ?? null,
-    offerAcceptedAt: offer.acceptedAt ? new Date(offer.acceptedAt) : new Date(),
-    priceDisplayMode: offer.priceDisplayMode,
-    totalExVat: offer.totalExVat,
-    totalIncVat: offer.totalIncVat,
-    createdBy: offer.createdBy,
-    lineItems: offer.lineItems.map(snapshotLineItem),
-  });
+  let project: Project;
+  try {
+    project = await projectsRepository.createFromOffer({
+      organizationId: orgId,
+      customerId: customer.id,
+      offerId: offer.id,
+      name: offer.title || `Projekt - ${customer.name}`,
+      offerNumber: offer.offerNumber ?? null,
+      offerAcceptedAt: offer.acceptedAt ? new Date(offer.acceptedAt) : new Date(),
+      priceDisplayMode: offer.priceDisplayMode,
+      totalExVat: offer.totalExVat,
+      totalIncVat: offer.totalIncVat,
+      createdBy: offer.createdBy,
+      lineItems: offer.lineItems.map(snapshotLineItem),
+    });
+  } catch (err) {
+    const racedProject = await projectsRepository.findByOfferId(offerId, orgId);
+    if (racedProject) return racedProject;
+    throw err;
+  }
 
   eventBus.publish({
     type: PROJECT_CREATED,

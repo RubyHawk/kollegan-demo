@@ -2,7 +2,7 @@
 // All models in this file are demo-only. Table prefix: demo_hotel_*
 // organizationId is nullable on these models for backward compat with existing rows.
 
-model HotelCustomer {
+model DemoHotelGuest {
   id        String   @id @default(uuid())
   name      String?
   phone     String?  @unique
@@ -38,7 +38,7 @@ model HotelBooking {
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
-  customer   HotelCustomer? @relation(fields: [customerId], references: [id])
+  customer   DemoHotelGuest? @relation(fields: [customerId], references: [id])
   customerId String?
 
   @@index([roomId])
@@ -60,7 +60,7 @@ model CallTranscript {
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
-  customer   HotelCustomer? @relation(fields: [customerId], references: [id])
+  customer   DemoHotelGuest? @relation(fields: [customerId], references: [id])
   customerId String?
 
   @@index([vapiCallId])
@@ -83,7 +83,7 @@ model CrmRecord {
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
-  customer   HotelCustomer? @relation(fields: [customerId], references: [id])
+  customer   DemoHotelGuest? @relation(fields: [customerId], references: [id])
   customerId String?
 
   @@index([customerId])

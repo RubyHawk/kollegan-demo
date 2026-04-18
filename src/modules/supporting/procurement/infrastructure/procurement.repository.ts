@@ -185,6 +185,24 @@ export const procurementRepository = {
     });
     if (!supplier) throw Object.assign(new Error('Supplier not found'), { code: 'SUPPLIER_NOT_FOUND' });
 
+    const linkedProjectLineItemIds = Array.from(new Set(
+      input.items
+        .map((item) => item.projectLineItemId)
+        .filter((id): id is string => Boolean(id)),
+    ));
+    if (linkedProjectLineItemIds.length > 0) {
+      const matchingLineItemCount = await prisma.projectLineItem.count({
+        where: {
+          id: { in: linkedProjectLineItemIds },
+          projectId: input.projectId,
+          organizationId: input.organizationId,
+        },
+      });
+      if (matchingLineItemCount !== linkedProjectLineItemIds.length) {
+        throw Object.assign(new Error('Project line item not found'), { code: 'PROJECT_LINE_ITEM_NOT_FOUND' });
+      }
+    }
+
     const totals = computeTotals(input.items);
     const max = await prisma.purchaseOrder.aggregate({
       where: { organizationId: input.organizationId },
@@ -239,6 +257,12 @@ export const procurementRepository = {
       where: { id: poId, projectId, organizationId: orgId, deletedAt: null },
     });
     if (!existing) return null;
+    if (existing.status === 'received') {
+      throw Object.assign(new Error('Purchase order is already received'), { code: 'PO_ALREADY_RECEIVED' });
+    }
+    if (existing.status === 'cancelled') {
+      throw Object.assign(new Error('Purchase order is cancelled'), { code: 'PO_CANCELLED' });
+    }
     const row = await prisma.purchaseOrder.update({
       where: { id: poId },
       data: {
@@ -267,14 +291,30 @@ export const procurementRepository = {
       include: { lineItems: true },
     });
     if (!existing) return null;
+    if (existing.status === 'draft') {
+      throw Object.assign(new Error('Purchase order must be submitted before receipt'), { code: 'PO_NOT_SUBMITTED' });
+    }
+    if (existing.status === 'cancelled') {
+      throw Object.assign(new Error('Purchase order is cancelled'), { code: 'PO_CANCELLED' });
+    }
 
     await prisma.$transaction(async (tx) => {
       if (receivedItems?.length) {
         for (const item of receivedItems) {
-          await tx.purchaseOrderLineItem.updateMany({
+          const existingLine = existing.lineItems.find((line) => line.id === item.lineItemId);
+          if (!existingLine) {
+            throw Object.assign(new Error('Purchase order line item not found'), { code: 'PO_LINE_ITEM_NOT_FOUND' });
+          }
+          if (item.receivedQuantity > existingLine.quantity) {
+            throw Object.assign(new Error('Received quantity cannot exceed ordered quantity'), { code: 'INVALID_RECEIPT_QUANTITY' });
+          }
+          const result = await tx.purchaseOrderLineItem.updateMany({
             where: { id: item.lineItemId, purchaseOrderId: poId, organizationId: orgId },
             data: { receivedQuantity: item.receivedQuantity },
           });
+          if (result.count === 0) {
+            throw Object.assign(new Error('Purchase order line item not found'), { code: 'PO_LINE_ITEM_NOT_FOUND' });
+          }
         }
       } else {
         for (const item of existing.lineItems) {
@@ -284,9 +324,16 @@ export const procurementRepository = {
           });
         }
       }
+      const lineItems = await tx.purchaseOrderLineItem.findMany({
+        where: { purchaseOrderId: poId, organizationId: orgId },
+      });
+      const allReceived = lineItems.every((item) => item.receivedQuantity >= item.quantity);
       await tx.purchaseOrder.update({
         where: { id: poId },
-        data: { status: 'received', receivedAt: new Date(), receivedBy: actorId, ...(notes !== undefined ? { notes } : {}) },
+        data: {
+          ...(allReceived ? { status: 'received' as const, receivedAt: new Date(), receivedBy: actorId } : {}),
+          ...(notes !== undefined ? { notes } : {}),
+        },
       });
     });
 

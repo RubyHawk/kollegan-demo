@@ -4,7 +4,14 @@ import { createHandler } from '@platform/api/handler';
 import { created, noContent, ok } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
 import { verifyToken } from '@platform/auth/jwt';
-import { createCustomer, deleteCustomer, getCustomer, listCustomers, updateCustomer } from '../../application/customers.service';
+import {
+  createCustomer,
+  deleteCustomer,
+  getCustomer,
+  listCustomers,
+  updateCustomer,
+  type Customer,
+} from '../../application/customers.service';
 
 function extractToken(req: NextRequest): string {
   return req.headers.get('authorization')?.slice(7) ?? req.cookies.get('at')?.value ?? req.cookies.get('token')?.value ?? '';
@@ -23,6 +30,15 @@ function extractId(req: NextRequest): string {
   return req.nextUrl.pathname.split('/').at(-1) ?? '';
 }
 
+function toContactCompat(customer: Customer) {
+  return {
+    ...customer,
+    callCount: 0,
+    firstSeen: customer.createdAt,
+    lastSeen: customer.updatedAt,
+  };
+}
+
 const ListQuerySchema = z.object({
   search: z.string().max(100).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -35,7 +51,13 @@ export const handleListCustomers = createHandler(
     const { query, req } = ctx as { query: z.infer<typeof ListQuerySchema>; req: NextRequest };
     const payload = await requireStaff(req);
     const result = await listCustomers(payload.orgId!, query);
-    return ok({ contacts: result.customers, customers: result.customers, total: result.total, limit: query.limit, offset: query.offset });
+    return ok({
+      contacts: result.customers.map(toContactCompat),
+      customers: result.customers,
+      total: result.total,
+      limit: query.limit,
+      offset: query.offset,
+    });
   },
 );
 
@@ -57,7 +79,7 @@ export const handleCreateCustomer = createHandler(
     const { body, req } = ctx as { body: z.infer<typeof CreateBodySchema>; req: NextRequest };
     const payload = await requireStaff(req);
     const customer = await createCustomer({ organizationId: payload.orgId!, ...body });
-    return created({ customer, contact: customer });
+    return created({ customer, contact: toContactCompat(customer) });
   },
 );
 
@@ -68,7 +90,7 @@ export const handleGetCustomer = createHandler(
     const payload = await requireStaff(req);
     const customer = await getCustomer(extractId(req), payload.orgId!);
     if (!customer) throw Errors.notFound('Customer not found');
-    return ok({ customer, contact: customer });
+    return ok({ customer, contact: toContactCompat(customer) });
   },
 );
 
@@ -91,7 +113,7 @@ export const handleUpdateCustomer = createHandler(
     const payload = await requireStaff(req);
     const customer = await updateCustomer(extractId(req), payload.orgId!, body);
     if (!customer) throw Errors.notFound('Customer not found');
-    return ok({ customer, contact: customer });
+    return ok({ customer, contact: toContactCompat(customer) });
   },
 );
 
