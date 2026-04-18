@@ -6,7 +6,15 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
-    exclude: [...configDefaults.exclude, '.claude/**'],
+    exclude: [
+      ...configDefaults.exclude,
+      '.claude/**',
+      '.codex-artifacts/**',
+      'deliverables/**',
+      'deliveries/**',
+      'preview-changes/**',
+      'tests/e2e/**',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

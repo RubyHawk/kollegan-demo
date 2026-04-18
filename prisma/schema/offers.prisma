@@ -90,13 +90,16 @@ model Offer {
   template     OfferTemplate? @relation(fields: [templateId], references: [id])
   organization Organization   @relation(fields: [organizationId], references: [id])
   company      Company?        @relation(fields: [companyId], references: [id])
+  customer     Customer?       @relation(fields: [customerId], references: [id])
   lineItems    OfferLineItem[]
+  projects     Project[]
 
   @@unique([organizationId, offerNumber])
   @@index([organizationId, status])
   @@index([organizationId, createdAt])
   @@index([organizationId, status, createdAt]) // composite: filtered tab views + sort
   @@index([organizationId, recipientEmail])
+  @@index([organizationId, customerId])
   @@index([deletedAt])
   @@map("off_offers")
 }
@@ -109,11 +112,15 @@ model OfferLineItem {
   unitPrice   Float              // SEK, ex VAT
   vatRate     Float  @default(0.25) // 0.25 = 25%
   discount    Float? @default(0)   // percentage 0–100
+  productId   String?
+  unit        String?
   sortOrder   Int    @default(0)
 
-  offer Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  offer   Offer         @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  product OfferProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   @@index([offerId])
+  @@index([productId])
   @@map("off_line_items")
 }
 
@@ -172,6 +179,7 @@ model OfferProduct {
   organization     Organization     @relation(fields: [organizationId], references: [id])
   productCategory  ProductCategory? @relation(fields: [categoryId], references: [id])
   company          Company?         @relation(fields: [companyId], references: [id])
+  lineItems        OfferLineItem[]
 
   @@index([organizationId, companyId, categoryId])
   @@index([organizationId, companyId, category])

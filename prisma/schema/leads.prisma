@@ -20,12 +20,15 @@ model Lead {
   deletedAt      DateTime?
   customerId     String?   // Customer.id — set on conversion
 
-  organization Organization  @relation(fields: [organizationId], references: [id])
-  activities   LeadActivity[]
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  customer          Customer?    @relation("LeadCustomer", fields: [customerId], references: [id])
+  convertedCustomer Customer?    @relation("CustomerConvertedFromLead")
+  activities        LeadActivity[]
 
   @@index([organizationId, status])
   @@index([organizationId, createdAt])
   @@index([organizationId, assignedTo])
+  @@index([organizationId, customerId])
   @@index([deletedAt])
   @@map("lead_leads")
 }

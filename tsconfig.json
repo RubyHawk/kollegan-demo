@@ -10,9 +10,9 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    "types": ["node", "vitest/globals"],
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "types": ["node", "vitest/globals"],
     "incremental": true,
     "plugins": [
       {

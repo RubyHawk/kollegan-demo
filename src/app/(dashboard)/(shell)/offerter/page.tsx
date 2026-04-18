@@ -930,6 +930,8 @@ export default function OffersPage() {
         description: p.name + (p.description ? ` — ${p.description}` : ''),
         unitPrice:   p.unitPrice,
         vatRate:     p.vatRate,
+        productId:   p.id,
+        unit:        p.unit,
       };
       return {
         ...f,
@@ -1908,7 +1910,7 @@ export default function OffersPage() {
                                           {item.description}
                                         </p>
                                         <p className="text-[10px] text-[var(--text-muted)] mt-0.5 tabular-nums">
-                                          {item.quantity} × {fmtSEK(displayUnitPrice)}{item.discount > 0 ? ` − ${item.discount}%` : ''} · {formatVatRate(item.vatRate)}
+                                          {item.quantity} {item.unit ? item.unit : 'st'} × {fmtSEK(displayUnitPrice)}{item.discount > 0 ? ` − ${item.discount}%` : ''} · {formatVatRate(item.vatRate)}
                                         </p>
                                       </div>
                                       <p className="text-xs font-semibold text-[var(--text-primary)] tabular-nums shrink-0">{fmtSEK(displayLineTotal)}</p>

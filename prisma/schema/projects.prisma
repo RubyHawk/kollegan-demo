@@ -1,50 +1,103 @@
-// ─── Projects ─────────────────────────────────────────────────────────────────
-// Table prefix: prj_*
+// ─── Projects / Delivery Workflow ─────────────────────────────────────────────
+// Generic domain. Table prefix: prj_*
+
+enum ProjectStage {
+  details
+  ordered
+  arrived
+  in_progress
+  completed
+}
 
 model Project {
-  id             String   @id @default(uuid())
-  organizationId String
-  name           String
-  description    String?
-  status         String   @default("active") // active | review | planned | done | archived
-  priority       String   @default("medium") // low | medium | high | critical
-  progress       Int      @default(0)        // 0–100
-  ownerId        String?  // User.id
-  dueDate        DateTime?
-  startDate      DateTime?
-  tags           String[]
-  createdBy      String   // User.id
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  deletedAt      DateTime?
+  id                    String       @id @default(uuid())
+  organizationId        String
+  customerId            String
+  offerId               String
+  name                  String
+  stage                 ProjectStage @default(details)
+  offerNumber           Int?
+  offerAcceptedAt       DateTime?
+  priceDisplayMode      String       @default("exclusive")
+  totalExVat            Float        @default(0)
+  totalIncVat           Float        @default(0)
+  siteAddress           String?
+  sitePostalCode        String?
+  siteCity              String?
+  siteCountry           String?      @default("SE")
+  squareMeters          Float?
+  objectType            String?
+  objectDescription     String?
+  accessNotes           String?
+  wishedInstallDate     DateTime?
+  wishedInstallDateText String?
+  onsiteContactName     String?
+  onsiteContactPhone    String?
+  onsiteContactEmail    String?
+  internalNotes         String?
+  createdBy             String?
+  completedAt           DateTime?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  deletedAt             DateTime?
 
-  organization Organization   @relation(fields: [organizationId], references: [id])
-  tasks        ProjectTask[]
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+  customer       Customer            @relation(fields: [customerId], references: [id])
+  offer          Offer               @relation(fields: [offerId], references: [id])
+  lineItems      ProjectLineItem[]
+  purchaseOrders PurchaseOrder[]
+  stageEvents    ProjectStageEvent[]
 
-  @@index([organizationId, status])
+  @@unique([organizationId, offerId])
+  @@index([organizationId, stage])
+  @@index([organizationId, customerId])
   @@index([organizationId, createdAt])
   @@index([deletedAt])
   @@map("prj_projects")
 }
 
-model ProjectTask {
-  id          String    @id @default(uuid())
-  projectId   String
-  title       String
-  description String?
-  status      String    @default("todo") // todo | in_progress | done | blocked
-  priority    String    @default("medium")
-  assigneeId  String?   // User.id
-  dueDate     DateTime?
-  sortOrder   Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  completedAt DateTime?
-  deletedAt   DateTime?
+model ProjectLineItem {
+  id                    String   @id @default(uuid())
+  organizationId        String
+  projectId             String
+  sourceOfferLineItemId String?
+  sourceProductId       String?
+  productName           String
+  description           String
+  quantity              Float
+  unit                  String   @default("st")
+  unitPrice             Float
+  vatRate               Float   @default(0.25)
+  discount              Float   @default(0)
+  lineTotalExVat        Float   @default(0)
+  lineTotalIncVat       Float   @default(0)
+  sortOrder             Int      @default(0)
+  createdAt             DateTime @default(now())
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  organization           Organization            @relation(fields: [organizationId], references: [id])
+  project                Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  purchaseOrderLineItems PurchaseOrderLineItem[]
 
-  @@index([projectId, status])
+  @@index([organizationId, projectId])
   @@index([projectId, sortOrder])
-  @@map("prj_tasks")
+  @@map("prj_line_items")
+}
+
+model ProjectStageEvent {
+  id             String        @id @default(uuid())
+  organizationId String
+  projectId      String
+  fromStage      ProjectStage?
+  toStage        ProjectStage
+  actorId        String?
+  reason         String?
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, projectId, createdAt])
+  @@index([organizationId, toStage])
+  @@map("prj_stage_events")
 }

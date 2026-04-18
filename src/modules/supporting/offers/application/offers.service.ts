@@ -720,6 +720,8 @@ export async function duplicateOffer(
       unitPrice: item.unitPrice,
       vatRate: item.vatRate,
       discount: item.discount ?? 0,
+      productId: item.productId,
+      unit: item.unit,
       sortOrder: idx,
     })),
   });

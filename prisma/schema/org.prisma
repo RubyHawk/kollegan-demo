@@ -24,6 +24,7 @@ model Organization {
 
   // Back-relations — defined in their respective schema files
   customers   Customer[]
+  hotelCustomers HotelCustomer[]
   bookings    HotelBooking[]
   transcripts CallTranscript[]
   crmRecords  CrmRecord[]
@@ -38,6 +39,11 @@ model Organization {
   companies          Company[]
   conversations Conversation[]
   projects      Project[]
+  projectLineItems ProjectLineItem[]
+  projectStageEvents ProjectStageEvent[]
+  suppliers     Supplier[]
+  purchaseOrders PurchaseOrder[]
+  purchaseOrderLineItems PurchaseOrderLineItem[]
   announcements Announcement[]
   meetings      Meeting[]
 
