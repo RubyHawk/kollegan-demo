@@ -59,7 +59,9 @@ const PUBLIC_OFFER_FIELDS = [
   'signatureImage',
 ] as const;
 
-type PublicOffer = Record<(typeof PUBLIC_OFFER_FIELDS)[number], unknown>;
+type PublicOffer = Record<(typeof PUBLIC_OFFER_FIELDS)[number], unknown> & {
+  rendererVariant?: 'legacy' | 'next';
+};
 
 function toPublicOffer(offer: Record<string, unknown>): PublicOffer {
   const result = {} as PublicOffer;
@@ -67,6 +69,21 @@ function toPublicOffer(offer: Record<string, unknown>): PublicOffer {
     (result as Record<string, unknown>)[field] = offer[field];
   }
   return result;
+}
+
+async function resolveRendererVariant(offer: Record<string, unknown>): Promise<'legacy' | 'next'> {
+  const organizationId = typeof offer.organizationId === 'string' ? offer.organizationId : null;
+  const offerId = typeof offer.id === 'string' ? offer.id : null;
+  if (!organizationId || !offerId) return 'legacy';
+
+  const { evaluateFeatureFlag } = await import('@modules/supporting/feature-flags');
+  const evaluation = await evaluateFeatureFlag({
+    organizationId,
+    key: 'public-offer-v2',
+    environment: process.env.NEXT_PUBLIC_APP_ENV ?? 'production',
+    contextKey: offerId,
+  });
+  return evaluation.enabled ? 'next' : 'legacy';
 }
 
 export const handleGetPublicOffer = createHandler(
@@ -90,6 +107,7 @@ export const handleGetPublicOffer = createHandler(
 
     const branding = await resolveOfferBrandingForOffer(offer);
     const publicOffer = toPublicOffer(offer as unknown as Record<string, unknown>);
+    publicOffer.rendererVariant = await resolveRendererVariant(offer as unknown as Record<string, unknown>);
     if (offer.generatedDocument) {
       publicOffer.generatedDocument = sanitizePublicOfferDocument(offer.generatedDocument, offer, branding);
     }
