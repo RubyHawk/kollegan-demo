@@ -23,12 +23,28 @@ function normalize(filePath) {
   return filePath.replaceAll('\\', '/');
 }
 
+function getPushBeforeSha() {
+  const eventPath = process.env.GITHUB_EVENT_PATH;
+  if (!eventPath || !fs.existsSync(eventPath)) return null;
+
+  try {
+    const event = JSON.parse(fs.readFileSync(eventPath, 'utf8'));
+    const before = typeof event.before === 'string' ? event.before : null;
+    if (!before || /^0+$/.test(before)) return null;
+    return before;
+  } catch {
+    return null;
+  }
+}
+
 function getChangedFiles() {
   const baseRef = process.env.GITHUB_BASE_REF;
   const eventName = process.env.GITHUB_EVENT_NAME;
+  const pushBeforeSha = eventName === 'push' ? getPushBeforeSha() : null;
   const commands = [
     baseRef ? `git diff --name-only --diff-filter=ACMR origin/${baseRef}...HEAD` : null,
-    eventName === 'push' ? 'git diff --name-only --diff-filter=ACMR HEAD^ HEAD' : null,
+    pushBeforeSha ? `git diff --name-only --diff-filter=ACMR ${pushBeforeSha} HEAD` : null,
+    eventName === 'push' && !pushBeforeSha ? 'git diff --name-only --diff-filter=ACMR HEAD^ HEAD' : null,
     'git diff --name-only --diff-filter=ACMR',
     'git ls-files --others --exclude-standard',
   ].filter(Boolean);
