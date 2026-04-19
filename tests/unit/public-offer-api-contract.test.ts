@@ -28,6 +28,15 @@ vi.mock('@modules/supporting/offers/application/public-offer-document', () => ({
   sanitizePublicOfferDocument: vi.fn((document) => ({ ...document, sanitized: true })),
 }));
 
+vi.mock('@modules/supporting/feature-flags', () => ({
+  evaluateFeatureFlag: vi.fn().mockResolvedValue({
+    key: 'public-offer-v2',
+    enabled: false,
+    reason: 'missing',
+    flag: null,
+  }),
+}));
+
 import {
   declineOfferByToken,
   markOfferViewed,
@@ -35,6 +44,7 @@ import {
   viewOffer,
 } from '@modules/supporting/offers/application/offers.service';
 import { sanitizePublicOfferDocument } from '@modules/supporting/offers/application/public-offer-document';
+import { evaluateFeatureFlag } from '@modules/supporting/feature-flags';
 import {
   handleDeclinePublicOffer,
   handleGetPublicOffer,
@@ -56,9 +66,17 @@ async function json(res: Response) {
   return res.json() as Promise<Record<string, unknown>>;
 }
 
+function futureIsoDate(): string {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() + 5);
+  return date.toISOString();
+}
+
 function offerFixture(overrides: Record<string, unknown> = {}) {
+  const future = futureIsoDate();
   return {
     id: 'offer_1',
+    organizationId: 'org_1',
     title: 'Solfilm montering',
     status: 'sent',
     recipientName: 'Anna Andersson',
@@ -67,11 +85,11 @@ function offerFixture(overrides: Record<string, unknown> = {}) {
     priceDisplayMode: 'exclusive',
     totalExVat: 10000,
     totalIncVat: 12500,
-    validUntil: '2026-05-01T00:00:00.000Z',
+    validUntil: future,
     notes: 'Publik notering',
     generatedDocument: { blocks: [{ type: 'paragraph', text: 'Hej' }] },
     publicToken: 'public-token',
-    publicTokenExpiresAt: '2026-05-01T00:00:00.000Z',
+    publicTokenExpiresAt: future,
     lineItems: [{ description: 'Film', quantity: 10, unitPrice: 1000 }],
     sentAt: '2026-04-19T00:00:00.000Z',
     acceptedAt: null,
@@ -79,7 +97,6 @@ function offerFixture(overrides: Record<string, unknown> = {}) {
     signerName: null,
     signatureImage: null,
     internalNotes: 'Ska aldrig exponeras',
-    organizationId: 'org_1',
     createdBy: 'user_1',
     ...overrides,
   };
@@ -104,11 +121,34 @@ describe('public offer API contract', () => {
       status: 'sent',
       recipientEmail: 'anna@example.com',
       generatedDocument: { sanitized: true },
+      rendererVariant: 'legacy',
     });
     expect(data).not.toHaveProperty('internalNotes');
     expect(data).not.toHaveProperty('organizationId');
     expect(data).not.toHaveProperty('createdBy');
     expect(sanitizePublicOfferDocument).toHaveBeenCalledOnce();
+    expect(evaluateFeatureFlag).toHaveBeenCalledWith({
+      organizationId: 'org_1',
+      key: 'public-offer-v2',
+      environment: 'production',
+      contextKey: 'offer_1',
+    });
+  });
+
+  it('returns next renderer variant when the public offer flag is enabled', async () => {
+    vi.mocked(viewOffer).mockResolvedValue(offerFixture() as never);
+    vi.mocked(evaluateFeatureFlag).mockResolvedValue({
+      key: 'public-offer-v2',
+      enabled: true,
+      reason: 'on',
+      flag: null,
+    });
+
+    const res = await handleGetPublicOffer(request('/api/offers/public/public-token', { method: 'GET' }));
+    const body = await json(res);
+
+    expect(res.status).toBe(200);
+    expect(body.data).toMatchObject({ rendererVariant: 'next' });
   });
 
   it('marks a public offer as viewed with client metadata', async () => {
