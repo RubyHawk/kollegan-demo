@@ -60,6 +60,15 @@ This plan supports ISO/IEC 27001:2022 readiness, but certification still depends
 - Security docs exist and link to engineering evidence.
 - ISO readiness gaps are visible rather than hidden.
 
+## Feature Flag Foundation Acceptance Criteria
+
+- Feature flags are tenant-scoped by `organizationId` and environment.
+- Release flags require an owner and expiry date.
+- Flag create/update/delete operations create audit events.
+- Browser clients use `/api/v1/feature-flags`.
+- Legacy `/api/feature-flags` wrappers exist only for compatibility during API v1 migration.
+- Public-offer rewrite work must use this foundation instead of hard switching customers onto a new renderer.
+
 ## Read First
 
 - [AI engineering](AI_ENGINEERING.md)
@@ -70,4 +79,3 @@ This plan supports ISO/IEC 27001:2022 readiness, but certification still depends
 - [Refactoring playbook](REFACTORING_PLAYBOOK.md)
 - [Codebase cleanup inventory](CODEBASE_CLEANUP_INVENTORY.md)
 - [Security evidence index](security/AUDIT_EVIDENCE_INDEX.md)
-

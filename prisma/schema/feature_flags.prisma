@@ -1,0 +1,62 @@
+// Feature flags / progressive delivery
+// Generic domain. Table prefix: ff_*
+
+enum FeatureFlagType {
+  release
+  kill_switch
+  experiment
+}
+
+enum FeatureFlagRolloutMode {
+  off
+  on
+  percentage
+  users
+}
+
+model FeatureFlag {
+  id             String                 @id @default(uuid())
+  organizationId String
+  key            String
+  description    String?
+  type           FeatureFlagType        @default(release)
+  owner          String
+  environment    String                 @default("production")
+  enabled        Boolean                @default(false)
+  rolloutMode    FeatureFlagRolloutMode @default(off)
+  rolloutScope   Json                   @default("{}")
+  expiresAt      DateTime?
+  createdBy      String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization            @relation(fields: [organizationId], references: [id])
+  auditEvents  FeatureFlagAuditEvent[]
+
+  @@unique([organizationId, environment, key])
+  @@index([organizationId, environment])
+  @@index([organizationId, enabled])
+  @@index([organizationId, expiresAt])
+  @@index([deletedAt])
+  @@map("ff_feature_flags")
+}
+
+model FeatureFlagAuditEvent {
+  id             String   @id @default(uuid())
+  organizationId String
+  featureFlagId  String
+  actorId        String?
+  action         String
+  before         Json?
+  after          Json?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  featureFlag  FeatureFlag  @relation(fields: [featureFlagId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, featureFlagId, createdAt])
+  @@index([organizationId, action, createdAt])
+  @@map("ff_feature_flag_audit_events")
+}

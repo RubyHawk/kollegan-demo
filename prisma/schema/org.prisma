@@ -46,6 +46,8 @@ model Organization {
   purchaseOrderLineItems PurchaseOrderLineItem[]
   announcements Announcement[]
   meetings      Meeting[]
+  featureFlags  FeatureFlag[]
+  featureFlagAuditEvents FeatureFlagAuditEvent[]
 
   @@index([slug])
   @@index([orgType])
