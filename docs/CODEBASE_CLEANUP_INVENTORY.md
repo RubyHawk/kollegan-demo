@@ -2,6 +2,12 @@
 
 Files are not deleted just because they look messy. They are inventoried, classified, verified, and removed in focused cleanup PRs.
 
+This document is generated from the current checkout. Run:
+
+```txt
+npm run inventory:codebase:write
+```
+
 ## Classes
 
 - `active-production`
@@ -13,31 +19,197 @@ Files are not deleted just because they look messy. They are inventoried, classi
 - `safe-to-delete`
 - `approved-exception`
 
+## Inventory Method
+
+- tracked file listing via `git ls-files`,
+- line-count scan for hand-written source and docs,
+- static import/export graph for TypeScript and JavaScript,
+- Next.js route entry detection,
+- module `index.ts` entry detection,
+- demo/test/generated classification,
+- legacy API wrapper classification.
+
+Static analysis is a triage tool, not deletion proof. A `dead-candidate` still needs manual verification for dynamic imports, string routes, framework conventions, tests, public assets, Prisma references, and production usage.
+
+## Snapshot Summary
+
+| Metric | Count |
+|---|---:|
+| Tracked files scanned | 711 |
+| Source files scanned | 582 |
+| Active production source files | 425 |
+| Files above 1000 lines | 3 |
+| Files above 500 lines | 24 |
+| Legacy API wrappers | 111 |
+| Dead-candidate review rows | 11 |
+
 ## Current Monolith Inventory
 
-Measured from `origin/main` on 2026-04-19. Generated files are excluded.
-
 | Lines | Classification | File |
-|---:|---|---|
-| 2885 | active-production | `src/app/offerter/publik/[token]/page.tsx` |
-| 2796 | active-production | `src/app/(dashboard)/(shell)/offerter/page.tsx` |
+| --- | --- | --- |
 | 2103 | active-production | `src/modules/supporting/offers/application/document-generator.ts` |
 | 1657 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/BlockSettingsSidebar.tsx` |
 | 1061 | active-production | `src/modules/core/voice/ui/components/voice-contact.tsx` |
+
+## Files Above 500 Lines
+
+| Lines | Classification | File |
+| --- | --- | --- |
 | 991 | active-production | `src/shared/ui/sidebar.tsx` |
 | 937 | active-production | `src/app/(dashboard)/(shell)/_components/DashboardView.tsx` |
-| 795 | active-demo | `src/modules/demos/hotel/ui/components/calendar-tab.tsx` |
+| 873 | active-demo | `src/modules/demos/hotel/ui/components/calendar-tab.tsx` |
 | 847 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/extensions/ImageNodeView.tsx` |
 | 804 | active-production | `src/modules/supporting/offers/application/offer-pdf.ts` |
 | 774 | active-production | `src/modules/supporting/offers/application/offers.service.ts` |
 | 769 | active-production | `src/app/(dashboard)/(shell)/produkter/_components/products-page-client.tsx` |
-| 665 | active-production | `src/app/(dashboard)/(shell)/installningar/utseende/page.tsx` |
-| 635 | active-demo | `src/modules/demos/hotel/activity/components/activity-log.tsx` |
+| 712 | active-production | `src/app/(dashboard)/(shell)/installningar/utseende/page.tsx` |
+| 669 | active-demo | `src/modules/demos/hotel/activity/components/activity-log.tsx` |
 | 647 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/DocumentCanvas.tsx` |
-| 583 | active-production | `src/modules/supporting/offers/infrastructure/companies.repository.ts` |
-| 564 | active-production | `src/modules/supporting/crm/ui/components/crm-tab.tsx` |
-| 540 | active-production | `src/platform/api/openapi.ts` |
-| 504 | active-production | `src/modules/supporting/offers/infrastructure/offers.repository.ts` |
+| 635 | active-production | `src/modules/supporting/offers/infrastructure/companies.repository.ts` |
+| 610 | test-only | `tests/unit/api-handler.test.ts` |
+| 602 | active-production | `src/modules/supporting/crm/ui/components/crm-tab.tsx` |
+| 557 | active-production | `src/platform/api/openapi.ts` |
+| 543 | active-production | `src/modules/supporting/offers/infrastructure/offers.repository.ts` |
+| 537 | active-production | `src/app/(dashboard)/(shell)/offerter/page.tsx` |
+| 534 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/EmailEditor.tsx` |
+| 519 | active-production | `src/app/(dashboard)/(shell)/mallar/[id]/page.tsx` |
+| 513 | active-production | `src/modules/supporting/offers/application/offer-email-dispatch.ts` |
+| 510 | active-production | `src/app/(dashboard)/(shell)/companies/_components/companies-page-client.tsx` |
+| 506 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/TemplateEditor.tsx` |
+
+## Dead-Candidate Review Queue
+
+| File | Classification | Reason |
+| --- | --- | --- |
+| src/app/(dashboard)/(shell)/mallar/_components/section-presets.tsx | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
+| src/modules/core/voice/events/publishers/voice-session.publisher.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
+| src/modules/supporting/crm/events/publishers/contact.publisher.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
+| src/platform/persistence/json-store.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
+| src/platform/queue/index.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
+| src/shared/lib/api/feature-flags.api.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
+| src/shared/lib/date-format.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
+| src/shared/stores/connection-store.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
+| src/shared/ui/glass-panel.tsx | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
+| src/shared/ui/tabs.tsx | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
+| src/shared/ui/theme-toggle.tsx | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
+
+## Legacy API Wrapper Review Queue
+
+These are compatibility wrappers and are not junk until client usage proves they can be retired.
+
+| File |
+| --- |
+| src/app/api/admin/access-review/route.ts |
+| src/app/api/admin/compliance/controls/[id]/evidence/route.ts |
+| src/app/api/admin/compliance/controls/route.ts |
+| src/app/api/admin/compliance/evidence/collect/route.ts |
+| src/app/api/admin/compliance/policies/[id]/route.ts |
+| src/app/api/admin/compliance/policies/route.ts |
+| src/app/api/admin/compliance/report/route.ts |
+| src/app/api/admin/compliance/risks/[id]/route.ts |
+| src/app/api/admin/compliance/risks/route.ts |
+| src/app/api/ai/availability/check/route.ts |
+| src/app/api/ai/calendar/book/route.ts |
+| src/app/api/ai/calendar/check/route.ts |
+| src/app/api/ai/crm/update/route.ts |
+| src/app/api/ai/customer/get/route.ts |
+| src/app/api/ai/hotel-info/route.ts |
+| src/app/api/ai/rooms/cancel/route.ts |
+| src/app/api/ai/rooms/lock/route.ts |
+| src/app/api/ai/transcripts/start/route.ts |
+| src/app/api/announcements/[id]/route.ts |
+| src/app/api/announcements/route.ts |
+| src/app/api/auth/change-password/route.ts |
+| src/app/api/auth/dev-login/route.ts |
+| src/app/api/auth/login/route.ts |
+| src/app/api/auth/logout/route.ts |
+| src/app/api/auth/mfa/backup-codes/regenerate/route.ts |
+| src/app/api/auth/mfa/backup-codes/route.ts |
+| src/app/api/auth/mfa/disable/route.ts |
+| src/app/api/auth/mfa/enable/route.ts |
+| src/app/api/auth/mfa/setup/route.ts |
+| src/app/api/auth/mfa/verify/route.ts |
+| src/app/api/auth/profile/route.ts |
+| src/app/api/auth/refresh/route.ts |
+| src/app/api/auth/register/route.ts |
+| src/app/api/auth/webauthn/authenticate/options/route.ts |
+| src/app/api/auth/webauthn/authenticate/verify/route.ts |
+| src/app/api/auth/webauthn/register/options/route.ts |
+| src/app/api/auth/webauthn/register/verify/route.ts |
+| src/app/api/calendar/events/route.ts |
+| src/app/api/companies/[id]/members/route.ts |
+| src/app/api/companies/[id]/route.ts |
+| src/app/api/companies/route.ts |
+| src/app/api/crm/contacts/[id]/route.ts |
+| src/app/api/crm/contacts/route.ts |
+| src/app/api/cron/offers/expire/route.ts |
+| src/app/api/demos/hotel/activities/[id]/route.ts |
+| src/app/api/demos/hotel/activities/route.ts |
+| src/app/api/demos/hotel/amenities/[id]/route.ts |
+| src/app/api/demos/hotel/amenities/route.ts |
+| src/app/api/demos/hotel/info/route.ts |
+| src/app/api/demos/hotel/restaurants/[id]/route.ts |
+| src/app/api/demos/hotel/restaurants/route.ts |
+| src/app/api/demos/hotel/rooms/available/route.ts |
+| src/app/api/demos/hotel/rooms/book/route.ts |
+| src/app/api/demos/hotel/rooms/cancel/route.ts |
+| src/app/api/demos/hotel/rooms/confirm/route.ts |
+| src/app/api/demos/hotel/rooms/lock/route.ts |
+| src/app/api/demos/hotel/rooms/route.ts |
+| src/app/api/demos/hotel/seed/route.ts |
+| src/app/api/docs/route.ts |
+| src/app/api/docs/ui/route.ts |
+| src/app/api/feature-flags/[id]/audit/route.ts |
+| src/app/api/feature-flags/[id]/route.ts |
+| src/app/api/feature-flags/evaluate/route.ts |
+| src/app/api/feature-flags/route.ts |
+| src/app/api/health/route.ts |
+| src/app/api/kunder/[id]/route.ts |
+| src/app/api/kunder/route.ts |
+| src/app/api/leads/[id]/activities/route.ts |
+| src/app/api/leads/[id]/convert/route.ts |
+| src/app/api/leads/[id]/route.ts |
+| src/app/api/leads/route.ts |
+| src/app/api/leverantorer/[id]/route.ts |
+| src/app/api/leverantorer/route.ts |
+| src/app/api/meetings/[id]/route.ts |
+| src/app/api/meetings/route.ts |
+| src/app/api/messages/conversations/[id]/messages/route.ts |
+| src/app/api/messages/conversations/route.ts |
+| src/app/api/n8n/crm/route.ts |
+| src/app/api/n8n/leads/route.ts |
+| src/app/api/offers/[id]/pdf/route.ts |
+| src/app/api/offers/[id]/route.ts |
+| src/app/api/offers/bulk-send/route.ts |
+| src/app/api/offers/counts/route.ts |
+| src/app/api/offers/products/[id]/route.ts |
+| src/app/api/offers/products/categories/[id]/route.ts |
+| src/app/api/offers/products/categories/route.ts |
+| src/app/api/offers/products/route.ts |
+| src/app/api/offers/public/[token]/decline/route.ts |
+| src/app/api/offers/public/[token]/pdf/route.ts |
+| src/app/api/offers/public/[token]/route.ts |
+| src/app/api/offers/public/[token]/sign/route.ts |
+| src/app/api/offers/public/[token]/view/route.ts |
+| src/app/api/offers/route.ts |
+| src/app/api/org/email-settings/route.ts |
+| src/app/api/org/notification-recipients/route.ts |
+| src/app/api/projects/[id]/route.ts |
+| src/app/api/projects/route.ts |
+| src/app/api/projekt/[id]/advance/route.ts |
+| src/app/api/projekt/[id]/details/route.ts |
+| src/app/api/projekt/[id]/purchase-orders/[poId]/receive/route.ts |
+| src/app/api/projekt/[id]/purchase-orders/[poId]/submit/route.ts |
+| src/app/api/projekt/[id]/purchase-orders/route.ts |
+| src/app/api/projekt/[id]/route.ts |
+| src/app/api/projekt/counts/route.ts |
+| src/app/api/projekt/route.ts |
+| src/app/api/sse/route.ts |
+| src/app/api/staff/route.ts |
+| src/app/api/templates/[id]/route.ts |
+| src/app/api/templates/assets/route.ts |
+| src/app/api/templates/preview/route.ts |
+| src/app/api/templates/route.ts |
 
 ## Rules
 
@@ -46,7 +218,17 @@ Measured from `origin/main` on 2026-04-19. Generated files are excluded.
 - Cleanup PRs must not include behavior changes.
 - Demo files are not junk if they support demo routes.
 - Legacy API wrappers are not junk until usage is verified gone.
+- A file may move from `dead-candidate` to `safe-to-delete` only after import graph, route strings, package scripts, tests, Prisma references, and public asset references have been checked.
 
 ## Approved Exceptions
 
 None.
+
+## Cleanup Workflow
+
+1. Generate this inventory.
+2. Pick a small batch of `dead-candidate` files.
+3. Verify each file with import search, route search, package scripts, tests, Prisma schema, and public asset references.
+4. Move confirmed files to `safe-to-delete` in a dedicated cleanup PR.
+5. Delete only confirmed files.
+6. Run typecheck, lint, tests, build, dependency checks, file-size checks, and manual smoke tests for affected flows.
