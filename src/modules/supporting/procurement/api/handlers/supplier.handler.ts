@@ -13,7 +13,9 @@ function extractToken(req: NextRequest): string {
 async function requireStaff(req: NextRequest) {
   const payload = await verifyToken(extractToken(req));
   if (!payload.orgId) throw Errors.forbidden('No organization context');
-  if (!payload.roles.some((r) => ['super_admin', 'admin', 'user'].includes(r))) throw Errors.forbidden('Staff role required');
+  if (payload.userType !== 'staff' && !payload.roles.some((r) => ['super_admin', 'admin', 'user'].includes(r))) {
+    throw Errors.forbidden('Staff role required');
+  }
   return payload;
 }
 

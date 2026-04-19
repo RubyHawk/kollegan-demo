@@ -1,7 +1,7 @@
 import { getSessionUser } from '@platform/auth/session';
 import { prisma } from '@platform/database/prisma';
 import DashboardView from './_components/DashboardView';
-import type { OfferActivityPoint, RecentOffer } from './_components/DashboardView';
+import type { OfferActivityPoint, ProjectStage, ProjectStats, RecentOffer } from './_components/DashboardView';
 
 // ─── Swedish-timezone greeting ────────────────────────────────────────────────
 
@@ -53,7 +53,7 @@ function makeDateLabel() {
 // ─── Data layer ───────────────────────────────────────────────────────────────
 
 async function getDashboardData(orgId: string) {
-  const [counts, recentRaw, valueRows, activityRaw] = await Promise.all([
+  const [counts, recentRaw, valueRows, activityRaw, projectRows] = await Promise.all([
     prisma.offer.groupBy({
       by: ['status'],
       where: { organizationId: orgId, deletedAt: null },
@@ -68,6 +68,12 @@ async function getDashboardData(orgId: string) {
         id: true, title: true, status: true, offerNumber: true,
         recipientName: true, recipientCompany: true,
         totalIncVat: true, createdAt: true, validUntil: true,
+        projects: {
+          where: { deletedAt: null },
+          select: { id: true, stage: true, completedAt: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
       },
     }),
 
@@ -80,6 +86,12 @@ async function getDashboardData(orgId: string) {
     prisma.offer.findMany({
       where: { organizationId: orgId, deletedAt: null },
       select: { createdAt: true, status: true },
+    }),
+
+    prisma.project.groupBy({
+      by: ['stage'],
+      where: { organizationId: orgId, deletedAt: null },
+      _count: { id: true },
     }),
   ]);
 
@@ -104,6 +116,27 @@ async function getDashboardData(orgId: string) {
   });
 
   // Serialize for client (Decimal → number, Date → string)
+  const projectStageCounts: Record<ProjectStage, number> = {
+    details: 0,
+    ordered: 0,
+    arrived: 0,
+    in_progress: 0,
+    completed: 0,
+  };
+  let projectTotal = 0;
+  for (const row of projectRows) {
+    const stage = row.stage as ProjectStage;
+    projectStageCounts[stage] = row._count.id;
+    projectTotal += row._count.id;
+  }
+
+  const projectStats: ProjectStats = {
+    total: projectTotal,
+    active: projectStageCounts.details + projectStageCounts.ordered + projectStageCounts.arrived + projectStageCounts.in_progress,
+    completed: projectStageCounts.completed,
+    stages: projectStageCounts,
+  };
+
   const recentOffers: RecentOffer[] = recentRaw.map(o => ({
     id:               o.id,
     title:            o.title,
@@ -114,6 +147,11 @@ async function getDashboardData(orgId: string) {
     totalIncVat:      Number(o.totalIncVat ?? 0),
     createdAt:        o.createdAt.toISOString(),
     validUntil:       o.validUntil?.toISOString() ?? null,
+    project:          o.projects[0] ? {
+      id: o.projects[0].id,
+      stage: o.projects[0].stage as ProjectStage,
+      completedAt: o.projects[0].completedAt?.toISOString() ?? null,
+    } : null,
   }));
 
   const activityData: OfferActivityPoint[] = activityRaw.map((offer) => ({
@@ -121,7 +159,7 @@ async function getDashboardData(orgId: string) {
     status: offer.status,
   }));
 
-  return { countMap, total, recentOffers, acceptedValue, pipelineValue, acceptanceRate, expiringSoon, activityData };
+  return { countMap, total, recentOffers, acceptedValue, pipelineValue, acceptanceRate, expiringSoon, activityData, projectStats };
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

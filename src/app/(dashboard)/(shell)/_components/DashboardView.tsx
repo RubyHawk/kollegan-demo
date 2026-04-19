@@ -24,11 +24,27 @@ export interface RecentOffer {
   totalIncVat: number;
   createdAt: string;
   validUntil: string | null;
+  project: OfferProjectSummary | null;
 }
 
 export interface OfferActivityPoint {
   createdAt: string;
   status: string;
+}
+
+export type ProjectStage = 'details' | 'ordered' | 'arrived' | 'in_progress' | 'completed';
+
+export interface OfferProjectSummary {
+  id: string;
+  stage: ProjectStage;
+  completedAt: string | null;
+}
+
+export interface ProjectStats {
+  total: number;
+  active: number;
+  completed: number;
+  stages: Record<ProjectStage, number>;
 }
 
 export interface DashboardViewProps {
@@ -43,6 +59,7 @@ export interface DashboardViewProps {
   countMap: Record<string, number>;
   recentOffers: RecentOffer[];
   activityData: OfferActivityPoint[];
+  projectStats: ProjectStats;
 }
 
 type RangePreset = '7d' | '30d' | '90d' | '365d' | 'custom';
@@ -85,6 +102,16 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string }> 
   accepted: { label: 'Accepterad', color: 'var(--status-accepted-text)', bg: 'var(--status-accepted-bg)' },
   declined: { label: 'Avvisad',    color: 'var(--status-declined-text)', bg: 'var(--status-declined-bg)' },
   expired:  { label: 'Utgången',   color: 'var(--status-expired-text)',  bg: 'var(--status-expired-bg)' },
+};
+
+const PROJECT_STAGE_ORDER: ProjectStage[] = ['details', 'ordered', 'arrived', 'in_progress', 'completed'];
+
+const PROJECT_STAGE_META: Record<ProjectStage, { label: string; query: string; color: string; bg: string }> = {
+  details:     { label: 'Uppgifter', query: 'uppgifter', color: 'var(--text-secondary)', bg: 'var(--surface-2)' },
+  ordered:     { label: 'Beställt', query: 'bestallt', color: 'var(--status-sent-text)', bg: 'var(--status-sent-bg)' },
+  arrived:     { label: 'Ankommet', query: 'ankommet', color: 'var(--status-viewed-text)', bg: 'var(--status-viewed-bg)' },
+  in_progress: { label: 'Pågår', query: 'pagar', color: 'var(--accent)', bg: 'var(--accent-subtle)' },
+  completed:   { label: 'Klart', query: 'klart', color: 'var(--status-accepted-text)', bg: 'var(--status-accepted-bg)' },
 };
 
 const RANGE_OPTIONS: Array<{ id: RangePreset; label: string; days?: number }> = [
@@ -236,6 +263,22 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // ─── KPI strip item ────────────────────────────────────────────────────────────
+
+function ProjectStageBadge({ project }: { project: OfferProjectSummary | null }) {
+  if (!project) return null;
+  const meta = PROJECT_STAGE_META[project.stage];
+  const label = project.stage === 'completed' ? 'Projekt klart' : `Projekt: ${meta.label}`;
+
+  return (
+    <span
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold"
+      style={{ background: meta.bg, color: meta.color, borderColor: `color-mix(in srgb, ${meta.color} 32%, var(--border))` }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: meta.color }} />
+      {label}
+    </span>
+  );
+}
 
 function KpiItem({ label, value, sub, icon, tone }: {
   label: string; value: React.ReactNode; sub: string; icon: React.ReactNode; tone: string;
@@ -397,6 +440,72 @@ function StatusDistributionCard({ countMap, total }: { countMap: Record<string, 
 
 // ─── Recharts tooltip ──────────────────────────────────────────────────────────
 
+function ProjectStatsCard({ stats }: { stats: ProjectStats }) {
+  const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+
+  return (
+    <motion.div variants={fadeUp} className="rounded-[20px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-4 py-3.5 shadow-[0_14px_34px_rgba(0,0,0,0.06)]">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">Projektläge</h2>
+          <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">Leverans efter accepterade offerter</p>
+        </div>
+        <Link href="/projekt" className="rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-2.5 py-1 text-[10px] font-semibold text-[var(--accent)] transition-colors hover:bg-[var(--surface-hover)]">
+          Alla projekt
+        </Link>
+      </div>
+
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Aktiva</p>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{stats.active}</p>
+        </div>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Klart</p>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--status-accepted-text)]">{stats.completed}</p>
+        </div>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Andel</p>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{completionRate}%</p>
+        </div>
+      </div>
+
+      <div className="mt-3 space-y-2">
+        {PROJECT_STAGE_ORDER.map((stage) => {
+          const meta = PROJECT_STAGE_META[stage];
+          const count = stats.stages[stage] ?? 0;
+          const percent = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
+          return (
+            <Link
+              key={stage}
+              href={`/projekt?stage=${meta.query}`}
+              className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2 transition-colors hover:bg-[var(--surface-hover)]"
+            >
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: meta.color }} />
+              <div className="min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-[11px] font-semibold text-[var(--text-primary)]">{meta.label}</span>
+                  <span className="text-[10px] tabular-nums text-[var(--text-muted)]">{percent}%</span>
+                </div>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${percent}%` }}
+                    transition={{ duration: 0.45, ease: 'easeOut' }}
+                    className="h-full rounded-full"
+                    style={{ background: meta.color }}
+                  />
+                </div>
+              </div>
+              <span className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">{count}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
 function ChartTooltip({ active, payload, label }: {
   active?: boolean;
   payload?: Array<{ value: number; name: string; color: string }>;
@@ -453,7 +562,7 @@ function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
             { lbl: 'Skapade', val: createdTotal },
             { lbl: 'Vunna',   val: acceptedTotal },
             { lbl: 'Vinstgrad',   val: `${successRate}%` },
-          ].map((item, i, arr) => (
+          ].map((item, i) => (
             <div key={item.lbl} className="flex items-center gap-1.5">
               {i > 0 && <span className="h-3 w-px bg-[var(--border)]"/>}
               <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">{item.lbl}</span>
@@ -628,7 +737,10 @@ function OffersPaginated({ offers }: { offers: RecentOffer[] }) {
           <motion.div key={offer.id} variants={fadeIn}>
             <Link
               href={`/offerter/${offer.id}`}
-              className="grid gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--surface-hover)] md:grid-cols-[72px_minmax(0,1fr)_auto_120px_76px] md:items-center"
+              className={cn(
+                'grid gap-3 border-l-4 border-l-transparent px-5 py-3.5 transition-colors hover:bg-[var(--surface-hover)] md:grid-cols-[72px_minmax(0,1fr)_auto_auto_120px_76px] md:items-center',
+                offer.project?.stage === 'completed' && 'border-l-[var(--status-accepted-text)] bg-[color-mix(in_srgb,var(--status-accepted-bg)_24%,var(--surface-0))]',
+              )}
             >
               <div className="font-mono text-[11px] text-[var(--text-muted)]">
                 {offer.offerNumber ? `#${offer.offerNumber}` : '—'}
@@ -640,6 +752,7 @@ function OffersPaginated({ offers }: { offers: RecentOffer[] }) {
                 </p>
               </div>
               <div className="md:justify-self-start"><StatusBadge status={offer.status}/></div>
+              <div className="md:justify-self-start"><ProjectStageBadge project={offer.project}/></div>
               <div className="text-sm font-semibold tabular-nums text-[var(--text-primary)] md:text-right">{fmtSEK(offer.totalIncVat)}</div>
               <div className="text-sm text-[var(--text-muted)] md:text-right">{fmtDate(offer.createdAt)}</div>
             </Link>
@@ -680,7 +793,7 @@ function OffersPaginated({ offers }: { offers: RecentOffer[] }) {
 export default function DashboardView({
   greetingText, greetingSub, dateLabel,
   acceptedValue, pipelineValue, acceptanceRate, expiringSoon,
-  total, countMap, recentOffers, activityData,
+  total, countMap, recentOffers, activityData, projectStats,
 }: DashboardViewProps) {
   const activePipeline = (countMap.sent ?? 0) + (countMap.viewed ?? 0);
 
@@ -812,6 +925,7 @@ export default function DashboardView({
 
           {/* Right sidebar */}
           <div className="space-y-3">
+            <ProjectStatsCard stats={projectStats}/>
             <StatusDistributionCard countMap={countMap} total={total}/>
             <TrendCard activityData={activityData}/>
           </div>

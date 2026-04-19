@@ -16,6 +16,7 @@
  */
 
 import { useEffect, useCallback, useRef, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { fetchWithRefresh } from '@shared/lib/api-client';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@shared/lib/utils';
@@ -50,7 +51,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useOffersListStore, PAGE_SIZE } from './_store/offers-list.store';
 import { useOffersFormStore } from './_store/offers-form.store';
-import type { OfferStatus, OfferPriceDisplayMode, LineItem, Offer, OfferTemplate, OfferProduct, ContactResult, CompanyResult } from './_store/types';
+import type { OfferStatus, OfferPriceDisplayMode, OfferProjectStage, LineItem, Offer, OfferTemplate, OfferProduct, ContactResult, CompanyResult } from './_store/types';
 import { EMPTY_LINE, EMPTY_FORM } from './_store/types';
 import { OfferTemplateCard } from './_components/offer-template-card';
 import { OfferTemplatePreviewModal } from './_components/offer-template-preview-modal';
@@ -85,6 +86,14 @@ const STATUS_LABEL: Record<OfferStatus, string> = {
   accepted: 'Accepterad',
   declined: 'Avvisad',
   expired:  'Utgången',
+};
+
+const PROJECT_STAGE_META: Record<OfferProjectStage, { label: string; bg: string; color: string }> = {
+  details:     { label: 'Uppgifter', bg: 'var(--surface-2)', color: 'var(--text-secondary)' },
+  ordered:     { label: 'Beställt', bg: 'var(--status-sent-bg)', color: 'var(--status-sent-text)' },
+  arrived:     { label: 'Ankommet', bg: 'var(--status-viewed-bg)', color: 'var(--status-viewed-text)' },
+  in_progress: { label: 'Pågår', bg: 'var(--accent-subtle)', color: 'var(--accent)' },
+  completed:   { label: 'Klart', bg: 'var(--status-accepted-bg)', color: 'var(--status-accepted-text)' },
 };
 
 const VALIDITY_OPTIONS = [
@@ -157,6 +166,35 @@ function canRemind(offer: Offer): boolean {
   if (offer.status !== 'sent' && offer.status !== 'viewed') return false;
   if (!offer.reminderSentAt) return true;
   return Date.now() - new Date(offer.reminderSentAt).getTime() >= 3 * 24 * 60 * 60 * 1000;
+}
+
+function ProjectStageBadge({ offer }: { offer: Offer }) {
+  if (offer.status !== 'accepted') return null;
+  const project = offer.project;
+
+  if (!project) {
+    return (
+      <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dashed border-[var(--border)] bg-[var(--surface-1)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-muted)]">
+        <span className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)]" />
+        Projekt saknas
+      </span>
+    );
+  }
+
+  const meta = PROJECT_STAGE_META[project.stage];
+  const label = project.stage === 'completed' ? 'Projekt klart' : `Projekt: ${meta.label}`;
+
+  return (
+    <Link
+      href={`/projekt/${project.id}`}
+      className="inline-flex w-fit items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors hover:bg-[var(--surface-hover)]"
+      style={{ background: meta.bg, color: meta.color, borderColor: `color-mix(in srgb, ${meta.color} 32%, var(--border))` }}
+      title="Öppna projektet"
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: meta.color }} />
+      {label}
+    </Link>
+  );
 }
 
 function describeBlockingIssue(issue: BlockingErrorPayload): { key: string; text: string } {
@@ -2327,15 +2365,28 @@ export default function OffersPage() {
             </div>
           )}
           {offers.map((offer) => (
-            <div key={offer.id} className={cn('rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4', offer.status === 'expired' && 'bg-amber-50/40 dark:bg-amber-900/10')}>
+            <div
+              key={offer.id}
+              className={cn(
+                'relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4',
+                offer.project?.stage === 'completed' && 'border-[color-mix(in_srgb,var(--status-accepted-text)_38%,var(--border))]',
+                offer.status === 'expired' && 'bg-amber-50/40 dark:bg-amber-900/10',
+              )}
+            >
+              {offer.project?.stage === 'completed' && (
+                <span className="absolute inset-y-0 left-0 w-1 bg-[var(--status-accepted-text)]" aria-hidden="true" />
+              )}
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="min-w-0">
                   <p className="font-semibold text-sm text-[var(--text-primary)] truncate">{offer.title}</p>
                   <p className="text-[11px] text-[var(--text-muted)] font-mono">{fmtOfferNumber(offer)}</p>
                 </div>
-                <span className={cn('shrink-0 text-[10px] px-2.5 py-1 rounded-full font-semibold', STATUS_STYLES[offer.status])}>
-                  {STATUS_LABEL[offer.status]}
-                </span>
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <span className={cn('text-[10px] px-2.5 py-1 rounded-full font-semibold', STATUS_STYLES[offer.status])}>
+                    {STATUS_LABEL[offer.status]}
+                  </span>
+                  <ProjectStageBadge offer={offer} />
+                </div>
               </div>
               <div className="flex items-end justify-between gap-3">
                 <div>
@@ -2433,7 +2484,15 @@ export default function OffersPage() {
               </thead>
               <tbody>
                 {offers.map((offer, i) => (
-                  <tr key={offer.id} className={cn('group hover:bg-[var(--surface-alt)] transition-colors', i > 0 && 'border-t border-[var(--border)]', offer.status === 'expired' && 'bg-amber-50/40 dark:bg-amber-900/10')}>
+                  <tr
+                    key={offer.id}
+                    className={cn(
+                      'group border-l-4 border-l-transparent hover:bg-[var(--surface-alt)] transition-colors',
+                      i > 0 && 'border-t border-[var(--border)]',
+                      offer.project?.stage === 'completed' && 'border-l-[var(--status-accepted-text)] bg-[color-mix(in_srgb,var(--status-accepted-bg)_28%,var(--surface-0))]',
+                      offer.status === 'expired' && 'bg-amber-50/40 dark:bg-amber-900/10',
+                    )}
+                  >
                     {/* Checkbox */}
                     <td className="px-3 py-3 w-8">
                       {offer.status === 'draft' && (
@@ -2460,6 +2519,7 @@ export default function OffersPage() {
                         <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold w-fit', STATUS_STYLES[offer.status])}>
                           {STATUS_LABEL[offer.status]}
                         </span>
+                        <ProjectStageBadge offer={offer} />
                         {offer.status === 'draft' && (
                           <button type="button" onClick={() => setConfirmSend(offer)} disabled={acting === offer.id}
                             className="text-[10px] font-medium text-[var(--accent)] hover:underline transition-colors text-left disabled:opacity-40 flex items-center gap-0.5">
