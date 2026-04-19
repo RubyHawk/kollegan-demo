@@ -2,23 +2,9 @@
 
 /* eslint react-hooks/exhaustive-deps: "off" */
 
-/**
- * /offers
- *
- * Offer / Quotation Builder.
- * - List of all offers with status tabs + search
- * - Slide-out panel to create a new offer with line-item editor
- * - Template dropdown: select a WYSIWYG template before creating
- * - Real-time totals (ex VAT, VAT amount, total inc VAT)
- * - Send / Accept / Decline actions
- * - Preview generated document in modal
- * - Copy public signing link to clipboard
- */
-
 import { useEffect, useCallback, useRef, useMemo, useState } from 'react';
 import { fetchWithRefresh } from '@shared/lib/api-client';
 import { AnimatePresence, motion } from 'framer-motion';
-import { cn } from '@shared/lib/utils';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import { useToast } from '@shared/ui/toast/toast-context';
 import ToastContainer from '@shared/ui/toast/toast-container';
@@ -37,9 +23,18 @@ import { OfferWizardRecipientCard } from './_components/offer-wizard-recipient-c
 import { OfferWizardDetailsCard } from './_components/offer-wizard-details-card';
 import { OfferWizardLineItemsCard } from './_components/offer-wizard-line-items-card';
 import { OfferWizardFooter } from './_components/offer-wizard-footer';
+import { OfferWizardStepTwoHeader } from './_components/offer-wizard-step-two-header';
 import { OffersLoadingState } from './_components/offers-loading-state';
 import { OffersMobileCards } from './_components/offers-mobile-cards';
 import { OffersDesktopTable } from './_components/offers-desktop-table';
+import {
+  BulkActionBar,
+  BulkSendResultBanner,
+  DraftSavedToast,
+  OffersDashboardToolbar,
+  OffersNoticeStack,
+  OffersPageHeader,
+} from './_components/offers-dashboard-controls';
 import {
   BlockingAlertCard,
   GenericErrorBanner,
@@ -47,7 +42,6 @@ import {
   type BlockingAlert,
   type BlockingErrorPayload,
 } from './_components/offer-blocking-alerts';
-import { STATUS_TABS } from './_lib/offers-dashboard-constants';
 import {
   normalizeSearchValue,
   pricingSummary,
@@ -102,7 +96,6 @@ export default function OffersPage() {
   } = useOffersFormStore();
 
   // ── Local refs (non-serializable / timer handles) ─────────────────────────
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveAndSendRef = useRef(false);
   const contactSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const livePreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -682,50 +675,25 @@ export default function OffersPage() {
   return (
     <div className="px-8 py-10 max-w-6xl mx-auto">
 
-      {/* Header */}
-      <div className="mb-8 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)] mb-1">Offerter</h1>
-          <p className="text-sm text-[var(--text-muted)]">Skapa, skicka och följ upp offerter direkt från plattformen.</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => { setShowForm(true); setEditingOfferId(null); setForm(EMPTY_FORM); dismissNotices(); setWizardStep(1); setLivePreviewHtml(null); setCachedTplContent(null); }}
-            className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Ny offert
-          </button>
-        </div>
-      </div>
+      <OffersPageHeader
+        onCreateOffer={() => {
+          setShowForm(true);
+          setEditingOfferId(null);
+          setForm(EMPTY_FORM);
+          dismissNotices();
+          setWizardStep(1);
+          setLivePreviewHtml(null);
+          setCachedTplContent(null);
+        }}
+      />
 
-      {/* Error banner */}
-      {blockingAlert ? (
-        <div className="mb-6">
-          <BlockingAlertCard alert={blockingAlert} onDismiss={dismissNotices} />
-        </div>
-      ) : error ? (
-        <div className="mb-6">
-          <GenericErrorBanner message={error} onDismiss={dismissNotices} />
-        </div>
-      ) : null}
+      <OffersNoticeStack
+        blockingAlert={blockingAlert}
+        error={error}
+        onDismiss={dismissNotices}
+      />
 
-      {/* Bulk send result banner */}
-      {bulkResult && (
-        <div className="mb-6 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400 flex items-center justify-between gap-3">
-          <span>
-            {bulkResult.sent} offert{bulkResult.sent !== 1 ? 'er' : ''} skickade
-            {bulkResult.failed > 0 ? ` · ${bulkResult.failed} misslyckades` : ''}
-          </span>
-          <button onClick={() => setBulkResult(null)} className="shrink-0 opacity-60 hover:opacity-100">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-      )}
+      <BulkSendResultBanner result={bulkResult} onDismiss={() => setBulkResult(null)} />
 
       {/* ── Guided offer wizard — full-screen split layout ── */}
       <AnimatePresence>
@@ -792,26 +760,12 @@ export default function OffersPage() {
                 {/* ════ STEP 2: Form ════ */}
                 {wizardStep === 2 && (
                   <>
-                    {/* Micro header */}
-                    <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 bg-[var(--surface-alt)] border-b border-[var(--border)]/50">
-                      <span className="flex-1 text-[10px] text-[var(--text-muted)] truncate">
-                        {editingOfferId ? 'Redigera offert' : 'Ny offert'}
-                        {form.templateId && ` · ${templates.find((t) => t.id === form.templateId)?.name ?? ''}`}
-                      </span>
-                      {!editingOfferId && (
-                        <button type="button" onClick={() => setWizardStep(1)}
-                          className="shrink-0 text-[10px] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
-                          Byt mall
-                        </button>
-                      )}
-                      <button onClick={closeWizard} title="Stäng"
-                        className="lg:hidden shrink-0 p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                      </button>
-                    </div>
-                    <div className="h-0.5 w-full bg-[var(--accent)]"/>
+                    <OfferWizardStepTwoHeader
+                      editingOfferId={editingOfferId}
+                      templateLabel={form.templateId ? selectedTemplate?.name ?? '' : null}
+                      onBackToTemplates={() => setWizardStep(1)}
+                      onClose={closeWizard}
+                    />
 
                     {/* Scrollable body */}
                     <div className="flex-1 overflow-y-auto">
@@ -908,99 +862,26 @@ export default function OffersPage() {
       )}
       </AnimatePresence>
 
-      {/* Floating bulk action bar */}
-      {selected.size > 0 && (
-        <div className="mb-4 flex items-center gap-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--surface)] px-4 py-3 shadow-md">
-          <span className="text-sm font-medium text-[var(--text-primary)]">
-            {selected.size} vald{selected.size !== 1 ? 'a' : ''}
-            {selectedDraftCount > 0 && selectedDraftCount < selected.size && ` · ${selectedDraftCount} utkast`}
-          </span>
-          <div className="flex-1"/>
-          {selectedDraftCount > 0 && (
-            <button
-              onClick={() => void doBulkSend()}
-              disabled={bulkSending}
-              className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              {bulkSending ? (
-                <>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                  </svg>
-                  Skickar…
-                </>
-              ) : (
-                `Skicka ${selectedDraftCount} offert${selectedDraftCount !== 1 ? 'er' : ''}`
-              )}
-            </button>
-          )}
-          <button
-            onClick={() => setSelected(new Set())}
-            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-          >
-            Rensa urval
-          </button>
-        </div>
-      )}
+      <BulkActionBar
+        selectedCount={selected.size}
+        selectedDraftCount={selectedDraftCount}
+        bulkSending={bulkSending}
+        onBulkSend={() => void doBulkSend()}
+        onClearSelection={() => setSelected(new Set())}
+      />
 
-      {/* Status tabs + filters */}
-      <div className="flex flex-col gap-3 mb-4">
-        {/* Row 1: pipeline pills */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {STATUS_TABS.map((t) => {
-            const count = tabCounts[t.id] ?? 0;
-            const isActive = tab === t.id;
-            return (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0',
-                  isActive
-                    ? 'bg-[var(--accent)] text-white shadow-sm'
-                    : 'bg-[var(--surface-alt)] text-[var(--text-secondary)] hover:bg-[var(--surface-active)] border border-[var(--border)]',
-                )}>
-                {t.label}
-                {count > 0 && (
-                  <span className={cn(
-                    'text-xs tabular-nums px-1.5 py-0.5 rounded-full leading-none',
-                    isActive ? 'bg-white/25 text-white' : 'bg-[var(--surface)] text-[var(--text-muted)]',
-                  )}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        {/* Row 2: search + date range */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input value={searchInput} onChange={(e) => {
-                const v = e.target.value;
-                setSearchInput(v);
-                if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-                searchDebounceRef.current = setTimeout(() => setSearch(v), 300);
-              }} placeholder="Sök offert…"
-              className="pl-8 pr-4 py-1.5 rounded border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors w-44"/>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-[var(--text-muted)] shrink-0">Från</span>
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-              className="py-1.5 px-2 rounded border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-            <span className="text-[11px] text-[var(--text-muted)] shrink-0">Till</span>
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-              className="py-1.5 px-2 rounded border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"/>
-            {(dateFrom || dateTo) && (
-              <button onClick={() => { setDateFrom(''); setDateTo(''); }}
-                className="text-[11px] text-[var(--text-muted)] hover:text-red-500 transition-colors px-1">
-                ✕
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      <OffersDashboardToolbar
+        tab={tab}
+        tabCounts={tabCounts}
+        searchInput={searchInput}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onTabChange={setTab}
+        onSearchInputChange={setSearchInput}
+        onSearchChange={setSearch}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+      />
 
       {/* Offers table */}
       {loading ? (
@@ -1056,19 +937,13 @@ export default function OffersPage() {
         </>
       )}
 
-      {/* Draft saved toast */}
-      {draftSaved && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-xl bg-[var(--surface-0)] border border-[var(--border)] shadow-lg px-4 py-3 text-sm text-[var(--text-primary)] animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500 shrink-0">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-          </svg>
-          Offert sparad som utkast — hittas under fliken{' '}
-          <button type="button" onClick={() => { setTab('draft'); setDraftSaved(false); }}
-            className="font-semibold underline hover:no-underline text-[var(--accent)]">
-            Utkast
-          </button>
-        </div>
-      )}
+      <DraftSavedToast
+        visible={draftSaved}
+        onOpenDrafts={() => {
+          setTab('draft');
+          setDraftSaved(false);
+        }}
+      />
 
       {/* Send confirmation modal */}
       <SendOfferDialog
