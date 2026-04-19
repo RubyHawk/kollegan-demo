@@ -7,7 +7,7 @@
  *   domain/         — contact.entity.ts (CrmContact, CrmEntry, CallEntry)
  *   application/    — crm.service.ts (lookupCustomer, updateCrm, startCallTranscript)
  *   infrastructure/ — contact.repository.ts (Prisma queries)
- *   events/         — contact.events.ts + publishers/contact.publisher.ts
+ *   events/         — contact.events.ts
  *   ui/             — components/crm-tab.tsx
  */
 
