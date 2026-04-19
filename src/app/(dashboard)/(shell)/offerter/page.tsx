@@ -8,11 +8,8 @@ import { useActiveCompany } from '@shared/hooks/use-active-company';
 import { useToast } from '@shared/ui/toast/toast-context';
 import ToastContainer from '@shared/ui/toast/toast-container';
 import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '@modules/supporting/offers/domain/pricing';
-import { deriveValidityDays } from '@modules/supporting/offers/domain/validity';
 import { useOffersListStore, PAGE_SIZE } from './_store/offers-list.store';
 import { useOffersFormStore } from './_store/offers-form.store';
-import type { Offer } from './_store/types';
-import { EMPTY_LINE, EMPTY_FORM } from './_store/types';
 import { OfferTemplatePreviewModal } from './_components/offer-template-preview-modal';
 import { SendOfferDialog } from './_components/send-offer-dialog';
 import { OfferPreviewDialog } from './_components/offer-preview-dialog';
@@ -21,6 +18,7 @@ import { OffersLoadingState } from './_components/offers-loading-state';
 import { OffersMobileCards } from './_components/offers-mobile-cards';
 import { OffersDesktopTable } from './_components/offers-desktop-table';
 import { useOfferListActions } from './_hooks/use-offer-list-actions';
+import { useOfferWizardLifecycle } from './_hooks/use-offer-wizard-lifecycle';
 import { useOfferWizardLookups } from './_hooks/use-offer-wizard-lookups';
 import { useOfferWizardSubmit } from './_hooks/use-offer-wizard-submit';
 import {
@@ -93,21 +91,6 @@ export default function OffersPage() {
   // Keep lastActiveFieldRef in sync so onLoad can reference it after activeField resets to null
   useEffect(() => { if (activeField) lastActiveFieldRef.current = activeField; }, [activeField]);
 
-  // ── Auto-open wizard when navigated from "Ny offert" sidebar link ─────────────
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('new') === 'true') {
-      setShowForm(true);
-      setEditingOfferId(null);
-      resetForm();
-      setForm((current) => ({ ...current, companyId: selectedCompanyId || current.companyId }));
-      setWizardStep(1);
-      // Clean the URL so a refresh doesn't re-trigger
-      window.history.replaceState(null, '', window.location.pathname);
-    }
-  }, [resetForm, selectedCompanyId, setEditingOfferId, setForm, setShowForm, setWizardStep]);
-
   // Reload offers when filters change (store actions read their own state) ────
   useEffect(() => {
     void load();
@@ -128,66 +111,6 @@ export default function OffersPage() {
   const offers     = filteredOffers;
   const total      = tabCounts.all;
   const totalPages = Math.max(1, Math.ceil(serverTotal / PAGE_SIZE));
-
-  // ── Open edit form for an existing draft offer ────────────────────────────────
-  const openEdit = useCallback((offer: Offer) => {
-    if (offer.companyId) {
-      setSelectedCompanyId(offer.companyId);
-    }
-    setEditingOfferId(offer.id);
-    setForm({
-      templateId:       offer.templateId ?? '',
-      priceDisplayMode: enforcedPriceDisplayMode,
-      contactId:        '',
-      companyId:        offer.companyId ?? '',
-      title:            offer.title,
-      recipientName:    offer.recipientName,
-      recipientEmail:   offer.recipientEmail,
-      recipientCompany: offer.recipientCompany ?? '',
-      notes:            offer.notes ?? '',
-      validityDays:     offer.validityDays
-        ?? (offer.validUntil ? deriveValidityDays(offer.createdAt, offer.validUntil) : 30),
-      lineItems:        offer.lineItems.length > 0 ? offer.lineItems : [{ ...EMPTY_LINE }],
-    });
-    setWizardStep(2);           // skip template picker when editing
-    setLivePreviewHtml(null);
-    setCachedTplContent(null);
-    setFieldErrors({});
-    setContactSearch('');
-    setContactResults([]);
-    // Load template preview if the offer has a template
-    if (offer.templateId) {
-      void (async () => {
-        setLivePreviewLoading(true);
-        try {
-          const tplRes = await fetchWithRefresh(`/api/templates/${offer.templateId}`);
-          if (!tplRes.ok) throw new Error();
-          const tplData = await tplRes.json() as { data?: { content?: string } };
-          const content = tplData.data?.content ?? null;
-          setCachedTplContent(content);
-          if (content) {
-            const res = await fetchWithRefresh('/api/templates/preview', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                content,
-                branding: selectedCompanyBranding,
-                offer: { priceDisplayMode: enforcedPriceDisplayMode },
-              }),
-            });
-            const j = await res.json() as { html?: string };
-            setLivePreviewHtml(j.html ?? null);
-          }
-        } catch { /* ignore */ } finally {
-          setLivePreviewLoading(false);
-        }
-      })();
-    }
-    setOpenCards({ mottagare: true, detaljer: true });
-    setConfirmedSections(new Set());
-    setOpenLines(new Set([0]));
-    dismissNotices();
-    setShowForm(true);
-  }, [setSelectedCompanyId]);
 
   const {
     createOffer,
@@ -254,6 +177,34 @@ export default function OffersPage() {
     setTplPreview,
   });
   const {
+    closeWizard,
+    openCreateOffer,
+    openEdit,
+  } = useOfferWizardLifecycle({
+    dismissNotices,
+    livePreviewTimer,
+    priceDisplayMode: enforcedPriceDisplayMode,
+    resetForm,
+    selectedCompanyBranding,
+    selectedCompanyId,
+    setActiveField,
+    setCachedTplContent,
+    setConfirmedSections,
+    setContactResults,
+    setContactSearch,
+    setEditingOfferId,
+    setFieldErrors,
+    setForm,
+    setLivePreviewHtml,
+    setLivePreviewLoading,
+    setOpenCards,
+    setOpenLines,
+    setPreviewDirty,
+    setSelectedCompanyId,
+    setShowForm,
+    setWizardStep,
+  });
+  const {
     copyLink,
     deleteOffer,
     doAction,
@@ -297,22 +248,6 @@ export default function OffersPage() {
     () => Boolean(livePreviewHtml && /<img[\s>]/i.test(livePreviewHtml)),
     [livePreviewHtml],
   );
-
-  // ── Wizard helpers ────────────────────────────────────────────────────────────
-
-  const closeWizard = useCallback(() => {
-    const s = useOffersFormStore.getState();
-    const dirty = s.form.recipientName.trim() !== '' || s.form.lineItems.some((l) => l.description.trim() !== '');
-    if (dirty && !window.confirm('Stäng utan att spara? Alla ändringar försvinner.')) return;
-    setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null);
-    dismissNotices(); setFieldErrors({}); setContactSearch(''); setContactResults([]);
-    setWizardStep(1); setLivePreviewHtml(null); setCachedTplContent(null);
-    setPreviewDirty(false); setActiveField(null);
-    setOpenCards({ mottagare: true, detaljer: true });
-    setConfirmedSections(new Set());
-    setOpenLines(new Set([0]));
-    if (livePreviewTimer.current) clearTimeout(livePreviewTimer.current);
-  }, []);
 
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   const mottagareComplete = form.recipientName.trim().length >= 2 && emailRe.test(form.recipientEmail.trim());
@@ -371,17 +306,7 @@ export default function OffersPage() {
   return (
     <div className="px-8 py-10 max-w-6xl mx-auto">
 
-      <OffersPageHeader
-        onCreateOffer={() => {
-          setShowForm(true);
-          setEditingOfferId(null);
-          setForm(EMPTY_FORM);
-          dismissNotices();
-          setWizardStep(1);
-          setLivePreviewHtml(null);
-          setCachedTplContent(null);
-        }}
-      />
+      <OffersPageHeader onCreateOffer={openCreateOffer} />
 
       <OffersNoticeStack
         blockingAlert={blockingAlert}
@@ -542,12 +467,7 @@ export default function OffersPage() {
           totalPages={totalPages}
           onAcceptAction={doAction}
           onCopyLink={copyLink}
-          onCreateOffer={() => {
-            setShowForm(true);
-            setEditingOfferId(null);
-            resetForm();
-            setWizardStep(1);
-          }}
+          onCreateOffer={openCreateOffer}
           onDelete={setConfirmDeleteOffer}
           onDuplicate={(id) => void doAction(id, 'duplicate')}
           onEdit={openEdit}
