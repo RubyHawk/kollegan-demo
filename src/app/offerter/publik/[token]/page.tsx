@@ -27,35 +27,17 @@ import {
 } from '@shared/ui/icons';
 import { BrandMark } from '@shared/ui/brand';
 import { summarizePersistedOfferPricing } from '@modules/supporting/offers/domain/pricing';
+import type { PageState, PublicOffer, SigMode, SignatureFields } from './_types/public-offer.types';
+import {
+  PublicOfferApiError,
+  declinePublicOffer,
+  downloadPublicOfferPdfBlob,
+  fetchPublicOffer,
+  markPublicOfferViewed,
+  signPublicOffer,
+} from './_api/public-offer.api';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-
-type OfferStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
-
-interface PublicOffer {
-  id: string;
-  title: string;
-  status: OfferStatus;
-  priceDisplayMode: 'exclusive' | 'inclusive';
-  recipientName: string;
-  recipientEmail: string;
-  recipientCompany?: string;
-  totalExVat: number;
-  totalIncVat: number;
-  lineItems: Array<{ quantity: number; unit?: string; unitPrice: number; vatRate: number; discount?: number }>;
-  validUntil: string;
-  notes?: string;
-  generatedDocument?: string;
-  publicToken: string;
-  publicTokenExpiresAt?: string;
-  viewedAt?: string;
-  acceptedAt?: string;
-  signerName?: string;
-  signatureImage?: string;
-}
-
-type PageState = 'loading' | 'ready' | 'declining' | 'signing' | 'accepted' | 'declined' | 'expired' | 'error';
-type SigMode = 'draw' | 'type';
 
 const SIG_FONTS = [
   { id: 'cursive1', family: "'Segoe Script', 'Bradley Hand', cursive", label: 'Handskrift' },
@@ -244,12 +226,6 @@ function textToSignatureImage(text: string, fontFamily: string): string {
   ctx.fillText(text, 24, 75);
   return canvas.toDataURL('image/png');
 }
-
-type SignatureFields = {
-  image?: string;
-  name?: string;
-  date?: string;
-};
 
 function applySignatureFields(root: ParentNode, signature?: SignatureFields) {
   root.querySelectorAll('[data-sig-field]').forEach((el) => {
@@ -2094,18 +2070,21 @@ export default function PublicOfferPage() {
     if (!token) return;
     void (async () => {
       try {
-        const res = await fetch(`/api/offers/public/${token}`);
-        if (res.status === 404 || res.status === 410) { setState('expired'); return; }
-        if (!res.ok) throw new Error(`Fel ${res.status}`);
-        const json = await res.json() as { data: PublicOffer };
-        const o = json.data;
+        const o = await fetchPublicOffer(token);
         setOffer(o);
         setSignerName(o.recipientName ?? '');
         if (o.status === 'accepted') setState('accepted');
         else if (o.status === 'declined') setState('declined');
         else if (o.publicTokenExpiresAt && new Date(o.publicTokenExpiresAt) < new Date()) setState('expired');
         else setState('ready');
-      } catch (e) { setErrMsg((e as Error).message); setState('error'); }
+      } catch (e) {
+        if (e instanceof PublicOfferApiError && (e.status === 404 || e.status === 410)) {
+          setState('expired');
+          return;
+        }
+        setErrMsg((e as Error).message);
+        setState('error');
+      }
     })();
   }, [token]);
 
@@ -2115,11 +2094,7 @@ export default function PublicOfferPage() {
 
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      void fetch(`/api/offers/public/${token}/view`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-      }).catch(() => {
+      void markPublicOfferViewed(token, controller.signal).catch(() => {
         // Best effort only; the document should still remain usable if this fails.
       });
     }, 1200);
@@ -2181,16 +2156,7 @@ export default function PublicOfferPage() {
     setBusy(true); setErrMsg('');
     setState('signing');
     try {
-      const res = await fetch(`/api/offers/public/${token}/sign`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ signatureImage, signerName: signerName.trim() }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({})) as { detail?: string };
-        // Show the API detail if it's a user-actionable message, otherwise generic
-        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Signeringen misslyckades. Försök igen.';
-        throw new Error(msg);
-      }
+      await signPublicOffer(token, { signatureImage, signerName: signerName.trim() });
       const acceptedAt = new Date().toISOString();
       setOffer((current) => current ? ({
         ...current,
@@ -2209,15 +2175,7 @@ export default function PublicOfferPage() {
   const handleDecline = useCallback(async () => {
     setBusy(true); setErrMsg('');
     try {
-      const res = await fetch(`/api/offers/public/${token}/decline`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comment: comment.trim() || undefined }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({})) as { detail?: string };
-        const msg = j.detail && j.detail.length < 120 ? j.detail : 'Avvisningen misslyckades. Försök igen.';
-        throw new Error(msg);
-      }
+      await declinePublicOffer(token, { comment: comment.trim() || undefined });
       setState('declined');
     } catch (e) { setErrMsg((e as Error).message); } finally { setBusy(false); }
   }, [token, comment]);
@@ -2225,12 +2183,9 @@ export default function PublicOfferPage() {
   const handleDownloadPdf = async () => {
     if (!offer?.generatedDocument) return;
     setDownloading(true);
-    const url = `/api/offers/public/${token}/pdf`;
     const previewWindow = window.open('', '_blank');
     try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('download_failed');
-      const blob = await response.blob();
+      const blob = await downloadPublicOfferPdfBlob(token);
       const objectUrl = URL.createObjectURL(blob);
       if (previewWindow && !previewWindow.closed) {
         previewWindow.location.href = objectUrl;
