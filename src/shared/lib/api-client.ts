@@ -67,6 +67,15 @@ export async function apiPut<T>(url: string, body: unknown): Promise<T> {
   return handleResponse<T>(res);
 }
 
+export async function apiPatch<T>(url: string, body: unknown): Promise<T> {
+  const res = await fetchWithRefresh(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return handleResponse<T>(res);
+}
+
 export async function apiDelete(url: string): Promise<void> {
   const res = await fetchWithRefresh(url, { method: 'DELETE' });
   if (!res.ok) {

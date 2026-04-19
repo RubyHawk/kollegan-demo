@@ -52,4 +52,9 @@ export const AUDIT_ACTIONS = {
   LEAD_STAGE_CHANGED: 'lead.stage_changed',
   LEAD_CONVERTED: 'lead.converted',
   LEAD_DELETED: 'lead.deleted',
+
+  // Feature flags
+  FEATURE_FLAG_CREATED: 'feature_flag.created',
+  FEATURE_FLAG_UPDATED: 'feature_flag.updated',
+  FEATURE_FLAG_DELETED: 'feature_flag.deleted',
 } as const;
