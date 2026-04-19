@@ -211,6 +211,21 @@ const PROJECT_INCLUDE = {
 };
 
 export const projectsRepository = {
+  async findAcceptedOfferIdsWithoutProjects(orgId: string, limit = 100): Promise<string[]> {
+    const rows = await prisma.offer.findMany({
+      where: {
+        organizationId: orgId,
+        status: 'accepted',
+        deletedAt: null,
+        projects: { none: {} },
+      },
+      select: { id: true },
+      orderBy: { acceptedAt: 'asc' },
+      take: limit,
+    });
+    return rows.map((row) => row.id);
+  },
+
   async findByOfferId(offerId: string, orgId: string): Promise<Project | null> {
     const row = await prisma.project.findFirst({
       where: { offerId, organizationId: orgId, deletedAt: null },

@@ -13,6 +13,7 @@ export {
 } from './domain/stage-machine';
 export {
   advanceProjectStage,
+  backfillProjectsFromAcceptedOffers,
   countProjects,
   createProjectFromOffer,
   getProject,

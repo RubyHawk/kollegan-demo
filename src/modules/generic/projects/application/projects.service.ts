@@ -88,10 +88,32 @@ export async function createProjectFromOffer(offerId: string, orgId: string): Pr
   return project;
 }
 
+export async function backfillProjectsFromAcceptedOffers(orgId: string): Promise<number> {
+  const offerIds = await projectsRepository.findAcceptedOfferIdsWithoutProjects(orgId);
+  let created = 0;
+
+  for (const offerId of offerIds) {
+    try {
+      const before = await projectsRepository.findByOfferId(offerId, orgId);
+      await createProjectFromOffer(offerId, orgId);
+      if (!before) created += 1;
+    } catch (err) {
+      logger.warn(TAG, 'Failed to backfill project from accepted offer', { offerId, orgId, err });
+    }
+  }
+
+  if (created > 0) {
+    logger.info(TAG, `Backfilled ${created} projects from accepted offers`, { orgId });
+  }
+
+  return created;
+}
+
 export async function listProjects(
   orgId: string,
   filter: ListProjectsFilter,
 ): Promise<{ projects: Project[]; total: number }> {
+  await backfillProjectsFromAcceptedOffers(orgId);
   return projectsRepository.list(orgId, filter);
 }
 
@@ -99,6 +121,7 @@ export async function countProjects(
   orgId: string,
   filter: Pick<ListProjectsFilter, 'search' | 'customerId'>,
 ): Promise<Record<ProjectStage, number>> {
+  await backfillProjectsFromAcceptedOffers(orgId);
   return projectsRepository.counts(orgId, filter);
 }
 
