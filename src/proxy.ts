@@ -25,11 +25,14 @@ const PUBLIC_PREFIXES = [
 
 /** Known app routes on the offert subdomain that must NOT be treated as offer tokens */
 const APP_ROUTES = [
-  '/offerter', '/mallar', '/produkter', '/installningar', '/logga-in',
-  '/registrera', '/api/', '/_next/', '/favicon',
+  '/', '/admin', '/analytics', '/announcements', '/companies', '/crm',
+  '/demos', '/installningar', '/logga-in', '/mallar', '/meetings',
+  '/messages', '/offerter', '/produkter', '/projects', '/projekt',
+  '/registrera', '/reports', '/api/', '/_next/', '/favicon',
 ];
 
 const OFFER_SUBDOMAIN = process.env.PUBLIC_OFFER_SUBDOMAIN ?? 'offert';
+const PUBLIC_OFFER_TOKEN_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const host = request.headers.get('host') ?? '';
@@ -42,7 +45,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const isAppRoute = APP_ROUTES.some((p) => pathname === p || pathname.startsWith(p + '/'));
     if (!isAppRoute) {
       const token = pathname.slice(1);
-      if (token && !token.includes('/')) {
+      if (token && !token.includes('/') && PUBLIC_OFFER_TOKEN_PATTERN.test(token)) {
         return NextResponse.rewrite(new URL(`/offerter/publik/${token}`, request.url));
       }
     }
