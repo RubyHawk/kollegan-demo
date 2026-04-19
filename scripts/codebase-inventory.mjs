@@ -119,6 +119,10 @@ function isLegacyWrapper(file) {
     && file.endsWith('/route.ts');
 }
 
+function isFeatureApiClient(file) {
+  return file.startsWith('src/shared/lib/api/') && file.endsWith('.api.ts');
+}
+
 function isNextEntry(file) {
   if (!file.startsWith('src/app/')) return false;
   const parsed = path.parse(file);
@@ -259,9 +263,14 @@ function renderInventory() {
     .filter(isLegacyWrapper)
     .sort()
     .map((file) => [file]);
+  const featureApiClients = files
+    .filter(isFeatureApiClient)
+    .sort()
+    .map((file) => [file]);
 
   const deadCandidates = productionSource
     .filter((file) => !isEntryPoint(file))
+    .filter((file) => !isFeatureApiClient(file))
     .filter((file) => !isReferencedByPackageJson(file, packageJsonText))
     .filter((file) => file.startsWith('src/'))
     .filter((file) => (graph.inbound.get(file)?.size ?? 0) === 0)
@@ -322,6 +331,7 @@ Static analysis is a triage tool, not deletion proof. A \`dead-candidate\` still
 | Active production source files | ${productionSource.length} |
 | Files above 1000 lines | ${monoliths.length} |
 | Files above 500 lines | ${largeFiles.length} |
+| Feature API clients | ${featureApiClients.length} |
 | Legacy API wrappers | ${legacyWrappers.length} |
 | Dead-candidate review rows | ${deadCandidates.length} |
 
@@ -334,6 +344,11 @@ ${markdownTable(['Lines', 'Classification', 'File'], warningRows)}
 ## Dead-Candidate Review Queue
 
 ${markdownTable(['File', 'Classification', 'Reason'], deadCandidates)}
+## Feature API Client Inventory
+
+These are browser-facing API contract wrappers. They are active infrastructure even before every UI screen has migrated to them.
+
+${markdownTable(['File'], featureApiClients)}
 ## Legacy API Wrapper Review Queue
 
 These are compatibility wrappers and are not junk until client usage proves they can be retired.
@@ -345,6 +360,7 @@ ${markdownTable(['File'], legacyWrappers)}
 - CI warns above 500 lines and fails above 1000 lines for new or modified hand-written source files.
 - Cleanup PRs must not include behavior changes.
 - Demo files are not junk if they support demo routes.
+- Feature API clients are not junk; wire them into UI clients over time.
 - Legacy API wrappers are not junk until usage is verified gone.
 - A file may move from \`dead-candidate\` to \`safe-to-delete\` only after import graph, route strings, package scripts, tests, Prisma references, and public asset references have been checked.
 
