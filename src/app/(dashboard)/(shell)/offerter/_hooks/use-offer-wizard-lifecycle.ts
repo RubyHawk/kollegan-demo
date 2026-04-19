@@ -4,7 +4,7 @@ import { useCallback, useEffect, type MutableRefObject } from 'react';
 import { fetchWithRefresh } from '@shared/lib/api-client';
 import { deriveValidityDays } from '@modules/supporting/offers/domain/validity';
 import type { ContactResult, Offer, OfferForm } from '../_store/types';
-import { EMPTY_FORM, EMPTY_LINE } from '../_store/types';
+import { EMPTY_LINE } from '../_store/types';
 import { useOffersFormStore } from '../_store/offers-form.store';
 
 type CompanyBranding = {
@@ -23,7 +23,6 @@ type UseOfferWizardLifecycleInput = {
   resetForm: () => void;
   selectedCompanyBranding?: CompanyBranding;
   selectedCompanyId?: string | null;
-  setActiveField: (field: string | null) => void;
   setCachedTplContent: (content: string | null) => void;
   setConfirmedSections: (sections: Set<'mottagare' | 'detaljer'>) => void;
   setContactResults: (results: ContactResult[]) => void;
@@ -35,7 +34,6 @@ type UseOfferWizardLifecycleInput = {
   setLivePreviewLoading: (loading: boolean) => void;
   setOpenCards: (cards: { mottagare: boolean; detaljer: boolean }) => void;
   setOpenLines: (lines: Set<number>) => void;
-  setPreviewDirty: (dirty: boolean) => void;
   setSelectedCompanyId: (id: string) => void;
   setShowForm: (show: boolean) => void;
   setWizardStep: (step: 1 | 2) => void;
@@ -48,7 +46,6 @@ export function useOfferWizardLifecycle({
   resetForm,
   selectedCompanyBranding,
   selectedCompanyId,
-  setActiveField,
   setCachedTplContent,
   setConfirmedSections,
   setContactResults,
@@ -60,27 +57,23 @@ export function useOfferWizardLifecycle({
   setLivePreviewLoading,
   setOpenCards,
   setOpenLines,
-  setPreviewDirty,
   setSelectedCompanyId,
   setShowForm,
   setWizardStep,
 }: UseOfferWizardLifecycleInput) {
   const openCreateOffer = useCallback(() => {
-    setShowForm(true);
-    setEditingOfferId(null);
-    setForm(EMPTY_FORM);
+    if (livePreviewTimer.current) clearTimeout(livePreviewTimer.current);
+    resetForm();
+    setForm((current) => ({ ...current, companyId: selectedCompanyId || current.companyId }));
     dismissNotices();
-    setWizardStep(1);
-    setLivePreviewHtml(null);
-    setCachedTplContent(null);
+    setShowForm(true);
   }, [
     dismissNotices,
-    setCachedTplContent,
-    setEditingOfferId,
+    livePreviewTimer,
+    resetForm,
+    selectedCompanyId,
     setForm,
-    setLivePreviewHtml,
     setShowForm,
-    setWizardStep,
   ]);
 
   useEffect(() => {
@@ -184,38 +177,14 @@ export function useOfferWizardLifecycle({
     if (dirty && !window.confirm('Stäng utan att spara? Alla ändringar försvinner.')) return;
 
     setShowForm(false);
-    setForm(EMPTY_FORM);
-    setEditingOfferId(null);
+    resetForm();
     dismissNotices();
-    setFieldErrors({});
-    setContactSearch('');
-    setContactResults([]);
-    setWizardStep(1);
-    setLivePreviewHtml(null);
-    setCachedTplContent(null);
-    setPreviewDirty(false);
-    setActiveField(null);
-    setOpenCards({ mottagare: true, detaljer: true });
-    setConfirmedSections(new Set());
-    setOpenLines(new Set([0]));
     if (livePreviewTimer.current) clearTimeout(livePreviewTimer.current);
   }, [
     dismissNotices,
     livePreviewTimer,
-    setActiveField,
-    setCachedTplContent,
-    setConfirmedSections,
-    setContactResults,
-    setContactSearch,
-    setEditingOfferId,
-    setFieldErrors,
-    setForm,
-    setLivePreviewHtml,
-    setOpenCards,
-    setOpenLines,
-    setPreviewDirty,
+    resetForm,
     setShowForm,
-    setWizardStep,
   ]);
 
   return {
