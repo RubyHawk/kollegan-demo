@@ -65,7 +65,8 @@ function getTrackedFiles() {
     .split(/\r?\n/)
     .filter(Boolean)
     .map(normalize)
-    .filter((file) => !shouldIgnore(file));
+    .filter((file) => !shouldIgnore(file))
+    .filter((file) => fs.existsSync(path.join(root, file)));
 }
 
 function readFile(file) {

@@ -35,13 +35,13 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 711 |
-| Source files scanned | 582 |
-| Active production source files | 425 |
+| Tracked files scanned | 701 |
+| Source files scanned | 572 |
+| Active production source files | 415 |
 | Files above 1000 lines | 3 |
 | Files above 500 lines | 24 |
 | Legacy API wrappers | 111 |
-| Dead-candidate review rows | 11 |
+| Dead-candidate review rows | 1 |
 
 ## Current Monolith Inventory
 
@@ -81,17 +81,7 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | File | Classification | Reason |
 | --- | --- | --- |
-| src/app/(dashboard)/(shell)/mallar/_components/section-presets.tsx | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
-| src/modules/core/voice/events/publishers/voice-session.publisher.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
-| src/modules/supporting/crm/events/publishers/contact.publisher.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
-| src/platform/persistence/json-store.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
-| src/platform/queue/index.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
 | src/shared/lib/api/feature-flags.api.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
-| src/shared/lib/date-format.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
-| src/shared/stores/connection-store.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
-| src/shared/ui/glass-panel.tsx | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
-| src/shared/ui/tabs.tsx | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
-| src/shared/ui/theme-toggle.tsx | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
 
 ## Legacy API Wrapper Review Queue
 
