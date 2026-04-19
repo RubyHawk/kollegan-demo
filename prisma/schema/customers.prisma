@@ -1,0 +1,33 @@
+// ─── CRM Customers ────────────────────────────────────────────────────────────
+// Supporting domain. Table prefix: crm_*
+
+model Customer {
+  id                  String    @id @default(uuid())
+  organizationId      String
+  name                String
+  email               String?
+  phone               String?
+  company             String?
+  address             String?
+  postalCode          String?
+  city                String?
+  country             String?   @default("SE")
+  notes               String?
+  convertedFromLeadId String?   @unique
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  convertedFromLead Lead?        @relation("CustomerConvertedFromLead", fields: [convertedFromLeadId], references: [id])
+  leads             Lead[]       @relation("LeadCustomer")
+  offers            Offer[]
+  projects          Project[]
+
+  @@unique([organizationId, email])
+  @@index([organizationId, name])
+  @@index([organizationId, company])
+  @@index([organizationId, createdAt])
+  @@index([deletedAt])
+  @@map("crm_customers")
+}

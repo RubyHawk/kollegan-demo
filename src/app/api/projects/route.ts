@@ -1,1 +1,1 @@
-export { handleListProjects as GET, handleCreateProject as POST } from '@modules/generic/projects';
+export { handleListProjects as GET } from '@modules/generic/projects/api/handlers/project.handler';

@@ -31,6 +31,8 @@ export interface CreateOfferInput {
     unitPrice:   number;
     vatRate:     number;
     discount?:   number;
+    productId?:  string;
+    unit?:       string;
     sortOrder?:  number;
   }>;
 }
@@ -69,6 +71,8 @@ export interface UpdateOfferInput {
     unitPrice:   number;
     vatRate:     number;
     discount?:   number;
+    productId?:  string | null;
+    unit?:       string | null;
     sortOrder?:  number;
   }>;
 }
@@ -93,6 +97,8 @@ function mapLineItem(r: Record<string, unknown>): OfferLineItem {
     unitPrice:   r.unitPrice as number,
     vatRate:     r.vatRate as number,
     discount:    (r.discount as number | null) ?? undefined,
+    productId:   (r.productId as string | null) ?? undefined,
+    unit:        (r.unit as string | null) ?? undefined,
     sortOrder:   (r.sortOrder as number | null) ?? undefined,
   };
 }
@@ -155,7 +161,7 @@ function computeTotals(
 
 const LINE_ITEM_SELECT = {
   id: true, description: true, quantity: true,
-  unitPrice: true, vatRate: true, discount: true, sortOrder: true,
+  unitPrice: true, vatRate: true, discount: true, productId: true, unit: true, sortOrder: true,
 };
 
 const OFFER_SELECT = {
@@ -228,6 +234,8 @@ export const offersRepository = {
             unitPrice:   item.unitPrice,
             vatRate:     item.vatRate,
             discount:    item.discount ?? 0,
+            productId:   item.productId ?? null,
+            unit:        item.unit ?? null,
             sortOrder:   item.sortOrder ?? idx,
           })),
         },
@@ -362,6 +370,8 @@ export const offersRepository = {
               unitPrice:   item.unitPrice,
               vatRate:     item.vatRate,
               discount:    item.discount ?? 0,
+              productId:   item.productId ?? null,
+              unit:        item.unit ?? null,
               sortOrder:   item.sortOrder ?? idx,
             })),
           },
@@ -502,6 +512,8 @@ export const offersRepository = {
               unitPrice:   item.unitPrice,
               vatRate:     item.vatRate,
               discount:    item.discount ?? 0,
+              productId:   item.productId ?? null,
+              unit:        item.unit ?? null,
               sortOrder:   item.sortOrder ?? idx,
             })),
           },

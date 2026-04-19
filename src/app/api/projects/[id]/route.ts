@@ -1,1 +1,1 @@
-export { handleGetProject as GET, handleUpdateProject as PATCH, handleDeleteProject as DELETE } from '@modules/generic/projects';
+export { handleGetProject as GET } from '@modules/generic/projects/api/handlers/project.handler';

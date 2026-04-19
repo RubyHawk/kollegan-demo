@@ -35,6 +35,7 @@ import {
   TooltipProvider,
 } from '@shared/ui/tooltip';
 import {
+  BriefcaseIcon,
   UserIcon,
   SettingsIcon,
   LogOutIcon,
@@ -113,6 +114,17 @@ const NAV_CONFIG: NavSection[] = [
         items: [
           { href: '/offerter',     label: 'Alla offerter' },
           { href: '/offerter/ny',  label: 'Ny offert' },
+        ],
+      },
+      {
+        type: 'dropdown',
+        key: 'projekt',
+        label: 'Projekt',
+        icon: BriefcaseIcon,
+        items: [
+          { href: '/projekt', label: 'Alla projekt' },
+          { href: '/projekt?stage=uppgifter', label: 'Nya' },
+          { href: '/projekt?stage=bestallt', label: 'Beställda' },
         ],
       },
       { type: 'link', href: '/mallar',    label: 'Mallar',           icon: FileTextIcon },

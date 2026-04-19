@@ -1,48 +1,41 @@
-/**
- * Projects Module — public interface.
- *
- * Other modules ONLY import from this file.
- */
-
-// Domain types
 export type {
+  InstallDetails,
   Project,
-  ProjectTask,
-  ProjectStatus,
-  ProjectPriority,
-  TaskStatus,
+  ProjectLineItem,
+  ProjectStage,
+  ProjectStageEvent,
 } from './domain/project.entity';
-
-// Application use cases
 export {
-  createProject,
+  PROJECT_STAGE_LABELS,
+  PROJECT_STAGES,
+  nextProjectStage,
+  validateStageTransition,
+} from './domain/stage-machine';
+export {
+  advanceProjectStage,
+  countProjects,
+  createProjectFromOffer,
   getProject,
   listProjects,
-  updateProject,
-  deleteProject,
-} from './application/project.service';
-export type { CreateProjectInput, UpdateProjectInput, ListProjectsFilter } from './application/project.service';
-
-// Domain events
+  updateProjectDetails,
+} from './application/projects.service';
+export type { ListProjectsFilter } from './application/projects.service';
 export {
-  PROJECT_CREATED,
-  PROJECT_UPDATED,
-  PROJECT_DELETED,
   PROJECT_COMPLETED,
+  PROJECT_CREATED,
+  PROJECT_STAGE_ADVANCED,
 } from './events/project.events';
 export type {
-  ProjectEvent,
-  ProjectCreatedEvent,
-  ProjectUpdatedEvent,
-  ProjectDeletedEvent,
   ProjectCompletedEvent,
+  ProjectCreatedEvent,
+  ProjectEvent,
+  ProjectStageAdvancedEvent,
 } from './events/project.events';
-
-// ── API Handlers ─────────────────────────────────────────────────────────────
+export { registerProjectEventSubscribers } from './events/offer-accepted.subscriber';
 export {
-  handleListProjects,
-  handleCreateProject,
+  handleAdvanceProjectStage,
   handleGetProject,
-  handleUpdateProject,
-  handleDeleteProject,
+  handleListProjects,
+  handleProjectCounts,
+  handleUpdateProjectDetails,
 } from './api/handlers/project.handler';

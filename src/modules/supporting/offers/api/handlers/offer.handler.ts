@@ -98,6 +98,8 @@ const LineItemSchema = z.object({
   unitPrice: z.number().min(0),
   vatRate: z.number().min(0).max(1).default(0.25),
   discount: z.number().min(0).max(100).default(0),
+  productId: z.string().uuid().optional().nullable(),
+  unit: z.string().max(50).optional().nullable(),
   sortOrder: z.number().int().optional(),
 });
 
@@ -140,7 +142,11 @@ export const handleCreateOffer = createHandler(
       leadId: body.leadId, customerId: body.customerId, companyId: body.companyId,
       templateId: body.templateId,
       emailSubject: body.emailSubject, emailBody: body.emailBody, emailHeaderConfig: body.emailHeaderConfig,
-      lineItems: body.lineItems,
+      lineItems: body.lineItems.map((item) => ({
+        ...item,
+        productId: item.productId ?? undefined,
+        unit: item.unit ?? undefined,
+      })),
     }, payload.sub);
     return created(offer, `/api/offers/${offer.id}`);
   },
@@ -221,7 +227,11 @@ export const handleUpdateOffer = createHandler(
         notes: body.notes, validUntil: newValidUntil, validityDays: body.validityDays,
         companyId: body.companyId,
         emailSubject: body.emailSubject, emailBody: body.emailBody, emailHeaderConfig: body.emailHeaderConfig,
-        lineItems: body.lineItems,
+        lineItems: body.lineItems?.map((item) => ({
+          ...item,
+          productId: item.productId ?? undefined,
+          unit: item.unit ?? undefined,
+        })),
       });
     }
 

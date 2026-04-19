@@ -1,48 +1,88 @@
-/**
- * Projects Module — Domain Types
- *
- * Covers project management with task tracking.
- *
- * Models:
- *  - Project: organizational project with status, priority, progress
- *  - ProjectTask: individual tasks within a project
- */
+import type { Customer } from '@modules/supporting/customers';
+import type { PurchaseOrder } from '@modules/supporting/procurement';
 
-export type ProjectStatus = 'active' | 'review' | 'planned' | 'done' | 'archived';
-export type ProjectPriority = 'low' | 'medium' | 'high' | 'critical';
-export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'blocked';
+export type ProjectStage = 'details' | 'ordered' | 'arrived' | 'in_progress' | 'completed';
 
-export interface ProjectTask {
+export interface ProjectLineItem {
   id: string;
+  organizationId: string;
   projectId: string;
-  title: string;
-  description: string | null;
-  status: TaskStatus;
-  priority: string;
-  assigneeId: string | null;
-  dueDate: string | null;
+  sourceOfferLineItemId: string | null;
+  sourceProductId: string | null;
+  productName: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  vatRate: number;
+  discount: number;
+  lineTotalExVat: number;
+  lineTotalIncVat: number;
   sortOrder: number;
   createdAt: string;
-  updatedAt: string;
-  completedAt: string | null;
+}
+
+export interface ProjectStageEvent {
+  id: string;
+  organizationId: string;
+  projectId: string;
+  fromStage: ProjectStage | null;
+  toStage: ProjectStage;
+  actorId: string | null;
+  reason: string | null;
+  metadata: unknown;
+  createdAt: string;
+}
+
+export interface InstallDetails {
+  siteAddress?: string | null;
+  sitePostalCode?: string | null;
+  siteCity?: string | null;
+  siteCountry?: string | null;
+  squareMeters?: number | null;
+  objectType?: string | null;
+  objectDescription?: string | null;
+  accessNotes?: string | null;
+  wishedInstallDate?: Date | null;
+  wishedInstallDateText?: string | null;
+  onsiteContactName?: string | null;
+  onsiteContactPhone?: string | null;
+  onsiteContactEmail?: string | null;
+  internalNotes?: string | null;
 }
 
 export interface Project {
   id: string;
   organizationId: string;
+  customerId: string;
+  offerId: string;
   name: string;
-  description: string | null;
-  status: ProjectStatus;
-  priority: ProjectPriority;
-  progress: number;
-  ownerId: string | null;
-  dueDate: string | null;
-  startDate: string | null;
-  tags: string[];
-  createdBy: string;
+  stage: ProjectStage;
+  offerNumber: number | null;
+  offerAcceptedAt: string | null;
+  priceDisplayMode: string;
+  totalExVat: number;
+  totalIncVat: number;
+  siteAddress: string | null;
+  sitePostalCode: string | null;
+  siteCity: string | null;
+  siteCountry: string | null;
+  squareMeters: number | null;
+  objectType: string | null;
+  objectDescription: string | null;
+  accessNotes: string | null;
+  wishedInstallDate: string | null;
+  wishedInstallDateText: string | null;
+  onsiteContactName: string | null;
+  onsiteContactPhone: string | null;
+  onsiteContactEmail: string | null;
+  internalNotes: string | null;
+  createdBy: string | null;
+  completedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  tasks?: ProjectTask[];
-  taskCount?: number;
-  tasksDone?: number;
+  customer?: Customer;
+  lineItems?: ProjectLineItem[];
+  purchaseOrders?: PurchaseOrder[];
+  stageEvents?: ProjectStageEvent[];
 }

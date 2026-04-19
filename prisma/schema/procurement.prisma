@@ -1,0 +1,92 @@
+// ─── Procurement ──────────────────────────────────────────────────────────────
+// Supporting domain. Table prefix: proc_*
+
+enum PurchaseOrderStatus {
+  draft
+  submitted
+  received
+  cancelled
+}
+
+model Supplier {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  email          String?
+  phone          String?
+  orgNumber      String?
+  address        String?
+  postalCode     String?
+  city           String?
+  country        String?   @default("SE")
+  notes          String?
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  purchaseOrders PurchaseOrder[]
+
+  @@index([organizationId, name])
+  @@index([organizationId, email])
+  @@index([deletedAt])
+  @@map("proc_suppliers")
+}
+
+model PurchaseOrder {
+  id                   String              @id @default(uuid())
+  organizationId       String
+  projectId            String
+  supplierId           String
+  poNumber             Int?
+  status               PurchaseOrderStatus @default(draft)
+  supplierReference    String?
+  expectedDeliveryDate DateTime?
+  submittedAt          DateTime?
+  submittedBy          String?
+  receivedAt           DateTime?
+  receivedBy           String?
+  notes                String?
+  totalExVat           Float               @default(0)
+  totalIncVat          Float               @default(0)
+  createdBy            String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  deletedAt            DateTime?
+
+  organization Organization            @relation(fields: [organizationId], references: [id])
+  project      Project                 @relation(fields: [projectId], references: [id])
+  supplier     Supplier                @relation(fields: [supplierId], references: [id])
+  lineItems    PurchaseOrderLineItem[]
+
+  @@unique([organizationId, poNumber])
+  @@index([organizationId, projectId])
+  @@index([organizationId, supplierId])
+  @@index([organizationId, status])
+  @@index([deletedAt])
+  @@map("proc_purchase_orders")
+}
+
+model PurchaseOrderLineItem {
+  id                String   @id @default(uuid())
+  organizationId    String
+  purchaseOrderId   String
+  projectLineItemId String?
+  description       String
+  quantity          Float
+  receivedQuantity  Float    @default(0)
+  unit              String   @default("st")
+  unitCost          Float
+  vatRate           Float    @default(0.25)
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
+
+  organization    Organization     @relation(fields: [organizationId], references: [id])
+  purchaseOrder   PurchaseOrder    @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  projectLineItem ProjectLineItem? @relation(fields: [projectLineItemId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, purchaseOrderId])
+  @@index([projectLineItemId])
+  @@map("proc_purchase_order_line_items")
+}
