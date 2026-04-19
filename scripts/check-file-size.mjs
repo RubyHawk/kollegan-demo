@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 
 const root = process.cwd();
 const warnAt = 500;
@@ -135,18 +135,61 @@ const files = allMode
 
 const warnings = [];
 const failures = [];
+const reductions = [];
+
+function readFileFromRef(ref, file) {
+  try {
+    return execFileSync('git', ['show', `${ref}:${normalize(file)}`], {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+  } catch {
+    return null;
+  }
+}
+
+function getBaselineLineCount(file) {
+  const candidateRefs = [
+    process.env.QUALITY_BASE_SHA,
+    process.env.GITHUB_BASE_REF ? `origin/${process.env.GITHUB_BASE_REF}` : null,
+    process.env.GITHUB_EVENT_NAME === 'push' ? getPushBeforeSha() : null,
+    'HEAD',
+  ].filter(Boolean);
+
+  for (const ref of candidateRefs) {
+    const content = readFileFromRef(ref, file);
+    if (content != null) return content.split(/\r?\n/).length;
+  }
+
+  return null;
+}
 
 for (const file of files) {
   const fullPath = path.join(root, file);
   if (!fs.existsSync(fullPath)) continue;
   const lines = fs.readFileSync(fullPath, 'utf8').split(/\r?\n/).length;
   const finding = { file: normalize(file), lines };
-  if (lines > failAt) failures.push(finding);
+  if (lines > failAt) {
+    const baselineLines = getBaselineLineCount(file);
+    if (baselineLines != null && baselineLines > failAt && lines < baselineLines) {
+      reductions.push({ ...finding, baselineLines });
+    } else {
+      failures.push(finding);
+    }
+  }
   else if (lines > warnAt) warnings.push(finding);
 }
 
 for (const warning of warnings) {
   console.warn(`File-size warning: ${warning.file} has ${warning.lines} lines (>${warnAt}).`);
+}
+
+for (const reduction of reductions) {
+  console.warn(
+    `Existing monolith reduced: ${reduction.file} has ${reduction.lines} lines ` +
+      `(was ${reduction.baselineLines}, still >${failAt}).`,
+  );
 }
 
 if (failures.length > 0) {
