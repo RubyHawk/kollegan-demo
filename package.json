@@ -8,6 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "lint:deps": "depcruise --validate .dependency-cruiser.cjs src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check:migrations": "node scripts/check-migration-safety.mjs",
+    "check:migrations:all": "node scripts/check-migration-safety.mjs --all",
+    "check:file-size": "node scripts/check-file-size.mjs",
+    "check:file-size:all": "node scripts/check-file-size.mjs --all",
+    "check:ai-proxies": "node scripts/check-ai-proxies.mjs",
     "test:e2e:mobile": "playwright test tests/e2e/mobile-qa.spec.ts --reporter=line",
     "postinstall": "prisma generate"
   },

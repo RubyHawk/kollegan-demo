@@ -1,20 +1,16 @@
-# Core Domain Modules
+# Core Modules
 
-Core domains contain the primary business logic that makes this platform valuable.
+Core modules contain platform-defining capabilities that should not depend on supporting, generic, or demo domains.
 
-## Modules
-- **automation** — Workflow engine: triggers, steps, execution, tool registry
-- **voice** — AI voice agents (Vapi), real-time call handling, AI tools
+Current examples:
 
-## Dependency Rule
-Core modules have ZERO dependencies on supporting or generic modules.
-They may only import from:
-- `@/infrastructure/*` — database, cache, events, external adapters
-- `@/shared/*` — UI primitives, utilities, types
+- `automation`
+- `voice`
 
-Cross-domain communication happens exclusively through the event bus
-(`@/infrastructure/events/event-bus`).
+Rules:
 
-## Current Status
-Modules are migrating from `src/features/` during Phase 3 of the architecture migration.
-Migration tracker: see `ARCHITECTURE.md` at project root.
+- No imports from `src/modules/supporting`.
+- No imports from `src/modules/generic`.
+- No imports from `src/modules/demos`.
+- Cross-domain communication should use events or public contracts.
+

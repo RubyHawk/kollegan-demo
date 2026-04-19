@@ -1,21 +1,12 @@
-# Supporting Domain Modules
+# Supporting Modules
 
-Supporting domains enhance the value of core domains but are not the primary product.
+Supporting modules implement ERP support domains such as auth, offers, leads, customers, products, procurement, compliance, meetings, messaging, and integrations.
 
-## Modules
-- **crm** — Contact management, call records, customer profiles
-- **leads** — Lead pipeline, scoring, conversion tracking
-- **identity** — Staff user management, authentication
-- **offers** — Offer templates and management
-- **integrations** — External service connectors (Slack, GitHub, N8N)
+Rules:
 
-## Dependency Rule
-Supporting modules may import from:
-- `@/modules/core/*` — via public index.ts only
-- `@/infrastructure/*`
-- `@/shared/*`
+- Use the standard module shape.
+- Do not import generic or demo internals.
+- Prefer events or public module contracts for cross-domain communication.
+- Keep Prisma in `infrastructure`.
+- Keep HTTP behavior in `api/handlers`.
 
-Supporting modules CANNOT import from `@/modules/generic/*`.
-
-## Current Status
-Modules are migrating from `src/features/` during Phase 4 of the architecture migration.
