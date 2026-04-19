@@ -4,7 +4,6 @@
 
 import { useEffect, useCallback, useRef, useMemo, useState } from 'react';
 import { fetchWithRefresh } from '@shared/lib/api-client';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import { useToast } from '@shared/ui/toast/toast-context';
 import ToastContainer from '@shared/ui/toast/toast-container';
@@ -17,9 +16,7 @@ import { EMPTY_LINE, EMPTY_FORM } from './_store/types';
 import { OfferTemplatePreviewModal } from './_components/offer-template-preview-modal';
 import { SendOfferDialog } from './_components/send-offer-dialog';
 import { OfferPreviewDialog } from './_components/offer-preview-dialog';
-import { OfferWizardLivePreview } from './_components/offer-wizard-live-preview';
-import { OfferWizardStepOne } from './_components/offer-wizard-step-one';
-import { OfferWizardStepTwoPanel } from './_components/offer-wizard-step-two-panel';
+import { OfferWizardShell } from './_components/offer-wizard-shell';
 import { OffersLoadingState } from './_components/offers-loading-state';
 import { OffersMobileCards } from './_components/offers-mobile-cards';
 import { OffersDesktopTable } from './_components/offers-desktop-table';
@@ -689,130 +686,100 @@ export default function OffersPage() {
 
       <BulkSendResultBanner result={bulkResult} onDismiss={() => setBulkResult(null)} />
 
-      {/* ── Guided offer wizard — full-screen split layout ── */}
-      <AnimatePresence>
-      {showForm && (
-        <>
-          <motion.div
-            key="offer-wizard"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-50 flex overflow-hidden bg-[var(--surface)]"
-          >
-            {/* ── Split body — full height, no top bar ── */}
-            <div className="flex-1 flex overflow-hidden">
-
-              {/* ── Left: live preview canvas (hidden on small screens) ── */}
-              <OfferWizardLivePreview
-                closeWizard={closeWizard}
-                livePreviewHtml={livePreviewHtml}
-                previewDirty={previewDirty}
-                livePreviewLoading={livePreviewLoading}
-                activeField={activeField}
-                selectedCompany={selectedCompany}
-                selectedTemplate={selectedTemplate}
-                previewLooksImageLed={previewLooksImageLed}
-                openTemplatePreview={openTemplatePreview}
-                previewIframeRef={previewIframeRef}
-                lastActiveFieldRef={lastActiveFieldRef}
-                templatesCount={templates.length}
-              />
-
-              {/* ── Right: step panel ── */}
-              <div className="w-full lg:w-[460px] shrink-0 border-l border-[var(--border)] bg-[var(--surface)] flex flex-col overflow-hidden">
-
-                {/* ════ STEP 1: Template + Recipient ════ */}
-                {wizardStep === 1 && (
-                  <OfferWizardStepOne
-                    companies={companies}
-                    form={form}
-                    selectedCompanyId={selectedCompanyId}
-                    templates={templates}
-                    contactSearch={contactSearch}
-                    contactResults={contactResults}
-                    contactLoading={contactLoading}
-                    companyResults={companyResults}
-                    companyLoading={companyLoading}
-                    closeWizard={closeWizard}
-                    setSelectedCompanyId={setSelectedCompanyId}
-                    setForm={setForm}
-                    setLivePreviewHtml={setLivePreviewHtml}
-                    setCachedTplContent={setCachedTplContent}
-                    selectTemplate={selectTemplate}
-                    openTemplatePreview={openTemplatePreview}
-                    searchContacts={searchContacts}
-                    setContactSearch={setContactSearch}
-                    setContactResults={setContactResults}
-                    pickContact={pickContact}
-                    searchCompanies={searchCompanies}
-                    setCompanyResults={setCompanyResults}
-                    setWizardStep={setWizardStep}
-                    setConfirmedSections={setConfirmedSections}
-                  />
-                )}
-
-                {/* ════ STEP 2: Form ════ */}
-                {wizardStep === 2 && (
-                  <OfferWizardStepTwoPanel
-                    activeTemplateLabel={form.templateId ? selectedTemplate?.name ?? '' : null}
-                    blockingAlert={blockingAlert}
-                    companyLoading={companyLoading}
-                    companyResults={companyResults}
-                    confirmedSections={confirmedSections}
-                    contactLoading={contactLoading}
-                    contactResults={contactResults}
-                    contactSearch={contactSearch}
-                    detajerComplete={detajerComplete}
-                    editingOfferId={editingOfferId}
-                    enforcedPriceDisplayMode={enforcedPriceDisplayMode}
-                    error={error}
-                    fieldErrors={fieldErrors}
-                    filteredServices={filteredServices}
-                    form={form}
-                    mottagareComplete={mottagareComplete}
-                    openCards={openCards}
-                    openLines={openLines}
-                    productPickerRow={productPickerRow}
-                    productSearch={productSearch}
-                    saveAndSendActive={saveAndSendRef.current}
-                    saving={saving}
-                    services={services}
-                    totals={tots}
-                    addLine={addLine}
-                    closeWizard={closeWizard}
-                    createOffer={createOffer}
-                    dismissNotices={dismissNotices}
-                    markSaveAndSend={() => { saveAndSendRef.current = true; }}
-                    pickContact={pickContact}
-                    pickProduct={pickProduct}
-                    removeLine={removeLine}
-                    reorderLines={reorderLines}
-                    searchCompanies={searchCompanies}
-                    searchContacts={searchContacts}
-                    setActiveField={setActiveField}
-                    setCompanyResults={setCompanyResults}
-                    setConfirmedSections={setConfirmedSections}
-                    setContactResults={setContactResults}
-                    setContactSearch={setContactSearch}
-                    setFieldErrors={setFieldErrors}
-                    setForm={setForm}
-                    setOpenCards={setOpenCards}
-                    setOpenLines={setOpenLines}
-                    setProductPickerRow={setProductPickerRow}
-                    setProductSearch={setProductSearch}
-                    setWizardStep={setWizardStep}
-                    updateLine={updateLine}
-                  />
-                )}
-
-
-
-              </div>
-            </div>
-          </motion.div>
-        </>
-      )}
-      </AnimatePresence>
+      <OfferWizardShell
+        open={showForm}
+        wizardStep={wizardStep}
+        livePreviewProps={{
+          closeWizard,
+          livePreviewHtml,
+          previewDirty,
+          livePreviewLoading,
+          activeField,
+          selectedCompany,
+          selectedTemplate,
+          previewLooksImageLed,
+          openTemplatePreview,
+          previewIframeRef,
+          lastActiveFieldRef,
+          templatesCount: templates.length,
+        }}
+        stepOneProps={{
+          companies,
+          form,
+          selectedCompanyId,
+          templates,
+          contactSearch,
+          contactResults,
+          contactLoading,
+          companyResults,
+          companyLoading,
+          closeWizard,
+          setSelectedCompanyId,
+          setForm,
+          setLivePreviewHtml,
+          setCachedTplContent,
+          selectTemplate,
+          openTemplatePreview,
+          searchContacts,
+          setContactSearch,
+          setContactResults,
+          pickContact,
+          searchCompanies,
+          setCompanyResults,
+          setWizardStep,
+          setConfirmedSections,
+        }}
+        stepTwoProps={{
+          activeTemplateLabel: form.templateId ? selectedTemplate?.name ?? '' : null,
+          blockingAlert,
+          companyLoading,
+          companyResults,
+          confirmedSections,
+          contactLoading,
+          contactResults,
+          contactSearch,
+          detajerComplete,
+          editingOfferId,
+          enforcedPriceDisplayMode,
+          error,
+          fieldErrors,
+          filteredServices,
+          form,
+          mottagareComplete,
+          openCards,
+          openLines,
+          productPickerRow,
+          productSearch,
+          saveAndSendActive: saveAndSendRef.current,
+          saving,
+          services,
+          totals: tots,
+          addLine,
+          closeWizard,
+          createOffer,
+          dismissNotices,
+          markSaveAndSend: () => { saveAndSendRef.current = true; },
+          pickContact,
+          pickProduct,
+          removeLine,
+          reorderLines,
+          searchCompanies,
+          searchContacts,
+          setActiveField,
+          setCompanyResults,
+          setConfirmedSections,
+          setContactResults,
+          setContactSearch,
+          setFieldErrors,
+          setForm,
+          setOpenCards,
+          setOpenLines,
+          setProductPickerRow,
+          setProductSearch,
+          setWizardStep,
+          updateLine,
+        }}
+      />
 
       <BulkActionBar
         selectedCount={selected.size}
