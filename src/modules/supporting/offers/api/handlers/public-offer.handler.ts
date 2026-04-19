@@ -76,14 +76,18 @@ async function resolveRendererVariant(offer: Record<string, unknown>): Promise<'
   const offerId = typeof offer.id === 'string' ? offer.id : null;
   if (!organizationId || !offerId) return 'legacy';
 
-  const { evaluateFeatureFlag } = await import('@modules/supporting/feature-flags');
-  const evaluation = await evaluateFeatureFlag({
-    organizationId,
-    key: 'public-offer-v2',
-    environment: process.env.NEXT_PUBLIC_APP_ENV ?? 'production',
-    contextKey: offerId,
-  });
-  return evaluation.enabled ? 'next' : 'legacy';
+  try {
+    const { evaluateFeatureFlag } = await import('@modules/supporting/feature-flags');
+    const evaluation = await evaluateFeatureFlag({
+      organizationId,
+      key: 'public-offer-v2',
+      environment: process.env.NEXT_PUBLIC_APP_ENV ?? 'production',
+      contextKey: offerId,
+    });
+    return evaluation.enabled ? 'next' : 'legacy';
+  } catch {
+    return 'legacy';
+  }
 }
 
 export const handleGetPublicOffer = createHandler(

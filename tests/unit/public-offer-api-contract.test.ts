@@ -151,6 +151,20 @@ describe('public offer API contract', () => {
     expect(body.data).toMatchObject({ rendererVariant: 'next' });
   });
 
+  it('fails open to the legacy renderer when feature flag lookup fails', async () => {
+    vi.mocked(viewOffer).mockResolvedValue(offerFixture() as never);
+    vi.mocked(evaluateFeatureFlag).mockRejectedValue(new Error('flag store unavailable'));
+
+    const res = await handleGetPublicOffer(request('/api/offers/public/public-token', { method: 'GET' }));
+    const body = await json(res);
+
+    expect(res.status).toBe(200);
+    expect(body.data).toMatchObject({
+      id: 'offer_1',
+      rendererVariant: 'legacy',
+    });
+  });
+
   it('marks a public offer as viewed with client metadata', async () => {
     vi.mocked(markOfferViewed).mockResolvedValue({
       status: 'viewed',
