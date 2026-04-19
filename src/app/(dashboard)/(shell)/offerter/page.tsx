@@ -21,6 +21,7 @@ import { OffersLoadingState } from './_components/offers-loading-state';
 import { OffersMobileCards } from './_components/offers-mobile-cards';
 import { OffersDesktopTable } from './_components/offers-desktop-table';
 import { useOfferListActions } from './_hooks/use-offer-list-actions';
+import { useOfferWizardSubmit } from './_hooks/use-offer-wizard-submit';
 import {
   BulkActionBar,
   BulkSendResultBanner,
@@ -83,7 +84,6 @@ export default function OffersPage() {
   } = useOffersFormStore();
 
   // ── Local refs (non-serializable / timer handles) ─────────────────────────
-  const saveAndSendRef = useRef(false);
   const contactSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const livePreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
@@ -228,85 +228,27 @@ export default function OffersPage() {
     setShowForm(true);
   }, [setSelectedCompanyId]);
 
-  // ── Create / update offer ──────────────────────────────────────────────────────
-  const createOffer = useCallback(async () => {
-    const errs: Record<string, string> = {};
-    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-    if (!form.title.trim())                errs.title          = 'Obligatoriskt';
-    else if (form.title.trim().length < 2) errs.title          = 'Minst 2 tecken';
-
-    if (!form.recipientName.trim())                errs.recipientName  = 'Obligatoriskt';
-    else if (form.recipientName.trim().length < 2) errs.recipientName  = 'Minst 2 tecken';
-
-    if (!form.recipientEmail.trim())              errs.recipientEmail = 'Obligatoriskt';
-    else if (!emailRe.test(form.recipientEmail.trim())) errs.recipientEmail = 'Ogiltig e-postadress';
-
-    let anyComplete = false;
-    form.lineItems.forEach((item, idx) => {
-      const hasDesc = item.description.trim().length > 0;
-      const hasQty  = item.quantity > 0;
-      if (hasDesc && hasQty) anyComplete = true;
-      if (hasDesc && !hasQty)  errs[`line_${idx}_quantity`]    = 'Måste vara > 0';
-      if (hasQty  && !hasDesc) errs[`line_${idx}_description`] = 'Beskrivning saknas';
-    });
-    if (!anyComplete) errs.lineItems = 'Minst en rad måste ha beskrivning och antal > 0.';
-
-    if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
-
-    setSaving(true); dismissNotices(); setFieldErrors({});
-    try {
-      const body: Record<string, unknown> = {
-        title:            form.title,
-        priceDisplayMode: enforcedPriceDisplayMode,
-        recipientName:    form.recipientName,
-        recipientEmail:   form.recipientEmail,
-        recipientCompany: form.recipientCompany || undefined,
-        notes:            form.notes || undefined,
-        validityDays:     form.validityDays,
-        lineItems:        form.lineItems
-          .filter((i) => i.description.trim() && i.quantity > 0)
-          .map((item, idx) => ({
-            ...item,
-            sortOrder: idx,
-          })),
-      };
-      if (form.templateId)    body.templateId   = form.templateId;
-      if (form.contactId)     body.customerId   = form.contactId;
-      if (form.companyId)     body.companyId    = form.companyId;
-
-      const isEdit = Boolean(editingOfferId);
-      const res = isEdit
-        ? await fetchWithRefresh(`/api/offers/${editingOfferId}`, {
-            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          })
-        : await fetchWithRefresh('/api/offers', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body:   JSON.stringify(body),
-          });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({})) as { detail?: string };
-        throw new Error(j.detail ?? `Fel ${res.status}`);
-      }
-      const j = await res.json() as { data: Offer };
-      setShowForm(false); setForm(EMPTY_FORM); setEditingOfferId(null);
-      await Promise.all([load(true), loadCounts()]);
-      if (saveAndSendRef.current) {
-        saveAndSendRef.current = false;
-        setConfirmSend(j.data);
-      } else {
-        setDraftSaved(true);
-        setTimeout(() => setDraftSaved(false), 3000);
-      }
-    } catch (e) {
-      setBlockingAlert(null);
-      setError((e as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  }, [dismissNotices, editingOfferId, form]);
-
+  const {
+    createOffer,
+    markSaveAndSend,
+    saveAndSendActive,
+  } = useOfferWizardSubmit({
+    dismissNotices,
+    editingOfferId,
+    form,
+    priceDisplayMode: enforcedPriceDisplayMode,
+    load,
+    loadCounts,
+    setBlockingAlert,
+    setConfirmSend,
+    setDraftSaved,
+    setEditingOfferId,
+    setError,
+    setFieldErrors,
+    setForm,
+    setSaving,
+    setShowForm,
+  });
   const selectedCompanyBranding = useMemo(() => (
     selectedCompany ? {
       name: selectedCompany.name,
@@ -663,7 +605,7 @@ export default function OffersPage() {
           openLines,
           productPickerRow,
           productSearch,
-          saveAndSendActive: saveAndSendRef.current,
+          saveAndSendActive,
           saving,
           services,
           totals: tots,
@@ -671,7 +613,7 @@ export default function OffersPage() {
           closeWizard,
           createOffer,
           dismissNotices,
-          markSaveAndSend: () => { saveAndSendRef.current = true; },
+          markSaveAndSend,
           pickContact,
           pickProduct,
           removeLine,
