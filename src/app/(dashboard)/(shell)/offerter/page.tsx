@@ -16,7 +16,6 @@
  */
 
 import { useEffect, useCallback, useRef, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { fetchWithRefresh } from '@shared/lib/api-client';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@shared/lib/utils';
@@ -30,7 +29,6 @@ import {
   fromDisplayUnitPrice,
   getDisplayLineTotal,
   getDisplayUnitPrice,
-  summarizeOfferPricing,
 } from '@modules/supporting/offers/domain/pricing';
 import { deriveValidityDays } from '@modules/supporting/offers/domain/validity';
 import {
@@ -45,64 +43,31 @@ import {
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { useOffersListStore, PAGE_SIZE } from './_store/offers-list.store';
 import { useOffersFormStore } from './_store/offers-form.store';
-import type { OfferStatus, OfferPriceDisplayMode, OfferProjectStage, LineItem, Offer, OfferTemplate, OfferProduct, ContactResult, CompanyResult } from './_store/types';
+import type { Offer, OfferTemplate, OfferProduct, ContactResult, CompanyResult } from './_store/types';
 import { EMPTY_LINE, EMPTY_FORM } from './_store/types';
+import { AutoGrowTextarea } from './_components/auto-grow-textarea';
 import { OfferTemplateCard } from './_components/offer-template-card';
 import { OfferTemplatePreviewModal } from './_components/offer-template-preview-modal';
 import { SendOfferDialog } from './_components/send-offer-dialog';
 import { OfferPreviewDialog } from './_components/offer-preview-dialog';
+import { ProjectStageBadge } from './_components/project-stage-badge';
+import { SortableRow } from './_components/sortable-row';
+import { STATUS_LABEL, STATUS_STYLES, STATUS_TABS, VALIDITY_OPTIONS } from './_lib/offers-dashboard-constants';
+import {
+  canRemind,
+  fmtDate,
+  fmtOfferNumber,
+  fmtSEK,
+  linePriceLabel,
+  normalizeSearchValue,
+  pricingSummary,
+  publicUrl,
+} from './_lib/offers-dashboard-formatters';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
-
-// ─── Constants ─────────────────────────────────────────────────────────────────
-
-const STATUS_TABS: { id: OfferStatus | 'all'; label: string }[] = [
-  { id: 'all',      label: 'Alla' },
-  { id: 'draft',    label: 'Utkast' },
-  { id: 'sent',     label: 'Skickade' },
-  { id: 'viewed',   label: 'Visade' },
-  { id: 'accepted', label: 'Accepterade' },
-  { id: 'declined', label: 'Avvisade' },
-];
-
-const STATUS_STYLES: Record<OfferStatus, string> = {
-  draft:    'bg-[var(--status-draft-bg)] text-[var(--status-draft-text)] border border-[var(--status-draft-border)]',
-  sent:     'bg-[var(--status-sent-bg)] text-[var(--status-sent-text)]',
-  viewed:   'bg-[var(--status-viewed-bg)] text-[var(--status-viewed-text)]',
-  accepted: 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted-text)]',
-  declined: 'bg-[var(--status-declined-bg)] text-[var(--status-declined-text)]',
-  expired:  'bg-[var(--status-expired-bg)] text-[var(--status-expired-text)]',
-};
-
-const STATUS_LABEL: Record<OfferStatus, string> = {
-  draft:    'Utkast',
-  sent:     'Skickad',
-  viewed:   'Visad',
-  accepted: 'Accepterad',
-  declined: 'Avvisad',
-  expired:  'Utgången',
-};
-
-const PROJECT_STAGE_META: Record<OfferProjectStage, { label: string; bg: string; color: string }> = {
-  details:     { label: 'Uppgifter', bg: 'var(--surface-2)', color: 'var(--text-secondary)' },
-  ordered:     { label: 'Beställt', bg: 'var(--status-sent-bg)', color: 'var(--status-sent-text)' },
-  arrived:     { label: 'Ankommet', bg: 'var(--status-viewed-bg)', color: 'var(--status-viewed-text)' },
-  in_progress: { label: 'Pågår', bg: 'var(--accent-subtle)', color: 'var(--accent)' },
-  completed:   { label: 'Klart', bg: 'var(--status-accepted-bg)', color: 'var(--status-accepted-text)' },
-};
-
-const VALIDITY_OPTIONS = [
-  { days: 7,  label: '7 dagar' },
-  { days: 14, label: '14 dagar' },
-  { days: 30, label: '30 dagar' },
-  { days: 60, label: '60 dagar' },
-  { days: 90, label: '90 dagar' },
-] as const;
 
 type BlockingErrorPayload = {
   code?: string;
@@ -122,80 +87,6 @@ type BlockingAlert = {
   groups: BlockingAlertGroup[];
   footer: string;
 };
-
-// ─── Utilities ─────────────────────────────────────────────────────────────────
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-function fmtSEK(n: number) {
-  return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(n);
-}
-
-function normalizeSearchValue(value: string) {
-  return value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim();
-}
-
-function pricingSummary(items: LineItem[], mode: OfferPriceDisplayMode) {
-  const validItems = items.filter((item) => item.description.trim() && item.quantity > 0);
-  return summarizeOfferPricing(validItems, mode);
-}
-
-function linePriceLabel(vatRate: number) {
-  return vatRate > 0 ? 'inkl. moms' : 'exkl. moms';
-}
-
-function publicUrl(token: string): string {
-  const base = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${base}/offerter/publik/${token}`;
-}
-
-function fmtOfferNumber(offer: Offer): string {
-  if (!offer.offerNumber) return offer.id.slice(0, 8).toUpperCase();
-  const year = new Date(offer.createdAt).getFullYear();
-  return `${year}-${String(offer.offerNumber).padStart(3, '0')}`;
-}
-
-/** Returns true if a reminder can be sent (no reminder yet, or cooldown of 3 days has passed) */
-function canRemind(offer: Offer): boolean {
-  if (offer.status !== 'sent' && offer.status !== 'viewed') return false;
-  if (!offer.reminderSentAt) return true;
-  return Date.now() - new Date(offer.reminderSentAt).getTime() >= 3 * 24 * 60 * 60 * 1000;
-}
-
-function ProjectStageBadge({ offer }: { offer: Offer }) {
-  if (offer.status !== 'accepted') return null;
-  const project = offer.project;
-
-  if (!project) {
-    return (
-      <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dashed border-[var(--border)] bg-[var(--surface-1)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-muted)]">
-        <span className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)]" />
-        Projekt saknas
-      </span>
-    );
-  }
-
-  const meta = PROJECT_STAGE_META[project.stage];
-  const label = project.stage === 'completed' ? 'Projekt klart' : `Projekt: ${meta.label}`;
-
-  return (
-    <Link
-      href={`/projekt/${project.id}`}
-      className="inline-flex w-fit items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors hover:bg-[var(--surface-hover)]"
-      style={{ background: meta.bg, color: meta.color, borderColor: `color-mix(in srgb, ${meta.color} 32%, var(--border))` }}
-      title="Öppna projektet"
-    >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: meta.color }} />
-      {label}
-    </Link>
-  );
-}
 
 function describeBlockingIssue(issue: BlockingErrorPayload): { key: string; text: string } {
   const field = issue.field ?? '';
@@ -371,109 +262,6 @@ function GenericErrorBanner({ message, onDismiss, compact = false }: { message: 
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
-    </div>
-  );
-}
-
-function AutoGrowTextarea({
-  value,
-  onChange,
-  onFocus,
-  placeholder,
-  className,
-  minRows = 2,
-}: {
-  value: string;
-  onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onFocus?: () => void;
-  placeholder?: string;
-  className?: string;
-  minRows?: number;
-}) {
-  const ref = useRef<HTMLTextAreaElement | null>(null);
-  const adjustHeight = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.height = '0px';
-    el.style.height = `${el.scrollHeight}px`;
-  }, []);
-
-  useEffect(() => {
-    adjustHeight();
-  }, [adjustHeight, value]);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    let frameId: number | null = null;
-    const scheduleAdjustHeight = () => {
-      if (frameId !== null) cancelAnimationFrame(frameId);
-      frameId = requestAnimationFrame(() => {
-        frameId = null;
-        adjustHeight();
-      });
-    };
-
-    const resizeObserver = typeof ResizeObserver !== 'undefined'
-      ? new ResizeObserver(() => scheduleAdjustHeight())
-      : null;
-
-    resizeObserver?.observe(el);
-    window.addEventListener('resize', scheduleAdjustHeight);
-
-    return () => {
-      if (frameId !== null) cancelAnimationFrame(frameId);
-      resizeObserver?.disconnect();
-      window.removeEventListener('resize', scheduleAdjustHeight);
-    };
-  }, [adjustHeight]);
-
-  return (
-    <textarea
-      ref={ref}
-      value={value}
-      rows={minRows}
-      onChange={onChange}
-      onFocus={onFocus}
-      placeholder={placeholder}
-      className={className}
-      style={{ overflow: 'hidden' }}
-    />
-  );
-}
-
-// ─── SortableRow — thin wrapper enabling drag-to-reorder for line items ────────
-
-function SortableRow({ id, children }: {
-  id: string;
-  children: (grip: React.ReactNode) => React.ReactNode;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-  const grip = (
-    <button
-      type="button"
-      {...attributes}
-      {...listeners}
-      className="shrink-0 p-1 rounded text-[var(--text-muted)] hover:text-[var(--accent)] cursor-grab active:cursor-grabbing touch-none opacity-0 group-hover/row:opacity-100 transition-opacity"
-      aria-label="Dra för att sortera"
-      tabIndex={-1}
-    >
-      <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">
-        <circle cx="3" cy="2" r="1.25"/><circle cx="7" cy="2" r="1.25"/>
-        <circle cx="3" cy="7" r="1.25"/><circle cx="7" cy="7" r="1.25"/>
-        <circle cx="3" cy="12" r="1.25"/><circle cx="7" cy="12" r="1.25"/>
-      </svg>
-    </button>
-  );
-  return (
-    <div ref={setNodeRef} style={style}>
-      {children(grip)}
     </div>
   );
 }
