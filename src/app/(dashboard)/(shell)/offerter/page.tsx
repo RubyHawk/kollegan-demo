@@ -39,6 +39,7 @@ import { OfferWizardDetailsCard } from './_components/offer-wizard-details-card'
 import { OfferWizardLineItemsCard } from './_components/offer-wizard-line-items-card';
 import { OfferWizardFooter } from './_components/offer-wizard-footer';
 import { OffersMobileEmptyState, OffersTableEmptyState } from './_components/offers-empty-state';
+import { OffersLoadingState } from './_components/offers-loading-state';
 import {
   BlockingAlertCard,
   GenericErrorBanner,
@@ -1007,12 +1008,7 @@ export default function OffersPage() {
 
       {/* Offers table */}
       {loading ? (
-        <div className="flex items-center justify-center py-20 gap-3">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--text-muted)]">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-          </svg>
-          <p className="text-sm text-[var(--text-muted)]">Laddar offerter…</p>
-        </div>
+        <OffersLoadingState />
       ) : (
         <>
         {/* Mobile cards */}
