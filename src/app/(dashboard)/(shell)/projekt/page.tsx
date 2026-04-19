@@ -110,6 +110,7 @@ function ProjectCard({ project }: { project: Project }) {
 
 export default function ProjectsBoardPage() {
   const searchParams = useSearchParams();
+  const stageQuery = searchParams.get('stage') ?? '';
   const projects = useProjectsListStore((s) => s.projects);
   const total = useProjectsListStore((s) => s.total);
   const counts = useProjectsListStore((s) => s.counts);
@@ -126,10 +127,9 @@ export default function ProjectsBoardPage() {
   const loadCounts = useProjectsListStore((s) => s.loadCounts);
 
   useEffect(() => {
-    const stageQuery = searchParams.get('stage');
     const stage = stageQuery ? QUERY_TO_STAGE[stageQuery] ?? 'all' : 'all';
     setStageFilter(stage);
-  }, [searchParams, setStageFilter]);
+  }, [stageQuery, setStageFilter]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => setSearch(searchInput), 250);
