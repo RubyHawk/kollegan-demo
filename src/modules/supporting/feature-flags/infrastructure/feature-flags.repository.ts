@@ -59,18 +59,25 @@ export const featureFlagsRepository = {
     filter: ListFeatureFlagsFilter,
   ): Promise<{ flags: FeatureFlag[]; total: number }> {
     const now = new Date();
-    const where = {
-      organizationId,
-      deletedAt: null,
-      ...(filter.environment ? { environment: filter.environment } : {}),
-      ...(!filter.includeExpired ? { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] } : {}),
-      ...(filter.search ? {
+    const predicates: Record<string, unknown>[] = [];
+    if (!filter.includeExpired) {
+      predicates.push({ OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] });
+    }
+    if (filter.search) {
+      predicates.push({
         OR: [
           { key: { contains: filter.search, mode: 'insensitive' as const } },
           { owner: { contains: filter.search, mode: 'insensitive' as const } },
           { description: { contains: filter.search, mode: 'insensitive' as const } },
         ],
-      } : {}),
+      });
+    }
+
+    const where = {
+      organizationId,
+      deletedAt: null,
+      ...(filter.environment ? { environment: filter.environment } : {}),
+      ...(predicates.length ? { AND: predicates } : {}),
     };
 
     const [rows, total] = await Promise.all([
