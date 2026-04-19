@@ -36,6 +36,10 @@ import {
 } from './_api/public-offer.api';
 import { PublicOfferHeader } from './_components/public-offer-header';
 import {
+  PublicOfferDocumentFrame,
+  PublicOfferDocumentLoadingNotice,
+} from './_components/public-offer-document-frame';
+import {
   PublicOfferLoadingScreen,
   PublicOfferSigningScreen,
   PublicOfferTerminalScreen,
@@ -2185,36 +2189,20 @@ export default function PublicOfferPage() {
       >
         <div className="mx-auto max-w-[1040px] overflow-x-hidden px-0 sm:px-6 sm:pt-2">
 
-        {/* Document iframe */}
         {offer.generatedDocument && (
-          <motion.section
-            ref={documentSectionRef}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.04 }}
-            className={promoPageCount > 0
-              ? 'mb-6 overflow-visible bg-transparent shadow-none sm:rounded-[26px]'
-              : 'mb-6 overflow-visible bg-transparent shadow-none sm:mx-0 sm:overflow-hidden sm:rounded-[28px] sm:border sm:border-white/75 sm:bg-white/92 sm:shadow-[0_20px_42px_rgba(15,23,42,0.08)]'}
-          >
-            <iframe
-              ref={iframeRef}
-              srcDoc={iframeDocumentHtml}
-              sandbox="allow-same-origin"
-              title="Offertdokument"
-              onLoad={handleIframeLoad}
-              className="block w-full border-none"
-              style={{ minHeight: '200px', overflow: 'hidden' }}
-              scrolling="no"
-            />
-          </motion.section>
+          <PublicOfferDocumentFrame
+            sectionRef={documentSectionRef}
+            iframeRef={iframeRef}
+            srcDoc={iframeDocumentHtml}
+            hasPromoPages={promoPageCount > 0}
+            onLoad={handleIframeLoad}
+          />
         )}
 
         {/* ─── Signing card ─── */}
         <div className="px-4 sm:px-0">
         {offer.generatedDocument && !documentReady && (
-          <div className="mb-4 flex items-center justify-center rounded-[20px] border border-slate-200/70 bg-white/95 px-4 py-3 text-sm text-slate-500 shadow-[0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur">
-            Anpassar offerten för din skärm...
-          </div>
+          <PublicOfferDocumentLoadingNotice />
         )}
         <AnimatePresence mode="wait">
           {(!offer.generatedDocument || documentReady) && (!isDecline ? (
