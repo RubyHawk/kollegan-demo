@@ -35,7 +35,7 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 701 |
+| Tracked files scanned | 705 |
 | Source files scanned | 572 |
 | Active production source files | 415 |
 | Files above 1000 lines | 3 |
