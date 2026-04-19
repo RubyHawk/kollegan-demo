@@ -29,8 +29,20 @@ jobs:
             rm -f .next/lock
             npm ci --include=dev --no-audit
             npx playwright install chromium
-            npm run check:migrations
-            npm run check:file-size
+            BEFORE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+            if [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+              if git rev-parse "${HEAD_SHA}^" >/dev/null 2>&1; then
+                QUALITY_BASE_SHA="$(git rev-parse "${HEAD_SHA}^")" QUALITY_HEAD_SHA="$HEAD_SHA" npm run check:migrations
+                QUALITY_BASE_SHA="$(git rev-parse "${HEAD_SHA}^")" QUALITY_HEAD_SHA="$HEAD_SHA" npm run check:file-size
+              else
+                npm run check:migrations:all
+                npm run check:file-size:all
+              fi
+            else
+              QUALITY_BASE_SHA="$BEFORE_SHA" QUALITY_HEAD_SHA="$HEAD_SHA" npm run check:migrations
+              QUALITY_BASE_SHA="$BEFORE_SHA" QUALITY_HEAD_SHA="$HEAD_SHA" npm run check:file-size
+            fi
             npm run check:ai-proxies
             npm run build
             npx prisma migrate deploy
