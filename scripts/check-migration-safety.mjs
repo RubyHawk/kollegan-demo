@@ -24,11 +24,14 @@ function normalize(filePath) {
 }
 
 function getChangedFiles() {
+  const baseRef = process.env.GITHUB_BASE_REF;
+  const eventName = process.env.GITHUB_EVENT_NAME;
   const commands = [
-    'git diff --name-only --diff-filter=ACMR origin/main...HEAD',
+    baseRef ? `git diff --name-only --diff-filter=ACMR origin/${baseRef}...HEAD` : null,
+    eventName === 'push' ? 'git diff --name-only --diff-filter=ACMR HEAD^ HEAD' : null,
     'git diff --name-only --diff-filter=ACMR',
     'git ls-files --others --exclude-standard',
-  ];
+  ].filter(Boolean);
   const files = new Set();
   for (const command of commands) {
     try {
@@ -66,7 +69,7 @@ function isAllowlisted(file, patternName) {
 
 const allMode = process.argv.includes('--all');
 const changedFiles = getChangedFiles();
-const files = allMode || changedFiles.length === 0
+const files = allMode
   ? [
       ...walk(path.join(root, 'prisma')),
       ...walk(path.join(root, 'src')),

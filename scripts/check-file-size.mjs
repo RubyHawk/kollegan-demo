@@ -5,7 +5,7 @@ import { execSync } from 'node:child_process';
 const root = process.cwd();
 const warnAt = 500;
 const failAt = 1000;
-const extensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.css', '.md']);
+const extensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.css', '.md', '.yml', '.yaml']);
 const ignoredSegments = [
   'node_modules',
   '.git',
@@ -28,11 +28,14 @@ function shouldIgnore(file) {
 }
 
 function getChangedFiles() {
+  const baseRef = process.env.GITHUB_BASE_REF;
+  const eventName = process.env.GITHUB_EVENT_NAME;
   const commands = [
-    'git diff --name-only --diff-filter=ACMR origin/main...HEAD',
+    baseRef ? `git diff --name-only --diff-filter=ACMR origin/${baseRef}...HEAD` : null,
+    eventName === 'push' ? 'git diff --name-only --diff-filter=ACMR HEAD^ HEAD' : null,
     'git diff --name-only --diff-filter=ACMR',
     'git ls-files --others --exclude-standard',
-  ];
+  ].filter(Boolean);
   const files = new Set();
   for (const command of commands) {
     try {
@@ -66,7 +69,7 @@ function walk(dir, files = []) {
 
 const allMode = process.argv.includes('--all');
 const changedFiles = getChangedFiles();
-const files = allMode || changedFiles.length === 0
+const files = allMode
   ? walk(root)
   : changedFiles.filter((file) => extensions.has(path.extname(file)) && !shouldIgnore(file));
 
