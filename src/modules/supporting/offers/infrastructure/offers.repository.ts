@@ -1,5 +1,5 @@
 import { prisma, Prisma } from '@platform/database/prisma';
-import type { Offer, OfferLineItem } from '../domain/offer.entity';
+import type { Offer, OfferLineItem, OfferProjectStage } from '../domain/offer.entity';
 import { calculateOfferTotals, DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '../domain/pricing';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -105,6 +105,8 @@ function mapLineItem(r: Record<string, unknown>): OfferLineItem {
 
 function mapOffer(r: Record<string, unknown>): Offer {
   const items = (r.lineItems as Record<string, unknown>[] | undefined) ?? [];
+  const projects = (r.projects as Record<string, unknown>[] | undefined) ?? [];
+  const project = projects[0] ?? null;
   return {
     id:                   r.id as string,
     organizationId:       r.organizationId as string,
@@ -144,6 +146,11 @@ function mapOffer(r: Record<string, unknown>): Offer {
     publicToken:          r.publicToken as string,
     publicTokenExpiresAt: r.publicTokenExpiresAt ? (r.publicTokenExpiresAt as Date).toISOString() : undefined,
     lineItems:            items.map(mapLineItem),
+    project: project ? {
+      id: project.id as string,
+      stage: project.stage as OfferProjectStage,
+      completedAt: project.completedAt ? (project.completedAt as Date).toISOString() : undefined,
+    } : null,
   };
 }
 
@@ -164,6 +171,13 @@ const LINE_ITEM_SELECT = {
   unitPrice: true, vatRate: true, discount: true, productId: true, unit: true, sortOrder: true,
 };
 
+const OFFER_PROJECT_SELECT = {
+  where: { deletedAt: null },
+  select: { id: true, stage: true, completedAt: true },
+  orderBy: { createdAt: 'desc' as const },
+  take: 1,
+};
+
 const OFFER_SELECT = {
   id: true, organizationId: true, title: true, status: true,
   offerNumber: true,
@@ -178,6 +192,7 @@ const OFFER_SELECT = {
   publicToken: true, publicTokenExpiresAt: true,
   createdAt: true, updatedAt: true,
   lineItems: { select: LINE_ITEM_SELECT, orderBy: { sortOrder: 'asc' as const } },
+  projects: OFFER_PROJECT_SELECT,
 };
 
 // Lightweight select for list queries — omits large document/image fields that are
@@ -195,6 +210,7 @@ const OFFER_LIST_SELECT = {
   publicToken: true, publicTokenExpiresAt: true,
   createdAt: true, updatedAt: true,
   lineItems: { select: LINE_ITEM_SELECT, orderBy: { sortOrder: 'asc' as const } },
+  projects: OFFER_PROJECT_SELECT,
 };
 
 // ─── Repository ────────────────────────────────────────────────────────────────

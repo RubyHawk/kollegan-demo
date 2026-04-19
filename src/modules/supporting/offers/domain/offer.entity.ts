@@ -16,6 +16,13 @@
 
 export type OfferStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
 export type OfferPriceDisplayMode = 'exclusive' | 'inclusive';
+export type OfferProjectStage = 'details' | 'ordered' | 'arrived' | 'in_progress' | 'completed';
+
+export interface OfferProjectSummary {
+  id: string;
+  stage: OfferProjectStage;
+  completedAt?: string;
+}
 
 export interface OfferLineItem {
   id: string;
@@ -68,6 +75,7 @@ export interface Offer {
   signatureMethod: string;
   publicToken: string;
   publicTokenExpiresAt?: string;
+  project?: OfferProjectSummary | null;
 }
 
 export interface ProductCategory {

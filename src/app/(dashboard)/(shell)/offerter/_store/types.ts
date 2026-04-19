@@ -5,6 +5,13 @@
 
 export type OfferStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
 export type OfferPriceDisplayMode = 'exclusive' | 'inclusive';
+export type OfferProjectStage = 'details' | 'ordered' | 'arrived' | 'in_progress' | 'completed';
+
+export interface OfferProjectSummary {
+  id: string;
+  stage: OfferProjectStage;
+  completedAt?: string | null;
+}
 
 export interface LineItem {
   id?:         string;
@@ -46,6 +53,7 @@ export interface Offer {
   notes?:               string;
   validUntil?:          string;
   validityDays?:        number;
+  project?:             OfferProjectSummary | null;
 }
 
 export interface OfferTemplate {
