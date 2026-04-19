@@ -15,10 +15,9 @@ import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import type SignatureCanvas from 'react-signature-canvas';
 import { summarizePersistedOfferPricing } from '@modules/supporting/offers/domain/pricing';
-import type { PageState, PublicOffer, SigMode, SignatureFields } from './_types/public-offer.types';
+import type { PageState, PublicOffer, SigMode } from './_types/public-offer.types';
 import {
   SIG_FONTS,
-  SWEDISH_MONTHS_SHORT,
   fmtDate,
   fmtQuantityWithUnit,
   fmtSEK,
@@ -26,6 +25,15 @@ import {
   todaySv,
   type SignatureFontId,
 } from './_lib/public-offer-formatters';
+import {
+  applySignatureFields,
+  compactDateText,
+  findFirstOfferPageIndex,
+  findOfferAnchor,
+  isPromoPageBlock,
+  normalizeOfferText,
+  stripLegacyLineItemTables,
+} from './_lib/public-offer-document-dom';
 import {
   PublicOfferApiError,
   declinePublicOffer,
@@ -47,190 +55,6 @@ import {
   PublicOfferSigningScreen,
   PublicOfferTerminalScreen,
 } from './_components/public-offer-status-screens';
-
-// ─── Utilities ─────────────────────────────────────────────────────────────────
-function normalizeBrokenSwedish(text: string): string {
-  return text
-    .replace(/Ã…/g, 'Å')
-    .replace(/Ã„/g, 'Ä')
-    .replace(/Ã–/g, 'Ö')
-    .replace(/Ã¥/g, 'å')
-    .replace(/Ã¤/g, 'ä')
-    .replace(/Ã¶/g, 'ö')
-    .replace(/Â /g, '\u00a0')
-    .replace(/Â·/g, '·')
-    .replace(/â€”/g, '—')
-    .replace(/â€“/g, '–')
-    .replace(/â€œ/g, '“')
-    .replace(/â€\u009d/g, '”')
-    .replace(/â€™/g, '’');
-}
-
-function normalizeOfferText(text: string): string {
-  return normalizeBrokenSwedish(text)
-    .replace(/Ã…/g, 'Å')
-    .replace(/Ã„/g, 'Ä')
-    .replace(/Ã–/g, 'Ö')
-    .replace(/Ã¥/g, 'å')
-    .replace(/Ã¤/g, 'ä')
-    .replace(/Ã¶/g, 'ö')
-    .replace(/Â /g, '\u00a0')
-    .replace(/Â·/g, '·')
-    .replace(/Â(?=[\u00a0 0-9%.,:;|kr])/g, '');
-}
-
-function compactDateText(value: string): string {
-  const trimmed = normalizeOfferText(value).trim();
-  const parts = trimmed.match(/^(\d{1,2})\s+([A-Za-zÅÄÖåäö.]+)\s+(\d{4})$/);
-  if (!parts) return trimmed;
-
-  const [, dayValue, monthValue, yearValue] = parts;
-  const normalizedMonth = monthValue.toLocaleLowerCase('sv-SE').replace(/\.$/, '');
-  const monthMap: Record<string, number> = {
-    januari: 0, jan: 0,
-    februari: 1, feb: 1,
-    mars: 2, mar: 2,
-    april: 3, apr: 3,
-    maj: 4,
-    juni: 5, jun: 5,
-    juli: 6, jul: 6,
-    augusti: 7, aug: 7,
-    september: 8, sep: 8,
-    oktober: 9, okt: 9,
-    november: 10, nov: 10,
-    december: 11, dec: 11,
-  };
-  const monthIndex = monthMap[normalizedMonth];
-  if (monthIndex == null) return trimmed;
-
-  return `${Number(dayValue)} ${SWEDISH_MONTHS_SHORT[monthIndex]} ${yearValue}`;
-}
-
-function isPromoPageBlock(pageBlock: HTMLElement): boolean {
-  const pageContent = pageBlock.querySelector<HTMLElement>('.page-content') ?? pageBlock;
-  const text = pageContent.innerText.replace(/\s+/g, ' ').trim();
-  const topLevelChildren = Array.from(pageContent.children) as HTMLElement[];
-  const hasEdgeToEdgeAbsoluteImage = topLevelChildren.some((child) => child.style.position === 'absolute');
-  const hasMeaningfulInlineContent = topLevelChildren.some((child) => {
-    if (child.style.position === 'absolute') return false;
-    const childText = child.innerText.replace(/\s+/g, ' ').trim();
-    return childText.length >= 40 || /^(H[1-6]|UL|OL|TABLE)$/.test(child.tagName);
-  });
-  const hasStructuredOfferContent = !!pageContent.querySelector(
-    '.offer-shell, .offer-items, .offer-summary, [data-var="lineItems"], table',
-  );
-
-  return hasEdgeToEdgeAbsoluteImage && !hasMeaningfulInlineContent && !hasStructuredOfferContent && text.length < 40;
-}
-
-function findFirstOfferPageIndex(pageBlocks: HTMLElement[]): number {
-  const firstOfferPageIndex = pageBlocks.findIndex((pageBlock) => !isPromoPageBlock(pageBlock));
-  return firstOfferPageIndex === -1 ? 0 : firstOfferPageIndex;
-}
-
-function findOfferAnchor(pageBlock: HTMLElement | null): HTMLElement | null {
-  if (!pageBlock) return null;
-
-  return pageBlock.querySelector<HTMLElement>(
-    '.offer-shell__topline, .offer-shell, .offer-section, .offer-items, .offer-summary, h1, h2, table',
-  );
-}
-
-function looksLikeLegacyLineItemTableText(text: string): boolean {
-  const normalized = text
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLocaleUpperCase('sv-SE');
-
-  const hasHeader = normalized.includes('BESKRIVNING') || normalized.includes('PRODUKT ELLER TJÄNST');
-  const hasColumns = normalized.includes('ANTAL')
-    && (normalized.includes('À-PRIS') || normalized.includes('Å-PRIS') || normalized.includes('A-PRIS'))
-    && normalized.includes('MOMS')
-    && normalized.includes('BELOPP');
-
-  return hasHeader && hasColumns;
-}
-
-function stripLegacyLineItemTables(root: ParentNode): void {
-  const hasStructuredItems = !!root.querySelector('.offer-items, .offer-items__table, .offer-items__cards, .offer-item-card');
-  if (!hasStructuredItems) return;
-
-  root.querySelectorAll<HTMLTableSectionElement>('thead').forEach((section) => {
-    if (looksLikeLegacyLineItemTableText(section.innerText)) {
-      section.parentElement?.remove();
-    }
-  });
-
-  root.querySelectorAll<HTMLTableElement>('table').forEach((table) => {
-    if (looksLikeLegacyLineItemTableText(table.innerText)) {
-      table.remove();
-    }
-  });
-}
-
-function applySignatureFields(root: ParentNode, signature?: SignatureFields) {
-  root.querySelectorAll('[data-sig-field]').forEach((el) => {
-    const field = el.getAttribute('data-sig-field');
-    const container = el as HTMLElement;
-
-    if (!signature?.image && !signature?.name && !signature?.date) {
-      container.style.display = 'none';
-      return;
-    }
-
-    container.replaceChildren();
-    container.style.border = 'none';
-    container.style.borderRadius = '0';
-    container.style.background = 'transparent';
-    container.style.padding = '4px 0';
-    container.style.minHeight = '0';
-    container.style.display = 'block';
-
-    if (field === 'signature') {
-      if (!signature.image) {
-        container.style.display = 'none';
-        return;
-      }
-      const img = document.createElement('img');
-      img.src = signature.image;
-      img.alt = 'Signatur';
-      img.style.maxWidth = '260px';
-      img.style.maxHeight = '80px';
-      img.style.display = 'block';
-      container.appendChild(img);
-      return;
-    }
-
-    if (field === 'name') {
-      if (!signature.name) {
-        container.style.display = 'none';
-        return;
-      }
-      const name = document.createElement('span');
-      name.textContent = signature.name;
-      name.style.fontSize = '15px';
-      name.style.color = '#1e293b';
-      name.style.fontWeight = '500';
-      container.appendChild(name);
-      return;
-    }
-
-    if (field === 'date') {
-      if (!signature.date) {
-        container.style.display = 'none';
-        return;
-      }
-      const date = document.createElement('span');
-      date.textContent = signature.date;
-      date.style.fontSize = '14px';
-      date.style.color = '#475569';
-      container.appendChild(date);
-      return;
-    }
-
-    container.style.display = 'none';
-  });
-}
 
 // ─── Animated checkmark (drawn with SVG path animation) ────────────────────────
 
