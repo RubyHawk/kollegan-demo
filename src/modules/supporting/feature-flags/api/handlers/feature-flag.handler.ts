@@ -17,6 +17,12 @@ import {
 const FeatureFlagTypeSchema = z.enum(['release', 'kill_switch', 'experiment']);
 const RolloutModeSchema = z.enum(['off', 'on', 'percentage', 'users']);
 const RolloutScopeSchema = z.record(z.string(), z.unknown()).default({});
+const BooleanQuerySchema = z.preprocess((value) => {
+  if (value === undefined) return false;
+  if (value === true || value === 'true') return true;
+  if (value === false || value === 'false') return false;
+  return value;
+}, z.boolean());
 
 function extractToken(req: NextRequest): string {
   return req.headers.get('authorization')?.slice(7) ?? req.cookies.get('at')?.value ?? req.cookies.get('token')?.value ?? '';
@@ -56,7 +62,7 @@ function parseDate(value: string | null | undefined): Date | null | undefined {
 const ListQuerySchema = z.object({
   environment: z.string().max(80).optional(),
   search: z.string().max(100).optional(),
-  includeExpired: z.coerce.boolean().default(false),
+  includeExpired: BooleanQuerySchema,
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
