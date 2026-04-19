@@ -14,9 +14,18 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import type SignatureCanvas from 'react-signature-canvas';
-import { CalendarIcon } from '@shared/ui/icons';
 import { summarizePersistedOfferPricing } from '@modules/supporting/offers/domain/pricing';
 import type { PageState, PublicOffer, SigMode, SignatureFields } from './_types/public-offer.types';
+import {
+  SIG_FONTS,
+  SWEDISH_MONTHS_SHORT,
+  fmtDate,
+  fmtQuantityWithUnit,
+  fmtSEK,
+  textToSignatureImage,
+  todaySv,
+  type SignatureFontId,
+} from './_lib/public-offer-formatters';
 import {
   PublicOfferApiError,
   declinePublicOffer,
@@ -31,6 +40,7 @@ import {
   PublicOfferDocumentLoadingNotice,
 } from './_components/public-offer-document-frame';
 import { PublicOfferDrawSignatureModal } from './_components/public-offer-draw-signature-modal';
+import { PublicOfferFooter } from './_components/public-offer-footer';
 import { PublicOfferSigningCard } from './_components/public-offer-signing-card';
 import {
   PublicOfferLoadingScreen,
@@ -38,48 +48,7 @@ import {
   PublicOfferTerminalScreen,
 } from './_components/public-offer-status-screens';
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
-
-const SIG_FONTS = [
-  { id: 'cursive1', family: "'Segoe Script', 'Bradley Hand', cursive", label: 'Handskrift' },
-  { id: 'cursive2', family: "'Brush Script MT', 'Snell Roundhand', cursive", label: 'Elegant' },
-  { id: 'serif',    family: "'Georgia', 'Times New Roman', serif",          label: 'Klassisk' },
-  { id: 'mono',     family: "'Courier New', monospace",                     label: 'Maskin' },
-] as const;
-
 // ─── Utilities ─────────────────────────────────────────────────────────────────
-
-function fmtSEK(n: number) {
-  return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(n);
-}
-function fmtQuantityWithUnit(quantity: number, unit?: string) {
-  const formattedQuantity = new Intl.NumberFormat('sv-SE', {
-    minimumFractionDigits: Number.isInteger(quantity) ? 0 : 2,
-    maximumFractionDigits: Number.isInteger(quantity) ? 0 : 2,
-  }).format(quantity);
-  const trimmedUnit = unit?.trim() ?? '';
-  const normalizedUnit = trimmedUnit.toLocaleLowerCase('sv-SE');
-  const displayUnit = (
-    ['m2', 'm^2', 'm²', 'kvm'].includes(normalizedUnit) ? 'm²'
-      : ['m3', 'm^3', 'm³'].includes(normalizedUnit) ? 'm³'
-        : trimmedUnit || 'st'
-  );
-  return `${formattedQuantity} ${displayUnit}`;
-}
-const SWEDISH_MONTHS_SHORT = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'] as const;
-
-function formatCompactSwedishDate(value: string | Date) {
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return `${date.getDate()} ${SWEDISH_MONTHS_SHORT[date.getMonth()]} ${date.getFullYear()}`;
-}
-
-function fmtDate(iso: string) {
-  return formatCompactSwedishDate(iso);
-}
-function todaySv() {
-  return formatCompactSwedishDate(new Date());
-}
 function normalizeBrokenSwedish(text: string): string {
   return text
     .replace(/Ã…/g, 'Å')
@@ -199,18 +168,6 @@ function stripLegacyLineItemTables(root: ParentNode): void {
   });
 }
 
-function textToSignatureImage(text: string, fontFamily: string): string {
-  const canvas = document.createElement('canvas');
-  canvas.width = 600; canvas.height = 150;
-  const ctx = canvas.getContext('2d')!;
-  ctx.clearRect(0, 0, 600, 150);
-  ctx.font = `44px ${fontFamily}`;
-  ctx.fillStyle = '#0f172a';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, 24, 75);
-  return canvas.toDataURL('image/png');
-}
-
 function applySignatureFields(root: ParentNode, signature?: SignatureFields) {
   root.querySelectorAll('[data-sig-field]').forEach((el) => {
     const field = el.getAttribute('data-sig-field');
@@ -295,7 +252,7 @@ export default function PublicOfferPage() {
   const [capturedSignature, setCapturedSignature] = useState<string | null>(null);
   const [capturedAt, setCapturedAt] = useState<string | null>(null);
   const [sigMode, setSigMode] = useState<SigMode>('type');
-  const [sigFont, setSigFont] = useState<typeof SIG_FONTS[number]['id']>(SIG_FONTS[0].id);
+  const [sigFont, setSigFont] = useState<SignatureFontId>(SIG_FONTS[0].id);
   const [drawnSignature, setDrawnSignature] = useState<string | null>(null);
   const [drawModalOpen, setDrawModalOpen] = useState(false);
   const [drawModalError, setDrawModalError] = useState('');
@@ -2211,7 +2168,7 @@ export default function PublicOfferPage() {
             onOpenDrawModal={openDrawModal}
             sigFonts={SIG_FONTS}
             activeFontId={sigFont}
-            onFontChange={(id) => setSigFont(id as typeof SIG_FONTS[number]['id'])}
+            onFontChange={(id) => setSigFont(id as SignatureFontId)}
             typedSignatureText={typedSignatureText}
             selectedFontFamily={selectedFont.family}
             drawnSignature={drawnSignature}
@@ -2237,16 +2194,10 @@ export default function PublicOfferPage() {
           onSave={saveDrawSignature}
         />
 
-        {/* Mobile validity strip */}
-        <div className="flex sm:hidden items-center justify-center gap-1.5 mt-4 px-4">
-          <CalendarIcon size={11} className="text-slate-500" />
-          <p className="text-[12px] text-slate-600">Giltig till {fmtDate(offer.validUntil)}</p>
-        </div>
-
-        {/* Footer */}
-        <p className="mt-6 px-4 text-center text-[12px] text-slate-500">
-          Soleria offertportal · {offer?.recipientEmail}
-        </p>
+        <PublicOfferFooter
+          validUntilLabel={fmtDate(offer.validUntil)}
+          recipientEmail={offer.recipientEmail}
+        />
         </div>
       </main>
 
