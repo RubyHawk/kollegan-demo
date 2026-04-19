@@ -11,7 +11,7 @@ import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '@modules/supporting/offers/dom
 import { deriveValidityDays } from '@modules/supporting/offers/domain/validity';
 import { useOffersListStore, PAGE_SIZE } from './_store/offers-list.store';
 import { useOffersFormStore } from './_store/offers-form.store';
-import type { Offer, OfferTemplate, OfferProduct, ContactResult, CompanyResult } from './_store/types';
+import type { Offer } from './_store/types';
 import { EMPTY_LINE, EMPTY_FORM } from './_store/types';
 import { OfferTemplatePreviewModal } from './_components/offer-template-preview-modal';
 import { SendOfferDialog } from './_components/send-offer-dialog';
@@ -21,6 +21,7 @@ import { OffersLoadingState } from './_components/offers-loading-state';
 import { OffersMobileCards } from './_components/offers-mobile-cards';
 import { OffersDesktopTable } from './_components/offers-desktop-table';
 import { useOfferListActions } from './_hooks/use-offer-list-actions';
+import { useOfferWizardLookups } from './_hooks/use-offer-wizard-lookups';
 import { useOfferWizardSubmit } from './_hooks/use-offer-wizard-submit';
 import {
   BulkActionBar,
@@ -31,10 +32,7 @@ import {
   OffersPageHeader,
 } from './_components/offers-dashboard-controls';
 import type { BlockingAlert } from './_components/offer-blocking-alerts';
-import {
-  normalizeSearchValue,
-  pricingSummary,
-} from './_lib/offers-dashboard-formatters';
+import { pricingSummary } from './_lib/offers-dashboard-formatters';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 
 
@@ -84,7 +82,6 @@ export default function OffersPage() {
   } = useOffersFormStore();
 
   // ── Local refs (non-serializable / timer handles) ─────────────────────────
-  const contactSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const livePreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
   const lastActiveFieldRef = useRef<string | null>(null);
@@ -111,43 +108,7 @@ export default function OffersPage() {
     }
   }, [resetForm, selectedCompanyId, setEditingOfferId, setForm, setShowForm, setWizardStep]);
 
-  // ── Load templates ────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (selectedCompanyId) params.set('companyId', selectedCompanyId);
-    void fetchWithRefresh(`/api/templates${params.toString() ? `?${params.toString()}` : ''}`)
-      .then(async (r) => {
-        if (r.ok) {
-          const j = await r.json() as { data: OfferTemplate[] };
-          setTemplates(j.data);
-        }
-      })
-      .catch(() => { /* templates unavailable — dropdown stays empty */ });
-  }, [selectedCompanyId, setTemplates]);
-
-  // ── Load products ─────────────────────────────────────────────────────────────
-  const loadServices = useCallback(async () => {
-    const params = new URLSearchParams();
-    if (selectedCompanyId) params.set('companyId', selectedCompanyId);
-    const r = await fetchWithRefresh(`/api/offers/products${params.toString() ? `?${params.toString()}` : ''}`);
-    if (r.ok) {
-      const j = await r.json() as { data: { products: OfferProduct[] } };
-      setServices(j.data.products);
-    }
-  }, [selectedCompanyId, setServices]);
-
-  useEffect(() => { void loadServices(); }, [loadServices]);
-
-  useEffect(() => {
-    if (!selectedCompanyId || editingOfferId) return;
-    setForm((current) => (
-      current.companyId === selectedCompanyId
-        ? current
-        : { ...current, companyId: current.companyId || selectedCompanyId }
-    ));
-  }, [editingOfferId, selectedCompanyId, setForm]);
-
-  // ── Reload offers when filters change (store actions read their own state) ────
+  // Reload offers when filters change (store actions read their own state) ────
   useEffect(() => {
     void load();
     void loadCounts();
@@ -260,29 +221,38 @@ export default function OffersPage() {
     } : undefined
   ), [selectedCompany]);
 
-  const openTemplatePreview = useCallback(async (templateId?: string) => {
-    const activeTemplateId = templateId ?? form.templateId;
-    if (!activeTemplateId) return;
-    setTplPreview({ loading: true, html: null });
-    try {
-      // Fetch full template (list response omits content for performance)
-      const tplRes = await fetchWithRefresh(`/api/templates/${activeTemplateId}`);
-      if (!tplRes.ok) throw new Error(`Kunde inte hämta mall (${tplRes.status})`);
-      const tplData = await tplRes.json() as { data?: { content?: string } };
-      const content = tplData.data?.content;
-
-      const res = await fetchWithRefresh('/api/templates/preview', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, branding: selectedCompanyBranding }),
-      });
-      const j = await res.json() as { html?: string; detail?: string };
-      if (!res.ok) throw new Error(j.detail ?? `Fel ${res.status}`);
-      setTplPreview({ loading: false, html: j.html ?? '' });
-    } catch {
-      setTplPreview(null);
-    }
-  }, [form.templateId, selectedCompanyBranding, setTplPreview]);
-
+  const {
+    filteredServices,
+    openTemplatePreview,
+    pickContact,
+    pickProduct,
+    searchCompanies,
+    searchContacts,
+    selectTemplate,
+    selectedTemplate,
+  } = useOfferWizardLookups({
+    editingOfferId,
+    form,
+    productSearch,
+    selectedCompanyBranding,
+    selectedCompanyId,
+    services,
+    templates,
+    setCachedTplContent,
+    setCompanyLoading,
+    setCompanyResults,
+    setContactLoading,
+    setContactResults,
+    setContactSearch,
+    setForm,
+    setLivePreviewHtml,
+    setLivePreviewLoading,
+    setProductPickerRow,
+    setProductSearch,
+    setServices,
+    setTemplates,
+    setTplPreview,
+  });
   const {
     copyLink,
     deleteOffer,
@@ -323,103 +293,6 @@ export default function OffersPage() {
     }
   }
 
-  // ── Contact search (debounced) ────────────────────────────────────────────
-  const searchContacts = useCallback((q: string) => {
-    setContactSearch(q);
-    if (contactSearchRef.current) clearTimeout(contactSearchRef.current);
-    if (!q.trim()) { setContactResults([]); return; }
-    contactSearchRef.current = setTimeout(async () => {
-      setContactLoading(true);
-      try {
-        const res = await fetchWithRefresh(`/api/crm/contacts?search=${encodeURIComponent(q)}&limit=8`);
-        if (res.ok) {
-          const j = await res.json() as { data: { contacts: ContactResult[] } };
-          setContactResults(j.data.contacts);
-        }
-      } catch { /* ignore */ } finally {
-        setContactLoading(false);
-      }
-    }, 280);
-  }, []);
-
-  const companySearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const searchCompanies = useCallback((q: string) => {
-    if (companySearchRef.current) clearTimeout(companySearchRef.current);
-    if (!q.trim()) { setCompanyResults([]); return; }
-    companySearchRef.current = setTimeout(async () => {
-      setCompanyLoading(true);
-      try {
-        const res = await fetchWithRefresh(`/api/companies?search=${encodeURIComponent(q)}&limit=8`);
-        if (res.ok) {
-          const j = await res.json() as { data: { companies: CompanyResult[] } };
-          setCompanyResults(j.data.companies ?? []);
-        }
-      } catch { /* ignore */ } finally {
-        setCompanyLoading(false);
-      }
-    }, 280);
-  }, [setCompanyResults, setCompanyLoading]);
-
-  const pickContact = useCallback((c: ContactResult) => {
-    setForm((f) => ({
-      ...f,
-      contactId:        c.id,
-      recipientName:    c.name    ?? f.recipientName,
-      recipientEmail:   c.email   ?? f.recipientEmail,
-      recipientCompany: c.company ?? f.recipientCompany,
-    }));
-    setContactSearch('');
-    setContactResults([]);
-  }, []);
-
-  // ── Product management ────────────────────────────────────────────────────────
-  const pickProduct = useCallback((idx: number, p: OfferProduct) => {
-    setForm((f) => {
-      const items = [...f.lineItems];
-      const mainCategoryTitle = (((p as unknown as { category?: string }).category) ?? '')
-        .split('/')
-        .map((part: string) => part.trim())
-        .filter(Boolean)[0];
-      items[idx] = {
-        ...items[idx],
-        description: p.name + (p.description ? ` — ${p.description}` : ''),
-        unitPrice:   p.unitPrice,
-        vatRate:     p.vatRate,
-        productId:   p.id,
-        unit:        p.unit,
-      };
-      return {
-        ...f,
-        lineItems: items,
-        title: f.title.trim() || mainCategoryTitle || f.title,
-      };
-    });
-    setProductPickerRow(null);
-    setProductSearch('');
-  }, [selectedCompanyBranding]);
-
-  const filteredServices = useMemo(
-    () => {
-      const query = normalizeSearchValue(productSearch);
-      if (!query) return services;
-
-      return services.filter((p) => {
-        const haystack = normalizeSearchValue([
-          p.name,
-          p.description ?? '',
-          p.unit ?? '',
-        ].join(' '));
-        return haystack.includes(query);
-      });
-    },
-    [services, productSearch],
-  );
-
-  const selectedTemplate = useMemo(
-    () => templates.find((template) => template.id === form.templateId) ?? null,
-    [templates, form.templateId],
-  );
-
   const previewLooksImageLed = useMemo(
     () => Boolean(livePreviewHtml && /<img[\s>]/i.test(livePreviewHtml)),
     [livePreviewHtml],
@@ -439,29 +312,6 @@ export default function OffersPage() {
     setConfirmedSections(new Set());
     setOpenLines(new Set([0]));
     if (livePreviewTimer.current) clearTimeout(livePreviewTimer.current);
-  }, []);
-
-  /** Fetch a template's full content, set it selected, load initial preview (stays on step 1). */
-  const selectTemplate = useCallback(async (tplId: string) => {
-    setForm((f) => ({ ...f, templateId: tplId }));
-    setLivePreviewLoading(true);
-    setLivePreviewHtml(null);
-    setCachedTplContent(null);
-    try {
-      const tplRes = await fetchWithRefresh(`/api/templates/${tplId}`);
-      if (!tplRes.ok) throw new Error();
-      const tplData = await tplRes.json() as { data?: { content?: string } };
-      const content = tplData.data?.content ?? null;
-      setCachedTplContent(content);
-      const res = await fetchWithRefresh('/api/templates/preview', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, branding: selectedCompanyBranding }),
-      });
-      const j = await res.json() as { html?: string };
-      setLivePreviewHtml(j.html ?? null);
-    } catch { /* ignore */ } finally {
-      setLivePreviewLoading(false);
-    }
   }, []);
 
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;

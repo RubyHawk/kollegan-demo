@@ -1,0 +1,283 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { fetchWithRefresh } from '@shared/lib/api-client';
+import type {
+  CompanyResult,
+  ContactResult,
+  OfferForm,
+  OfferProduct,
+  OfferTemplate,
+} from '../_store/types';
+import { normalizeSearchValue } from '../_lib/offers-dashboard-formatters';
+
+type TemplatePreview = { loading: boolean; html: string | null };
+
+type CompanyBranding = {
+  name?: string | null;
+  website?: string | null;
+  logoUrl?: string | null;
+  senderEmail?: string | null;
+  senderName?: string | null;
+  emailHeaderConfig?: unknown;
+};
+
+type UseOfferWizardLookupsInput = {
+  editingOfferId: string | null;
+  form: OfferForm;
+  productSearch: string;
+  selectedCompanyBranding?: CompanyBranding;
+  selectedCompanyId?: string | null;
+  services: OfferProduct[];
+  templates: OfferTemplate[];
+  setCachedTplContent: (content: string | null) => void;
+  setCompanyLoading: (loading: boolean) => void;
+  setCompanyResults: (results: CompanyResult[]) => void;
+  setContactLoading: (loading: boolean) => void;
+  setContactResults: (results: ContactResult[]) => void;
+  setContactSearch: (value: string) => void;
+  setForm: (form: OfferForm | ((prev: OfferForm) => OfferForm)) => void;
+  setLivePreviewHtml: (html: string | null) => void;
+  setLivePreviewLoading: (loading: boolean) => void;
+  setProductPickerRow: (row: number | null) => void;
+  setProductSearch: (value: string) => void;
+  setServices: (products: OfferProduct[]) => void;
+  setTemplates: (templates: OfferTemplate[]) => void;
+  setTplPreview: (preview: TemplatePreview | null) => void;
+};
+
+export function useOfferWizardLookups({
+  editingOfferId,
+  form,
+  productSearch,
+  selectedCompanyBranding,
+  selectedCompanyId,
+  services,
+  templates,
+  setCachedTplContent,
+  setCompanyLoading,
+  setCompanyResults,
+  setContactLoading,
+  setContactResults,
+  setContactSearch,
+  setForm,
+  setLivePreviewHtml,
+  setLivePreviewLoading,
+  setProductPickerRow,
+  setProductSearch,
+  setServices,
+  setTemplates,
+  setTplPreview,
+}: UseOfferWizardLookupsInput) {
+  const contactSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const companySearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedCompanyId) params.set('companyId', selectedCompanyId);
+    void fetchWithRefresh(`/api/templates${params.toString() ? `?${params.toString()}` : ''}`)
+      .then(async (response) => {
+        if (response.ok) {
+          const json = await response.json() as { data: OfferTemplate[] };
+          setTemplates(json.data);
+        }
+      })
+      .catch(() => {
+        /* templates unavailable - dropdown stays empty */
+      });
+  }, [selectedCompanyId, setTemplates]);
+
+  const loadServices = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (selectedCompanyId) params.set('companyId', selectedCompanyId);
+    const response = await fetchWithRefresh(`/api/offers/products${params.toString() ? `?${params.toString()}` : ''}`);
+    if (response.ok) {
+      const json = await response.json() as { data: { products: OfferProduct[] } };
+      setServices(json.data.products);
+    }
+  }, [selectedCompanyId, setServices]);
+
+  useEffect(() => {
+    void loadServices();
+  }, [loadServices]);
+
+  useEffect(() => {
+    if (!selectedCompanyId || editingOfferId) return;
+    setForm((current) => (
+      current.companyId === selectedCompanyId
+        ? current
+        : { ...current, companyId: current.companyId || selectedCompanyId }
+    ));
+  }, [editingOfferId, selectedCompanyId, setForm]);
+
+  useEffect(() => () => {
+    if (contactSearchRef.current) clearTimeout(contactSearchRef.current);
+    if (companySearchRef.current) clearTimeout(companySearchRef.current);
+  }, []);
+
+  const openTemplatePreview = useCallback(async (templateId?: string) => {
+    const activeTemplateId = templateId ?? form.templateId;
+    if (!activeTemplateId) return;
+    setTplPreview({ loading: true, html: null });
+    try {
+      const tplRes = await fetchWithRefresh(`/api/templates/${activeTemplateId}`);
+      if (!tplRes.ok) throw new Error(`Kunde inte hämta mall (${tplRes.status})`);
+      const tplData = await tplRes.json() as { data?: { content?: string } };
+      const content = tplData.data?.content;
+
+      const res = await fetchWithRefresh('/api/templates/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, branding: selectedCompanyBranding }),
+      });
+      const json = await res.json() as { html?: string; detail?: string };
+      if (!res.ok) throw new Error(json.detail ?? `Fel ${res.status}`);
+      setTplPreview({ loading: false, html: json.html ?? '' });
+    } catch {
+      setTplPreview(null);
+    }
+  }, [form.templateId, selectedCompanyBranding, setTplPreview]);
+
+  const searchContacts = useCallback((query: string) => {
+    setContactSearch(query);
+    if (contactSearchRef.current) clearTimeout(contactSearchRef.current);
+    if (!query.trim()) {
+      setContactResults([]);
+      return;
+    }
+    contactSearchRef.current = setTimeout(async () => {
+      setContactLoading(true);
+      try {
+        const res = await fetchWithRefresh(`/api/crm/contacts?search=${encodeURIComponent(query)}&limit=8`);
+        if (res.ok) {
+          const json = await res.json() as { data: { contacts: ContactResult[] } };
+          setContactResults(json.data.contacts);
+        }
+      } catch {
+        /* ignore */
+      } finally {
+        setContactLoading(false);
+      }
+    }, 280);
+  }, [setContactLoading, setContactResults, setContactSearch]);
+
+  const searchCompanies = useCallback((query: string) => {
+    if (companySearchRef.current) clearTimeout(companySearchRef.current);
+    if (!query.trim()) {
+      setCompanyResults([]);
+      return;
+    }
+    companySearchRef.current = setTimeout(async () => {
+      setCompanyLoading(true);
+      try {
+        const res = await fetchWithRefresh(`/api/companies?search=${encodeURIComponent(query)}&limit=8`);
+        if (res.ok) {
+          const json = await res.json() as { data: { companies: CompanyResult[] } };
+          setCompanyResults(json.data.companies ?? []);
+        }
+      } catch {
+        /* ignore */
+      } finally {
+        setCompanyLoading(false);
+      }
+    }, 280);
+  }, [setCompanyLoading, setCompanyResults]);
+
+  const pickContact = useCallback((contact: ContactResult) => {
+    setForm((current) => ({
+      ...current,
+      contactId: contact.id,
+      recipientName: contact.name ?? current.recipientName,
+      recipientEmail: contact.email ?? current.recipientEmail,
+      recipientCompany: contact.company ?? current.recipientCompany,
+    }));
+    setContactSearch('');
+    setContactResults([]);
+  }, [setContactResults, setContactSearch, setForm]);
+
+  const pickProduct = useCallback((idx: number, product: OfferProduct) => {
+    setForm((current) => {
+      const items = [...current.lineItems];
+      const mainCategoryTitle = (((product as unknown as { category?: string }).category) ?? '')
+        .split('/')
+        .map((part: string) => part.trim())
+        .filter(Boolean)[0];
+      items[idx] = {
+        ...items[idx],
+        description: product.name + (product.description ? ` — ${product.description}` : ''),
+        unitPrice: product.unitPrice,
+        vatRate: product.vatRate,
+        productId: product.id,
+        unit: product.unit,
+      };
+      return {
+        ...current,
+        lineItems: items,
+        title: current.title.trim() || mainCategoryTitle || current.title,
+      };
+    });
+    setProductPickerRow(null);
+    setProductSearch('');
+  }, [setForm, setProductPickerRow, setProductSearch]);
+
+  const selectTemplate = useCallback(async (templateId: string) => {
+    setForm((current) => ({ ...current, templateId }));
+    setLivePreviewLoading(true);
+    setLivePreviewHtml(null);
+    setCachedTplContent(null);
+    try {
+      const tplRes = await fetchWithRefresh(`/api/templates/${templateId}`);
+      if (!tplRes.ok) throw new Error();
+      const tplData = await tplRes.json() as { data?: { content?: string } };
+      const content = tplData.data?.content ?? null;
+      setCachedTplContent(content);
+      const res = await fetchWithRefresh('/api/templates/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, branding: selectedCompanyBranding }),
+      });
+      const json = await res.json() as { html?: string };
+      setLivePreviewHtml(json.html ?? null);
+    } catch {
+      /* ignore */
+    } finally {
+      setLivePreviewLoading(false);
+    }
+  }, [
+    selectedCompanyBranding,
+    setCachedTplContent,
+    setForm,
+    setLivePreviewHtml,
+    setLivePreviewLoading,
+  ]);
+
+  const filteredServices = useMemo(() => {
+    const query = normalizeSearchValue(productSearch);
+    if (!query) return services;
+
+    return services.filter((product) => {
+      const haystack = normalizeSearchValue([
+        product.name,
+        product.description ?? '',
+        product.unit ?? '',
+      ].join(' '));
+      return haystack.includes(query);
+    });
+  }, [productSearch, services]);
+
+  const selectedTemplate = useMemo(
+    () => templates.find((template) => template.id === form.templateId) ?? null,
+    [form.templateId, templates],
+  );
+
+  return {
+    filteredServices,
+    openTemplatePreview,
+    pickContact,
+    pickProduct,
+    searchCompanies,
+    searchContacts,
+    selectTemplate,
+    selectedTemplate,
+  };
+}
