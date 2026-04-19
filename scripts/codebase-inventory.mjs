@@ -49,7 +49,16 @@ function normalize(filePath) {
 
 function shouldIgnore(file) {
   const normalized = normalize(file);
-  return ignoredSegments.some((segment) => normalized.includes(segment));
+  const fileSegments = normalized.split('/');
+
+  return ignoredSegments.some((pattern) => {
+    const patternSegments = normalize(pattern).split('/');
+    for (let index = 0; index <= fileSegments.length - patternSegments.length; index += 1) {
+      const matches = patternSegments.every((segment, offset) => fileSegments[index + offset] === segment);
+      if (matches) return true;
+    }
+    return false;
+  });
 }
 
 function git(args) {
