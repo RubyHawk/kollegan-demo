@@ -40,8 +40,9 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 | Active production source files | 415 |
 | Files above 1000 lines | 3 |
 | Files above 500 lines | 24 |
+| Feature API clients | 1 |
 | Legacy API wrappers | 111 |
-| Dead-candidate review rows | 1 |
+| Dead-candidate review rows | 0 |
 
 ## Current Monolith Inventory
 
@@ -79,9 +80,15 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 ## Dead-Candidate Review Queue
 
-| File | Classification | Reason |
-| --- | --- | --- |
-| src/shared/lib/api/feature-flags.api.ts | dead-candidate | No static inbound imports found; verify routes, dynamic imports, strings, tests, and runtime usage before deletion. |
+_None._
+
+## Feature API Client Inventory
+
+These are browser-facing API contract wrappers. They are active infrastructure even before every UI screen has migrated to them.
+
+| File |
+| --- |
+| src/shared/lib/api/feature-flags.api.ts |
 
 ## Legacy API Wrapper Review Queue
 
@@ -207,6 +214,7 @@ These are compatibility wrappers and are not junk until client usage proves they
 - CI warns above 500 lines and fails above 1000 lines for new or modified hand-written source files.
 - Cleanup PRs must not include behavior changes.
 - Demo files are not junk if they support demo routes.
+- Feature API clients are not junk; wire them into UI clients over time.
 - Legacy API wrappers are not junk until usage is verified gone.
 - A file may move from `dead-candidate` to `safe-to-delete` only after import graph, route strings, package scripts, tests, Prisma references, and public asset references have been checked.
 
