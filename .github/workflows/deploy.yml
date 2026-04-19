@@ -29,6 +29,9 @@ jobs:
             rm -f .next/lock
             npm ci --include=dev --no-audit
             npx playwright install chromium
+            npm run check:migrations
+            npm run check:file-size
+            npm run check:ai-proxies
             npm run build
             npx prisma migrate deploy
             sudo systemctl restart kollegan
