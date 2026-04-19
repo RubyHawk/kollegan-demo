@@ -20,6 +20,7 @@ import { OfferWizardShell } from './_components/offer-wizard-shell';
 import { OffersLoadingState } from './_components/offers-loading-state';
 import { OffersMobileCards } from './_components/offers-mobile-cards';
 import { OffersDesktopTable } from './_components/offers-desktop-table';
+import { useOfferListActions } from './_hooks/use-offer-list-actions';
 import {
   BulkActionBar,
   BulkSendResultBanner,
@@ -28,15 +29,10 @@ import {
   OffersNoticeStack,
   OffersPageHeader,
 } from './_components/offers-dashboard-controls';
-import {
-  buildBlockingAlert,
-  type BlockingAlert,
-  type BlockingErrorPayload,
-} from './_components/offer-blocking-alerts';
+import type { BlockingAlert } from './_components/offer-blocking-alerts';
 import {
   normalizeSearchValue,
   pricingSummary,
-  publicUrl,
 } from './_lib/offers-dashboard-formatters';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 
@@ -311,65 +307,6 @@ export default function OffersPage() {
     }
   }, [dismissNotices, editingOfferId, form]);
 
-  // ── Status actions (send / accept / decline / duplicate / remind) ────────────
-  const doAction = useCallback(async (id: string, action: 'send' | 'accept' | 'decline' | 'duplicate' | 'remind') => {
-    setActing(id);
-    try {
-      dismissNotices();
-      const res = await fetchWithRefresh(`/api/offers/${id}?action=${action}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({})) as {
-          detail?: string;
-          blockingErrors?: BlockingErrorPayload[];
-        };
-        const blockingIssues = (payload.blockingErrors ?? [])
-          .filter((issue) => issue && (issue.message || issue.code || issue.field));
-
-        if (blockingIssues.length > 0) {
-          const nextAlert = buildBlockingAlert(blockingIssues);
-          setBlockingAlert(nextAlert);
-          setError(payload.detail ?? nextAlert.title);
-          addToast({
-            message: 'Offerten stoppades av kvalitetskontrollen. Läs vad som måste rättas innan du skickar igen.',
-            color: 'amber',
-            icon: (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600">
-                <path d="M12 9v4" />
-                <path d="M12 17h.01" />
-                <path d="m3.2 18 7.9-13.7a1 1 0 0 1 1.8 0L20.8 18a1 1 0 0 1-.9 1.5H4.1a1 1 0 0 1-.9-1.5Z" />
-              </svg>
-            ),
-          });
-          return;
-        }
-
-        throw new Error(payload.detail ?? `Fel ${res.status}`);
-      }
-      setBlockingAlert(null);
-      await Promise.all([load(true), loadCounts()]);
-    } catch (e) {
-      setBlockingAlert(null);
-      setError((e as Error).message);
-    } finally {
-      setActing(null);
-    }
-  }, [addToast, dismissNotices, load, loadCounts]);
-
-  // ── Delete ────────────────────────────────────────────────────────────────────
-  const deleteOffer = useCallback(async (id: string) => {
-    setConfirmDeleteOffer(null);
-    try {
-      const res = await fetchWithRefresh(`/api/offers/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      await Promise.all([load(true), loadCounts()]);
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }, []);
-
-  // ── Template preview (from offer form) ────────────────────────────────────────
   const selectedCompanyBranding = useMemo(() => (
     selectedCompany ? {
       name: selectedCompany.name,
@@ -404,55 +341,31 @@ export default function OffersPage() {
     }
   }, [form.templateId, selectedCompanyBranding, setTplPreview]);
 
-  // ── Fetch & open generated document preview on-demand ─────────────────────────
-  // generatedDocument is excluded from the list payload (too large); fetch by ID.
-  const fetchAndPreviewDoc = useCallback(async (offerId: string) => {
-    setFetchingDocId(offerId);
-    try {
-      const res = await fetchWithRefresh(`/api/offers/${offerId}`);
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      const j = await res.json() as { data?: { generatedDocument?: string } };
-      setPreviewDoc(j.data?.generatedDocument ?? null);
-    } catch { /* show nothing on error */ } finally {
-      setFetchingDocId(null);
-    }
-  }, []);
+  const {
+    copyLink,
+    deleteOffer,
+    doAction,
+    doBulkSend,
+    fetchAndPreviewDoc,
+  } = useOfferListActions({
+    addToast,
+    allOffers,
+    clearSelected,
+    dismissNotices,
+    load,
+    loadCounts,
+    selected,
+    setActing,
+    setBlockingAlert,
+    setBulkResult,
+    setBulkSending,
+    setConfirmDeleteOffer,
+    setCopied,
+    setError,
+    setFetchingDocId,
+    setPreviewDoc,
+  });
 
-  // ── Copy public link ───────────────────────────────────────────────────────────
-  const copyLink = useCallback(async (offer: Offer) => {
-    const url = publicUrl(offer.publicToken);
-    await navigator.clipboard.writeText(url).catch(() => {});
-    setCopied(offer.id);
-    setTimeout(() => setCopied(null), 2000);
-  }, []);
-
-  // ── Bulk send ─────────────────────────────────────────────────────────────
-  const doBulkSend = useCallback(async () => {
-    const ids = Array.from(selected).filter((id) => {
-      const o = allOffers.find((o) => o.id === id);
-      return o?.status === 'draft';
-    });
-    if (ids.length === 0) return;
-    setBulkSending(true); setBulkResult(null); dismissNotices();
-    try {
-      const res = await fetchWithRefresh('/api/offers/bulk-send', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body:   JSON.stringify({ ids }),
-      });
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      const j = await res.json() as { data: { sent: number; failed: number } };
-      setBulkResult(j.data);
-      clearSelected();
-      await Promise.all([load(true), loadCounts()]);
-    } catch (e) {
-      setBlockingAlert(null);
-      setError((e as Error).message);
-    } finally {
-      setBulkSending(false);
-    }
-  }, [selected, allOffers]);
-
-  // ── Selection helpers ─────────────────────────────────────────────────────
   const draftOffers = allOffers.filter((o) => o.status === 'draft');
   const selectedDraftCount = Array.from(selected).filter((id) => allOffers.find((o) => o.id === id)?.status === 'draft').length;
   const allDraftsSelected  = draftOffers.length > 0 && draftOffers.every((o) => selected.has(o.id));
