@@ -1,0 +1,14 @@
+{
+  "allowedFindings": [
+    {
+      "file": "prisma/migrations/20260301000002_phase2_mfa_opaque_tokens/migration.sql",
+      "pattern": "DROP COLUMN",
+      "reason": "Historical migration present before the production-data-safety gate. New destructive migrations must not be added without approval."
+    },
+    {
+      "file": "prisma/migrations/20260418193000_project_subsystem/migration.sql",
+      "pattern": "DROP TABLE",
+      "reason": "Historical project-subsystem migration documented as a risk. Future destructive project migrations require explicit approval and preflight evidence."
+    }
+  ]
+}

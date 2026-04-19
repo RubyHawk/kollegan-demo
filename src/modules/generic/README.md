@@ -1,24 +1,18 @@
-# Generic Domain Modules
+# Generic Modules
 
-Generic domains are vertical products built on top of core and supporting domains.
-These represent specific business verticals or demo bounded contexts.
+Generic modules provide cross-cutting ERP capabilities built on core and supporting contracts.
 
-## Modules
-- **hotel** — Hotel management vertical (rooms, bookings, services, amenities)
-- **team-hub** — Team collaboration (announcements, meetings, workspace, integrations)
-- **billing** — Subscription and payment management (planned)
-- **analytics** — Usage analytics and reporting (planned)
+Examples:
 
-## Demo Bounded Contexts
-Demo verticals live under `demos/` and are fully isolated:
-- **demos/hotel-demo** — Grand Hotel Kollegan AI demo (migrating from generic/hotel)
+- dashboard,
+- portal,
+- projects,
+- analytics,
+- future branding boundary.
 
-## Dependency Rule
-Generic modules may import from:
-- `@/modules/supporting/*` — via public index.ts only
-- `@/modules/core/*` — via public index.ts only
-- `@/infrastructure/*`
-- `@/shared/*`
+Rules:
 
-## Current Status
-Modules are migrating from `src/features/` during Phase 5 of the architecture migration.
+- Generic ERP modules may use supporting/core public contracts.
+- Generic ERP modules may not import demo internals.
+- Cross-cutting concepts should remain ERP-neutral and not inherit demo naming.
+
