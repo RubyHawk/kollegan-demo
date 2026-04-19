@@ -19,11 +19,7 @@ import { SendOfferDialog } from './_components/send-offer-dialog';
 import { OfferPreviewDialog } from './_components/offer-preview-dialog';
 import { OfferWizardLivePreview } from './_components/offer-wizard-live-preview';
 import { OfferWizardStepOne } from './_components/offer-wizard-step-one';
-import { OfferWizardRecipientCard } from './_components/offer-wizard-recipient-card';
-import { OfferWizardDetailsCard } from './_components/offer-wizard-details-card';
-import { OfferWizardLineItemsCard } from './_components/offer-wizard-line-items-card';
-import { OfferWizardFooter } from './_components/offer-wizard-footer';
-import { OfferWizardStepTwoHeader } from './_components/offer-wizard-step-two-header';
+import { OfferWizardStepTwoPanel } from './_components/offer-wizard-step-two-panel';
 import { OffersLoadingState } from './_components/offers-loading-state';
 import { OffersMobileCards } from './_components/offers-mobile-cards';
 import { OffersDesktopTable } from './_components/offers-desktop-table';
@@ -36,8 +32,6 @@ import {
   OffersPageHeader,
 } from './_components/offers-dashboard-controls';
 import {
-  BlockingAlertCard,
-  GenericErrorBanner,
   buildBlockingAlert,
   type BlockingAlert,
   type BlockingErrorPayload,
@@ -759,98 +753,56 @@ export default function OffersPage() {
 
                 {/* ════ STEP 2: Form ════ */}
                 {wizardStep === 2 && (
-                  <>
-                    <OfferWizardStepTwoHeader
-                      editingOfferId={editingOfferId}
-                      templateLabel={form.templateId ? selectedTemplate?.name ?? '' : null}
-                      onBackToTemplates={() => setWizardStep(1)}
-                      onClose={closeWizard}
-                    />
-
-                    {/* Scrollable body */}
-                    <div className="flex-1 overflow-y-auto">
-                      <div className="p-4 space-y-3">
-
-                        {/* Error */}
-                        {blockingAlert ? (
-                          <BlockingAlertCard alert={blockingAlert} onDismiss={dismissNotices} compact />
-                        ) : error ? (
-                          <GenericErrorBanner message={error} onDismiss={dismissNotices} compact />
-                        ) : null}
-
-                        {/* ── CARD 1: Mottagare ── */}
-                        <OfferWizardRecipientCard
-                          form={form}
-                          fieldErrors={fieldErrors}
-                          openCards={openCards}
-                          confirmedSections={confirmedSections}
-                          contactSearch={contactSearch}
-                          contactResults={contactResults}
-                          contactLoading={contactLoading}
-                          companyResults={companyResults}
-                          companyLoading={companyLoading}
-                          mottagareComplete={mottagareComplete}
-                          setForm={setForm}
-                          setFieldErrors={setFieldErrors}
-                          setOpenCards={setOpenCards}
-                          setConfirmedSections={setConfirmedSections}
-                          setActiveField={setActiveField}
-                          searchContacts={searchContacts}
-                          setContactSearch={setContactSearch}
-                          setContactResults={setContactResults}
-                          pickContact={pickContact}
-                          searchCompanies={searchCompanies}
-                          setCompanyResults={setCompanyResults}
-                        />
-
-                        {/* ── CARD 2: Offertdetaljer ── */}
-                        <OfferWizardDetailsCard
-                          form={form}
-                          fieldErrors={fieldErrors}
-                          openCards={openCards}
-                          confirmedSections={confirmedSections}
-                          detajerComplete={detajerComplete}
-                          setForm={setForm}
-                          setFieldErrors={setFieldErrors}
-                          setOpenCards={setOpenCards}
-                          setConfirmedSections={setConfirmedSections}
-                          setActiveField={setActiveField}
-                        />
-
-                        {/* CARD 3: Offert-rader */}
-                        <OfferWizardLineItemsCard
-                          form={form}
-                          fieldErrors={fieldErrors}
-                          openLines={openLines}
-                          services={services}
-                          filteredServices={filteredServices}
-                          productPickerRow={productPickerRow}
-                          productSearch={productSearch}
-                          enforcedPriceDisplayMode={enforcedPriceDisplayMode}
-                          setOpenLines={setOpenLines}
-                          setProductPickerRow={setProductPickerRow}
-                          setProductSearch={setProductSearch}
-                          setActiveField={setActiveField}
-                          updateLine={updateLine}
-                          addLine={addLine}
-                          removeLine={removeLine}
-                          reorderLines={reorderLines}
-                          pickProduct={pickProduct}
-                        />
-
-                      </div>
-                    </div>
-
-                    {/* ── Sticky footer ── */}
-                    <OfferWizardFooter
-                      totals={tots}
-                      saving={saving}
-                      editingOfferId={editingOfferId}
-                      saveAndSendActive={saveAndSendRef.current}
-                      createOffer={createOffer}
-                      markSaveAndSend={() => { saveAndSendRef.current = true; }}
-                    />
-                  </>
+                  <OfferWizardStepTwoPanel
+                    activeTemplateLabel={form.templateId ? selectedTemplate?.name ?? '' : null}
+                    blockingAlert={blockingAlert}
+                    companyLoading={companyLoading}
+                    companyResults={companyResults}
+                    confirmedSections={confirmedSections}
+                    contactLoading={contactLoading}
+                    contactResults={contactResults}
+                    contactSearch={contactSearch}
+                    detajerComplete={detajerComplete}
+                    editingOfferId={editingOfferId}
+                    enforcedPriceDisplayMode={enforcedPriceDisplayMode}
+                    error={error}
+                    fieldErrors={fieldErrors}
+                    filteredServices={filteredServices}
+                    form={form}
+                    mottagareComplete={mottagareComplete}
+                    openCards={openCards}
+                    openLines={openLines}
+                    productPickerRow={productPickerRow}
+                    productSearch={productSearch}
+                    saveAndSendActive={saveAndSendRef.current}
+                    saving={saving}
+                    services={services}
+                    totals={tots}
+                    addLine={addLine}
+                    closeWizard={closeWizard}
+                    createOffer={createOffer}
+                    dismissNotices={dismissNotices}
+                    markSaveAndSend={() => { saveAndSendRef.current = true; }}
+                    pickContact={pickContact}
+                    pickProduct={pickProduct}
+                    removeLine={removeLine}
+                    reorderLines={reorderLines}
+                    searchCompanies={searchCompanies}
+                    searchContacts={searchContacts}
+                    setActiveField={setActiveField}
+                    setCompanyResults={setCompanyResults}
+                    setConfirmedSections={setConfirmedSections}
+                    setContactResults={setContactResults}
+                    setContactSearch={setContactSearch}
+                    setFieldErrors={setFieldErrors}
+                    setForm={setForm}
+                    setOpenCards={setOpenCards}
+                    setOpenLines={setOpenLines}
+                    setProductPickerRow={setProductPickerRow}
+                    setProductSearch={setProductSearch}
+                    setWizardStep={setWizardStep}
+                    updateLine={updateLine}
+                  />
                 )}
 
 
