@@ -41,7 +41,51 @@ function getPushBeforeSha() {
   }
 }
 
+function isGitSha(value) {
+  return typeof value === 'string' && /^[0-9a-f]{7,40}$/i.test(value) && !/^0+$/.test(value);
+}
+
+function isGitHead(value) {
+  return value === 'HEAD';
+}
+
+function readExplicitRange() {
+  const rawBase = process.env.QUALITY_BASE_SHA;
+  const rawHead = process.env.QUALITY_HEAD_SHA;
+  if (!rawBase && !rawHead) return null;
+
+  if (!isGitSha(rawBase)) {
+    console.error('QUALITY_BASE_SHA is set but is not a valid non-zero git SHA.');
+    process.exit(1);
+  }
+
+  if (rawHead && !isGitSha(rawHead) && !isGitHead(rawHead)) {
+    console.error('QUALITY_HEAD_SHA is set but is not a valid non-zero git SHA or HEAD.');
+    process.exit(1);
+  }
+
+  return { base: rawBase, head: rawHead ?? 'HEAD' };
+}
+
+function changedFilesForRange(base, head) {
+  try {
+    const output = execSync(`git diff --name-only --diff-filter=ACMR ${base} ${head}`, {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    return output.split(/\r?\n/).filter(Boolean);
+  } catch (error) {
+    console.error(`Failed to compute file-size diff range ${base}..${head}.`);
+    if (error.stderr) console.error(String(error.stderr).trim());
+    process.exit(1);
+  }
+}
+
 function getChangedFiles() {
+  const explicitRange = readExplicitRange();
+  if (explicitRange) return changedFilesForRange(explicitRange.base, explicitRange.head);
+
   const baseRef = process.env.GITHUB_BASE_REF;
   const eventName = process.env.GITHUB_EVENT_NAME;
   const pushBeforeSha = eventName === 'push' ? getPushBeforeSha() : null;
