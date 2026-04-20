@@ -1,1 +1,1 @@
-export { GET } from '../../../auth/dev-login/route';
+export { handleDevLogin as GET } from '@modules/supporting/auth';
