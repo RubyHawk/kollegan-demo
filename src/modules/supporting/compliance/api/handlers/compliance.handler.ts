@@ -33,6 +33,13 @@ function extractToken(req: NextRequest): string {
     ?? '';
 }
 
+function complianceApiBasePath(req: NextRequest): string {
+  const pathname = new URL(req.url).pathname;
+  return pathname.startsWith('/api/v1/')
+    ? '/api/v1/admin/compliance'
+    : '/api/admin/compliance';
+}
+
 async function requireAdmin(req: NextRequest): Promise<{ orgId: string; userId: string }> {
   const payload = await verifyToken(extractToken(req));
   const isAdmin = payload.roles.includes('super_admin') || payload.roles.includes('admin');
@@ -146,7 +153,7 @@ export const handleCreateRisk = createHandler(
       dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
       createdBy: userId,
     });
-    return created(risk, `/api/admin/compliance/risks/${risk.id}`);
+    return created(risk, `${complianceApiBasePath(req)}/risks/${risk.id}`);
   },
 );
 
@@ -236,7 +243,7 @@ export const handleCreatePolicy = createHandler(
       version: body.version, reviewCycleDays: body.reviewCycleDays, owner: body.owner,
       createdBy: userId,
     });
-    return created(policy, `/api/admin/compliance/policies/${policy.id}`);
+    return created(policy, `${complianceApiBasePath(req)}/policies/${policy.id}`);
   },
 );
 
