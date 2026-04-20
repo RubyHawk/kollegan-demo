@@ -3,6 +3,14 @@
 
 export { login, logout, refreshTokens, revokeAllSessions, completeMfaLogin, getUserOrganizationId } from './application/auth.service';
 export type { LoginInput, LoginResult, MfaChallengeResult, LoginOutcome } from './application/auth.service';
+export { changeAccountPassword, getAccountProfile, updateAccountProfile } from './application/account.service';
+export type {
+  AccountProfile,
+  ChangeAccountPasswordInput,
+  ThemeFontSize,
+  ThemeMode,
+  UpdateAccountProfileInput,
+} from './application/account.service';
 
 export {
   generateTotpSetup,
@@ -49,6 +57,7 @@ export type {
 
 // ── API Handlers ─────────────────────────────────────────────────────────────
 export { handleLogin, handleLogout, handleRefresh, handleRegister } from './api/handlers/auth.handler';
+export { handleChangePassword, handleGetProfile, handleUpdateProfile } from './api/handlers/account.handler';
 export {
   handleMfaSetup,
   handleMfaEnable,
