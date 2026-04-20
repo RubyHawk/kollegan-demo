@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import { countOffers, listOffers } from '@shared/lib/api/offers.api';
 import type { Offer, OfferStatus, BulkResult, OfferTemplate } from './types';
 
 const PAGE_SIZE = 25;
@@ -157,19 +157,15 @@ export const useOffersListStore = create<OffersListState>()((set, get) => ({
     if (!silent) set({ loading: true });
     set({ error: null });
     try {
-      const params = new URLSearchParams({
-        limit:  String(PAGE_SIZE),
-        offset: String(s.currentPage * PAGE_SIZE),
+      const result = await listOffers({
+        limit: PAGE_SIZE,
+        offset: s.currentPage * PAGE_SIZE,
+        status: s.tab !== 'all' ? s.tab : undefined,
+        search: s.search.trim() || undefined,
+        dateFrom: s.dateFrom || undefined,
+        dateTo: s.dateTo || undefined,
       });
-      if (s.tab !== 'all')   params.set('status',   s.tab);
-      if (s.search.trim())   params.set('search',   s.search.trim());
-      if (s.dateFrom)        params.set('dateFrom', s.dateFrom);
-      if (s.dateTo)          params.set('dateTo',   s.dateTo);
-      const res = await fetchWithRefresh(`/api/offers?${params}`);
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      const json = await res.json().catch(() => null) as { data: { offers: Offer[]; total: number } } | null;
-      if (!json) throw new Error('Serverfel — försök igen.');
-      set({ allOffers: json.data.offers, serverTotal: json.data.total });
+      set({ allOffers: result.offers, serverTotal: result.total });
     } catch (e) {
       set({ error: (e as Error).message });
     } finally {
@@ -181,12 +177,8 @@ export const useOffersListStore = create<OffersListState>()((set, get) => ({
   loadCounts: async () => {
     const s = get();
     try {
-      const params = new URLSearchParams();
-      if (s.search.trim()) params.set('search', s.search.trim());
-      const res = await fetchWithRefresh(`/api/offers/counts?${params}`);
-      if (!res.ok) return;
-      const json = await res.json().catch(() => null) as { data: { counts: Record<string, number> } } | null;
-      if (json?.data?.counts) set({ tabCounts: json.data.counts });
+      const counts = await countOffers({ search: s.search.trim() || undefined });
+      set({ tabCounts: counts });
     } catch { /* non-critical */ }
   },
 }));
