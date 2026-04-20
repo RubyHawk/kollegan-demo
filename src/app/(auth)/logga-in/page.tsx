@@ -2,12 +2,19 @@
 
 import { useState, FormEvent, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import {
+  devLoginUrl,
+  login,
+  startPasskeyAuthentication,
+  verifyMfa,
+  verifyPasskeyAuthentication,
+  type MfaMethod,
+} from '@shared/lib/api/auth-session.api';
 import { BrandLockup, BrandScene } from '@shared/ui/brand';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Step = 'credentials' | 'mfa';
-type MfaMethod = 'totp' | 'webauthn' | 'backup_code';
 
 function sanitizeRedirect(target: string | null): string {
   if (!target) return '/';
@@ -80,28 +87,17 @@ function LoginForm() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/auth/login', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email, password, rememberMe }),
-      });
+      const result = await login({ email, password, rememberMe });
 
-      if (res.status === 202) {
-        const json = await res.json().catch(() => ({})) as { data?: { methods?: MfaMethod[] } };
-        setMfaMethods(json.data?.methods ?? ['totp']);
+      if (result.status === 'mfa_required') {
+        setMfaMethods(result.methods);
         setStep('mfa');
         return;
       }
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { detail?: string; error?: string };
-        setError(data.detail ?? data.error ?? 'Inloggning misslyckades.');
-        return;
-      }
-
       window.location.replace(redirect);
-    } catch {
-      setError('Nätverksfel. Försök igen.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Nätverksfel. Försök igen.');
     } finally {
       setLoading(false);
     }
@@ -114,22 +110,12 @@ function LoginForm() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/auth/mfa/verify', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ code: mfaCode }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { detail?: string; error?: string };
-        setError(data.detail ?? data.error ?? 'Ogiltig kod. Försök igen.');
-        setMfaCode('');
-        return;
-      }
+      await verifyMfa(mfaCode);
 
       window.location.replace(redirect);
-    } catch {
-      setError('Nätverksfel. Försök igen.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Nätverksfel. Försök igen.');
+      setMfaCode('');
     } finally {
       setLoading(false);
     }
@@ -141,29 +127,12 @@ function LoginForm() {
     setPasskeyLoading(true);
     setError('');
     try {
-      const optRes = await fetch('/api/auth/webauthn/authenticate/options', { method: 'POST' });
-      if (!optRes.ok) {
-        const data = await optRes.json().catch(() => ({})) as { detail?: string };
-        setError(data.detail ?? 'Kunde inte starta passkey-autentisering.');
-        return;
-      }
-      const { data: optData } = await optRes.json() as { data: unknown };
+      const options = await startPasskeyAuthentication();
 
       // Dynamically import to avoid SSR issues with the WebAuthn browser API
       const { startAuthentication } = await import('@simplewebauthn/browser');
-      const authResponse = await startAuthentication({ optionsJSON: optData as Parameters<typeof startAuthentication>[0]['optionsJSON'] });
-
-      const verifyRes = await fetch('/api/auth/webauthn/authenticate/verify', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(authResponse),
-      });
-
-      if (!verifyRes.ok) {
-        const data = await verifyRes.json().catch(() => ({})) as { detail?: string };
-        setError(data.detail ?? 'Passkey-verifiering misslyckades.');
-        return;
-      }
+      const authResponse = await startAuthentication({ optionsJSON: options as Parameters<typeof startAuthentication>[0]['optionsJSON'] });
+      await verifyPasskeyAuthentication(authResponse);
 
       window.location.replace(redirect);
     } catch (err: unknown) {
@@ -327,7 +296,7 @@ function LoginForm() {
               {process.env.NODE_ENV !== 'production' && (
                 <div className="mt-6 pt-5 border-t border-(--border) text-center">
                   <a
-                    href={`/api/auth/dev-login?redirect=${encodeURIComponent(redirect)}`}
+                    href={devLoginUrl(redirect)}
                     className="text-xs text-(--text-muted) hover:text-(--text-secondary) transition-colors"
                   >
                     Dev: logga in utan konto →

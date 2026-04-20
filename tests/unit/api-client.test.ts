@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiDelete, apiGet } from '../../src/shared/lib/api-client';
+import { getProfile } from '../../src/shared/lib/api/auth-account.api';
 import { removeCompanyMember } from '../../src/shared/lib/api/companies.api';
 import { deleteProduct, deleteProductCategory } from '../../src/shared/lib/api/products.api';
 
@@ -58,6 +59,17 @@ describe('api-client', () => {
 });
 
 describe('feature API clients', () => {
+  it('keeps profile reads uncached for theme/profile sync', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: { id: 'user_1' } }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(getProfile()).resolves.toMatchObject({ id: 'user_1' });
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/auth/profile', expect.objectContaining({ cache: 'no-store' }));
+  });
+
   it('treats successful member removal 204 responses as empty success', async () => {
     mockFetch(new Response(null, { status: 204 }));
 

@@ -48,7 +48,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 // Attempt a silent token refresh. Returns true if the server issued a new `at` cookie.
 async function tryRefresh(): Promise<boolean> {
   try {
-    const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+    const res = await fetch('/api/v1/auth/refresh', { method: 'POST', credentials: 'include' });
     return res.ok;
   } catch {
     return false;
@@ -72,8 +72,8 @@ async function fetchWithRefresh(input: string, init?: RequestInit): Promise<Resp
   return fetch(input, requestInit); // retry once with the new `at` cookie
 }
 
-export async function apiGet<T>(url: string): Promise<T> {
-  const res = await fetchWithRefresh(url);
+export async function apiGet<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetchWithRefresh(url, init);
   return handleResponse<T>(res);
 }
 

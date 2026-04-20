@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
+import { register } from '@shared/lib/api/auth-session.api';
 import { Input } from '@shared/ui/input';
 import { Button } from '@shared/ui/button';
 import { BrandLockup } from '@shared/ui/brand';
@@ -18,21 +19,11 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data.error ?? 'Registreringen gick inte att slutföra.');
-        return;
-      }
+      await register({ email, password });
 
       window.location.href = '/';
-    } catch {
-      setError('Nätverksfel. Försök igen.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Nätverksfel. Försök igen.');
     } finally {
       setLoading(false);
     }
