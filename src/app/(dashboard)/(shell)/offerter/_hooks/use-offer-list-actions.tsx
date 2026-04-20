@@ -1,17 +1,22 @@
 'use client';
 
 import { useCallback } from 'react';
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import {
+  OfferActionApiError,
+  bulkSendOffers,
+  deleteOffer as deleteOfferById,
+  getOffer,
+  runOfferAction,
+  type OfferAction,
+} from '@shared/lib/api/offers.api';
 import type { Toast } from '@shared/ui/toast/types';
 import type { Offer } from '../_store/types';
 import {
   buildBlockingAlert,
   type BlockingAlert,
-  type BlockingErrorPayload,
 } from '../_components/offer-blocking-alerts';
 import { publicUrl } from '../_lib/offers-dashboard-formatters';
 
-type OfferAction = 'send' | 'accept' | 'decline' | 'duplicate' | 'remind';
 type BulkResult = { sent: number; failed: number };
 
 type UseOfferListActionsInput = {
@@ -55,24 +60,18 @@ export function useOfferListActions({
     setActing(id);
     try {
       dismissNotices();
-      const res = await fetchWithRefresh(`/api/offers/${id}?action=${action}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({})) as {
-          detail?: string;
-          blockingErrors?: BlockingErrorPayload[];
-        };
-        const blockingIssues = (payload.blockingErrors ?? [])
+      await runOfferAction(id, action);
+      setBlockingAlert(null);
+      await Promise.all([load(true), loadCounts()]);
+    } catch (e) {
+      if (e instanceof OfferActionApiError) {
+        const blockingIssues = e.blockingErrors
           .filter((issue) => issue && (issue.message || issue.code || issue.field));
 
         if (blockingIssues.length > 0) {
           const nextAlert = buildBlockingAlert(blockingIssues);
           setBlockingAlert(nextAlert);
-          setError(payload.detail ?? nextAlert.title);
+          setError(e.detail ?? nextAlert.title);
           addToast({
             message: 'Offerten stoppades av kvalitetskontrollen. Läs vad som måste rättas innan du skickar igen.',
             color: 'amber',
@@ -86,13 +85,8 @@ export function useOfferListActions({
           });
           return;
         }
-
-        throw new Error(payload.detail ?? `Fel ${res.status}`);
       }
 
-      setBlockingAlert(null);
-      await Promise.all([load(true), loadCounts()]);
-    } catch (e) {
       setBlockingAlert(null);
       setError((e as Error).message);
     } finally {
@@ -103,8 +97,7 @@ export function useOfferListActions({
   const deleteOffer = useCallback(async (id: string) => {
     setConfirmDeleteOffer(null);
     try {
-      const res = await fetchWithRefresh(`/api/offers/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      await deleteOfferById(id);
       await Promise.all([load(true), loadCounts()]);
     } catch (e) {
       setError((e as Error).message);
@@ -114,10 +107,8 @@ export function useOfferListActions({
   const fetchAndPreviewDoc = useCallback(async (offerId: string) => {
     setFetchingDocId(offerId);
     try {
-      const res = await fetchWithRefresh(`/api/offers/${offerId}`);
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      const j = await res.json() as { data?: { generatedDocument?: string } };
-      setPreviewDoc(j.data?.generatedDocument ?? null);
+      const offer = await getOffer(offerId);
+      setPreviewDoc(offer.generatedDocument ?? null);
     } catch {
       /* show nothing on error */
     } finally {
@@ -143,14 +134,8 @@ export function useOfferListActions({
     setBulkResult(null);
     dismissNotices();
     try {
-      const res = await fetchWithRefresh('/api/offers/bulk-send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids }),
-      });
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      const j = await res.json() as { data: BulkResult };
-      setBulkResult(j.data);
+      const result = await bulkSendOffers(ids);
+      setBulkResult(result);
       clearSelected();
       await Promise.all([load(true), loadCounts()]);
     } catch (e) {

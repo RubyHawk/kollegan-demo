@@ -3,58 +3,19 @@
  * Exported so both the list/form stores and the page component can share the same shapes.
  */
 
-export type OfferStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
-export type OfferPriceDisplayMode = 'exclusive' | 'inclusive';
-export type OfferProjectStage = 'details' | 'ordered' | 'arrived' | 'in_progress' | 'completed';
+import type {
+  OfferLineItem as LineItem,
+  OfferPriceDisplayMode,
+} from '@shared/lib/api/offers.api';
 
-export interface OfferProjectSummary {
-  id: string;
-  stage: OfferProjectStage;
-  completedAt?: string | null;
-}
-
-export interface LineItem {
-  id?:         string;
-  description: string;
-  quantity:    number;
-  unitPrice:   number;
-  vatRate:     number;
-  discount:    number;
-  productId?:   string;
-  unit?:        string;
-  sortOrder?:  number;
-}
-
-export interface Offer {
-  id:                   string;
-  organizationId:       string;
-  offerNumber:          number | null;
-  priceDisplayMode:     OfferPriceDisplayMode;
-  title:                string;
-  status:               OfferStatus;
-  recipientName:        string;
-  recipientEmail:       string;
-  recipientCompany?:    string;
-  totalExVat:           number;
-  totalIncVat:          number;
-  lineItems:            LineItem[];
-  createdAt:            string;
-  sentAt?:              string;
-  viewedAt?:            string;
-  acceptedAt?:          string;
-  declinedAt?:          string;
-  reminderSentAt?:      string;
-  reminderCount:        number;
-  leadId?:              string;
-  companyId?:           string;
-  templateId?:          string;
-  publicToken:          string;
-  publicTokenExpiresAt?: string;
-  notes?:               string;
-  validUntil?:          string;
-  validityDays?:        number;
-  project?:             OfferProjectSummary | null;
-}
+export type {
+  Offer,
+  OfferLineItem as LineItem,
+  OfferPriceDisplayMode,
+  OfferProjectStage,
+  OfferProjectSummary,
+  OfferStatus,
+} from '@shared/lib/api/offers.api';
 
 export interface OfferTemplate {
   id:            string;
