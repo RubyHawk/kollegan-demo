@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@shared/lib/utils';
+import { updateProfile } from '@shared/lib/api/auth-account.api';
 import { SectionCard, FieldLabel, Input, SaveButton, type UserProps } from '../_components/shared';
 
 export default function ProfilClient({ user }: { user: UserProps }) {
@@ -46,15 +47,7 @@ export default function ProfilClient({ user }: { user: UserProps }) {
   async function save() {
     setPending(true); setError(null);
     try {
-      const res = await fetch('/api/auth/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName: firstName.trim(), lastName: lastName.trim(), avatarUrl }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({})) as { detail?: string };
-        throw new Error(j.detail ?? `Fel ${res.status}`);
-      }
+      await updateProfile({ firstName: firstName.trim(), lastName: lastName.trim(), avatarUrl });
       setSaved(true);
       setTimeout(() => setSaved(false), 2800);
       router.refresh();

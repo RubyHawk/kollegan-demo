@@ -42,6 +42,19 @@ describe('api-client', () => {
       message: 'Kunde inte ta bort posten.',
     });
   });
+
+  it('uses legacy JSON string errors as the thrown API error message', async () => {
+    mockFetch(new Response(JSON.stringify({ error: 'Nuvarande losenord ar felaktigt.' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    }));
+
+    await expect(apiGet('/api/v1/auth/profile')).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 400,
+      message: 'Nuvarande losenord ar felaktigt.',
+    });
+  });
 });
 
 describe('feature API clients', () => {

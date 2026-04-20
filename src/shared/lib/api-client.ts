@@ -19,10 +19,12 @@ async function readApiError(res: Response): Promise<string> {
       const json = await res.json() as {
         detail?: string;
         title?: string;
-        error?: { message?: string };
+        error?: string | { message?: string };
+        message?: string;
         data?: { message?: string };
       };
-      return json.detail ?? json.title ?? json.error?.message ?? json.data?.message ?? fallback;
+      const errorMessage = typeof json.error === 'string' ? json.error : json.error?.message;
+      return json.detail ?? json.title ?? errorMessage ?? json.message ?? json.data?.message ?? fallback;
     }
 
     const text = await res.text();

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { getEmailSettings, updateEmailSettings } from '@shared/lib/api/settings.api';
 import { SectionCard, FieldLabel, Input, SaveButton } from '../_components/shared';
 
 export default function EpostPage() {
@@ -11,12 +12,10 @@ export default function EpostPage() {
   const [loading, setLoading]         = useState(true);
 
   useEffect(() => {
-    fetch('/api/org/email-settings')
-      .then((r) => r.json())
-      .then((res) => {
-        const d = (res as { data?: { senderEmail?: string; senderName?: string } }).data ?? res;
-        setSenderEmail(d.senderEmail ?? '');
-        setSenderName(d.senderName ?? '');
+    getEmailSettings()
+      .then((settings) => {
+        setSenderEmail(settings.senderEmail ?? '');
+        setSenderName(settings.senderName ?? '');
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -26,13 +25,9 @@ export default function EpostPage() {
     setPending(true);
     setSaved(false);
     try {
-      await fetch('/api/org/email-settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          senderEmail: senderEmail.trim() || null,
-          senderName: senderName.trim() || null,
-        }),
+      await updateEmailSettings({
+        senderEmail: senderEmail.trim() || null,
+        senderName: senderName.trim() || null,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
