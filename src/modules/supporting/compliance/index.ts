@@ -4,6 +4,7 @@ export type { ComplianceControl, ControlWithStatus } from './domain/control.enti
 export type { ComplianceEvidence, CreateEvidenceInput, EvidenceStatus, CollectorResult } from './domain/evidence.entity';
 export type { ComplianceRisk, CreateRiskInput, UpdateRiskInput, RiskTreatment, RiskStatus } from './domain/risk.entity';
 export type { CompliancePolicy, CreatePolicyInput, UpdatePolicyInput, PolicyStatus } from './domain/policy.entity';
+export type { AccessReviewData, AccessReviewUserRow } from './domain/access-review.entity';
 export { ISO_27001_CONTROLS } from './domain/control-registry';
 
 export {
@@ -25,10 +26,13 @@ export {
 
 export { buildEvidencePackage } from './application/report.service';
 
+export { buildAccessReview } from './application/access-review.service';
+
 export { registerComplianceJobs } from './application/jobs';
 
 // ── API Handlers ─────────────────────────────────────────────────────────────
 export {
+  handleAccessReview,
   handleListControls,
   handleControlEvidence,
   handleCollectEvidence,

@@ -3,7 +3,7 @@ import { apiDelete, apiGet } from '../../src/shared/lib/api-client';
 import { listAnnouncements } from '../../src/shared/lib/api/announcements.api';
 import { getProfile } from '../../src/shared/lib/api/auth-account.api';
 import { removeCompanyMember } from '../../src/shared/lib/api/companies.api';
-import { createRisk, deletePolicy, listComplianceControls, listRisks } from '../../src/shared/lib/api/compliance.api';
+import { createRisk, deletePolicy, getAccessReview, listComplianceControls, listRisks } from '../../src/shared/lib/api/compliance.api';
 import { listCustomers } from '../../src/shared/lib/api/customers.api';
 import { createLead } from '../../src/shared/lib/api/leads.api';
 import { updateMeeting } from '../../src/shared/lib/api/meetings.api';
@@ -176,6 +176,19 @@ describe('feature API clients', () => {
 
     await expect(listComplianceControls()).resolves.toMatchObject({ total: 0 });
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/admin/compliance/controls', expect.any(Object));
+  });
+
+  it('uses v1 admin access-review routes', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      data: { generatedAt: '2026-04-21T00:00:00.000Z', totalUsers: 0, users: [] },
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(getAccessReview()).resolves.toMatchObject({ totalUsers: 0 });
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/admin/access-review', expect.any(Object));
   });
 
   it('uses v1 compliance pagination for risk reads', async () => {

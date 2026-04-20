@@ -1,6 +1,7 @@
 import { apiDelete, apiGet, apiPost } from '../api-client';
 
 const BASE_URL = '/api/v1/admin/compliance';
+const ACCESS_REVIEW_URL = '/api/v1/admin/access-review';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -35,6 +36,29 @@ export interface ComplianceControl {
 export interface ControlsResponse {
   controls: ComplianceControl[];
   total: number;
+}
+
+export interface AccessReviewUserRow {
+  id: string;
+  email: string;
+  name: string | null;
+  userType: string;
+  isActive: boolean;
+  organizationId: string | null;
+  roles: string[];
+  lastLoginAt: string | null;
+  mfaEnabled: boolean;
+  totpConfigured: boolean;
+  passkeysRegistered: number;
+  mfaGraceExpiresAt: string | null;
+  activeSessions: number;
+  createdAt: string;
+}
+
+export interface AccessReviewData {
+  generatedAt: string;
+  totalUsers: number;
+  users: AccessReviewUserRow[];
 }
 
 export interface Policy {
@@ -99,6 +123,11 @@ function query(params: object): string {
 
 export async function listComplianceControls(): Promise<ControlsResponse> {
   const res = await apiGet<ApiEnvelope<ControlsResponse>>(`${BASE_URL}/controls`);
+  return res.data;
+}
+
+export async function getAccessReview(params: { orgId?: string } = {}): Promise<AccessReviewData> {
+  const res = await apiGet<ApiEnvelope<AccessReviewData>>(`${ACCESS_REVIEW_URL}${query(params)}`);
   return res.data;
 }
 
