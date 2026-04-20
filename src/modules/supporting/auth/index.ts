@@ -11,6 +11,12 @@ export type {
   ThemeMode,
   UpdateAccountProfileInput,
 } from './application/account.service';
+export { createLegacyStaffUser, deleteLegacyStaffUser, listLegacyStaffUsers } from './application/staff-users.service';
+export type {
+  CreateLegacyStaffUserInput,
+  LegacyStaffRole,
+  LegacyStaffUser,
+} from './domain/staff-user.entity';
 
 export {
   generateTotpSetup,
@@ -58,6 +64,12 @@ export type {
 // ── API Handlers ─────────────────────────────────────────────────────────────
 export { handleLogin, handleLogout, handleRefresh, handleRegister } from './api/handlers/auth.handler';
 export { handleChangePassword, handleGetProfile, handleUpdateProfile } from './api/handlers/account.handler';
+export {
+  handleCreateStaff,
+  handleCreateStaffV1,
+  handleDeleteStaff,
+  handleListStaff,
+} from './api/handlers/staff.handler';
 export {
   handleMfaSetup,
   handleMfaEnable,
