@@ -3,8 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowSquareOut, Buildings, FileText, Package, Plus, UsersThree } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
-import type { Company } from '@modules/supporting/offers';
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import {
+  createCompany,
+  deleteCompany as deleteCompanyRecord,
+  listCompanies,
+  listCompanyMembers,
+  removeCompanyMember,
+  updateCompany,
+  upsertCompanyMember,
+  type Company,
+} from '@shared/lib/api/companies.api';
 import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
@@ -50,28 +58,13 @@ export function CompaniesPageClient() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams();
-      if (search) params.set('search', search);
-      const response = await fetchWithRefresh(`/api/companies?${params}`);
-      if (!response.ok) throw new Error('Kunde inte hämta företag');
-
-      const payload = (await response.json()) as { data: { companies: Company[] } };
-      setCompanies(payload.data.companies);
+      setCompanies(await listCompanies({ search: search || undefined }));
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setLoading(false);
     }
   }, [search]);
-
-  const readApiProblem = useCallback(async (response: Response, fallback: string) => {
-    try {
-      const payload = (await response.json()) as { detail?: string; title?: string };
-      return payload.detail || payload.title || fallback;
-    } catch {
-      return fallback;
-    }
-  }, []);
 
   useEffect(() => {
     void load();
@@ -97,16 +90,9 @@ export function CompaniesPageClient() {
     setMembersLoading(true);
     setError(null);
     try {
-      const response = await fetchWithRefresh(`/api/companies/${company.id}/members`);
-      if (!response.ok) throw new Error('Kunde inte hämta användarkopplingar');
-      const payload = (await response.json()) as {
-        data: {
-          members: CompanyMemberRecord[];
-          availableUsers: AssignableUserRecord[];
-        };
-      };
-      setMembers(payload.data.members);
-      setAvailableUsers(payload.data.availableUsers);
+      const payload = await listCompanyMembers(company.id);
+      setMembers(payload.members);
+      setAvailableUsers(payload.availableUsers);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -131,24 +117,9 @@ export function CompaniesPageClient() {
           logoUrl: form.logoUrl.trim() || undefined,
         };
 
-        const response = editCompany
-          ? await fetchWithRefresh(`/api/companies/${editCompany.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(body),
-            })
-          : await fetchWithRefresh('/api/companies', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(body),
-            });
-
-        if (!response.ok) {
-          throw new Error(await readApiProblem(response, 'Kunde inte spara företaget'));
-        }
-
-        const payload = (await response.json()) as { data: Company };
-        const savedCompany = payload.data;
+        const savedCompany = editCompany
+          ? await updateCompany(editCompany.id, body)
+          : await createCompany(body);
 
         closeModal();
         await Promise.all([load(), reloadScopedCompanies()]);
@@ -162,7 +133,7 @@ export function CompaniesPageClient() {
         setSaving(false);
       }
     },
-    [editCompany, load, readApiProblem, reloadScopedCompanies, selectedCompanyId, setSelectedCompanyId],
+    [editCompany, load, reloadScopedCompanies, selectedCompanyId, setSelectedCompanyId],
   );
 
   const handleAddMember = useCallback(
@@ -170,12 +141,7 @@ export function CompaniesPageClient() {
       if (!membersCompany) return;
       setMemberSaving(true);
       try {
-        const response = await fetchWithRefresh(`/api/companies/${membersCompany.id}/members`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, role }),
-        });
-        if (!response.ok) throw new Error('Kunde inte koppla användaren till företaget');
+        await upsertCompanyMember(membersCompany.id, { userId, role });
         await loadMembers(membersCompany);
       } catch (err) {
         setError((err as Error).message);
@@ -191,22 +157,14 @@ export function CompaniesPageClient() {
       if (!membersCompany) return;
       setMemberSaving(true);
       try {
-        const response = await fetchWithRefresh(`/api/companies/${membersCompany.id}/members`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            mode: 'create',
-            email: form.email.trim(),
-            password: form.password,
-            firstName: form.firstName.trim() || undefined,
-            lastName: form.lastName.trim() || undefined,
-            role: form.role,
-          }),
+        await upsertCompanyMember(membersCompany.id, {
+          mode: 'create',
+          email: form.email.trim(),
+          password: form.password,
+          firstName: form.firstName.trim() || undefined,
+          lastName: form.lastName.trim() || undefined,
+          role: form.role,
         });
-        if (!response.ok) {
-          const text = await response.text().catch(() => '');
-          throw new Error(text || 'Kunde inte skapa kontot');
-        }
         await loadMembers(membersCompany);
       } catch (err) {
         setError((err as Error).message);
@@ -222,11 +180,7 @@ export function CompaniesPageClient() {
       if (!membersCompany) return;
       setMemberSaving(true);
       try {
-        const response = await fetchWithRefresh(
-          `/api/companies/${membersCompany.id}/members?userId=${encodeURIComponent(userId)}`,
-          { method: 'DELETE' },
-        );
-        if (!response.ok) throw new Error('Kunde inte ta bort användarkopplingen');
+        await removeCompanyMember(membersCompany.id, userId);
         await loadMembers(membersCompany);
       } catch (err) {
         setError((err as Error).message);
@@ -239,9 +193,10 @@ export function CompaniesPageClient() {
 
   const handleDelete = useCallback(
     async (company: Company) => {
-      const response = await fetchWithRefresh(`/api/companies/${company.id}`, { method: 'DELETE' });
-      if (!response.ok) {
-        setError('Kunde inte ta bort företaget');
+      try {
+        await deleteCompanyRecord(company.id);
+      } catch (err) {
+        setError((err as Error).message);
         return;
       }
 

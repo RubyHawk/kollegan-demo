@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowSquareOut, PencilSimple, Trash, UsersThree } from '@phosphor-icons/react';
-import type { Company } from '@modules/supporting/offers';
+import type { Company } from '@shared/lib/api/companies.api';
 
 function initials(name: string) {
   return name

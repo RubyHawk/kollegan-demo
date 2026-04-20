@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FolderOpen, Sparkle, StackSimple } from '@phosphor-icons/react';
-import type { OfferProduct, ProductCategory } from '@modules/supporting/offers';
+import type { OfferProduct, ProductCategory } from '@shared/lib/api/products.api';
 import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
 import {

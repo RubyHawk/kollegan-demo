@@ -5,10 +5,36 @@ class ApiError extends Error {
   }
 }
 
+async function readApiError(res: Response): Promise<string> {
+  const fallback = 'Unknown error';
+  const contentType = res.headers.get('content-type') ?? '';
+
+  try {
+    if (contentType.includes('application/problem+json')) {
+      const problem = await res.json() as { detail?: string; title?: string };
+      return problem.detail ?? problem.title ?? fallback;
+    }
+
+    if (contentType.includes('application/json')) {
+      const json = await res.json() as {
+        detail?: string;
+        title?: string;
+        error?: { message?: string };
+        data?: { message?: string };
+      };
+      return json.detail ?? json.title ?? json.error?.message ?? json.data?.message ?? fallback;
+    }
+
+    const text = await res.text();
+    return text || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
-    const text = await res.text().catch(() => 'Unknown error');
-    throw new ApiError(res.status, text);
+    throw new ApiError(res.status, await readApiError(res));
   }
   const contentType = res.headers.get('content-type');
   if (contentType?.includes('application/json')) {
@@ -79,8 +105,7 @@ export async function apiPatch<T>(url: string, body: unknown): Promise<T> {
 export async function apiDelete(url: string): Promise<void> {
   const res = await fetchWithRefresh(url, { method: 'DELETE' });
   if (!res.ok) {
-    const text = await res.text().catch(() => 'Unknown error');
-    throw new ApiError(res.status, text);
+    throw new ApiError(res.status, await readApiError(res));
   }
 }
 

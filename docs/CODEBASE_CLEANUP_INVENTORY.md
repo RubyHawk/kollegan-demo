@@ -35,12 +35,12 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 722 |
-| Source files scanned | 589 |
-| Active production source files | 432 |
+| Tracked files scanned | 731 |
+| Source files scanned | 598 |
+| Active production source files | 441 |
 | Files above 1000 lines | 3 |
-| Files above 500 lines | 24 |
-| Feature API clients | 4 |
+| Files above 500 lines | 23 |
+| Feature API clients | 6 |
 | Legacy API wrappers | 111 |
 | Dead-candidate review rows | 0 |
 
@@ -62,7 +62,7 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 | 847 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/extensions/ImageNodeView.tsx` |
 | 804 | active-production | `src/modules/supporting/offers/application/offer-pdf.ts` |
 | 774 | active-production | `src/modules/supporting/offers/application/offers.service.ts` |
-| 769 | active-production | `src/app/(dashboard)/(shell)/produkter/_components/products-page-client.tsx` |
+| 729 | active-production | `src/app/(dashboard)/(shell)/produkter/_components/products-page-client.tsx` |
 | 712 | active-production | `src/app/(dashboard)/(shell)/installningar/utseende/page.tsx` |
 | 669 | active-demo | `src/modules/demos/hotel/activity/components/activity-log.tsx` |
 | 647 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/DocumentCanvas.tsx` |
@@ -75,7 +75,6 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 | 534 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/EmailEditor.tsx` |
 | 519 | active-production | `src/app/(dashboard)/(shell)/mallar/[id]/page.tsx` |
 | 513 | active-production | `src/modules/supporting/offers/application/offer-email-dispatch.ts` |
-| 510 | active-production | `src/app/(dashboard)/(shell)/companies/_components/companies-page-client.tsx` |
 | 506 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/TemplateEditor.tsx` |
 
 ## Dead-Candidate Review Queue
@@ -88,9 +87,11 @@ These are browser-facing API contract wrappers. They are active infrastructure e
 
 | File |
 | --- |
+| src/shared/lib/api/companies.api.ts |
 | src/shared/lib/api/feature-flags.api.ts |
 | src/shared/lib/api/offers.api.ts |
 | src/shared/lib/api/procurement.api.ts |
+| src/shared/lib/api/products.api.ts |
 | src/shared/lib/api/projects.api.ts |
 
 ## Legacy API Wrapper Review Queue

@@ -1,4 +1,4 @@
-import type { OfferProduct, ProductCategory } from '@modules/supporting/offers';
+import type { OfferProduct, ProductCategory } from '@shared/lib/api/products.api';
 import type { CategoryNode, ProductCategoryMeta, ProductForm } from './product-library.types';
 import { EMPTY_PRODUCT_FORM } from './product-library.types';
 
@@ -16,27 +16,6 @@ export function productInitials(name: string) {
 
 export function normalizeSearch(value: string) {
   return value.trim().toLowerCase();
-}
-
-export async function readApiError(response: Response, fallback: string) {
-  const contentType = response.headers.get('content-type') ?? '';
-
-  try {
-    if (contentType.includes('application/problem+json')) {
-      const problem = await response.json() as { detail?: string };
-      return problem.detail ?? fallback;
-    }
-
-    if (contentType.includes('application/json')) {
-      const json = await response.json() as { error?: { message?: string }; data?: { message?: string } };
-      return json.error?.message ?? json.data?.message ?? fallback;
-    }
-
-    const text = await response.text();
-    return text || fallback;
-  } catch {
-    return fallback;
-  }
 }
 
 export function buildCategoryTree(categories: ProductCategory[]): CategoryNode[] {
