@@ -8,27 +8,18 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import {
+  createRisk,
+  deleteRisk as deleteRiskRequest,
+  listRisks,
+  type Risk,
+  type RiskStatus,
+  type RiskTreatment,
+} from '@shared/lib/api/compliance.api';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type Treatment = 'accept' | 'mitigate' | 'transfer' | 'avoid';
-type RiskStatus = 'open' | 'in_progress' | 'resolved' | 'accepted';
-
-interface Risk {
-  id:            string;
-  asset:         string;
-  threat:        string;
-  vulnerability: string;
-  likelihood:    number;
-  impact:        number;
-  riskScore:     number;
-  treatment:     Treatment;
-  treatmentDesc: string | null;
-  owner:         string | null;
-  dueDate:       string | null;
-  status:        RiskStatus;
-  createdAt:     string;
-}
+type Treatment = RiskTreatment;
 
 const STATUS_TABS: { key: RiskStatus | 'all'; label: string }[] = [
   { key: 'all',         label: 'Alla' },
@@ -86,12 +77,9 @@ export default function RisksPage() {
     setLoading(true);
     setError(null);
     try {
-      const qs = status ? `?status=${status}` : '';
-      const res = await fetch(`/api/admin/compliance/risks${qs}`);
-      if (!res.ok) throw new Error(`Misslyckades att ladda (${res.status})`);
-      const json = await res.json() as { data: Risk[]; pagination: { total: number } };
-      setRisks(json.data);
-      setTotal(json.pagination?.total ?? json.data.length);
+      const result = await listRisks({ status, limit: 50, offset: 0 });
+      setRisks(result.risks);
+      setTotal(result.total);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -116,12 +104,7 @@ export default function RisksPage() {
         owner:         form.owner         || undefined,
         dueDate:       form.dueDate       ? new Date(form.dueDate).toISOString() : undefined,
       };
-      const res = await fetch('/api/admin/compliance/risks', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(`Misslyckades att skapa risk (${res.status})`);
+      await createRisk(body);
       setShowForm(false);
       setForm(EMPTY_FORM);
       await load(tab === 'all' ? undefined : tab);
@@ -135,7 +118,7 @@ export default function RisksPage() {
   const deleteRisk = useCallback(async (id: string) => {
     if (!confirm('Ta bort denna risk?')) return;
     try {
-      await fetch(`/api/admin/compliance/risks/${id}`, { method: 'DELETE' });
+      await deleteRiskRequest(id);
       await load(tab === 'all' ? undefined : tab);
     } catch (e) {
       setError((e as Error).message);

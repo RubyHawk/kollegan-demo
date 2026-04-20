@@ -9,30 +9,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import {
+  collectComplianceEvidence,
+  getComplianceReport,
+  listComplianceControls,
+  type ControlsResponse,
+  type EvidenceStatus,
+} from '@shared/lib/api/compliance.api';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-
-type EvidenceStatus = 'pass' | 'fail' | 'warn' | 'unknown';
-
-interface LatestEvidence {
-  status:      EvidenceStatus;
-  summary:     string;
-  collectedAt: string;
-}
-
-interface Control {
-  id:             string;
-  controlId:      string;
-  name:           string;
-  description:    string;
-  evidenceType:   string;
-  latestEvidence: LatestEvidence | null;
-}
-
-interface ControlsResponse {
-  controls: Control[];
-  total:    number;
-}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -81,15 +66,10 @@ export default function CompliancePage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/compliance/controls');
-      if (!res.ok) {
-        if (res.status === 403) throw new Error('Åtkomst nekad — admin-roll krävs');
-        throw new Error(`Misslyckades att ladda kontroller (${res.status})`);
-      }
-      const json = await res.json() as { data: ControlsResponse };
-      setData(json.data);
+      setData(await listComplianceControls());
     } catch (e) {
-      setError((e as Error).message);
+      const status = typeof e === 'object' && e && 'status' in e ? (e as { status?: number }).status : undefined;
+      setError(status === 403 ? 'Åtkomst nekad — admin-roll krävs' : (e as Error).message);
     } finally {
       setLoading(false);
     }
@@ -100,8 +80,7 @@ export default function CompliancePage() {
   const collectEvidence = useCallback(async () => {
     setCollecting(true);
     try {
-      const res = await fetch('/api/admin/compliance/evidence/collect', { method: 'POST' });
-      if (!res.ok) throw new Error(`Insamling misslyckades (${res.status})`);
+      await collectComplianceEvidence();
       await load();
     } catch (e) {
       setError((e as Error).message);
@@ -113,10 +92,8 @@ export default function CompliancePage() {
   const exportReport = useCallback(async () => {
     setExporting(true);
     try {
-      const res = await fetch('/api/admin/compliance/report');
-      if (!res.ok) throw new Error(`Export misslyckades (${res.status})`);
-      const json = await res.json() as { data: unknown };
-      downloadJson(json.data, `iso27001-evidence-${new Date().toISOString().split('T')[0]}.json`);
+      const report = await getComplianceReport();
+      downloadJson(report, `iso27001-evidence-${new Date().toISOString().split('T')[0]}.json`);
     } catch (e) {
       setError((e as Error).message);
     } finally {

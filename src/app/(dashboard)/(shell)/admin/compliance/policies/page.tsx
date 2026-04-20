@@ -7,24 +7,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import {
+  createPolicy,
+  deletePolicy as deletePolicyRequest,
+  listPolicies,
+  type Policy,
+  type PolicyStatus,
+} from '@shared/lib/api/compliance.api';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-
-type PolicyStatus = 'draft' | 'active' | 'retired';
-
-interface Policy {
-  id:              string;
-  name:            string;
-  category:        string;
-  version:         string;
-  status:          PolicyStatus;
-  owner:           string | null;
-  nextReviewDate:  string | null;
-  approvedAt:      string | null;
-  createdAt:       string;
-  updatedAt:       string;
-  content:         string;
-}
 
 const STATUS_STYLES: Record<PolicyStatus, string> = {
   draft:   'bg-[var(--surface-alt)] text-[var(--text-muted)] border border-[var(--border)]',
@@ -78,10 +69,8 @@ export default function PoliciesPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/compliance/policies');
-      if (!res.ok) throw new Error(`Misslyckades att ladda (${res.status})`);
-      const json = await res.json() as { data: Policy[] };
-      setPolicies(json.data);
+      const result = await listPolicies({ limit: 50, offset: 0 });
+      setPolicies(result.policies);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -103,12 +92,7 @@ export default function PoliciesPage() {
         reviewCycleDays: form.reviewCycleDays,
         owner:           form.owner || undefined,
       };
-      const res = await fetch('/api/admin/compliance/policies', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(`Misslyckades att skapa policy (${res.status})`);
+      await createPolicy(body);
       setShowForm(false);
       setForm(EMPTY_FORM);
       await load();
@@ -122,7 +106,7 @@ export default function PoliciesPage() {
   const deletePolicy = useCallback(async (id: string) => {
     if (!confirm('Ta bort denna policy?')) return;
     try {
-      await fetch(`/api/admin/compliance/policies/${id}`, { method: 'DELETE' });
+      await deletePolicyRequest(id);
       await load();
     } catch (e) {
       setError((e as Error).message);

@@ -3,6 +3,7 @@ import { apiDelete, apiGet } from '../../src/shared/lib/api-client';
 import { listAnnouncements } from '../../src/shared/lib/api/announcements.api';
 import { getProfile } from '../../src/shared/lib/api/auth-account.api';
 import { removeCompanyMember } from '../../src/shared/lib/api/companies.api';
+import { createRisk, deletePolicy, listComplianceControls, listRisks } from '../../src/shared/lib/api/compliance.api';
 import { listCustomers } from '../../src/shared/lib/api/customers.api';
 import { createLead } from '../../src/shared/lib/api/leads.api';
 import { updateMeeting } from '../../src/shared/lib/api/meetings.api';
@@ -161,6 +162,70 @@ describe('feature API clients', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/v1/messages/conversations/conversation_1/messages',
       expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('uses v1 compliance routes for control reads', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      data: { controls: [], total: 0 },
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(listComplianceControls()).resolves.toMatchObject({ total: 0 });
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/admin/compliance/controls', expect.any(Object));
+  });
+
+  it('uses v1 compliance pagination for risk reads', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      data: [],
+      pagination: { total: 0, count: 0, hasNext: false, hasPrev: false },
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(listRisks({ status: 'open', limit: 50, offset: 0 })).resolves.toMatchObject({ total: 0 });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/admin/compliance/risks?status=open&limit=50&offset=0',
+      expect.any(Object),
+    );
+  });
+
+  it('uses v1 compliance routes for risk creation and policy delete', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { id: 'risk_1', asset: 'Repo', threat: 'Unauthorized access' },
+      }), {
+        status: 201,
+        headers: { 'content-type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createRisk({
+      asset: 'Repo',
+      threat: 'Unauthorized access',
+      vulnerability: 'Missing review',
+      likelihood: 3,
+      impact: 4,
+      treatment: 'mitigate',
+    })).resolves.toMatchObject({ id: 'risk_1' });
+    await expect(deletePolicy('policy_1')).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/api/v1/admin/compliance/risks',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/api/v1/admin/compliance/policies/policy_1',
+      expect.objectContaining({ method: 'DELETE' }),
     );
   });
 });
