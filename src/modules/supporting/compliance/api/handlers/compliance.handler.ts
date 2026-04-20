@@ -24,6 +24,7 @@ import { collectAllEvidence } from '../../application/evidence.service';
 import { createRisk, updateRisk, deleteRisk, listRisks } from '../../application/risk.service';
 import { createPolicy, updatePolicy, deletePolicy, listPolicies } from '../../application/policy.service';
 import { buildEvidencePackage } from '../../application/report.service';
+import { buildAccessReview } from '../../application/access-review.service';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -40,13 +41,36 @@ function complianceApiBasePath(req: NextRequest): string {
     : '/api/admin/compliance';
 }
 
-async function requireAdmin(req: NextRequest): Promise<{ orgId: string; userId: string }> {
+async function requireAdmin(req: NextRequest): Promise<{ orgId: string; userId: string; roles: string[] }> {
   const payload = await verifyToken(extractToken(req));
   const isAdmin = payload.roles.includes('super_admin') || payload.roles.includes('admin');
   if (!isAdmin) throw Errors.forbidden('Admin role required');
   if (!payload.orgId) throw Errors.forbidden('Organization context required');
-  return { orgId: payload.orgId, userId: payload.sub };
+  return { orgId: payload.orgId, userId: payload.sub, roles: payload.roles };
 }
+
+async function requireAccessReviewAdmin(req: NextRequest): Promise<{ orgId: string | null; roles: string[] }> {
+  const payload = await verifyToken(extractToken(req));
+  const isAdmin = payload.roles.includes('super_admin') || payload.roles.includes('admin');
+  if (!isAdmin) throw Errors.forbidden('Access review requires admin role');
+  return { orgId: payload.orgId ?? null, roles: payload.roles };
+}
+
+// Access Review
+
+const AccessReviewQuerySchema = z.object({
+  orgId: z.string().optional(),
+});
+
+export const handleAccessReview = createHandler(
+  { auth: 'jwt', tag: 'Admin:AccessReview', requireMfa: true, query: AccessReviewQuerySchema, rateLimit: { max: 20, windowMs: 60_000 } },
+  async (ctx) => {
+    const { req, query } = ctx as { req: NextRequest; query: z.infer<typeof AccessReviewQuerySchema> };
+    const { orgId, roles } = await requireAccessReviewAdmin(req);
+    const orgFilter = roles.includes('super_admin') ? (query.orgId ?? null) : orgId;
+    return ok(await buildAccessReview(orgFilter));
+  },
+);
 
 // ── Controls ─────────────────────────────────────────────────────────────────
 

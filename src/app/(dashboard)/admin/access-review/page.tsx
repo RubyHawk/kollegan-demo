@@ -12,31 +12,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import {
+  getAccessReview,
+  type AccessReviewData as ReviewData,
+  type AccessReviewUserRow as UserRow,
+} from '@shared/lib/api/compliance.api';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-
-interface UserRow {
-  id: string;
-  email: string;
-  name: string | null;
-  userType: string;
-  isActive: boolean;
-  organizationId: string | null;
-  roles: string[];
-  lastLoginAt: string | null;
-  mfaEnabled: boolean;
-  totpConfigured: boolean;
-  passkeysRegistered: number;
-  mfaGraceExpiresAt: string | null;
-  activeSessions: number;
-  createdAt: string;
-}
-
-interface ReviewData {
-  generatedAt: string;
-  totalUsers: number;
-  users: UserRow[];
-}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -115,15 +97,10 @@ export default function AccessReviewPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/access-review');
-      if (!res.ok) {
-        if (res.status === 403) throw new Error('Åtkomst nekad — admin-roll krävs');
-        throw new Error(`Misslyckades att ladda data (${res.status})`);
-      }
-      const json = await res.json() as { data: ReviewData };
-      setData(json.data);
+      setData(await getAccessReview());
     } catch (e) {
-      setError((e as Error).message);
+      const status = typeof e === 'object' && e && 'status' in e ? (e as { status?: number }).status : undefined;
+      setError(status === 403 ? 'Åtkomst nekad — admin-roll krävs' : (e as Error).message);
     } finally {
       setLoading(false);
     }
