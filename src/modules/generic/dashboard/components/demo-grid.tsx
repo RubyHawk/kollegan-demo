@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { logout } from '@shared/lib/api/auth-account.api';
 
 interface Props {
   userRole: string | null;
@@ -16,7 +17,7 @@ export default function DemoGrid({ userRole }: Props) {
   const router = useRouter();
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await logout();
     router.push('/logga-in');
     router.refresh();
   }

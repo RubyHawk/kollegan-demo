@@ -42,7 +42,7 @@ export async function updateProfile(payload: UpdateProfilePayload) {
 }
 
 export async function getProfile() {
-  const res = await apiGet<Envelope<UserProfile>>(`${AUTH_BASE_URL}/profile`);
+  const res = await apiGet<Envelope<UserProfile>>(`${AUTH_BASE_URL}/profile`, { cache: 'no-store' });
   return res.data;
 }
 

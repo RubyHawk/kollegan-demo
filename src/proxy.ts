@@ -10,6 +10,7 @@ const PUBLIC_PREFIXES = [
   '/logga-in',
   '/registrera',
   '/api/auth/',
+  '/api/v1/auth/',
   '/api/docs',
   '/api/demo/',
   // Vapi & n8n webhooks have their own auth
@@ -22,6 +23,10 @@ const PUBLIC_PREFIXES = [
   '/_next/',
   '/favicon',
 ];
+
+export function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
 /** Known app routes on the offert subdomain that must NOT be treated as offer tokens */
 const APP_ROUTES = [
@@ -54,7 +59,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   const { pathname } = request.nextUrl;
 
-  if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
+  if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
