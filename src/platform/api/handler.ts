@@ -324,7 +324,8 @@ export function createHandler<
       if (authStrategy === 'jwt') {
         const authHeader = req.headers.get('authorization') ?? '';
         // Primary: Bearer token from Authorization header (API-to-API, mobile)
-        let token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+        const bearer = authHeader.match(/^Bearer\s+(.+)$/i);
+        let token = bearer?.[1] ?? '';
         // Fallback: httpOnly `at` cookie (access JWT) for same-origin browser requests.
         // Note: `token`/`portal_token` are opaque refresh tokens — not JWTs, not usable here.
         if (!token) {

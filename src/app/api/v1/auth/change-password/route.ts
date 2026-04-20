@@ -1,1 +1,1 @@
-export { POST } from '../../../auth/change-password/route';
+export { handleChangePassword as POST } from '@modules/supporting/auth';

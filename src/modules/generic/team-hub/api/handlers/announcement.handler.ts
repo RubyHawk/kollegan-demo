@@ -17,9 +17,8 @@ const PinnedQuerySchema = z.enum(['true', 'false']).optional();
 
 function extractToken(req: NextRequest): string {
   const auth = req.headers.get('authorization') ?? '';
-  return auth.startsWith('Bearer ')
-    ? auth.slice(7)
-    : req.cookies.get('at')?.value ?? req.cookies.get('token')?.value ?? '';
+  const bearer = auth.match(/^Bearer\s+(.+)$/i);
+  return bearer?.[1] ?? req.cookies.get('at')?.value ?? req.cookies.get('token')?.value ?? '';
 }
 
 async function requireOrg(req: NextRequest): Promise<JWTPayload> {

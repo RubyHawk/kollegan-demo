@@ -3,6 +3,7 @@
 
 import { prisma } from '@platform/database/prisma';
 import type { User, CreateUserInput } from '../domain/user.entity';
+import type { AccountProfile, UpdateAccountProfileData } from '../domain/account.entity';
 
 function mapUser(raw: {
   id: string;
@@ -53,6 +54,23 @@ export const userRepository = {
     return raw ? mapUser(raw) : null;
   },
 
+  async findAccountProfile(id: string): Promise<AccountProfile | null> {
+    return prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        avatarUrl: true,
+        themeMode: true,
+        themeAccent: true,
+        themeFontFamily: true,
+        themeFontSize: true,
+      },
+    });
+  },
+
   async create(input: CreateUserInput): Promise<User> {
     const raw = await prisma.user.create({
       data: {
@@ -79,6 +97,10 @@ export const userRepository = {
 
   async updatePasswordHash(id: string, passwordHash: string): Promise<void> {
     await prisma.user.update({ where: { id }, data: { passwordHash } });
+  },
+
+  async updateAccountProfile(id: string, data: UpdateAccountProfileData): Promise<void> {
+    await prisma.user.update({ where: { id }, data });
   },
 
   async markEmailVerified(id: string): Promise<void> {

@@ -1,1 +1,1 @@
-export { GET, PATCH } from '../../../auth/profile/route';
+export { handleGetProfile as GET, handleUpdateProfile as PATCH } from '@modules/supporting/auth';
