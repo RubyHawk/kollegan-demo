@@ -34,6 +34,7 @@ export type { OfferPricingSummary } from './domain/pricing';
 export {
   createOffer,
   getOffer,
+  getStaffOfferDetail,
   listOffers,
   countOffers,
   updateOffer,
@@ -43,6 +44,7 @@ export {
   signOffer,
   declineOfferByToken,
   acceptOffer,
+  acceptOfferOnBehalfForStaff,
   declineOffer,
   deleteOffer,
   duplicateOffer,
@@ -50,7 +52,7 @@ export {
   bulkSendOffers,
   sendOfferReminder,
 } from './application/offers.service';
-export type { BulkSendResult } from './application/offers.service';
+export type { BulkSendResult, StaffOfferAcceptResult, StaffOfferDetail } from './application/offers.service';
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter } from './application/offers.service';
 
 export {

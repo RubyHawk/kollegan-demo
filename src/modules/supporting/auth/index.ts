@@ -1,7 +1,7 @@
 // ─── Auth module public API ───────────────────────────────────────────────────
 // Only export what other modules and route handlers are allowed to import.
 
-export { login, logout, refreshTokens, revokeAllSessions, completeMfaLogin } from './application/auth.service';
+export { login, logout, refreshTokens, revokeAllSessions, completeMfaLogin, getUserOrganizationId } from './application/auth.service';
 export type { LoginInput, LoginResult, MfaChallengeResult, LoginOutcome } from './application/auth.service';
 
 export {
