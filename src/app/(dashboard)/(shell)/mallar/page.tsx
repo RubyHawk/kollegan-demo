@@ -22,6 +22,14 @@ function fmtDate(iso: string) {
   });
 }
 
+async function resolveTemplateContent(template: OfferTemplate) {
+  if (template.content?.trim()) {
+    return template.content;
+  }
+
+  return (await getTemplate(template.id)).content;
+}
+
 export default function TemplatesPage() {
   const router = useRouter();
   const {
@@ -87,8 +95,8 @@ export default function TemplatesPage() {
       setPreviewing(template.id);
       setPreviewHtml(null);
       try {
-        const templateContent = template.content ?? (await getTemplate(template.id)).content;
-        if (!templateContent) {
+        const templateContent = await resolveTemplateContent(template);
+        if (!templateContent?.trim()) {
           throw new Error('Kunde inte ladda mallens innehåll.');
         }
 
@@ -108,10 +116,12 @@ export default function TemplatesPage() {
     async (template: OfferTemplate) => {
       setDuplicating(template.id);
       try {
+        const templateContent = await resolveTemplateContent(template);
+
         await createTemplate({
           name: `Kopia av ${template.name}`,
           companyId: (template.companyId ?? selectedCompanyId) || undefined,
-          content: template.content ?? (await getTemplate(template.id)).content ?? '{}',
+          content: templateContent?.trim() ? templateContent : '{}',
         });
         await load();
       } catch (e) {
