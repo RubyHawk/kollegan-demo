@@ -4,30 +4,20 @@
  * /crm/leads
  *
  * Lead management — list, filter by status, and create new leads.
- * Connected to GET /api/leads and POST /api/leads.
+ * Connected through the leads feature API client.
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import {
+  createLead,
+  listLeads,
+  type CreateLeadPayload,
+  type Lead,
+  type LeadSource,
+  type LeadStatus,
+} from '@shared/lib/api/leads.api';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
-
-type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'won' | 'lost';
-type LeadSource = 'voice_call' | 'web_form' | 'manual' | 'referral' | 'n8n_webhook';
-
-interface Lead {
-  id:             string;
-  name:           string;
-  email:          string | null;
-  phone:          string | null;
-  company:        string | null;
-  status:         LeadStatus;
-  source:         LeadSource;
-  score:          number | null;
-  estimatedValue: number | null;
-  assignedTo:     string | null;
-  notes:          string | null;
-  createdAt:      string;
-}
 
 const STATUS_TABS: { key: LeadStatus | 'all'; label: string }[] = [
   { key: 'all',       label: 'Alla' },
@@ -94,14 +84,9 @@ export default function LeadsPage() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams();
-      if (status) params.set('status', status);
-      if (q)      params.set('search', q);
-      const res = await fetch(`/api/leads?${params}`);
-      if (!res.ok) throw new Error(`Misslyckades att ladda leads (${res.status})`);
-      const json = await res.json() as { leads: Lead[]; total: number };
-      setLeads(json.leads);
-      setTotal(json.total);
+      const result = await listLeads({ status, search: q, limit: 50, offset: 0 });
+      setLeads(result.leads);
+      setTotal(result.total);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -117,7 +102,7 @@ export default function LeadsPage() {
     setSaving(true);
     setError(null);
     try {
-      const body: Record<string, unknown> = {
+      const body: CreateLeadPayload = {
         name:   form.name,
         status: form.status,
         source: form.source,
@@ -128,12 +113,7 @@ export default function LeadsPage() {
       if (form.notes)          body.notes          = form.notes;
       if (form.estimatedValue) body.estimatedValue = parseFloat(form.estimatedValue);
 
-      const res = await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(`Misslyckades att skapa lead (${res.status})`);
+      await createLead(body);
       setShowForm(false);
       setForm(EMPTY_FORM);
       await load(tab === 'all' ? undefined : tab, search || undefined);

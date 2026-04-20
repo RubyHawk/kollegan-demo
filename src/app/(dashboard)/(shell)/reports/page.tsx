@@ -8,6 +8,7 @@
  */
 
 import { useState } from 'react';
+import { loadReportRows } from '@shared/lib/api/reports.api';
 
 interface Report {
   id:       string;
@@ -23,25 +24,25 @@ const REPORTS: Report[] = [
     id: 'contacts-export', name: 'Kontaktexport',
     desc: 'Fullständig export av alla kunder och kontakter med historik.',
     category: 'CRM', color: 'text-[var(--accent)] bg-[var(--accent)]/10',
-    endpoint: '/api/crm/contacts?limit=1000&offset=0',
+    endpoint: '/api/v1/kunder?limit=1000&offset=0',
   },
   {
     id: 'leads-export', name: 'Leadsexport',
     desc: 'Alla leads med status, källa, poäng och estimerat värde.',
     category: 'CRM', color: 'text-violet-600 dark:text-violet-400 bg-violet-500/10',
-    endpoint: '/api/leads?limit=1000&offset=0',
+    endpoint: '/api/v1/leads?limit=1000&offset=0',
   },
   {
     id: 'offers-export', name: 'Offertöversikt',
     desc: 'Alla offerter med status, mottagare och totalsummor.',
     category: 'Försäljning', color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
-    endpoint: '/api/offers?limit=1000&offset=0',
+    endpoint: '/api/v1/offers?limit=1000&offset=0',
   },
   {
     id: 'projects-export', name: 'Projektöversikt',
     desc: 'Status, framsteg och milstolpar för alla aktiva projekt.',
     category: 'Projekt', color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
-    endpoint: '/api/projects?limit=1000&offset=0',
+    endpoint: '/api/v1/projekt?limit=1000&offset=0',
   },
   {
     id: 'meetings-export', name: 'Mötesexport',
@@ -102,18 +103,7 @@ export default function ReportsPage() {
     setError(null);
     setSuccess(null);
     try {
-      const res = await fetch(report.endpoint);
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      const json = await res.json() as Record<string, unknown>;
-
-      // Drill into .data envelope and find the first array
-      const envelope = (json.data as Record<string, unknown> | undefined) ?? json;
-      let rows: Record<string, unknown>[] = [];
-      for (const val of Object.values(envelope)) {
-        if (Array.isArray(val)) { rows = val as Record<string, unknown>[]; break; }
-      }
-      if (rows.length === 0) rows = [envelope];
-
+      const rows = await loadReportRows(report.endpoint);
       const csv = toCsv(rows);
       downloadCsv(csv, `${report.id}-${new Date().toISOString().slice(0, 10)}.csv`);
       setSuccess(`"${report.name}" laddades ned — ${rows.length} rader.`);
