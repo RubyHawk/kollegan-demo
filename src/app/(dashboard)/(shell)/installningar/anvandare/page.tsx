@@ -4,21 +4,20 @@
  * /settings/users
  *
  * User management — list, create, and delete staff accounts.
- * Connected to GET/POST/DELETE /api/staff.
+ * Connected to GET/POST/DELETE /api/v1/staff.
  * Admin-only: access is enforced server-side on the API.
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import {
+  createStaffUser,
+  deleteStaffUser,
+  listStaffUsers,
+  type StaffRole,
+  type StaffUser,
+} from '@shared/lib/api/staff.api';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
-
-interface StaffUser {
-  id:        string;
-  email:     string;
-  role:      string;
-  createdAt: string;
-  lastLogin: string | null;
-}
 
 const ROLE_BADGE: Record<string, string> = {
   admin:        'bg-[var(--accent)]/10 text-[var(--accent)]',
@@ -44,7 +43,7 @@ function initials(email: string): string {
 const AVATAR_COLORS = ['bg-violet-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500'];
 function avatarColor(id: string) { return AVATAR_COLORS[id.charCodeAt(0) % AVATAR_COLORS.length]; }
 
-const EMPTY_FORM = { email: '', password: '', role: 'receptionist' as 'receptionist' | 'manager' | 'admin' };
+const EMPTY_FORM = { email: '', password: '', role: 'receptionist' as StaffRole };
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
@@ -60,10 +59,7 @@ export default function UsersPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/staff');
-      if (!res.ok) throw new Error(`Misslyckades att ladda användare (${res.status})`);
-      const json = await res.json() as { data: { users: StaffUser[] } };
-      setUsers(json.data.users);
+      setUsers(await listStaffUsers());
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -77,15 +73,7 @@ export default function UsersPage() {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch('/api/staff', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email: form.email, password: form.password, role: form.role }),
-      });
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({})) as { error?: string };
-        throw new Error(json.error ?? `Misslyckades att skapa användare (${res.status})`);
-      }
+      await createStaffUser({ email: form.email, password: form.password, role: form.role });
       setShowForm(false);
       setForm(EMPTY_FORM);
       await load();
@@ -99,8 +87,7 @@ export default function UsersPage() {
   const deleteUser = useCallback(async (id: string) => {
     if (!confirm('Ta bort denna användare? Åtgärden kan inte ångras.')) return;
     try {
-      const res = await fetch(`/api/staff?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(`Misslyckades att ta bort (${res.status})`);
+      await deleteStaffUser(id);
       await load();
     } catch (e) {
       setError((e as Error).message);

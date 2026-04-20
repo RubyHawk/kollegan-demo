@@ -4,8 +4,11 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, CheckCircle, Plus, Trash, WarningCircle } from '@phosphor-icons/react';
 import { cn } from '@shared/lib/utils';
-import { fetchWithRefresh } from '@shared/lib/api-client';
-import type { NotificationRecipient } from '@modules/supporting/identity/domain/organization.entity';
+import {
+  getNotificationRecipients,
+  updateNotificationRecipients,
+  type NotificationRecipient,
+} from '@shared/lib/api/settings.api';
 import {
   ACTIVE_NOTIFICATION_DEFINITIONS,
   ACTIVE_NOTIFICATION_TAGS,
@@ -22,18 +25,6 @@ const TONE_ACTIVE: Record<string, string> = {
   red: 'border-red-500 bg-red-500 text-white',
 };
 
-interface NotificationRecipientsResponse {
-  recipients?: NotificationRecipient[];
-  canManage?: boolean;
-}
-
-function unwrapEnvelope<T>(payload: unknown): T {
-  if (payload && typeof payload === 'object' && 'data' in payload) {
-    return (payload as { data: T }).data;
-  }
-  return payload as T;
-}
-
 export default function NotifieringarPage() {
   const [recipients, setRecipients] = useState<NotificationRecipient[]>([]);
   const [canManage, setCanManage] = useState(true);
@@ -47,18 +38,8 @@ export default function NotifieringarPage() {
   const [addError, setAddError] = useState('');
 
   useEffect(() => {
-    fetchWithRefresh('/api/org/notification-recipients')
-      .then(async (response) => {
-        if (!response.ok) {
-          const problem = await response
-            .json()
-            .catch(() => ({ detail: '' })) as { detail?: string };
-          throw new Error(problem.detail || 'Kunde inte hämta notifieringsinställningarna.');
-        }
-        return response.json();
-      })
-      .then((payload) => {
-        const data = unwrapEnvelope<NotificationRecipientsResponse>(payload);
+    getNotificationRecipients()
+      .then((data) => {
         setRecipients(data.recipients ?? []);
         setCanManage(Boolean(data.canManage ?? true));
       })
@@ -78,21 +59,7 @@ export default function NotifieringarPage() {
     setError('');
 
     try {
-      const response = await fetchWithRefresh('/api/org/notification-recipients', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipients: next }),
-      });
-
-      if (!response.ok) {
-        const problem = await response
-          .json()
-          .catch(() => ({ detail: '' })) as { detail?: string };
-        throw new Error(problem.detail || 'Kunde inte spara. Försök igen.');
-      }
-
-      const payload = await response.json();
-      const data = unwrapEnvelope<NotificationRecipientsResponse>(payload);
+      const data = await updateNotificationRecipients(next);
       setRecipients(data.recipients ?? next);
       setCanManage(Boolean(data.canManage ?? true));
       setSaved(true);

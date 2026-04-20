@@ -7,6 +7,7 @@ import Sidebar from '@shared/ui/sidebar';
 import { MenuIcon, ChevronRightIcon } from '@shared/ui/icons';
 import { SearchTrigger } from '@shared/ui/search-command';
 import { BrandLockup } from '@shared/ui/brand';
+import { logout } from '@shared/lib/api/auth-account.api';
 
 interface User {
   email: string;
@@ -73,7 +74,7 @@ export default function AppShell({ user, children }: Props) {
   }
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await logout();
     router.push('/logga-in');
     router.refresh();
   }

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@shared/lib/utils';
 import { SPRING_SNAPPY } from '@shared/lib/motion';
 import { Icon, SaveButton } from '../_components/shared';
+import { updateProfile } from '@shared/lib/api/auth-account.api';
 import {
   DEFAULT_THEME_ID,
   THEMES,
@@ -38,11 +39,7 @@ function persistAppearancePatch(patch: {
   themeFontFamily?: string;
   themeFontSize?: FontSize;
 }) {
-  void fetch('/api/auth/profile', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(patch),
-  }).catch(() => {
+  void updateProfile(patch).catch(() => {
     // ignore background persistence failures
   });
 }

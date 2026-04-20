@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { getProfile } from '@shared/lib/api/auth-account.api';
 import {
   FONT_OPTIONS,
   FONT_SIZE_SCALES,
@@ -137,19 +138,7 @@ export function ThemeBootstrap({ enableProfileSync = true }: { enableProfileSync
     applyPersistedThemePreferences();
 
     if (enableProfileSync) {
-      void fetch('/api/auth/profile', { cache: 'no-store', credentials: 'include' })
-        .then(async (response) => {
-          if (!response.ok) return null;
-          const payload = await response.json() as {
-            data?: {
-              themeMode?: string | null;
-              themeAccent?: string | null;
-              themeFontFamily?: string | null;
-              themeFontSize?: string | null;
-            };
-          };
-          return payload.data ?? null;
-        })
+      void getProfile()
         .then((profile) => {
           if (!profile) return;
           applyResolvedThemePreferences({

@@ -35,12 +35,12 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 737 |
-| Source files scanned | 604 |
-| Active production source files | 446 |
+| Tracked files scanned | 749 |
+| Source files scanned | 616 |
+| Active production source files | 458 |
 | Files above 1000 lines | 3 |
 | Files above 500 lines | 22 |
-| Feature API clients | 7 |
+| Feature API clients | 10 |
 | Legacy API wrappers | 111 |
 | Dead-candidate review rows | 0 |
 
@@ -63,7 +63,7 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 | 804 | active-production | `src/modules/supporting/offers/application/offer-pdf.ts` |
 | 774 | active-production | `src/modules/supporting/offers/application/offers.service.ts` |
 | 729 | active-production | `src/app/(dashboard)/(shell)/produkter/_components/products-page-client.tsx` |
-| 712 | active-production | `src/app/(dashboard)/(shell)/installningar/utseende/page.tsx` |
+| 709 | active-production | `src/app/(dashboard)/(shell)/installningar/utseende/page.tsx` |
 | 669 | active-demo | `src/modules/demos/hotel/activity/components/activity-log.tsx` |
 | 647 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/DocumentCanvas.tsx` |
 | 635 | active-production | `src/modules/supporting/offers/infrastructure/companies.repository.ts` |
@@ -86,12 +86,15 @@ These are browser-facing API contract wrappers. They are active infrastructure e
 
 | File |
 | --- |
+| src/shared/lib/api/auth-account.api.ts |
 | src/shared/lib/api/companies.api.ts |
 | src/shared/lib/api/feature-flags.api.ts |
 | src/shared/lib/api/offers.api.ts |
 | src/shared/lib/api/procurement.api.ts |
 | src/shared/lib/api/products.api.ts |
 | src/shared/lib/api/projects.api.ts |
+| src/shared/lib/api/settings.api.ts |
+| src/shared/lib/api/staff.api.ts |
 | src/shared/lib/api/templates.api.ts |
 
 ## Legacy API Wrapper Review Queue

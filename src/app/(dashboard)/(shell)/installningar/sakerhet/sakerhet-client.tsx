@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EASE_SPRING } from '@shared/lib/motion';
+import { changePassword as changeAccountPassword, disableMfa, enableMfa, setupMfa } from '@shared/lib/api/auth-account.api';
 import { SectionCard, FieldLabel, Input, SaveButton, Icon, type UserProps } from '../_components/shared';
 
 type MfaStep = 'idle' | 'scan' | 'confirm' | 'backup' | 'disable';
@@ -30,23 +31,14 @@ export default function SakerhetClient({ user }: { user: UserProps }) {
     setPwError('');
     setPwSaved(false);
     try {
-      const res = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw, confirmPassword: confirmPw }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { error?: string };
-        setPwError(data.error ?? 'Något gick fel.');
-        return;
-      }
+      await changeAccountPassword({ currentPassword: currentPw, newPassword: newPw, confirmPassword: confirmPw });
       setPwSaved(true);
       setCurrentPw('');
       setNewPw('');
       setConfirmPw('');
       setTimeout(() => setPwSaved(false), 3000);
-    } catch {
-      setPwError('Nätverksfel. Försök igen.');
+    } catch (error) {
+      setPwError(error instanceof Error ? error.message : 'Nätverksfel. Försök igen.');
     } finally {
       setPwPending(false);
     }
@@ -56,17 +48,12 @@ export default function SakerhetClient({ user }: { user: UserProps }) {
     setMfaLoading(true);
     setMfaError('');
     try {
-      const res = await fetch('/api/auth/mfa/setup', { method: 'POST' });
-      if (!res.ok) {
-        setMfaError('Kunde inte starta MFA-konfiguration. Försök igen.');
-        return;
-      }
-      const { data } = await res.json() as { data: { qrDataUrl: string; secret: string } };
+      const data = await setupMfa();
       setMfaQr(data.qrDataUrl);
       setMfaSecret(data.secret);
       setMfaStep('scan');
-    } catch {
-      setMfaError('Nätverksfel. Försök igen.');
+    } catch (error) {
+      setMfaError(error instanceof Error ? error.message : 'Nätverksfel. Försök igen.');
     } finally {
       setMfaLoading(false);
     }
@@ -76,24 +63,13 @@ export default function SakerhetClient({ user }: { user: UserProps }) {
     setMfaLoading(true);
     setMfaError('');
     try {
-      const res = await fetch('/api/auth/mfa/enable', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: mfaCode }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { detail?: string };
-        setMfaError(data.detail ?? 'Ogiltig kod. Kontrollera din autentiseringsapp och försök igen.');
-        setMfaCode('');
-        return;
-      }
-      const { data } = await res.json() as { data: { backupCodes: string[] } };
+      const data = await enableMfa(mfaCode);
       setBackupCodes(data.backupCodes);
       setMfaCode('');
       setMfaStep('backup');
       setMfaEnabled(true);
-    } catch {
-      setMfaError('Nätverksfel. Försök igen.');
+    } catch (error) {
+      setMfaError(error instanceof Error ? error.message : 'Nätverksfel. Försök igen.');
     } finally {
       setMfaLoading(false);
     }
@@ -103,22 +79,12 @@ export default function SakerhetClient({ user }: { user: UserProps }) {
     setMfaLoading(true);
     setMfaError('');
     try {
-      const res = await fetch('/api/auth/mfa/disable', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: disableCode }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { detail?: string };
-        setMfaError(data.detail ?? 'Ogiltig kod. Försök igen.');
-        setDisableCode('');
-        return;
-      }
+      await disableMfa(disableCode);
       setDisableCode('');
       setMfaStep('idle');
       setMfaEnabled(false);
-    } catch {
-      setMfaError('Nätverksfel. Försök igen.');
+    } catch (error) {
+      setMfaError(error instanceof Error ? error.message : 'Nätverksfel. Försök igen.');
     } finally {
       setMfaLoading(false);
     }
