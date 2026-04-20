@@ -12,40 +12,8 @@ import {
 } from 'recharts';
 import { animate, motion, useMotionValue } from 'framer-motion';
 import Link from 'next/link';
+import type { OfferActivityPoint, OfferProjectSummary, ProjectStage, ProjectStats, RecentOffer } from '@modules/generic/dashboard';
 import { cn } from '@shared/lib/utils';
-
-export interface RecentOffer {
-  id: string;
-  title: string;
-  status: string;
-  offerNumber: number | null;
-  recipientName: string | null;
-  recipientCompany: string | null;
-  totalIncVat: number;
-  createdAt: string;
-  validUntil: string | null;
-  project: OfferProjectSummary | null;
-}
-
-export interface OfferActivityPoint {
-  createdAt: string;
-  status: string;
-}
-
-export type ProjectStage = 'details' | 'ordered' | 'arrived' | 'in_progress' | 'completed';
-
-export interface OfferProjectSummary {
-  id: string;
-  stage: ProjectStage;
-  completedAt: string | null;
-}
-
-export interface ProjectStats {
-  total: number;
-  active: number;
-  completed: number;
-  stages: Record<ProjectStage, number>;
-}
 
 export interface DashboardViewProps {
   greetingText: string;

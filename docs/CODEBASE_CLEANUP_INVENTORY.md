@@ -57,7 +57,7 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 | Lines | Classification | File |
 | --- | --- | --- |
 | 991 | active-production | `src/shared/ui/sidebar.tsx` |
-| 937 | active-production | `src/app/(dashboard)/(shell)/_components/DashboardView.tsx` |
+| 905 | active-production | `src/app/(dashboard)/(shell)/_components/DashboardView.tsx` |
 | 873 | active-demo | `src/modules/demos/hotel/ui/components/calendar-tab.tsx` |
 | 847 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/extensions/ImageNodeView.tsx` |
 | 804 | active-production | `src/modules/supporting/offers/application/offer-pdf.ts` |
