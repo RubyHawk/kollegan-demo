@@ -14,6 +14,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 | 2026-04-19 | Feature flag foundation | TBD | `ff_feature_flag_audit_events`, `aud_audit_logs`, `/api/v1/feature-flags` handlers | Engineering lead |
 | 2026-04-21 | Auth route boundary cleanup | TBD | Profile/change-password handlers moved behind auth module; route files remain thin wrappers; no schema/data changes | Engineering lead |
 | 2026-04-21 | Staff API route boundary cleanup | TBD | Staff handlers moved behind auth module; legacy and v1 route files are thin wrappers; no schema/data changes | Engineering lead |
+| 2026-04-21 | Dev-login route boundary cleanup | TBD | Dev-only login handler moved behind auth module; route files remain thin wrappers; no schema/data changes | Engineering lead |
 
 ## Feature Flag Rollout Evidence
 

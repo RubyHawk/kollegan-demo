@@ -11,6 +11,7 @@ export type {
   ThemeMode,
   UpdateAccountProfileInput,
 } from './application/account.service';
+export { createDevelopmentAccessToken } from './application/dev-login.service';
 export { createLegacyStaffUser, deleteLegacyStaffUser, listLegacyStaffUsers } from './application/staff-users.service';
 export type {
   CreateLegacyStaffUserInput,
@@ -64,6 +65,7 @@ export type {
 // ── API Handlers ─────────────────────────────────────────────────────────────
 export { handleLogin, handleLogout, handleRefresh, handleRegister } from './api/handlers/auth.handler';
 export { handleChangePassword, handleGetProfile, handleUpdateProfile } from './api/handlers/account.handler';
+export { handleDevLogin } from './api/handlers/dev-login.handler';
 export {
   handleCreateStaff,
   handleCreateStaffV1,
