@@ -35,12 +35,12 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 710 |
-| Source files scanned | 577 |
-| Active production source files | 420 |
+| Tracked files scanned | 722 |
+| Source files scanned | 589 |
+| Active production source files | 432 |
 | Files above 1000 lines | 3 |
 | Files above 500 lines | 24 |
-| Feature API clients | 2 |
+| Feature API clients | 4 |
 | Legacy API wrappers | 111 |
 | Dead-candidate review rows | 0 |
 
@@ -90,6 +90,8 @@ These are browser-facing API contract wrappers. They are active infrastructure e
 | --- |
 | src/shared/lib/api/feature-flags.api.ts |
 | src/shared/lib/api/offers.api.ts |
+| src/shared/lib/api/procurement.api.ts |
+| src/shared/lib/api/projects.api.ts |
 
 ## Legacy API Wrapper Review Queue
 

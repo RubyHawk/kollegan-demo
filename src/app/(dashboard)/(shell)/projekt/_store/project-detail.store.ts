@@ -1,5 +1,13 @@
 import { create } from 'zustand';
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import { createSupplier, listSuppliers } from '@shared/lib/api/procurement.api';
+import {
+  advanceProjectStage,
+  createProjectPurchaseOrder,
+  getProject,
+  receiveProjectPurchaseOrder,
+  submitProjectPurchaseOrder,
+  updateProjectDetails,
+} from '@shared/lib/api/projects.api';
 import type {
   InstallDetailsForm,
   Project,
@@ -90,28 +98,6 @@ function poDraftFromProject(project: Project): PurchaseOrderForm {
   return { ...EMPTY_PO_DRAFT, items: lines };
 }
 
-function problemMessage(body: string, fallback: string) {
-  try {
-    const json = JSON.parse(body) as { detail?: string; title?: string };
-    return json.detail ?? json.title ?? fallback;
-  } catch {
-    return body || fallback;
-  }
-}
-
-async function jsonRequest<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetchWithRefresh(url, {
-    credentials: 'include',
-    ...init,
-    headers: {
-      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
-      ...init?.headers,
-    },
-  });
-  if (!res.ok) throw new Error(problemMessage(await res.text(), `Fel ${res.status}`));
-  return res.json() as Promise<T>;
-}
-
 export const useProjectDetailStore = create<ProjectDetailState>()((set, get) => ({
   project: null,
   suppliers: [],
@@ -146,8 +132,7 @@ export const useProjectDetailStore = create<ProjectDetailState>()((set, get) => 
   loadProject: async (projectId) => {
     set({ loading: true, error: null });
     try {
-      const json = await jsonRequest<{ data: { project: Project } }>(`/api/projekt/${projectId}`);
-      const project = json.data.project;
+      const project = await getProject(projectId);
       set({
         project,
         detailsDraft: detailsFromProject(project),
@@ -162,8 +147,8 @@ export const useProjectDetailStore = create<ProjectDetailState>()((set, get) => 
 
   loadSuppliers: async () => {
     try {
-      const json = await jsonRequest<{ data: { suppliers: Supplier[] } }>('/api/leverantorer?limit=100');
-      set({ suppliers: json.data.suppliers });
+      const result = await listSuppliers({ limit: 100 });
+      set({ suppliers: result.suppliers });
     } catch {
       // Supplier list is loaded again when the panel opens.
     }
@@ -191,11 +176,8 @@ export const useProjectDetailStore = create<ProjectDetailState>()((set, get) => 
         onsiteContactEmail: draft.onsiteContactEmail.trim() || null,
         internalNotes: draft.internalNotes.trim() || null,
       };
-      const json = await jsonRequest<{ data: { project: Project } }>(`/api/projekt/${project.id}/details`, {
-        method: 'PATCH',
-        body: JSON.stringify(body),
-      });
-      set({ project: json.data.project, detailsDraft: detailsFromProject(json.data.project) });
+      const updated = await updateProjectDetails(project.id, body);
+      set({ project: updated, detailsDraft: detailsFromProject(updated) });
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;
@@ -209,11 +191,8 @@ export const useProjectDetailStore = create<ProjectDetailState>()((set, get) => 
     if (!project) return;
     set({ acting: true, error: null });
     try {
-      const json = await jsonRequest<{ data: { project: Project } }>(`/api/projekt/${project.id}/advance`, {
-        method: 'POST',
-        body: JSON.stringify({ toStage }),
-      });
-      set({ project: json.data.project, detailsDraft: detailsFromProject(json.data.project) });
+      const updated = await advanceProjectStage(project.id, toStage);
+      set({ project: updated, detailsDraft: detailsFromProject(updated) });
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;
@@ -230,16 +209,13 @@ export const useProjectDetailStore = create<ProjectDetailState>()((set, get) => 
     try {
       let supplierId = draft.supplierId;
       if (!supplierId && draft.supplierName.trim()) {
-        const supplierJson = await jsonRequest<{ data: { supplier: Supplier } }>('/api/leverantorer', {
-          method: 'POST',
-          body: JSON.stringify({
-            name: draft.supplierName.trim(),
-            email: draft.supplierEmail.trim() || null,
-            phone: draft.supplierPhone.trim() || null,
-            orgNumber: draft.supplierOrgNumber.trim() || null,
-          }),
+        const supplier = await createSupplier({
+          name: draft.supplierName.trim(),
+          email: draft.supplierEmail.trim() || null,
+          phone: draft.supplierPhone.trim() || null,
+          orgNumber: draft.supplierOrgNumber.trim() || null,
         });
-        supplierId = supplierJson.data.supplier.id;
+        supplierId = supplier.id;
       }
       const items = draft.items
         .filter((line) => line.description.trim() && Number(line.quantity) > 0)
@@ -251,19 +227,13 @@ export const useProjectDetailStore = create<ProjectDetailState>()((set, get) => 
           unitCost: Number(line.unitCost || 0),
           vatRate: Number(line.vatRate || 0.25),
         }));
-      const poJson = await jsonRequest<{ data: { purchaseOrder: PurchaseOrder } }>(`/api/projekt/${project.id}/purchase-orders`, {
-        method: 'POST',
-        body: JSON.stringify({
-          supplierId,
-          items,
-          expectedDeliveryDate: draft.expectedDeliveryDate ? new Date(draft.expectedDeliveryDate).toISOString() : null,
-          notes: draft.notes.trim() || null,
-        }),
+      const purchaseOrder = await createProjectPurchaseOrder(project.id, {
+        supplierId,
+        items,
+        expectedDeliveryDate: draft.expectedDeliveryDate ? new Date(draft.expectedDeliveryDate).toISOString() : null,
+        notes: draft.notes.trim() || null,
       });
-      await jsonRequest<{ data: { purchaseOrder: PurchaseOrder } }>(`/api/projekt/${project.id}/purchase-orders/${poJson.data.purchaseOrder.id}/submit`, {
-        method: 'PATCH',
-        body: JSON.stringify({}),
-      });
+      await submitProjectPurchaseOrder(project.id, purchaseOrder.id);
       await get().loadProject(project.id);
       await get().loadSuppliers();
     } catch (error) {
@@ -279,10 +249,7 @@ export const useProjectDetailStore = create<ProjectDetailState>()((set, get) => 
     if (!project) return;
     set({ acting: true, error: null });
     try {
-      await jsonRequest<{ data: { purchaseOrder: PurchaseOrder } }>(`/api/projekt/${project.id}/purchase-orders/${poId}/submit`, {
-        method: 'PATCH',
-        body: JSON.stringify({}),
-      });
+      await submitProjectPurchaseOrder(project.id, poId);
       await get().loadProject(project.id);
     } catch (error) {
       set({ error: (error as Error).message });
@@ -298,14 +265,11 @@ export const useProjectDetailStore = create<ProjectDetailState>()((set, get) => 
     set({ acting: true, error: null });
     try {
       const draft = get().receiptDraft;
-      await jsonRequest<{ data: { purchaseOrder: PurchaseOrder } }>(`/api/projekt/${project.id}/purchase-orders/${po.id}/receive`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          receivedItems: draft.map((line) => ({
-            lineItemId: line.lineItemId,
-            receivedQuantity: Number(line.receivedQuantity || 0),
-          })),
-        }),
+      await receiveProjectPurchaseOrder(project.id, po.id, {
+        receivedItems: draft.map((line) => ({
+          lineItemId: line.lineItemId,
+          receivedQuantity: Number(line.receivedQuantity || 0),
+        })),
       });
       await get().loadProject(project.id);
     } catch (error) {
