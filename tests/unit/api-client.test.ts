@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiDelete, apiGet } from '../../src/shared/lib/api-client';
 import { getProfile } from '../../src/shared/lib/api/auth-account.api';
 import { removeCompanyMember } from '../../src/shared/lib/api/companies.api';
+import { listCustomers } from '../../src/shared/lib/api/customers.api';
+import { createLead } from '../../src/shared/lib/api/leads.api';
 import { deleteProduct, deleteProductCategory } from '../../src/shared/lib/api/products.api';
 
 afterEach(() => {
@@ -89,5 +91,31 @@ describe('feature API clients', () => {
     mockFetch(new Response(null, { status: 204 }));
 
     await expect(deleteProductCategory('category_1')).resolves.toBeUndefined();
+  });
+
+  it('uses v1 customers routes for CRM contact reads', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      data: { contacts: [], customers: [], total: 0, limit: 8, offset: 0 },
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(listCustomers({ search: 'anna', limit: 8, offset: 0 })).resolves.toMatchObject({ total: 0 });
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/kunder?search=anna&limit=8&offset=0', expect.any(Object));
+  });
+
+  it('uses v1 leads routes for lead creation', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      data: { lead: { id: 'lead_1', name: 'Anna', status: 'new', source: 'manual' } },
+    }), {
+      status: 201,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createLead({ name: 'Anna', status: 'new', source: 'manual' })).resolves.toMatchObject({ id: 'lead_1' });
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/leads', expect.objectContaining({ method: 'POST' }));
   });
 });

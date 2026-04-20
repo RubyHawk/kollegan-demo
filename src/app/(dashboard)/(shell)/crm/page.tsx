@@ -8,6 +8,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { listCustomers } from '@shared/lib/api/customers.api';
+import { listLeads, type Lead } from '@shared/lib/api/leads.api';
 
 interface Stats {
   contacts: number;
@@ -16,13 +18,7 @@ interface Stats {
   leadsWon: number;
 }
 
-interface RecentLead {
-  id:        string;
-  name:      string;
-  company:   string | null;
-  status:    string;
-  createdAt: string;
-}
+type RecentLead = Pick<Lead, 'id' | 'name' | 'company' | 'status' | 'createdAt'>;
 
 const STATUS_BADGE: Record<string, string> = {
   new:       'bg-[var(--accent)]/10 text-[var(--accent)]',
@@ -53,19 +49,17 @@ export default function CrmPage() {
   useEffect(() => {
     async function load() {
       try {
-        const [leadsRes, contactsRes] = await Promise.all([
-          fetch('/api/leads?limit=200&offset=0'),
-          fetch('/api/crm/contacts?limit=1&offset=0'),
+        const [leadsResult, contactsResult] = await Promise.all([
+          listLeads({ limit: 100, offset: 0 }),
+          listCustomers({ limit: 1, offset: 0 }),
         ]);
-        const leadsJson    = leadsRes.ok    ? (await leadsRes.json()    as { leads: RecentLead[]; total: number }) : null;
-        const contactsJson = contactsRes.ok ? (await contactsRes.json() as { data: { total: number } })           : null;
 
-        setRecentLeads((leadsJson?.leads ?? []).slice(0, 5));
+        setRecentLeads(leadsResult.leads.slice(0, 5));
         setStats({
-          contacts: contactsJson?.data?.total ?? 0,
-          leads:    leadsJson?.total          ?? 0,
-          leadsNew: (leadsJson?.leads ?? []).filter(l => l.status === 'new').length,
-          leadsWon: (leadsJson?.leads ?? []).filter(l => l.status === 'won').length,
+          contacts: contactsResult.total,
+          leads:    leadsResult.total,
+          leadsNew: leadsResult.leads.filter(l => l.status === 'new').length,
+          leadsWon: leadsResult.leads.filter(l => l.status === 'won').length,
         });
       } catch (e) {
         setError((e as Error).message);

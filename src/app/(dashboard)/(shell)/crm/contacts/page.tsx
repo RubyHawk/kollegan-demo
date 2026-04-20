@@ -4,25 +4,22 @@
  * /crm/contacts
  *
  * Contact book — individual contacts (Customer records) with full CRUD.
- * Connected to GET/POST /api/crm/contacts and PATCH/DELETE /api/crm/contacts/[id].
+ * Connected through the customers feature API client.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@shared/lib/utils';
+import {
+  createCustomer,
+  deleteCustomer,
+  listCustomers,
+  updateCustomer,
+  type CustomerContact,
+} from '@shared/lib/api/customers.api';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface Contact {
-  id:        string;
-  name:      string | null;
-  phone:     string | null;
-  email:     string | null;
-  company:   string | null;
-  notes:     string | null;
-  callCount: number;
-  firstSeen: string;
-  lastSeen:  string;
-}
+type Contact = CustomerContact;
 
 const AVATAR_COLORS = ['bg-violet-500','bg-blue-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-sky-500'];
 const avatarColor = (id: string) => AVATAR_COLORS[id.charCodeAt(0) % AVATAR_COLORS.length];
@@ -56,13 +53,9 @@ export default function ContactsPage() {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ limit: '50', offset: '0' });
-      if (search.trim()) params.set('search', search.trim());
-      const res = await fetch(`/api/crm/contacts?${params}`);
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      const json = await res.json() as { data: { contacts: Contact[]; total: number } };
-      setContacts(json.data.contacts);
-      setTotal(json.data.total);
+      const result = await listCustomers({ limit: 50, offset: 0, search: search.trim() || undefined });
+      setContacts(result.contacts);
+      setTotal(result.total);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -86,22 +79,17 @@ export default function ContactsPage() {
     setSaving(true);
     setError(null);
     try {
-      const method = editing ? 'PATCH' : 'POST';
-      const url    = editing ? `/api/crm/contacts/${editing.id}` : '/api/crm/contacts';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name:    form.name.trim()    || undefined,
-          phone:   form.phone.trim()   || null,
-          email:   form.email.trim()   || null,
-          company: form.company.trim() || null,
-          notes:   form.notes.trim()   || null,
-        }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({})) as { detail?: string };
-        throw new Error(j.detail ?? `Fel ${res.status}`);
+      const payload = {
+        name:    form.name.trim(),
+        phone:   form.phone.trim()   || null,
+        email:   form.email.trim()   || null,
+        company: form.company.trim() || null,
+        notes:   form.notes.trim()   || null,
+      };
+      if (editing) {
+        await updateCustomer(editing.id, payload);
+      } else {
+        await createCustomer(payload);
       }
       setShowForm(false);
       setEditing(null);
@@ -118,8 +106,7 @@ export default function ContactsPage() {
     if (!confirm('Ta bort kontakten permanent?')) return;
     setActing(id);
     try {
-      const res = await fetch(`/api/crm/contacts/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      await deleteCustomer(id);
       await load(true);
     } catch (e) {
       setError((e as Error).message);
