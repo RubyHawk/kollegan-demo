@@ -15,13 +15,14 @@ import {
   buildSendToRecipientPayload,
 } from './offer-email';
 import { identityService } from '@modules/supporting/identity';
-import { generateDocument, generateFallbackDocument, interpolateEmailText } from './document-generator';
+import { generateDocument, generateFallbackDocument, interpolateEmailText, sanitizeGeneratedOfferDocument } from './document-generator';
 import { templatesRepository } from '../infrastructure/templates.repository';
 import { companiesRepository } from '../infrastructure/companies.repository';
 import { productsRepository } from '../infrastructure/products.repository';
 import { resolveOfferBranding } from './company-branding';
 import { dispatchCreatorNotification, dispatchOfferEmail, dispatchReminderEmail } from './offer-email-dispatch';
 import { prisma } from '@platform/database/prisma';
+import { summarizeOfferPricing, type OfferPricingSummary } from '../domain/pricing';
 import { computeOfferValidUntil } from '../domain/validity';
 import { assertOfferReadyForSend } from './publish-validation';
 import type { OfferBrandingProfile } from './company-branding';
@@ -29,6 +30,14 @@ import { renderPublicOfferPdf, resolvePdfOrigin } from './offer-pdf';
 import { sanitizePublicPdfOfferDocument } from './public-offer-document';
 
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
+
+export interface StaffOfferDetail {
+  offer: Offer;
+  renderedDocument: string | null;
+  pricing: OfferPricingSummary;
+}
+
+export type StaffOfferAcceptResult = 'accepted' | 'no_org' | 'not_accepted';
 
 const TAG = 'OffersService';
 
@@ -233,6 +242,11 @@ async function resolveOfferBrandingForOfferData(offer: Offer): Promise<OfferBran
   return resolveOfferBranding(company, org, responsible);
 }
 
+async function getActorOrganizationId(userId: string): Promise<string | null> {
+  const { getUserOrganizationId } = await import('@modules/supporting/auth');
+  return getUserOrganizationId(userId);
+}
+
 export async function createOffer(
   input: CreateOfferInput,
   actorId: string,
@@ -257,6 +271,25 @@ export async function createOffer(
 
 export async function getOffer(id: string, orgId: string): Promise<Offer | null> {
   return offersRepository.findById(id, orgId);
+}
+
+export async function getStaffOfferDetail(offerId: string, actorUserId: string): Promise<StaffOfferDetail | null> {
+  const orgId = await getActorOrganizationId(actorUserId);
+  if (!orgId) return null;
+
+  const offer = await getOffer(offerId, orgId);
+  if (!offer) return null;
+
+  const branding = await resolveOfferBrandingForOfferData(offer);
+  const renderedDocument = offer.generatedDocument
+    ? sanitizeGeneratedOfferDocument(offer.generatedDocument, offer, branding)
+    : null;
+
+  return {
+    offer,
+    renderedDocument,
+    pricing: summarizeOfferPricing(offer.lineItems, offer.priceDisplayMode),
+  };
 }
 
 export async function listOffers(
@@ -625,6 +658,17 @@ export async function acceptOffer(id: string, orgId: string): Promise<Offer | nu
   logger.info(TAG, `Offer accepted: ${id}`, { totalIncVat: updated.totalIncVat });
   void persistPublicOfferPdfSnapshot(updated);
   return updated;
+}
+
+export async function acceptOfferOnBehalfForStaff(
+  id: string,
+  actorUserId: string,
+): Promise<StaffOfferAcceptResult> {
+  const orgId = await getActorOrganizationId(actorUserId);
+  if (!orgId) return 'no_org';
+
+  const accepted = await acceptOffer(id, orgId);
+  return accepted ? 'accepted' : 'not_accepted';
 }
 
 export async function declineOffer(id: string, orgId: string): Promise<Offer | null> {

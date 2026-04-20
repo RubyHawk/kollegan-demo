@@ -232,6 +232,10 @@ export async function login(input: LoginInput): Promise<LoginOutcome> {
 // Called after the MFA challenge is verified (TOTP or WebAuthn).
 // Looks up the user and issues the final tokens with amr=['pwd','otp'|'hwk'].
 
+export async function getUserOrganizationId(userId: string): Promise<string | null> {
+  return userRepository.findOrganizationIdById(userId);
+}
+
 export async function completeMfaLogin(
   userId: string,
   amrMethod: 'otp' | 'hwk', // IANA AMR values: otp=TOTP/backup, hwk=hardware key (WebAuthn)

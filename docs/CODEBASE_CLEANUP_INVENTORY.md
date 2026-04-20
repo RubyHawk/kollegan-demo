@@ -35,9 +35,9 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 788 |
-| Source files scanned | 655 |
-| Active production source files | 496 |
+| Tracked files scanned | 791 |
+| Source files scanned | 658 |
+| Active production source files | 499 |
 | Files above 1000 lines | 3 |
 | Files above 500 lines | 22 |
 | Feature API clients | 18 |
@@ -60,8 +60,8 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 | 905 | active-production | `src/app/(dashboard)/(shell)/_components/DashboardView.tsx` |
 | 873 | active-demo | `src/modules/demos/hotel/ui/components/calendar-tab.tsx` |
 | 847 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/extensions/ImageNodeView.tsx` |
+| 818 | active-production | `src/modules/supporting/offers/application/offers.service.ts` |
 | 804 | active-production | `src/modules/supporting/offers/application/offer-pdf.ts` |
-| 774 | active-production | `src/modules/supporting/offers/application/offers.service.ts` |
 | 729 | active-production | `src/app/(dashboard)/(shell)/produkter/_components/products-page-client.tsx` |
 | 709 | active-production | `src/app/(dashboard)/(shell)/installningar/utseende/page.tsx` |
 | 669 | active-demo | `src/modules/demos/hotel/activity/components/activity-log.tsx` |

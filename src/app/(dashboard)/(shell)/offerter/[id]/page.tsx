@@ -2,11 +2,7 @@ import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
 import { getSessionUser } from '@platform/auth/session';
-import { prisma } from '@platform/database/prisma';
-import { acceptOffer as acceptOfferByStaff, getOffer } from '@modules/supporting/offers/application/offers.service';
-import { resolveOfferBrandingForOffer } from '@modules/supporting/offers/application/offer-branding-profile';
-import { sanitizeGeneratedOfferDocument } from '@modules/supporting/offers/application/document-generator';
-import { summarizeOfferPricing } from '@modules/supporting/offers/domain/pricing';
+import { acceptOfferOnBehalfForStaff, getStaffOfferDetail } from '@modules/supporting/offers';
 
 function fmtDate(iso?: string) {
   if (!iso) return '—';
@@ -43,18 +39,10 @@ export default async function OfferDetailsPage({
   if (!user) redirect('/logga-in');
 
   const { id } = await params;
-  const orgId = await prisma.user
-    .findUnique({ where: { id: user.id }, select: { organizationId: true } })
-    .then((record) => record?.organizationId ?? '');
+  const detail = await getStaffOfferDetail(id, user.id);
+  if (!detail) notFound();
 
-  if (!orgId) notFound();
-
-  const offer = await getOffer(id, orgId);
-  if (!offer) notFound();
-  const branding = await resolveOfferBrandingForOffer(offer);
-  const renderedDocument = offer.generatedDocument
-    ? sanitizeGeneratedOfferDocument(offer.generatedDocument, offer, branding)
-    : null;
+  const { offer, renderedDocument, pricing } = detail;
 
   async function acceptOnBehalfAction() {
     'use server';
@@ -62,13 +50,9 @@ export default async function OfferDetailsPage({
     const sessionUser = await getSessionUser();
     if (!sessionUser) redirect('/logga-in');
 
-    const actionOrgId = await prisma.user
-      .findUnique({ where: { id: sessionUser.id }, select: { organizationId: true } })
-      .then((record) => record?.organizationId ?? '');
+    const result = await acceptOfferOnBehalfForStaff(id, sessionUser.id);
+    if (result === 'no_org') notFound();
 
-    if (!actionOrgId) notFound();
-
-    await acceptOfferByStaff(id, actionOrgId);
     revalidatePath('/offerter');
     revalidatePath(`/offerter/${id}`);
     redirect(`/offerter/${id}`);
@@ -78,7 +62,6 @@ export default async function OfferDetailsPage({
     offer.status === 'sent' || offer.status === 'viewed' || offer.status === 'accepted'
       ? `/offerter/publik/${offer.publicToken}`
       : null;
-  const pricing = summarizeOfferPricing(offer.lineItems, offer.priceDisplayMode);
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
