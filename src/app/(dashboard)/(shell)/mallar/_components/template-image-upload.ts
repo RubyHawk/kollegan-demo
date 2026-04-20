@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import { uploadTemplateAsset } from '@shared/lib/api/templates.api';
 
 const MAX_TEMPLATE_IMAGE_BYTES = 8 * 1024 * 1024;
 
@@ -45,20 +45,7 @@ export async function uploadTemplateImage(file: File): Promise<string> {
     throw new Error('Bilden är för stor. Använd en bild under 8 MB.');
   }
 
-  const formData = new FormData();
-  formData.append('file', file);
-
-  const res = await fetchWithRefresh('/api/templates/assets', {
-    method: 'POST',
-    body: formData,
-  });
-
-  const json = await res.json().catch(() => ({})) as { url?: string; detail?: string };
-  if (!res.ok || !json.url) {
-    throw new Error(json.detail ?? `Bilduppladdning misslyckades (${res.status})`);
-  }
-
-  return json.url;
+  return uploadTemplateAsset(file);
 }
 
 export async function normalizeTemplateImages<T>(value: T): Promise<T> {

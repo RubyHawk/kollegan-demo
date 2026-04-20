@@ -2,19 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import {
+  createTemplate,
+  deleteTemplate,
+  getTemplate,
+  listTemplates,
+  previewTemplate,
+  type OfferTemplate,
+} from '@shared/lib/api/templates.api';
 import { cn } from '@shared/lib/utils';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
-
-interface OfferTemplate {
-  id: string;
-  companyId?: string;
-  name: string;
-  content?: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('sv-SE', {
@@ -72,16 +70,7 @@ export default function TemplatesPage() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams();
-      if (selectedCompanyId) {
-        params.set('companyId', selectedCompanyId);
-      }
-      const res = await fetchWithRefresh(`/api/templates?${params.toString()}`);
-      if (!res.ok) {
-        throw new Error(`Fel ${res.status}`);
-      }
-      const json = (await res.json()) as { data: OfferTemplate[] };
-      setTemplates(json.data);
+      setTemplates(await listTemplates({ companyId: selectedCompanyId || undefined }));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -98,34 +87,15 @@ export default function TemplatesPage() {
       setPreviewing(template.id);
       setPreviewHtml(null);
       try {
-        const templateContent =
-          template.content ??
-          (await (async () => {
-            const templateRes = await fetchWithRefresh(`/api/templates/${template.id}`);
-            const templateJson = (await templateRes.json().catch(() => ({}))) as {
-              data?: OfferTemplate;
-              detail?: string;
-            };
-            if (!templateRes.ok || !templateJson.data?.content) {
-              throw new Error(templateJson.detail ?? `Kunde inte ladda mallens innehåll (${templateRes.status})`);
-            }
-            return templateJson.data.content;
-          })());
-
-        const res = await fetchWithRefresh('/api/templates/preview', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: templateContent,
-            branding: selectedCompanyBranding,
-          }),
-        });
-
-        const json = (await res.json()) as { html?: string; detail?: string };
-        if (!res.ok) {
-          throw new Error(json.detail ?? `Fel ${res.status}`);
+        const templateContent = template.content ?? (await getTemplate(template.id)).content;
+        if (!templateContent) {
+          throw new Error('Kunde inte ladda mallens innehåll.');
         }
-        setPreviewHtml(json.html ?? '');
+
+        setPreviewHtml(await previewTemplate({
+          content: templateContent,
+          branding: selectedCompanyBranding,
+        }));
       } catch (e) {
         setError((e as Error).message);
         setPreviewing(null);
@@ -138,18 +108,11 @@ export default function TemplatesPage() {
     async (template: OfferTemplate) => {
       setDuplicating(template.id);
       try {
-        const res = await fetchWithRefresh('/api/templates', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: `Kopia av ${template.name}`,
-            companyId: (template.companyId ?? selectedCompanyId) || undefined,
-            content: template.content,
-          }),
+        await createTemplate({
+          name: `Kopia av ${template.name}`,
+          companyId: (template.companyId ?? selectedCompanyId) || undefined,
+          content: template.content ?? (await getTemplate(template.id)).content ?? '{}',
         });
-        if (!res.ok) {
-          throw new Error(`Fel ${res.status}`);
-        }
         await load();
       } catch (e) {
         setError((e as Error).message);
@@ -165,10 +128,7 @@ export default function TemplatesPage() {
       setDeleting(id);
       setConfirmDelete(null);
       try {
-        const res = await fetchWithRefresh(`/api/templates/${id}`, { method: 'DELETE' });
-        if (!res.ok) {
-          throw new Error(`Fel ${res.status}`);
-        }
+        await deleteTemplate(id);
         await load();
       } catch (e) {
         setError((e as Error).message);

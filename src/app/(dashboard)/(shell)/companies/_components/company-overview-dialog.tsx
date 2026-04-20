@@ -10,9 +10,9 @@ import {
   NotePencil,
   Package,
 } from '@phosphor-icons/react';
-import { fetchWithRefresh } from '@shared/lib/api-client';
 import { listCompanyMembers, type Company } from '@shared/lib/api/companies.api';
 import { listProducts } from '@shared/lib/api/products.api';
+import { listTemplates } from '@shared/lib/api/templates.api';
 import { Button } from '@shared/ui/button';
 import {
   Dialog,
@@ -155,19 +155,18 @@ export function CompanyOverviewDialog({
     if (!open || !company) return;
 
     let cancelled = false;
-    setState(EMPTY_STATE);
 
     void (async () => {
       try {
+        await Promise.resolve();
+        if (cancelled) return;
+        setState(EMPTY_STATE);
+
         const [membersPayload, templatesRes, productsPayload] = await Promise.all([
           listCompanyMembers(company.id),
-          fetchWithRefresh(`/api/templates?companyId=${company.id}`),
+          listTemplates({ companyId: company.id }),
           listProducts({ companyId: company.id }),
         ]);
-
-        if (!templatesRes.ok) throw new Error(`Kunde inte hämta mallar (${templatesRes.status})`);
-
-        const templatesJson = (await templatesRes.json()) as { data?: TemplateSummary[] };
 
         if (cancelled) return;
 
@@ -175,7 +174,7 @@ export function CompanyOverviewDialog({
           loading: false,
           error: null,
           members: membersPayload.members,
-          templates: templatesJson.data ?? [],
+          templates: templatesRes,
           products: productsPayload,
         });
       } catch (error) {
