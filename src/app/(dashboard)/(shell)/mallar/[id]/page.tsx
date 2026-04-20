@@ -10,7 +10,13 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import {
+  createTemplate,
+  getTemplate,
+  previewTemplate,
+  updateTemplate,
+  type CreateTemplatePayload,
+} from '@shared/lib/api/templates.api';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import type { TemplateEditorHandle } from '../_components/TemplateEditor';
 import type { EmailEditorHandle } from '../_components/EmailEditor';
@@ -19,30 +25,7 @@ import { normalizeTemplateImages } from '../_components/template-image-upload';
 const TemplateEditor = dynamic(() => import('../_components/TemplateEditor'), { ssr: false });
 const EmailEditor = dynamic(() => import('../_components/EmailEditor'), { ssr: false });
 
-interface OfferTemplate {
-  id: string;
-  companyId?: string;
-  name: string;
-  content: string;
-  emailSubject?: string;
-  emailBody?: string;
-  emailHeaderConfig?: string;
-}
-
 type Tab = 'offer' | 'email';
-
-async function readJsonResponse<T>(res: Response): Promise<T> {
-  const raw = await res.text();
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    throw new Error(
-      raw.startsWith('<')
-        ? 'Servern returnerade HTML i stället för JSON. Kontrollera att du fortfarande är inloggad och att API:t svarar korrekt.'
-        : 'Kunde inte tolka svaret från servern.',
-    );
-  }
-}
 
 export default function TemplateEditorPage() {
   const router = useRouter();
@@ -97,18 +80,16 @@ export default function TemplateEditorPage() {
     void (async () => {
       setLoading(true);
       try {
-        const res = await fetchWithRefresh(`/api/templates/${params.id}`);
-        if (!res.ok) throw new Error(`Hittade inte mallen (${res.status})`);
-        const json = await readJsonResponse<{ data: OfferTemplate }>(res);
-        setName(json.data.name);
-        if (json.data.companyId) {
-          setSelectedCompanyId(json.data.companyId);
+        const template = await getTemplate(params.id);
+        setName(template.name);
+        if (template.companyId) {
+          setSelectedCompanyId(template.companyId);
         }
-        setInitEmailSubject(json.data.emailSubject ?? '');
-        setInitEmailBody(json.data.emailBody ?? '');
-        setInitEmailHdrCfg(json.data.emailHeaderConfig ?? '');
-        initialContentRef.current = json.data.content;
-        editorRef.current?.setContent(json.data.content);
+        setInitEmailSubject(template.emailSubject ?? '');
+        setInitEmailBody(template.emailBody ?? '');
+        setInitEmailHdrCfg(template.emailHeaderConfig ?? '');
+        initialContentRef.current = template.content;
+        editorRef.current?.setContent(template.content ?? '');
       } catch (e) {
         setError((e as Error).message);
       } finally {
@@ -168,7 +149,7 @@ export default function TemplateEditorPage() {
     setError(null);
     setSaved(false);
     try {
-      const payload: Record<string, unknown> = {
+      const payload: CreateTemplatePayload = {
         name: name.trim(),
         companyId: selectedCompanyId,
         content,
@@ -177,31 +158,17 @@ export default function TemplateEditorPage() {
         ...(emailHeaderConfig ? { emailHeaderConfig } : {}),
       };
 
-      const res = isNew
-        ? await fetchWithRefresh('/api/templates', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          })
-        : await fetchWithRefresh(`/api/templates/${params.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
-
-      if (!res.ok) {
-        const problem = await readJsonResponse<{ detail?: string } | null>(res).catch(() => null);
-        throw new Error(problem?.detail ?? `Fel ${res.status}`);
-      }
+      const savedTemplate = isNew
+        ? await createTemplate(payload)
+        : await updateTemplate(params.id, payload);
 
       if (isNew) {
-        const jsonResponse = await readJsonResponse<{ data: OfferTemplate }>(res);
         try {
           localStorage.removeItem(draftKey);
         } catch {
           // ignore
         }
-        router.replace(`/mallar/${jsonResponse.data.id}`);
+        router.replace(`/mallar/${savedTemplate.id}`);
       } else {
         setIsDirty(false);
         setDraftBanner(false);
@@ -227,17 +194,10 @@ export default function TemplateEditorPage() {
     try {
       const json = rawJson ? await normalizeTemplateImages(rawJson) : undefined;
       if (json) editorRef.current?.setContent(json);
-      const res = await fetchWithRefresh('/api/templates/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: json ? JSON.stringify(json) : undefined,
-          branding: selectedCompanyBranding,
-        }),
-      });
-      const preview = await readJsonResponse<{ html?: string; detail?: string }>(res);
-      if (!res.ok) throw new Error(preview.detail ?? `Fel ${res.status}`);
-      setPreviewHtml(preview.html ?? '');
+      setPreviewHtml(await previewTemplate({
+        content: json ? JSON.stringify(json) : undefined,
+        branding: selectedCompanyBranding,
+      }));
     } catch (e) {
       setError((e as Error).message);
       setPreviewing(false);

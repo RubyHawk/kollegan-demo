@@ -35,12 +35,12 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 731 |
-| Source files scanned | 598 |
-| Active production source files | 441 |
+| Tracked files scanned | 737 |
+| Source files scanned | 604 |
+| Active production source files | 446 |
 | Files above 1000 lines | 3 |
-| Files above 500 lines | 23 |
-| Feature API clients | 6 |
+| Files above 500 lines | 22 |
+| Feature API clients | 7 |
 | Legacy API wrappers | 111 |
 | Dead-candidate review rows | 0 |
 
@@ -73,7 +73,6 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 | 543 | active-production | `src/modules/supporting/offers/infrastructure/offers.repository.ts` |
 | 537 | active-production | `src/app/(dashboard)/(shell)/offerter/page.tsx` |
 | 534 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/EmailEditor.tsx` |
-| 519 | active-production | `src/app/(dashboard)/(shell)/mallar/[id]/page.tsx` |
 | 513 | active-production | `src/modules/supporting/offers/application/offer-email-dispatch.ts` |
 | 506 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/TemplateEditor.tsx` |
 
@@ -93,6 +92,7 @@ These are browser-facing API contract wrappers. They are active infrastructure e
 | src/shared/lib/api/procurement.api.ts |
 | src/shared/lib/api/products.api.ts |
 | src/shared/lib/api/projects.api.ts |
+| src/shared/lib/api/templates.api.ts |
 
 ## Legacy API Wrapper Review Queue
 
