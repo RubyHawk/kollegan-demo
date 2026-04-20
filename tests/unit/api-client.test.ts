@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiDelete, apiGet } from '../../src/shared/lib/api-client';
+import { listAnnouncements } from '../../src/shared/lib/api/announcements.api';
 import { getProfile } from '../../src/shared/lib/api/auth-account.api';
 import { removeCompanyMember } from '../../src/shared/lib/api/companies.api';
 import { listCustomers } from '../../src/shared/lib/api/customers.api';
 import { createLead } from '../../src/shared/lib/api/leads.api';
+import { updateMeeting } from '../../src/shared/lib/api/meetings.api';
+import { sendMessage } from '../../src/shared/lib/api/messages.api';
 import { deleteProduct, deleteProductCategory } from '../../src/shared/lib/api/products.api';
 
 afterEach(() => {
@@ -117,5 +120,47 @@ describe('feature API clients', () => {
 
     await expect(createLead({ name: 'Anna', status: 'new', source: 'manual' })).resolves.toMatchObject({ id: 'lead_1' });
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/leads', expect.objectContaining({ method: 'POST' }));
+  });
+
+  it('uses v1 announcements routes for team-hub reads', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      data: { announcements: [], total: 0 },
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(listAnnouncements({ limit: 50, offset: 0 })).resolves.toMatchObject({ total: 0 });
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/announcements?limit=50&offset=0', expect.any(Object));
+  });
+
+  it('uses v1 meetings routes for meeting updates', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      data: { meeting: { id: 'meeting_1', status: 'completed' } },
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(updateMeeting('meeting_1', { status: 'completed' })).resolves.toMatchObject({ id: 'meeting_1' });
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/meetings/meeting_1', expect.objectContaining({ method: 'PATCH' }));
+  });
+
+  it('uses v1 messages routes for sending messages', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      data: { message: { id: 'message_1', body: 'Hej' } },
+    }), {
+      status: 201,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(sendMessage('conversation_1', { body: 'Hej' })).resolves.toMatchObject({ id: 'message_1' });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/messages/conversations/conversation_1/messages',
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 });

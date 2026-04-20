@@ -9,33 +9,16 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@shared/lib/utils';
+import {
+  createConversation as createConversationRequest,
+  listConversations,
+  listMessages,
+  sendMessage as sendMessageRequest,
+  type Conversation,
+  type Message,
+} from '@shared/lib/api/messages.api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface LastMessage {
-  body:       string;
-  createdAt:  string;
-  senderName: string;
-}
-
-interface Conversation {
-  id:               string;
-  title:            string | null;
-  type:             string;
-  participantCount: number;
-  lastMessage:      LastMessage | null;
-  unreadCount:      number;
-  updatedAt:        string;
-}
-
-interface Message {
-  id:         string;
-  senderId:   string;
-  senderName: string;
-  body:       string;
-  type:       string;
-  createdAt:  string;
-}
 
 const AVATAR_COLORS = ['bg-violet-500','bg-blue-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-sky-500'];
 const avatarColor = (str: string) => AVATAR_COLORS[str.charCodeAt(0) % AVATAR_COLORS.length];
@@ -74,10 +57,8 @@ export default function MessagesPage() {
   const loadConversations = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const res = await fetch('/api/messages/conversations?limit=50&offset=0');
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      const json = await res.json() as { data: { conversations: Conversation[] } };
-      setConversations(json.data.conversations);
+      const result = await listConversations({ limit: 50, offset: 0 });
+      setConversations(result.conversations);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -90,10 +71,8 @@ export default function MessagesPage() {
   const loadMessages = useCallback(async (convId: string) => {
     setMsgLoading(true);
     try {
-      const res = await fetch(`/api/messages/conversations/${convId}/messages?limit=100&offset=0`);
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      const json = await res.json() as { data: { messages: Message[] } };
-      setMessages(json.data.messages);
+      const result = await listMessages(convId, { limit: 100, offset: 0 });
+      setMessages(result.messages);
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     } catch {
       setMessages([]);
@@ -111,12 +90,7 @@ export default function MessagesPage() {
     if (!selected || !newMsg.trim()) return;
     setSending(true);
     try {
-      const res = await fetch(`/api/messages/conversations/${selected.id}/messages`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ body: newMsg.trim() }),
-      });
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      await sendMessageRequest(selected.id, { body: newMsg.trim() });
       setNewMsg('');
       await loadMessages(selected.id);
       await loadConversations(true);
@@ -131,17 +105,12 @@ export default function MessagesPage() {
     if (!newTitle.trim()) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/messages/conversations', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          title:          newTitle.trim(),
-          type:           'group',
-          participantIds: [],
-          initialMessage: newInitMsg.trim() || undefined,
-        }),
+      await createConversationRequest({
+        title:          newTitle.trim(),
+        type:           'group',
+        participantIds: [],
+        initialMessage: newInitMsg.trim() || undefined,
       });
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
       setShowNewForm(false);
       setNewTitle('');
       setNewInitMsg('');

@@ -48,13 +48,13 @@ const REPORTS: Report[] = [
     id: 'meetings-export', name: 'Mötesexport',
     desc: 'Alla schemalagda och genomförda möten med deltagare.',
     category: 'Team Hub', color: 'text-blue-600 dark:text-blue-400 bg-blue-500/10',
-    endpoint: '/api/meetings?limit=1000&offset=0',
+    endpoint: '/api/v1/meetings?limit=100&offset=0',
   },
   {
     id: 'announcements-export', name: 'Meddelanden',
     desc: 'Alla organisationens annonseringar och nyheter.',
     category: 'Team Hub', color: 'text-rose-600 dark:text-rose-400 bg-rose-500/10',
-    endpoint: '/api/announcements?limit=1000&offset=0',
+    endpoint: '/api/v1/announcements?limit=100&offset=0',
   },
 ];
 

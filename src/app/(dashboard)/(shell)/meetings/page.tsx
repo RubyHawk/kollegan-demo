@@ -4,40 +4,22 @@
  * /meetings
  *
  * Meetings calendar — schedule, view, and manage team meetings.
- * Connected to GET/POST /api/meetings and PATCH/DELETE /api/meetings/[id].
+ * Connected through the meetings feature API client.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@shared/lib/utils';
+import {
+  createMeeting,
+  deleteMeeting as deleteMeetingRequest,
+  listMeetings,
+  updateMeeting,
+  type Meeting,
+  type MeetingProvider,
+  type MeetingStatus,
+} from '@shared/lib/api/meetings.api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-type MeetingStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
-
-interface Participant {
-  id:     string;
-  name:   string;
-  email:  string | null;
-  userId: string | null;
-}
-
-interface Meeting {
-  id:              string;
-  title:           string;
-  status:          MeetingStatus;
-  provider:        string;
-  meetingUrl:      string | null;
-  agenda:          string | null;
-  scheduledAt:     string;
-  startedAt:       string | null;
-  endedAt:         string | null;
-  durationSeconds: number | null;
-  createdBy:       string;
-  createdAt:       string;
-  updatedAt:       string;
-  participants:    Participant[];
-  summary:         { status: string; summary: string | null; keyDecisions: string[]; nextSteps: string | null } | null;
-}
 
 const STATUS_LABEL: Record<MeetingStatus, string> = {
   scheduled:   'Schemalagd',
@@ -87,13 +69,9 @@ export default function MeetingsPage() {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ limit: '50', offset: '0' });
-      if (tab !== 'all') params.set('status', tab);
-      const res = await fetch(`/api/meetings?${params}`);
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      const json = await res.json() as { data: { meetings: Meeting[]; total: number } };
-      setMeetings(json.data.meetings);
-      setTotal(json.data.total);
+      const result = await listMeetings({ limit: 50, offset: 0, status: tab === 'all' ? undefined : tab });
+      setMeetings(result.meetings);
+      setTotal(result.total);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -107,21 +85,14 @@ export default function MeetingsPage() {
     if (!form.title.trim() || !form.scheduledAt) { setError('Titel och tid krävs.'); return; }
     setSaving(true); setError(null);
     try {
-      const res = await fetch('/api/meetings', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title:       form.title.trim(),
-          scheduledAt: new Date(form.scheduledAt).toISOString(),
-          provider:    form.provider,
-          meetingUrl:  form.meetingUrl.trim() || undefined,
-          agenda:      form.agenda.trim()     || undefined,
-          participants: [],
-        }),
+      await createMeeting({
+        title:       form.title.trim(),
+        scheduledAt: new Date(form.scheduledAt).toISOString(),
+        provider:    form.provider as MeetingProvider,
+        meetingUrl:  form.meetingUrl.trim() || undefined,
+        agenda:      form.agenda.trim()     || undefined,
+        participants: [],
       });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({})) as { detail?: string };
-        throw new Error(j.detail ?? `Fel ${res.status}`);
-      }
       setShowForm(false); setForm(EMPTY_FORM);
       await load(true);
     } catch (e) {
@@ -134,11 +105,7 @@ export default function MeetingsPage() {
   const updateStatus = useCallback(async (id: string, status: MeetingStatus) => {
     setActing(id);
     try {
-      const res = await fetch(`/api/meetings/${id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      await updateMeeting(id, { status });
       await load(true);
     } catch (e) {
       setError((e as Error).message);
@@ -151,8 +118,7 @@ export default function MeetingsPage() {
     if (!confirm('Ta bort mötet?')) return;
     setActing(id);
     try {
-      const res = await fetch(`/api/meetings/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      await deleteMeetingRequest(id);
       await load(true);
     } catch (e) {
       setError((e as Error).message);

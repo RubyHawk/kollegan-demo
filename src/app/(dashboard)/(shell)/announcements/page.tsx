@@ -4,30 +4,24 @@
  * /announcements
  *
  * Announcements board — create, pin, and read-track org announcements.
- * Connected to GET/POST /api/announcements and PATCH/DELETE /api/announcements/[id].
+ * Connected through the announcements feature API client.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@shared/lib/utils';
+import {
+  createAnnouncement,
+  deleteAnnouncement as deleteAnnouncementRequest,
+  listAnnouncements,
+  markAnnouncementRead,
+  updateAnnouncement,
+  type Announcement,
+  type AnnouncementPriority,
+} from '@shared/lib/api/announcements.api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Priority = 'normal' | 'important' | 'urgent';
-
-interface Announcement {
-  id:          string;
-  title:       string;
-  content:     string;
-  priority:    Priority;
-  isPinned:    boolean;
-  authorId:    string;
-  publishedAt: string;
-  expiresAt:   string | null;
-  isRead:      boolean;
-  readAt:      string | null;
-  createdAt:   string;
-  updatedAt:   string;
-}
+type Priority = AnnouncementPriority;
 
 const PRIORITY_STYLE: Record<Priority, string> = {
   normal:    'bg-[var(--surface-alt)] text-[var(--text-muted)] border border-[var(--border)]',
@@ -62,11 +56,9 @@ export default function AnnouncementsPage() {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/announcements?limit=50&offset=0');
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
-      const json = await res.json() as { data: { announcements: Announcement[]; total: number } };
-      setAnnouncements(json.data.announcements);
-      setTotal(json.data.total);
+      const result = await listAnnouncements({ limit: 50, offset: 0 });
+      setAnnouncements(result.announcements);
+      setTotal(result.total);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -87,21 +79,17 @@ export default function AnnouncementsPage() {
     if (!form.title.trim() || !form.content.trim()) { setError('Titel och innehåll krävs.'); return; }
     setSaving(true); setError(null);
     try {
-      const method = editing ? 'PATCH' : 'POST';
-      const url    = editing ? `/api/announcements/${editing.id}` : '/api/announcements';
-      const res = await fetch(url, {
-        method, headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title:     form.title.trim(),
-          content:   form.content.trim(),
-          priority:  form.priority,
-          isPinned:  form.isPinned,
-          expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined,
-        }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({})) as { detail?: string };
-        throw new Error(j.detail ?? `Fel ${res.status}`);
+      const payload = {
+        title:     form.title.trim(),
+        content:   form.content.trim(),
+        priority:  form.priority,
+        isPinned:  form.isPinned,
+        expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined,
+      };
+      if (editing) {
+        await updateAnnouncement(editing.id, payload);
+      } else {
+        await createAnnouncement(payload);
       }
       setShowForm(false); setEditing(null); setForm(EMPTY_FORM);
       await load(true);
@@ -114,10 +102,7 @@ export default function AnnouncementsPage() {
 
   const markRead = useCallback(async (id: string) => {
     try {
-      await fetch(`/api/announcements/${id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'read' }),
-      });
+      await markAnnouncementRead(id);
       await load(true);
     } catch { /* silent */ }
   }, [load]);
@@ -126,8 +111,7 @@ export default function AnnouncementsPage() {
     if (!confirm('Ta bort meddelandet?')) return;
     setActing(id);
     try {
-      const res = await fetch(`/api/announcements/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(`Fel ${res.status}`);
+      await deleteAnnouncementRequest(id);
       await load(true);
     } catch (e) {
       setError((e as Error).message);
