@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import { countProjects, listProjects } from '@shared/lib/api/projects.api';
 import type { Project, ProjectStage } from './types';
 
 const EMPTY_COUNTS: Record<ProjectStage, number> = {
@@ -30,15 +30,6 @@ interface ProjectsListState {
   loadCounts: () => Promise<void>;
 }
 
-function problemMessage(body: string, fallback: string) {
-  try {
-    const json = JSON.parse(body) as { detail?: string; title?: string };
-    return json.detail ?? json.title ?? fallback;
-  } catch {
-    return body || fallback;
-  }
-}
-
 export const useProjectsListStore = create<ProjectsListState>()((set, get) => ({
   projects: [],
   total: 0,
@@ -62,13 +53,13 @@ export const useProjectsListStore = create<ProjectsListState>()((set, get) => ({
     if (!silent) set({ loading: true });
     set({ error: null });
     try {
-      const params = new URLSearchParams({ limit: '100', offset: '0' });
-      if (state.stageFilter !== 'all') params.set('stage', state.stageFilter);
-      if (state.search.trim()) params.set('search', state.search.trim());
-      const res = await fetchWithRefresh(`/api/projekt?${params.toString()}`);
-      if (!res.ok) throw new Error(problemMessage(await res.text(), `Fel ${res.status}`));
-      const json = await res.json() as { data: { projects: Project[]; total: number } };
-      set({ projects: json.data.projects, total: json.data.total });
+      const result = await listProjects({
+        limit: 100,
+        offset: 0,
+        stage: state.stageFilter !== 'all' ? state.stageFilter : undefined,
+        search: state.search.trim() || undefined,
+      });
+      set({ projects: result.projects, total: result.total });
     } catch (error) {
       set({ error: (error as Error).message });
     } finally {
@@ -79,12 +70,8 @@ export const useProjectsListStore = create<ProjectsListState>()((set, get) => ({
   loadCounts: async () => {
     const state = get();
     try {
-      const params = new URLSearchParams();
-      if (state.search.trim()) params.set('search', state.search.trim());
-      const res = await fetchWithRefresh(`/api/projekt/counts?${params.toString()}`);
-      if (!res.ok) return;
-      const json = await res.json() as { data: { counts: Record<ProjectStage, number> } };
-      set({ counts: { ...EMPTY_COUNTS, ...json.data.counts } });
+      const counts = await countProjects({ search: state.search.trim() || undefined });
+      set({ counts: { ...EMPTY_COUNTS, ...counts } });
     } catch {
       // Counts are supporting UI only.
     }
