@@ -1,24 +1,24 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import { listCompanies, type Company } from '@shared/lib/api/companies.api';
 
-export interface ActiveCompanyOption {
-  id: string;
-  name: string;
-  orgNumber?: string;
-  addressLine1?: string;
-  addressLine2?: string;
-  postalCode?: string;
-  city?: string;
-  region?: string;
-  country?: string;
-  logoUrl?: string;
-  website?: string;
-  senderEmail?: string;
-  senderName?: string;
-  emailHeaderConfig?: string;
-}
+export type ActiveCompanyOption = Pick<Company,
+  | 'id'
+  | 'name'
+  | 'orgNumber'
+  | 'addressLine1'
+  | 'addressLine2'
+  | 'postalCode'
+  | 'city'
+  | 'region'
+  | 'country'
+  | 'logoUrl'
+  | 'website'
+  | 'senderEmail'
+  | 'senderName'
+  | 'emailHeaderConfig'
+>;
 
 const STORAGE_KEY = 'active-offer-company-id';
 
@@ -32,13 +32,7 @@ export function useActiveCompany() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetchWithRefresh('/api/companies');
-      if (!response.ok) {
-        throw new Error(`Kunde inte hämta företag (${response.status})`);
-      }
-
-      const payload = await response.json() as { data?: { companies?: ActiveCompanyOption[] } };
-      const nextCompanies = payload.data?.companies ?? [];
+      const nextCompanies = await listCompanies();
       setCompanies(nextCompanies);
 
       const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) ?? '' : '';

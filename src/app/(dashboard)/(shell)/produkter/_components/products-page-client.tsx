@@ -10,12 +10,22 @@ import {
   Plus,
   Sparkle,
 } from '@phosphor-icons/react';
-import type { OfferProduct, ProductCategory } from '@modules/supporting/offers';
 import { Button } from '@shared/ui/button';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import {
+  ProductApiError,
+  createProduct,
+  createProductCategory,
+  deleteProduct as deleteProductRecord,
+  deleteProductCategory,
+  listProductCategories,
+  listProducts,
+  updateProduct,
+  type OfferProduct,
+  type ProductCategory,
+} from '@shared/lib/api/products.api';
 import { cn } from '@shared/lib/utils';
 import { CategoryManagerDialog } from './category-manager-dialog';
 import { ProductModal } from './product-modal';
@@ -31,11 +41,8 @@ import {
   buildStructuredCategoryLabel,
   getProductCategoryMeta,
   normalizeSearch,
-  readApiError,
 } from './product-library.utils';
 
-type ProductEnvelope = { data: { products: OfferProduct[] } };
-type CategoryEnvelope = { data: { categories: ProductCategory[] } };
 type CategoryFilterKey = '' | 'uncategorized' | `main:${string}` | `sub:${string}` | `legacy:${string}`;
 
 export function ProductsPageClient() {
@@ -66,36 +73,24 @@ export function ProductsPageClient() {
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
 
   const loadProducts = useCallback(async () => {
-    const params = new URLSearchParams();
-    if (selectedCompanyId) params.set('companyId', selectedCompanyId);
-    const response = await fetchWithRefresh(`/api/offers/products${params.toString() ? `?${params.toString()}` : ''}`);
-    if (!response.ok) {
-      throw new Error(await readApiError(response, 'Kunde inte hämta produkter'));
-    }
-
-    const json = await response.json() as ProductEnvelope;
-    setProducts(json.data.products);
+    setProducts(await listProducts({ companyId: selectedCompanyId || undefined }));
   }, [selectedCompanyId]);
 
   const loadCategories = useCallback(async () => {
-    const params = new URLSearchParams();
-    if (selectedCompanyId) params.set('companyId', selectedCompanyId);
-    const response = await fetchWithRefresh(`/api/offers/products/categories${params.toString() ? `?${params.toString()}` : ''}`);
-    if (response.status === 503) {
-      setCategorySupport('unavailable');
-      setCategorySupportMessage(await readApiError(response, 'Produktkategorier är inte redo ännu.'));
-      setRawCategories([]);
-      return;
+    try {
+      const categories = await listProductCategories({ companyId: selectedCompanyId || undefined });
+      setCategorySupport('available');
+      setCategorySupportMessage(null);
+      setRawCategories(categories);
+    } catch (err) {
+      if (err instanceof ProductApiError && err.status === 503) {
+        setCategorySupport('unavailable');
+        setCategorySupportMessage(err.message);
+        setRawCategories([]);
+        return;
+      }
+      throw err;
     }
-
-    if (!response.ok) {
-      throw new Error(await readApiError(response, 'Kunde inte hämta kategorier'));
-    }
-
-    const json = await response.json() as CategoryEnvelope;
-    setCategorySupport('available');
-    setCategorySupportMessage(null);
-    setRawCategories(json.data.categories);
   }, [selectedCompanyId]);
 
   const reloadAll = useCallback(async () => {
@@ -249,19 +244,10 @@ export function ProductsPageClient() {
     setCategorySaving(true);
     setError(null);
     try {
-      const response = await fetchWithRefresh('/api/offers/products/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...payload,
-          companyId: selectedCompanyId || undefined,
-        }),
+      await createProductCategory({
+        ...payload,
+        companyId: selectedCompanyId || undefined,
       });
-
-      if (!response.ok) {
-        throw new Error(await readApiError(response, 'Kunde inte skapa kategori'));
-      }
-
       await loadCategories();
     } catch (err) {
       setError((err as Error).message);
@@ -274,14 +260,7 @@ export function ProductsPageClient() {
     setDeletingCategoryId(categoryId);
     setError(null);
     try {
-      const response = await fetchWithRefresh(`/api/offers/products/categories/${categoryId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error(await readApiError(response, 'Kunde inte ta bort kategorin'));
-      }
-
+      await deleteProductCategory(categoryId);
       await Promise.all([loadProducts(), loadCategories()]);
     } catch (err) {
       setError((err as Error).message);
@@ -320,17 +299,10 @@ export function ProductsPageClient() {
         isActive: form.isActive,
       };
 
-      const response = await fetchWithRefresh(
-        editingProduct ? `/api/offers/products/${editingProduct.id}` : '/api/offers/products',
-        {
-          method: editingProduct ? 'PATCH' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error(await readApiError(response, 'Kunde inte spara produkten'));
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, payload);
+      } else {
+        await createProduct(payload);
       }
 
       closeModal();
@@ -345,15 +317,10 @@ export function ProductsPageClient() {
   const handleToggleActive = useCallback(async (product: OfferProduct) => {
     setError(null);
     try {
-      const response = await fetchWithRefresh(`/api/offers/products/${product.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isActive: !product.isActive, companyId: selectedCompanyId || undefined }),
+      await updateProduct(product.id, {
+        isActive: !product.isActive,
+        companyId: selectedCompanyId || undefined,
       });
-
-      if (!response.ok) {
-        throw new Error(await readApiError(response, 'Kunde inte uppdatera produkten'));
-      }
 
       setProducts((current) =>
         current.map((item) => (item.id === product.id ? { ...item, isActive: !item.isActive } : item)),
@@ -367,14 +334,7 @@ export function ProductsPageClient() {
     setDeletingId(product.id);
     setError(null);
     try {
-      const response = await fetchWithRefresh(`/api/offers/products/${product.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error(await readApiError(response, 'Kunde inte ta bort produkten'));
-      }
-
+      await deleteProductRecord(product.id);
       setProducts((current) => current.filter((item) => item.id !== product.id));
       setDeleteProduct(null);
       if (editingProduct?.id === product.id) {

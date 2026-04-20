@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Buildings, Globe, IdentificationCard, MapPinLine } from '@phosphor-icons/react';
-import type { Company } from '@modules/supporting/offers';
+import type { Company } from '@shared/lib/api/companies.api';
 import { Button } from '@shared/ui/button';
 import {
   Dialog,

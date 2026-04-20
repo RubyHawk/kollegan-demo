@@ -10,8 +10,9 @@ import {
   NotePencil,
   Package,
 } from '@phosphor-icons/react';
-import type { Company } from '@modules/supporting/offers';
 import { fetchWithRefresh } from '@shared/lib/api-client';
+import { listCompanyMembers, type Company } from '@shared/lib/api/companies.api';
+import { listProducts } from '@shared/lib/api/products.api';
 import { Button } from '@shared/ui/button';
 import {
   Dialog,
@@ -41,8 +42,8 @@ interface MemberSummary {
   user: {
     id: string;
     email: string;
-    firstName?: string;
-    lastName?: string;
+    firstName?: string | null;
+    lastName?: string | null;
   };
 }
 
@@ -158,28 +159,24 @@ export function CompanyOverviewDialog({
 
     void (async () => {
       try {
-        const [membersRes, templatesRes, productsRes] = await Promise.all([
-          fetchWithRefresh(`/api/companies/${company.id}/members`),
+        const [membersPayload, templatesRes, productsPayload] = await Promise.all([
+          listCompanyMembers(company.id),
           fetchWithRefresh(`/api/templates?companyId=${company.id}`),
-          fetchWithRefresh(`/api/offers/products?companyId=${company.id}`),
+          listProducts({ companyId: company.id }),
         ]);
 
-        if (!membersRes.ok) throw new Error(`Kunde inte hämta användare (${membersRes.status})`);
         if (!templatesRes.ok) throw new Error(`Kunde inte hämta mallar (${templatesRes.status})`);
-        if (!productsRes.ok) throw new Error(`Kunde inte hämta produkter (${productsRes.status})`);
 
-        const membersJson = (await membersRes.json()) as { data: { members: MemberSummary[] } };
         const templatesJson = (await templatesRes.json()) as { data?: TemplateSummary[] };
-        const productsJson = (await productsRes.json()) as { data?: { products?: ProductSummary[] } };
 
         if (cancelled) return;
 
         setState({
           loading: false,
           error: null,
-          members: membersJson.data.members,
+          members: membersPayload.members,
           templates: templatesJson.data ?? [],
-          products: productsJson.data?.products ?? [],
+          products: productsPayload,
         });
       } catch (error) {
         if (cancelled) return;

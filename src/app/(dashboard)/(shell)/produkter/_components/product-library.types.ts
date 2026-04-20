@@ -1,6 +1,6 @@
 'use client';
 
-import type { OfferProduct, ProductCategory } from '@modules/supporting/offers';
+import type { OfferProduct, ProductCategory } from '@shared/lib/api/products.api';
 
 export type CategorySupportState = 'available' | 'unavailable';
 export type CategoryMode = 'hierarchy' | 'custom';
