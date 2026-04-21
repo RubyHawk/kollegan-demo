@@ -1,5 +1,5 @@
 import { getDashboardOrganizationIdForUser, getDashboardReadModel } from '@modules/generic/dashboard';
-import { getSessionUser } from '@platform/auth/session';
+import { getSessionUser } from '@modules/supporting/auth';
 import DashboardView from './_components/DashboardView';
 
 function makeGreeting(name: string | null): { greeting: string; sub: string } {

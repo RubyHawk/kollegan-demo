@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getSessionUser } from '@platform/auth/session';
+import { getSessionUser } from '@modules/supporting/auth';
 import SettingsNav from './_components/settings-nav';
 import type { ReactNode } from 'react';
 
