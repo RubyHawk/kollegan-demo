@@ -35,11 +35,11 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 872 |
-| Source files scanned | 739 |
-| Active production source files | 564 |
+| Tracked files scanned | 874 |
+| Source files scanned | 741 |
+| Active production source files | 566 |
 | Files above 1000 lines | 0 |
-| Files above 500 lines | 2 |
+| Files above 500 lines | 1 |
 | Feature API clients | 18 |
 | Legacy API wrappers | 111 |
 | Dead-candidate review rows | 0 |
@@ -53,7 +53,6 @@ _None._
 | Lines | Classification | File |
 | --- | --- | --- |
 | 677 | active-production | `src/modules/supporting/offers/application/offers.service.ts` |
-| 635 | active-production | `src/modules/supporting/offers/infrastructure/companies.repository.ts` |
 
 ## Dead-Candidate Review Queue
 
