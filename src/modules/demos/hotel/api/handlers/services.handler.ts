@@ -16,8 +16,8 @@ import {
   updateRestaurant,
   deleteRestaurant,
   getAllHotelServices,
-} from '../../infrastructure/hotel-services-store';
-import { getAllRooms } from '../../infrastructure/room-store';
+  getAllRooms,
+} from '../../server';
 
 export const dynamic = 'force-dynamic';
 
