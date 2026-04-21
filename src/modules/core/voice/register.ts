@@ -21,8 +21,7 @@ import { checkAvailability } from './ai-tools/availability';
 // Phase 5: hotel module registers hotel.* tools itself; remove these imports
 import { lockRoom, confirmBooking, cancelBooking } from '@demos/hotel/infrastructure/room-store';
 // Phase 4: crm module registers crm.* tools itself; remove these imports
-import { lookupCustomer, updateCrm } from '@modules/supporting/crm/application/crm.service';
-import { upsertCustomer } from '@modules/supporting/crm/infrastructure/contact.repository';
+import { lookupCustomer, updateCrm, upsertCustomer } from '@modules/supporting/crm';
 import { checkCalendarRange } from './ai-tools/calendar';
 
 export function registerVoiceTools(): void {
