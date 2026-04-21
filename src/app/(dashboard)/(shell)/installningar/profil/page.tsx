@@ -1,4 +1,4 @@
-﻿import { redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { getSessionUser } from '@modules/supporting/auth';
 import ProfilClient from './profil-client';
 
