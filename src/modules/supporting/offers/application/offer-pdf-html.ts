@@ -97,19 +97,19 @@ export function buildPublicPdfHtml(
   (function () {
     function normalizeBrokenSwedish(text) {
       return text
-        .replace(/Ãƒâ€¦/g, 'Ã…')
-        .replace(/Ãƒâ€ž/g, 'Ã„')
-        .replace(/Ãƒâ€“/g, 'Ã–')
-        .replace(/ÃƒÂ¥/g, 'Ã¥')
-        .replace(/ÃƒÂ¤/g, 'Ã¤')
-        .replace(/ÃƒÂ¶/g, 'Ã¶')
-        .replace(/Ã‚Â /g, '\\u00a0')
-        .replace(/Ã‚Â·/g, 'Â·')
-        .replace(/Ã¢â‚¬â€/g, 'â€”')
-        .replace(/Ã¢â‚¬â€œ/g, 'â€“')
-        .replace(/Ã¢â‚¬Å“/g, 'â€œ')
-        .replace(/Ã¢â‚¬\\u009d/g, 'â€')
-        .replace(/Ã¢â‚¬â„¢/g, 'â€™');
+        .replace(/\u00c3\u0192\u00e2\u20ac\u00a6/g, '\u00c3\u2026')
+        .replace(/\u00c3\u0192\u00e2\u20ac\u017e/g, '\u00c3\u201e')
+        .replace(/\u00c3\u0192\u00e2\u20ac\u201c/g, '\u00c3\u2013')
+        .replace(/\u00c3\u0192\u00c2\u00a5/g, '\u00c3\u00a5')
+        .replace(/\u00c3\u0192\u00c2\u00a4/g, '\u00c3\u00a4')
+        .replace(/\u00c3\u0192\u00c2\u00b6/g, '\u00c3\u00b6')
+        .replace(/\u00c3\u201a\u00c2\u00a0/g, '\\u00a0')
+        .replace(/\u00c3\u201a\u00c2\u00b7/g, '\u00c2\u00b7')
+        .replace(/\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u20ac\u009d/g, '\u00e2\u20ac\u201d')
+        .replace(/\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u20ac\u0153/g, '\u00e2\u20ac\u201c')
+        .replace(/\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u201c/g, '\u00e2\u20ac\u0153')
+        .replace(/\u00c3\u00a2\u00e2\u201a\u00ac\\u009d/g, '\u00e2\u20ac\u009d')
+        .replace(/\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2/g, '\u00e2\u20ac\u2122');
     }
 
     var statusLabel = ${JSON.stringify(
@@ -118,7 +118,7 @@ export function buildPublicPdfHtml(
         : offer.status === 'declined'
           ? 'Avvisad'
           : offer.status === 'expired'
-            ? 'UtgÃ¥ngen'
+            ? 'Utgången'
             : 'Offert',
     )};
     var statusClass = ${JSON.stringify(
@@ -167,20 +167,20 @@ export function buildPublicPdfHtml(
       return normalizeBrokenSwedish(text)
         .replace(/Å-pris/g, 'À-pris')
         .replace(/\bA-pris\b/g, 'À-pris')
-        .replace(/Ãƒâ€¦/g, 'Ã…')
-        .replace(/Ãƒâ€ž/g, 'Ã„')
-        .replace(/Ãƒâ€“/g, 'Ã–')
-        .replace(/ÃƒÂ¥/g, 'Ã¥')
-        .replace(/ÃƒÂ¤/g, 'Ã¤')
-        .replace(/ÃƒÂ¶/g, 'Ã¶')
-        .replace(/Ã‚Â /g, '\\u00a0')
-        .replace(/Ã‚Â·/g, 'Â·')
-        .replace(/Ã‚(?=[\\u00a0 0-9%.,:;|kr])/g, '');
+        .replace(/\u00c3\u0192\u00e2\u20ac\u00a6/g, '\u00c3\u2026')
+        .replace(/\u00c3\u0192\u00e2\u20ac\u017e/g, '\u00c3\u201e')
+        .replace(/\u00c3\u0192\u00e2\u20ac\u201c/g, '\u00c3\u2013')
+        .replace(/\u00c3\u0192\u00c2\u00a5/g, '\u00c3\u00a5')
+        .replace(/\u00c3\u0192\u00c2\u00a4/g, '\u00c3\u00a4')
+        .replace(/\u00c3\u0192\u00c2\u00b6/g, '\u00c3\u00b6')
+        .replace(/\u00c3\u201a\u00c2\u00a0/g, '\\u00a0')
+        .replace(/\u00c3\u201a\u00c2\u00b7/g, '\u00c2\u00b7')
+        .replace(/\u00c3\u201a(?=[\\u00a0 0-9%.,:;|kr])/g, '');
     }
 
     function compactDateText(value) {
       var trimmed = normalizeOfferText(value).trim();
-      var parts = trimmed.match(/^(\\d{1,2})\\s+([A-Za-zÃ…Ã„Ã–Ã¥Ã¤Ã¶.]+)\\s+(\\d{4})$/);
+      var parts = trimmed.match(/^(\\d{1,2})\\s+([A-Za-zÅÄÖåäö.]+)\\s+(\\d{4})$/);
       if (!parts) return trimmed;
 
       var monthValue = parts[2].toLocaleLowerCase('sv-SE').replace(/\\.$/, '');

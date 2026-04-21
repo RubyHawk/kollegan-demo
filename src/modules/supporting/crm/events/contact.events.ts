@@ -1,5 +1,6 @@
 import type { DomainEvent } from '@platform/events';
 import { EventTypes } from '@platform/events';
+import type { CrmContact } from '../domain/contact.entity';
 
 // ─── Event type constants ───────────────────────────────────────────────────────
 // Format: crm.{aggregate}.{verb} — matches EventTypes registry in @platform/events
@@ -28,6 +29,9 @@ export interface CrmRecordCreatedEvent extends DomainEvent {
     customerId: string;
     vapiCallId?: string;
     bookedRooms: string[];
+    displayName?: string;
+    summary?: string;
+    contact?: CrmContact;
   };
 }
 

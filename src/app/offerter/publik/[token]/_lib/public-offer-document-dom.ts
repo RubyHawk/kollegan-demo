@@ -3,32 +3,32 @@ import { SWEDISH_MONTHS_SHORT } from './public-offer-formatters';
 
 function normalizeBrokenSwedish(text: string): string {
   return text
-    .replace(/Ã…/g, 'Å')
-    .replace(/Ã„/g, 'Ä')
-    .replace(/Ã–/g, 'Ö')
-    .replace(/Ã¥/g, 'å')
-    .replace(/Ã¤/g, 'ä')
-    .replace(/Ã¶/g, 'ö')
-    .replace(/Â /g, '\u00a0')
-    .replace(/Â·/g, '·')
-    .replace(/â€”/g, '—')
-    .replace(/â€“/g, '–')
-    .replace(/â€œ/g, '“')
-    .replace(/â€\u009d/g, '”')
-    .replace(/â€™/g, '’');
+    .replace(/\u00c3\u2026/g, '\u00c5')
+    .replace(/\u00c3\u201e/g, '\u00c4')
+    .replace(/\u00c3\u2013/g, '\u00d6')
+    .replace(/\u00c3\u00a5/g, '\u00e5')
+    .replace(/\u00c3\u00a4/g, '\u00e4')
+    .replace(/\u00c3\u00b6/g, '\u00f6')
+    .replace(/\u00c2\u00a0/g, '\u00a0')
+    .replace(/\u00c2\u00b7/g, '\u00b7')
+    .replace(/\u00e2\u20ac\u201d/g, '\u2014')
+    .replace(/\u00e2\u20ac\u201c/g, '\u2013')
+    .replace(/\u00e2\u20ac\u0153/g, '\u201c')
+    .replace(/\u00e2\u20ac\u009d/g, '\u201d')
+    .replace(/\u00e2\u20ac\u2122/g, '\u2019');
 }
 
 export function normalizeOfferText(text: string): string {
   return normalizeBrokenSwedish(text)
-    .replace(/Ã…/g, 'Å')
-    .replace(/Ã„/g, 'Ä')
-    .replace(/Ã–/g, 'Ö')
-    .replace(/Ã¥/g, 'å')
-    .replace(/Ã¤/g, 'ä')
-    .replace(/Ã¶/g, 'ö')
-    .replace(/Â /g, '\u00a0')
-    .replace(/Â·/g, '·')
-    .replace(/Â(?=[\u00a0 0-9%.,:;|kr])/g, '');
+    .replace(/\u00c3\u2026/g, '\u00c5')
+    .replace(/\u00c3\u201e/g, '\u00c4')
+    .replace(/\u00c3\u2013/g, '\u00d6')
+    .replace(/\u00c3\u00a5/g, '\u00e5')
+    .replace(/\u00c3\u00a4/g, '\u00e4')
+    .replace(/\u00c3\u00b6/g, '\u00f6')
+    .replace(/\u00c2\u00a0/g, '\u00a0')
+    .replace(/\u00c2\u00b7/g, '\u00b7')
+    .replace(/\u00c2(?=[\u00a0 0-9%.,:;|kr])/g, '');
 }
 
 export function compactDateText(value: string): string {

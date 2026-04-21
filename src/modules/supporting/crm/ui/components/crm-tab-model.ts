@@ -1,4 +1,4 @@
-import type { ActivityEvent } from '@demos/hotel/activity/types';
+import type { CrmActivityEvent } from '../../domain/activity.entity';
 import type { CrmContact } from '../../domain/contact.entity';
 
 export interface CrmEntry {
@@ -23,11 +23,11 @@ export interface CallEntry {
 }
 
 /* ─── Build CRM entries (customer profiles) ──────────────────── */
-export function buildCrmEntries(activities: ActivityEvent[]): CrmEntry[] {
+export function buildCrmEntries(activities: CrmActivityEvent[]): CrmEntry[] {
   const entries: CrmEntry[] = [];
   const ordered = [...activities].reverse();
 
-  let sessionEvts: ActivityEvent[] = [];
+  let sessionEvts: CrmActivityEvent[] = [];
   let inSession = false;
   let sessionStart: Date | null = null;
 
@@ -62,11 +62,11 @@ export function buildCrmEntries(activities: ActivityEvent[]): CrmEntry[] {
 }
 
 /* ─── Build call log ─────────────────────────────────────────── */
-export function buildCallLog(activities: ActivityEvent[]): CallEntry[] {
+export function buildCallLog(activities: CrmActivityEvent[]): CallEntry[] {
   const entries: CallEntry[] = [];
   const ordered = [...activities].reverse();
 
-  let sessionEvts: ActivityEvent[] = [];
+  let sessionEvts: CrmActivityEvent[] = [];
   let inSession = false;
   let sessionStart: Date | null = null;
   let idx = 0;

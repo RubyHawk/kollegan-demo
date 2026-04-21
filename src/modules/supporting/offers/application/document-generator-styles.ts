@@ -79,7 +79,7 @@ export const FALLBACK_DOCUMENT_STYLES = `    *, *::before, *::after { box-sizing
 export const GENERATED_DOCUMENT_SHELL_STYLES = `    *, *::before, *::after { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; background: #fff; margin: 0; padding: 0; }
     img { max-width: 100%; height: auto; }
-    /* doc-wrapper: 816px container ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no horizontal padding so page-block fills full width */
+    /* doc-wrapper: 816px container - no horizontal padding so page-block fills full width */
     .doc-wrapper { max-width: 816px; margin: 40px auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
     /* page-content: carries the horizontal padding; position:static so absolute images */
     /* inside it still anchor to page-block (the nearest position:relative ancestor)    */
@@ -184,7 +184,7 @@ export const GENERATED_DOCUMENT_SHELL_STYLES = `    *, *::before, *::after { box
     .doc-footer { font-size: 12px; color: #64748b; margin-top: 0; }
     .doc-divider { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
     .page-separator { border: none; border-top: 2px dashed #e2e8f0; margin: 0; }
-    /* page-block is exactly 816px wide ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â matches the editor's data-a4-page dimensions */
+    /* page-block is exactly 816px wide - matches the editor's data-a4-page dimensions */
     /* so fill-page images (posX:0, posY:0, width:816, height:1056) render without crop */
     .page-block { position: relative; min-height: 1056px; overflow: hidden; }
     @media (max-width: 640px) {

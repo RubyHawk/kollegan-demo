@@ -1,7 +1,7 @@
-import type { ActivityEvent } from '@demos/hotel/activity/types';
+import type { CrmActivityEvent } from '../../domain/activity.entity';
 import { EmptyState, Icon, fmtShortDate, fmtTime } from './crm-tab-shared';
 
-export function BookingLogTab({ activities }: { activities: ActivityEvent[] }) {
+export function BookingLogTab({ activities }: { activities: CrmActivityEvent[] }) {
   const bookings = [...activities]
     .filter(e => e.type === 'room_confirmed' || e.type === 'room_cancelled')
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
