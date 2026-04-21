@@ -31,7 +31,6 @@ export type { ActivityEvent, Session } from './activity/types';
 // ── API client helpers ─────────────────────────────────────────────────────
 export * from './api/rooms';
 export * from './api/services';
-export { handleSeedHotelDemo } from './api/handlers/seed.handler';
 
 // ── Domain types ───────────────────────────────────────────────────────────
 export type { Room, RoomType, RoomStatus, RoomStoreState } from './domain/room.entity';
