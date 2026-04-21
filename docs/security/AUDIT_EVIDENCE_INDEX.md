@@ -15,6 +15,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 | 2026-04-21 | Auth route boundary cleanup | TBD | Profile/change-password handlers moved behind auth module; route files remain thin wrappers; no schema/data changes | Engineering lead |
 | 2026-04-21 | Staff API route boundary cleanup | TBD | Staff handlers moved behind auth module; legacy and v1 route files are thin wrappers; no schema/data changes | Engineering lead |
 | 2026-04-21 | Dev-login route boundary cleanup | TBD | Dev-only login handler moved behind auth module; route files remain thin wrappers; no schema/data changes | Engineering lead |
+| 2026-04-21 | Hotel demo seed route boundary cleanup | TBD | Demo seed handler moved behind hotel demo module; route file remains a thin wrapper; no schema/data changes | Engineering lead |
 
 ## Feature Flag Rollout Evidence
 
