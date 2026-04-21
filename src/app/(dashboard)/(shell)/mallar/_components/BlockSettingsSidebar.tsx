@@ -134,7 +134,7 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
   }
 
   return (
-    <InspectorCard title="Bild" subtitle="InstÃ¤llningar fÃ¶r markerad bild.">
+    <InspectorCard title="Bild" subtitle="Inställningar för markerad bild.">
       <div className="space-y-2.5">
         <Field label="Layout">
           <div className="grid grid-cols-2 gap-1">
@@ -154,13 +154,13 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
               active={!isFree && imgFloat === 'left'}
               onClick={() => setLayout('floatLeft')}
             >
-              Flytande vÃ¤
+              Flytande vä
             </ChoiceButton>
             <ChoiceButton
               active={!isFree && imgFloat === 'right'}
               onClick={() => setLayout('floatRight')}
             >
-              Flytande hÃ¶
+              Flytande hö
             </ChoiceButton>
           </div>
         </Field>
@@ -169,9 +169,9 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
           <Field label="Justering">
             <div className="grid grid-cols-3 gap-1">
               {[
-                { value: 'left', label: 'VÃ¤nster' },
+                { value: 'left', label: 'Vänster' },
                 { value: 'center', label: 'Center' },
-                { value: 'right', label: 'HÃ¶ger' },
+                { value: 'right', label: 'Höger' },
               ].map((option) => (
                 <ChoiceButton
                   key={option.value}
@@ -185,7 +185,7 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
           </Field>
         )}
 
-        <Field label={`Bredd  Â·  ${width}px`}>
+        <Field label={`Bredd  ·  ${width}px`}>
           <input
             type="range"
             min={80}
@@ -212,14 +212,14 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
               type="button"
               onClick={resetSize}
               className="shrink-0 rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]"
-              title={naturalWidth ? `Ã…terstÃ¤ll till originalstorlek (${naturalWidth}Ã—${naturalHeight}px)` : 'Ã…terstÃ¤ll'}
+              title={naturalWidth ? `Återställ till originalstorlek (${naturalWidth}×${naturalHeight}px)` : 'Återställ'}
             >
-              Ã…terstÃ¤ll
+              Återställ
             </button>
           </div>
         </Field>
 
-        <Field label={`HÃ¶jd  Â·  ${heightAttr ? `${heightAttr}px` : 'auto'}`}>
+        <Field label={`Höjd  ·  ${heightAttr ? `${heightAttr}px` : 'auto'}`}>
           <input
             type="range"
             min={40}
@@ -233,13 +233,13 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
             className="w-full accent-[var(--accent)]"
           />
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            0 = automatisk hÃ¶jd (proportionell)
+            0 = automatisk höjd (proportionell)
           </p>
         </Field>
 
         {isFree && (
           <>
-            <Field label="Position pÃ¥ sidan">
+            <Field label="Position på sidan">
               <div className="grid grid-cols-2 gap-1">
                 <label className="flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-1.5 py-1">
                   <span className="text-[10px] font-semibold text-[var(--text-muted)]">X</span>
@@ -262,16 +262,16 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
               </div>
             </Field>
 
-            <Field label="TextflÃ¶de">
+            <Field label="Textflöde">
               <div className="grid grid-cols-3 gap-1">
                 <ChoiceButton active={wrapText === 'none'} onClick={() => patch({ wrapText: 'none' })}>
-                  OvanpÃ¥
+                  Ovanpå
                 </ChoiceButton>
                 <ChoiceButton active={wrapText === 'left'} onClick={() => patch({ wrapText: 'left' })}>
-                  VÃ¤nster
+                  Vänster
                 </ChoiceButton>
                 <ChoiceButton active={wrapText === 'right'} onClick={() => patch({ wrapText: 'right' })}>
-                  HÃ¶ger
+                  Höger
                 </ChoiceButton>
               </div>
             </Field>
@@ -294,7 +294,7 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
                     ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)] text-[var(--accent)]'
                     : 'border-[var(--border)] bg-[var(--surface-0)] text-[var(--text-secondary)] hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]'
                 )}
-                title={isBehind ? 'Bilden ligger bakom texten â€” klicka fÃ¶r att flytta fram' : 'LÃ¤gg bilden bakom texten'}
+                title={isBehind ? 'Bilden ligger bakom texten — klicka för att flytta fram' : 'Lägg bilden bakom texten'}
               >
                 {isBehind ? 'Bakom text' : 'Bakom text'}
               </button>
@@ -306,7 +306,7 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
           <input
             type="text"
             value={altText}
-            placeholder="Beskriv bilden fÃ¶r tillgÃ¤nglighet"
+            placeholder="Beskriv bilden för tillgänglighet"
             onChange={(event) => patch({ alt: event.target.value })}
             className={inputClass}
           />
@@ -558,16 +558,16 @@ function ImageInspector({ editor }: { editor: Editor }) {
   return (
     <InspectorCard
       title="Bild"
-      subtitle="VÃ¤lj ett tydligt bildlÃ¤ge och finjustera storlek och placering utan trÃ¶ga sliders."
+      subtitle="Välj ett tydligt bildläge och finjustera storlek och placering utan tröga sliders."
     >
       <div className="space-y-4">
-        <Field label="BildlÃ¤ge">
+        <Field label="Bildläge">
           <div className="grid grid-cols-2 gap-2">
             {[
               { value: 'auto', label: 'Auto' },
               { value: 'inline', label: 'Infogad' },
-              { value: 'float-left', label: 'Flyt vÃ¤nster' },
-              { value: 'float-right', label: 'Flyt hÃ¶ger' },
+              { value: 'float-left', label: 'Flyt vänster' },
+              { value: 'float-right', label: 'Flyt höger' },
               { value: 'free', label: 'Fri placering' },
               { value: 'background', label: 'Bakgrund' },
             ].map((option) => (
@@ -586,9 +586,9 @@ function ImageInspector({ editor }: { editor: Editor }) {
           <Field label="Justering">
             <div className="grid grid-cols-3 gap-2">
               {[
-                { value: 'left', label: 'VÃ¤nster' },
+                { value: 'left', label: 'Vänster' },
                 { value: 'center', label: 'Center' },
-                { value: 'right', label: 'HÃ¶ger' },
+                { value: 'right', label: 'Höger' },
               ].map((option) => (
                 <ChoiceButton
                   key={option.value}
@@ -677,17 +677,17 @@ function ImageInspector({ editor }: { editor: Editor }) {
                   })
                 )
               }
-              placeholder="HÃ¶jd i px"
+              placeholder="Höjd i px"
               className={inputClass}
             />
           </div>
           <p className="mt-2 text-xs text-[var(--text-muted)]">
-            LÃ¤mna hÃ¶jden tom fÃ¶r automatisk proportion. Nuvarande original: {naturalWidth ?? 'okÃ¤nd'} Ã— {naturalHeight ?? 'okÃ¤nd'} px.
+            Lämna höjden tom för automatisk proportion. Nuvarande original: {naturalWidth ?? 'okänd'} × {naturalHeight ?? 'okänd'} px.
           </p>
         </Field>
 
         {(mode === 'free' || mode === 'background') && (
-          <Field label="Placering pÃ¥ sidan">
+          <Field label="Placering på sidan">
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="number"
@@ -742,7 +742,7 @@ function ImageInspector({ editor }: { editor: Editor }) {
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <ChoiceButton active={posX === 0 && posY === 0} onClick={() => setImageAttrs({ posX: 0, posY: 0 })}>
-                Ã–vre vÃ¤nster
+                Övre vänster
               </ChoiceButton>
               <ChoiceButton active={posX === 96 && posY === 96} onClick={() => setImageAttrs({ posX: 96, posY: 96 })}>
                 Textyta
@@ -758,16 +758,16 @@ function ImageInspector({ editor }: { editor: Editor }) {
         )}
 
         {mode === 'free' && (
-          <Field label="TextflÃ¶de">
+          <Field label="Textflöde">
             <div className="grid grid-cols-3 gap-2">
               <ChoiceButton active={wrapText === 'none'} onClick={() => setImageAttrs({ wrapText: 'none' })}>
-                OvanpÃ¥
+                Ovanpå
               </ChoiceButton>
               <ChoiceButton active={wrapText === 'left'} onClick={() => setImageAttrs({ wrapText: 'left' })}>
-                Text hÃ¶ger
+                Text höger
               </ChoiceButton>
               <ChoiceButton active={wrapText === 'right'} onClick={() => setImageAttrs({ wrapText: 'right' })}>
-                Text vÃ¤nster
+                Text vänster
               </ChoiceButton>
             </div>
           </Field>
@@ -788,7 +788,7 @@ function ImageInspector({ editor }: { editor: Editor }) {
                   !canMoveBackward && 'cursor-not-allowed opacity-40'
                 )}
               >
-                BakÃ¥t
+                Bakåt
               </button>
               <button
                 type="button"
@@ -802,7 +802,7 @@ function ImageInspector({ editor }: { editor: Editor }) {
                   !canMoveForward && 'cursor-not-allowed opacity-40'
                 )}
               >
-                FramÃ¥t
+                Framåt
               </button>
             </div>
           </Field>
@@ -815,7 +815,7 @@ function ImageInspector({ editor }: { editor: Editor }) {
             onChange={(event) => setAltDraft(event.target.value)}
             onBlur={() => setImageAttrs({ alt: altDraft.trim() || null })}
             onKeyDown={(event) => onDraftKeyDown(event, () => setImageAttrs({ alt: altDraft.trim() || null }))}
-            placeholder="Beskriv bilden fÃ¶r tillgÃ¤nglighet"
+            placeholder="Beskriv bilden för tillgänglighet"
             className={inputClass}
           />
         </Field>
@@ -836,10 +836,10 @@ function TableInspector() {
   return (
     <InspectorCard
       title="Tabell"
-      subtitle="Tabeller justeras direkt i dokumentytan. Markera celler och anvÃ¤nd den fria layouten pÃ¥ sidan."
+      subtitle="Tabeller justeras direkt i dokumentytan. Markera celler och använd den fria layouten på sidan."
     >
       <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-2 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
-        Ã„ndra tabellinnehÃ¥ll direkt i canvasen â€” markera celler fÃ¶r att redigera.
+        Ändra tabellinnehåll direkt i canvasen — markera celler för att redigera.
       </div>
     </InspectorCard>
   );
@@ -851,9 +851,9 @@ function SignatureInspector({ editor }: { editor: Editor }) {
   const label = (attrs.label as string) ?? 'Signatur';
 
   return (
-    <InspectorCard title="SignaturfÃ¤lt" subtitle="Avancerat block fÃ¶r presentationssidor.">
+    <InspectorCard title="Signaturfält" subtitle="Avancerat block för presentationssidor.">
       <div className="space-y-2">
-        <Field label="FÃ¤lttyp">
+        <Field label="Fälttyp">
           <div className="grid grid-cols-3 gap-2">
             {[
               { value: 'signature', label: 'Signatur' },
@@ -890,7 +890,7 @@ function VariableInspector({ editor }: { editor: Editor }) {
   const label = (attrs.label as string) ?? '';
 
   return (
-    <InspectorCard title="Variabel" subtitle="FÃ¤lt som fylls med offertdata automatiskt.">
+    <InspectorCard title="Variabel" subtitle="Fält som fylls med offertdata automatiskt.">
       <div className="space-y-2">
         <Field label="Variabelnamn">
           <code className="block break-all rounded-md border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] text-violet-700">
