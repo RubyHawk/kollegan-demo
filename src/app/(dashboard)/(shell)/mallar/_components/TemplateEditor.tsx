@@ -19,28 +19,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import { CustomImage } from './extensions/custom-image.extension';
-import TextAlign from '@tiptap/extension-text-align';
-import { TextStyle } from '@tiptap/extension-text-style';
-import Color from '@tiptap/extension-color';
-import Underline from '@tiptap/extension-underline';
-import Link from '@tiptap/extension-link';
-import { Table } from '@tiptap/extension-table';
-import TableRow from '@tiptap/extension-table-row';
-import { TableCellWithBg, TableHeaderWithBg } from './extensions/table-cell-background.extension';
-import FontFamily from '@tiptap/extension-font-family';
-import Highlight from '@tiptap/extension-highlight';
-import Placeholder from '@tiptap/extension-placeholder';
-import Subscript from '@tiptap/extension-subscript';
-import Superscript from '@tiptap/extension-superscript';
-import { VariableNode } from './extensions/variable-node.extension';
-import { SignatureBlockNode } from './extensions/signature-block.extension';
-import { DragHandleExtension } from './extensions/drag-handle.extension';
-import { FontSize } from './extensions/font-size.extension';
-import { LineHeight } from './extensions/line-height.extension';
 import { normalizePresentationPages } from './presentation-page-height';
-import { TextIndent } from './extensions/indent.extension';
 import type { EditorView } from '@tiptap/pm/view';
 
 import dynamic from 'next/dynamic';
@@ -56,24 +35,11 @@ import BlocksSidebar from './BlocksSidebar';
 import BlockSettingsSidebar from './BlockSettingsSidebar';
 import PageRail from './PageRail';
 import TopToolbar from './TopToolbar';
+import { MINI_EXTENSIONS, createBodyExtensions } from './template-editor-extensions';
 
 const DocumentCanvas = dynamic(() => import('./DocumentCanvas'), { ssr: false });
 
-// ── Shared extensions for header/footer mini-editors ──────────────────────────
-// Lighter than the body editor: no tables, images, signature blocks, or drag handles.
-const MINI_EXTENSIONS = [
-  StarterKit.configure({ dropcursor: false }),
-  TextAlign.configure({ types: ['heading', 'paragraph'] }),
-  TextStyle,
-  Color,
-  Underline,
-  FontFamily,
-  FontSize,
-  Highlight.configure({ multicolor: true }),
-  VariableNode,
-];
-
-// ── Public handle ─────────────────────────────────────────────────────────────
+// Public handle ─────────────────────────────────────────────────────────────
 
 export interface TemplateEditorHandle {
   getJSON:    () => object;
@@ -137,35 +103,7 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
 
   const editor = useEditor({
     immediatelyRender: false,
-    extensions: [
-      StarterKit.configure({
-        dropcursor: { color: 'var(--accent)', width: 2 },
-      }),
-      CustomImage.configure({ allowBase64: true }),
-      TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      TextStyle,
-      Color,
-      Underline,
-      Link.configure({ openOnClick: false }),
-      Table.configure({ resizable: true }),
-      TableRow,
-      TableHeaderWithBg,
-      TableCellWithBg,
-      FontFamily,
-      FontSize,
-      Highlight.configure({ multicolor: true }),
-      Subscript,
-      Superscript,
-      LineHeight,
-      TextIndent,
-      VariableNode,
-      SignatureBlockNode,
-      DragHandleExtension,
-      Placeholder.configure({
-        placeholder: 'Skriv här eller välj en byggsten från panelen till vänster…',
-        emptyEditorClass: 'is-editor-empty',
-      }),
-    ],
+    extensions: createBodyExtensions(),
     content: initDoc.current.pages[0]?.body ?? EMPTY_DOC,
     editorProps: {
       attributes: {
