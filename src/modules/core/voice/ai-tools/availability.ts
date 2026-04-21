@@ -1,5 +1,4 @@
-import { getAllRooms, logRoomsQueried } from '@demos/hotel/infrastructure/room-store';
-import type { RoomType } from '@demos/hotel/domain/room.entity';
+import { getAllRooms, logRoomsQueried, type RoomType } from '@demos/hotel/server';
 
 export interface AvailabilityOptions {
   checkIn?: string;   // YYYY-MM-DD
