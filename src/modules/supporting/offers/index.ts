@@ -152,3 +152,4 @@ export {
   handleSignPublicOffer,
   handleDeclinePublicOffer,
 } from './api/handlers/public-offer.handler';
+export { handleGetPublicOfferPdf } from './api/handlers/public-offer-pdf.handler';
