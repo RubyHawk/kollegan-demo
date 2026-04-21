@@ -11,6 +11,7 @@ export {
   confirmBooking,
   getAvailableRooms,
   getAllRooms,
+  getFullState,
   lockRoom,
   logRoomsQueried,
   resetRooms,
