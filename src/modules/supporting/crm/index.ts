@@ -21,6 +21,7 @@ export type { CrmActivityEvent, CrmActivitySession } from './domain/activity.ent
 // Application — service layer
 export { lookupCustomer, updateCrm, startCallTranscript } from './application/crm.service';
 export type { CustomerLookupResult, CrmUpdateInput, CrmUpdateResult } from './application/crm.service';
+export { registerCrmVoiceTools } from './application/crm-voice-tools';
 
 // Infrastructure — expose upsertCustomer for voice register.ts (known cross-domain usage)
 export { upsertCustomer } from './infrastructure/contact.repository';

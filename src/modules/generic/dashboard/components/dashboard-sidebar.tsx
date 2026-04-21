@@ -1,8 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import type { ActivityEvent } from '@demos/hotel/activity/types';
+import type { RealtimeActivityEvent } from '@shared/realtime/activity.types';
 import { SPRING_SNAPPY } from '@shared/lib/motion';
+
+type ActivityEvent = RealtimeActivityEvent;
 
 type Tab = 'available' | 'activity' | 'hotel-info' | 'crm' | 'calendar' | 'setup';
 
