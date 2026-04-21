@@ -35,46 +35,26 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 794 |
-| Source files scanned | 661 |
-| Active production source files | 502 |
-| Files above 1000 lines | 3 |
-| Files above 500 lines | 22 |
+| Tracked files scanned | 868 |
+| Source files scanned | 735 |
+| Active production source files | 560 |
+| Files above 1000 lines | 0 |
+| Files above 500 lines | 3 |
 | Feature API clients | 18 |
 | Legacy API wrappers | 111 |
 | Dead-candidate review rows | 0 |
 
 ## Current Monolith Inventory
 
-| Lines | Classification | File |
-| --- | --- | --- |
-| 2103 | active-production | `src/modules/supporting/offers/application/document-generator.ts` |
-| 1657 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/BlockSettingsSidebar.tsx` |
-| 1061 | active-production | `src/modules/core/voice/ui/components/voice-contact.tsx` |
+_None._
 
 ## Files Above 500 Lines
 
 | Lines | Classification | File |
 | --- | --- | --- |
-| 991 | active-production | `src/shared/ui/sidebar.tsx` |
-| 905 | active-production | `src/app/(dashboard)/(shell)/_components/DashboardView.tsx` |
-| 873 | active-demo | `src/modules/demos/hotel/ui/components/calendar-tab.tsx` |
-| 847 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/extensions/ImageNodeView.tsx` |
-| 818 | active-production | `src/modules/supporting/offers/application/offers.service.ts` |
-| 804 | active-production | `src/modules/supporting/offers/application/offer-pdf.ts` |
-| 729 | active-production | `src/app/(dashboard)/(shell)/produkter/_components/products-page-client.tsx` |
-| 709 | active-production | `src/app/(dashboard)/(shell)/installningar/utseende/page.tsx` |
-| 669 | active-demo | `src/modules/demos/hotel/activity/components/activity-log.tsx` |
-| 647 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/DocumentCanvas.tsx` |
+| 677 | active-production | `src/modules/supporting/offers/application/offers.service.ts` |
 | 635 | active-production | `src/modules/supporting/offers/infrastructure/companies.repository.ts` |
-| 610 | test-only | `tests/unit/api-handler.test.ts` |
-| 602 | active-production | `src/modules/supporting/crm/ui/components/crm-tab.tsx` |
-| 557 | active-production | `src/platform/api/openapi.ts` |
 | 543 | active-production | `src/modules/supporting/offers/infrastructure/offers.repository.ts` |
-| 537 | active-production | `src/app/(dashboard)/(shell)/offerter/page.tsx` |
-| 534 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/EmailEditor.tsx` |
-| 513 | active-production | `src/modules/supporting/offers/application/offer-email-dispatch.ts` |
-| 506 | active-production | `src/app/(dashboard)/(shell)/mallar/_components/TemplateEditor.tsx` |
 
 ## Dead-Candidate Review Queue
 
