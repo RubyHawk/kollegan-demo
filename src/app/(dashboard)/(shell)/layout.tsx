@@ -1,4 +1,4 @@
-﻿import { redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { getSessionUser } from '@modules/supporting/auth';
 import AppShell from '@shared/ui/app-shell';
 import type { ReactNode } from 'react';

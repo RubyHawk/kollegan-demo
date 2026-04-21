@@ -19,7 +19,7 @@ function makeGreeting(name: string | null): { greeting: string; sub: string } {
         : hour < 17
           ? 'God eftermiddag'
           : hour < 22
-            ? 'God kv?ll'
+            ? 'God kväll'
             : 'God natt';
 
   const firstName = name?.split(' ')[0] ?? null;
@@ -27,20 +27,20 @@ function makeGreeting(name: string | null): { greeting: string; sub: string } {
 
   const sub =
     hour < 5
-      ? 'Ta det lugnt ? det ?r mitt i natten.'
+      ? 'Ta det lugnt — det är mitt i natten.'
       : hour < 9
-        ? `${dowCap}smorgon ? kaffet ?r p?, dags att s?tta ig?ng.`
+        ? `${dowCap}smorgon — kaffet är på, dags att sätta igång.`
         : hour < 12
-          ? `En fin ${dow} ? vad ska vi ta itu med idag?`
+          ? `En fin ${dow} — vad ska vi ta itu med idag?`
           : hour < 14
-            ? 'Bra jobbat i morse ? h?ll tempot uppe.'
+            ? 'Bra jobbat i morse — håll tempot uppe.'
             : hour < 17
-              ? `${dowCap}seftermiddag ? kolla l?get p? dina offerter.`
+              ? `${dowCap}seftermiddag — kolla läget på dina offerter.`
               : hour < 20
-                ? 'Dagen lider mot sitt slut ? se hur det gick idag.'
+                ? 'Dagen lider mot sitt slut — se hur det gick idag.'
                 : hour < 22
-                  ? 'Kv?llspasset ? lugn och ro f?r att fatta beslut.'
-                  : 'Sent p? natten ? kom ih?g att vila.';
+                  ? 'Kvällspasset — lugn och ro för att fatta beslut.'
+                  : 'Sent på natten — kom ihåg att vila.';
 
   return { greeting, sub };
 }

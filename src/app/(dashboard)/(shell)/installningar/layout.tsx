@@ -12,10 +12,10 @@ export default async function SettingsLayout({ children }: { children: ReactNode
       {/* Page header */}
       <div className="mb-6">
         <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)] leading-tight">
-          Inst?llningar
+          Inställningar
         </h1>
         <p className="text-sm text-[var(--text-muted)] mt-0.5">
-          Hantera din profil, utseende och s?kerhet.
+          Hantera din profil, utseende och säkerhet.
         </p>
       </div>
 
