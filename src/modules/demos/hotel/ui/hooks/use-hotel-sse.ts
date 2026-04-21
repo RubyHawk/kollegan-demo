@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
 import { useEffect } from 'react';
-import { useRealtimeStore } from '@demos/hotel/ui/stores/hotel-realtime-store';
-import type { Room } from '@demos/hotel/domain/room.entity';
-import type { ActivityEvent } from '@demos/hotel/activity/types';
+import { useRealtimeStore } from '../stores/hotel-realtime-store';
+import type { Room } from '../../domain/room.entity';
+import type { ActivityEvent } from '../../activity/types';
 
-interface SSEPayload {
-  type: "room_update" | "activity" | "call_status" | "full_state";
+interface HotelSSEPayload {
+  type: 'room_update' | 'activity' | 'call_status' | 'full_state';
   payload: unknown;
 }
 
-export function useSSE(enabled = true) {
+export function useHotelSSE(enabled = true) {
   const { setFullState, updateRoom, addActivity, setCallStatus, setConnected } =
     useRealtimeStore();
 
@@ -20,16 +20,16 @@ export function useSSE(enabled = true) {
       return;
     }
 
-    const es = new EventSource("/api/sse");
+    const es = new EventSource('/api/sse');
 
     es.onopen = () => setConnected(true);
     es.onerror = () => setConnected(false);
 
     es.onmessage = (event) => {
-      const msg: SSEPayload = JSON.parse(event.data);
+      const msg: HotelSSEPayload = JSON.parse(event.data);
 
       switch (msg.type) {
-        case "full_state": {
+        case 'full_state': {
           const state = msg.payload as {
             rooms: Room[];
             recentActivity: ActivityEvent[];
@@ -38,13 +38,13 @@ export function useSSE(enabled = true) {
           setFullState(state);
           break;
         }
-        case "room_update":
+        case 'room_update':
           updateRoom(msg.payload as Room);
           break;
-        case "activity":
+        case 'activity':
           addActivity(msg.payload as ActivityEvent);
           break;
-        case "call_status": {
+        case 'call_status': {
           const { onCall } = msg.payload as { onCall: boolean };
           setCallStatus(onCall);
           break;
