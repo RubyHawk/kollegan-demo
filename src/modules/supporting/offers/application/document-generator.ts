@@ -16,119 +16,30 @@
  *   image (with width / align attrs)
  */
 
-import type { Offer, OfferLineItem } from '../domain/offer.entity';
-import {
-  formatVatRate,
-  getDisplayLineTotal,
-  getDisplayUnitPrice,
-  normalizeVatRate,
-  summarizeOfferPricing,
-  summarizePersistedOfferPricing,
-} from '../domain/pricing';
+import type { Offer } from '../domain/offer.entity';
 import type { OfferBrandingProfile } from './company-branding';
 import { sanitizeUrl, escapeHtml as secureEscapeHtml } from '@platform/security/sanitize';
+import {
+  DEFAULT_DOCUMENT_NOTES_HEADING,
+  DEFAULT_DOCUMENT_TERMS_BODY,
+  DEFAULT_DOCUMENT_TERMS_HEADING,
+  buildCustomerLines,
+  escapeHtml,
+  fmtDate,
+  fmtSEK,
+  formatOfferLineItemQuantityHtml,
+  getCompactBrandingAddressLines,
+  renderRichPlainText,
+  resolveFreeImageRenderZIndex,
+} from './document-formatting';
+import { renderPublicOfferFooterHtml } from './document-footer';
+import { buildStructuredLineItems } from './document-line-items';
+import { renderPublicOfferSummaryHtml } from './document-summary';
+
+export { renderPublicOfferFooterHtml } from './document-footer';
+export { renderPublicOfferSummaryHtml } from './document-summary';
 
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ SEK formatter ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-
-function fmtSEK(n: number): string {
-  return new Intl.NumberFormat('sv-SE', {
-    style: 'currency', currency: 'SEK', maximumFractionDigits: 0,
-  }).format(n);
-}
-
-function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('sv-SE', {
-    day: '2-digit', month: 'long', year: 'numeric',
-  });
-}
-
-function fmtSEKPrecise(n: number): string {
-  return new Intl.NumberFormat('sv-SE', {
-    style: 'currency', currency: 'SEK', minimumFractionDigits: 2, maximumFractionDigits: 2,
-  }).format(n);
-}
-
-function fmtQuantity(n: number): string {
-  return new Intl.NumberFormat('sv-SE', {
-    minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
-    maximumFractionDigits: Number.isInteger(n) ? 0 : 2,
-  }).format(n);
-}
-
-function normalizeLineItemUnit(unit: string): string {
-  return unit
-    .trim()
-    .replace(/\u00c2(?=[\u00b2\u00b3])/g, '')
-    .toLocaleLowerCase('sv-SE');
-}
-
-function formatLineItemUnitHtml(unit: string): string {
-  const cleanedUnit = unit.trim().replace(/\u00c2(?=[\u00b2\u00b3])/g, '');
-  const normalized = normalizeLineItemUnit(cleanedUnit);
-  if (!normalized) return '';
-  if (['m2', 'm^2', 'm²', 'kvm'].includes(normalized)) return 'm&sup2;';
-  if (['m3', 'm^3', 'm³'].includes(normalized)) return 'm&sup3;';
-  return escapeHtml(cleanedUnit);
-}
-
-function formatOfferLineItemQuantityHtml(item: OfferLineItem): string {
-  const quantity = fmtQuantity(item.quantity);
-  const maybeUnit = typeof (item as OfferLineItem & { unit?: unknown }).unit === 'string'
-    ? String((item as OfferLineItem & { unit?: unknown }).unit).trim().replace(/\u00c2(?=[\u00b2\u00b3])/g, '')
-    : '';
-
-  if (!maybeUnit) return `${quantity} st`;
-  return `${quantity} ${formatLineItemUnitHtml(maybeUnit)}`;
-}
-
-function buildOfferSummary(offer: Offer) {
-  return summarizePersistedOfferPricing(offer);
-}
-
-function getOfferLineItemDescription(description: string): { title: string; detail?: string } {
-  const value = description.trim();
-  const separator = [' — ', ' – ', ' - ', ' ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â '].find((candidate) => value.includes(candidate)) ?? '';
-  if (!separator) return { title: value };
-
-  const [title, ...rest] = value.split(separator);
-  const detail = rest.join(separator).trim();
-  return {
-    title: title.trim(),
-    detail: detail || undefined,
-  };
-}
-
-function buildCustomerLines(offer: Offer): string[] {
-  const lines = [
-    offer.recipientCompany ?? '',
-    offer.recipientName,
-    offer.recipientEmail,
-  ];
-
-  const seen = new Set<string>();
-  return lines
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0)
-    .filter((value) => {
-      const key = value.toLocaleLowerCase('sv-SE');
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-}
-
-const DEFAULT_DOCUMENT_TERMS_HEADING = 'Juridiska villkor';
-const DEFAULT_DOCUMENT_TERMS_BODY = 'Offerten gäller till angivet datum. Arbetet utförs enligt överenskommen omfattning och faktureras enligt summeringen ovan. Eventuella ändringar eller tillägg hanteras som separat tilläggsbeställning.';
-const DEFAULT_DOCUMENT_NOTES_HEADING = 'Anteckningar';
-
-function renderRichPlainText(value: string): string {
-  return secureEscapeHtml(value).replace(/\r?\n/g, '<br />');
-}
-
-function resolveFreeImageRenderZIndex(zIndex: number, background = false): number {
-  if (background || zIndex < 0) return 0;
-  return 20 + zIndex;
-}
 
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ TipTap JSON ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ HTML ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
@@ -305,14 +216,6 @@ function nodeToHtml(node: TipTapNode, replacements?: Record<string, string>): st
   }
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
 function stripLegacyStructuredIntroHtml(html: string): string {
   return html
     // Old table-based offer blocks should never render inside the new document page intro.
@@ -372,102 +275,6 @@ function stripLegacyLineItemTables(html: string): string {
 }
 
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Line items table ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-
-function buildStructuredLineItems(items: OfferLineItem[], mode: Offer['priceDisplayMode']): string {
-  const pricing = summarizeOfferPricing(items, mode);
-  const showVatColumn = pricing.hasVat;
-  const showDiscountColumn = items.some((item) => (item.discount ?? 0) > 0);
-  const gridTemplate = [
-    'minmax(0, 1fr)',
-    '64px',
-    '104px',
-    ...(showDiscountColumn ? ['64px'] : []),
-    ...(showVatColumn ? ['64px'] : []),
-    '132px',
-  ].join(' ');
-
-  const headerCells = [
-    '<span>Produkt eller tj\u00e4nst</span>',
-    '<span>Antal</span>',
-    '<span>&Agrave;-pris</span>',
-    ...(showDiscountColumn ? ['<span>Rabatt</span>'] : []),
-    ...(showVatColumn ? ['<span>Moms</span>'] : []),
-    '<span>Belopp</span>',
-  ].join('');
-
-  const desktopRows = items.map((item) => {
-    const displayUnitPrice = getDisplayUnitPrice(item, mode);
-    const displayLineTotal = getDisplayLineTotal(item, mode);
-    const description = getOfferLineItemDescription(item.description);
-    return `
-      <article class="offer-item-row" style="--offer-columns:${gridTemplate}">
-        <div class="offer-item-row__product">
-          <div class="offer-item-row__title">${escapeHtml(description.title)}</div>
-          ${description.detail ? `<div class="offer-item-row__detail">${escapeHtml(description.detail)}</div>` : ''}
-        </div>
-        <div class="offer-item-row__value">${formatOfferLineItemQuantityHtml(item)}</div>
-        <div class="offer-item-row__value">${fmtSEKPrecise(displayUnitPrice)}</div>
-        ${showDiscountColumn ? `<div class="offer-item-row__value">${item.discount ? `${item.discount}%` : '—'}</div>` : ''}
-        ${showVatColumn ? `<div class="offer-item-row__value">${formatVatRate(item.vatRate)}</div>` : ''}
-        <div class="offer-item-row__value offer-item-row__value--strong">${fmtSEKPrecise(displayLineTotal)}</div>
-      </article>`;
-  }).join('');
-
-  const mobileCards = items.map((item) => {
-    const displayUnitPrice = getDisplayUnitPrice(item, mode);
-    const displayLineTotal = getDisplayLineTotal(item, mode);
-    const description = getOfferLineItemDescription(item.description);
-    const mobileVatLabel = normalizeVatRate(item.vatRate) > 0
-      ? `${Math.round(normalizeVatRate(item.vatRate) * 100)}%`
-      : 'Momsfri';
-    const mobileMetrics = [
-      { label: 'Antal', value: formatOfferLineItemQuantityHtml(item) },
-      { label: '&Agrave;-pris', value: fmtSEKPrecise(displayUnitPrice) },
-      ...(showDiscountColumn ? [{ label: 'Rabatt', value: item.discount ? `${item.discount}%` : '—' }] : []),
-      ...(showVatColumn ? [{ label: 'Moms', value: mobileVatLabel }] : []),
-    ];
-    const mobileMetricCount = mobileMetrics.length;
-    const mobileRows = [
-      ...mobileMetrics.map((metric, index) => {
-        const metricClasses = [
-          'offer-item-card__metric',
-          mobileMetricCount % 2 === 1 && index === mobileMetricCount - 1 ? 'offer-item-card__metric--full' : '',
-        ].filter(Boolean).join(' ');
-        return `<div class="${metricClasses}"><dt>${metric.label}</dt><dd>${metric.value}</dd></div>`;
-      }),
-      `<div class="offer-item-card__metric offer-item-card__metric--total"><dt>Belopp</dt><dd>${fmtSEKPrecise(displayLineTotal)}</dd></div>`,
-    ].join('');
-
-    return `
-      <article class="offer-item-card">
-        <div class="offer-item-card__top">
-          <div class="offer-item-card__eyebrow">Produkt eller tj\u00e4nst</div>
-          <div class="offer-item-card__title">${escapeHtml(description.title)}</div>
-          ${description.detail ? `<div class="offer-item-card__detail">${escapeHtml(description.detail)}</div>` : ''}
-        </div>
-        <dl class="offer-item-card__grid">
-          ${mobileRows}
-        </dl>
-      </article>`;
-  }).join('');
-
-  return `
-    <div class="offer-items">
-      <div class="offer-items__table" style="display:block;">
-        <div class="offer-items__head" style="--offer-columns:${gridTemplate}">
-          ${headerCells}
-        </div>
-        <div class="offer-items__body">
-          ${desktopRows}
-        </div>
-      </div>
-      <div class="offer-items__cards" style="display:none;">
-        ${mobileCards}
-      </div>
-    </div>`;
-}
-
-// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Signature placeholder HTML ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 const SIGNATURE_FIELD_HTML = `
   <div data-sig-field="signature" style="border:2px dashed #cbd5e1;border-radius:8px;padding:24px 20px;margin:24px 0;text-align:center;min-height:80px;background:#f8fafc;">
@@ -1359,98 +1166,8 @@ function extractLegacyDocumentIntroHtml(
   return stripLegacyStructuredIntroHtml(nodeToHtml({ type: 'doc', content: introNodes }, introReplacements));
 }
 
-export function renderPublicOfferSummaryHtml(offer: Offer): string {
-  const summary = buildOfferSummary(offer);
-  const subtotalBeforeDiscount = summary.discountAmount > 0
-    ? offer.totalExVat + summary.discountAmount
-    : offer.totalExVat;
-  const boxClass = 'offer-summary offer-summary--below';
-  const totalSubcopy = summary.displayModeLabel;
-  const discountRow = summary.discountAmount > 0 ? `
-    <div class="offer-summary__row offer-summary__row--discount">
-      <span>Rabatt</span>
-      <strong>- ${fmtSEKPrecise(summary.discountAmount).replace(/^-+\s*/, '')}</strong>
-    </div>` : '';
-  const vatRow = summary.hasVat ? `
-    <div class="offer-summary__row offer-summary__row--vat">
-      <span>${summary.vatLabel}</span>
-      <strong>${fmtSEKPrecise(summary.vatAmount)}</strong>
-    </div>` : '';
-
-  return `
-    <aside class="${boxClass}">
-      <div class="offer-summary__row offer-summary__row--subtotal">
-        <span>${summary.subtotalLabel}</span>
-        <strong>${fmtSEKPrecise(subtotalBeforeDiscount)}</strong>
-      </div>
-      ${discountRow}
-      ${vatRow}
-      <div class="offer-summary__row offer-summary__row--total">
-        <span class="offer-summary__total-copy">
-          <span class="offer-summary__total-label">Totalsumma</span>
-          <span class="offer-summary__total-subcopy">${escapeHtml(totalSubcopy)}</span>
-        </span>
-        <strong>${fmtSEKPrecise(summary.totalAmount)}</strong>
-      </div>
-    </aside>`;
-}
-
-function renderFooterIcon(kind: 'website' | 'user' | 'mail'): string {
-  const pathByKind = {
-    website: '<circle cx="128" cy="128" r="84"></circle><path d="M44 96h168"></path><path d="M44 160h168"></path><path d="M128 44c22 22 36 52 36 84s-14 62-36 84c-22-22-36-52-36-84s14-62 36-84z"></path>',
-    user: '<circle cx="128" cy="96" r="36"></circle><path d="M60 204c12-34 40-52 68-52s56 18 68 52"></path>',
-    mail: '<rect x="44" y="68" width="168" height="120" rx="18"></rect><path d="m56 84 72 56 72-56"></path>',
-  } as const;
-
-  return `
-    <svg class="offer-shell__footer-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false">
-      ${pathByKind[kind]}
-    </svg>`;
-}
-
-export function renderPublicOfferFooterHtml(branding?: OfferBrandingProfile): string {
-  const companyName = branding?.companyName?.trim() || branding?.senderName?.trim() || 'Soleria';
-  const website = branding?.website?.trim() || '';
-  const responsibleName = branding?.responsibleName?.trim() || branding?.senderName?.trim() || '-';
-  const responsibleEmail = branding?.responsibleEmail?.trim() || branding?.senderEmail?.trim() || '-';
-  const websiteHref = website ? sanitizeUrl(/^https?:\/\//i.test(website) ? website : `https://${website}`) : '';
-  const websiteLabel = website
-    ? escapeHtml(website.replace(/^https?:\/\//i, '').replace(/\/+$/, ''))
-    : '-';
-
-  return `
-    <footer class="offer-shell__footer">
-      <div class="offer-shell__footer-item offer-shell__footer-item--company">
-        <strong>${renderFooterIcon('website')}<span>${escapeHtml(companyName)}</span></strong>
-        ${websiteHref ? `<a href="${websiteHref}" target="_blank" rel="noreferrer noopener">${websiteLabel}</a>` : '<span>-</span>'}
-      </div>
-      <div class="offer-shell__footer-item offer-shell__footer-item--responsible">
-        <strong>${renderFooterIcon('user')}<span>Ansvarig</span></strong>
-        <span>${escapeHtml(responsibleName)}</span>
-      </div>
-      <div class="offer-shell__footer-item offer-shell__footer-item--contact">
-        <strong>${renderFooterIcon('mail')}<span>Kontakt</span></strong>
-        <span>${escapeHtml(responsibleEmail)}</span>
-      </div>
-    </footer>`;
-}
-
 function normalizeSummaryPlacement(): 'below' {
   return 'below';
-}
-
-function getCompactBrandingAddressLines(addressLines: string[] = []): string[] {
-  const seen = new Set<string>();
-  return addressLines
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .filter((line) => !/^(sverige|sweden)$/i.test(line))
-    .filter((line) => {
-      const key = line.toLocaleLowerCase('sv-SE');
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
 }
 
 function renderStructuredDocumentPage(
@@ -2098,5 +1815,4 @@ export function generateDocument(templateContent: string, offer: Offer, branding
 </body>
 </html>`, offer, branding);
 }
-
 
