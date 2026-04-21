@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
-import { getSessionUser } from '@platform/auth/session';
+import { getSessionUser } from '@modules/supporting/auth';
 import { acceptOfferOnBehalfForStaff, getStaffOfferDetail } from '@modules/supporting/offers';
 
 function fmtDate(iso?: string) {
-  if (!iso) return '—';
+  if (!iso) return '?';
   return new Date(iso).toLocaleDateString('sv-SE', {
     day: '2-digit',
     month: 'long',
@@ -27,7 +27,7 @@ const STATUS_LABEL: Record<string, string> = {
   viewed: 'Visad',
   accepted: 'Accepterad',
   declined: 'Avvisad',
-  expired: 'Utgången',
+  expired: 'Utg?ngen',
 };
 
 export default async function OfferDetailsPage({
@@ -72,7 +72,7 @@ export default async function OfferDetailsPage({
               href="/offerter"
               className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
             >
-              <span aria-hidden="true">←</span>
+              <span aria-hidden="true">?</span>
               Tillbaka till offerter
             </Link>
             <div className="space-y-2">
@@ -88,7 +88,7 @@ export default async function OfferDetailsPage({
                 {offer.title}
               </h1>
               <p className="max-w-2xl text-sm text-[var(--text-secondary)]">
-                Här ser du allt som skickats till kunden, tillsammans med status, dokument och nästa steg.
+                H?r ser du allt som skickats till kunden, tillsammans med status, dokument och n?sta steg.
               </p>
             </div>
           </div>
@@ -100,7 +100,7 @@ export default async function OfferDetailsPage({
                   type="submit"
                   className="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
                 >
-                  Acceptera åt kund
+                  Acceptera ?t kund
                 </button>
               </form>
             )}
@@ -111,7 +111,7 @@ export default async function OfferDetailsPage({
                 rel="noreferrer"
                 className="inline-flex items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-hover)]"
               >
-                Öppna PDF
+                ?ppna PDF
               </a>
             )}
             {publicHref && (
@@ -120,7 +120,7 @@ export default async function OfferDetailsPage({
                 target="_blank"
                 className="inline-flex items-center justify-center rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
               >
-                Öppna signeringslänk
+                ?ppna signeringsl?nk
               </Link>
             )}
           </div>
@@ -137,7 +137,7 @@ export default async function OfferDetailsPage({
           </div>
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Värde</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">V?rde</p>
             <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">{fmtSEK(pricing.totalAmount)}</p>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
               {pricing.displayModeLabel}
@@ -152,9 +152,9 @@ export default async function OfferDetailsPage({
           </div>
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Uppföljning</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Uppf?ljning</p>
             <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">
-              Påminnelser {offer.reminderCount ?? 0}
+              P?minnelser {offer.reminderCount ?? 0}
             </p>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
               Senast {fmtDate(offer.reminderSentAt)}
@@ -172,7 +172,7 @@ export default async function OfferDetailsPage({
             <div>
               <h2 className="text-base font-semibold text-[var(--text-primary)]">Dokument</h2>
               <p className="text-sm text-[var(--text-secondary)]">
-                Samma innehåll som kunden ser vid granskning och signering.
+                Samma inneh?ll som kunden ser vid granskning och signering.
               </p>
             </div>
           </div>
@@ -185,9 +185,9 @@ export default async function OfferDetailsPage({
             />
           ) : (
             <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] px-5 py-8 text-center">
-              <p className="text-sm font-medium text-[var(--text-primary)]">Dokumentet skapas när offerten skickas</p>
+              <p className="text-sm font-medium text-[var(--text-primary)]">Dokumentet skapas n?r offerten skickas</p>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                Under tiden kan du fortsätta arbeta med offertinnehållet i listvyn.
+                Under tiden kan du forts?tta arbeta med offertinneh?llet i listvyn.
               </p>
             </div>
           )}
@@ -231,7 +231,7 @@ export default async function OfferDetailsPage({
                 <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]">{offer.notes}</p>
               ) : (
                 <p className="text-sm text-[var(--text-secondary)]">
-                  Ingen extra anteckning är sparad på offerten ännu.
+                  Ingen extra anteckning ?r sparad p? offerten ?nnu.
                 </p>
               )}
             </div>

@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
-import { getSessionUser } from '@platform/auth/session';
+﻿import { redirect } from 'next/navigation';
+import { getSessionUser } from '@modules/supporting/auth';
 import SakerhetClient from './sakerhet-client';
 
 export default async function SakerhetPage() {
