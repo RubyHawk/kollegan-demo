@@ -1,33 +1,24 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/core';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
-import type { HFCtxValue } from './header-footer-context';
+import { DocumentDefaultsInspector, PresentationPageInspector } from './presentation-page-inspectors';
+import { StructuredOfferInspector } from './structured-offer-inspector';
 import {
-  DEFAULT_DOCUMENT_NOTES_HEADING,
-  DEFAULT_DOCUMENT_TERMS_BODY,
-  DEFAULT_DOCUMENT_TERMS_HEADING,
-  PAGE_ROLE_LABELS,
-} from './template-doc';
-import { uploadTemplateImage } from './template-image-upload';
+  ChoiceButton,
+  Field,
+  InspectorCard,
+  inputClass,
+  secondaryButtonClass,
+} from './block-settings-controls';
 import {
   PRESENTATION_PAGE_HEIGHT,
   PRESENTATION_PAGE_WIDTH,
   syncPresentationPageHeightForActivePage,
 } from './presentation-page-height';
 import { cn } from '@shared/lib/utils';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  ModalActionFooter,
-  ModalBody,
-} from '@shared/ui/dialog';
-import { CaretDown, PencilSimpleLine } from '@phosphor-icons/react';
 
 type ActiveBlock = 'image' | 'table' | 'signatureBlock' | 'variable' | null;
 
@@ -81,585 +72,6 @@ export default function BlockSettingsSidebar() {
     </aside>
   );
 }
-
-function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
-  const uploadRef = useRef<HTMLInputElement>(null);
-  const page = hf.pages[hf.activeIdx];
-  const document = page.document ?? {};
-  const [dialogMode, setDialogMode] = useState<'pageLabel' | 'terms' | 'notes' | 'background' | null>(null);
-  const [pageLabelDraft, setPageLabelDraft] = useState(page.label);
-  const [termsHeadingDraft, setTermsHeadingDraft] = useState(document.termsHeading ?? DEFAULT_DOCUMENT_TERMS_HEADING);
-  const [termsBodyDraft, setTermsBodyDraft] = useState(document.termsBody ?? DEFAULT_DOCUMENT_TERMS_BODY);
-  const [notesHeadingDraft, setNotesHeadingDraft] = useState(document.notesHeading ?? DEFAULT_DOCUMENT_NOTES_HEADING);
-  const [backgroundDraft, setBackgroundDraft] = useState(document.backgroundImageSrc ?? '');
-  const visibleBlockCount = [
-    document.showLogo ?? true,
-    document.showSenderDetails ?? true,
-    document.showCustomerBlock ?? true,
-    document.showIntro ?? true,
-    document.showLineItems ?? true,
-    document.showSummary ?? true,
-    document.showTerms ?? true,
-    document.showNotes ?? true,
-    document.showFooter ?? true,
-  ].filter(Boolean).length;
-
-  const openDialog = (mode: 'pageLabel' | 'terms' | 'notes' | 'background') => {
-    setPageLabelDraft(page.label);
-    setTermsHeadingDraft(document.termsHeading ?? DEFAULT_DOCUMENT_TERMS_HEADING);
-    setTermsBodyDraft(document.termsBody ?? DEFAULT_DOCUMENT_TERMS_BODY);
-    setNotesHeadingDraft(document.notesHeading ?? DEFAULT_DOCUMENT_NOTES_HEADING);
-    setBackgroundDraft(document.backgroundImageSrc ?? '');
-    setDialogMode(mode);
-  };
-
-  const saveDialog = () => {
-    if (dialogMode === 'pageLabel') {
-      hf.renamePage(hf.activeIdx, pageLabelDraft.trim() || 'Offertsida');
-    } else if (dialogMode === 'terms') {
-      hf.patchActivePage({
-        document: {
-          ...document,
-          termsHeading: termsHeadingDraft.trim() || DEFAULT_DOCUMENT_TERMS_HEADING,
-          termsBody: termsBodyDraft.trim() || DEFAULT_DOCUMENT_TERMS_BODY,
-        },
-      });
-    } else if (dialogMode === 'notes') {
-      hf.patchActivePage({
-        document: {
-          ...document,
-          notesHeading: notesHeadingDraft.trim() || DEFAULT_DOCUMENT_NOTES_HEADING,
-        },
-      });
-    } else if (dialogMode === 'background') {
-      hf.patchActivePage({
-        document: {
-          ...document,
-          backgroundImageSrc: backgroundDraft.trim(),
-        },
-      });
-    }
-    setDialogMode(null);
-  };
-
-  return (
-    <>
-      <div className="space-y-2 p-2">
-        <div className="rounded-xl border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface)_0%,var(--surface-0)_100%)] px-3 py-3 shadow-sm">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Strukturerad offertsida</p>
-          <p className="mt-1 text-[12px] leading-5 text-[var(--text-secondary)]">
-            {'Tyngre textf\u00e4lt \u00f6ppnas i dialogrutor, medan layoutval och synliga block ligger i hopf\u00e4llbara sektioner.'}
-          </p>
-        </div>
-
-        <InspectorDisclosure
-          title={'Sid\u00f6versikt'}
-          subtitle={'Rubrik, PDF-beteende och sidtyp f\u00f6r den h\u00e4r systemstyrda sidan.'}
-          badge="Grund"
-          defaultOpen
-        >
-          <div className="space-y-2">
-            <EditableSummaryCard
-              label={'Offertsidans rubrik'}
-              value={page.label}
-              description={'Visas som huvudrubrik i den publika offerten och i mallens f\u00f6rhandsvisning.'}
-              actionLabel={'\u00c4ndra rubrik'}
-              onClick={() => openDialog('pageLabel')}
-            />
-
-            <ToggleCard
-              title={'Med i kundens PDF'}
-              description={
-                page.includeInCustomerPdf === false
-                  ? 'Visas bara i webbversionen'
-                  : 'F\u00f6ljer med i nedladdad PDF'
-              }
-              checked={page.includeInCustomerPdf !== false}
-              onChange={(checked) => hf.patchActivePage({ includeInCustomerPdf: checked })}
-            />
-
-            <StaticCard
-              title={'Sidmodell'}
-              description={'Strukturerad offert med l\u00e5st sekvens f\u00f6r pris, summering och juridik.'}
-              badge="System"
-            />
-          </div>
-        </InspectorDisclosure>
-
-        <InspectorDisclosure
-          title="Layout & tydlighet"
-          subtitle={'Rytm, luft och hur de fasta blocken upplevs visuellt i canvasen.'}
-          badge={document.introLayout === 'roomy' ? 'Rymlig' : 'Kompakt'}
-          defaultOpen
-        >
-          <div className="space-y-2">
-            <Field label="Summering">
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 text-[11px] leading-5 text-[var(--text-secondary)]">
-                {'Summeringen visas alltid som en smal box under produkter och tj\u00e4nster, precis innan juridiska villkor.'}
-              </div>
-            </Field>
-
-            <Field label={'Fri textyta'}>
-              <div className="grid grid-cols-2 gap-2">
-                <ChoiceButton
-                  active={(document.introLayout ?? 'compact') === 'compact'}
-                  onClick={() => hf.patchActivePage({ document: { ...document, introLayout: 'compact' } })}
-                >
-                  Kompakt
-                </ChoiceButton>
-                <ChoiceButton
-                  active={(document.introLayout ?? 'compact') === 'roomy'}
-                  onClick={() => hf.patchActivePage({ document: { ...document, introLayout: 'roomy' } })}
-                >
-                  Rymlig
-                </ChoiceButton>
-              </div>
-            </Field>
-          </div>
-        </InspectorDisclosure>
-
-        <InspectorDisclosure
-          title={'Synliga delar'}
-          subtitle={'Sl\u00e5 av eller p\u00e5 de systemblock som kunden ska se p\u00e5 offertsidan.'}
-          badge={`${visibleBlockCount}/9 aktiva`}
-        >
-          <div className="space-y-1">
-            <ToggleRow label="Logo" checked={document.showLogo ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showLogo: checked } })} />
-            <ToggleRow label={'Avs\u00e4ndare'} checked={document.showSenderDetails ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showSenderDetails: checked } })} />
-            <ToggleRow label="Kundblock" checked={document.showCustomerBlock ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showCustomerBlock: checked } })} />
-            <ToggleRow label={'Fri textyta'} checked={document.showIntro ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showIntro: checked } })} />
-            <ToggleRow label={'Produkter och tj\u00e4nster'} checked={document.showLineItems ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showLineItems: checked } })} />
-            <ToggleRow label="Summering" checked={document.showSummary ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showSummary: checked } })} />
-            <ToggleRow label={'Juridiska villkor'} checked={document.showTerms ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showTerms: checked } })} />
-            <ToggleRow label={'Anteckningar'} checked={document.showNotes ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showNotes: checked } })} />
-            <ToggleRow label="Footer" checked={document.showFooter ?? true} onChange={(checked) => hf.patchActivePage({ document: { ...document, showFooter: checked } })} />
-          </div>
-        </InspectorDisclosure>
-
-        <InspectorDisclosure
-          title="Bakgrund & watermark"
-          subtitle={'Bakgrundsbild, styrka och placering f\u00f6r att skapa mer separation i sidan.'}
-          badge={document.backgroundImageSrc ? 'Aktiv' : 'Ingen'}
-        >
-          <div className="space-y-2">
-            <EditableSummaryCard
-              label="Bakgrundsbild"
-              value={document.backgroundImageSrc ? 'Bakgrund kopplad' : 'Ingen bakgrund vald'}
-              description={
-                document.backgroundImageSrc
-                  ? truncateText(document.backgroundImageSrc, 88)
-                  : 'L\u00e4gg in en bildl\u00e4nk eller ladda upp en fil f\u00f6r mer djup i sidan.'
-              }
-              actionLabel={'\u00d6ppna l\u00e4nkf\u00e4lt'}
-              onClick={() => openDialog('background')}
-            />
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => uploadRef.current?.click()}
-                className={secondaryButtonClass}
-              >
-                Ladda upp bild
-              </button>
-              {document.backgroundImageSrc && (
-                <button
-                  type="button"
-                  onClick={() => hf.patchActivePage({ document: { ...document, backgroundImageSrc: '' } })}
-                  className={secondaryButtonClass}
-                >
-                  Rensa
-                </button>
-              )}
-            </div>
-
-            <input
-              ref={uploadRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={async (event) => {
-                const file = event.target.files?.[0];
-                event.target.value = '';
-                if (!file) return;
-                try {
-                  const src = await uploadTemplateImage(file);
-                  hf.patchActivePage({ document: { ...document, backgroundImageSrc: src } });
-                } catch (error) {
-                  window.alert(error instanceof Error ? error.message : 'Kunde inte ladda upp bakgrunden.');
-                }
-              }}
-            />
-
-            <Field label={'Bakgrundsstyrka'}>
-              <input
-                type="range"
-                min={0}
-                max={0.2}
-                step={0.01}
-                value={document.backgroundOpacity ?? 0.08}
-                onChange={(event) => hf.patchActivePage({ document: { ...document, backgroundOpacity: Number(event.target.value) } })}
-                className="w-full accent-[var(--accent)]"
-              />
-            </Field>
-
-            <Field label="Placering">
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { value: 'top', label: 'Topp' },
-                  { value: 'bottom', label: 'Botten' },
-                  { value: 'full', label: 'Hel sida' },
-                ].map((option) => (
-                  <ChoiceButton
-                    key={option.value}
-                    active={(document.watermarkMode ?? 'bottom') === option.value}
-                    onClick={() => hf.patchActivePage({ document: { ...document, watermarkMode: option.value as 'top' | 'bottom' | 'full' } })}
-                  >
-                    {option.label}
-                  </ChoiceButton>
-                ))}
-              </div>
-            </Field>
-          </div>
-        </InspectorDisclosure>
-
-        <InspectorDisclosure
-          title={'Texter som g\u00e5r att \u00e4ndra'}
-          subtitle={'L\u00e4ngre textf\u00e4lt \u00f6ppnas i rena dialogrutor i st\u00e4llet f\u00f6r i sidpanelen.'}
-          badge="Dialog"
-          defaultOpen
-        >
-          <div className="space-y-2">
-            <EditableSummaryCard
-              label={'Juridiska villkor'}
-              value={document.termsHeading ?? DEFAULT_DOCUMENT_TERMS_HEADING}
-              description={truncateText(document.termsBody ?? DEFAULT_DOCUMENT_TERMS_BODY, 120)}
-              actionLabel={'Redigera juridik'}
-              onClick={() => openDialog('terms')}
-            />
-
-            <EditableSummaryCard
-              label={'Anteckningsrubrik'}
-              value={document.notesHeading ?? DEFAULT_DOCUMENT_NOTES_HEADING}
-              description={'Anv\u00e4nds n\u00e4r offerten har en separat kommentar eller projektspecifik notering.'}
-              actionLabel={'Redigera anteckning'}
-              onClick={() => openDialog('notes')}
-            />
-
-            <div className="rounded-xl border border-dashed border-[var(--accent-border)] bg-[var(--accent-subtle)]/55 px-3 py-2.5">
-              <p className="text-[11px] font-semibold text-[var(--text-primary)]">{'Fri offerttext skrivs direkt i canvasen'}</p>
-              <p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">
-                {'Den stora introytan p\u00e5 sidan \u00e4r markerad som skrivbar, s\u00e5 du slipper fler textf\u00e4lt i panelen.'}
-              </p>
-            </div>
-          </div>
-        </InspectorDisclosure>
-      </div>
-
-      <Dialog open={dialogMode !== null} onOpenChange={(open) => !open && setDialogMode(null)}>
-        <DialogContent mobileVariant="sheet" size="md" showMobileClose>
-          <div className="flex min-h-0 flex-1 flex-col">
-          <DialogHeader className="border-b border-[var(--border)] pr-16">
-            <DialogTitle>{getDialogTitle(dialogMode)}</DialogTitle>
-            <DialogDescription>{getDialogDescription(dialogMode)}</DialogDescription>
-          </DialogHeader>
-
-          <ModalBody className="space-y-4">
-            {dialogMode === 'pageLabel' && (
-              <Field label={'Rubrik p\u00e5 sidan'}>
-                <input
-                  type="text"
-                  value={pageLabelDraft}
-                  onChange={(event) => setPageLabelDraft(event.target.value)}
-                  className={inputClass}
-                  autoFocus
-                />
-              </Field>
-            )}
-
-            {dialogMode === 'terms' && (
-              <>
-                <Field label={'Rubrik f\u00f6r juridik'}>
-                  <input
-                    type="text"
-                    value={termsHeadingDraft}
-                    onChange={(event) => setTermsHeadingDraft(event.target.value)}
-                    className={inputClass}
-                    autoFocus
-                  />
-                </Field>
-                <Field label={'Standardtext'}>
-                  <textarea
-                    rows={8}
-                    value={termsBodyDraft}
-                    onChange={(event) => setTermsBodyDraft(event.target.value)}
-                    className={textareaClass}
-                  />
-                </Field>
-              </>
-            )}
-
-            {dialogMode === 'notes' && (
-              <Field label={'Rubrik f\u00f6r anteckningar'}>
-                <input
-                  type="text"
-                  value={notesHeadingDraft}
-                  onChange={(event) => setNotesHeadingDraft(event.target.value)}
-                  className={inputClass}
-                  autoFocus
-                />
-              </Field>
-            )}
-
-            {dialogMode === 'background' && (
-              <>
-                <Field label={'Bildl\u00e4nk'}>
-                  <input
-                    type="url"
-                    value={backgroundDraft}
-                    onChange={(event) => setBackgroundDraft(event.target.value)}
-                    className={inputClass}
-                    placeholder="https://..."
-                    autoFocus
-                  />
-                </Field>
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 text-[12px] leading-5 text-[var(--text-secondary)]">
-                  {'Vill du hellre ladda upp en fil kan du fortfarande g\u00f6ra det i sidpanelen under samma sektion.'}
-                </div>
-              </>
-            )}
-          </ModalBody>
-
-          <ModalActionFooter>
-            <button
-              type="button"
-              onClick={() => setDialogMode(null)}
-              className={secondaryButtonClass}
-            >
-              Avbryt
-            </button>
-            <button
-              type="button"
-              onClick={saveDialog}
-              className="rounded-md border border-[var(--accent-border)] bg-[var(--accent-subtle)] px-3 py-1.5 text-[12px] font-semibold text-[var(--accent)] transition-colors hover:brightness-[0.98]"
-            >
-              Spara
-            </button>
-          </ModalActionFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-function getDialogTitle(mode: 'pageLabel' | 'terms' | 'notes' | 'background' | null): string {
-  switch (mode) {
-    case 'pageLabel':
-      return '\u00c4ndra rubrik';
-    case 'terms':
-      return 'Redigera juridiska villkor';
-    case 'notes':
-      return 'Redigera anteckningsrubrik';
-    case 'background':
-      return 'Bakgrundsbild';
-    default:
-      return 'Redigera';
-  }
-}
-
-function getDialogDescription(mode: 'pageLabel' | 'terms' | 'notes' | 'background' | null): string {
-  switch (mode) {
-    case 'pageLabel':
-      return 'Ge offertsidan en tydlig rubrik som blir l\u00e4tt att k\u00e4nna igen f\u00f6r kunden.';
-    case 'terms':
-      return 'H\u00e5ll den juridiska standardtexten samlad h\u00e4r i st\u00e4llet f\u00f6r att ha ett stort textf\u00e4lt i sidpanelen.';
-    case 'notes':
-      return 'Den h\u00e4r rubriken anv\u00e4nds n\u00e4r offerten inneh\u00e5ller en separat projektnotering.';
-    case 'background':
-      return 'Ange en bildl\u00e4nk eller rensa bakgrunden f\u00f6r en lugnare sidk\u00e4nsla.';
-    default:
-      return 'Uppdatera inneh\u00e5ll utan att \u00f6verfylla sidpanelen.';
-  }
-}
-
-function InspectorDisclosure({
-  title,
-  subtitle,
-  badge,
-  defaultOpen = false,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  badge?: string;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-
-  return (
-    <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-start justify-between gap-3 px-3 py-3 text-left transition-colors hover:bg-[var(--surface-0)]"
-        aria-expanded={open}
-      >
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-primary)]">{title}</p>
-            {badge ? (
-              <span className="rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
-                {badge}
-              </span>
-            ) : null}
-          </div>
-          {subtitle ? <p className="mt-1 text-[11px] leading-5 text-[var(--text-muted)]">{subtitle}</p> : null}
-        </div>
-        <CaretDown
-          size={16}
-          weight="bold"
-          className={cn('mt-0.5 shrink-0 text-[var(--text-muted)] transition-transform', open && 'rotate-180')}
-        />
-      </button>
-      {open ? <div className="border-t border-[var(--border)] px-3 py-3">{children}</div> : null}
-    </section>
-  );
-}
-
-function EditableSummaryCard({
-  label,
-  value,
-  description,
-  actionLabel,
-  onClick,
-}: {
-  label: string;
-  value: string;
-  description: string;
-  actionLabel: string;
-  onClick: () => void;
-}) {
-  return (
-    <div className="rounded-xl border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface)_0%,var(--surface-0)_100%)] px-3 py-3 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{label}</p>
-          <p className="mt-1 break-words text-[13px] font-semibold text-[var(--text-primary)]">{value}</p>
-          <p className="mt-2 text-[11px] leading-5 text-[var(--text-secondary)]">{description}</p>
-        </div>
-        <button
-          type="button"
-          onClick={onClick}
-          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--accent-border)] bg-[var(--surface)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--accent)] transition-colors hover:bg-[var(--accent-subtle)]"
-        >
-          <PencilSimpleLine size={12} />
-          {actionLabel}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function truncateText(value: string, maxLength: number): string {
-  if (value.length <= maxLength) return value;
-  return `${value.slice(0, Math.max(0, maxLength - 3)).trimEnd()}...`;
-}
-function PresentationPageInspector({ hf }: { hf: HFCtxValue }) {
-  const page = hf.pages[hf.activeIdx];
-
-  return (
-    <InspectorCard
-      title="Sida"
-      subtitle="Grundinställningar för presentationssidan."
-    >
-      <div className="space-y-2">
-        <Field label="Sidnamn">
-          <input
-            type="text"
-            value={page.label}
-            onChange={(event) => hf.renamePage(hf.activeIdx, event.target.value)}
-            className={inputClass}
-          />
-        </Field>
-
-        <Field label="Sidroll">
-          <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5 text-[12px] text-[var(--text-primary)]">
-            {PAGE_ROLE_LABELS[page.role ?? 'custom']}
-          </div>
-        </Field>
-
-        <ToggleCard
-          title="Med i kundens PDF"
-          description={page.includeInCustomerPdf === false ? 'Sidan är intern' : 'Sidan följer med kunden'}
-          checked={page.includeInCustomerPdf !== false}
-          onChange={(checked) => hf.patchActivePage({ includeInCustomerPdf: checked })}
-        />
-
-        <div className="grid grid-cols-2 gap-2">
-          <ChoiceButton
-            active={(page.kind ?? 'presentation') === 'presentation'}
-            onClick={() => hf.patchActivePage({ kind: 'presentation', role: page.role ?? 'custom' })}
-          >
-            Presentation
-          </ChoiceButton>
-          <ChoiceButton
-            active={(page.kind ?? 'presentation') === 'document'}
-            onClick={() => hf.patchActivePage({ kind: 'document', role: 'offer', includeInCustomerPdf: true })}
-          >
-            Gör till offertsida
-          </ChoiceButton>
-        </div>
-      </div>
-    </InspectorCard>
-  );
-}
-
-function DocumentDefaultsInspector({ hf }: { hf: HFCtxValue }) {
-  const fonts = ['Calibri', 'Arial', 'Georgia', 'Helvetica Neue', 'Inter'];
-
-  return (
-    <InspectorCard
-      title="Dokumentstandard"
-      subtitle="Typsnitt och marginaler för presentationssidorna."
-    >
-      <div className="space-y-2">
-        <Field label="Standardteckensnitt">
-          <select
-            value={hf.docSettings.defaultFont}
-            onChange={(event) => hf.patchDocSettings({ defaultFont: event.target.value })}
-            className={inputClass}
-          >
-            {fonts.map((font) => (
-              <option key={font} value={font}>{font}</option>
-            ))}
-          </select>
-        </Field>
-
-        <Field label="Sidmarginal">
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { value: 'tight', label: 'Smal' },
-              { value: 'normal', label: 'Normal' },
-              { value: 'wide', label: 'Bred' },
-            ].map((option) => (
-              <ChoiceButton
-                key={option.value}
-                active={hf.docSettings.pageMargin === option.value}
-                onClick={() => hf.patchDocSettings({ pageMargin: option.value as 'tight' | 'normal' | 'wide' })}
-              >
-                {option.label}
-              </ChoiceButton>
-            ))}
-          </div>
-        </Field>
-      </div>
-    </InspectorCard>
-  );
-}
-
-// Legacy inspector kept temporarily for reference during the new image-panel rollout.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function LegacyImageInspector({ editor }: { editor: Editor }) {
   const attrs = editor.getAttributes('image');
@@ -722,7 +134,7 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
   }
 
   return (
-    <InspectorCard title="Bild" subtitle="Inställningar för markerad bild.">
+    <InspectorCard title="Bild" subtitle="InstÃ¤llningar fÃ¶r markerad bild.">
       <div className="space-y-2.5">
         <Field label="Layout">
           <div className="grid grid-cols-2 gap-1">
@@ -742,13 +154,13 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
               active={!isFree && imgFloat === 'left'}
               onClick={() => setLayout('floatLeft')}
             >
-              Flytande vä
+              Flytande vÃ¤
             </ChoiceButton>
             <ChoiceButton
               active={!isFree && imgFloat === 'right'}
               onClick={() => setLayout('floatRight')}
             >
-              Flytande hö
+              Flytande hÃ¶
             </ChoiceButton>
           </div>
         </Field>
@@ -757,9 +169,9 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
           <Field label="Justering">
             <div className="grid grid-cols-3 gap-1">
               {[
-                { value: 'left', label: 'Vänster' },
+                { value: 'left', label: 'VÃ¤nster' },
                 { value: 'center', label: 'Center' },
-                { value: 'right', label: 'Höger' },
+                { value: 'right', label: 'HÃ¶ger' },
               ].map((option) => (
                 <ChoiceButton
                   key={option.value}
@@ -773,7 +185,7 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
           </Field>
         )}
 
-        <Field label={`Bredd  ·  ${width}px`}>
+        <Field label={`Bredd  Â·  ${width}px`}>
           <input
             type="range"
             min={80}
@@ -800,14 +212,14 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
               type="button"
               onClick={resetSize}
               className="shrink-0 rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)] hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]"
-              title={naturalWidth ? `Återställ till originalstorlek (${naturalWidth}×${naturalHeight}px)` : 'Återställ'}
+              title={naturalWidth ? `Ã…terstÃ¤ll till originalstorlek (${naturalWidth}Ã—${naturalHeight}px)` : 'Ã…terstÃ¤ll'}
             >
-              Återställ
+              Ã…terstÃ¤ll
             </button>
           </div>
         </Field>
 
-        <Field label={`Höjd  ·  ${heightAttr ? `${heightAttr}px` : 'auto'}`}>
+        <Field label={`HÃ¶jd  Â·  ${heightAttr ? `${heightAttr}px` : 'auto'}`}>
           <input
             type="range"
             min={40}
@@ -821,13 +233,13 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
             className="w-full accent-[var(--accent)]"
           />
           <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">
-            0 = automatisk höjd (proportionell)
+            0 = automatisk hÃ¶jd (proportionell)
           </p>
         </Field>
 
         {isFree && (
           <>
-            <Field label="Position på sidan">
+            <Field label="Position pÃ¥ sidan">
               <div className="grid grid-cols-2 gap-1">
                 <label className="flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-1.5 py-1">
                   <span className="text-[10px] font-semibold text-[var(--text-muted)]">X</span>
@@ -850,16 +262,16 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
               </div>
             </Field>
 
-            <Field label="Textflöde">
+            <Field label="TextflÃ¶de">
               <div className="grid grid-cols-3 gap-1">
                 <ChoiceButton active={wrapText === 'none'} onClick={() => patch({ wrapText: 'none' })}>
-                  Ovanpå
+                  OvanpÃ¥
                 </ChoiceButton>
                 <ChoiceButton active={wrapText === 'left'} onClick={() => patch({ wrapText: 'left' })}>
-                  Vänster
+                  VÃ¤nster
                 </ChoiceButton>
                 <ChoiceButton active={wrapText === 'right'} onClick={() => patch({ wrapText: 'right' })}>
-                  Höger
+                  HÃ¶ger
                 </ChoiceButton>
               </div>
             </Field>
@@ -882,7 +294,7 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
                     ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)] text-[var(--accent)]'
                     : 'border-[var(--border)] bg-[var(--surface-0)] text-[var(--text-secondary)] hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]'
                 )}
-                title={isBehind ? 'Bilden ligger bakom texten — klicka för att flytta fram' : 'Lägg bilden bakom texten'}
+                title={isBehind ? 'Bilden ligger bakom texten â€” klicka fÃ¶r att flytta fram' : 'LÃ¤gg bilden bakom texten'}
               >
                 {isBehind ? 'Bakom text' : 'Bakom text'}
               </button>
@@ -894,7 +306,7 @@ function LegacyImageInspector({ editor }: { editor: Editor }) {
           <input
             type="text"
             value={altText}
-            placeholder="Beskriv bilden för tillgänglighet"
+            placeholder="Beskriv bilden fÃ¶r tillgÃ¤nglighet"
             onChange={(event) => patch({ alt: event.target.value })}
             className={inputClass}
           />
@@ -1146,16 +558,16 @@ function ImageInspector({ editor }: { editor: Editor }) {
   return (
     <InspectorCard
       title="Bild"
-      subtitle="Välj ett tydligt bildläge och finjustera storlek och placering utan tröga sliders."
+      subtitle="VÃ¤lj ett tydligt bildlÃ¤ge och finjustera storlek och placering utan trÃ¶ga sliders."
     >
       <div className="space-y-4">
-        <Field label="Bildläge">
+        <Field label="BildlÃ¤ge">
           <div className="grid grid-cols-2 gap-2">
             {[
               { value: 'auto', label: 'Auto' },
               { value: 'inline', label: 'Infogad' },
-              { value: 'float-left', label: 'Flyt vänster' },
-              { value: 'float-right', label: 'Flyt höger' },
+              { value: 'float-left', label: 'Flyt vÃ¤nster' },
+              { value: 'float-right', label: 'Flyt hÃ¶ger' },
               { value: 'free', label: 'Fri placering' },
               { value: 'background', label: 'Bakgrund' },
             ].map((option) => (
@@ -1174,9 +586,9 @@ function ImageInspector({ editor }: { editor: Editor }) {
           <Field label="Justering">
             <div className="grid grid-cols-3 gap-2">
               {[
-                { value: 'left', label: 'Vänster' },
+                { value: 'left', label: 'VÃ¤nster' },
                 { value: 'center', label: 'Center' },
-                { value: 'right', label: 'Höger' },
+                { value: 'right', label: 'HÃ¶ger' },
               ].map((option) => (
                 <ChoiceButton
                   key={option.value}
@@ -1265,17 +677,17 @@ function ImageInspector({ editor }: { editor: Editor }) {
                   })
                 )
               }
-              placeholder="Höjd i px"
+              placeholder="HÃ¶jd i px"
               className={inputClass}
             />
           </div>
           <p className="mt-2 text-xs text-[var(--text-muted)]">
-            Lämna höjden tom för automatisk proportion. Nuvarande original: {naturalWidth ?? 'okänd'} × {naturalHeight ?? 'okänd'} px.
+            LÃ¤mna hÃ¶jden tom fÃ¶r automatisk proportion. Nuvarande original: {naturalWidth ?? 'okÃ¤nd'} Ã— {naturalHeight ?? 'okÃ¤nd'} px.
           </p>
         </Field>
 
         {(mode === 'free' || mode === 'background') && (
-          <Field label="Placering på sidan">
+          <Field label="Placering pÃ¥ sidan">
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="number"
@@ -1330,7 +742,7 @@ function ImageInspector({ editor }: { editor: Editor }) {
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <ChoiceButton active={posX === 0 && posY === 0} onClick={() => setImageAttrs({ posX: 0, posY: 0 })}>
-                Övre vänster
+                Ã–vre vÃ¤nster
               </ChoiceButton>
               <ChoiceButton active={posX === 96 && posY === 96} onClick={() => setImageAttrs({ posX: 96, posY: 96 })}>
                 Textyta
@@ -1346,16 +758,16 @@ function ImageInspector({ editor }: { editor: Editor }) {
         )}
 
         {mode === 'free' && (
-          <Field label="Textflöde">
+          <Field label="TextflÃ¶de">
             <div className="grid grid-cols-3 gap-2">
               <ChoiceButton active={wrapText === 'none'} onClick={() => setImageAttrs({ wrapText: 'none' })}>
-                Ovanpå
+                OvanpÃ¥
               </ChoiceButton>
               <ChoiceButton active={wrapText === 'left'} onClick={() => setImageAttrs({ wrapText: 'left' })}>
-                Text höger
+                Text hÃ¶ger
               </ChoiceButton>
               <ChoiceButton active={wrapText === 'right'} onClick={() => setImageAttrs({ wrapText: 'right' })}>
-                Text vänster
+                Text vÃ¤nster
               </ChoiceButton>
             </div>
           </Field>
@@ -1376,7 +788,7 @@ function ImageInspector({ editor }: { editor: Editor }) {
                   !canMoveBackward && 'cursor-not-allowed opacity-40'
                 )}
               >
-                Bakåt
+                BakÃ¥t
               </button>
               <button
                 type="button"
@@ -1390,7 +802,7 @@ function ImageInspector({ editor }: { editor: Editor }) {
                   !canMoveForward && 'cursor-not-allowed opacity-40'
                 )}
               >
-                Framåt
+                FramÃ¥t
               </button>
             </div>
           </Field>
@@ -1403,7 +815,7 @@ function ImageInspector({ editor }: { editor: Editor }) {
             onChange={(event) => setAltDraft(event.target.value)}
             onBlur={() => setImageAttrs({ alt: altDraft.trim() || null })}
             onKeyDown={(event) => onDraftKeyDown(event, () => setImageAttrs({ alt: altDraft.trim() || null }))}
-            placeholder="Beskriv bilden för tillgänglighet"
+            placeholder="Beskriv bilden fÃ¶r tillgÃ¤nglighet"
             className={inputClass}
           />
         </Field>
@@ -1424,10 +836,10 @@ function TableInspector() {
   return (
     <InspectorCard
       title="Tabell"
-      subtitle="Tabeller justeras direkt i dokumentytan. Markera celler och använd den fria layouten på sidan."
+      subtitle="Tabeller justeras direkt i dokumentytan. Markera celler och anvÃ¤nd den fria layouten pÃ¥ sidan."
     >
       <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-2 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
-        Ändra tabellinnehåll direkt i canvasen — markera celler för att redigera.
+        Ã„ndra tabellinnehÃ¥ll direkt i canvasen â€” markera celler fÃ¶r att redigera.
       </div>
     </InspectorCard>
   );
@@ -1439,9 +851,9 @@ function SignatureInspector({ editor }: { editor: Editor }) {
   const label = (attrs.label as string) ?? 'Signatur';
 
   return (
-    <InspectorCard title="Signaturfält" subtitle="Avancerat block för presentationssidor.">
+    <InspectorCard title="SignaturfÃ¤lt" subtitle="Avancerat block fÃ¶r presentationssidor.">
       <div className="space-y-2">
-        <Field label="Fälttyp">
+        <Field label="FÃ¤lttyp">
           <div className="grid grid-cols-3 gap-2">
             {[
               { value: 'signature', label: 'Signatur' },
@@ -1478,7 +890,7 @@ function VariableInspector({ editor }: { editor: Editor }) {
   const label = (attrs.label as string) ?? '';
 
   return (
-    <InspectorCard title="Variabel" subtitle="Fält som fylls med offertdata automatiskt.">
+    <InspectorCard title="Variabel" subtitle="FÃ¤lt som fylls med offertdata automatiskt.">
       <div className="space-y-2">
         <Field label="Variabelnamn">
           <code className="block break-all rounded-md border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] text-violet-700">
@@ -1494,163 +906,3 @@ function VariableInspector({ editor }: { editor: Editor }) {
     </InspectorCard>
   );
 }
-
-function InspectorCard({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)]">
-      <div className="border-b border-[var(--border)] px-2.5 py-1.5">
-        <p className="text-[11px] font-semibold text-[var(--text-primary)]">{title}</p>
-        {subtitle && <p className="mt-0.5 text-[10px] leading-4 text-[var(--text-muted)]">{subtitle}</p>}
-      </div>
-      <div className="px-2.5 py-2">{children}</div>
-    </section>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-function ChoiceButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded-md border px-2 py-1 text-[11px] font-medium transition-colors',
-        active
-          ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)] text-[var(--accent)]'
-          : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]'
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-function ToggleCard({
-  title,
-  description,
-  checked,
-  onChange,
-}: {
-  title: string;
-  description: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[11px] font-semibold text-[var(--text-primary)]">{title}</p>
-          <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">{description}</p>
-        </div>
-        <ToggleSwitch checked={checked} onChange={onChange} />
-      </div>
-    </div>
-  );
-}
-
-function StaticCard({
-  title,
-  description,
-  badge,
-}: {
-  title: string;
-  description: string;
-  badge: string;
-}) {
-  return (
-    <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[11px] font-semibold text-[var(--text-primary)]">{title}</p>
-          <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">{description}</p>
-        </div>
-        <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-600">
-          {badge}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function ToggleRow({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1">
-      <div className="flex items-center justify-between gap-1.5">
-        <span className="min-w-0 flex-1 truncate text-[11px] text-[var(--text-primary)]">{label}</span>
-        <ToggleSwitch checked={checked} onChange={onChange} />
-      </div>
-    </div>
-  );
-}
-
-function ToggleSwitch({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={cn(
-        'relative h-4 w-7 shrink-0 cursor-pointer rounded-full transition-colors',
-        checked ? 'bg-[var(--accent)]' : 'bg-slate-300'
-      )}
-      aria-pressed={checked}
-    >
-      <span
-        className={cn(
-          'pointer-events-none absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform',
-          checked ? 'translate-x-3' : 'translate-x-0'
-        )}
-      />
-    </button>
-  );
-}
-
-const inputClass = 'w-full rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5 text-[12px] text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-border)]';
-const textareaClass = `${inputClass} min-h-[72px] resize-y`;
-const secondaryButtonClass = 'flex-1 rounded-md border border-[var(--border)] px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]';
