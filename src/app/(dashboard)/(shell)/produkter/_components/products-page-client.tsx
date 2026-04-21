@@ -1,19 +1,9 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import {
-  ArrowsClockwise,
-  FolderOpen,
-  Folders,
-  MagnifyingGlass,
-  Plus,
-  Sparkle,
-} from '@phosphor-icons/react';
-import { Button } from '@shared/ui/button';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
-import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
 import {
   ProductApiError,
   createProduct,
@@ -26,15 +16,19 @@ import {
   type OfferProduct,
   type ProductCategory,
 } from '@shared/lib/api/products.api';
-import { cn } from '@shared/lib/utils';
 import { CategoryManagerDialog } from './category-manager-dialog';
 import { ProductModal } from './product-modal';
-import { ProductRow } from './product-row';
+import {
+  ProductFilterPanel,
+  ProductLibraryHeader,
+  ProductLibraryPanel,
+} from './product-library-sections';
 import type {
   CategoryComposerPayload,
+  CategoryFilterKey,
+  CategorySupportState,
   ProductCategoryMeta,
   ProductForm,
-  CategorySupportState,
 } from './product-library.types';
 import {
   buildCategoryTree,
@@ -42,8 +36,6 @@ import {
   getProductCategoryMeta,
   normalizeSearch,
 } from './product-library.utils';
-
-type CategoryFilterKey = '' | 'uncategorized' | `main:${string}` | `sub:${string}` | `legacy:${string}`;
 
 export function ProductsPageClient() {
   const {
@@ -224,6 +216,8 @@ export function ProductsPageClient() {
   const totalVisible = filteredProducts.length;
   const activeCount = products.filter((product) => product.isActive).length;
   const uncategorizedCount = products.filter((product) => !productMetas.get(product.id)?.label).length;
+  const activeMainFilterId = categoryFilter.startsWith('main:') ? categoryFilter.slice(5) : '';
+  const hasActiveFilters = Boolean(search || categoryFilter || showInactive);
 
   const openCreate = () => {
     setEditingProduct(null);
@@ -238,6 +232,16 @@ export function ProductsPageClient() {
   const closeModal = () => {
     setModalOpen(false);
     setEditingProduct(null);
+  };
+
+  const openCategoryManager = () => {
+    setCategoryManagerOpen(true);
+  };
+
+  const resetFilters = () => {
+    setSearch('');
+    setCategoryFilter('');
+    setShowInactive(false);
   };
 
   const handleCreateCategory = useCallback(async (payload: CategoryComposerPayload) => {
@@ -347,191 +351,41 @@ export function ProductsPageClient() {
     }
   }, [editingProduct]);
 
-  const activeMainFilterId = categoryFilter.startsWith('main:') ? categoryFilter.slice(5) : '';
-  const hasActiveFilters = Boolean(search || categoryFilter || showInactive);
-
-  const filterPanel = (
-    <div className="space-y-4">
-      <label className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-3 text-sm text-[var(--text-secondary)]">
-        Visa inaktiva
-        <input
-          type="checkbox"
-          checked={showInactive}
-          onChange={(event) => setShowInactive(event.target.checked)}
-          className="rounded border-[var(--border)]"
-        />
-      </label>
-
-      <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Snabbfilter</p>
-        <div className="space-y-1.5">
-          <button
-            type="button"
-            onClick={() => setCategoryFilter('')}
-            className={cn(
-              'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm transition-colors',
-              !categoryFilter ? 'bg-[var(--accent)]/10 text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
-            )}
-          >
-            <span>Alla produkter</span>
-            <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 text-xs">{products.length}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setCategoryFilter('uncategorized')}
-            className={cn(
-              'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm transition-colors',
-              categoryFilter === 'uncategorized' ? 'bg-[var(--accent)]/10 text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
-            )}
-          >
-            <span>Okategoriserade</span>
-            <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 text-xs">{uncategorizedCount}</span>
-          </button>
-        </div>
-      </div>
-
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Hierarki</p>
-          <button
-            type="button"
-            onClick={() => setCategoryManagerOpen(true)}
-            className="text-xs font-medium text-[var(--accent)]"
-          >
-            Hantera
-          </button>
-        </div>
-        <div className="space-y-2">
-          {categoryTree.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[var(--border)] px-4 py-5 text-sm text-[var(--text-muted)]">
-              {categorySupport === 'available'
-                ? 'Skapa första huvudkategorin för att börja strukturera biblioteket.'
-                : categorySupportMessage ?? 'Kategorier aktiveras när databasen är uppdaterad.'}
-            </div>
-          ) : (
-            categoryTree.map((node) => (
-              <div key={node.main.id} className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-2">
-                <button
-                  type="button"
-                  onClick={() => setCategoryFilter(`main:${node.main.id}`)}
-                  className={cn(
-                    'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm transition-colors',
-                    activeMainFilterId === node.main.id ? 'bg-[var(--surface-0)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)]',
-                  )}
-                >
-                  <span className="font-medium">{node.main.name}</span>
-                  <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 text-xs">
-                    {mainCounts.get(node.main.id) ?? 0}
-                  </span>
-                </button>
-                {node.children.length > 0 && (
-                  <div className="mt-1 flex flex-wrap gap-2 px-2 pb-2">
-                    {node.children.map((child) => (
-                      <button
-                        key={child.id}
-                        type="button"
-                        onClick={() => setCategoryFilter(`sub:${child.id}`)}
-                        className={cn(
-                          'rounded-full px-2.5 py-1 text-xs transition-colors',
-                          categoryFilter === `sub:${child.id}`
-                            ? 'bg-[var(--accent)] text-white'
-                            : 'bg-[var(--surface-0)] text-[var(--text-secondary)] hover:bg-[var(--surface)]',
-                        )}
-                      >
-                        {child.name} • {subCounts.get(child.id) ?? 0}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {legacyCategoryLabels.length > 0 && (
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Äldre fria etiketter</p>
-          <div className="flex flex-wrap gap-2">
-            {legacyCategoryLabels.map((label) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => setCategoryFilter(`legacy:${label}`)}
-                className={cn(
-                  'rounded-full border px-3 py-1.5 text-xs transition-colors',
-                  categoryFilter === `legacy:${label}`
-                    ? 'border-[var(--accent)] bg-[var(--accent)]/8 text-[var(--accent)]'
-                    : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
-                )}
-              >
-                {label} • {legacyCounts.get(label) ?? 0}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+  const renderFilterPanel = () => (
+    <ProductFilterPanel
+      productsCount={products.length}
+      uncategorizedCount={uncategorizedCount}
+      showInactive={showInactive}
+      categoryFilter={categoryFilter}
+      activeMainFilterId={activeMainFilterId}
+      categoryTree={categoryTree}
+      categorySupport={categorySupport}
+      categorySupportMessage={categorySupportMessage}
+      mainCounts={mainCounts}
+      subCounts={subCounts}
+      legacyCounts={legacyCounts}
+      legacyCategoryLabels={legacyCategoryLabels}
+      onShowInactiveChange={setShowInactive}
+      onCategoryFilterChange={setCategoryFilter}
+      onManageCategories={openCategoryManager}
+    />
   );
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="space-y-6">
-        <section className="overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm">
-          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_240px]">
-            <div className="space-y-3 px-5 py-5 sm:px-6">
-              <div className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                Produktbibliotek
-              </div>
-              <h1 className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">
-                Håll biblioteket snabbt, tydligt och lätt att lita på.
-              </h1>
-
-              <div className="grid max-w-sm grid-cols-3 gap-2">
-                <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2.5">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Produkter</div>
-                  <div className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{products.length}</div>
-                </div>
-                <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2.5">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Aktiva nu</div>
-                  <div className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{activeCount}</div>
-                </div>
-                <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2.5">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Visas nu</div>
-                  <div className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{totalVisible}</div>
-                </div>
-              </div>
-
-              {companies.length > 1 && (
-                <CompanyScopeSelector
-                  companies={companies}
-                  selectedCompanyId={selectedCompanyId}
-                  onSelect={setSelectedCompanyId}
-                  compact
-                  title="Företagets bibliotek"
-                  description="Byt företag för att se rätt produkter och kategorier."
-                />
-              )}
-              {companyLoading && (
-                <p className="text-xs text-[var(--text-muted)]">Läser in företagets bibliotek…</p>
-              )}
-              {companyError && (
-                <p className="text-xs text-amber-700 dark:text-amber-400">{companyError}</p>
-              )}
-            </div>
-
-            <aside className="flex flex-col justify-center gap-2 border-t border-[var(--border)] px-5 py-5 lg:border-l lg:border-t-0">
-              <Button type="button" onClick={openCreate} className="h-10 rounded-xl px-3.5">
-                <Plus size={16} weight="bold" />
-                Ny produkt
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setCategoryManagerOpen(true)} className="h-10 rounded-xl px-3.5">
-                <Folders size={16} weight="bold" />
-                Hantera kategorier
-              </Button>
-            </aside>
-          </div>
-        </section>
+        <ProductLibraryHeader
+          companies={companies}
+          selectedCompanyId={selectedCompanyId}
+          companyLoading={companyLoading}
+          companyError={companyError}
+          productCount={products.length}
+          activeCount={activeCount}
+          totalVisible={totalVisible}
+          onSelectCompany={setSelectedCompanyId}
+          onCreateProduct={openCreate}
+          onManageCategories={openCategoryManager}
+        />
 
         <AnimatePresence>
           {error && (
@@ -539,7 +393,7 @@ export function ProductsPageClient() {
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              className="rounded-[24px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300"
+              className="rounded-[24px] border border-[var(--status-danger-bg)] bg-[var(--status-danger-bg)] px-4 py-3 text-sm text-[var(--status-danger-text)]"
             >
               {error}
             </motion.div>
@@ -547,127 +401,32 @@ export function ProductsPageClient() {
         </AnimatePresence>
 
         <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className="hidden h-fit rounded-[26px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-sm xl:block xl:sticky xl:top-6">
+          <aside className="hidden h-fit rounded-[26px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-sm xl:sticky xl:top-6 xl:block">
             <div className="mb-3">
               <p className="text-sm font-semibold text-[var(--text-primary)]">Filter</p>
             </div>
-            {filterPanel}
+            {renderFilterPanel()}
           </aside>
 
-          <section className="order-1 overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm xl:order-2">
-            <div className="border-b border-[var(--border)] px-4 py-4 sm:px-5">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <p className="text-base font-semibold text-[var(--text-primary)]">Bibliotek</p>
-                <div className="flex flex-wrap gap-2">
-                  {hasActiveFilters && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setSearch('');
-                        setCategoryFilter('');
-                        setShowInactive(false);
-                      }}
-                      className="h-10 rounded-xl px-3.5"
-                    >
-                      <ArrowsClockwise size={16} weight="bold" />
-                      Rensa
-                    </Button>
-                  )}
-                  <Button type="button" variant="outline" onClick={() => void reloadAll()} className="h-10 rounded-xl px-3.5">
-                    <ArrowsClockwise size={16} weight="bold" />
-                    Ladda om
-                  </Button>
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-col gap-3 lg:flex-row">
-                <label className="relative block flex-1">
-                  <MagnifyingGlass size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-                  <input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Sök namn, beskrivning, SKU, enhet eller kategori"
-                    className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
-                  />
-                </label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setFiltersOpen((current) => !current)}
-                  className="rounded-2xl xl:hidden"
-                >
-                  {filtersOpen ? 'Dölj filter' : 'Visa filter'}
-                </Button>
-              </div>
-
-              <AnimatePresence initial={false}>
-                {filtersOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.18, ease: 'easeOut' }}
-                    className="overflow-hidden xl:hidden"
-                  >
-                    <div className="mt-4 rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-                      {filterPanel}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <div className="min-h-[420px]">
-              {loading ? (
-                <div>
-                  {[1, 2, 3, 4].map((item) => (
-                    <div key={item} className="h-14 animate-pulse border-b border-[var(--border)] last:border-b-0" />
-                  ))}
-                </div>
-              ) : filteredProducts.length === 0 ? (
-                  <motion.div initial={{ opacity: 0, scale: 0.985 }} animate={{ opacity: 1, scale: 1 }} className="flex min-h-[360px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-6 m-4 text-center">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[24px] bg-[var(--surface-0)] text-[var(--text-muted)]">
-                    {hasActiveFilters ? <Sparkle size={24} weight="duotone" /> : <FolderOpen size={24} weight="duotone" />}
-                  </div>
-                  <p className="text-base font-semibold text-[var(--text-primary)]">
-                    {hasActiveFilters ? 'Ingen produkt matchar filtret' : 'Produktbiblioteket är tomt'}
-                  </p>
-                  <p className="mt-2 max-w-md text-sm leading-7 text-[var(--text-muted)]">
-                    {hasActiveFilters
-                      ? 'Prova att rensa filtren eller sök bredare för att hitta rätt post.'
-                      : 'Börja med de vanligaste tjänsterna och ge dem en tydlig struktur så att offertsidan känns självklar för alla som jobbar i den.'}
-                  </p>
-                  <div className="mt-5 flex flex-wrap justify-center gap-2">
-                    <Button type="button" onClick={openCreate} className="h-10 rounded-xl px-3.5">
-                      <Plus size={16} weight="bold" />
-                      Ny produkt
-                    </Button>
-                    <Button type="button" variant="outline" onClick={() => setCategoryManagerOpen(true)} className="h-10 rounded-xl px-3.5">
-                      <Folders size={16} weight="bold" />
-                      Hantera kategorier
-                    </Button>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div layout>
-                  <AnimatePresence initial={false}>
-                    {filteredProducts.map((product) => (
-                      <ProductRow
-                        key={product.id}
-                        product={product}
-                        meta={productMetas.get(product.id)}
-                        deleting={deletingId === product.id}
-                        onEdit={openEdit}
-                        onToggleActive={handleToggleActive}
-                        onDelete={setDeleteProduct}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </motion.div>
-              )}
-            </div>
-          </section>
+          <ProductLibraryPanel
+            loading={loading}
+            products={filteredProducts}
+            productMetas={productMetas}
+            deletingId={deletingId}
+            search={search}
+            filtersOpen={filtersOpen}
+            hasActiveFilters={hasActiveFilters}
+            filterPanel={renderFilterPanel()}
+            onSearchChange={setSearch}
+            onFiltersOpenChange={setFiltersOpen}
+            onResetFilters={resetFilters}
+            onReload={() => void reloadAll()}
+            onCreateProduct={openCreate}
+            onManageCategories={openCategoryManager}
+            onEdit={openEdit}
+            onToggleActive={handleToggleActive}
+            onDelete={setDeleteProduct}
+          />
         </div>
       </motion.div>
 
@@ -683,7 +442,7 @@ export function ProductsPageClient() {
           saving={saving}
           onClose={closeModal}
           onSave={handleSave}
-          onOpenCategoryManager={() => setCategoryManagerOpen(true)}
+          onOpenCategoryManager={openCategoryManager}
         />
       )}
 
@@ -703,7 +462,9 @@ export function ProductsPageClient() {
 
       <ConfirmDestructiveDialog
         open={Boolean(deleteProduct)}
-        onOpenChange={(open) => { if (!open) setDeleteProduct(null); }}
+        onOpenChange={(open) => {
+          if (!open) setDeleteProduct(null);
+        }}
         title={deleteProduct ? `Ta bort ${deleteProduct.name}?` : 'Ta bort produkt?'}
         description="Produkten försvinner från biblioteket och visas inte längre i offertflödet."
         confirmLabel="Ta bort"
@@ -717,12 +478,3 @@ export function ProductsPageClient() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
