@@ -1,7 +1,7 @@
 /**
  * AI bookings tool module.
  *
- * Re-exports room-store functions directly — they already handle:
+ * Re-exports hotel demo server functions directly. They already handle:
  *   - SSE broadcast (real-time dashboard updates)
  *   - Activity log entries
  *   - Disk persistence
@@ -9,4 +9,4 @@
  *
  * No duplication needed.
  */
-export { lockRoom, confirmBooking, cancelBooking } from '@demos/hotel/infrastructure/room-store';
+export { lockRoom, confirmBooking, cancelBooking } from '@demos/hotel/server';

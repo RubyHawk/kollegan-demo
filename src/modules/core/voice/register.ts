@@ -19,7 +19,7 @@
 import { registerTool } from '@modules/core/automation/tools/registry';
 import { checkAvailability } from './ai-tools/availability';
 // Phase 5: hotel module registers hotel.* tools itself; remove these imports
-import { lockRoom, confirmBooking, cancelBooking } from '@demos/hotel/infrastructure/room-store';
+import { lockRoom, confirmBooking, cancelBooking } from '@demos/hotel/server';
 // Phase 4: crm module registers crm.* tools itself; remove these imports
 import { lookupCustomer, updateCrm, upsertCustomer } from '@modules/supporting/crm';
 import { checkCalendarRange } from './ai-tools/calendar';

@@ -138,6 +138,7 @@ module.exports = {
         'Deep imports into domain/, application/, or infrastructure/ break encapsulation.',
       from: {
         path: '^src/modules',
+        pathNot: '^src/modules/[^/]+/[^/]+/(index|server)\\.ts$',
       },
       to: {
         path: '^src/modules/[^/]+/[^/]+/(domain|application|infrastructure)/',
