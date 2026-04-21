@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiPut, apiDelete } from '@shared/lib/api-client';
-import type { Restaurant, HotelActivity, Amenity } from '../domain/service.entity';
+import type { Amenity, HotelActivity, Restaurant } from '../server';
 
 type ServiceType = 'restaurant' | 'activity' | 'amenity';
 

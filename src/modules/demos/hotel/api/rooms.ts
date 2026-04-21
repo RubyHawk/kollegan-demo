@@ -1,5 +1,5 @@
 import { apiPost, apiDelete } from '@shared/lib/api-client';
-import type { Room } from '../domain/room.entity';
+import type { Room } from '../server';
 
 interface BookingResult {
   success: boolean;

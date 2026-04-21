@@ -131,17 +131,29 @@ module.exports = {
 
     // ─── Module encapsulation ────────────────────────────────────────────────────
     {
-      name: 'no-deep-module-imports',
+      name: 'no-intra-module-deep-imports-outside-entrypoints',
       severity: 'warn',
       comment:
-        'Import from a module\'s public index.ts barrel only. ' +
-        'Deep imports into domain/, application/, or infrastructure/ break encapsulation.',
+        'Within a module, import domain/application/infrastructure internals only from that module\'s public entrypoints. ' +
+        'Other source files should depend on the module contract.',
       from: {
-        path: '^src/modules',
-        pathNot: '^src/modules/[^/]+/[^/]+/(index|server)\\.ts$',
+        path: '^src/modules/([^/]+)/([^/]+)/(?!index\\.ts$|server\\.ts$)',
+      },
+      to: {
+        path: '^src/modules/$1/$2/(domain|application|infrastructure)/',
+      },
+    },
+    {
+      name: 'no-cross-module-deep-imports',
+      severity: 'warn',
+      comment:
+        'Import other modules through their public entrypoint, not their domain/application/infrastructure internals.',
+      from: {
+        path: '^src/modules/([^/]+)/([^/]+)',
       },
       to: {
         path: '^src/modules/[^/]+/[^/]+/(domain|application|infrastructure)/',
+        pathNot: '^src/modules/$1/$2/',
       },
     },
 

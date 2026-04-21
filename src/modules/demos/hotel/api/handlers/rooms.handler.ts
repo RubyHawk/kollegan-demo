@@ -8,7 +8,7 @@ import {
   confirmBooking,
   getAvailableRooms,
   logRoomsQueried,
-} from '../../infrastructure/room-store';
+} from '../../server';
 
 export const dynamic = 'force-dynamic';
 

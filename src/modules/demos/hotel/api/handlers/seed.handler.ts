@@ -5,12 +5,10 @@ import {
   DEMO_HOTEL_SEED_ENDPOINT,
   DEMO_HOTEL_SEED_TAG,
   DEMO_HOTEL_STAFF,
-} from '../../domain/seed.entity';
-import {
   HotelSeedHashingError,
   HotelSeedRepositoryError,
   seedHotelStaffUsers,
-} from '../../application/seed.service';
+} from '../../server';
 
 function problem(status: number, title: string, detail: string) {
   return NextResponse.json(
