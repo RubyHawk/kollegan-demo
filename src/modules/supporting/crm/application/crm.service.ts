@@ -1,6 +1,5 @@
 import { logger } from '@platform/logging/logger';
 import { eventBus } from '@platform/events';
-import { logActivity } from '@demos/hotel/infrastructure/room-store'; // TODO: extract to shared @platform/activity
 import {
   findCustomerByPhone,
   findCustomerByName,
@@ -146,7 +145,6 @@ export async function updateCrm(input: CrmUpdateInput): Promise<CrmUpdateResult>
     });
   }
 
-  // Broadcast to dashboard activity feed
   const displayName = input.name ?? input.email ?? input.phone ?? 'Okänd gäst';
   const contact: CrmContact = {
     name:    input.name,
@@ -157,14 +155,6 @@ export async function updateCrm(input: CrmUpdateInput): Promise<CrmUpdateResult>
     summary: input.summary,
   };
 
-  logActivity({
-    type:    'crm_contact',
-    message: input.summary
-      ? `Kundprofil: ${displayName} — ${input.summary}`
-      : `Kundprofil insamlad för ${displayName}.`,
-    metadata: contact,
-  });
-
   eventBus.publish<CrmRecordCreatedEvent>({
     type:       CRM_RECORD_CREATED,
     orgId:      DEMO_ORG_ID,
@@ -174,6 +164,9 @@ export async function updateCrm(input: CrmUpdateInput): Promise<CrmUpdateResult>
       customerId:  customer.id,
       vapiCallId:  input.vapiCallId,
       bookedRooms: input.bookedRoomIds ?? [],
+      displayName,
+      summary:     input.summary,
+      contact,
     },
   });
 

@@ -1,8 +1,8 @@
-import type { ActivityEvent } from '@demos/hotel/activity/types';
+import type { CrmActivityEvent } from '../../domain/activity.entity';
 import { buildCallLog } from './crm-tab-model';
 import { EmptyState, Icon, fmtDuration, fmtShortDate, fmtTime } from './crm-tab-shared';
 
-export function CallLogTab({ activities }: { activities: ActivityEvent[] }) {
+export function CallLogTab({ activities }: { activities: CrmActivityEvent[] }) {
   const calls = buildCallLog(activities);
 
   if (calls.length === 0) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { ActivityEvent } from '@demos/hotel/activity/types';
+import type { CrmActivityEvent } from '../../domain/activity.entity';
 import { BookingLogTab } from './crm-booking-log-tab';
 import { CallLogTab } from './crm-call-log-tab';
 import { CustomerList } from './crm-customer-list';
@@ -9,7 +9,7 @@ import { buildCallLog, buildCrmEntries } from './crm-tab-model';
 import { TabBtn } from './crm-tab-shared';
 
 interface Props {
-  activities: ActivityEvent[];
+  activities: CrmActivityEvent[];
   onCountChange?: (n: number) => void;
 }
 
