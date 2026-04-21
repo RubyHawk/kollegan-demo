@@ -6,17 +6,14 @@ import { useEffect, useCallback, useRef, useMemo, useState } from 'react';
 import { fetchWithRefresh } from '@shared/lib/api-client';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import { useToast } from '@shared/ui/toast/toast-context';
-import ToastContainer from '@shared/ui/toast/toast-container';
 import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '@modules/supporting/offers/domain/pricing';
 import { useOffersListStore, PAGE_SIZE } from './_store/offers-list.store';
 import { useOffersFormStore } from './_store/offers-form.store';
-import { OfferTemplatePreviewModal } from './_components/offer-template-preview-modal';
-import { SendOfferDialog } from './_components/send-offer-dialog';
-import { OfferPreviewDialog } from './_components/offer-preview-dialog';
 import { OfferWizardShell } from './_components/offer-wizard-shell';
 import { OffersLoadingState } from './_components/offers-loading-state';
 import { OffersMobileCards } from './_components/offers-mobile-cards';
 import { OffersDesktopTable } from './_components/offers-desktop-table';
+import { OffersPageDialogs } from './_components/offers-page-dialogs';
 import { useOfferListActions } from './_hooks/use-offer-list-actions';
 import { useOfferWizardLifecycle } from './_hooks/use-offer-wizard-lifecycle';
 import { useOfferWizardLookups } from './_hooks/use-offer-wizard-lookups';
@@ -31,10 +28,6 @@ import {
 } from './_components/offers-dashboard-controls';
 import type { BlockingAlert } from './_components/offer-blocking-alerts';
 import { pricingSummary } from './_lib/offers-dashboard-formatters';
-import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
-
-
-// ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function OffersPage() {
   const enforcedPriceDisplayMode = DEFAULT_OFFER_PRICE_DISPLAY_MODE;
@@ -46,7 +39,6 @@ export default function OffersPage() {
     selectedCompanyId,
     setSelectedCompanyId,
   } = useActiveCompany();
-  // ── List store ─────────────────────────────────────────────────────────────
   const {
     allOffers, serverTotal, tabCounts, loading, error,
     searchInput, search,
@@ -60,7 +52,6 @@ export default function OffersPage() {
     load, loadCounts,
   } = useOffersListStore();
 
-  // ── Form store ─────────────────────────────────────────────────────────────
   const {
     showForm, editingOfferId, wizardStep, form, fieldErrors, saving, draftSaved,
     livePreviewHtml, livePreviewLoading, previewDirty, activeField, cachedTplContent,
@@ -79,7 +70,6 @@ export default function OffersPage() {
     updateLine, addLine, removeLine, reorderLines, resetForm,
   } = useOffersFormStore();
 
-  // ── Local refs (non-serializable / timer handles) ─────────────────────────
   const livePreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
   const lastActiveFieldRef = useRef<string | null>(null);
@@ -88,19 +78,15 @@ export default function OffersPage() {
     setBlockingAlert(null);
   }, [setError]);
 
-  // Keep lastActiveFieldRef in sync so onLoad can reference it after activeField resets to null
   useEffect(() => { if (activeField) lastActiveFieldRef.current = activeField; }, [activeField]);
 
-  // Reload offers when filters change (store actions read their own state) ────
   useEffect(() => {
     void load();
     void loadCounts();
     clearSelected();
     setBulkResult(null);
-    // load/loadCounts/clearSelected/setBulkResult are stable store actions
   }, [tab, search, currentPage, dateFrom, dateTo]);
 
-  // ── Derived: client-side sort only (status + date filtering is server-side) ───
   const filteredOffers = useMemo(() => {
     return allOffers.slice().sort((a, b) => {
       const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -251,7 +237,6 @@ export default function OffersPage() {
   const mottagareComplete = form.recipientName.trim().length >= 2 && emailRe.test(form.recipientEmail.trim());
   const detajerComplete   = form.title.trim().length >= 2;
 
-  /** Schedule a debounced re-render of the live preview with current form values. */
   const scheduleLivePreview = useCallback((currentForm: typeof form, content: string) => {
     setPreviewDirty(true);
     if (livePreviewTimer.current) clearTimeout(livePreviewTimer.current);
@@ -285,7 +270,6 @@ export default function OffersPage() {
     }, 1000);
   }, [selectedCompanyBranding]);
 
-  // Re-render preview whenever form values change (step 2 only)
   useEffect(() => {
     if (!showForm || wizardStep !== 2 || !cachedTplContent) return;
     scheduleLivePreview(form, cachedTplContent);
@@ -487,50 +471,29 @@ export default function OffersPage() {
         }}
       />
 
-      {/* Send confirmation modal */}
-      <SendOfferDialog
-        open={Boolean(confirmSend)}
-        onClose={() => setConfirmSend(null)}
-        recipientName={confirmSend?.recipientName ?? ''}
-        recipientEmail={confirmSend?.recipientEmail ?? ''}
-        recipientCompany={confirmSend?.recipientCompany}
-        loading={confirmSend ? acting === confirmSend.id : false}
-        onConfirm={() => {
+      <OffersPageDialogs
+        confirmSend={confirmSend}
+        confirmDeleteOffer={confirmDeleteOffer}
+        previewDoc={previewDoc}
+        templatePreview={tplPreview}
+        acting={acting}
+        toasts={toasts}
+        onCloseSend={() => setConfirmSend(null)}
+        onConfirmSend={() => {
           if (!confirmSend) return;
           void doAction(confirmSend.id, 'send');
           setConfirmSend(null);
         }}
-      />
-
-      {/* Template preview modal */}
-      <OfferTemplatePreviewModal
-        open={Boolean(tplPreview)}
-        html={tplPreview?.html ?? null}
-        loading={tplPreview?.loading ?? false}
-        onClose={() => setTplPreview(null)}
-      />
-      {/* Delete offer confirmation modal */}
-      <ConfirmDestructiveDialog
-        open={Boolean(confirmDeleteOffer)}
-        onOpenChange={(open) => { if (!open) setConfirmDeleteOffer(null); }}
-        title="Ta bort offert?"
-        description="Offerten tas bort permanent och kan inte återställas."
-        confirmLabel="Ta bort"
-        onConfirm={() => {
+        onCloseTemplatePreview={() => setTplPreview(null)}
+        onDeleteDialogOpenChange={(open) => { if (!open) setConfirmDeleteOffer(null); }}
+        onConfirmDelete={() => {
           if (!confirmDeleteOffer) return;
           void deleteOffer(confirmDeleteOffer);
           setConfirmDeleteOffer(null);
         }}
+        onClosePreview={() => setPreviewDoc(null)}
+        onDismissToast={dismissToast}
       />
-
-      {/* Document preview modal */}
-      <OfferPreviewDialog
-        open={Boolean(previewDoc)}
-        onClose={() => setPreviewDoc(null)}
-        srcDoc={previewDoc ?? ''}
-      />
-
-      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
