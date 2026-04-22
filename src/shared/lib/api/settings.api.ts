@@ -2,7 +2,32 @@ import { apiGet, apiPut } from '../api-client';
 
 const ORG_BASE_URL = '/api/v1/org';
 
-export type NotificationTag = string;
+export const ACTIVE_NOTIFICATION_TAGS = [
+  'offer_signed',
+  'offer_declined',
+] as const;
+
+export type ActiveNotificationTag = typeof ACTIVE_NOTIFICATION_TAGS[number];
+export type NotificationTag = ActiveNotificationTag;
+
+export interface ActiveNotificationTagDefinition {
+  tag: ActiveNotificationTag;
+  label: string;
+  tone: 'emerald' | 'red';
+}
+
+export const ACTIVE_NOTIFICATION_DEFINITIONS: ActiveNotificationTagDefinition[] = [
+  {
+    tag: 'offer_signed',
+    label: 'Offert signerad',
+    tone: 'emerald',
+  },
+  {
+    tag: 'offer_declined',
+    label: 'Offert avvisad',
+    tone: 'red',
+  },
+];
 
 export interface EmailSettings {
   senderEmail: string | null;
@@ -13,7 +38,7 @@ export interface EmailSettings {
 export interface NotificationRecipient {
   id: string;
   email: string;
-  tags: NotificationTag[];
+  tags: ActiveNotificationTag[];
 }
 
 export interface NotificationRecipientsResponse {

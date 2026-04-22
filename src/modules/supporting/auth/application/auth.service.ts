@@ -349,7 +349,7 @@ async function migrateStaffUser(staffUser: {
   createdAt: Date;
   lastLogin: Date | null;
 }): Promise<User> {
-  const { identityService } = await import('@modules/supporting/identity/application/identity.service');
+  const { identityService } = await import('@modules/supporting/identity');
   const demoOrg = await identityService.getOrCreateDemoOrg();
 
   const roleMap: Record<string, string> = {

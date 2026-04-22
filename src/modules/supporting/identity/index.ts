@@ -9,6 +9,12 @@
  */
 
 export { identityService } from './application/identity.service';
+export {
+  handleGetOrgEmailSettings,
+  handleUpdateOrgEmailSettings,
+  handleGetOrgNotificationRecipients,
+  handleUpdateOrgNotificationRecipients,
+} from './api/handlers/org-settings.handler';
 export type {
   Organization,
   OrgMember,
