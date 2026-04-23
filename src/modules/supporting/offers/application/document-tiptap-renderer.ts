@@ -1,4 +1,4 @@
-﻿import { sanitizeUrl } from '@platform/security/sanitize';
+import { sanitizeUrl } from '@platform/security/sanitize';
 import { escapeHtml, resolveFreeImageRenderZIndex } from './document-formatting';
 
 /** TipTap JSON node shape used by persisted offer document templates. */

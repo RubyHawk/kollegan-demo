@@ -56,9 +56,11 @@ export function formatOfferLineItemQuantityHtml(item: OfferLineItem): string {
   return `${quantity} ${formatLineItemUnitHtml(maybeUnit)}`;
 }
 
+const LEGACY_MOJIBAKE_EM_DASH_SEPARATOR = ' \u00e2\u20ac\u201d ';
+
 export function getOfferLineItemDescription(description: string): { title: string; detail?: string } {
   const value = description.trim();
-  const separator = [' \u2014 ', ' \u2013 ', ' - ', ' \u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u009d '].find((candidate) => value.includes(candidate)) ?? '';
+  const separator = [' — ', ' – ', ' - ', LEGACY_MOJIBAKE_EM_DASH_SEPARATOR].find((candidate) => value.includes(candidate)) ?? '';
   if (!separator) return { title: value };
 
   const [title, ...rest] = value.split(separator);
