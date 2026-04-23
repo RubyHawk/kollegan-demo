@@ -3,7 +3,7 @@
 // Phase 2 fix: mfaMethod added to preserve which MFA method was used across refreshes.
 
 import { prisma } from '@platform/database/prisma';
-import type { Session, CreateSessionInput, MfaMethod } from '../domain/session.entity';
+import type { Session, CreateSessionInput, MfaMethod, SessionUser } from '../domain/session.entity';
 
 export const sessionRepository = {
   async create(input: CreateSessionInput): Promise<Session> {
@@ -22,6 +22,32 @@ export const sessionRepository = {
 
   async findByTokenHash(hash: string): Promise<Session | null> {
     return prisma.session.findUnique({ where: { refreshTokenHash: hash } }) as Promise<Session | null>;
+  },
+
+  async findSessionUserByTokenHash(hash: string): Promise<SessionUser | null> {
+    const session = await prisma.session.findUnique({ where: { refreshTokenHash: hash } });
+    if (!session || session.revokedAt || session.expiresAt < new Date()) return null;
+
+    const user = await prisma.user.findFirst({
+      where: { id: session.userId, deletedAt: null },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        avatarUrl: true,
+        userType: true,
+        mfaEnabled: true,
+      },
+    });
+    if (!user) return null;
+
+    const userRole = await prisma.userRole
+      .findFirst({ where: { userId: session.userId }, include: { role: true } })
+      .catch(() => null);
+    const role = (userRole as { role?: { name: string } } | null)?.role?.name ?? user.userType ?? 'staff';
+
+    return { ...user, role };
   },
 
   async revoke(hash: string): Promise<void> {

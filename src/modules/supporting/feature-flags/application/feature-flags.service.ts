@@ -1,4 +1,4 @@
-import { log as logAudit } from '@modules/supporting/audit';
+import { evaluateSharedFeatureFlagRollout } from '@shared/lib/feature-flags';
 import { featureFlagsRepository } from '../infrastructure/feature-flags.repository';
 import type {
   CreateFeatureFlagInput,
@@ -10,7 +10,6 @@ import type {
   UpdateFeatureFlagInput,
 } from '../domain/feature-flag.entity';
 import { FEATURE_FLAG_AUDIT_ACTIONS } from '../domain/feature-flag.entity';
-import { evaluateFeatureFlagRollout } from '../domain/rollout';
 
 function serializeFlag(flag: FeatureFlag): Record<string, unknown> {
   return {
@@ -50,8 +49,7 @@ async function appendAudit(
     after,
     metadata: metadata ?? null,
   });
-
-  await logAudit({
+  await featureFlagsRepository.appendAuditLog({
     organizationId: flag.organizationId,
     actorId: actorId ?? null,
     action,
@@ -147,7 +145,7 @@ export async function evaluateFeatureFlag(input: FeatureFlagEvaluationInput): Pr
   const flag = await featureFlagsRepository.findByKey(input.key, input.organizationId, environment);
 
   if (!flag) return { key: input.key, enabled: false, reason: 'missing', flag: null };
-  return evaluateFeatureFlagRollout(flag, { ...input, environment });
+  return evaluateSharedFeatureFlagRollout(flag, { ...input, environment });
 }
 
 export async function listFeatureFlagAuditEvents(

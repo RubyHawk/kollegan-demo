@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
-import { getSessionUser } from '@platform/auth/session';
+import { getSessionUser } from '@modules/supporting/auth';
 import { acceptOfferOnBehalfForStaff, getStaffOfferDetail } from '@modules/supporting/offers';
 
 function fmtDate(iso?: string) {

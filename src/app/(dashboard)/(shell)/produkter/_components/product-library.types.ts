@@ -4,6 +4,7 @@ import type { OfferProduct, ProductCategory } from '@shared/lib/api/products.api
 
 export type CategorySupportState = 'available' | 'unavailable';
 export type CategoryMode = 'hierarchy' | 'custom';
+export type CategoryFilterKey = '' | 'uncategorized' | `main:${string}` | `sub:${string}` | `legacy:${string}`;
 
 export interface ProductForm {
   name: string;

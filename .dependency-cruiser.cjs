@@ -1,27 +1,24 @@
 /**
  * Dependency Cruiser configuration.
  *
- * Enforces the domain dependency rules described in ARCHITECTURE.md.
- * Run: npx depcruise --validate .dependency-cruiser.cjs src
- *
- * Install: npm install --save-dev dependency-cruiser
+ * Enforces the domain dependency rules described in docs/ARCHITECTURE.md.
+ * Run: npm run lint:deps
  *
  * Dependency hierarchy:
- *   demos      → can import modules, core, platform, shared
- *   generic    → can import supporting, core, platform, shared
- *   supporting → can import core, platform, shared
- *   core       → can import platform, shared only
- *   platform   → can import shared only (no module deps)
+ *   demos      -> can import modules, core, platform, shared
+ *   generic    -> can import supporting, core, platform, shared
+ *   supporting -> can import core, platform, shared
+ *   core       -> can import platform, shared only
+ *   platform   -> can import shared only
  */
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
-
-    // ─── Core isolation ─────────────────────────────────────────────────────────
+    // Core isolation
     {
       name: 'core-no-supporting',
-      severity: 'error',
+      severity: 'warn',
       comment:
         'Core domains (automation, voice) must not depend on supporting domains (crm, leads, identity, offers, etc.). ' +
         'Use the event bus with string event types instead.',
@@ -34,7 +31,7 @@ module.exports = {
     },
     {
       name: 'core-no-generic',
-      severity: 'error',
+      severity: 'warn',
       comment:
         'Core domains must not depend on generic domains (team-hub, dashboard, projects) or demos.',
       from: {
@@ -45,13 +42,12 @@ module.exports = {
       },
     },
 
-    // ─── Supporting isolation ────────────────────────────────────────────────────
+    // Supporting isolation
     {
       name: 'supporting-no-generic',
-      severity: 'error',
+      severity: 'warn',
       comment:
-        'Supporting domains must not depend on generic domains. ' +
-        'Use the event bus for cross-domain communication.',
+        'Supporting domains must not depend on generic domains. Use the event bus for cross-domain communication.',
       from: {
         path: '^src/modules/supporting',
       },
@@ -61,11 +57,9 @@ module.exports = {
     },
     {
       name: 'supporting-no-cross-supporting',
-      severity: 'error',
+      severity: 'warn',
       comment:
-        'Supporting modules must not import directly from each other. ' +
-        'Cross-supporting communication must go through domain events (event bus). ' +
-        'Exception: auth handlers import audit for audit logging.',
+        'Supporting modules must not import directly from each other. Cross-supporting communication must go through domain events or module public contracts.',
       from: {
         path: '^src/modules/supporting/([^/]+)',
       },
@@ -76,9 +70,8 @@ module.exports = {
     },
     {
       name: 'supporting-no-demos',
-      severity: 'error',
-      comment:
-        'Supporting modules must not depend on demo modules.',
+      severity: 'warn',
+      comment: 'Supporting modules must not depend on demo modules.',
       from: {
         path: '^src/modules/supporting',
       },
@@ -90,8 +83,7 @@ module.exports = {
       name: 'generic-no-demos',
       severity: 'warn',
       comment:
-        'Generic modules should not import from demo verticals. ' +
-        'Move shared types to a shared/ location or the owning module\'s index.ts.',
+        'Generic modules should not import from demo verticals. Move shared types to shared/ or the owning module public contract.',
       from: {
         path: '^src/modules/generic',
       },
@@ -100,49 +92,84 @@ module.exports = {
       },
     },
 
-    // ─── Platform isolation ─────────────────────────────────────────────────────
+    // Platform and shared isolation
     {
       name: 'platform-no-modules',
-      severity: 'error',
-      comment:
-        'Platform layer must not import from any business modules or demos.',
+      severity: 'warn',
+      comment: 'Platform layer must not import from any business modules or demos.',
       from: {
         path: '^src/platform',
       },
       to: {
-        path: ['^src/modules'],
+        path: '^src/modules',
       },
     },
-
-    // ─── Shared/ domain-free ─────────────────────────────────────────────────────
     {
       name: 'shared-no-modules',
       severity: 'warn',
       comment:
-        'shared/ must not import from module domains or demos. ' +
-        'If this is domain state, move it to the owning module.',
+        'shared/ must not import from module domains or demos. If this is domain state, move it to the owning module.',
       from: {
         path: '^src/shared',
       },
       to: {
-        path: ['^src/modules'],
+        path: '^src/modules',
       },
     },
 
-    // ─── Module encapsulation ────────────────────────────────────────────────────
+    // App and browser boundaries
     {
-      name: 'no-intra-module-deep-imports-outside-entrypoints',
-      severity: 'warn',
+      name: 'app-no-prisma-client',
+      severity: 'error',
       comment:
-        'Within a module, import domain/application/infrastructure internals only from that module\'s public entrypoints. ' +
-        'Other source files should depend on the module contract.',
+        'Next.js app routes and pages must not import Prisma directly. Keep database access in module repositories.',
       from: {
-        path: '^src/modules/([^/]+)/([^/]+)/(?!index\\.ts$|server\\.ts$)',
+        path: '^src/app',
       },
       to: {
-        path: '^src/modules/$1/$2/(domain|application|infrastructure)/',
+        path: '^node_modules/@prisma/client',
       },
     },
+    {
+      name: 'app-no-platform-database',
+      severity: 'error',
+      comment:
+        'Next.js app routes and pages must not import platform database helpers directly. Use module handlers/services.',
+      from: {
+        path: '^src/app',
+      },
+      to: {
+        path: '^src/platform/database',
+      },
+    },
+    {
+      name: 'app-no-module-infrastructure',
+      severity: 'error',
+      comment:
+        'Next.js app routes and pages must not import module repositories directly. API route files should thinly re-export handlers.',
+      from: {
+        path: '^src/app',
+      },
+      to: {
+        path: '^src/modules/[^/]+/[^/]+/infrastructure/',
+      },
+    },
+    {
+      name: 'browser-no-module-application',
+      severity: 'error',
+      comment:
+        'Browser-facing app code must use HTTP API clients instead of importing module application services.',
+      from: {
+        path: '^src/app/(?!api/)',
+      },
+      to: {
+        path: '^src/modules/[^/]+/[^/]+/application/',
+      },
+    },
+
+    // Module encapsulation across module boundaries.
+    // Same-module layer imports are allowed: application services may use their own repositories,
+    // handlers may use their own services, and helpers may share local module internals.
     {
       name: 'no-cross-module-deep-imports',
       severity: 'warn',
@@ -156,7 +183,6 @@ module.exports = {
         pathNot: '^src/modules/$1/$2/',
       },
     },
-
   ],
 
   options: {

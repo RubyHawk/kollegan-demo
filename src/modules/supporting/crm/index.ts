@@ -16,10 +16,12 @@ export { default as CrmTab } from './ui/components/crm-tab';
 
 // Domain types
 export type { CrmContact, CrmEntry, CallEntry } from './domain/contact.entity';
+export type { CrmActivityEvent, CrmActivitySession } from './domain/activity.entity';
 
 // Application — service layer
 export { lookupCustomer, updateCrm, startCallTranscript } from './application/crm.service';
 export type { CustomerLookupResult, CrmUpdateInput, CrmUpdateResult } from './application/crm.service';
+export { registerCrmVoiceTools } from './application/crm-voice-tools';
 
 // Infrastructure — expose upsertCustomer for voice register.ts (known cross-domain usage)
 export { upsertCustomer } from './infrastructure/contact.repository';

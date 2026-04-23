@@ -349,8 +349,7 @@ async function migrateStaffUser(staffUser: {
   createdAt: Date;
   lastLogin: Date | null;
 }): Promise<User> {
-  const { identityService } = await import('@modules/supporting/identity/application/identity.service');
-  const demoOrg = await identityService.getOrCreateDemoOrg();
+  const demoOrgId = await userRepository.findOrCreateLegacyDemoOrganizationId();
 
   const roleMap: Record<string, string> = {
     receptionist: 'user',
@@ -365,7 +364,7 @@ async function migrateStaffUser(staffUser: {
       email: staffUser.email,
       passwordHash: staffUser.passwordHash,
       userType: 'staff',
-      organizationId: demoOrg.id,
+      organizationId: demoOrgId,
     });
   } catch (err) {
     const isPrismaUniqueViolation =
@@ -381,7 +380,7 @@ async function migrateStaffUser(staffUser: {
 
   const role = await userRepository.findRoleByName(newRoleName);
   if (role) {
-    await userRepository.assignRole(user.id, role.id, demoOrg.id);
+    await userRepository.assignRole(user.id, role.id, demoOrgId);
   }
 
   logger.info(TAG, `Auto-migrated StaffUser → User: ${staffUser.email}`, {

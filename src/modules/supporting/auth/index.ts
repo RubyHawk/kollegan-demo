@@ -4,6 +4,7 @@
 export { login, logout, refreshTokens, revokeAllSessions, completeMfaLogin, getUserOrganizationId } from './application/auth.service';
 export type { LoginInput, LoginResult, MfaChallengeResult, LoginOutcome } from './application/auth.service';
 export { changeAccountPassword, getAccountProfile, updateAccountProfile } from './application/account.service';
+export { getSessionUser } from './application/server-session.service';
 export type {
   AccountProfile,
   ChangeAccountPasswordInput,
@@ -46,7 +47,7 @@ export { userRepository } from './infrastructure/user.repository';
 export { sessionRepository } from './infrastructure/session.repository';
 
 export type { User, CreateUserInput, UserType } from './domain/user.entity';
-export type { Session, CreateSessionInput } from './domain/session.entity';
+export type { Session, CreateSessionInput, SessionUser } from './domain/session.entity';
 export type { RoleName } from './domain/role.entity';
 export { SYSTEM_ROLES } from './domain/role.entity';
 

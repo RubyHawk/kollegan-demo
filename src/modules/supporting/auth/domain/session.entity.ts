@@ -24,3 +24,14 @@ export interface CreateSessionInput {
   mfaVerifiedAt?: Date;
   mfaMethod?: MfaMethod;
 }
+
+export interface SessionUser {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  avatarUrl: string | null;
+  userType: string;
+  role: string;
+  mfaEnabled: boolean;
+}

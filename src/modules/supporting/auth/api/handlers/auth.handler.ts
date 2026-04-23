@@ -1,5 +1,5 @@
 /**
- * Auth API handlers — colocated with the auth module.
+ * Auth API handlers - colocated with the auth module.
  *
  * Handlers that use createHandler() for standard request/response flows.
  * Cookie-based flows (login, logout, refresh) remain in their route files
@@ -10,24 +10,20 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import bcrypt from 'bcryptjs';
 import { checkRateLimit } from '@platform/cache/rate-limiter';
 import { signMfaChallengeToken, hashOpaqueToken } from '@platform/auth/jwt';
 import { login, logout, refreshTokens } from '../../application/auth.service';
 import type { LoginResult } from '../../application/auth.service';
-import { userRepository } from '../../infrastructure/user.repository';
+import { AUTH_AUDIT_ACTIONS, recordAuthAudit } from '../../application/auth-audit.service';
+import { registerStaffAccount } from '../../application/auth-registration.service';
 import { sessionRepository } from '../../infrastructure/session.repository';
-import { log, AUDIT_ACTIONS } from '@modules/supporting/audit';
-import { identityService } from '@modules/supporting/identity';
 import { BRAND_API_REALM, BRAND_PROBLEM_BASE } from '@shared/branding';
 
-// ── Constants ────────────────────────────────────────────────────────────────
-
-const REFRESH_TTL_SEC_STAFF    = 60 * 60 * 24 * 7;
+const REFRESH_TTL_SEC_STAFF = 60 * 60 * 24 * 7;
 const REFRESH_TTL_SEC_STAFF_REMEMBER = 60 * 60 * 24 * 30;
 const REFRESH_TTL_SEC_CUSTOMER = 60 * 60 * 24 * 30;
-const MFA_CHALLENGE_TTL_SEC    = 60 * 5;
-const ACCESS_TTL_SEC           = 60 * 15;
+const MFA_CHALLENGE_TTL_SEC = 60 * 5;
+const ACCESS_TTL_SEC = 60 * 15;
 
 const sharedCookieOpts = {
   httpOnly: true,
@@ -35,8 +31,6 @@ const sharedCookieOpts = {
   sameSite: 'lax' as const,
   path: '/',
 };
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function extractIp(req: NextRequest): string {
   return req.headers.get('x-forwarded-for')?.split(',')[0].trim()
@@ -50,8 +44,6 @@ function problemJson(type: string, title: string, status: number, detail?: strin
     { status, headers: { 'Content-Type': 'application/problem+json', ...extraHeaders } },
   );
 }
-
-// ── Login ────────────────────────────────────────────────────────────────────
 
 const LoginSchema = z.object({
   email: z.string().email(),
@@ -73,7 +65,9 @@ export async function handleLogin(req: NextRequest): Promise<NextResponse> {
   }
 
   let body: unknown;
-  try { body = await req.json(); } catch {
+  try {
+    body = await req.json();
+  } catch {
     return problemJson('bad-request', 'Bad Request', 400, 'Request body is not valid JSON');
   }
 
@@ -92,8 +86,8 @@ export async function handleLogin(req: NextRequest): Promise<NextResponse> {
   } catch (err: unknown) {
     const code = (err as { code?: string }).code;
 
-    await log({
-      action: AUDIT_ACTIONS.USER_LOGIN_FAILED,
+    await recordAuthAudit({
+      action: AUTH_AUDIT_ACTIONS.USER_LOGIN_FAILED,
       resourceType: 'User',
       resourceId: email,
       metadata: { ip: ipAddress ?? null, reason: code ?? 'unknown' },
@@ -105,8 +99,12 @@ export async function handleLogin(req: NextRequest): Promise<NextResponse> {
       });
     }
     if (code === 'MFA_SETUP_REQUIRED') {
-      return problemJson('mfa-setup-required', 'MFA Setup Required', 403,
-        'Your account requires MFA. Please contact your administrator or log in from a previous session to configure it.');
+      return problemJson(
+        'mfa-setup-required',
+        'MFA Setup Required',
+        403,
+        'Your account requires MFA. Please contact your administrator or log in from a previous session to configure it.',
+      );
     }
 
     return problemJson('internal', 'Internal Server Error', 500);
@@ -121,8 +119,8 @@ export async function handleLogin(req: NextRequest): Promise<NextResponse> {
 
   const loginResult = outcome as LoginResult;
 
-  await log({
-    action: AUDIT_ACTIONS.USER_LOGIN,
+  await recordAuthAudit({
+    action: AUTH_AUDIT_ACTIONS.USER_LOGIN,
     organizationId: loginResult.user.orgId,
     actorId: loginResult.user.id,
     actorType: 'user',
@@ -133,13 +131,18 @@ export async function handleLogin(req: NextRequest): Promise<NextResponse> {
 
   const isCustomer = loginResult.user.userType === 'customer';
   const cookieName = isCustomer ? 'portal_token' : 'token';
-  const ttlSec     = isCustomer
+  const ttlSec = isCustomer
     ? REFRESH_TTL_SEC_CUSTOMER
     : (rememberMe ? REFRESH_TTL_SEC_STAFF_REMEMBER : REFRESH_TTL_SEC_STAFF);
 
   const res = NextResponse.json({
     data: {
-      user: { id: loginResult.user.id, email: loginResult.user.email, userType: loginResult.user.userType, roles: loginResult.user.roles },
+      user: {
+        id: loginResult.user.id,
+        email: loginResult.user.email,
+        userType: loginResult.user.userType,
+        roles: loginResult.user.roles,
+      },
       ...(loginResult.mfaWarning ? { mfaWarning: { expiresAt: loginResult.mfaWarning.expiresAt } } : {}),
     },
   });
@@ -150,27 +153,27 @@ export async function handleLogin(req: NextRequest): Promise<NextResponse> {
   return res;
 }
 
-// ── Logout ───────────────────────────────────────────────────────────────────
-
 export async function handleLogout(req: NextRequest): Promise<NextResponse> {
-  const staffToken  = req.cookies.get('token')?.value;
+  const staffToken = req.cookies.get('token')?.value;
   const portalToken = req.cookies.get('portal_token')?.value;
-  const rawToken    = staffToken ?? portalToken;
+  const rawToken = staffToken ?? portalToken;
 
   if (rawToken) {
     let userId: string | undefined;
     const orgId: string | null = null;
     try {
-      const hash    = hashOpaqueToken(rawToken);
+      const hash = hashOpaqueToken(rawToken);
       const session = await sessionRepository.findByTokenHash(hash);
       if (session) userId = session.userId;
-    } catch { /* proceed to clear cookies */ }
+    } catch {
+      // Proceed to clear cookies even when session lookup fails.
+    }
 
     await logout(rawToken);
 
     if (userId) {
-      await log({
-        action: AUDIT_ACTIONS.USER_LOGOUT,
+      await recordAuthAudit({
+        action: AUTH_AUDIT_ACTIONS.USER_LOGOUT,
         organizationId: orgId,
         actorId: userId,
         actorType: 'user',
@@ -190,8 +193,6 @@ export async function handleLogout(req: NextRequest): Promise<NextResponse> {
   return res;
 }
 
-// ── Refresh ──────────────────────────────────────────────────────────────────
-
 export async function handleRefresh(req: NextRequest): Promise<NextResponse> {
   const ip = extractIp(req);
 
@@ -204,7 +205,7 @@ export async function handleRefresh(req: NextRequest): Promise<NextResponse> {
   const rawRefreshToken = req.cookies.get('token')?.value ?? req.cookies.get('portal_token')?.value;
   if (!rawRefreshToken) {
     return problemJson('unauthorized', 'Unauthorized', 401, 'No refresh token present', {
-        'WWW-Authenticate': `Bearer realm="${BRAND_API_REALM}", charset="UTF-8"`,
+      'WWW-Authenticate': `Bearer realm="${BRAND_API_REALM}", charset="UTF-8"`,
     });
   }
 
@@ -213,12 +214,12 @@ export async function handleRefresh(req: NextRequest): Promise<NextResponse> {
     result = await refreshTokens(rawRefreshToken);
   } catch {
     return problemJson('unauthorized', 'Unauthorized', 401, 'Invalid or expired refresh token', {
-        'WWW-Authenticate': `Bearer realm="${BRAND_API_REALM}", charset="UTF-8"`,
+      'WWW-Authenticate': `Bearer realm="${BRAND_API_REALM}", charset="UTF-8"`,
     });
   }
 
-  await log({
-    action: AUDIT_ACTIONS.USER_TOKEN_REFRESHED,
+  await recordAuthAudit({
+    action: AUTH_AUDIT_ACTIONS.USER_TOKEN_REFRESHED,
     organizationId: result.orgId,
     actorId: result.userId,
     actorType: 'user',
@@ -229,7 +230,7 @@ export async function handleRefresh(req: NextRequest): Promise<NextResponse> {
 
   const isCustomer = result.userType === 'customer';
   const cookieName = isCustomer ? 'portal_token' : 'token';
-  const ttlSec     = isCustomer ? REFRESH_TTL_SEC_CUSTOMER : REFRESH_TTL_SEC_STAFF;
+  const ttlSec = isCustomer ? REFRESH_TTL_SEC_CUSTOMER : REFRESH_TTL_SEC_STAFF;
 
   const res = NextResponse.json({ data: { accessToken: result.accessToken } });
   res.cookies.set(cookieName, result.refreshToken, { ...sharedCookieOpts, maxAge: ttlSec });
@@ -238,21 +239,17 @@ export async function handleRefresh(req: NextRequest): Promise<NextResponse> {
   return res;
 }
 
-// ── Register ─────────────────────────────────────────────────────────────────
-//
-// Creates a new staff user, provisions a personal default organization,
-// assigns the 'admin' role, and auto-logs them in so they land in the app
-// with a valid session (at cookie) — no separate login step required.
-
 const RegisterSchema = z.object({
-  email:    z.string().email(),
+  email: z.string().email(),
   password: z.string().min(8),
-  orgName:  z.string().min(1).max(100).optional(),
+  orgName: z.string().min(1).max(100).optional(),
 });
 
 export async function handleRegister(req: NextRequest): Promise<NextResponse> {
   let body: unknown;
-  try { body = await req.json(); } catch {
+  try {
+    body = await req.json();
+  } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
@@ -261,54 +258,18 @@ export async function handleRegister(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Email is required and password must be at least 8 characters.' }, { status: 400 });
   }
 
-  const { email, password, orgName } = parsed.data;
-  const existing = await userRepository.findByEmail(email);
-  if (existing) {
-    return NextResponse.json({ error: 'An account with that email already exists.' }, { status: 409 });
-  }
-
-  // 1. Provision a default organization for this user.
-  //    Slug is derived from the email local-part + a short time suffix for uniqueness.
-  const localPart = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 24);
-  const suffix    = Date.now().toString(36).slice(-4);
-  const orgSlug   = `${localPart}-${suffix}`;
-  const resolvedOrgName = orgName?.trim() || `${email.split('@')[0]}'s Organization`;
-  const plan = process.env.NODE_ENV === 'production' ? 'starter' : 'dev';
-  const org  = await identityService.createOrg({ name: resolvedOrgName, slug: orgSlug, plan });
-
-  // 2. Create the user assigned to the new org.
-  const passwordHash      = await bcrypt.hash(password, 12);
-  const mfaGraceExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  const user = await userRepository.create({
-    email, passwordHash, userType: 'staff',
-    organizationId: org.id, mfaGraceExpiresAt,
-  });
-
-  // 3. Grant admin role so the user can manage templates, offers, etc.
-  const adminRole = await userRepository.findRoleByName('admin');
-  if (adminRole) {
-    await userRepository.assignRole(user.id, adminRole.id, org.id, user.id);
-  }
-
-  // 4. Auto-login: issue access + refresh tokens so the browser is immediately
-  //    authenticated — no separate /login call needed after registration.
-  let loginOutcome;
   try {
-    loginOutcome = await login({ email, password });
-  } catch {
-    // If login fails for any reason, still return 201 — user can log in manually.
-    return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
+    const result = await registerStaffAccount(parsed.data);
+    const res = NextResponse.json({ id: result.user.id, email: result.user.email }, { status: 201 });
+    if (result.refreshToken && result.accessToken) {
+      res.cookies.set('token', result.refreshToken, { ...sharedCookieOpts, maxAge: REFRESH_TTL_SEC_STAFF });
+      res.cookies.set('at', result.accessToken, { ...sharedCookieOpts, maxAge: ACCESS_TTL_SEC });
+    }
+    return res;
+  } catch (err: unknown) {
+    if ((err as { code?: string }).code === 'EMAIL_EXISTS') {
+      return NextResponse.json({ error: 'An account with that email already exists.' }, { status: 409 });
+    }
+    return NextResponse.json({ error: 'Could not create account.' }, { status: 500 });
   }
-
-  if ('status' in loginOutcome) {
-    // MFA challenge (shouldn't happen for brand-new users within the grace window).
-    return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
-  }
-
-  const loginResult = loginOutcome as LoginResult;
-
-  const res = NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
-  res.cookies.set('token', loginResult.refreshToken, { ...sharedCookieOpts, maxAge: REFRESH_TTL_SEC_STAFF });
-  res.cookies.set('at',    loginResult.accessToken,  { ...sharedCookieOpts, maxAge: ACCESS_TTL_SEC });
-  return res;
 }

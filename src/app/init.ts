@@ -14,6 +14,8 @@ import { registerVoiceTools }          from '@modules/core/voice/register';
 import { registerAutomationListeners } from '@modules/core/automation/events/subscribers/domain-events.subscriber';
 import { registerOfferEmailJobs }      from '@modules/supporting/offers';
 import { registerProjectEventSubscribers } from '@modules/generic/projects';
+import { registerCrmVoiceTools } from '@modules/supporting/crm';
+import { registerHotelCrmEventSubscribers, registerHotelVoiceTools } from '@demos/hotel/server';
 import { logger }                      from '@platform/logging/logger';
 
 let initialized = false;
@@ -27,11 +29,14 @@ export function initializeApp(): void {
 
   // 1. Register all tools into the central tool registry
   registerVoiceTools();
+  registerHotelVoiceTools();
+  registerCrmVoiceTools();
   // Future: registerLeadsTools(), registerOffersTools(), ...
 
   // 2. Register all cross-module event listeners
   registerAutomationListeners();
   registerProjectEventSubscribers();
+  registerHotelCrmEventSubscribers();
   // Future: registerCrmListeners(), registerLeadsListeners(), ...
 
   // 3. Register offer email job handlers (Resend-backed, retryable)

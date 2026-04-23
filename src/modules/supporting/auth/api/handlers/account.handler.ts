@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getSessionUser } from '@platform/auth/session';
+import { getSessionUser } from '../../application/server-session.service';
 import {
   changeAccountPassword,
   getAccountProfile,

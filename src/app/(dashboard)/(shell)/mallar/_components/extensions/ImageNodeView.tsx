@@ -1,42 +1,10 @@
 'use client';
 
 /**
- * ImageNodeView — React NodeView for the CustomImage extension.
+ * React NodeView for CustomImage.
  *
- * Architecture decisions
- * ──────────────────────
- * 1. Toolbar rendered INSIDE the NodeView when `selected === true`.
- *    Driven by ProseMirror selection state (sync) — no BubbleMenu/Tippy race.
- *
- * 2. All drag operations (resize + free-move) use direct DOM writes during
- *    the drag and a single updateAttributes call on mouseup.
- *
- * 3. Layout modes
- *    ┌─────────────────────────────────────────────────────────┐
- *    │  inline / block  │  normal flow, flex or CSS float      │
- *    │  inline / float  │  CSS float with text wrapping        │
- *    │  free            │  position:absolute on NodeViewWrapper │
- *    │                  │  relative to the A4 page canvas       │
- *    └─────────────────────────────────────────────────────────┘
- *
- * 4. Layer management (free mode only)
- *    Free images form a bounded stack tracked by their `zIndex` attribute.
- *    Values are always ≥ 0.  The rank (1-based position in the sorted stack)
- *    is computed live from the document on every render.
- *
- *    bringForward / sendBackward swap the z-index of THIS image with its
- *    immediate neighbour in the stack via a single ProseMirror transaction
- *    (two setNodeAttribute calls, atomically committed).
- *
- *    Buttons are disabled at the stack boundaries — no element can move
- *    beyond the occupied range.
- *
- * 5. Free-mode drag-to-move
- *    mousedown on the image body starts a move drag.  Delta from the drag
- *    start is added to posX/posY.  The NodeViewWrapper's left/top style is
- *    mutated directly for zero-latency movement; updateAttributes fires once
- *    on mouseup.  The A4 page ancestor is found via `data-a4-page` attribute
- *    for bounds clamping.
+ * Resize and free-move drags use direct DOM writes during the drag, then a
+ * single attribute update on mouseup. Free images use zIndex for layer order.
  */
 
 import { NodeViewWrapper } from '@tiptap/react';
@@ -44,26 +12,16 @@ import type { NodeViewProps } from '@tiptap/react';
 import { useRef, useCallback, useState, useLayoutEffect } from 'react';
 import type { CSSProperties } from 'react';
 import { useHeaderFooter } from '../header-footer-context';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@shared/ui/tooltip';
 import {
   PRESENTATION_PAGE_HEIGHT,
   PRESENTATION_PAGE_WIDTH,
   syncPresentationPageHeightForActivePage,
 } from '../presentation-page-height';
+import { ImageNodeToolbar } from './image-node-toolbar';
+import type { ImgAlign, ImgFloat, ImgPosition, ImgWrapText, StackItem } from './image-node-types';
 
 const MIN_W = 80;
 const MAX_W = PRESENTATION_PAGE_WIDTH;
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type ImgPosition = 'inline' | 'free';
-type ImgFloat    = 'left' | 'right' | null;
-type ImgAlign    = 'left' | 'center' | 'right' | null;
-type ImgWrapText = 'none' | 'left' | 'right';
-
-interface StackItem { pos: number; zIndex: number }
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export function ImageNodeView({ node, updateAttributes, selected, editor, getPos }: NodeViewProps) {
   const hf = useHeaderFooter();
@@ -106,21 +64,15 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     updateAttributes(patch);
     syncPresentationPageHeightForActivePage(hf, editor?.getJSON() as object | undefined);
   }, [editor, hf, updateAttributes]);
-
-  // ── ProseMirror → page-canvas offset correction ──────────────────────────────
   //
-  // ProseMirror always sets `.ProseMirror { position: relative }` internally.
   // That makes .ProseMirror the containing block for position:absolute children,
-  // but .ProseMirror sits *inside* the body-div padding (H_PAD px from each edge
   // of data-a4-page).  Coordinates are stored relative to data-a4-page (so that
-  // posX=0,posY=0 = true page corner), so we subtract the ProseMirror offset
   // when applying left/top in the editor.
   const [pmOffset, setPmOffset] = useState({ x: 0, y: 0 });
   useLayoutEffect(() => {
     if (!isFree) return;
     const container = containerRef.current;
     if (!container) return;
-    // Walk up to .ProseMirror and to data-a4-page
     let pm: HTMLElement | null = container;
     while (pm && !pm.classList.contains('ProseMirror')) pm = pm.parentElement;
     let page: HTMLElement | null = container;
@@ -130,19 +82,11 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     const pageRect = page.getBoundingClientRect();
     const x = Math.round(pmRect.left - pageRect.left);
     const y = Math.round(pmRect.top  - pageRect.top);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPmOffset(prev => (prev.x === x && prev.y === y ? prev : { x, y }));
   }); // intentionally no deps — re-runs on every render to track header-zone changes
-
-  // Refs for direct DOM writes during drags (no React state → no re-renders)
   const containerRef = useRef<HTMLDivElement>(null);
   const resizeRef    = useRef<{ startX: number; startW: number; latestW: number } | null>(null);
-  const moveRef      = useRef<{
-    startX: number; startY: number;
-    origX: number; origY: number;
-    latestX: number; latestY: number;
-  } | null>(null);
-
-  // ── Layer management helpers ──────────────────────────────────────────────────
 
   /** Sorted (asc) list of all free images currently in the document. */
   const buildStack = (): StackItem[] => {
@@ -171,7 +115,6 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
       const p = getPos();
       return typeof p === 'number' ? p : null;
     }
-    // Fallback: scan by reference
     let found: number | null = null;
     editor?.state.doc.descendants((n, pos) => {
       if (found !== null) return false;
@@ -179,10 +122,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     });
     return found;
   };
-
-  // ── Layer rank — computed every render so it's always fresh ──────────────────
   //
-  // Both images involved in a swap re-render (their zIndex attrs changed).
   // Uninvolved images don't re-render, but their rank is unchanged anyway.
 
   let layerRank  = 1;   // 1-based
@@ -200,9 +140,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     atTop       = idx >= layerTotal - 1;
   }
 
-  // ── Layer operations ──────────────────────────────────────────────────────────
-
-  const bringForward = useCallback(() => {
+  const bringForward = () => {
     if (!editor || !isFree) return;
     const stack = buildStack();
     const mp    = myDocPos();
@@ -215,10 +153,9 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     tr.setNodeAttribute(me.pos,    'zIndex', above.zIndex);
     tr.setNodeAttribute(above.pos, 'zIndex', me.zIndex);
     editor.view.dispatch(tr);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, isFree, getPos, node]);
+  };
 
-  const sendBackward = useCallback(() => {
+  const sendBackward = () => {
     if (!editor || !isFree) return;
     const stack = buildStack();
     const mp    = myDocPos();
@@ -231,10 +168,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     tr.setNodeAttribute(me.pos,    'zIndex', below.zIndex);
     tr.setNodeAttribute(below.pos, 'zIndex', me.zIndex);
     editor.view.dispatch(tr);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, isFree, getPos, node]);
-
-  // ── Resize (bottom-right handle) ────────────────────────────────────────────
+  };
 
   const onResizeStart = useCallback(
     (e: React.MouseEvent) => {
@@ -269,19 +203,13 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     },
     [applyImagePatch, width, isFree],
   );
-
-  // ── Free-mode drag to reposition ─────────────────────────────────────────────
   //
-  // Threshold-based: we do NOT call stopPropagation so ProseMirror can create
   // a NodeSelection on simple clicks.  The drag only activates after the pointer
-  // has moved >4px, at which point we take over movement.
 
   const onMoveStart = useCallback(
     (e: React.MouseEvent) => {
       if (!isFree) return;
-      // Explicitly select this node via chain so ProseMirror processes the selection
       // synchronously and the right sidebar updates immediately.
-      // NOTE: do NOT call e.preventDefault() — ProseMirror checks event.defaultPrevented
       // in its own native mousedown handler and will skip selection if it is set.
       const p = typeof getPos === 'function' ? getPos() : null;
       if (typeof p === 'number') editor?.chain().focus().setNodeSelection(p).run();
@@ -293,7 +221,6 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
       const origX  = posX,      origY  = posY;
       let latestX  = posX,      latestY = posY;
       let dragging = false;
-      // Capture pmOffset at drag start (stable for the duration of the drag)
       const offX = pmOffset.x, offY = pmOffset.y;
 
       const onMove = (ev: MouseEvent) => {
@@ -304,12 +231,10 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
         latestX = origX + dx;
         latestY = origY + dy;
         if (isFreeWrapped) {
-          // Float-based: update margins on the wrapper
           if (wrapText === 'left')  wrapper.style.marginLeft = `${latestX}px`;
           if (wrapText === 'right') wrapper.style.marginRight = `${Math.max(0, 816 - latestX - (width ?? 200))}px`;
           wrapper.style.marginTop = `${latestY}px`;
         } else {
-          // latestX/Y are page-relative; subtract ProseMirror offset for CSS left/top
           wrapper.style.left = `${latestX - offX}px`;
           wrapper.style.top  = `${latestY - offY}px`;
         }
@@ -326,11 +251,8 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [applyImagePatch, isFree, isFreeWrapped, wrapText, posX, posY, width, getPos, editor, pmOffset],
   );
-
-  // ── Command helpers ───────────────────────────────────────────────────────────
 
   const setFloat = (f: ImgFloat) =>
     applyImagePatch({
@@ -356,7 +278,6 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
         py = Math.round(Math.max(0, imgRect.top  - pageRect.top + el.scrollTop));
       }
     }
-    // Place on top of existing free-image stack
     applyImagePatch({
       position: 'free', float: null, posX: px, posY: py,
       background: false,
@@ -381,15 +302,11 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
 
   const deleteImage = () => editor?.chain().focus().deleteSelection().run();
 
-  // ── Layout styles ─────────────────────────────────────────────────────────────
-
-  // Defensive fallback: always provide a non-zero width so images never collapse
   // when attrs are missing (e.g. legacy inserts before default-width was added).
   const imgW = width ?? (isFree ? 360 : 360);
 
   const wrapperStyle: CSSProperties = isFreeWrapped
     ? {
-        // Float-based free mode: participates in text flow, positioned via margins
         float:       wrapText as 'left' | 'right',
         marginLeft:  wrapText === 'left'  ? posX                                          : undefined,
         marginRight: wrapText === 'right' ? Math.max(0, 816 - posX - (imgW ?? 200))      : undefined,
@@ -403,7 +320,6 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
     : isFree
       ? {
           position:   'absolute',
-          // Subtract ProseMirror offset so (0,0) = true top-left of page canvas.
           // See pmOffset comment above.
           left:       posX - pmOffset.x,
           top:        posY - pmOffset.y,
@@ -434,8 +350,6 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
 
   const containerWidth = `${imgW}px`;
 
-  // ── Render ────────────────────────────────────────────────────────────────────
-
   return (
     <NodeViewWrapper draggable={!isFree} style={wrapperStyle}>
       <div
@@ -452,163 +366,39 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
         onClick={isFree ? selectSelf : undefined}
       >
 
-        {/* ── Floating toolbar — shown when selected ──────────────────────── */}
         {selected && (
-          <TooltipProvider delayDuration={120}>
-          <div
-            contentEditable={false}
-            style={{
-              position:   'absolute',
-              top:        posY < 60 ? 8 : -52,
-              left:       '50%',
-              transform:  'translateX(-50%)',
-              zIndex:     200,
-              display:    'flex',
-              alignItems: 'center',
-              gap:        2,
-              background: 'white',
-              border:     '1px solid #e2e8f0',
-              borderRadius: 8,
-              boxShadow:  '0 4px 14px rgba(0,0,0,0.13)',
-              padding:    '3px 6px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <span style={{ fontSize: 10, color: '#94a3b8', paddingRight: 2,
-              fontFamily: 'system-ui,sans-serif', userSelect: 'none' }}>
-              Layout
-            </span>
-
-            <ImgBtn active={!isFree && !imgFloat} tooltip="Infogad i text — tar upp hela raden" onClick={() => setFloat(null)}>
-              <BlockIcon />
-            </ImgBtn>
-
-            <ImgBtn active={!isFree && imgFloat === 'left'} tooltip="Text flödar till höger om bilden" onClick={() => setFloat('left')}>
-              <FloatLeftIcon />
-            </ImgBtn>
-
-            <ImgBtn active={!isFree && imgFloat === 'right'} tooltip="Text flödar till vänster om bilden" onClick={() => setFloat('right')}>
-              <FloatRightIcon />
-            </ImgBtn>
-
-            <ImgBtn active={isFree} tooltip="Fri placering — absolut position, ignorerar textflöde" onClick={isFree ? toInline : toFree}>
-              <FreeIcon />
-            </ImgBtn>
-
-            {/* Alignment — inline block mode only */}
-            {!isFree && !imgFloat && (
-              <>
-                <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
-                <ImgBtn active={!align || align === 'left'} tooltip="Vänsterjustera" onClick={() => setAlign('left')}>
-                  <AlignLeftIcon />
-                </ImgBtn>
-                <ImgBtn active={align === 'center'} tooltip="Centrera" onClick={() => setAlign('center')}>
-                  <AlignCenterIcon />
-                </ImgBtn>
-                <ImgBtn active={align === 'right'} tooltip="Högerjustera" onClick={() => setAlign('right')}>
-                  <AlignRightIcon />
-                </ImgBtn>
-              </>
+          <ImageNodeToolbar
+            align={align}
+            atBottom={atBottom}
+            atTop={atTop}
+            imgFloat={imgFloat}
+            isBackground={isBackground}
+            isFree={isFree}
+            layerRank={layerRank}
+            layerTotal={layerTotal}
+            posY={posY}
+            wrapText={wrapText}
+            onBringForward={bringForward}
+            onDelete={deleteImage}
+            onFillPage={() => applyImagePatch({
+              posX: 0,
+              posY: 0,
+              width: PRESENTATION_PAGE_WIDTH,
+              height: PRESENTATION_PAGE_HEIGHT,
+              wrapText: 'none',
+              background: false,
+            })}
+            onSendBackward={sendBackward}
+            onSetAlign={setAlign}
+            onSetFloat={setFloat}
+            onSetWrapText={setWrapText}
+            onToggleBackground={() => applyImagePatch(
+              isBackground
+                ? { background: false, zIndex: getMaxForegroundZ() + 1 }
+                : { position: 'free', wrapText: 'none', background: true, zIndex: 0 },
             )}
-
-            {/* Wrap-text controls — free mode only */}
-            {isFree && !isBackground && (
-              <>
-                <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
-                <span style={{ fontSize: 10, color: '#94a3b8', paddingRight: 1,
-                  fontFamily: 'system-ui,sans-serif', userSelect: 'none' }}>
-                  Flöde
-                </span>
-                <ImgBtn active={wrapText === 'none' || !wrapText} tooltip="Ingen textomflödning — lägger sig ovanpå text" onClick={() => setWrapText('none')}>
-                  <WrapNoneIcon />
-                </ImgBtn>
-                <ImgBtn active={wrapText === 'left'} tooltip="Text flödar till höger om bilden" onClick={() => setWrapText('left')}>
-                  <FloatLeftIcon />
-                </ImgBtn>
-                <ImgBtn active={wrapText === 'right'} tooltip="Text flödar till vänster om bilden" onClick={() => setWrapText('right')}>
-                  <FloatRightIcon />
-                </ImgBtn>
-              </>
-            )}
-
-            {/* Fill page — free mode only */}
-            {isFree && (
-              <>
-                <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
-                <ImgBtn
-                  active={false}
-                  tooltip={`Fyll hela sidan (${PRESENTATION_PAGE_WIDTH}×${PRESENTATION_PAGE_HEIGHT} px)`}
-                  onClick={() => applyImagePatch({
-                    posX: 0,
-                    posY: 0,
-                    width: PRESENTATION_PAGE_WIDTH,
-                    height: PRESENTATION_PAGE_HEIGHT,
-                    wrapText: 'none',
-                    background: false,
-                  })}
-                >
-                  <FillPageIcon />
-                </ImgBtn>
-              </>
-            )}
-
-            {/* Layer controls — free mode only */}
-            {isFree && !isBackground && layerTotal > 1 && (
-              <>
-                <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
-
-                <span style={{ fontSize: 10, color: '#94a3b8', paddingRight: 1,
-                  fontFamily: 'system-ui,sans-serif', userSelect: 'none' }}>
-                  Lager
-                </span>
-
-                <ImgBtn active={false} disabled={atBottom} tooltip="Skicka bakåt" onClick={sendBackward}>
-                  <LayerDownIcon />
-                </ImgBtn>
-
-                <span style={{
-                  fontSize: 10, minWidth: 24, textAlign: 'center',
-                  fontFamily: 'system-ui,sans-serif',
-                  color: '#475569', fontWeight: 600,
-                }}>
-                  {layerRank}/{layerTotal}
-                </span>
-
-                <ImgBtn active={false} disabled={atTop} tooltip="Flytta framåt" onClick={bringForward}>
-                  <LayerUpIcon />
-                </ImgBtn>
-              </>
-            )}
-
-            {/* Background toggle — free mode only */}
-            {isFree && (
-              <>
-                <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
-                <ImgBtn
-                  active={isBackground}
-                  tooltip={isBackground ? 'Bakgrundsbild - klicka igen for att gora den vanlig' : 'Anvand som bakgrundsbild bakom texten'}
-                  onClick={() => applyImagePatch(
-                    isBackground
-                      ? { background: false, zIndex: getMaxForegroundZ() + 1 }
-                      : { position: 'free', wrapText: 'none', background: true, zIndex: 0 }
-                  )}
-                >
-                  {/* Simple "image behind lines" icon */}
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="6" width="20" height="12" rx="2" />
-                    <path d="M2 10h20M2 14h20" strokeDasharray="3 2" />
-                  </svg>
-                </ImgBtn>
-              </>
-            )}
-
-            <div style={{ width: 1, height: 16, background: '#e2e8f0', margin: '0 2px', flexShrink: 0 }} />
-
-            <ImgBtn active={false} danger tooltip="Ta bort bild" onClick={deleteImage}>
-              <TrashIcon />
-            </ImgBtn>
-          </div>
-          </TooltipProvider>
+            onToggleFreeMode={isFree ? toInline : toFree}
+          />
         )}
 
         {/* Blue selection ring */}
@@ -663,184 +453,5 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
         )}
       </div>
     </NodeViewWrapper>
-  );
-}
-
-// ── Toolbar button ─────────────────────────────────────────────────────────────
-
-function ImgBtn({
-  active, danger, disabled, tooltip, onClick, children,
-}: {
-  active: boolean;
-  danger?: boolean;
-  disabled?: boolean;
-  tooltip: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          disabled={disabled}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            if (!disabled) onClick();
-          }}
-          className={[
-            'inline-flex h-8 w-8 items-center justify-center rounded-md border text-slate-600 transition-colors',
-            disabled ? 'cursor-default border-slate-200 bg-slate-50 opacity-40' : '',
-            !disabled && active ? 'border-blue-200 bg-blue-50 text-blue-700 shadow-sm' : '',
-            !disabled && !active && danger ? 'border-red-200 bg-white text-red-500 hover:bg-red-50' : '',
-            !disabled && !active && !danger ? 'border-transparent bg-white hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900' : '',
-          ].join(' ')}
-        >
-          {children}
-        </button>
-      </TooltipTrigger>
-      {!disabled && (
-        <TooltipContent side="bottom" align="center">
-          {tooltip}
-        </TooltipContent>
-      )}
-    </Tooltip>
-  );
-}
-
-// ── Icons ──────────────────────────────────────────────────────────────────────
-
-function BlockIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-      <rect x="2" y="7" width="16" height="6" rx="1.5"/>
-      <rect x="2" y="2" width="16" height="2" rx="1" opacity=".35"/>
-      <rect x="2" y="16" width="16" height="2" rx="1" opacity=".35"/>
-    </svg>
-  );
-}
-
-function FloatLeftIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-      <rect x="2" y="3" width="7" height="7" rx="1"/>
-      <rect x="11" y="3"  width="7" height="1.5" rx=".75" opacity=".45"/>
-      <rect x="11" y="6"  width="7" height="1.5" rx=".75" opacity=".45"/>
-      <rect x="11" y="9"  width="5" height="1.5" rx=".75" opacity=".45"/>
-      <rect x="2"  y="13" width="16" height="1.5" rx=".75" opacity=".45"/>
-      <rect x="2"  y="16" width="12" height="1.5" rx=".75" opacity=".45"/>
-    </svg>
-  );
-}
-
-function FloatRightIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-      <rect x="11" y="3" width="7" height="7" rx="1"/>
-      <rect x="2"  y="3"  width="7" height="1.5" rx=".75" opacity=".45"/>
-      <rect x="2"  y="6"  width="7" height="1.5" rx=".75" opacity=".45"/>
-      <rect x="2"  y="9"  width="5" height="1.5" rx=".75" opacity=".45"/>
-      <rect x="2"  y="13" width="16" height="1.5" rx=".75" opacity=".45"/>
-      <rect x="2"  y="16" width="12" height="1.5" rx=".75" opacity=".45"/>
-    </svg>
-  );
-}
-
-function FreeIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-      <rect x="2" y="2" width="16" height="16" rx="1.5" fill="none"
-        stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2"/>
-      <path d="M10 5.5 7.5 8h5L10 5.5zm0 9 2.5-2.5h-5L10 14.5zm-4.5-4.5L8 12.5v-5L5.5 10zm9 0L12 7.5v5l2.5-2.5z"
-        fillRule="evenodd"/>
-    </svg>
-  );
-}
-
-function AlignLeftIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <line x1="3" y1="6"  x2="21" y2="6"/>
-      <line x1="3" y1="12" x2="15" y2="12"/>
-      <line x1="3" y1="18" x2="18" y2="18"/>
-    </svg>
-  );
-}
-
-function AlignCenterIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <line x1="3"  y1="6"  x2="21" y2="6"/>
-      <line x1="6"  y1="12" x2="18" y2="12"/>
-      <line x1="4"  y1="18" x2="20" y2="18"/>
-    </svg>
-  );
-}
-
-function AlignRightIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <line x1="3"  y1="6"  x2="21" y2="6"/>
-      <line x1="9"  y1="12" x2="21" y2="12"/>
-      <line x1="6"  y1="18" x2="21" y2="18"/>
-    </svg>
-  );
-}
-
-function LayerUpIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="17 11 12 6 7 11"/>
-      <line x1="12" y1="6" x2="12" y2="18"/>
-      <line x1="4" y1="20" x2="20" y2="20"/>
-    </svg>
-  );
-}
-
-function LayerDownIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="7 13 12 18 17 13"/>
-      <line x1="12" y1="18" x2="12" y2="6"/>
-      <line x1="4" y1="4" x2="20" y2="4"/>
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="3 6 5 6 21 6"/>
-      <path d="M19 6l-1 14H6L5 6"/>
-      <path d="M10 11v6"/><path d="M14 11v6"/>
-      <path d="M9 6V4h6v2"/>
-    </svg>
-  );
-}
-
-function FillPageIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
-      <rect x="3" y="2" width="14" height="16" rx="1" fill="none" stroke="currentColor" strokeWidth="1.5"/>
-      <rect x="5" y="4" width="10" height="12" rx=".5"/>
-    </svg>
-  );
-}
-
-function WrapNoneIcon() {
-  // A square with an X inside — "no wrap"
-  return (
-    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-      <rect x="2" y="2" width="16" height="16" rx="1.5" fill="none"
-        stroke="currentColor" strokeWidth="1.5"/>
-      <line x1="6" y1="6" x2="14" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="14" y1="6" x2="6" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
   );
 }

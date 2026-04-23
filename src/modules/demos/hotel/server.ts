@@ -11,6 +11,7 @@ export {
   confirmBooking,
   getAvailableRooms,
   getAllRooms,
+  getFullState,
   lockRoom,
   logRoomsQueried,
   resetRooms,
@@ -40,6 +41,8 @@ export {
   DEMO_HOTEL_SEED_TAG,
   DEMO_HOTEL_STAFF,
 } from './domain/seed.entity';
+export { registerHotelCrmEventSubscribers } from './events/crm-record.subscriber';
+export { registerHotelVoiceTools } from './register';
 
 export type { Room, RoomType } from './domain/room.entity';
 export type { Amenity, HotelActivity, Restaurant } from './domain/service.entity';

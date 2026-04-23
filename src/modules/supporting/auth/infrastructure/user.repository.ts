@@ -47,9 +47,38 @@ export const userRepository = {
     return raw?.organizationId ?? null;
   },
 
+  async findOrCreateLegacyDemoOrganizationId(): Promise<string> {
+    const org = await prisma.organization.upsert({
+      where: { slug: 'demo' },
+      create: {
+        name: 'Grand Hotel Soleria (Demo)',
+        slug: 'demo',
+        plan: 'demo',
+      },
+      update: {
+        name: 'Grand Hotel Soleria (Demo)',
+      },
+      select: { id: true },
+    });
+    return org.id;
+  },
+
   async findByEmail(email: string): Promise<User | null> {
     const raw = await prisma.user.findFirst({
       where: { email, deletedAt: null },
+    });
+    return raw ? mapUser(raw) : null;
+  },
+
+  async findByEmailInsensitive(email: string): Promise<User | null> {
+    const raw = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: email,
+          mode: 'insensitive',
+        },
+        deletedAt: null,
+      },
     });
     return raw ? mapUser(raw) : null;
   },

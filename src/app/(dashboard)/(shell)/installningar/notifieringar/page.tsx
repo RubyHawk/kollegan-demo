@@ -5,15 +5,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, CheckCircle, Plus, Trash, WarningCircle } from '@phosphor-icons/react';
 import { cn } from '@shared/lib/utils';
 import {
+  ACTIVE_NOTIFICATION_DEFINITIONS,
+  ACTIVE_NOTIFICATION_TAGS,
+  type ActiveNotificationTag,
   getNotificationRecipients,
   updateNotificationRecipients,
   type NotificationRecipient,
 } from '@shared/lib/api/settings.api';
-import {
-  ACTIVE_NOTIFICATION_DEFINITIONS,
-  ACTIVE_NOTIFICATION_TAGS,
-  type ActiveNotificationTag,
-} from '@modules/supporting/identity/domain/notification-routing';
 
 const TONE_PILL: Record<string, string> = {
   emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/20 dark:text-emerald-400',

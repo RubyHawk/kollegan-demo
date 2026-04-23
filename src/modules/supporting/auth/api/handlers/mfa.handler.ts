@@ -21,8 +21,8 @@ import {
   consumeBackupCode,
 } from '../../application/mfa.service';
 import { completeMfaLogin } from '../../application/auth.service';
+import { AUTH_AUDIT_ACTIONS, recordAuthAudit } from '../../application/auth-audit.service';
 import { userRepository } from '../../infrastructure/user.repository';
-import { log, AUDIT_ACTIONS } from '@modules/supporting/audit';
 import { BRAND_PROBLEM_BASE } from '@shared/branding';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -184,8 +184,8 @@ export async function handleMfaVerify(req: NextRequest): Promise<NextResponse> {
   if (!totpValid) {
     const backupValid = await consumeBackupCode(userId, code);
     if (!backupValid) {
-      await log({
-        action: AUDIT_ACTIONS.USER_LOGIN_FAILED,
+      await recordAuthAudit({
+        action: AUTH_AUDIT_ACTIONS.USER_LOGIN_FAILED,
         actorId: userId, actorType: 'user',
         resourceType: 'User', resourceId: userId,
         metadata: { ip: ipAddress ?? null, reason: 'INVALID_MFA_CODE' },
@@ -200,8 +200,8 @@ export async function handleMfaVerify(req: NextRequest): Promise<NextResponse> {
 
   const result = await completeMfaLogin(userId, 'otp', ipAddress, userAgent, rememberMe);
 
-  await log({
-    action: AUDIT_ACTIONS.USER_LOGIN,
+  await recordAuthAudit({
+    action: AUTH_AUDIT_ACTIONS.USER_LOGIN,
     organizationId: result.user.orgId,
     actorId: result.user.id, actorType: 'user',
     resourceType: 'User', resourceId: result.user.id,

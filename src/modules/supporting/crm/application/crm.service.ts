@@ -1,6 +1,6 @@
 import { logger } from '@platform/logging/logger';
 import { eventBus } from '@platform/events';
-import { logActivity } from '@demos/hotel/infrastructure/room-store'; // TODO: extract to shared @platform/activity
+import { createVoiceCallLead } from './crm-lead-side-effects';
 import {
   findCustomerByPhone,
   findCustomerByName,
@@ -92,8 +92,7 @@ export async function updateCrm(input: CrmUpdateInput): Promise<CrmUpdateResult>
   // Auto-create a lead for new customers identified from voice calls (Phase 3)
   const isNewCustomer = customer.callCount === 1;
   if (isNewCustomer && (input.name ?? input.phone ?? input.email)) {
-    const { createLead } = await import('@modules/supporting/leads');
-    await createLead(
+    await createVoiceCallLead(
       {
         organizationId: DEMO_ORG_ID,
         name:           input.name ?? input.email ?? input.phone ?? 'Unknown',
@@ -101,7 +100,6 @@ export async function updateCrm(input: CrmUpdateInput): Promise<CrmUpdateResult>
         phone:          input.phone,
         company:        input.company,
         notes:          input.summary ?? input.notes,
-        source:         'voice_call',
       },
       'system',
     ).catch((err: unknown) => logger.error(TAG, 'Auto-lead creation failed', { error: err }));
@@ -146,7 +144,6 @@ export async function updateCrm(input: CrmUpdateInput): Promise<CrmUpdateResult>
     });
   }
 
-  // Broadcast to dashboard activity feed
   const displayName = input.name ?? input.email ?? input.phone ?? 'Okänd gäst';
   const contact: CrmContact = {
     name:    input.name,
@@ -157,14 +154,6 @@ export async function updateCrm(input: CrmUpdateInput): Promise<CrmUpdateResult>
     summary: input.summary,
   };
 
-  logActivity({
-    type:    'crm_contact',
-    message: input.summary
-      ? `Kundprofil: ${displayName} — ${input.summary}`
-      : `Kundprofil insamlad för ${displayName}.`,
-    metadata: contact,
-  });
-
   eventBus.publish<CrmRecordCreatedEvent>({
     type:       CRM_RECORD_CREATED,
     orgId:      DEMO_ORG_ID,
@@ -174,6 +163,9 @@ export async function updateCrm(input: CrmUpdateInput): Promise<CrmUpdateResult>
       customerId:  customer.id,
       vapiCallId:  input.vapiCallId,
       bookedRooms: input.bookedRoomIds ?? [],
+      displayName,
+      summary:     input.summary,
+      contact,
     },
   });
 

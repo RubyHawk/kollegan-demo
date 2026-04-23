@@ -5,9 +5,4 @@
  *   import { checkAvailability, lockRoom, updateCrm } from '@modules/core/voice/ai-tools';
  */
 
-export * from './availability';
-export * from './bookings';
 export * from './calendar';
-export * from './crm';
-export * from './customers';
-export * from './hotel-info';

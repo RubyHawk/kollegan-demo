@@ -14,22 +14,33 @@ import {
   buildReminderPayload,
   buildSendToRecipientPayload,
 } from './offer-email';
-import { identityService } from '@modules/supporting/identity';
-import { generateDocument, generateFallbackDocument, interpolateEmailText, sanitizeGeneratedOfferDocument } from './document-generator';
+import { interpolateEmailText, sanitizeGeneratedOfferDocument } from './document-generator';
 import { templatesRepository } from '../infrastructure/templates.repository';
 import { companiesRepository } from '../infrastructure/companies.repository';
-import { productsRepository } from '../infrastructure/products.repository';
+import { offerBrandingRepository } from '../infrastructure/offer-branding.repository';
 import { resolveOfferBranding } from './company-branding';
 import { dispatchCreatorNotification, dispatchOfferEmail, dispatchReminderEmail } from './offer-email-dispatch';
-import { prisma } from '@platform/database/prisma';
 import { summarizeOfferPricing, type OfferPricingSummary } from '../domain/pricing';
-import { computeOfferValidUntil } from '../domain/validity';
 import { assertOfferReadyForSend } from './publish-validation';
-import type { OfferBrandingProfile } from './company-branding';
-import { renderPublicOfferPdf, resolvePdfOrigin } from './offer-pdf';
-import { sanitizePublicPdfOfferDocument } from './public-offer-document';
+import { markLinkedLeadWon } from './offer-side-effects';
+import { resolveGeneratedDocumentForSend, resolveOfferSendWindow } from './offer-send-window';
+import {
+  getActorOrganizationId,
+  getOfferResponsibleUser,
+  OFFERS_SERVICE_TAG,
+  persistPublicOfferPdfSnapshot,
+  resolveOfferBrandingForOfferData,
+} from './offer-service-support';
 
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter };
+export { applyProductUnitsToOffer } from './offer-product-units';
+export { resolveGeneratedDocumentForSend, resolveOfferSendWindow } from './offer-send-window';
+export {
+  declineOfferByToken,
+  markOfferViewed,
+  signOffer,
+  viewOffer,
+} from './public-offer-actions.service';
 
 export interface StaffOfferDetail {
   offer: Offer;
@@ -39,213 +50,7 @@ export interface StaffOfferDetail {
 
 export type StaffOfferAcceptResult = 'accepted' | 'no_org' | 'not_accepted';
 
-const TAG = 'OffersService';
-
-function normalizeProductLookupValue(value: string): string {
-  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('sv-SE');
-}
-
-function buildProductFamilyLookupValue(value: string): string {
-  return normalizeProductLookupValue(
-    value
-      .replace(/\d+/g, ' ')
-      .replace(/[^a-zA-ZåäöÅÄÖ\s]/g, ' ')
-      .replace(/\s+/g, ' '),
-  );
-}
-
-function getLineItemProductCandidates(description: string): string[] {
-  const value = description.trim();
-  if (!value) return [];
-
-  const separator = [' — ', ' – ', ' - '].find((candidate) => value.includes(candidate));
-  const title = separator ? value.split(separator)[0]?.trim() ?? '' : value;
-
-  return Array.from(new Set([value, title].filter(Boolean).map(normalizeProductLookupValue)));
-}
-
-export function applyProductUnitsToOffer(offer: Offer, products: Array<{ name: string; unit?: string }>): Offer {
-  if (!offer.lineItems.length || !products.length) return offer;
-
-  const unitByName = new Map<string, string>();
-  const unitByFamily = new Map<string, string | null>();
-  products.forEach((product) => {
-    const unit = product.unit?.trim();
-    if (!unit) return;
-    const key = normalizeProductLookupValue(product.name);
-    if (!unitByName.has(key)) unitByName.set(key, unit);
-
-    const familyKey = buildProductFamilyLookupValue(product.name);
-    if (!familyKey) return;
-
-    if (!unitByFamily.has(familyKey)) {
-      unitByFamily.set(familyKey, unit);
-      return;
-    }
-
-    if (unitByFamily.get(familyKey) !== unit) {
-      unitByFamily.set(familyKey, null);
-    }
-  });
-
-  if (!unitByName.size) return offer;
-
-  let didChange = false;
-  const lineItems = offer.lineItems.map((item) => {
-    if (item.unit?.trim()) return item;
-
-    const matchedUnit = getLineItemProductCandidates(item.description)
-      .map((candidate) => unitByName.get(candidate))
-      .find((candidate): candidate is string => Boolean(candidate))
-      ?? getLineItemProductCandidates(item.description)
-        .map((candidate) => unitByFamily.get(buildProductFamilyLookupValue(candidate)) ?? undefined)
-        .find((candidate): candidate is string => Boolean(candidate));
-
-    if (!matchedUnit) return item;
-    didChange = true;
-    return { ...item, unit: matchedUnit };
-  });
-
-  return didChange ? { ...offer, lineItems } : offer;
-}
-
-async function enrichOfferLineItemUnits(offer: Offer): Promise<Offer> {
-  if (!offer.lineItems.length) return offer;
-
-  try {
-    const products = await productsRepository.list(
-      offer.organizationId,
-      undefined,
-      undefined,
-      true,
-      offer.companyId,
-    );
-    return applyProductUnitsToOffer(offer, products);
-  } catch (err) {
-    logger.warn(TAG, 'Failed to resolve product units for offer line items', { err, offerId: offer.id });
-    return offer;
-  }
-}
-
-export function resolveGeneratedDocumentForSend(input: {
-  existingGeneratedDocument?: string;
-  templateContent?: string;
-  sendSnapshot: Offer;
-  branding: OfferBrandingProfile;
-}): { generatedDocument: string; usesCurrentTemplate: boolean } {
-  const storedSnapshot = input.existingGeneratedDocument?.trim();
-  if (storedSnapshot) {
-    return {
-      generatedDocument: input.existingGeneratedDocument!,
-      usesCurrentTemplate: false,
-    };
-  }
-
-  if (input.templateContent) {
-    return {
-      generatedDocument: generateDocument(input.templateContent, input.sendSnapshot, input.branding),
-      usesCurrentTemplate: true,
-    };
-  }
-
-  return {
-    generatedDocument: generateFallbackDocument(input.sendSnapshot, input.branding),
-    usesCurrentTemplate: false,
-  };
-}
-
-export function resolveOfferSendWindow(
-  existing: Offer,
-  now: Date = new Date(),
-): {
-  sentAt: Date;
-  validUntil: Date;
-  publicTokenExpiresAt: Date;
-} {
-  const hasStoredSnapshot = Boolean(existing.generatedDocument?.trim());
-
-  if (hasStoredSnapshot) {
-    const sentAt = existing.sentAt ? new Date(existing.sentAt) : now;
-    const validUntil = new Date(existing.validUntil);
-    return {
-      sentAt,
-      validUntil,
-      publicTokenExpiresAt: existing.publicTokenExpiresAt
-        ? new Date(existing.publicTokenExpiresAt)
-        : validUntil,
-    };
-  }
-
-  const sentAt = now;
-  const validUntil = computeOfferValidUntil(sentAt, existing.validityDays ?? 30);
-  return {
-    sentAt,
-    validUntil,
-    publicTokenExpiresAt: validUntil,
-  };
-}
-async function getOfferResponsibleUser(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      email: true,
-      firstName: true,
-      lastName: true,
-    },
-  });
-
-  if (!user) return null;
-
-  const name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email;
-  return {
-    name,
-    email: user.email,
-  };
-}
-
-async function persistPublicOfferPdfSnapshot(
-  offer: Offer,
-  branding?: OfferBrandingProfile,
-): Promise<void> {
-  if (!offer.generatedDocument?.trim()) return;
-
-  try {
-    const offerWithUnits = await enrichOfferLineItemUnits(offer);
-    const resolvedBranding = branding ?? await resolveOfferBrandingForOfferData(offerWithUnits);
-    const sanitizedDocument = sanitizePublicPdfOfferDocument(
-      offerWithUnits.generatedDocument!,
-      offerWithUnits,
-      resolvedBranding,
-    );
-    const { pdfBytes, fingerprint } = await renderPublicOfferPdf({
-      documentHtml: sanitizedDocument,
-      origin: resolvePdfOrigin(),
-      offer: offerWithUnits,
-    });
-
-    await offersRepository.updateById(offerWithUnits.id, {
-      generatedPdf: pdfBytes,
-      generatedPdfFingerprint: fingerprint,
-    });
-  } catch (err) {
-    logger.warn(TAG, 'Failed to persist public offer PDF snapshot', { offerId: offer.id, err });
-  }
-}
-
-async function resolveOfferBrandingForOfferData(offer: Offer): Promise<OfferBrandingProfile> {
-  const [org, company, responsible] = await Promise.all([
-    identityService.getOrg(offer.organizationId),
-    offer.companyId ? companiesRepository.getById(offer.companyId, offer.organizationId) : Promise.resolve(null),
-    getOfferResponsibleUser(offer.createdBy),
-  ]);
-
-  return resolveOfferBranding(company, org, responsible);
-}
-
-async function getActorOrganizationId(userId: string): Promise<string | null> {
-  const { getUserOrganizationId } = await import('@modules/supporting/auth');
-  return getUserOrganizationId(userId);
-}
+const TAG = OFFERS_SERVICE_TAG;
 
 export async function createOffer(
   input: CreateOfferInput,
@@ -339,7 +144,7 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   let emailHeaderConfig: string | undefined = existing.emailHeaderConfig;
   let templateContent: string | undefined;
   const [org, company, responsible] = await Promise.all([
-    identityService.getOrg(orgId),
+    offerBrandingRepository.findOrganizationProfile(orgId),
     existing.companyId ? companiesRepository.getById(existing.companyId, orgId) : Promise.resolve(null),
     getOfferResponsibleUser(existing.createdBy),
   ]);
@@ -436,182 +241,6 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   return updated;
 }
 
-export async function viewOffer(
-  publicToken: string,
-): Promise<Offer | null> {
-  const existing = await offersRepository.findByPublicToken(publicToken);
-  if (!existing) return null;
-
-  if (existing.publicTokenExpiresAt && new Date(existing.publicTokenExpiresAt) < new Date()) {
-    return null;
-  }
-
-  return enrichOfferLineItemUnits(existing);
-}
-
-export async function markOfferViewed(
-  publicToken: string,
-  ip: string,
-  userAgent: string,
-): Promise<Offer | null> {
-  const existing = await offersRepository.findByPublicToken(publicToken);
-  if (!existing) return null;
-
-  if (existing.publicTokenExpiresAt && new Date(existing.publicTokenExpiresAt) < new Date()) {
-    return null;
-  }
-
-  let updated = existing;
-  if (existing.status === 'sent') {
-    updated = (await offersRepository.updateById(existing.id, {
-      status: 'viewed',
-      viewedAt: new Date(),
-    })) ?? existing;
-  }
-
-  void import('@modules/supporting/audit').then(({ log }) =>
-    log({
-      action: 'offer.viewed',
-      resourceType: 'Offer',
-      resourceId: existing.id,
-      organizationId: null,
-      actorId: null,
-      actorType: 'system',
-      metadata: { ip, userAgent },
-    }).catch((err: unknown) => logger.warn(TAG, 'Audit log failed for offer.viewed', { err }))
-  );
-
-  return updated;
-}
-
-export async function signOffer(
-  publicToken: string,
-  signatureImage: string,
-  ip: string,
-  userAgent: string,
-  signerName?: string,
-): Promise<Offer | null> {
-  const existing = await offersRepository.findByPublicToken(publicToken);
-  if (!existing) return null;
-
-  if (existing.publicTokenExpiresAt && new Date(existing.publicTokenExpiresAt) < new Date()) {
-    return null;
-  }
-
-  if (existing.status !== 'sent' && existing.status !== 'viewed') {
-    return null;
-  }
-
-  const final = await offersRepository.updateById(existing.id, {
-    status: 'accepted',
-    acceptedAt: new Date(),
-    signatureImage,
-    ...(signerName ? { signerName } : {}),
-  });
-  if (!final) return null;
-
-  eventBus.publish({
-    type: OFFER_ACCEPTED,
-    orgId: final.organizationId,
-    occurredAt: new Date().toISOString(),
-    payload: {
-      offerId: final.id,
-      totalIncVat: final.totalIncVat,
-      leadId: final.leadId,
-    },
-  });
-
-  if (final.leadId) {
-    const { updateLead } = await import('@modules/supporting/leads');
-    await updateLead(final.leadId, final.organizationId, { status: 'won' }, 'system').catch((err: unknown) =>
-      logger.warn(TAG, 'Failed to auto-update lead on offer signature', { err })
-    );
-  }
-
-  const org = await identityService.getOrg(final.organizationId).catch(() => null);
-  await dispatchCreatorNotification(
-    buildCreatorNotificationPayload(final, 'signed', {
-      senderEmail: org?.senderEmail,
-      senderName: org?.senderName,
-    }),
-  ).catch((err: unknown) =>
-    logger.warn(TAG, 'Failed to send creator notification', { err })
-  );
-
-  void import('@modules/supporting/audit').then(({ log }) =>
-    log({
-      action: 'offer.signed',
-      resourceType: 'Offer',
-      resourceId: final.id,
-      organizationId: null,
-      actorId: null,
-      actorType: 'system',
-      metadata: { ip, userAgent },
-    }).catch((err: unknown) => logger.warn(TAG, 'Audit log failed for offer.signed', { err }))
-  );
-
-  logger.info(TAG, `Offer signed: ${final.id}`);
-  void persistPublicOfferPdfSnapshot(final);
-  return final;
-}
-
-export async function declineOfferByToken(
-  publicToken: string,
-  comment: string | undefined,
-  ip: string,
-  userAgent: string,
-): Promise<Offer | null> {
-  const existing = await offersRepository.findByPublicToken(publicToken);
-  if (!existing) return null;
-
-  if (existing.publicTokenExpiresAt && new Date(existing.publicTokenExpiresAt) < new Date()) {
-    return null;
-  }
-
-  if (existing.status !== 'sent' && existing.status !== 'viewed') {
-    return null;
-  }
-
-  const final = await offersRepository.updateById(existing.id, {
-    status: 'declined',
-    declinedAt: new Date(),
-  });
-  if (!final) return null;
-
-  eventBus.publish({
-    type: OFFER_DECLINED,
-    orgId: final.organizationId,
-    occurredAt: new Date().toISOString(),
-    payload: { offerId: final.id },
-  });
-
-  const org = await identityService.getOrg(final.organizationId).catch(() => null);
-  await dispatchCreatorNotification(
-    buildCreatorNotificationPayload(final, 'declined', {
-      comment,
-      senderEmail: org?.senderEmail,
-      senderName: org?.senderName,
-    }),
-  ).catch((err: unknown) =>
-    logger.warn(TAG, 'Failed to send decline notification', { err })
-  );
-
-  void import('@modules/supporting/audit').then(({ log }) =>
-    log({
-      action: 'offer.declined',
-      resourceType: 'Offer',
-      resourceId: final.id,
-      organizationId: null,
-      actorId: null,
-      actorType: 'system',
-      metadata: { ip, userAgent, comment },
-    }).catch((err: unknown) => logger.warn(TAG, 'Audit log failed for offer.declined', { err }))
-  );
-
-  logger.info(TAG, `Offer declined: ${final.id}`);
-  return final;
-}
-
 export async function acceptOffer(id: string, orgId: string): Promise<Offer | null> {
   const existing = await offersRepository.findById(id, orgId);
   if (!existing) return null;
@@ -638,14 +267,9 @@ export async function acceptOffer(id: string, orgId: string): Promise<Offer | nu
     },
   });
 
-  if (updated.leadId) {
-    const { updateLead } = await import('@modules/supporting/leads');
-    await updateLead(updated.leadId, orgId, { status: 'won' }, 'system').catch((err: unknown) =>
-      logger.warn(TAG, 'Failed to auto-update lead on offer acceptance', { err })
-    );
-  }
+  await markLinkedLeadWon(updated.leadId, orgId);
 
-  const org = await identityService.getOrg(orgId).catch(() => null);
+  const org = await offerBrandingRepository.findOrganizationProfile(orgId).catch(() => null);
   await dispatchCreatorNotification(
     buildCreatorNotificationPayload(updated, 'signed', {
       senderEmail: org?.senderEmail,
@@ -788,7 +412,7 @@ export async function sendOfferReminder(id: string, orgId: string): Promise<Offe
   }
 
   const [org, company] = await Promise.all([
-    identityService.getOrg(orgId),
+    offerBrandingRepository.findOrganizationProfile(orgId),
     existing.companyId ? companiesRepository.getById(existing.companyId, orgId) : Promise.resolve(null),
   ]);
   const responsible = await getOfferResponsibleUser(existing.createdBy);

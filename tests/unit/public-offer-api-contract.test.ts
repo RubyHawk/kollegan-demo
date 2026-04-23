@@ -28,13 +28,8 @@ vi.mock('@modules/supporting/offers/application/public-offer-document', () => ({
   sanitizePublicOfferDocument: vi.fn((document) => ({ ...document, sanitized: true })),
 }));
 
-vi.mock('@modules/supporting/feature-flags', () => ({
-  evaluateFeatureFlag: vi.fn().mockResolvedValue({
-    key: 'public-offer-v2',
-    enabled: false,
-    reason: 'missing',
-    flag: null,
-  }),
+vi.mock('@modules/supporting/offers/application/public-offer-renderer.service', () => ({
+  resolvePublicOfferRendererVariant: vi.fn().mockResolvedValue('legacy'),
 }));
 
 import {
@@ -44,7 +39,7 @@ import {
   viewOffer,
 } from '@modules/supporting/offers/application/offers.service';
 import { sanitizePublicOfferDocument } from '@modules/supporting/offers/application/public-offer-document';
-import { evaluateFeatureFlag } from '@modules/supporting/feature-flags';
+import { resolvePublicOfferRendererVariant } from '@modules/supporting/offers/application/public-offer-renderer.service';
 import {
   handleDeclinePublicOffer,
   handleGetPublicOffer,
@@ -127,22 +122,15 @@ describe('public offer API contract', () => {
     expect(data).not.toHaveProperty('organizationId');
     expect(data).not.toHaveProperty('createdBy');
     expect(sanitizePublicOfferDocument).toHaveBeenCalledOnce();
-    expect(evaluateFeatureFlag).toHaveBeenCalledWith({
+    expect(resolvePublicOfferRendererVariant).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'offer_1',
       organizationId: 'org_1',
-      key: 'public-offer-v2',
-      environment: 'production',
-      contextKey: 'offer_1',
-    });
+    }));
   });
 
   it('returns next renderer variant when the public offer flag is enabled', async () => {
     vi.mocked(viewOffer).mockResolvedValue(offerFixture() as never);
-    vi.mocked(evaluateFeatureFlag).mockResolvedValue({
-      key: 'public-offer-v2',
-      enabled: true,
-      reason: 'on',
-      flag: null,
-    });
+    vi.mocked(resolvePublicOfferRendererVariant).mockResolvedValue('next');
 
     const res = await handleGetPublicOffer(request('/api/offers/public/public-token', { method: 'GET' }));
     const body = await json(res);
@@ -153,7 +141,7 @@ describe('public offer API contract', () => {
 
   it('fails open to the legacy renderer when feature flag lookup fails', async () => {
     vi.mocked(viewOffer).mockResolvedValue(offerFixture() as never);
-    vi.mocked(evaluateFeatureFlag).mockRejectedValue(new Error('flag store unavailable'));
+    vi.mocked(resolvePublicOfferRendererVariant).mockResolvedValue('legacy');
 
     const res = await handleGetPublicOffer(request('/api/offers/public/public-token', { method: 'GET' }));
     const body = await json(res);
