@@ -136,7 +136,7 @@ async function readApiError(response: Response, fallback: string) {
   }
 }
 
-export async function listCompanies(params: { search?: string } = {}): Promise<Company[]> {
+export async function listCompanies(params: { search?: string; limit?: number; offset?: number } = {}): Promise<Company[]> {
   const res = await apiGet<ApiEnvelope<{ companies: Company[] }>>(`${BASE_URL}${query(params)}`);
   return res.data.companies;
 }

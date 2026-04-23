@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPost, fetchWithRefresh } from '../api-client';
+import { apiDelete, apiGet, apiPatch, apiPost, fetchWithRefresh } from '../api-client';
 
 const BASE_URL = '/api/v1/offers';
 
@@ -59,6 +59,20 @@ export interface Offer {
   validityDays?: number;
   generatedDocument?: string | null;
   project?: OfferProjectSummary | null;
+}
+
+export interface SaveOfferPayload {
+  templateId?: string;
+  customerId?: string;
+  companyId?: string;
+  title: string;
+  priceDisplayMode: OfferPriceDisplayMode;
+  recipientName: string;
+  recipientEmail: string;
+  recipientCompany?: string;
+  notes?: string;
+  validityDays: number;
+  lineItems: OfferLineItem[];
 }
 
 export interface BlockingErrorPayload {
@@ -124,6 +138,16 @@ export async function countOffers(params: CountOffersParams = {}): Promise<Recor
 
 export async function getOffer(id: string): Promise<Offer> {
   const res = await apiGet<ApiEnvelope<Offer>>(`${BASE_URL}/${id}`);
+  return res.data;
+}
+
+export async function createOffer(payload: SaveOfferPayload): Promise<Offer> {
+  const res = await apiPost<ApiEnvelope<Offer>>(BASE_URL, payload);
+  return res.data;
+}
+
+export async function updateOffer(id: string, payload: SaveOfferPayload): Promise<Offer> {
+  const res = await apiPatch<ApiEnvelope<Offer>>(`${BASE_URL}/${id}`, payload);
   return res.data;
 }
 

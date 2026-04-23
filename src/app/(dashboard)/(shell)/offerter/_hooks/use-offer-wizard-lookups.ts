@@ -1,7 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import { listCompanies } from '@shared/lib/api/companies.api';
+import { listCustomers } from '@shared/lib/api/customers.api';
+import { listProducts } from '@shared/lib/api/products.api';
+import {
+  getTemplate,
+  listTemplates,
+  previewTemplate,
+  type TemplateBrandingPreview,
+} from '@shared/lib/api/templates.api';
 import type {
   CompanyResult,
   ContactResult,
@@ -21,6 +29,23 @@ type CompanyBranding = {
   senderName?: string | null;
   emailHeaderConfig?: unknown;
 };
+
+function toTemplateBrandingPreview(
+  branding?: CompanyBranding,
+): TemplateBrandingPreview | undefined {
+  if (!branding) return undefined;
+
+  return {
+    ...(branding.name ? { name: branding.name } : {}),
+    ...(branding.website ? { website: branding.website } : {}),
+    ...(branding.logoUrl ? { logoUrl: branding.logoUrl } : {}),
+    ...(branding.senderEmail ? { senderEmail: branding.senderEmail } : {}),
+    ...(branding.senderName ? { senderName: branding.senderName } : {}),
+    ...(typeof branding.emailHeaderConfig === 'string' && branding.emailHeaderConfig
+      ? { emailHeaderConfig: branding.emailHeaderConfig }
+      : {}),
+  };
+}
 
 type UseOfferWizardLookupsInput = {
   editingOfferId: string | null;
@@ -73,14 +98,9 @@ export function useOfferWizardLookups({
   const companySearchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (selectedCompanyId) params.set('companyId', selectedCompanyId);
-    void fetchWithRefresh(`/api/templates${params.toString() ? `?${params.toString()}` : ''}`)
-      .then(async (response) => {
-        if (response.ok) {
-          const json = await response.json() as { data: OfferTemplate[] };
-          setTemplates(json.data);
-        }
+    void listTemplates(selectedCompanyId ? { companyId: selectedCompanyId } : {})
+      .then((nextTemplates) => {
+        setTemplates(nextTemplates as OfferTemplate[]);
       })
       .catch(() => {
         /* templates unavailable - dropdown stays empty */
@@ -88,13 +108,8 @@ export function useOfferWizardLookups({
   }, [selectedCompanyId, setTemplates]);
 
   const loadServices = useCallback(async () => {
-    const params = new URLSearchParams();
-    if (selectedCompanyId) params.set('companyId', selectedCompanyId);
-    const response = await fetchWithRefresh(`/api/offers/products${params.toString() ? `?${params.toString()}` : ''}`);
-    if (response.ok) {
-      const json = await response.json() as { data: { products: OfferProduct[] } };
-      setServices(json.data.products);
-    }
+    const products = await listProducts(selectedCompanyId ? { companyId: selectedCompanyId } : {});
+    setServices(products as OfferProduct[]);
   }, [selectedCompanyId, setServices]);
 
   useEffect(() => {
@@ -120,19 +135,12 @@ export function useOfferWizardLookups({
     if (!activeTemplateId) return;
     setTplPreview({ loading: true, html: null });
     try {
-      const tplRes = await fetchWithRefresh(`/api/templates/${activeTemplateId}`);
-      if (!tplRes.ok) throw new Error(`Kunde inte hämta mall (${tplRes.status})`);
-      const tplData = await tplRes.json() as { data?: { content?: string } };
-      const content = tplData.data?.content;
-
-      const res = await fetchWithRefresh('/api/templates/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, branding: selectedCompanyBranding }),
+      const template = await getTemplate(activeTemplateId);
+      const html = await previewTemplate({
+        content: template.content ?? undefined,
+        branding: toTemplateBrandingPreview(selectedCompanyBranding),
       });
-      const json = await res.json() as { html?: string; detail?: string };
-      if (!res.ok) throw new Error(json.detail ?? `Fel ${res.status}`);
-      setTplPreview({ loading: false, html: json.html ?? '' });
+      setTplPreview({ loading: false, html });
     } catch {
       setTplPreview(null);
     }
@@ -148,11 +156,8 @@ export function useOfferWizardLookups({
     contactSearchRef.current = setTimeout(async () => {
       setContactLoading(true);
       try {
-        const res = await fetchWithRefresh(`/api/crm/contacts?search=${encodeURIComponent(query)}&limit=8`);
-        if (res.ok) {
-          const json = await res.json() as { data: { contacts: ContactResult[] } };
-          setContactResults(json.data.contacts);
-        }
+        const result = await listCustomers({ search: query, limit: 8, offset: 0 });
+        setContactResults(result.contacts as ContactResult[]);
       } catch {
         /* ignore */
       } finally {
@@ -170,11 +175,8 @@ export function useOfferWizardLookups({
     companySearchRef.current = setTimeout(async () => {
       setCompanyLoading(true);
       try {
-        const res = await fetchWithRefresh(`/api/companies?search=${encodeURIComponent(query)}&limit=8`);
-        if (res.ok) {
-          const json = await res.json() as { data: { companies: CompanyResult[] } };
-          setCompanyResults(json.data.companies ?? []);
-        }
+        const companies = await listCompanies({ search: query, limit: 8, offset: 0 });
+        setCompanyResults(companies as CompanyResult[]);
       } catch {
         /* ignore */
       } finally {
@@ -204,7 +206,7 @@ export function useOfferWizardLookups({
         .filter(Boolean)[0];
       items[idx] = {
         ...items[idx],
-        description: product.name + (product.description ? ` — ${product.description}` : ''),
+        description: product.name + (product.description ? ` - ${product.description}` : ''),
         unitPrice: product.unitPrice,
         vatRate: product.vatRate,
         productId: product.id,
@@ -226,18 +228,14 @@ export function useOfferWizardLookups({
     setLivePreviewHtml(null);
     setCachedTplContent(null);
     try {
-      const tplRes = await fetchWithRefresh(`/api/templates/${templateId}`);
-      if (!tplRes.ok) throw new Error();
-      const tplData = await tplRes.json() as { data?: { content?: string } };
-      const content = tplData.data?.content ?? null;
+      const template = await getTemplate(templateId);
+      const content = template.content ?? null;
       setCachedTplContent(content);
-      const res = await fetchWithRefresh('/api/templates/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, branding: selectedCompanyBranding }),
+      const html = await previewTemplate({
+        content: content ?? undefined,
+        branding: toTemplateBrandingPreview(selectedCompanyBranding),
       });
-      const json = await res.json() as { html?: string };
-      setLivePreviewHtml(json.html ?? null);
+      setLivePreviewHtml(html || null);
     } catch {
       /* ignore */
     } finally {

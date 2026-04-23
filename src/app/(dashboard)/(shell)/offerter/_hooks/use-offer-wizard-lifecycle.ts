@@ -1,7 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, type MutableRefObject } from 'react';
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import {
+  getTemplate,
+  previewTemplate,
+  type TemplateBrandingPreview,
+} from '@shared/lib/api/templates.api';
 import { deriveValidityDays } from '@modules/supporting/offers/domain/validity';
 import type { ContactResult, Offer, OfferForm } from '../_store/types';
 import { EMPTY_LINE } from '../_store/types';
@@ -15,6 +19,23 @@ type CompanyBranding = {
   senderName?: string | null;
   emailHeaderConfig?: unknown;
 };
+
+function toTemplateBrandingPreview(
+  branding?: CompanyBranding,
+): TemplateBrandingPreview | undefined {
+  if (!branding) return undefined;
+
+  return {
+    ...(branding.name ? { name: branding.name } : {}),
+    ...(branding.website ? { website: branding.website } : {}),
+    ...(branding.logoUrl ? { logoUrl: branding.logoUrl } : {}),
+    ...(branding.senderEmail ? { senderEmail: branding.senderEmail } : {}),
+    ...(branding.senderName ? { senderName: branding.senderName } : {}),
+    ...(typeof branding.emailHeaderConfig === 'string' && branding.emailHeaderConfig
+      ? { emailHeaderConfig: branding.emailHeaderConfig }
+      : {}),
+  };
+}
 
 type UseOfferWizardLifecycleInput = {
   dismissNotices: () => void;
@@ -116,26 +137,20 @@ export function useOfferWizardLifecycle({
     setContactResults([]);
 
     if (offer.templateId) {
+      const templateId = offer.templateId;
       void (async () => {
         setLivePreviewLoading(true);
         try {
-          const tplRes = await fetchWithRefresh(`/api/templates/${offer.templateId}`);
-          if (!tplRes.ok) throw new Error();
-          const tplData = await tplRes.json() as { data?: { content?: string } };
-          const content = tplData.data?.content ?? null;
+          const template = await getTemplate(templateId);
+          const content = template.content ?? null;
           setCachedTplContent(content);
           if (content) {
-            const res = await fetchWithRefresh('/api/templates/preview', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                content,
-                branding: selectedCompanyBranding,
-                offer: { priceDisplayMode },
-              }),
+            const html = await previewTemplate({
+              content,
+              branding: toTemplateBrandingPreview(selectedCompanyBranding),
+              offer: { priceDisplayMode },
             });
-            const json = await res.json() as { html?: string };
-            setLivePreviewHtml(json.html ?? null);
+            setLivePreviewHtml(html || null);
           }
         } catch {
           /* ignore */
