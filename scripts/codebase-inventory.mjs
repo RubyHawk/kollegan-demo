@@ -337,6 +337,10 @@ function renderInventory() {
 
   const monoliths = largeFiles.filter((item) => item.lines > 1000);
   const warnings = largeFiles.filter((item) => item.lines <= 1000);
+  const demoApiRoutes = apiRoutes.filter((route) => route.kind === 'demo-api-route');
+  const publicAndIntegrationApiRoutes = apiRoutes.filter(
+    (route) => route.kind === 'public-document-route' || route.kind === 'integration-or-ops-route',
+  );
   const legacyWrappers = apiRoutes
     .filter((route) => route.kind === 'legacy-compat-wrapper')
     .map((route) => [route.file]);
@@ -421,8 +425,9 @@ Static analysis is a triage tool, not deletion proof. A \`dead-candidate\` still
 | API v1 route files | ${apiRoutes.filter((route) => route.kind === 'api-v1').length} |
 | Feature API clients | ${featureApiClients.length} |
 | Legacy API compatibility wrappers | ${legacyWrappers.length} |
-| Demo API routes | ${apiRoutes.filter((route) => route.kind === 'demo-api-route').length} |
-| Public/integration API routes | ${retainedNonVersionedApiRoutes.length} |
+| Demo API routes | ${demoApiRoutes.length} |
+| Public/integration API routes | ${publicAndIntegrationApiRoutes.length} |
+| Retained non-versioned API routes | ${retainedNonVersionedApiRoutes.length} |
 | Literal legacy \`/api/*\` references outside route files | ${legacyLiteralApiReferences.length} |
 | Dead-candidate review rows | ${deadCandidates.length} |
 

@@ -4,6 +4,12 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 concurrency:
   group: quality-gates-${{ github.event.pull_request.number || github.ref }}
@@ -20,16 +26,22 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          cache: npm
+
+      - name: Restore npm cache
+        id: npm-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
 
       - name: Restore lint cache
-        uses: actions/cache@v4
+        id: lint-cache
+        uses: actions/cache/restore@v4
         with:
           path: .next/cache/eslint
-          key: ${{ runner.os }}-lint-${{ hashFiles('package-lock.json') }}-${{ github.ref_name }}-${{ github.sha }}
+          key: ${{ runner.os }}-lint-${{ hashFiles('package-lock.json', 'eslint.config.*', '.eslintrc*', 'tsconfig*.json') }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-lint-${{ hashFiles('package-lock.json') }}-${{ github.ref_name }}-
-            ${{ runner.os }}-lint-${{ hashFiles('package-lock.json') }}-
+            ${{ runner.os }}-lint-${{ hashFiles('package-lock.json', 'eslint.config.*', '.eslintrc*', 'tsconfig*.json') }}-
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
@@ -45,6 +57,11 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: npm run typecheck
+
       - name: Migration safety
         run: npm run check:migrations
 
@@ -59,28 +76,48 @@ jobs:
       - name: File-size guard
         run: npm run check:file-size
 
+      - name: Save npm cache
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.npm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.npm
+          key: ${{ steps.npm-cache.outputs.cache-primary-key }}
+
+      - name: Save lint cache
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.lint-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .next/cache/eslint
+          key: ${{ steps.lint-cache.outputs.cache-primary-key }}
+
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          cache: npm
+
+      - name: Restore npm cache
+        id: npm-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
 
       - name: Restore build caches
-        uses: actions/cache@v4
+        id: build-cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             .next/cache
             tsconfig.tsbuildinfo
-          key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-${{ github.ref_name }}-${{ github.sha }}
+          key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json', 'next.config.ts', 'tsconfig*.json', 'prisma/schema/**/*.prisma') }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-${{ github.ref_name }}-
-            ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-
+            ${{ runner.os }}-build-${{ hashFiles('package-lock.json', 'next.config.ts', 'tsconfig*.json', 'prisma/schema/**/*.prisma') }}-
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
@@ -90,15 +127,19 @@ jobs:
           DATABASE_URL: postgresql://user:pass@localhost:5432/kollegan?schema=public
         run: npx prisma generate
 
-      - name: Typecheck
-        env:
-          NODE_OPTIONS: --max-old-space-size=4096
-        run: npm run typecheck
-
       - name: Build
         env:
           NODE_OPTIONS: --max-old-space-size=4096
         run: npm run build
+
+      - name: Save build caches
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.build-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .next/cache
+            tsconfig.tsbuildinfo
+          key: ${{ steps.build-cache.outputs.cache-primary-key }}
 
   safety:
     runs-on: ubuntu-latest
