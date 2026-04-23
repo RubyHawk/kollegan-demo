@@ -52,11 +52,14 @@ jobs:
       - name: Package Next build artifact
         run: tar -czf kollegan-next-build.tar.gz .next
 
-      - name: Upload Next build artifact
+      - name: Package deploy bundle
+        run: tar -czf kollegan-deploy-bundle.tar.gz kollegan-next-build.tar.gz scripts/deploy-release.sh
+
+      - name: Upload deploy bundle
         uses: actions/upload-artifact@v4
         with:
-          name: next-build-${{ github.sha }}
-          path: kollegan-next-build.tar.gz
+          name: deploy-bundle-${{ github.sha }}
+          path: kollegan-deploy-bundle.tar.gz
           if-no-files-found: error
           retention-days: 1
 
@@ -74,20 +77,20 @@ jobs:
     needs:
       - build_release
     steps:
-      - name: Download Next build artifact
+      - name: Download deploy bundle
         uses: actions/download-artifact@v4
         with:
-          name: next-build-${{ github.sha }}
+          name: deploy-bundle-${{ github.sha }}
           path: .
 
-      - name: Copy build artifact to VPS
+      - name: Copy deploy bundle to VPS
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 2222
-          source: kollegan-next-build.tar.gz
+          source: kollegan-deploy-bundle.tar.gz
           target: /tmp/kollegan-release
           overwrite: true
 
@@ -100,6 +103,8 @@ jobs:
           port: 2222
           script: |
             set -euo pipefail
-            cd /var/www/offert
+            mkdir -p /tmp/kollegan-release
+            tar -xzf /tmp/kollegan-release/kollegan-deploy-bundle.tar.gz -C /tmp/kollegan-release
+            chmod +x /tmp/kollegan-release/scripts/deploy-release.sh
             HEALTHCHECK_URLS="${{ secrets.DEPLOY_HEALTHCHECK_URLS }}" \
-            bash scripts/deploy-release.sh /tmp/kollegan-release/kollegan-next-build.tar.gz ${{ github.sha }}
+            bash /tmp/kollegan-release/scripts/deploy-release.sh /tmp/kollegan-release/kollegan-next-build.tar.gz ${{ github.sha }}
