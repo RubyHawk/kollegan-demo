@@ -7,6 +7,7 @@ import { offersRepository } from '../infrastructure/offers.repository';
 import { buildCreatorNotificationPayload } from './offer-email';
 import { dispatchCreatorNotification } from './offer-email-dispatch';
 import { enrichOfferLineItemUnits } from './offer-product-units';
+import { markLinkedLeadWon, recordPublicOfferAudit } from './offer-side-effects';
 import { OFFERS_SERVICE_TAG, persistPublicOfferPdfSnapshot } from './offer-service-support';
 
 function isPublicOfferExpired(offer: Offer): boolean {
@@ -15,24 +16,6 @@ function isPublicOfferExpired(offer: Offer): boolean {
 
 function canCustomerRespondToOffer(offer: Offer): boolean {
   return offer.status === 'sent' || offer.status === 'viewed';
-}
-
-function logPublicOfferAudit(
-  action: 'offer.viewed' | 'offer.signed' | 'offer.declined',
-  offerId: string,
-  metadata: Record<string, string | undefined>,
-): void {
-  void import('@modules/supporting/audit').then(({ log }) =>
-    log({
-      action,
-      resourceType: 'Offer',
-      resourceId: offerId,
-      organizationId: null,
-      actorId: null,
-      actorType: 'system',
-      metadata,
-    }).catch((err: unknown) => logger.warn(OFFERS_SERVICE_TAG, `Audit log failed for ${action}`, { err }))
-  );
 }
 
 export async function viewOffer(
@@ -68,7 +51,7 @@ export async function markOfferViewed(
     })) ?? existing;
   }
 
-  logPublicOfferAudit('offer.viewed', existing.id, { ip, userAgent });
+  recordPublicOfferAudit('offer.viewed', existing.id, { ip, userAgent });
 
   return updated;
 }
@@ -110,12 +93,7 @@ export async function signOffer(
     },
   });
 
-  if (final.leadId) {
-    const { updateLead } = await import('@modules/supporting/leads');
-    await updateLead(final.leadId, final.organizationId, { status: 'won' }, 'system').catch((err: unknown) =>
-      logger.warn(OFFERS_SERVICE_TAG, 'Failed to auto-update lead on offer signature', { err })
-    );
-  }
+  await markLinkedLeadWon(final.leadId, final.organizationId);
 
   const org = await offerBrandingRepository.findOrganizationProfile(final.organizationId).catch(() => null);
   await dispatchCreatorNotification(
@@ -127,7 +105,7 @@ export async function signOffer(
     logger.warn(OFFERS_SERVICE_TAG, 'Failed to send creator notification', { err })
   );
 
-  logPublicOfferAudit('offer.signed', final.id, { ip, userAgent });
+  recordPublicOfferAudit('offer.signed', final.id, { ip, userAgent });
 
   logger.info(OFFERS_SERVICE_TAG, `Offer signed: ${final.id}`);
   void persistPublicOfferPdfSnapshot(final);
@@ -175,7 +153,7 @@ export async function declineOfferByToken(
     logger.warn(OFFERS_SERVICE_TAG, 'Failed to send decline notification', { err })
   );
 
-  logPublicOfferAudit('offer.declined', final.id, { ip, userAgent, comment });
+  recordPublicOfferAudit('offer.declined', final.id, { ip, userAgent, comment });
 
   logger.info(OFFERS_SERVICE_TAG, `Offer declined: ${final.id}`);
   return final;
