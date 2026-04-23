@@ -15,6 +15,7 @@ import {
 } from '../_components/theme-data';
 import { THEME_COOKIE_KEYS, setThemePreferenceCookie, THEME_STORAGE_KEYS } from '@shared/lib/theme-preferences';
 import { AppearanceSettingsView, FONT_SIZE_OPTIONS } from './appearance-settings-sections';
+import { OrganizationThemeSettingsCard } from './organization-theme-settings-card';
 
 const DEFAULT_THEME = THEMES.find((item) => item.id === DEFAULT_THEME_ID) ?? THEMES[0];
 
@@ -227,22 +228,25 @@ export default function UtseendePage() {
   );
 
   return (
-    <AppearanceSettingsView
-      theme={theme}
-      fontSize={fontSize}
-      selectedTheme={selectedTheme}
-      fontFamily={fontFamily}
-      resolvedDark={resolvedDark}
-      pending={pending}
-      saved={saved}
-      activeTheme={activeTheme}
-      activeFont={activeFont}
-      activeFontSize={activeFontSize}
-      applyTheme={applyTheme}
-      applySelectedTheme={applySelectedTheme}
-      applyFont={applyFont}
-      applyFontSize={applyFontSize}
-      save={save}
-    />
+    <div className="space-y-5">
+      <AppearanceSettingsView
+        theme={theme}
+        fontSize={fontSize}
+        selectedTheme={selectedTheme}
+        fontFamily={fontFamily}
+        resolvedDark={resolvedDark}
+        pending={pending}
+        saved={saved}
+        activeTheme={activeTheme}
+        activeFont={activeFont}
+        activeFontSize={activeFontSize}
+        applyTheme={applyTheme}
+        applySelectedTheme={applySelectedTheme}
+        applyFont={applyFont}
+        applyFontSize={applyFontSize}
+        save={save}
+      />
+      <OrganizationThemeSettingsCard />
+    </div>
   );
 }

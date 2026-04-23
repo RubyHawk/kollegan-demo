@@ -61,6 +61,13 @@ const UpdateEmailSettingsBodySchema = z.object({
   emailHeaderConfig: z.string().max(5_000).nullable().optional(),
 });
 
+const UpdateThemeSettingsBodySchema = z.object({
+  themeMode: z.enum(['light', 'dark', 'auto']).nullable().optional(),
+  themeAccent: z.string().max(50).nullable().optional(),
+  themeFontFamily: z.string().max(50).nullable().optional(),
+  themeFontSize: z.enum(['small', 'medium', 'large']).nullable().optional(),
+});
+
 const RecipientSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email().max(254),
@@ -113,6 +120,56 @@ export const handleUpdateOrgEmailSettings = createHandler(
       senderEmail: org.senderEmail ?? null,
       senderName: org.senderName ?? null,
       emailHeaderConfig: org.emailHeaderConfig ?? null,
+    });
+  },
+);
+
+export const handleGetOrgThemeSettings = createHandler(
+  { auth: 'jwt', tag: 'Org:ThemeSettings:Get', rateLimit: { max: 60, windowMs: 60_000 } },
+  async (ctx) => {
+    const { req } = ctx as { req: NextRequest };
+    const payload = await verifyToken(extractToken(req));
+    if (!payload.orgId) throw Errors.forbidden('No organization context');
+
+    const org = await identityService.getOrg(payload.orgId);
+    if (!org) throw Errors.notFound('Organization not found');
+
+    return ok({
+      themeMode: org.themeMode ?? null,
+      themeAccent: org.themeAccent ?? null,
+      themeFontFamily: org.themeFontFamily ?? null,
+      themeFontSize: org.themeFontSize ?? null,
+      canManage: isStaffUser(payload),
+    });
+  },
+);
+
+export const handleUpdateOrgThemeSettings = createHandler(
+  {
+    auth: 'jwt',
+    tag: 'Org:ThemeSettings:Update',
+    body: UpdateThemeSettingsBodySchema,
+    rateLimit: { max: 30, windowMs: 60_000 },
+  },
+  async (ctx) => {
+    const { body, req } = ctx as { body: z.infer<typeof UpdateThemeSettingsBodySchema>; req: NextRequest };
+    const payload = await verifyToken(extractToken(req));
+    if (!payload.orgId) throw Errors.forbidden('No organization context');
+    if (!isStaffUser(payload)) throw Errors.forbidden('Only staff users can manage organization theme defaults');
+
+    const org = await identityService.updateOrgThemeSettings(payload.orgId, {
+      themeMode: body.themeMode,
+      themeAccent: body.themeAccent,
+      themeFontFamily: body.themeFontFamily,
+      themeFontSize: body.themeFontSize,
+    });
+
+    return ok({
+      themeMode: org.themeMode ?? null,
+      themeAccent: org.themeAccent ?? null,
+      themeFontFamily: org.themeFontFamily ?? null,
+      themeFontSize: org.themeFontSize ?? null,
+      canManage: true,
     });
   },
 );

@@ -12,6 +12,8 @@ export { identityService } from './application/identity.service';
 export {
   handleGetOrgEmailSettings,
   handleUpdateOrgEmailSettings,
+  handleGetOrgThemeSettings,
+  handleUpdateOrgThemeSettings,
   handleGetOrgNotificationRecipients,
   handleUpdateOrgNotificationRecipients,
 } from './api/handlers/org-settings.handler';
