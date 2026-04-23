@@ -179,7 +179,7 @@ export function buildPublicPdfHtml(
     function normalizeOfferText(text) {
       return normalizeBrokenSwedish(text)
         .replace(/Å-pris/g, 'À-pris')
-        .replace(/\bA-pris\b/g, 'À-pris')
+        .replace(/\\bA-pris\\b/g, 'À-pris')
         .replace(/\u00c3\u2026/g, 'Å')
         .replace(/\u00c3\u201e/g, 'Ä')
         .replace(/\u00c3\u2013/g, 'Ö')
@@ -193,7 +193,7 @@ export function buildPublicPdfHtml(
 
     function compactDateText(value) {
       var trimmed = normalizeOfferText(value).trim();
-      var parts = trimmed.match(/^(\d{1,2})\s+([A-Za-zÅÄÖåäö.]+)\s+(\d{4})$/);
+      var parts = trimmed.match(/^(\\d{1,2})\\s+([A-Za-zÅÄÖåäö.]+)\\s+(\\d{4})$/);
       if (!parts) return trimmed;
 
       var monthValue = parts[2].toLocaleLowerCase('sv-SE').replace(/\\.$/, '');
