@@ -33,9 +33,13 @@ jobs:
         run: npm test
 
       - name: Typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: npm run typecheck
 
       - name: Build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: npm run build
 
       - name: Migration safety
