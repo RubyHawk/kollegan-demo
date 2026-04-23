@@ -22,6 +22,7 @@ import { resolveOfferBranding } from './company-branding';
 import { dispatchCreatorNotification, dispatchOfferEmail, dispatchReminderEmail } from './offer-email-dispatch';
 import { summarizeOfferPricing, type OfferPricingSummary } from '../domain/pricing';
 import { assertOfferReadyForSend } from './publish-validation';
+import { markLinkedLeadWon } from './offer-side-effects';
 import { resolveGeneratedDocumentForSend, resolveOfferSendWindow } from './offer-send-window';
 import {
   getActorOrganizationId,
@@ -266,12 +267,7 @@ export async function acceptOffer(id: string, orgId: string): Promise<Offer | nu
     },
   });
 
-  if (updated.leadId) {
-    const { updateLead } = await import('@modules/supporting/leads');
-    await updateLead(updated.leadId, orgId, { status: 'won' }, 'system').catch((err: unknown) =>
-      logger.warn(TAG, 'Failed to auto-update lead on offer acceptance', { err })
-    );
-  }
+  await markLinkedLeadWon(updated.leadId, orgId);
 
   const org = await offerBrandingRepository.findOrganizationProfile(orgId).catch(() => null);
   await dispatchCreatorNotification(
