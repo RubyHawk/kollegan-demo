@@ -3,7 +3,7 @@
 /* eslint react-hooks/exhaustive-deps: "off" */
 
 import { useEffect, useCallback, useRef, useMemo, useState } from 'react';
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import { previewTemplate } from '@shared/lib/api/templates.api';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import { useToast } from '@shared/ui/toast/toast-context';
 import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '@modules/supporting/offers/domain/pricing';
@@ -245,24 +245,20 @@ export default function OffersPage() {
       try {
         setLivePreviewLoading(true);
         setPreviewDirty(false);
-        const res = await fetchWithRefresh('/api/templates/preview', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content,
-            branding: selectedCompanyBranding,
-            offer: {
-              priceDisplayMode: enforcedPriceDisplayMode,
-              title:            currentForm.title            || undefined,
-              recipientName:    currentForm.recipientName    || undefined,
-              recipientEmail:   currentForm.recipientEmail   || undefined,
-              recipientCompany: currentForm.recipientCompany || undefined,
-              notes:            currentForm.notes            || undefined,
-              lineItems:        validItems.length > 0 ? validItems : undefined,
-            },
-          }),
+        const html = await previewTemplate({
+          content,
+          branding: selectedCompanyBranding,
+          offer: {
+            priceDisplayMode: enforcedPriceDisplayMode,
+            title:            currentForm.title            || undefined,
+            recipientName:    currentForm.recipientName    || undefined,
+            recipientEmail:   currentForm.recipientEmail   || undefined,
+            recipientCompany: currentForm.recipientCompany || undefined,
+            notes:            currentForm.notes            || undefined,
+            lineItems:        validItems.length > 0 ? validItems : undefined,
+          },
         });
-        const j = await res.json() as { html?: string };
-        if (j.html) setLivePreviewHtml(j.html);
+        if (html) setLivePreviewHtml(html);
       } catch { /* ignore */ } finally {
         setLivePreviewLoading(false);
         setActiveField(null);

@@ -27,6 +27,8 @@ jobs:
       - name: AI proxy consistency
         run: npm run check:ai-proxies
 
+      - name: Dependency boundaries
+        run: npm run lint:deps
       - name: Text encoding guard
         run: npm run check:encoding
 
