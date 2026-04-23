@@ -1,45 +1,43 @@
-import { fetchWithRefresh } from '../api-client';
+import { listAnnouncements } from './announcements.api';
+import { listCustomers } from './customers.api';
+import { listLeads } from './leads.api';
+import { listMeetings } from './meetings.api';
+import { listOffers } from './offers.api';
+import { listProjects } from './projects.api';
 
-async function readApiError(response: Response, fallback: string) {
-  const contentType = response.headers.get('content-type') ?? '';
+export type ReportRows = Record<string, unknown>[];
+export type ReportRowsLoader = () => Promise<ReportRows>;
 
-  try {
-    if (contentType.includes('application/problem+json')) {
-      const problem = await response.json() as { detail?: string; title?: string };
-      return problem.detail ?? problem.title ?? fallback;
-    }
-
-    if (contentType.includes('application/json')) {
-      const json = await response.json() as {
-        detail?: string;
-        title?: string;
-        error?: string | { message?: string };
-        message?: string;
-      };
-      const errorMessage = typeof json.error === 'string' ? json.error : json.error?.message;
-      return json.detail ?? json.title ?? errorMessage ?? json.message ?? fallback;
-    }
-
-    const text = await response.text();
-    return text || fallback;
-  } catch {
-    return fallback;
-  }
+function asRows(rows: unknown[]): ReportRows {
+  return rows as ReportRows;
 }
 
-export async function loadReportRows(endpoint: string): Promise<Record<string, unknown>[]> {
-  const res = await fetchWithRefresh(endpoint);
-  if (!res.ok) throw new Error(await readApiError(res, `Fel ${res.status}`));
+export async function loadContactsReportRows(): Promise<ReportRows> {
+  const data = await listCustomers({ limit: 1000, offset: 0 });
+  return asRows(data.contacts.length > 0 ? data.contacts : data.customers);
+}
 
-  const json = await res.json() as Record<string, unknown>;
-  const envelope = (json.data as Record<string, unknown> | undefined) ?? json;
-  let rows: Record<string, unknown>[] = [];
-  for (const val of Object.values(envelope)) {
-    if (Array.isArray(val)) {
-      rows = val as Record<string, unknown>[];
-      break;
-    }
-  }
+export async function loadLeadsReportRows(): Promise<ReportRows> {
+  const data = await listLeads({ limit: 1000, offset: 0 });
+  return asRows(data.leads);
+}
 
-  return rows.length > 0 ? rows : [envelope];
+export async function loadOffersReportRows(): Promise<ReportRows> {
+  const data = await listOffers({ limit: 1000, offset: 0 });
+  return asRows(data.offers);
+}
+
+export async function loadProjectsReportRows(): Promise<ReportRows> {
+  const data = await listProjects({ limit: 1000, offset: 0 });
+  return asRows(data.projects);
+}
+
+export async function loadMeetingsReportRows(): Promise<ReportRows> {
+  const data = await listMeetings({ limit: 100, offset: 0 });
+  return asRows(data.meetings);
+}
+
+export async function loadAnnouncementsReportRows(): Promise<ReportRows> {
+  const data = await listAnnouncements({ limit: 100, offset: 0 });
+  return asRows(data.announcements);
 }

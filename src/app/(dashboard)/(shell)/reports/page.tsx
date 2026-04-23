@@ -8,7 +8,15 @@
  */
 
 import { useState } from 'react';
-import { loadReportRows } from '@shared/lib/api/reports.api';
+import {
+  loadAnnouncementsReportRows,
+  loadContactsReportRows,
+  loadLeadsReportRows,
+  loadMeetingsReportRows,
+  loadOffersReportRows,
+  loadProjectsReportRows,
+  type ReportRowsLoader,
+} from '@shared/lib/api/reports.api';
 
 interface Report {
   id:       string;
@@ -16,7 +24,7 @@ interface Report {
   desc:     string;
   category: string;
   color:    string;
-  endpoint: string;
+  loadRows: ReportRowsLoader;
 }
 
 const REPORTS: Report[] = [
@@ -24,37 +32,37 @@ const REPORTS: Report[] = [
     id: 'contacts-export', name: 'Kontaktexport',
     desc: 'Fullständig export av alla kunder och kontakter med historik.',
     category: 'CRM', color: 'text-[var(--accent)] bg-[var(--accent)]/10',
-    endpoint: '/api/v1/kunder?limit=1000&offset=0',
+    loadRows: loadContactsReportRows,
   },
   {
     id: 'leads-export', name: 'Leadsexport',
     desc: 'Alla leads med status, källa, poäng och estimerat värde.',
     category: 'CRM', color: 'text-violet-600 dark:text-violet-400 bg-violet-500/10',
-    endpoint: '/api/v1/leads?limit=1000&offset=0',
+    loadRows: loadLeadsReportRows,
   },
   {
     id: 'offers-export', name: 'Offertöversikt',
     desc: 'Alla offerter med status, mottagare och totalsummor.',
     category: 'Försäljning', color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
-    endpoint: '/api/v1/offers?limit=1000&offset=0',
+    loadRows: loadOffersReportRows,
   },
   {
     id: 'projects-export', name: 'Projektöversikt',
     desc: 'Status, framsteg och milstolpar för alla aktiva projekt.',
     category: 'Projekt', color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
-    endpoint: '/api/v1/projekt?limit=1000&offset=0',
+    loadRows: loadProjectsReportRows,
   },
   {
     id: 'meetings-export', name: 'Mötesexport',
     desc: 'Alla schemalagda och genomförda möten med deltagare.',
     category: 'Team Hub', color: 'text-blue-600 dark:text-blue-400 bg-blue-500/10',
-    endpoint: '/api/v1/meetings?limit=100&offset=0',
+    loadRows: loadMeetingsReportRows,
   },
   {
     id: 'announcements-export', name: 'Meddelanden',
     desc: 'Alla organisationens annonseringar och nyheter.',
     category: 'Team Hub', color: 'text-rose-600 dark:text-rose-400 bg-rose-500/10',
-    endpoint: '/api/v1/announcements?limit=100&offset=0',
+    loadRows: loadAnnouncementsReportRows,
   },
 ];
 
@@ -103,7 +111,7 @@ export default function ReportsPage() {
     setError(null);
     setSuccess(null);
     try {
-      const rows = await loadReportRows(report.endpoint);
+      const rows = await report.loadRows();
       const csv = toCsv(rows);
       downloadCsv(csv, `${report.id}-${new Date().toISOString().slice(0, 10)}.csv`);
       setSuccess(`"${report.name}" laddades ned — ${rows.length} rader.`);
