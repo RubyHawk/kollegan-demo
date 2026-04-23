@@ -1,8 +1,7 @@
-import { prisma } from '@platform/database/prisma';
 import { logger } from '@platform/logging/logger';
 import { sanitizeEmailHtml, escapeHtml } from '@platform/security/sanitize';
 import { BRAND_NAME, BRAND_TAGLINE } from '@shared/branding';
-import type { ActiveNotificationTag } from '@modules/supporting/identity';
+import { offerBrandingRepository } from '../infrastructure/offer-branding.repository';
 import { getDisplayModeLabel } from '../domain/pricing';
 import type {
   NotifyCreatorPayload,
@@ -12,6 +11,7 @@ import type {
 import { fromAddress, sendEmail } from './offer-email-transport';
 
 const TAG = 'OfferEmailDispatch';
+type OfferNotificationTag = 'offer_signed' | 'offer_declined';
 
 function emailPricing(p: Pick<SendToRecipientPayload, 'priceDisplayMode' | 'totalExVat' | 'totalIncVat'>) {
   const hasVat = Math.abs(p.totalIncVat - p.totalExVat) > 0.009;
@@ -389,11 +389,8 @@ export async function dispatchReminderEmail(payload: ReminderPayload): Promise<v
 }
 
 export async function dispatchCreatorNotification(payload: NotifyCreatorPayload): Promise<void> {
-  const user = await prisma.user.findUnique({
-    where: { id: payload.createdBy },
-    select: { email: true },
-  });
-  if (!user?.email) {
+  const creatorEmail = await offerBrandingRepository.findUserEmail(payload.createdBy);
+  if (!creatorEmail) {
     logger.warn(TAG, `Creator email not found for User ${payload.createdBy} - skipping`);
     return;
   }
@@ -406,32 +403,25 @@ export async function dispatchCreatorNotification(payload: NotifyCreatorPayload)
   const from = fromAddress(payload.senderEmail, payload.senderName);
   const html = notifyCreatorHtml(payload);
 
-  await sendEmail({ from, to: user.email, subject, html });
-  logger.info(TAG, `Sent creator notification (${payload.event}) to ${user.email}`, { offerId: payload.offerId });
+  await sendEmail({ from, to: creatorEmail, subject, html });
+  logger.info(TAG, `Sent creator notification (${payload.event}) to ${creatorEmail}`, { offerId: payload.offerId });
 
   // Fan out to additional notification routing recipients
-  const tag: ActiveNotificationTag = payload.event === 'signed' ? 'offer_signed' : 'offer_declined';
+  const tag: OfferNotificationTag = payload.event === 'signed' ? 'offer_signed' : 'offer_declined';
   try {
-    const org = await prisma.organization.findUnique({
-      where:  { id: payload.organizationId },
-      select: { notificationRecipients: true },
-    });
-    if (org?.notificationRecipients) {
-      const recipients: Array<{ id: string; email: string; tags: string[] }> =
-        JSON.parse(org.notificationRecipients);
-      for (const r of recipients) {
-        if (!r.tags.includes(tag)) continue;
-        if (r.email === user.email) continue; // already sent above
-        try {
-          await sendEmail({ from, to: r.email, subject, html });
-          logger.info(TAG, `Sent notification routing email (${payload.event}) to ${r.email}`, { offerId: payload.offerId });
-        } catch (err) {
-          logger.warn(TAG, 'Failed to send notification routing email to recipient', {
-            err,
-            offerId: payload.offerId,
-            recipientEmail: r.email,
-          });
-        }
+    const recipients = await offerBrandingRepository.listNotificationRecipients(payload.organizationId);
+    for (const r of recipients) {
+      if (!r.tags.includes(tag)) continue;
+      if (r.email === creatorEmail) continue; // already sent above
+      try {
+        await sendEmail({ from, to: r.email, subject, html });
+        logger.info(TAG, `Sent notification routing email (${payload.event}) to ${r.email}`, { offerId: payload.offerId });
+      } catch (err) {
+        logger.warn(TAG, 'Failed to send notification routing email to recipient', {
+          err,
+          offerId: payload.offerId,
+          recipientEmail: r.email,
+        });
       }
     }
   } catch (err) {

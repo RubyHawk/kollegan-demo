@@ -1,8 +1,7 @@
-import { prisma } from '@platform/database/prisma';
 import { logger } from '@platform/logging/logger';
-import { identityService } from '@modules/supporting/identity';
 import type { Offer } from '../domain/offer.entity';
 import { companiesRepository } from '../infrastructure/companies.repository';
+import { offerBrandingRepository } from '../infrastructure/offer-branding.repository';
 import { resolveOfferBranding, type OfferBrandingProfile } from './company-branding';
 import { enrichOfferLineItemUnits } from './offer-product-units';
 import { renderPublicOfferPdf, resolvePdfOrigin } from './offer-pdf';
@@ -11,22 +10,7 @@ import { sanitizePublicPdfOfferDocument } from './public-offer-document';
 export const OFFERS_SERVICE_TAG = 'OffersService';
 
 export async function getOfferResponsibleUser(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      email: true,
-      firstName: true,
-      lastName: true,
-    },
-  });
-
-  if (!user) return null;
-
-  const name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email;
-  return {
-    name,
-    email: user.email,
-  };
+  return offerBrandingRepository.findResponsibleUser(userId);
 }
 
 export async function persistPublicOfferPdfSnapshot(
@@ -62,7 +46,7 @@ export async function persistPublicOfferPdfSnapshot(
 
 export async function resolveOfferBrandingForOfferData(offer: Offer): Promise<OfferBrandingProfile> {
   const [org, company, responsible] = await Promise.all([
-    identityService.getOrg(offer.organizationId),
+    offerBrandingRepository.findOrganizationProfile(offer.organizationId),
     offer.companyId ? companiesRepository.getById(offer.companyId, offer.organizationId) : Promise.resolve(null),
     getOfferResponsibleUser(offer.createdBy),
   ]);
@@ -71,6 +55,5 @@ export async function resolveOfferBrandingForOfferData(offer: Offer): Promise<Of
 }
 
 export async function getActorOrganizationId(userId: string): Promise<string | null> {
-  const { getUserOrganizationId } = await import('@modules/supporting/auth');
-  return getUserOrganizationId(userId);
+  return offerBrandingRepository.findUserOrganizationId(userId);
 }
