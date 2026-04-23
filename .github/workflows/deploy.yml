@@ -25,6 +25,17 @@ jobs:
           node-version: 24
           cache: npm
 
+      - name: Restore build caches
+        id: build-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .next/cache
+            tsconfig.tsbuildinfo
+          key: ${{ runner.os }}-deploy-build-${{ hashFiles('package-lock.json', 'next.config.ts', 'tsconfig*.json', 'prisma/schema/**/*.prisma') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-deploy-build-${{ hashFiles('package-lock.json', 'next.config.ts', 'tsconfig*.json', 'prisma/schema/**/*.prisma') }}-
+
       - name: Install dependencies
         run: npm ci --include=dev --prefer-offline --no-audit --ignore-scripts
 
@@ -49,6 +60,15 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+      - name: Save build caches
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .next/cache
+            tsconfig.tsbuildinfo
+          key: ${{ steps.build-cache.outputs.cache-primary-key }}
+
   deploy:
     runs-on: ubuntu-latest
     needs:
@@ -58,7 +78,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: next-build-${{ github.sha }}
-          path: release
+          path: .
 
       - name: Copy build artifact to VPS
         uses: appleboy/scp-action@v1
@@ -67,8 +87,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 2222
-          source: release/kollegan-next-build.tar.gz
-          target: /tmp
+          source: kollegan-next-build.tar.gz
+          target: /tmp/kollegan-release
           overwrite: true
 
       - name: Deploy artifact on VPS
@@ -81,4 +101,5 @@ jobs:
           script: |
             set -euo pipefail
             cd /var/www/offert
-            bash scripts/deploy-release.sh /tmp/release/kollegan-next-build.tar.gz
+            HEALTHCHECK_URLS="${{ secrets.DEPLOY_HEALTHCHECK_URLS }}" \
+            bash scripts/deploy-release.sh /tmp/kollegan-release/kollegan-next-build.tar.gz ${{ github.sha }}
