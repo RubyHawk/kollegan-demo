@@ -183,6 +183,35 @@ export const featureFlagsRepository = {
     return mapAuditEvent(row as unknown as Record<string, unknown>);
   },
 
+  async appendAuditLog(input: {
+    organizationId: string;
+    actorId?: string | null;
+    action: string;
+    resourceType: string;
+    resourceId: string;
+    actorType?: 'user' | 'system' | 'api_key';
+    before?: Record<string, unknown> | null;
+    after?: Record<string, unknown> | null;
+    metadata?: Record<string, unknown> | null;
+  }): Promise<void> {
+    await prisma.auditLog.create({
+      data: {
+        organizationId: input.organizationId,
+        actorId: input.actorId ?? null,
+        action: input.action,
+        resourceType: input.resourceType,
+        resourceId: input.resourceId,
+        actorType: input.actorType ?? 'system',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        before: (input.before ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        after: (input.after ?? undefined) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        metadata: (input.metadata ?? undefined) as any,
+      },
+    });
+  },
+
   async listAuditEvents(
     featureFlagId: string,
     organizationId: string,
