@@ -33,6 +33,7 @@ const ignoredSegments = new Set([
 
 const suspiciousLinePatterns = [
   { name: 'replacement-character', regex: /\uFFFD/ },
+  { name: 'utf8-bom', regex: /\uFEFF/ },
   { name: 'utf8-latin1-mojibake', regex: /Ã.|Â.|â€[^\s]?|â€™|â€œ|â€�|â€“|â€”|â€¦|ï»¿/ },
 ];
 
