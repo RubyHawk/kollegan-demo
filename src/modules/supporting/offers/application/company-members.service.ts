@@ -1,7 +1,7 @@
 import { logger } from '@platform/logging/logger';
 import bcrypt from 'bcryptjs';
 import { companiesRepository } from '../infrastructure/companies.repository';
-import { userRepository } from '@modules/supporting/auth';
+import { companyMemberAccountsRepository } from '../infrastructure/company-member-accounts.repository';
 
 const TAG = 'CompanyMembersService';
 
@@ -51,7 +51,7 @@ export async function createCompanyMemberAccount(
   grantedBy?: string,
 ) {
   const normalizedEmail = input.email.trim().toLowerCase();
-  const existing = await userRepository.findByEmail(normalizedEmail);
+  const existing = await companyMemberAccountsRepository.findUserByEmailInsensitive(normalizedEmail);
   if (existing && existing.deletedAt === null) {
     throw new Error('EMAIL_ALREADY_EXISTS');
   }
@@ -59,22 +59,21 @@ export async function createCompanyMemberAccount(
   const passwordHash = await bcrypt.hash(input.password, 12);
   const mfaGraceExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-  const user = await userRepository.create({
+  const user = await companyMemberAccountsRepository.createUser({
     email: normalizedEmail,
     passwordHash,
     firstName: input.firstName?.trim() || undefined,
     lastName: input.lastName?.trim() || undefined,
-    userType: 'staff',
     organizationId: orgId,
     mfaGraceExpiresAt,
   });
 
-  const staffRole = await userRepository.findRoleByName('user');
+  const staffRole = await companyMemberAccountsRepository.findRoleByName('user');
   if (!staffRole) {
     throw new Error('DEFAULT_ROLE_MISSING');
   }
 
-  await userRepository.assignRole(user.id, staffRole.id, orgId, grantedBy);
+  await companyMemberAccountsRepository.assignRole(user.id, staffRole.id, orgId, grantedBy);
   const member = await upsertCompanyMember(companyId, orgId, user.id, input.role, grantedBy);
 
   logger.info(TAG, 'Company member account created', {
