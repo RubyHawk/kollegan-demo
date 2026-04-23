@@ -1,8 +1,8 @@
 import { eventBus } from '@platform/events';
 import { logger } from '@platform/logging/logger';
-import { identityService } from '@modules/supporting/identity';
 import type { Offer } from '../domain/offer.entity';
 import { OFFER_ACCEPTED, OFFER_DECLINED } from '../events/offer.events';
+import { offerBrandingRepository } from '../infrastructure/offer-branding.repository';
 import { offersRepository } from '../infrastructure/offers.repository';
 import { buildCreatorNotificationPayload } from './offer-email';
 import { dispatchCreatorNotification } from './offer-email-dispatch';
@@ -117,7 +117,7 @@ export async function signOffer(
     );
   }
 
-  const org = await identityService.getOrg(final.organizationId).catch(() => null);
+  const org = await offerBrandingRepository.findOrganizationProfile(final.organizationId).catch(() => null);
   await dispatchCreatorNotification(
     buildCreatorNotificationPayload(final, 'signed', {
       senderEmail: org?.senderEmail,
@@ -164,7 +164,7 @@ export async function declineOfferByToken(
     payload: { offerId: final.id },
   });
 
-  const org = await identityService.getOrg(final.organizationId).catch(() => null);
+  const org = await offerBrandingRepository.findOrganizationProfile(final.organizationId).catch(() => null);
   await dispatchCreatorNotification(
     buildCreatorNotificationPayload(final, 'declined', {
       comment,

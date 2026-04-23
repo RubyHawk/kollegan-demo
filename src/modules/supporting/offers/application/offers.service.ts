@@ -14,10 +14,10 @@ import {
   buildReminderPayload,
   buildSendToRecipientPayload,
 } from './offer-email';
-import { identityService } from '@modules/supporting/identity';
 import { interpolateEmailText, sanitizeGeneratedOfferDocument } from './document-generator';
 import { templatesRepository } from '../infrastructure/templates.repository';
 import { companiesRepository } from '../infrastructure/companies.repository';
+import { offerBrandingRepository } from '../infrastructure/offer-branding.repository';
 import { resolveOfferBranding } from './company-branding';
 import { dispatchCreatorNotification, dispatchOfferEmail, dispatchReminderEmail } from './offer-email-dispatch';
 import { summarizeOfferPricing, type OfferPricingSummary } from '../domain/pricing';
@@ -143,7 +143,7 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   let emailHeaderConfig: string | undefined = existing.emailHeaderConfig;
   let templateContent: string | undefined;
   const [org, company, responsible] = await Promise.all([
-    identityService.getOrg(orgId),
+    offerBrandingRepository.findOrganizationProfile(orgId),
     existing.companyId ? companiesRepository.getById(existing.companyId, orgId) : Promise.resolve(null),
     getOfferResponsibleUser(existing.createdBy),
   ]);
@@ -273,7 +273,7 @@ export async function acceptOffer(id: string, orgId: string): Promise<Offer | nu
     );
   }
 
-  const org = await identityService.getOrg(orgId).catch(() => null);
+  const org = await offerBrandingRepository.findOrganizationProfile(orgId).catch(() => null);
   await dispatchCreatorNotification(
     buildCreatorNotificationPayload(updated, 'signed', {
       senderEmail: org?.senderEmail,
@@ -416,7 +416,7 @@ export async function sendOfferReminder(id: string, orgId: string): Promise<Offe
   }
 
   const [org, company] = await Promise.all([
-    identityService.getOrg(orgId),
+    offerBrandingRepository.findOrganizationProfile(orgId),
     existing.companyId ? companiesRepository.getById(existing.companyId, orgId) : Promise.resolve(null),
   ]);
   const responsible = await getOfferResponsibleUser(existing.createdBy);
