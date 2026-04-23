@@ -18,8 +18,8 @@ import {
   completeAuthentication,
 } from '../../application/webauthn.service';
 import { completeMfaLogin } from '../../application/auth.service';
+import { AUTH_AUDIT_ACTIONS, recordAuthAudit } from '../../application/auth-audit.service';
 import { userRepository } from '../../infrastructure/user.repository';
-import { log, AUDIT_ACTIONS } from '@modules/supporting/audit';
 import type { RegistrationResponseJSON, AuthenticationResponseJSON } from '@simplewebauthn/browser';
 import { BRAND_PROBLEM_BASE } from '@shared/branding';
 
@@ -182,8 +182,8 @@ export async function handleAuthenticateVerify(req: NextRequest): Promise<NextRe
     await completeAuthentication(userId, body as AuthenticationResponseJSON);
   } catch (err: unknown) {
     const code = (err as { code?: string }).code;
-    await log({
-      action: AUDIT_ACTIONS.USER_LOGIN_FAILED,
+    await recordAuthAudit({
+      action: AUTH_AUDIT_ACTIONS.USER_LOGIN_FAILED,
       actorId: userId, actorType: 'user',
       resourceType: 'User', resourceId: userId,
       metadata: { ip: ipAddress ?? null, reason: code ?? 'WEBAUTHN_FAILED' },
@@ -203,8 +203,8 @@ export async function handleAuthenticateVerify(req: NextRequest): Promise<NextRe
 
   const result = await completeMfaLogin(userId, 'hwk', ipAddress, userAgent, rememberMe);
 
-  await log({
-    action: AUDIT_ACTIONS.USER_LOGIN,
+  await recordAuthAudit({
+    action: AUTH_AUDIT_ACTIONS.USER_LOGIN,
     organizationId: result.user.orgId,
     actorId: result.user.id, actorType: 'user',
     resourceType: 'User', resourceId: result.user.id,
