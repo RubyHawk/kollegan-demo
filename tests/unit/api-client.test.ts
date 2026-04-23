@@ -9,6 +9,7 @@ import { createLead } from '../../src/shared/lib/api/leads.api';
 import { updateMeeting } from '../../src/shared/lib/api/meetings.api';
 import { sendMessage } from '../../src/shared/lib/api/messages.api';
 import { deleteProduct, deleteProductCategory } from '../../src/shared/lib/api/products.api';
+import { getThemeSettings, updateThemeSettings } from '../../src/shared/lib/api/settings.api';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -239,6 +240,54 @@ describe('feature API clients', () => {
       2,
       '/api/v1/admin/compliance/policies/policy_1',
       expect.objectContaining({ method: 'DELETE' }),
+    );
+  });
+
+  it('uses v1 org theme-settings routes for organization defaults', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: {
+          themeMode: 'auto',
+          themeAccent: 'soleria',
+          themeFontFamily: 'inter',
+          themeFontSize: 'medium',
+          canManage: true,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: {
+          themeMode: null,
+          themeAccent: 'nature',
+          themeFontFamily: null,
+          themeFontSize: 'large',
+          canManage: true,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(getThemeSettings()).resolves.toMatchObject({ canManage: true, themeMode: 'auto' });
+    await expect(updateThemeSettings({
+      themeMode: null,
+      themeAccent: 'nature',
+      themeFontSize: 'large',
+    })).resolves.toMatchObject({ themeAccent: 'nature', themeFontSize: 'large' });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/api/v1/org/theme-settings',
+      expect.any(Object),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/api/v1/org/theme-settings',
+      expect.objectContaining({ method: 'PUT' }),
     );
   });
 });
