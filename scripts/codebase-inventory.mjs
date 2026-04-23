@@ -113,10 +113,34 @@ function isGenerated(file) {
     || file.endsWith('.generated.tsx');
 }
 
+function isApiRoute(file) {
+  return file.startsWith('src/app/api/') && file.endsWith('/route.ts');
+}
+
+function isV1ApiRoute(file) {
+  return file.startsWith('src/app/api/v1/') && file.endsWith('/route.ts');
+}
+
+function apiRouteKind(file) {
+  if (!isApiRoute(file)) return null;
+  if (isV1ApiRoute(file)) return 'api-v1';
+  if (file.startsWith('src/app/api/demos/')) return 'demo-api-route';
+  if (file.startsWith('src/app/api/offers/public/')) return 'public-document-route';
+  if (
+    file.startsWith('src/app/api/ai/')
+    || file.startsWith('src/app/api/cron/')
+    || file.startsWith('src/app/api/docs/')
+    || file.startsWith('src/app/api/health/')
+    || file.startsWith('src/app/api/n8n/')
+    || file.startsWith('src/app/api/sse/')
+  ) {
+    return 'integration-or-ops-route';
+  }
+  return 'legacy-compat-wrapper';
+}
+
 function isLegacyWrapper(file) {
-  return file.startsWith('src/app/api/')
-    && !file.startsWith('src/app/api/v1/')
-    && file.endsWith('/route.ts');
+  return apiRouteKind(file) === 'legacy-compat-wrapper';
 }
 
 function isFeatureApiClient(file) {
@@ -242,6 +266,56 @@ function markdownTable(headers, rows) {
   return [header, separator, ...body].join('\n') + '\n';
 }
 
+function legacyLiteralReferenceArea(file) {
+  if (file.startsWith('src/app/')) return 'ui-route';
+  if (file.startsWith('src/shared/')) return 'shared';
+  if (
+    file.includes('/ui/')
+    || file.includes('/components/')
+    || file.includes('/hooks/')
+  ) {
+    return 'feature-ui';
+  }
+  if (file.startsWith('src/modules/demos/')) return 'demo-client';
+  if (file.includes('/api/handlers/')) return 'handler';
+  if (file.startsWith('src/platform/api/')) return 'openapi';
+  if (file === 'src/proxy.ts') return 'proxy';
+  return 'other';
+}
+
+function collectLegacyLiteralApiReferences(sourceFiles) {
+  const references = [];
+  const literalPattern = /["'`](\/api\/(?!v1\/)[^"'`\s)]*)/g;
+
+  for (const file of sourceFiles) {
+    if (
+      isApiRoute(file)
+      || isTest(file)
+      || isGenerated(file)
+      || file.startsWith('scripts/')
+      || file === 'next.config.ts'
+    ) {
+      continue;
+    }
+
+    const lines = readFile(file).split(/\r?\n/);
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = lines[index];
+      let match;
+      while ((match = literalPattern.exec(line)) !== null) {
+        references.push({
+          area: legacyLiteralReferenceArea(file),
+          endpoint: match[1],
+          file,
+          line: index + 1,
+        });
+      }
+    }
+  }
+
+  return references.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
+}
+
 function renderInventory() {
   const files = getTrackedFiles();
   const packageJsonText = fs.existsSync(path.join(root, 'package.json'))
@@ -250,6 +324,10 @@ function renderInventory() {
   const countedFiles = files.filter(isCountedFile);
   const sourceFiles = files.filter(isSourceFile);
   const productionSource = sourceFiles.filter((file) => classify(file) === 'active-production');
+  const apiRoutes = files
+    .filter(isApiRoute)
+    .sort()
+    .map((file) => ({ file, kind: apiRouteKind(file) }));
   const graph = buildImportGraph(sourceFiles);
 
   const largeFiles = countedFiles
@@ -259,14 +337,22 @@ function renderInventory() {
 
   const monoliths = largeFiles.filter((item) => item.lines > 1000);
   const warnings = largeFiles.filter((item) => item.lines <= 1000);
-  const legacyWrappers = files
-    .filter(isLegacyWrapper)
-    .sort()
-    .map((file) => [file]);
+  const legacyWrappers = apiRoutes
+    .filter((route) => route.kind === 'legacy-compat-wrapper')
+    .map((route) => [route.file]);
+  const retainedNonVersionedApiRoutes = apiRoutes
+    .filter((route) => route.kind !== 'api-v1' && route.kind !== 'legacy-compat-wrapper')
+    .map((route) => [route.kind, route.file]);
   const featureApiClients = files
     .filter(isFeatureApiClient)
     .sort()
     .map((file) => [file]);
+  const legacyLiteralApiReferences = collectLegacyLiteralApiReferences(sourceFiles)
+    .map((reference) => [
+      reference.area,
+      `\`${reference.file}:${reference.line}\``,
+      `\`${reference.endpoint}\``,
+    ]);
 
   const deadCandidates = productionSource
     .filter((file) => !isEntryPoint(file))
@@ -331,8 +417,13 @@ Static analysis is a triage tool, not deletion proof. A \`dead-candidate\` still
 | Active production source files | ${productionSource.length} |
 | Files above 1000 lines | ${monoliths.length} |
 | Files above 500 lines | ${largeFiles.length} |
+| API route files | ${apiRoutes.length} |
+| API v1 route files | ${apiRoutes.filter((route) => route.kind === 'api-v1').length} |
 | Feature API clients | ${featureApiClients.length} |
-| Legacy API wrappers | ${legacyWrappers.length} |
+| Legacy API compatibility wrappers | ${legacyWrappers.length} |
+| Demo API routes | ${apiRoutes.filter((route) => route.kind === 'demo-api-route').length} |
+| Public/integration API routes | ${retainedNonVersionedApiRoutes.length} |
+| Literal legacy \`/api/*\` references outside route files | ${legacyLiteralApiReferences.length} |
 | Dead-candidate review rows | ${deadCandidates.length} |
 
 ## Current Monolith Inventory
@@ -349,11 +440,21 @@ ${markdownTable(['File', 'Classification', 'Reason'], deadCandidates)}
 These are browser-facing API contract wrappers. They are active infrastructure even before every UI screen has migrated to them.
 
 ${markdownTable(['File'], featureApiClients)}
-## Legacy API Wrapper Review Queue
+## Legacy API Compatibility Wrapper Review Queue
 
-These are compatibility wrappers and are not junk until client usage proves they can be retired.
+These are compatibility or alias routes kept while browser, mobile, and external callers migrate away from legacy \`/api/*\` paths. They are not junk until usage proves they can be retired.
 
 ${markdownTable(['File'], legacyWrappers)}
+## Retained Non-Versioned API Routes
+
+These are not part of the \`/api/v1\` migration target. They stay non-versioned because they are public document routes, demos, or infrastructure/integration endpoints.
+
+${markdownTable(['Kind', 'File'], retainedNonVersionedApiRoutes)}
+## Literal Legacy API References Outside Route Files
+
+These are literal \`/api/*\` strings outside route files. Not every row is a migration blocker: handler \`Location\` headers, proxy allowlists, and OpenAPI specs are expected. UI/shared rows are the main retirement blockers.
+
+${markdownTable(['Area', 'Location', 'Endpoint'], legacyLiteralApiReferences)}
 ## Rules
 
 - No hand-written production source file may remain above 1000 lines after monolith-split phases unless listed as an approved exception here.
@@ -361,7 +462,7 @@ ${markdownTable(['File'], legacyWrappers)}
 - Cleanup PRs must not include behavior changes.
 - Demo files are not junk if they support demo routes.
 - Feature API clients are not junk; wire them into UI clients over time.
-- Legacy API wrappers are not junk until usage is verified gone.
+- Legacy API compatibility wrappers are not junk until usage is verified gone.
 - A file may move from \`dead-candidate\` to \`safe-to-delete\` only after import graph, route strings, package scripts, tests, Prisma references, and public asset references have been checked.
 
 ## Approved Exceptions

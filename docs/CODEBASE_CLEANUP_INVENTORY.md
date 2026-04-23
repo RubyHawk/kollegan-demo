@@ -37,11 +37,16 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 |---|---:|
 | Tracked files scanned | 904 |
 | Source files scanned | 770 |
-| Active production source files | 585 |
+| Active production source files | 620 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 0 |
+| API route files | 177 |
+| API v1 route files | 66 |
 | Feature API clients | 19 |
-| Legacy API wrappers | 111 |
+| Legacy API compatibility wrappers | 76 |
+| Demo API routes | 14 |
+| Public/integration API routes | 35 |
+| Literal legacy `/api/*` references outside route files | 51 |
 | Dead-candidate review rows | 0 |
 
 ## Current Monolith Inventory
@@ -82,9 +87,9 @@ These are browser-facing API contract wrappers. They are active infrastructure e
 | src/shared/lib/api/staff.api.ts |
 | src/shared/lib/api/templates.api.ts |
 
-## Legacy API Wrapper Review Queue
+## Legacy API Compatibility Wrapper Review Queue
 
-These are compatibility wrappers and are not junk until client usage proves they can be retired.
+These are compatibility or alias routes kept while browser, mobile, and external callers migrate away from legacy `/api/*` paths. They are not junk until usage proves they can be retired.
 
 | File |
 | --- |
@@ -97,15 +102,6 @@ These are compatibility wrappers and are not junk until client usage proves they
 | src/app/api/admin/compliance/report/route.ts |
 | src/app/api/admin/compliance/risks/[id]/route.ts |
 | src/app/api/admin/compliance/risks/route.ts |
-| src/app/api/ai/availability/check/route.ts |
-| src/app/api/ai/calendar/book/route.ts |
-| src/app/api/ai/calendar/check/route.ts |
-| src/app/api/ai/crm/update/route.ts |
-| src/app/api/ai/customer/get/route.ts |
-| src/app/api/ai/hotel-info/route.ts |
-| src/app/api/ai/rooms/cancel/route.ts |
-| src/app/api/ai/rooms/lock/route.ts |
-| src/app/api/ai/transcripts/start/route.ts |
 | src/app/api/announcements/[id]/route.ts |
 | src/app/api/announcements/route.ts |
 | src/app/api/auth/change-password/route.ts |
@@ -131,28 +127,10 @@ These are compatibility wrappers and are not junk until client usage proves they
 | src/app/api/companies/route.ts |
 | src/app/api/crm/contacts/[id]/route.ts |
 | src/app/api/crm/contacts/route.ts |
-| src/app/api/cron/offers/expire/route.ts |
-| src/app/api/demos/hotel/activities/[id]/route.ts |
-| src/app/api/demos/hotel/activities/route.ts |
-| src/app/api/demos/hotel/amenities/[id]/route.ts |
-| src/app/api/demos/hotel/amenities/route.ts |
-| src/app/api/demos/hotel/info/route.ts |
-| src/app/api/demos/hotel/restaurants/[id]/route.ts |
-| src/app/api/demos/hotel/restaurants/route.ts |
-| src/app/api/demos/hotel/rooms/available/route.ts |
-| src/app/api/demos/hotel/rooms/book/route.ts |
-| src/app/api/demos/hotel/rooms/cancel/route.ts |
-| src/app/api/demos/hotel/rooms/confirm/route.ts |
-| src/app/api/demos/hotel/rooms/lock/route.ts |
-| src/app/api/demos/hotel/rooms/route.ts |
-| src/app/api/demos/hotel/seed/route.ts |
-| src/app/api/docs/route.ts |
-| src/app/api/docs/ui/route.ts |
 | src/app/api/feature-flags/[id]/audit/route.ts |
 | src/app/api/feature-flags/[id]/route.ts |
 | src/app/api/feature-flags/evaluate/route.ts |
 | src/app/api/feature-flags/route.ts |
-| src/app/api/health/route.ts |
 | src/app/api/kunder/[id]/route.ts |
 | src/app/api/kunder/route.ts |
 | src/app/api/leads/[id]/activities/route.ts |
@@ -165,8 +143,6 @@ These are compatibility wrappers and are not junk until client usage proves they
 | src/app/api/meetings/route.ts |
 | src/app/api/messages/conversations/[id]/messages/route.ts |
 | src/app/api/messages/conversations/route.ts |
-| src/app/api/n8n/crm/route.ts |
-| src/app/api/n8n/leads/route.ts |
 | src/app/api/offers/[id]/pdf/route.ts |
 | src/app/api/offers/[id]/route.ts |
 | src/app/api/offers/bulk-send/route.ts |
@@ -175,11 +151,6 @@ These are compatibility wrappers and are not junk until client usage proves they
 | src/app/api/offers/products/categories/[id]/route.ts |
 | src/app/api/offers/products/categories/route.ts |
 | src/app/api/offers/products/route.ts |
-| src/app/api/offers/public/[token]/decline/route.ts |
-| src/app/api/offers/public/[token]/pdf/route.ts |
-| src/app/api/offers/public/[token]/route.ts |
-| src/app/api/offers/public/[token]/sign/route.ts |
-| src/app/api/offers/public/[token]/view/route.ts |
 | src/app/api/offers/route.ts |
 | src/app/api/org/email-settings/route.ts |
 | src/app/api/org/notification-recipients/route.ts |
@@ -193,12 +164,111 @@ These are compatibility wrappers and are not junk until client usage proves they
 | src/app/api/projekt/[id]/route.ts |
 | src/app/api/projekt/counts/route.ts |
 | src/app/api/projekt/route.ts |
-| src/app/api/sse/route.ts |
 | src/app/api/staff/route.ts |
 | src/app/api/templates/[id]/route.ts |
 | src/app/api/templates/assets/route.ts |
 | src/app/api/templates/preview/route.ts |
 | src/app/api/templates/route.ts |
+
+## Retained Non-Versioned API Routes
+
+These are not part of the `/api/v1` migration target. They stay non-versioned because they are public document routes, demos, or infrastructure/integration endpoints.
+
+| Kind | File |
+| --- | --- |
+| integration-or-ops-route | src/app/api/ai/availability/check/route.ts |
+| integration-or-ops-route | src/app/api/ai/calendar/book/route.ts |
+| integration-or-ops-route | src/app/api/ai/calendar/check/route.ts |
+| integration-or-ops-route | src/app/api/ai/crm/update/route.ts |
+| integration-or-ops-route | src/app/api/ai/customer/get/route.ts |
+| integration-or-ops-route | src/app/api/ai/hotel-info/route.ts |
+| integration-or-ops-route | src/app/api/ai/rooms/cancel/route.ts |
+| integration-or-ops-route | src/app/api/ai/rooms/lock/route.ts |
+| integration-or-ops-route | src/app/api/ai/transcripts/start/route.ts |
+| integration-or-ops-route | src/app/api/cron/offers/expire/route.ts |
+| demo-api-route | src/app/api/demos/hotel/activities/[id]/route.ts |
+| demo-api-route | src/app/api/demos/hotel/activities/route.ts |
+| demo-api-route | src/app/api/demos/hotel/amenities/[id]/route.ts |
+| demo-api-route | src/app/api/demos/hotel/amenities/route.ts |
+| demo-api-route | src/app/api/demos/hotel/info/route.ts |
+| demo-api-route | src/app/api/demos/hotel/restaurants/[id]/route.ts |
+| demo-api-route | src/app/api/demos/hotel/restaurants/route.ts |
+| demo-api-route | src/app/api/demos/hotel/rooms/available/route.ts |
+| demo-api-route | src/app/api/demos/hotel/rooms/book/route.ts |
+| demo-api-route | src/app/api/demos/hotel/rooms/cancel/route.ts |
+| demo-api-route | src/app/api/demos/hotel/rooms/confirm/route.ts |
+| demo-api-route | src/app/api/demos/hotel/rooms/lock/route.ts |
+| demo-api-route | src/app/api/demos/hotel/rooms/route.ts |
+| demo-api-route | src/app/api/demos/hotel/seed/route.ts |
+| integration-or-ops-route | src/app/api/docs/route.ts |
+| integration-or-ops-route | src/app/api/docs/ui/route.ts |
+| integration-or-ops-route | src/app/api/health/route.ts |
+| integration-or-ops-route | src/app/api/n8n/crm/route.ts |
+| integration-or-ops-route | src/app/api/n8n/leads/route.ts |
+| public-document-route | src/app/api/offers/public/[token]/decline/route.ts |
+| public-document-route | src/app/api/offers/public/[token]/pdf/route.ts |
+| public-document-route | src/app/api/offers/public/[token]/route.ts |
+| public-document-route | src/app/api/offers/public/[token]/sign/route.ts |
+| public-document-route | src/app/api/offers/public/[token]/view/route.ts |
+| integration-or-ops-route | src/app/api/sse/route.ts |
+
+## Literal Legacy API References Outside Route Files
+
+These are literal `/api/*` strings outside route files. Not every row is a migration blocker: handler `Location` headers, proxy allowlists, and OpenAPI specs are expected. UI/shared rows are the main retirement blockers.
+
+| Area | Location | Endpoint |
+| --- | --- | --- |
+| ui-route | `src/app/offerter/publik/[token]/_api/public-offer.api.ts:38` | `/api/offers/public/${token}${suffix}` |
+| feature-ui | `src/modules/core/voice/ui/hooks/use-vapi.ts:147` | `/api/ai/hotel-info` |
+| demo-client | `src/modules/demos/hotel/api/rooms.ts:16` | `/api/demos/hotel/rooms/book` |
+| demo-client | `src/modules/demos/hotel/api/rooms.ts:20` | `/api/demos/hotel/rooms/cancel` |
+| demo-client | `src/modules/demos/hotel/api/rooms.ts:24` | `/api/demos/hotel/rooms` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:7` | `/api/demos/hotel/${type` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:14` | `/api/demos/hotel/restaurants` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:19` | `/api/demos/hotel/restaurants` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:23` | `/api/demos/hotel/restaurants/${id}` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:27` | `/api/demos/hotel/restaurants/${id}` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:33` | `/api/demos/hotel/activities` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:38` | `/api/demos/hotel/activities` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:42` | `/api/demos/hotel/activities/${id}` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:46` | `/api/demos/hotel/activities/${id}` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:52` | `/api/demos/hotel/amenities` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:57` | `/api/demos/hotel/amenities` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:61` | `/api/demos/hotel/amenities/${id}` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:65` | `/api/demos/hotel/amenities/${id}` |
+| demo-client | `src/modules/demos/hotel/api/services.ts:71` | `/api/demos/hotel/info` |
+| demo-client | `src/modules/demos/hotel/domain/seed.entity.ts:1` | `/api/demos/hotel/seed` |
+| feature-ui | `src/modules/demos/hotel/ui/components/calendar-tab-google-view.tsx:64` | `/api/calendar/events` |
+| feature-ui | `src/modules/demos/hotel/ui/hooks/use-hotel-sse.ts:23` | `/api/sse` |
+| feature-ui | `src/modules/generic/dashboard/components/setup-tab.tsx:80` | `/api/staff` |
+| feature-ui | `src/modules/generic/dashboard/components/setup-tab.tsx:100` | `/api/demo/seed-staff` |
+| feature-ui | `src/modules/generic/dashboard/components/setup-tab.tsx:257` | `/api/staff` |
+| feature-ui | `src/modules/generic/dashboard/components/setup-tab.tsx:269` | `/api/staff?id=${id}` |
+| handler | `src/modules/supporting/auth/api/handlers/staff.handler.ts:58` | `/api/staff` |
+| handler | `src/modules/supporting/compliance/api/handlers/compliance.handler.ts:41` | `/api/admin/compliance` |
+| handler | `src/modules/supporting/offers/api/handlers/company.handler.ts:159` | `/api/companies/${company.id}` |
+| handler | `src/modules/supporting/offers/api/handlers/offer.handler.ts:151` | `/api/offers/${offer.id}` |
+| handler | `src/modules/supporting/offers/api/handlers/offer.handler.ts:211` | `/api/offers/${dup.id}` |
+| handler | `src/modules/supporting/offers/api/handlers/product-categories.handler.ts:92` | `/api/offers/products/categories/${category.id}` |
+| handler | `src/modules/supporting/offers/api/handlers/product.handler.ts:87` | `/api/offers/products/${product.id}` |
+| handler | `src/modules/supporting/offers/api/handlers/template.handler.ts:88` | `/api/templates/${template.id}` |
+| openapi | `src/platform/api/openapi-ai-paths.ts:2` | `/api/ai/availability/check` |
+| openapi | `src/platform/api/openapi-ai-paths.ts:46` | `/api/ai/rooms/lock` |
+| openapi | `src/platform/api/openapi-ai-paths.ts:75` | `/api/ai/rooms/cancel` |
+| openapi | `src/platform/api/openapi-ai-paths.ts:104` | `/api/ai/calendar/check` |
+| openapi | `src/platform/api/openapi-ai-paths.ts:146` | `/api/ai/calendar/book` |
+| openapi | `src/platform/api/openapi-ai-paths.ts:178` | `/api/ai/crm/update` |
+| openapi | `src/platform/api/openapi-ai-paths.ts:213` | `/api/ai/customer/get` |
+| openapi | `src/platform/api/openapi-ai-paths.ts:254` | `/api/ai/hotel-info` |
+| openapi | `src/platform/api/openapi-ai-paths.ts:277` | `/api/ai/transcripts/start` |
+| openapi | `src/platform/api/openapi-components.ts:67` | `/api/ai/crm/update` |
+| proxy | `src/proxy.ts:12` | `/api/auth/` |
+| proxy | `src/proxy.ts:14` | `/api/docs` |
+| proxy | `src/proxy.ts:15` | `/api/demo/` |
+| proxy | `src/proxy.ts:17` | `/api/ai/` |
+| proxy | `src/proxy.ts:18` | `/api/n8n/` |
+| proxy | `src/proxy.ts:21` | `/api/offers/public/` |
+| proxy | `src/proxy.ts:36` | `/api/` |
 
 ## Rules
 
@@ -207,7 +277,7 @@ These are compatibility wrappers and are not junk until client usage proves they
 - Cleanup PRs must not include behavior changes.
 - Demo files are not junk if they support demo routes.
 - Feature API clients are not junk; wire them into UI clients over time.
-- Legacy API wrappers are not junk until usage is verified gone.
+- Legacy API compatibility wrappers are not junk until usage is verified gone.
 - A file may move from `dead-candidate` to `safe-to-delete` only after import graph, route strings, package scripts, tests, Prisma references, and public asset references have been checked.
 
 ## Approved Exceptions
