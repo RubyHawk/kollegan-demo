@@ -57,6 +57,11 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: npm run typecheck
+
       - name: Migration safety
         run: npm run check:migrations
 
@@ -121,11 +126,6 @@ jobs:
         env:
           DATABASE_URL: postgresql://user:pass@localhost:5432/kollegan?schema=public
         run: npx prisma generate
-
-      - name: Typecheck
-        env:
-          NODE_OPTIONS: --max-old-space-size=4096
-        run: npm run typecheck
 
       - name: Build
         env:
