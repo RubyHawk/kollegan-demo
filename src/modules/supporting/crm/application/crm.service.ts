@@ -1,5 +1,6 @@
 import { logger } from '@platform/logging/logger';
 import { eventBus } from '@platform/events';
+import { createVoiceCallLead } from './crm-lead-side-effects';
 import {
   findCustomerByPhone,
   findCustomerByName,
@@ -91,8 +92,7 @@ export async function updateCrm(input: CrmUpdateInput): Promise<CrmUpdateResult>
   // Auto-create a lead for new customers identified from voice calls (Phase 3)
   const isNewCustomer = customer.callCount === 1;
   if (isNewCustomer && (input.name ?? input.phone ?? input.email)) {
-    const { createLead } = await import('@modules/supporting/leads');
-    await createLead(
+    await createVoiceCallLead(
       {
         organizationId: DEMO_ORG_ID,
         name:           input.name ?? input.email ?? input.phone ?? 'Unknown',
@@ -100,7 +100,6 @@ export async function updateCrm(input: CrmUpdateInput): Promise<CrmUpdateResult>
         phone:          input.phone,
         company:        input.company,
         notes:          input.summary ?? input.notes,
-        source:         'voice_call',
       },
       'system',
     ).catch((err: unknown) => logger.error(TAG, 'Auto-lead creation failed', { error: err }));
