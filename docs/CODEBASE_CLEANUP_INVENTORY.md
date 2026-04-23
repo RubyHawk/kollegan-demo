@@ -45,7 +45,8 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 | Feature API clients | 19 |
 | Legacy API compatibility wrappers | 76 |
 | Demo API routes | 14 |
-| Public/integration API routes | 35 |
+| Public/integration API routes | 21 |
+| Retained non-versioned API routes | 35 |
 | Literal legacy `/api/*` references outside route files | 51 |
 | Dead-candidate review rows | 0 |
 
