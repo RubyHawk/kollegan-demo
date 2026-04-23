@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiDelete, apiGet } from '../../src/shared/lib/api-client';
 import { listAnnouncements } from '../../src/shared/lib/api/announcements.api';
-import { getProfile } from '../../src/shared/lib/api/auth-account.api';
+import { getThemeProfile, updateThemePreferences } from '../../src/shared/lib/api/branding.api';
 import { listCompanies, removeCompanyMember } from '../../src/shared/lib/api/companies.api';
 import { createRisk, deletePolicy, getAccessReview, listComplianceControls, listRisks } from '../../src/shared/lib/api/compliance.api';
 import { listCustomers } from '../../src/shared/lib/api/customers.api';
@@ -67,15 +67,29 @@ describe('api-client', () => {
 });
 
 describe('feature API clients', () => {
-  it('keeps profile reads uncached for theme/profile sync', async () => {
+  it('keeps theme profile reads uncached for appearance sync', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: { id: 'user_1' } }), {
       status: 200,
       headers: { 'content-type': 'application/json' },
     }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(getProfile()).resolves.toMatchObject({ id: 'user_1' });
+    await expect(getThemeProfile()).resolves.toMatchObject({ id: 'user_1' });
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/auth/profile', expect.objectContaining({ cache: 'no-store' }));
+  });
+
+  it('uses the dedicated branding client for theme preference updates', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(updateThemePreferences({ themeMode: 'dark', themeAccent: 'forest' })).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/auth/profile',
+      expect.objectContaining({ method: 'PATCH' }),
+    );
   });
 
   it('treats successful member removal 204 responses as empty success', async () => {

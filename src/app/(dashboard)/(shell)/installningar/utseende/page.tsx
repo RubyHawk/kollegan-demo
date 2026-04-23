@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { updateProfile } from '@shared/lib/api/auth-account.api';
+import { updateThemePreferences } from '@shared/lib/api/branding.api';
 import {
   DEFAULT_THEME_ID,
   THEMES,
@@ -24,7 +24,7 @@ function persistAppearancePatch(patch: {
   themeFontFamily?: string;
   themeFontSize?: FontSize;
 }) {
-  void updateProfile(patch).catch(() => {
+  void updateThemePreferences(patch).catch(() => {
     // ignore background persistence failures
   });
 }

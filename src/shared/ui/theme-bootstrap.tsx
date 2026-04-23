@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { getProfile, type UserProfile } from '@shared/lib/api/auth-account.api';
+import { getThemeProfile, type ThemeProfile } from '@shared/lib/api/branding.api';
 import {
   FONT_OPTIONS,
   FONT_SIZE_SCALES,
@@ -82,7 +82,7 @@ function firstDefined<T>(...values: Array<T | null | undefined>): T | undefined 
   return undefined;
 }
 
-export function resolveProfileThemePreferences(profile?: UserProfile | null): ResolvedThemePreferences {
+export function resolveProfileThemePreferences(profile?: ThemeProfile | null): ResolvedThemePreferences {
   if (!profile) return {};
 
   return {
@@ -163,7 +163,7 @@ export function ThemeBootstrap({ enableProfileSync = true }: { enableProfileSync
     applyPersistedThemePreferences();
 
     if (enableProfileSync) {
-      void getProfile()
+      void getThemeProfile()
         .then((profile) => {
           if (!profile) return;
           applyResolvedThemePreferences(resolveProfileThemePreferences(profile));
