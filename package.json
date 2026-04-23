@@ -14,6 +14,8 @@
     "check:migrations:all": "node scripts/check-migration-safety.mjs --all",
     "check:file-size": "node scripts/check-file-size.mjs",
     "check:file-size:all": "node scripts/check-file-size.mjs --all",
+    "check:encoding": "node scripts/check-text-encoding.mjs",
+    "check:encoding:all": "node scripts/check-text-encoding.mjs --all",
     "check:ai-proxies": "node scripts/check-ai-proxies.mjs",
     "inventory:codebase": "node scripts/codebase-inventory.mjs",
     "inventory:codebase:write": "node scripts/codebase-inventory.mjs --write",

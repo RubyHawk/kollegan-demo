@@ -10,7 +10,7 @@ export function PresentationPageInspector({ hf }: { hf: HFCtxValue }) {
   return (
     <InspectorCard
       title="Sida"
-      subtitle="GrundinstÃ¤llningar fÃ¶r presentationssidan."
+      subtitle="Grundinställningar för presentationssidan."
     >
       <div className="space-y-2">
         <Field label="Sidnamn">
@@ -30,7 +30,7 @@ export function PresentationPageInspector({ hf }: { hf: HFCtxValue }) {
 
         <ToggleCard
           title="Med i kundens PDF"
-          description={page.includeInCustomerPdf === false ? 'Sidan Ã¤r intern' : 'Sidan fÃ¶ljer med kunden'}
+          description={page.includeInCustomerPdf === false ? 'Sidan är intern' : 'Sidan följer med kunden'}
           checked={page.includeInCustomerPdf !== false}
           onChange={(checked) => hf.patchActivePage({ includeInCustomerPdf: checked })}
         />
@@ -46,7 +46,7 @@ export function PresentationPageInspector({ hf }: { hf: HFCtxValue }) {
             active={(page.kind ?? 'presentation') === 'document'}
             onClick={() => hf.patchActivePage({ kind: 'document', role: 'offer', includeInCustomerPdf: true })}
           >
-            GÃ¶r till offertsida
+            Gör till offertsida
           </ChoiceButton>
         </div>
       </div>
@@ -60,7 +60,7 @@ export function DocumentDefaultsInspector({ hf }: { hf: HFCtxValue }) {
   return (
     <InspectorCard
       title="Dokumentstandard"
-      subtitle="Typsnitt och marginaler fÃ¶r presentationssidorna."
+      subtitle="Typsnitt och marginaler för presentationssidorna."
     >
       <div className="space-y-2">
         <Field label="Standardteckensnitt">

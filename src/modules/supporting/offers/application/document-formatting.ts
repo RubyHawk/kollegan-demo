@@ -58,7 +58,7 @@ export function formatOfferLineItemQuantityHtml(item: OfferLineItem): string {
 
 export function getOfferLineItemDescription(description: string): { title: string; detail?: string } {
   const value = description.trim();
-  const separator = [' — ', ' – ', ' - ', ' ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â '].find((candidate) => value.includes(candidate)) ?? '';
+  const separator = [' — ', ' – ', ' - ', ' \u00e2\u20ac\u201d '].find((candidate) => value.includes(candidate)) ?? '';
   if (!separator) return { title: value };
 
   const [title, ...rest] = value.split(separator);

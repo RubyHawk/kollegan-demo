@@ -27,5 +27,8 @@ jobs:
       - name: AI proxy consistency
         run: npm run check:ai-proxies
 
+      - name: Text encoding guard
+        run: npm run check:encoding
+
       - name: File-size guard
         run: npm run check:file-size
