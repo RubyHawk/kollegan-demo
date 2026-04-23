@@ -2,7 +2,7 @@
 
 Owner: ISMS Manager  
 Review cadence: Monthly during refactor, quarterly after stabilization  
-Status: Draft baseline
+Status: Baseline in progress
 
 Use this file as an index to evidence. Do not commit secrets, backups, customer exports, or sensitive logs.
 
@@ -10,19 +10,20 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 
 | Date | Change | PR/commit | Evidence | Owner |
 |---|---|---|---|---|
-| 2026-04-19 | AI-native refactor and ISO readiness foundation | TBD | Docs, scripts, CI checks | Engineering lead |
-| 2026-04-19 | Feature flag foundation | TBD | `ff_feature_flag_audit_events`, `aud_audit_logs`, `/api/v1/feature-flags` handlers | Engineering lead |
-| 2026-04-21 | Auth route boundary cleanup | TBD | Profile/change-password handlers moved behind auth module; route files remain thin wrappers; no schema/data changes | Engineering lead |
-| 2026-04-21 | Staff API route boundary cleanup | TBD | Staff handlers moved behind auth module; legacy and v1 route files are thin wrappers; no schema/data changes | Engineering lead |
-| 2026-04-21 | Dev-login route boundary cleanup | TBD | Dev-only login handler moved behind auth module; route files remain thin wrappers; no schema/data changes | Engineering lead |
-| 2026-04-21 | Hotel demo seed route boundary cleanup | TBD | Demo seed handler moved behind hotel demo module; route file remains a thin wrapper; no schema/data changes | Engineering lead |
-| 2026-04-21 | Health route boundary cleanup | TBD | Health readiness checks moved behind platform health layer; route file remains a thin wrapper; no schema/data changes | Engineering lead |
+| 2026-04-19 | AI-native refactor and ISO readiness foundation | PR #432 / `1cbcc31` | Baseline docs, AI rules, production-data safety guidance, refactor playbook, and initial quality-gate scripts added as engineering evidence | Engineering lead |
+| 2026-04-19 | Feature flag foundation | PR #437 / `3a1b5c0` | `ff_feature_flag_audit_events`, `aud_audit_logs`, `/api/v1/feature-flags` handlers, rollout evaluation, and API contract coverage | Engineering lead |
+| 2026-04-21 | Auth route boundary cleanup | PR #489 / `3ced973` | Profile/change-password handlers moved behind auth module; route files remain thin wrappers; no schema/data changes | Engineering lead |
+| 2026-04-21 | Staff API route boundary cleanup | PR #490 / `920f905` | Staff handlers moved behind auth module; legacy and v1 route files are thin wrappers; no schema/data changes | Engineering lead |
+| 2026-04-21 | Dev-login route boundary cleanup | PR #491 / `3b7425d` | Dev-only login handler moved behind auth module; route files remain thin wrappers; no schema/data changes | Engineering lead |
+| 2026-04-21 | Hotel demo seed route boundary cleanup | PR #492 / `febb34e` | Demo seed handler moved behind hotel demo module; route file remains a thin wrapper; no schema/data changes | Engineering lead |
+| 2026-04-21 | Health route boundary cleanup | PR #493 / `d339fca` | Health readiness checks moved behind platform health layer; route file remains a thin wrapper; no schema/data changes | Engineering lead |
+| 2026-04-23 | Quality gate hardening and browser API boundary enforcement | PRs #542-#544 / `78f4531`, `9b25ad5`, `dea51f3` | Added text-encoding guard, enforced dependency-boundary validation in PR CI, moved offer template preview onto the shared templates API client, and added BOM regression coverage | Engineering lead |
 
 ## Feature Flag Rollout Evidence
 
 | Date | Flag | Environment | Rollout evidence | Rollback evidence | Owner |
 |---|---|---|---|---|---|
-| TBD | Public offer rewrite | production | TBD | TBD | Engineering lead |
+| TBD | Public offer rewrite | production | Implementation exists behind the feature-flag foundation; no production rollout evidence recorded yet | Roll back by disabling the renderer flag and falling back to `legacy` in the public offer renderer | Engineering lead |
 
 ## Migration Evidence
 
