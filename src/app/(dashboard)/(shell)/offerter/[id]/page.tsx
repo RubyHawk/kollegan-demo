@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
+import { getOfferPdfUrl } from '@shared/lib/api/offers.api';
 import { getSessionUser } from '@modules/supporting/auth';
 import { acceptOfferOnBehalfForStaff, getStaffOfferDetail } from '@modules/supporting/offers';
 
@@ -106,7 +107,7 @@ export default async function OfferDetailsPage({
             )}
             {offer.generatedDocument && (
               <a
-                href={`/api/offers/${offer.id}/pdf`}
+                href={getOfferPdfUrl(offer.id)}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-hover)]"
