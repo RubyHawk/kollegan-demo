@@ -18,6 +18,10 @@ function toOrg(raw: {
   senderEmail?: string | null;
   senderName?: string | null;
   emailHeaderConfig?: string | null;
+  themeMode?: string | null;
+  themeAccent?: string | null;
+  themeFontFamily?: string | null;
+  themeFontSize?: string | null;
   notificationRecipients?: string | null;
 }): Organization {
   return {
@@ -30,6 +34,10 @@ function toOrg(raw: {
     ...(raw.senderEmail ? { senderEmail: raw.senderEmail } : {}),
     ...(raw.senderName  ? { senderName: raw.senderName }   : {}),
     ...(raw.emailHeaderConfig ? { emailHeaderConfig: raw.emailHeaderConfig } : {}),
+    ...(raw.themeMode ? { themeMode: raw.themeMode } : {}),
+    ...(raw.themeAccent ? { themeAccent: raw.themeAccent } : {}),
+    ...(raw.themeFontFamily ? { themeFontFamily: raw.themeFontFamily } : {}),
+    ...(raw.themeFontSize ? { themeFontSize: raw.themeFontSize } : {}),
     ...(raw.notificationRecipients != null ? { notificationRecipients: raw.notificationRecipients } : {}),
   };
 }
@@ -63,7 +71,16 @@ export const identityRepository = {
     return orgs.map(toOrg);
   },
 
-  async updateOrg(id: string, data: { senderEmail?: string | null; senderName?: string | null; emailHeaderConfig?: string | null; notificationRecipients?: string | null }): Promise<Organization> {
+  async updateOrg(id: string, data: {
+    senderEmail?: string | null;
+    senderName?: string | null;
+    emailHeaderConfig?: string | null;
+    themeMode?: string | null;
+    themeAccent?: string | null;
+    themeFontFamily?: string | null;
+    themeFontSize?: string | null;
+    notificationRecipients?: string | null;
+  }): Promise<Organization> {
     const org = await prisma.organization.update({ where: { id }, data });
     return toOrg(org);
   },

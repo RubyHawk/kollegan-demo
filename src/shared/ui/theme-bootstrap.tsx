@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { getProfile } from '@shared/lib/api/auth-account.api';
+import { getProfile, type UserProfile } from '@shared/lib/api/auth-account.api';
 import {
   FONT_OPTIONS,
   FONT_SIZE_SCALES,
@@ -22,6 +22,13 @@ const VALID_THEME_MODES: Record<ThemeMode, true> = {
   dark: true,
   auto: true,
 };
+
+export interface ResolvedThemePreferences {
+  mode?: string | null;
+  accent?: string | null;
+  fontFamily?: string | null;
+  fontSize?: string | null;
+}
 
 function injectStyle(id: string, css: string) {
   let node = document.getElementById(id) as HTMLStyleElement | null;
@@ -66,6 +73,24 @@ function getFontSizeCss(scale: number) {
     `.text-2xl { font-size: ${(1.5 * scale).toFixed(4)}rem !important; line-height: ${(2 * scale).toFixed(4)}rem !important; }`,
     `.text-3xl { font-size: ${(1.875 * scale).toFixed(4)}rem !important; line-height: ${(2.25 * scale).toFixed(4)}rem !important; }`,
   ].join('\n');
+}
+
+function firstDefined<T>(...values: Array<T | null | undefined>): T | undefined {
+  for (const value of values) {
+    if (value !== undefined && value !== null) return value;
+  }
+  return undefined;
+}
+
+export function resolveProfileThemePreferences(profile?: UserProfile | null): ResolvedThemePreferences {
+  if (!profile) return {};
+
+  return {
+    mode: firstDefined(profile.themeMode, profile.organizationThemeMode),
+    accent: firstDefined(profile.themeAccent, profile.organizationThemeAccent),
+    fontFamily: firstDefined(profile.themeFontFamily, profile.organizationThemeFontFamily),
+    fontSize: firstDefined(profile.themeFontSize, profile.organizationThemeFontSize),
+  };
 }
 
 function applyResolvedThemePreferences({
@@ -141,12 +166,7 @@ export function ThemeBootstrap({ enableProfileSync = true }: { enableProfileSync
       void getProfile()
         .then((profile) => {
           if (!profile) return;
-          applyResolvedThemePreferences({
-            mode: profile.themeMode,
-            accent: profile.themeAccent,
-            fontFamily: profile.themeFontFamily,
-            fontSize: profile.themeFontSize,
-          });
+          applyResolvedThemePreferences(resolveProfileThemePreferences(profile));
         })
         .catch(() => {
           // ignore auth/profile failures

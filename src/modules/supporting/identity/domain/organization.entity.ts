@@ -30,6 +30,14 @@ export interface Organization {
   senderName?: string;
   /** JSON config for default visual email header */
   emailHeaderConfig?: string;
+  /** Default internal app theme mode for org members */
+  themeMode?: string;
+  /** Default internal app accent theme for org members */
+  themeAccent?: string;
+  /** Default internal app font family for org members */
+  themeFontFamily?: string;
+  /** Default internal app font size for org members */
+  themeFontSize?: string;
   /** Serialised NotificationRecipient[] — who gets which notification emails */
   notificationRecipients?: string;
 }

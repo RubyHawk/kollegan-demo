@@ -17,6 +17,10 @@ model Organization {
   senderEmail String? // e.g. "sales@mycompany.se" — must be verified in Resend
   senderName  String? // e.g. "Acme AB" — display name in the From header
   emailHeaderConfig String? // JSON config for default visual email header
+  themeMode String? // default internal app theme mode for org members
+  themeAccent String? // default internal app accent theme for org members
+  themeFontFamily String? // default internal app font family for org members
+  themeFontSize String? // default internal app font size for org members
 
   // Notification routing — JSON array of NotificationRecipient objects
   // [{ "id": "uuid", "email": "...", "tags": ["offer_signed", "offer_declined"] }]

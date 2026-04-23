@@ -84,7 +84,7 @@ export const userRepository = {
   },
 
   async findAccountProfile(id: string): Promise<AccountProfile | null> {
-    return prisma.user.findUnique({
+    const profile = await prisma.user.findUnique({
       where: { id },
       select: {
         id: true,
@@ -96,8 +96,34 @@ export const userRepository = {
         themeAccent: true,
         themeFontFamily: true,
         themeFontSize: true,
+        organization: {
+          select: {
+            themeMode: true,
+            themeAccent: true,
+            themeFontFamily: true,
+            themeFontSize: true,
+          },
+        },
       },
     });
+
+    if (!profile) return null;
+
+    return {
+      id: profile.id,
+      email: profile.email,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      avatarUrl: profile.avatarUrl,
+      themeMode: profile.themeMode,
+      themeAccent: profile.themeAccent,
+      themeFontFamily: profile.themeFontFamily,
+      themeFontSize: profile.themeFontSize,
+      organizationThemeMode: profile.organization?.themeMode ?? null,
+      organizationThemeAccent: profile.organization?.themeAccent ?? null,
+      organizationThemeFontFamily: profile.organization?.themeFontFamily ?? null,
+      organizationThemeFontSize: profile.organization?.themeFontSize ?? null,
+    };
   },
 
   async create(input: CreateUserInput): Promise<User> {

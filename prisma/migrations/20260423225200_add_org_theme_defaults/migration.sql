@@ -1,0 +1,5 @@
+ALTER TABLE "org_organizations"
+ADD COLUMN IF NOT EXISTS "themeMode" TEXT,
+ADD COLUMN IF NOT EXISTS "themeAccent" TEXT,
+ADD COLUMN IF NOT EXISTS "themeFontFamily" TEXT,
+ADD COLUMN IF NOT EXISTS "themeFontSize" TEXT;
