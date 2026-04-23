@@ -5,8 +5,12 @@ on:
     branches:
       - main
 
+concurrency:
+  group: quality-gates-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  safety:
+  quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -17,6 +21,15 @@ jobs:
         with:
           node-version: 24
           cache: npm
+
+      - name: Restore lint cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache/eslint
+          key: ${{ runner.os }}-lint-${{ hashFiles('package-lock.json') }}-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-lint-${{ hashFiles('package-lock.json') }}-${{ github.ref_name }}-
+            ${{ runner.os }}-lint-${{ hashFiles('package-lock.json') }}-
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
@@ -32,16 +45,6 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      - name: Typecheck
-        env:
-          NODE_OPTIONS: --max-old-space-size=4096
-        run: npm run typecheck
-
-      - name: Build
-        env:
-          NODE_OPTIONS: --max-old-space-size=4096
-        run: npm run build
-
       - name: Migration safety
         run: npm run check:migrations
 
@@ -55,3 +58,56 @@ jobs:
 
       - name: File-size guard
         run: npm run check:file-size
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Restore build caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+            tsconfig.tsbuildinfo
+          key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-${{ github.ref_name }}-
+            ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}-
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Prisma client generate
+        env:
+          DATABASE_URL: postgresql://user:pass@localhost:5432/kollegan?schema=public
+        run: npx prisma generate
+
+      - name: Typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: npm run typecheck
+
+      - name: Build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: npm run build
+
+  safety:
+    runs-on: ubuntu-latest
+    needs:
+      - quality
+      - build
+    if: always()
+    steps:
+      - name: Require quality and build jobs to pass
+        run: |
+          test "${{ needs.quality.result }}" = "success"
+          test "${{ needs.build.result }}" = "success"
