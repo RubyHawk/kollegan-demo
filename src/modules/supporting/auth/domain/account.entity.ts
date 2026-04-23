@@ -11,6 +11,10 @@ export interface AccountProfile {
   themeAccent: string | null;
   themeFontFamily: string | null;
   themeFontSize: string | null;
+  organizationThemeMode: string | null;
+  organizationThemeAccent: string | null;
+  organizationThemeFontFamily: string | null;
+  organizationThemeFontSize: string | null;
 }
 
 export interface UpdateAccountProfileData {

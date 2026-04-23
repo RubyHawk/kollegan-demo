@@ -15,6 +15,10 @@ export interface UserProfile {
   themeAccent?: string | null;
   themeFontFamily?: string | null;
   themeFontSize?: ThemeFontSize | string | null;
+  organizationThemeMode?: ThemeMode | string | null;
+  organizationThemeAccent?: string | null;
+  organizationThemeFontFamily?: string | null;
+  organizationThemeFontSize?: ThemeFontSize | string | null;
 }
 
 export interface UpdateProfilePayload {
