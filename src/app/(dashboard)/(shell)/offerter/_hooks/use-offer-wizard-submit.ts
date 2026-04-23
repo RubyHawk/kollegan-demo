@@ -1,7 +1,11 @@
 'use client';
 
 import { useCallback, useRef } from 'react';
-import { fetchWithRefresh } from '@shared/lib/api-client';
+import {
+  createOffer as createOfferRequest,
+  updateOffer,
+  type SaveOfferPayload,
+} from '@shared/lib/api/offers.api';
 import type { Offer, OfferForm, OfferPriceDisplayMode } from '../_store/types';
 import { EMPTY_FORM } from '../_store/types';
 import type { BlockingAlert } from '../_components/offer-blocking-alerts';
@@ -50,8 +54,8 @@ function validateOfferForm(form: OfferForm): Record<string, string> {
   return errs;
 }
 
-function buildOfferPayload(form: OfferForm, priceDisplayMode: OfferPriceDisplayMode) {
-  const body: Record<string, unknown> = {
+function buildOfferPayload(form: OfferForm, priceDisplayMode: OfferPriceDisplayMode): SaveOfferPayload {
+  const body: SaveOfferPayload = {
     title: form.title,
     priceDisplayMode,
     recipientName: form.recipientName,
@@ -106,25 +110,9 @@ export function useOfferWizardSubmit({
 
     try {
       const body = buildOfferPayload(form, priceDisplayMode);
-      const isEdit = Boolean(editingOfferId);
-      const res = isEdit
-        ? await fetchWithRefresh(`/api/offers/${editingOfferId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          })
-        : await fetchWithRefresh('/api/offers', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          });
-
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({})) as { detail?: string };
-        throw new Error(json.detail ?? `Fel ${res.status}`);
-      }
-
-      const json = await res.json() as { data: Offer };
+      const savedOffer = editingOfferId
+        ? await updateOffer(editingOfferId, body)
+        : await createOfferRequest(body);
       setShowForm(false);
       setForm(EMPTY_FORM);
       setEditingOfferId(null);
@@ -132,7 +120,7 @@ export function useOfferWizardSubmit({
 
       if (saveAndSendRef.current) {
         saveAndSendRef.current = false;
-        setConfirmSend(json.data);
+        setConfirmSend(savedOffer);
       } else {
         setDraftSaved(true);
         setTimeout(() => setDraftSaved(false), 3000);

@@ -35,14 +35,6 @@ export interface EmailSettings {
   emailHeaderConfig?: string | null;
 }
 
-export interface ThemeSettings {
-  themeMode: 'light' | 'dark' | 'auto' | null;
-  themeAccent: string | null;
-  themeFontFamily: string | null;
-  themeFontSize: 'small' | 'medium' | 'large' | null;
-  canManage: boolean;
-}
-
 export interface NotificationRecipient {
   id: string;
   email: string;
@@ -65,16 +57,6 @@ export async function getEmailSettings() {
 
 export async function updateEmailSettings(payload: Partial<EmailSettings>) {
   const res = await apiPut<Envelope<EmailSettings>>(`${ORG_BASE_URL}/email-settings`, payload);
-  return res.data;
-}
-
-export async function getThemeSettings() {
-  const res = await apiGet<Envelope<ThemeSettings>>(`${ORG_BASE_URL}/theme-settings`);
-  return res.data;
-}
-
-export async function updateThemeSettings(payload: Partial<Omit<ThemeSettings, 'canManage'>>) {
-  const res = await apiPut<Envelope<ThemeSettings>>(`${ORG_BASE_URL}/theme-settings`, payload);
   return res.data;
 }
 

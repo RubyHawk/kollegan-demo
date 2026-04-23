@@ -43,20 +43,6 @@ export const identityService = {
     return org;
   },
 
-  async updateOrgThemeSettings(
-    orgId: string,
-    settings: {
-      themeMode?: string | null;
-      themeAccent?: string | null;
-      themeFontFamily?: string | null;
-      themeFontSize?: string | null;
-    },
-  ): Promise<Organization> {
-    const org = await identityRepository.updateOrg(orgId, settings);
-    logger.info(TAG, `Org theme settings updated`, { orgId });
-    return org;
-  },
-
   async updateOrgNotificationRecipients(
     orgId: string,
     notificationRecipients: string,

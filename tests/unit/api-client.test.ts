@@ -2,14 +2,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiDelete, apiGet } from '../../src/shared/lib/api-client';
 import { listAnnouncements } from '../../src/shared/lib/api/announcements.api';
 import { getProfile } from '../../src/shared/lib/api/auth-account.api';
-import { removeCompanyMember } from '../../src/shared/lib/api/companies.api';
+import { listCompanies, removeCompanyMember } from '../../src/shared/lib/api/companies.api';
 import { createRisk, deletePolicy, getAccessReview, listComplianceControls, listRisks } from '../../src/shared/lib/api/compliance.api';
 import { listCustomers } from '../../src/shared/lib/api/customers.api';
 import { createLead } from '../../src/shared/lib/api/leads.api';
 import { updateMeeting } from '../../src/shared/lib/api/meetings.api';
 import { sendMessage } from '../../src/shared/lib/api/messages.api';
-import { deleteProduct, deleteProductCategory } from '../../src/shared/lib/api/products.api';
-import { getThemeSettings, updateThemeSettings } from '../../src/shared/lib/api/settings.api';
+import { createOffer, updateOffer } from '../../src/shared/lib/api/offers.api';
+import { deleteProduct, deleteProductCategory, listProducts } from '../../src/shared/lib/api/products.api';
+import { getTemplate, listTemplates, previewTemplate } from '../../src/shared/lib/api/templates.api';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -109,6 +110,92 @@ describe('feature API clients', () => {
 
     await expect(listCustomers({ search: 'anna', limit: 8, offset: 0 })).resolves.toMatchObject({ total: 0 });
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/kunder?search=anna&limit=8&offset=0', expect.any(Object));
+  });
+
+  it('uses v1 offer wizard routes through shared API clients', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: [{ id: 'tpl_1', name: 'Standard' }],
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { id: 'tpl_1', name: 'Standard', content: '<p>Hello</p>', createdAt: '', updatedAt: '' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        html: '<p>Preview</p>',
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { products: [{ id: 'prod_1', name: 'Service', unitPrice: 100, vatRate: 0.25, createdBy: 'u', createdAt: '' }] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { companies: [{ id: 'company_1', name: 'Acme', createdBy: 'u', createdAt: '', updatedAt: '', organizationId: 'org_1' }] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { contacts: [], customers: [], total: 0, limit: 8, offset: 0 },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { id: 'offer_1', title: 'Test', status: 'draft' },
+      }), {
+        status: 201,
+        headers: { 'content-type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { id: 'offer_1', title: 'Updated', status: 'draft' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(listTemplates({ companyId: 'company_1' })).resolves.toHaveLength(1);
+    await expect(getTemplate('tpl_1')).resolves.toMatchObject({ id: 'tpl_1' });
+    await expect(previewTemplate({ content: '<p>Hello</p>' })).resolves.toBe('<p>Preview</p>');
+    await expect(listProducts({ companyId: 'company_1' })).resolves.toHaveLength(1);
+    await expect(listCompanies({ search: 'acme', limit: 8, offset: 0 })).resolves.toHaveLength(1);
+    await expect(listCustomers({ search: 'anna', limit: 8, offset: 0 })).resolves.toMatchObject({ total: 0 });
+    await expect(createOffer({
+      title: 'Test',
+      priceDisplayMode: 'inclusive',
+      recipientName: 'Anna',
+      recipientEmail: 'anna@example.com',
+      validityDays: 30,
+      lineItems: [],
+    })).resolves.toMatchObject({ id: 'offer_1' });
+    await expect(updateOffer('offer_1', {
+      title: 'Updated',
+      priceDisplayMode: 'inclusive',
+      recipientName: 'Anna',
+      recipientEmail: 'anna@example.com',
+      validityDays: 30,
+      lineItems: [],
+    })).resolves.toMatchObject({ title: 'Updated' });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/v1/templates?companyId=company_1', expect.any(Object));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/v1/templates/tpl_1', expect.any(Object));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/v1/templates/preview', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/v1/offers/products?companyId=company_1', expect.any(Object));
+    expect(fetchMock).toHaveBeenNthCalledWith(5, '/api/v1/companies?search=acme&limit=8&offset=0', expect.any(Object));
+    expect(fetchMock).toHaveBeenNthCalledWith(6, '/api/v1/kunder?search=anna&limit=8&offset=0', expect.any(Object));
+    expect(fetchMock).toHaveBeenNthCalledWith(7, '/api/v1/offers', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(8, '/api/v1/offers/offer_1', expect.objectContaining({ method: 'PATCH' }));
   });
 
   it('uses v1 leads routes for lead creation', async () => {
@@ -240,54 +327,6 @@ describe('feature API clients', () => {
       2,
       '/api/v1/admin/compliance/policies/policy_1',
       expect.objectContaining({ method: 'DELETE' }),
-    );
-  });
-
-  it('uses v1 org theme-settings routes for organization defaults', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        data: {
-          themeMode: 'auto',
-          themeAccent: 'soleria',
-          themeFontFamily: 'inter',
-          themeFontSize: 'medium',
-          canManage: true,
-        },
-      }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        data: {
-          themeMode: null,
-          themeAccent: 'nature',
-          themeFontFamily: null,
-          themeFontSize: 'large',
-          canManage: true,
-        },
-      }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      }));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await expect(getThemeSettings()).resolves.toMatchObject({ canManage: true, themeMode: 'auto' });
-    await expect(updateThemeSettings({
-      themeMode: null,
-      themeAccent: 'nature',
-      themeFontSize: 'large',
-    })).resolves.toMatchObject({ themeAccent: 'nature', themeFontSize: 'large' });
-
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      '/api/v1/org/theme-settings',
-      expect.any(Object),
-    );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      '/api/v1/org/theme-settings',
-      expect.objectContaining({ method: 'PUT' }),
     );
   });
 });
