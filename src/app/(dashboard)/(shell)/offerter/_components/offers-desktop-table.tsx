@@ -1,5 +1,6 @@
 'use client';
 
+import { getOfferPdfUrl } from '@shared/lib/api/offers.api';
 import { cn } from '@shared/lib/utils';
 import type { Offer, OfferPriceDisplayMode } from '../_store/types';
 import { STATUS_LABEL, STATUS_STYLES } from '../_lib/offers-dashboard-constants';
@@ -205,7 +206,7 @@ export function OffersDesktopTable({
                           </button>
                           <button
                             type="button"
-                            onClick={() => window.open(`/api/offers/${offer.id}/pdf`, '_blank')}
+                            onClick={() => window.open(getOfferPdfUrl(offer.id), '_blank')}
                             title="Öppna PDF"
                             aria-label="Öppna PDF"
                             className="rounded-md p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors"

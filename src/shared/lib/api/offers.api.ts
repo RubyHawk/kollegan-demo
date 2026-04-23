@@ -141,6 +141,10 @@ export async function getOffer(id: string): Promise<Offer> {
   return res.data;
 }
 
+export function getOfferPdfUrl(id: string): string {
+  return `${BASE_URL}/${id}/pdf`;
+}
+
 export async function createOffer(payload: SaveOfferPayload): Promise<Offer> {
   const res = await apiPost<ApiEnvelope<Offer>>(BASE_URL, payload);
   return res.data;

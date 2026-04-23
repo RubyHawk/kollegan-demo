@@ -8,7 +8,7 @@ import { listCustomers } from '../../src/shared/lib/api/customers.api';
 import { createLead } from '../../src/shared/lib/api/leads.api';
 import { updateMeeting } from '../../src/shared/lib/api/meetings.api';
 import { sendMessage } from '../../src/shared/lib/api/messages.api';
-import { createOffer, updateOffer } from '../../src/shared/lib/api/offers.api';
+import { createOffer, getOfferPdfUrl, updateOffer } from '../../src/shared/lib/api/offers.api';
 import { deleteProduct, deleteProductCategory, listProducts } from '../../src/shared/lib/api/products.api';
 import { getTemplate, listTemplates, previewTemplate } from '../../src/shared/lib/api/templates.api';
 
@@ -196,6 +196,10 @@ describe('feature API clients', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(6, '/api/v1/kunder?search=anna&limit=8&offset=0', expect.any(Object));
     expect(fetchMock).toHaveBeenNthCalledWith(7, '/api/v1/offers', expect.objectContaining({ method: 'POST' }));
     expect(fetchMock).toHaveBeenNthCalledWith(8, '/api/v1/offers/offer_1', expect.objectContaining({ method: 'PATCH' }));
+  });
+
+  it('builds v1 offer PDF links through the shared offers API client', () => {
+    expect(getOfferPdfUrl('offer_1')).toBe('/api/v1/offers/offer_1/pdf');
   });
 
   it('uses v1 leads routes for lead creation', async () => {

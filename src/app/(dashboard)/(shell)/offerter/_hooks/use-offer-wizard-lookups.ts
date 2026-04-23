@@ -108,8 +108,12 @@ export function useOfferWizardLookups({
   }, [selectedCompanyId, setTemplates]);
 
   const loadServices = useCallback(async () => {
-    const products = await listProducts(selectedCompanyId ? { companyId: selectedCompanyId } : {});
-    setServices(products as OfferProduct[]);
+    try {
+      const products = await listProducts(selectedCompanyId ? { companyId: selectedCompanyId } : {});
+      setServices(products as OfferProduct[]);
+    } catch {
+      /* keep the existing services list when product lookups fail */
+    }
   }, [selectedCompanyId, setServices]);
 
   useEffect(() => {
