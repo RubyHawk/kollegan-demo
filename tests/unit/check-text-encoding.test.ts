@@ -21,9 +21,9 @@ afterEach(() => {
 });
 
 describe('check-text-encoding script', () => {
-  it('fails on untracked files with a real UTF-8 BOM', () => {
+  it('fails on untracked files with a real UTF-8 BOM even when the first line is a comment', () => {
     const repoDir = createTempRepo();
-    writeFileSync(join(repoDir, 'bom.ts'), '\uFEFFexport const value = 1;\n', 'utf8');
+    writeFileSync(join(repoDir, 'bom.ts'), '\uFEFF// keep this comment\nexport const value = 1;\n', 'utf8');
 
     const result = spawnSync(process.execPath, [scriptPath], {
       cwd: repoDir,

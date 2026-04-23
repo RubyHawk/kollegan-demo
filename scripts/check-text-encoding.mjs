@@ -33,7 +33,6 @@ const ignoredSegments = new Set([
 
 const suspiciousLinePatterns = [
   { name: 'replacement-character', regex: /\uFFFD/ },
-  { name: 'utf8-bom', regex: /\uFEFF/ },
   { name: 'utf8-latin1-mojibake', regex: /Ã.|Â.|â€[^\s]?|â€™|â€œ|â€�|â€“|â€”|â€¦|ï»¿/ },
 ];
 
@@ -198,6 +197,15 @@ for (const file of files) {
 
   const text = fs.readFileSync(fullPath, 'utf8');
   const lines = text.split(/\r?\n/);
+
+  if (text.startsWith('\uFEFF')) {
+    findings.push({
+      file: normalize(file),
+      line: 1,
+      pattern: 'utf8-bom',
+      text: lines[0]?.trim() ?? '',
+    });
+  }
 
   lines.forEach((line, index) => {
     if (!isIntentionalNormalizationLine(line)) {
