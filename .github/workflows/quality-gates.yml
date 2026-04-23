@@ -29,7 +29,6 @@ jobs:
 
       - name: Dependency boundaries
         run: npm run lint:deps
-
       - name: Text encoding guard
         run: npm run check:encoding
 
