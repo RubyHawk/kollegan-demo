@@ -41,7 +41,7 @@ async function createPersonalOrganization(email: string, orgName?: string) {
 
 export async function registerStaffAccount(input: RegisterStaffAccountInput): Promise<RegisterStaffAccountResult> {
   const email = input.email.trim().toLowerCase();
-  const existing = await userRepository.findByEmail(email);
+  const existing = await userRepository.findByEmailInsensitive(email);
   if (existing) {
     throw Object.assign(new Error('An account with that email already exists.'), { code: 'EMAIL_EXISTS' });
   }

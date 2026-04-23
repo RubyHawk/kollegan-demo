@@ -70,6 +70,19 @@ export const userRepository = {
     return raw ? mapUser(raw) : null;
   },
 
+  async findByEmailInsensitive(email: string): Promise<User | null> {
+    const raw = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: email,
+          mode: 'insensitive',
+        },
+        deletedAt: null,
+      },
+    });
+    return raw ? mapUser(raw) : null;
+  },
+
   async findAccountProfile(id: string): Promise<AccountProfile | null> {
     return prisma.user.findUnique({
       where: { id },
