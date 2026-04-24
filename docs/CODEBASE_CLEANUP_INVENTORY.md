@@ -35,15 +35,15 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 902 |
-| Source files scanned | 767 |
+| Tracked files scanned | 896 |
+| Source files scanned | 761 |
 | Active production source files | 624 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 0 |
-| API route files | 170 |
+| API route files | 164 |
 | API v1 route files | 67 |
 | Feature API clients | 20 |
-| Legacy API compatibility wrappers | 68 |
+| Legacy API compatibility wrappers | 62 |
 | Demo API routes | 14 |
 | Public/integration API routes | 21 |
 | Retained non-versioned API routes | 35 |
@@ -130,12 +130,6 @@ These are compatibility or alias routes kept while browser, mobile, and external
 | src/app/api/feature-flags/[id]/route.ts |
 | src/app/api/feature-flags/evaluate/route.ts |
 | src/app/api/feature-flags/route.ts |
-| src/app/api/kunder/[id]/route.ts |
-| src/app/api/kunder/route.ts |
-| src/app/api/leads/[id]/activities/route.ts |
-| src/app/api/leads/[id]/convert/route.ts |
-| src/app/api/leads/[id]/route.ts |
-| src/app/api/leads/route.ts |
 | src/app/api/leverantorer/[id]/route.ts |
 | src/app/api/leverantorer/route.ts |
 | src/app/api/offers/[id]/pdf/route.ts |
