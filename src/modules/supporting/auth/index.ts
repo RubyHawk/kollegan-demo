@@ -69,7 +69,6 @@ export { handleChangePassword, handleGetProfile, handleUpdateProfile } from './a
 export { handleDevLogin } from './api/handlers/dev-login.handler';
 export {
   handleCreateStaff,
-  handleCreateStaffV1,
   handleDeleteStaff,
   handleListStaff,
 } from './api/handlers/staff.handler';

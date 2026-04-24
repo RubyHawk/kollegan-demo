@@ -55,8 +55,7 @@ function createStaffHandler(locationBase: string) {
   );
 }
 
-export const handleCreateStaff = createStaffHandler('/api/staff');
-export const handleCreateStaffV1 = createStaffHandler('/api/v1/staff');
+export const handleCreateStaff = createStaffHandler('/api/v1/staff');
 
 export const handleDeleteStaff = createHandler(
   {
