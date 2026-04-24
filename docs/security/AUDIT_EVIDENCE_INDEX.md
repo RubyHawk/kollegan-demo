@@ -15,6 +15,8 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Feature-flag rollouts: `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`
 - Incidents and drills: `docs/security/INCIDENT_POSTMORTEM_LOG.md`
 - Vulnerability reviews: `docs/security/VULNERABILITY_REVIEW_LOG.md`
+- Internal audit workflow: `docs/security/INTERNAL_AUDIT_PLAYBOOK.md`
+- Management review workflow: `docs/security/MANAGEMENT_REVIEW_AGENDA.md`
 
 ## Change Evidence
 
@@ -44,6 +46,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 | 2026-04-24 | Auth wrapper retirement                                     | PR #582 / `4ec6b8b`                                        | Added the missing `/api/v1/auth` MFA backup-code and WebAuthn registration routes, made `v1` auth routes self-contained, and retired legacy `/api/auth` compatibility wrappers after repo usage verification; no schema or production-data changes | Engineering lead |
 | 2026-04-24 | Security operations evidence logs                           | PR #585 / `6cc847f`                                        | Added repo-backed operational log templates for access reviews, restore tests, internal audits, management reviews, incidents, and vulnerability triage; linked those logs from the security policies, audit evidence index, and SoA without creating fake records | Engineering lead |
 | 2026-04-24 | Feature-flag rollout evidence log                           | PR #586 / `75d17e1`                                        | Added a repo-backed rollout log for production-impacting release flags and linked it from change management, the audit evidence index, and the SoA so rollout/rollback evidence can be recorded without inventing fake entries | Engineering lead |
+| 2026-04-24 | Internal audit and management review playbooks              | PR #587 / `1e2d343`                                        | Added repo-backed internal audit and management review workflows, linked them from the corresponding logs, and tightened the evidence index so those two remaining operating gaps are executable without inventing records | Engineering lead |
 
 ## Feature Flag Rollout Evidence
 
@@ -73,8 +76,8 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 
 | Date                      | Activity          | Findings                                                | Corrective actions                                                 | Owner        |
 | ------------------------- | ----------------- | ------------------------------------------------------- | ------------------------------------------------------------------ | ------------ |
-| Open gap as of 2026-04-24 | Internal audit    | Repo-backed log path now exists in `INTERNAL_AUDIT_LOG.md`, but no completed internal audit record is committed yet | Schedule independent review and record findings/corrective actions | ISMS Manager |
-| Open gap as of 2026-04-24 | Management review | Repo-backed log path now exists in `MANAGEMENT_REVIEW_LOG.md`, but no completed management review record is committed yet | Record management review decisions, owners, and follow-up actions  | Management   |
+| Open gap as of 2026-04-24 | Internal audit    | Repo-backed log and audit workflow now exist in `INTERNAL_AUDIT_LOG.md` and `INTERNAL_AUDIT_PLAYBOOK.md`, but no completed internal audit record is committed yet | Schedule independent review and record findings/corrective actions | ISMS Manager |
+| Open gap as of 2026-04-24 | Management review | Repo-backed log and agenda now exist in `MANAGEMENT_REVIEW_LOG.md` and `MANAGEMENT_REVIEW_AGENDA.md`, but no completed management review record is committed yet | Record management review decisions, owners, and follow-up actions  | Management   |
 
 ## Incident And Vulnerability Operations
 
