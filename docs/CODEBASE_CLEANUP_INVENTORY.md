@@ -35,15 +35,15 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 906 |
-| Source files scanned | 771 |
+| Tracked files scanned | 902 |
+| Source files scanned | 767 |
 | Active production source files | 624 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 0 |
-| API route files | 174 |
+| API route files | 170 |
 | API v1 route files | 67 |
 | Feature API clients | 20 |
-| Legacy API compatibility wrappers | 72 |
+| Legacy API compatibility wrappers | 68 |
 | Demo API routes | 14 |
 | Public/integration API routes | 21 |
 | Retained non-versioned API routes | 35 |
@@ -138,10 +138,6 @@ These are compatibility or alias routes kept while browser, mobile, and external
 | src/app/api/leads/route.ts |
 | src/app/api/leverantorer/[id]/route.ts |
 | src/app/api/leverantorer/route.ts |
-| src/app/api/meetings/[id]/route.ts |
-| src/app/api/meetings/route.ts |
-| src/app/api/messages/conversations/[id]/messages/route.ts |
-| src/app/api/messages/conversations/route.ts |
 | src/app/api/offers/[id]/pdf/route.ts |
 | src/app/api/offers/[id]/route.ts |
 | src/app/api/offers/bulk-send/route.ts |
