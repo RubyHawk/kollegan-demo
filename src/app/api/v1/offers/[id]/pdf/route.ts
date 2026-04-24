@@ -1,1 +1,1 @@
-export { GET } from '../../../../offers/[id]/pdf/route';
+export { handleGetOfferPdf as GET } from '@modules/supporting/offers';

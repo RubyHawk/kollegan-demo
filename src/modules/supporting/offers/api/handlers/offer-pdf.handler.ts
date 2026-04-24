@@ -1,29 +1,23 @@
-/**
- * GET /api/offers/[id]/pdf
- *
- * Returns the offer's generated HTML document with an auto-print script
- * injected. Opening this URL in a new tab triggers the browser print dialog,
- * which lets the user save as PDF. No external PDF library required.
- *
- * Auth: reads the `at` httpOnly cookie (sent automatically by the browser
- * when window.open() is used, so no manual token passing needed).
- */
-
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@platform/auth/jwt';
-import { getOffer } from '@modules/supporting/offers';
-import { resolveOfferBrandingForOffer } from '@modules/supporting/offers/application/offer-branding-profile';
-import { sanitizeGeneratedOfferDocument } from '@modules/supporting/offers/application/document-generator';
+import { getOffer } from '../../application/offers.service';
+import { resolveOfferBrandingForOffer } from '../../application/offer-branding-profile';
+import { sanitizeGeneratedOfferDocument } from '../../application/document-generator';
 
 function extractToken(req: NextRequest): string {
   return req.headers.get('authorization')?.slice(7) ?? req.cookies.get('at')?.value ?? '';
 }
 
+function extractId(req: NextRequest): string {
+  const parts = req.nextUrl.pathname.split('/');
+  return parts[parts.length - 2] ?? '';
+}
+
 function slugify(s: string): string {
   return s
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .replace(/[åä]/g, 'a')
-    .replace(/[ö]/g, 'o')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 60);
@@ -114,39 +108,34 @@ function buildSignatureHydrationScript(offer: {
 </script>`;
 }
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-): Promise<NextResponse> {
-  // Authenticate
+export async function handleGetOfferPdf(req: NextRequest): Promise<NextResponse> {
   let payload;
   try {
     payload = await verifyToken(extractToken(req));
   } catch {
     return new NextResponse('Unauthorized', { status: 401 });
   }
+
   if (!payload.orgId) {
     return new NextResponse('Forbidden', { status: 403 });
   }
 
-  // Fetch offer
-  const { id } = await params;
+  const id = extractId(req);
   const offer = await getOffer(id, payload.orgId);
   if (!offer) {
     return new NextResponse('Not found', { status: 404 });
   }
+
   if (!offer.generatedDocument) {
     return new NextResponse('Offer has no generated document yet. Send the offer first.', {
       status: 422,
     });
   }
 
-  // Inject auto-print script + print-optimised overrides before </body>
   const signatureScript = buildSignatureHydrationScript(offer);
   const printScript = `
 <script>
   window.addEventListener('load', function () {
-    // Small delay to let fonts and images settle
     setTimeout(function () { window.print(); }, 300);
   });
 </script>`;
@@ -166,6 +155,7 @@ export async function GET(
   } catch {
     documentHtml = offer.generatedDocument;
   }
+
   const html = documentHtml
     .replace('</head>', `${printStyles}\n</head>`)
     .replace('</body>', `${signatureScript}\n${printScript}\n</body>`);
@@ -176,9 +166,7 @@ export async function GET(
     status: 200,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      // "inline" keeps it in the tab; the browser's Save as PDF dialog saves it
       'Content-Disposition': `inline; filename="${filename}"`,
-      // Prevent caching of sensitive documents
       'Cache-Control': 'private, no-store',
     },
   });

@@ -109,6 +109,7 @@ export {
   handleExpireOffers,
   handleBulkSendOffers,
 } from './api/handlers/offer.handler';
+export { handleGetOfferPdf } from './api/handlers/offer-pdf.handler';
 
 export {
   handleListTemplates,
