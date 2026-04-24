@@ -11,7 +11,7 @@ Likelihood and impact are scored from 1 to 5.
 Risk score:
 
 ```txt
-likelihood × impact
+likelihood x impact
 ```
 
 Severity:
@@ -47,4 +47,3 @@ Each risk must include:
 - Avoid
 
 Accepted risks require owner approval and review date.
-
