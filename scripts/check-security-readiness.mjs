@@ -104,10 +104,11 @@ function escapeTableCell(value) {
 }
 
 function parseMarkdownRow(line) {
-  return line
-    .split("|")
-    .map((part) => part.trim())
-    .filter(Boolean);
+  const cells = line.split("|");
+  if (cells.length >= 2) {
+    return cells.slice(1, -1).map((part) => part.trim());
+  }
+  return cells.map((part) => part.trim());
 }
 
 function parseTracker() {
@@ -124,6 +125,8 @@ function parseTracker() {
   ]);
 
   let totalControls = 0;
+  let missingApplicability = 0;
+  let missingImplementation = 0;
 
   for (const line of lines) {
     if (!line.startsWith("|")) continue;
@@ -132,17 +135,35 @@ function parseTracker() {
     if (!/^\d+\.\d+$/.test(columns[0])) continue;
 
     totalControls += 1;
-    applicability.set(
-      columns[2],
-      (applicability.get(columns[2]) ?? 0) + 1,
-    );
-    implementation.set(
-      columns[3],
-      (implementation.get(columns[3]) ?? 0) + 1,
-    );
+    const applicabilityValue = columns[2];
+    const implementationValue = columns[3];
+
+    if (applicability.has(applicabilityValue)) {
+      applicability.set(
+        applicabilityValue,
+        (applicability.get(applicabilityValue) ?? 0) + 1,
+      );
+    } else {
+      missingApplicability += 1;
+    }
+
+    if (implementation.has(implementationValue)) {
+      implementation.set(
+        implementationValue,
+        (implementation.get(implementationValue) ?? 0) + 1,
+      );
+    } else {
+      missingImplementation += 1;
+    }
   }
 
-  return { totalControls, applicability, implementation };
+  return {
+    totalControls,
+    applicability,
+    implementation,
+    missingApplicability,
+    missingImplementation,
+  };
 }
 
 function parseEvidenceIndexGaps() {
@@ -205,6 +226,41 @@ function renderMarkdown() {
     (register) => register.status === "Empty register",
   ).length;
   const nextActions = [...new Set(openGaps.map((gap) => nextActionMap.get(gap.section)).filter(Boolean))];
+  const structuralObservations = [];
+
+  if (tracker.missingApplicability === 0) {
+    structuralObservations.push(
+      `All ${tracker.totalControls} Annex A controls currently have an applicability decision in \`ANNEX_A_CONTROL_TRACKER.md\`.`,
+    );
+  } else {
+    structuralObservations.push(
+      `${tracker.missingApplicability} Annex A control rows are still missing an applicability decision in \`ANNEX_A_CONTROL_TRACKER.md\`.`,
+    );
+  }
+
+  if (tracker.missingImplementation === 0) {
+    structuralObservations.push(
+      "All tracked Annex A controls currently have an implementation-status value.",
+    );
+  } else {
+    structuralObservations.push(
+      `${tracker.missingImplementation} Annex A control rows are still missing an implementation-status value.`,
+    );
+  }
+
+  if (openGaps.length === 0 && emptyRegisterCount === 0) {
+    structuralObservations.push(
+      "No open evidence-index gaps or empty operating registers are currently detected in the repository snapshot.",
+    );
+  } else {
+    structuralObservations.push(
+      "Remaining readiness gaps in the repository are primarily missing operating records, not missing baseline structure.",
+    );
+  }
+
+  structuralObservations.push(
+    "Certification readiness still must not be claimed until the operating logs contain real completed entries.",
+  );
 
   return `# Security Readiness Status
 
@@ -224,17 +280,17 @@ It summarizes what the repository can currently prove about ISO/IEC 27001:2022 r
 | Included controls | ${tracker.applicability.get("Included") ?? 0} |
 | Excluded controls | ${tracker.applicability.get("Excluded") ?? 0} |
 | Review required controls | ${tracker.applicability.get("Review required") ?? 0} |
+| Controls missing applicability decision | ${tracker.missingApplicability} |
 | Controls with baseline evidence linked | ${tracker.implementation.get("Baseline evidence linked") ?? 0} |
 | Controls with open gaps | ${tracker.implementation.get("Open gap") ?? 0} |
+| Controls missing implementation status | ${tracker.missingImplementation} |
 | Operational evidence registers tracked | ${registerStatuses.length} |
 | Empty operational evidence registers | ${emptyRegisterCount} |
 | Open gap rows in audit evidence index | ${openGaps.length} |
 
 ## Structural Readiness Observations
 
-- All 93 Annex A controls currently have an applicability decision in \`ANNEX_A_CONTROL_TRACKER.md\`.
-- Remaining readiness gaps in the repository are primarily missing operating records, not missing baseline structure.
-- Certification readiness still must not be claimed until the operating logs contain real completed entries.
+${structuralObservations.map((observation) => `- ${observation}`).join("\n")}
 
 ## Operational Evidence Register Status
 
