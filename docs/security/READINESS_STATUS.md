@@ -22,7 +22,7 @@ It summarizes what the repository can currently prove about ISO/IEC 27001:2022 r
 | Controls missing implementation status | 0 |
 | Operational evidence registers tracked | 10 |
 | Empty operational evidence registers | 10 |
-| Open gap rows in audit evidence index | 9 |
+| Open gap rows in audit evidence index | 10 |
 
 ## Structural Readiness Observations
 
@@ -59,6 +59,7 @@ It summarizes what the repository can currently prove about ISO/IEC 27001:2022 r
 | Incident And Vulnerability Operations | Vulnerability review | Engineering lead | Repo-backed log and review workflow now exist in `VULNERABILITY_REVIEW_LOG.md` and `VULNERABILITY_REVIEW_PLAYBOOK.md`, but no review record is committed yet |
 | Supplier Reviews | In-scope SaaS, hosting, database, and AI suppliers | ISMS Manager | Repo-backed log and review workflow now exist in `SUPPLIER_REVIEW_LOG.md` and `SUPPLIER_REVIEW_PLAYBOOK.md`, but no completed supplier review record is committed yet |
 | Awareness And Training | In-scope engineering and admin/support awareness | ISMS Manager | Repo-backed log and workflow now exist in `SECURITY_AWARENESS_LOG.md` and `SECURITY_AWARENESS_PLAYBOOK.md`, but no completed awareness or training record is committed yet |
+| Asset Lifecycle | Offboarding asset return and secure disposal/reuse events | ISMS Manager | Repo-backed lifecycle log and baselines now exist in `ASSET_LIFECYCLE_LOG.md`, `OFFBOARDING_AND_ASSET_RETURN_STANDARD.md`, and `ASSET_DISPOSAL_AND_REUSE_STANDARD.md`, but no completed lifecycle record is committed yet |
 
 ## Next Highest-Value Actions
 
@@ -69,3 +70,4 @@ It summarizes what the repository can currently prove about ISO/IEC 27001:2022 r
 - Run the first incident drill and vulnerability review cycle, then record both outcomes in the corresponding logs.
 - Complete the first supplier review cycle for in-scope suppliers and record it in `docs/security/SUPPLIER_REVIEW_LOG.md`.
 - Run the first awareness or training cycle and record the completed activity in `docs/security/SECURITY_AWARENESS_LOG.md`.
+- Record the first repo-safe asset return, secure disposal, reuse, or exception outcome in `docs/security/ASSET_LIFECYCLE_LOG.md` when such an event occurs.

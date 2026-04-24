@@ -89,6 +89,10 @@ const nextActionMap = new Map([
     "Awareness And Training",
     "Run the first awareness or training cycle and record the completed activity in `docs/security/SECURITY_AWARENESS_LOG.md`.",
   ],
+  [
+    "Asset Lifecycle",
+    "Record the first repo-safe asset return, secure disposal, reuse, or exception outcome in `docs/security/ASSET_LIFECYCLE_LOG.md` when such an event occurs.",
+  ],
 ]);
 
 function readText(filePath) {
