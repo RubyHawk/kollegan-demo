@@ -17,6 +17,9 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Vulnerability reviews: `docs/security/VULNERABILITY_REVIEW_LOG.md`
 - Supplier reviews: `docs/security/SUPPLIER_REVIEW_LOG.md`
 - Security awareness: `docs/security/SECURITY_AWARENESS_LOG.md`
+- Asset inventory baseline: `docs/security/ASSET_INVENTORY.md`
+- Information handling baseline: `docs/security/INFORMATION_HANDLING_STANDARD.md`
+- Information transfer baseline: `docs/security/INFORMATION_TRANSFER_STANDARD.md`
 - Access review workflow: `docs/security/ACCESS_REVIEW_CHECKLIST.md`
 - Restore-test workflow: `docs/security/RESTORE_TEST_PLAYBOOK.md`
 - Incident drill workflow: `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md`

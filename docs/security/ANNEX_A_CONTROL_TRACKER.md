@@ -25,12 +25,12 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 5.6 | Contact with special interest groups | Review required | Open gap | TBD | Record operational owner and evidence source |
 | 5.7 | Threat intelligence | Review required | Open gap | TBD | Record review method or justified exclusion |
 | 5.8 | Information security in project management | Included | Baseline evidence linked | Engineering lead | `docs/security/CHANGE_MANAGEMENT.md`, `docs/REFACTORING_PLAYBOOK.md` |
-| 5.9 | Inventory of information and other associated assets | Review required | Open gap | TBD | Record inventory source and owner |
-| 5.10 | Acceptable use of information and other associated assets | Review required | Open gap | TBD | Record policy location or justified exclusion |
+| 5.9 | Inventory of information and other associated assets | Included | Baseline evidence linked | ISMS Manager | `docs/security/ASSET_INVENTORY.md`, `docs/security/ISMS_SCOPE.md` |
+| 5.10 | Acceptable use of information and other associated assets | Included | Baseline evidence linked | ISMS Manager | `docs/security/INFORMATION_HANDLING_STANDARD.md`, `docs/AI_ENGINEERING.md` |
 | 5.11 | Return of assets | Review required | Open gap | TBD | Record offboarding evidence source |
-| 5.12 | Classification of information | Review required | Open gap | TBD | Record classification method or justified exclusion |
-| 5.13 | Labelling of information | Review required | Open gap | TBD | Record labelling method or justified exclusion |
-| 5.14 | Information transfer | Review required | Open gap | TBD | Record transfer controls and evidence |
+| 5.12 | Classification of information | Included | Baseline evidence linked | ISMS Manager | `docs/security/INFORMATION_HANDLING_STANDARD.md`, `docs/security/ASSET_INVENTORY.md` |
+| 5.13 | Labelling of information | Included | Baseline evidence linked | ISMS Manager | `docs/security/INFORMATION_HANDLING_STANDARD.md` |
+| 5.14 | Information transfer | Included | Baseline evidence linked | ISMS Manager | `docs/security/INFORMATION_TRANSFER_STANDARD.md`, `docs/PRODUCTION_DATA_SAFETY.md` |
 | 5.15 | Access control | Included | Baseline evidence linked | ISMS Manager | `docs/security/ACCESS_CONTROL.md`, `docs/security/ACCESS_REVIEW_LOG.md` |
 | 5.16 | Identity management | Included | Baseline evidence linked | Engineering lead | `docs/security/ACCESS_CONTROL.md`, `docs/security/AUDIT_EVIDENCE_INDEX.md` |
 | 5.17 | Authentication information | Included | Baseline evidence linked | Engineering lead | `docs/security/ACCESS_CONTROL.md`, `docs/security/AUDIT_EVIDENCE_INDEX.md` |
