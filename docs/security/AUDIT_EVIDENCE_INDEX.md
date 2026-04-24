@@ -28,6 +28,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Test information baseline: `docs/security/TEST_INFORMATION_STANDARD.md`
 - Supplier assurance baseline: `docs/security/SUPPLIER_ASSURANCE_STANDARD.md`
 - Business continuity baseline: `docs/security/BUSINESS_CONTINUITY_STANDARD.md`
+- Hosting resilience baseline: `docs/security/HOSTING_RESILIENCE_STANDARD.md`
 - Legal, records, and privacy baseline: `docs/security/LEGAL_RECORDS_AND_PRIVACY_STANDARD.md`
 - Remote working baseline: `docs/security/REMOTE_WORKING_STANDARD.md`
 - Authentication and cryptography baseline: `docs/security/AUTHENTICATION_AND_CRYPTOGRAPHY_STANDARD.md`
@@ -35,6 +36,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Endpoint/operations baseline: `docs/security/ENDPOINT_AND_OPERATIONS_SECURITY_STANDARD.md`
 - Data-protection lifecycle baseline: `docs/security/DATA_PROTECTION_LIFECYCLE_STANDARD.md`
 - Network/service baseline: `docs/security/NETWORK_AND_SERVICE_SECURITY_STANDARD.md`
+- Web-filtering baseline: `docs/security/WEB_FILTERING_BASELINE.md`
 - Access review workflow: `docs/security/ACCESS_REVIEW_CHECKLIST.md`
 - Restore-test workflow: `docs/security/RESTORE_TEST_PLAYBOOK.md`
 - Incident drill workflow: `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md`
