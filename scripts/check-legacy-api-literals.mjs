@@ -13,7 +13,7 @@ const trackedSourceExtensions = new Set([
   ".cjs",
 ]);
 
-const literalPattern = /(?<=["'`])\/api\/(?!v\d+(?:\/|["'`]|$))[^"'`\s)]+/g;
+const routeFilePattern = /^src\/app\/api(?:\/.*)?\/route\.[jt]sx?$/;
 
 const allowlist = [
   {
@@ -44,7 +44,7 @@ const allowlist = [
     file: "src/modules/demos/hotel/api/services.ts",
     reason: "Hotel demo services stay outside the ERP v1 surface.",
     patterns: [
-      /^\/api\/demos\/hotel\/\$\{type$/,
+      /^\/api\/demos\/hotel\/\$\{type\b/,
       /^\/api\/demos\/hotel\/restaurants$/,
       /^\/api\/demos\/hotel\/restaurants\/\$\{id\}$/,
       /^\/api\/demos\/hotel\/activities$/,
@@ -87,6 +87,11 @@ const allowlist = [
       /^\/api\/$/,
     ],
   },
+  {
+    file: "src/modules/supporting/compliance/application/evidence-collectors/security-headers.collector.ts",
+    reason: "Security-header collection intentionally probes the non-versioned health endpoint via the configured app URL.",
+    patterns: [/^\/api\/health$/],
+  },
 ];
 
 const allowlistByFile = new Map(allowlist.map((entry) => [entry.file, entry]));
@@ -109,20 +114,51 @@ function shouldScan(file) {
   const extension = path.extname(file);
   if (!trackedSourceExtensions.has(extension)) return false;
   if (!file.startsWith("src/")) return false;
-  if (file.startsWith("src/app/api/") && file.endsWith("/route.ts")) return false;
+  if (routeFilePattern.test(file)) return false;
   return true;
+}
+
+const stringLiteralPattern = /(["'])(?:\\.|(?!\1)[^\\\r\n])*\1|`(?:\\.|[^\\])*?`/gs;
+const directEndpointPattern = /^\/api\/(?!v\d+(?:\/|$))[^"'`\s)]*/g;
+const hostPrefixedEndpointPattern = /https?:\/\/[^\s"'`]+(\/api\/(?!v\d+(?:\/|$))[^"'`\s)]*)/g;
+const templatePrefixedEndpointPattern = /\$\{[^}]+\}[^"'`]*?(\/api\/(?!v\d+(?:\/|$))[^"'`\s)]*)/g;
+
+function lineNumber(text, index) {
+  return text.slice(0, index).split("\n").length;
+}
+
+function collectPatternMatches(content, literalOffset, fullText, pattern, endpointGroup = 0) {
+  const findings = [];
+
+  for (const match of content.matchAll(pattern)) {
+    const endpoint = match[endpointGroup];
+    if (!endpoint) continue;
+
+    const matchIndex = match.index ?? 0;
+    const endpointOffset = match[0].lastIndexOf(endpoint);
+    const absoluteIndex = literalOffset + matchIndex + Math.max(endpointOffset, 0);
+
+    findings.push({
+      endpoint,
+      line: lineNumber(fullText, absoluteIndex),
+    });
+  }
+
+  return findings;
 }
 
 function findLiterals(file) {
   const text = fs.readFileSync(path.join(root, file), "utf8");
   const findings = [];
 
-  for (const match of text.matchAll(literalPattern)) {
-    const endpoint = match[0];
-    const index = match.index ?? 0;
-    const before = text.slice(0, index);
-    const line = before.split("\n").length;
-    findings.push({ endpoint, line });
+  for (const literal of text.matchAll(stringLiteralPattern)) {
+    const raw = literal[0];
+    const literalOffset = (literal.index ?? 0) + 1;
+    const content = raw.slice(1, -1);
+
+    findings.push(...collectPatternMatches(content, literalOffset, text, directEndpointPattern));
+    findings.push(...collectPatternMatches(content, literalOffset, text, hostPrefixedEndpointPattern, 1));
+    findings.push(...collectPatternMatches(content, literalOffset, text, templatePrefixedEndpointPattern, 1));
   }
 
   return findings;

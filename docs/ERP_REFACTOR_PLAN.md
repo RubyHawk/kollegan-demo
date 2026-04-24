@@ -78,4 +78,5 @@ This plan supports ISO/IEC 27001:2022 readiness, but certification still depends
 - [API versioning](API_VERSIONING.md)
 - [Refactoring playbook](REFACTORING_PLAYBOOK.md)
 - [Codebase cleanup inventory](CODEBASE_CLEANUP_INVENTORY.md)
+- [Plan status](PLAN_STATUS.md)
 - [Security evidence index](security/AUDIT_EVIDENCE_INDEX.md)
