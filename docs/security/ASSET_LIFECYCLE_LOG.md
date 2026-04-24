@@ -2,7 +2,7 @@
 
 Owner: ISMS Manager  
 Review cadence: Quarterly  
-Status: Empty register as of 2026-04-25
+Status: Empty register as of 2026-04-24
 
 Use this register for completed asset-return, secure-disposal, or reuse events only. Do not commit serial numbers, home addresses, destruction certificates, shipping labels, or sensitive personnel notes.
 
@@ -15,7 +15,7 @@ Use this register for completed asset-return, secure-disposal, or reuse events o
 
 ## Lifecycle Records
 
-No asset-lifecycle records are committed yet as of 2026-04-25.
+No asset-lifecycle records are committed yet as of 2026-04-24.
 
 | Date | Lifecycle event | Asset class | Scope or trigger | Result | Follow-up actions | Evidence link |
 | --- | --- | --- | --- | --- | --- | --- |
