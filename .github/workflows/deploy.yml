@@ -256,7 +256,7 @@ jobs:
         run: |
           set -euo pipefail
           build_commit_sha="$(git rev-parse HEAD)"
-          tree_sha="$(git rev-parse HEAD^{tree})"
+          tree_sha="$(git rev-parse 'HEAD^{tree}')"
 
           BUILD_COMMIT_SHA="$build_commit_sha" \
           TREE_SHA="$tree_sha" \
