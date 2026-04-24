@@ -16,6 +16,7 @@ This is a working SoA index for ISO/IEC 27001:2022 readiness. The detailed per-c
 | Backup | Included | Business data must be recoverable. | Engineering lead | `docs/security/BACKUP_AND_RESTORE.md`, `docs/security/RESTORE_TEST_LOG.md` |
 | Logging and monitoring | Included | Feature flags, deployments, security events, and admin changes need evidence. | Engineering lead | `docs/security/AUDIT_EVIDENCE_INDEX.md`, `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`, `docs/security/INCIDENT_POSTMORTEM_LOG.md`, `.github/workflows/deploy.yml` |
 | Secure development lifecycle | Included | App is actively developed with AI-assisted workflows. | Engineering lead | `docs/security/SECURE_DEVELOPMENT.md`, `.github/workflows/quality-gates.yml` |
+| Environment separation and test information | Included | Release validation, restore testing, and production safety require clear boundaries between production and non-production data handling. | Engineering lead | `docs/security/ENVIRONMENT_SEPARATION_STANDARD.md`, `docs/security/TEST_INFORMATION_STANDARD.md`, `docs/security/RESTORE_TEST_PLAYBOOK.md` |
 | Change management | Included | Refactor and releases need auditable controls. | Engineering lead | `docs/security/CHANGE_MANAGEMENT.md`, `.github/workflows/deploy.yml` |
 | Vulnerability management | Included | Dependencies and app vulnerabilities require triage. | Engineering lead | `docs/security/VULNERABILITY_MANAGEMENT.md`, `docs/security/VULNERABILITY_REVIEW_LOG.md` |
 
