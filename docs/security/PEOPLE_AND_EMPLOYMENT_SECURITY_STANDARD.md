@@ -22,11 +22,15 @@ This standard defines the minimum people-security baseline for Kollegan. Detaile
 ## Offboarding And Change Of Role
 
 - Remove or reduce repository, VPS, database, CI/CD, and SaaS access when roles change or end.
+- Review assigned organization-owned devices, removable media, tokens, badges, and other controlled assets as part of offboarding.
+- Use the offboarding and asset-return baseline to make asset recovery or approved exceptions explicit.
 - Use the access-review process to verify that changes in responsibilities are reflected in actual access rights.
 
 ## Related Evidence
 
 - `docs/security/ACCESS_CONTROL.md`
 - `docs/security/ACCESS_REVIEW_CHECKLIST.md`
+- `docs/security/OFFBOARDING_AND_ASSET_RETURN_STANDARD.md`
+- `docs/security/ASSET_LIFECYCLE_LOG.md`
 - `docs/security/SECURITY_AWARENESS_PLAYBOOK.md`
 - `docs/security/AI_USAGE_POLICY.md`
