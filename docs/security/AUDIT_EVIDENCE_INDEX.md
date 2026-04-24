@@ -21,6 +21,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Vulnerability review workflow: `docs/security/VULNERABILITY_REVIEW_PLAYBOOK.md`
 - Internal audit workflow: `docs/security/INTERNAL_AUDIT_PLAYBOOK.md`
 - Management review workflow: `docs/security/MANAGEMENT_REVIEW_AGENDA.md`
+- Detailed Annex A tracker: `docs/security/ANNEX_A_CONTROL_TRACKER.md`
 
 ## Change Evidence
 

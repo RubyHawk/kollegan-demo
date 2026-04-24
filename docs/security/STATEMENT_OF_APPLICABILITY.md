@@ -2,9 +2,9 @@
 
 Owner: ISMS Manager  
 Review cadence: Quarterly and after risk methodology changes  
-Status: Draft baseline
+Status: Structured baseline
 
-This is a working SoA index for ISO/IEC 27001:2022 readiness. It must be completed with all Annex A controls before certification readiness is claimed.
+This is a working SoA index for ISO/IEC 27001:2022 readiness. The detailed per-control tracker lives in `docs/security/ANNEX_A_CONTROL_TRACKER.md`, and it must be completed with all Annex A controls before certification readiness is claimed.
 
 | Control area | Applicability | Rationale | Owner | Evidence |
 |---|---|---|---|---|
@@ -35,6 +35,10 @@ The following clause-level operating evidence is tracked alongside this SoA and 
 - `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md`
 - `docs/security/VULNERABILITY_REVIEW_LOG.md`
 - `docs/security/VULNERABILITY_REVIEW_PLAYBOOK.md`
+
+## Detailed Annex A Tracking
+
+Use `docs/security/ANNEX_A_CONTROL_TRACKER.md` as the canonical detailed matrix for all 93 Annex A controls, including applicability decisions, owners, and evidence links.
 
 ## Completion Rule
 
