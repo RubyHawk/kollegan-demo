@@ -26,8 +26,10 @@ Do not commit secrets, customer exports, backups, or infrastructure credentials 
 | Security evidence and ISMS documentation | Documentation set | Policies, evidence index, SoA, review logs, playbooks | Internal | ISMS Manager | `docs/security/AUDIT_EVIDENCE_INDEX.md`, `docs/security/STATEMENT_OF_APPLICABILITY.md` |
 | AI-assisted development workflow | Development process | Prompt context, code context, AI usage rules, agent instructions | Internal | Engineering lead | `docs/AI_ENGINEERING.md`, `docs/security/AI_USAGE_POLICY.md` |
 | Transactional email and public offer delivery | Business communication flow | Offer emails, signing links, customer-facing delivery metadata | Restricted | Engineering lead | `docs/security/SUPPLIER_MANAGEMENT.md`, `docs/PRODUCTION_DATA_SAFETY.md` |
+| Assigned endpoint devices and removable media | Operational asset class | Laptops, phones, hardware keys, removable media, and printed/exported material that can hold Kollegan information | Restricted | ISMS Manager | `docs/security/OFFBOARDING_AND_ASSET_RETURN_STANDARD.md`, `docs/security/ASSET_DISPOSAL_AND_REUSE_STANDARD.md` |
 
 ## Review Rule
 
 - Add or update rows when a new in-scope supplier, environment, or data-bearing workflow is introduced.
 - Record supplier-specific review outcomes in `SUPPLIER_REVIEW_LOG.md`; keep this file as the higher-level asset baseline.
+- Keep serial-level asset inventories or sensitive custody records outside the repository when they contain personnel or operationally sensitive detail.

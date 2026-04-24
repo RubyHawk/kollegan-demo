@@ -20,10 +20,13 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Segregation-of-duties baseline: `docs/security/SEGREGATION_OF_DUTIES.md`
 - Governance contacts/threat baseline: `docs/security/GOVERNANCE_CONTACTS_AND_THREAT_INTELLIGENCE.md`
 - Asset inventory baseline: `docs/security/ASSET_INVENTORY.md`
+- Asset lifecycle log: `docs/security/ASSET_LIFECYCLE_LOG.md`
 - Information handling baseline: `docs/security/INFORMATION_HANDLING_STANDARD.md`
 - Information transfer baseline: `docs/security/INFORMATION_TRANSFER_STANDARD.md`
 - People/employment baseline: `docs/security/PEOPLE_AND_EMPLOYMENT_SECURITY_STANDARD.md`
+- Offboarding and asset-return baseline: `docs/security/OFFBOARDING_AND_ASSET_RETURN_STANDARD.md`
 - Physical/hosting baseline: `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`
+- Asset disposal/reuse baseline: `docs/security/ASSET_DISPOSAL_AND_REUSE_STANDARD.md`
 - Environment separation baseline: `docs/security/ENVIRONMENT_SEPARATION_STANDARD.md`
 - Test information baseline: `docs/security/TEST_INFORMATION_STANDARD.md`
 - Supplier assurance baseline: `docs/security/SUPPLIER_ASSURANCE_STANDARD.md`

@@ -27,7 +27,7 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 5.8 | Information security in project management | Included | Baseline evidence linked | Engineering lead | `docs/security/CHANGE_MANAGEMENT.md`, `docs/REFACTORING_PLAYBOOK.md` |
 | 5.9 | Inventory of information and other associated assets | Included | Baseline evidence linked | ISMS Manager | `docs/security/ASSET_INVENTORY.md`, `docs/security/ISMS_SCOPE.md` |
 | 5.10 | Acceptable use of information and other associated assets | Included | Baseline evidence linked | ISMS Manager | `docs/security/INFORMATION_HANDLING_STANDARD.md`, `docs/AI_ENGINEERING.md` |
-| 5.11 | Return of assets | Included | Baseline evidence linked | ISMS Manager | `docs/security/PEOPLE_AND_EMPLOYMENT_SECURITY_STANDARD.md`, `docs/security/ACCESS_REVIEW_CHECKLIST.md` |
+| 5.11 | Return of assets | Included | Baseline evidence linked | ISMS Manager | `docs/security/OFFBOARDING_AND_ASSET_RETURN_STANDARD.md`, `docs/security/ASSET_LIFECYCLE_LOG.md` |
 | 5.12 | Classification of information | Included | Baseline evidence linked | ISMS Manager | `docs/security/INFORMATION_HANDLING_STANDARD.md`, `docs/security/ASSET_INVENTORY.md` |
 | 5.13 | Labelling of information | Included | Baseline evidence linked | ISMS Manager | `docs/security/INFORMATION_HANDLING_STANDARD.md` |
 | 5.14 | Information transfer | Included | Baseline evidence linked | ISMS Manager | `docs/security/INFORMATION_TRANSFER_STANDARD.md`, `docs/PRODUCTION_DATA_SAFETY.md` |
@@ -63,7 +63,7 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 6.2 | Terms and conditions of employment | Included | Baseline evidence linked | ISMS Manager | `docs/security/PEOPLE_AND_EMPLOYMENT_SECURITY_STANDARD.md` |
 | 6.3 | Information security awareness, education and training | Included | Baseline evidence linked | ISMS Manager | `docs/security/SECURITY_AWARENESS_LOG.md`, `docs/security/SECURITY_AWARENESS_PLAYBOOK.md`, `docs/security/AI_USAGE_POLICY.md` |
 | 6.4 | Disciplinary process | Included | Baseline evidence linked | ISMS Manager | `docs/security/PEOPLE_AND_EMPLOYMENT_SECURITY_STANDARD.md` |
-| 6.5 | Responsibilities after termination or change of employment | Included | Baseline evidence linked | ISMS Manager | `docs/security/ACCESS_CONTROL.md`, `docs/security/ACCESS_REVIEW_CHECKLIST.md` |
+| 6.5 | Responsibilities after termination or change of employment | Included | Baseline evidence linked | ISMS Manager | `docs/security/OFFBOARDING_AND_ASSET_RETURN_STANDARD.md`, `docs/security/ACCESS_CONTROL.md`, `docs/security/ACCESS_REVIEW_CHECKLIST.md` |
 | 6.6 | Confidentiality or non-disclosure agreements | Included | Baseline evidence linked | ISMS Manager | `docs/security/PEOPLE_AND_EMPLOYMENT_SECURITY_STANDARD.md` |
 | 6.7 | Remote working | Included | Baseline evidence linked | ISMS Manager | `docs/security/REMOTE_WORKING_STANDARD.md`, `docs/security/ACCESS_CONTROL.md`, `docs/vps-security-guide.html` |
 | 6.8 | Information security event reporting | Included | Baseline evidence linked | ISMS Manager | `docs/security/INCIDENT_RESPONSE.md`, `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md` |
@@ -85,7 +85,7 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 7.11 | Supporting utilities | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/BUSINESS_CONTINUITY_STANDARD.md` |
 | 7.12 | Cabling security | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/SUPPLIER_MANAGEMENT.md` |
 | 7.13 | Equipment maintenance | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/SUPPLIER_ASSURANCE_STANDARD.md` |
-| 7.14 | Secure disposal or re-use of equipment | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/LEGAL_RECORDS_AND_PRIVACY_STANDARD.md` |
+| 7.14 | Secure disposal or re-use of equipment | Included | Baseline evidence linked | ISMS Manager | `docs/security/ASSET_DISPOSAL_AND_REUSE_STANDARD.md`, `docs/security/ASSET_LIFECYCLE_LOG.md` |
 
 ## A.8 Technological Controls
 
