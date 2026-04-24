@@ -9,6 +9,11 @@ concurrency:
   group: deploy-production
   cancel-in-progress: false
 
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   DEPLOY_APP_DIR: /var/www/offert
@@ -18,19 +23,201 @@ env:
   NEXT_PUBLIC_VAPI_ASSISTANT_ID: ${{ vars.NEXT_PUBLIC_VAPI_ASSISTANT_ID || secrets.NEXT_PUBLIC_VAPI_ASSISTANT_ID }}
 
 jobs:
-  build_release:
+  classify:
     runs-on: ubuntu-latest
+    outputs:
+      runtime_affecting: ${{ steps.classify.outputs.runtime_affecting }}
+      process_affecting: ${{ steps.classify.outputs.process_affecting }}
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+      unknown_files: ${{ steps.classify.outputs.unknown_files }}
+      should_deploy: ${{ steps.classify.outputs.should_deploy }}
+      changed_files_json: ${{ steps.classify.outputs.changed_files_json }}
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 1
+          fetch-depth: 0
+
+      - name: Classify changed files
+        id: classify
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          before_sha="${{ github.event.before }}"
+          head_sha="${{ github.sha }}"
+
+          if [[ "$before_sha" =~ ^0+$ ]]; then
+            mapfile -t changed_files < <(git ls-tree -r --name-only "$head_sha")
+          else
+            mapfile -t changed_files < <(git diff --name-only --diff-filter=ACMR "$before_sha" "$head_sha")
+          fi
+
+          runtime=false
+          process=false
+          docs_only=true
+          unknown=false
+
+          for file in "${changed_files[@]}"; do
+            [ -n "$file" ] || continue
+            matched=false
+
+            case "$file" in
+              src/*|prisma/*|public/*|package.json|package-lock.json|next.config.*|tsconfig*.json|middleware.ts|instrumentation.ts|eslint.config.*|vitest.config.*|postcss.config.*|tailwind.config.*)
+                runtime=true
+                docs_only=false
+                matched=true
+                ;;
+            esac
+
+            case "$file" in
+              .github/workflows/*|scripts/deploy-release.sh|scripts/check-*.mjs|scripts/codebase-inventory.mjs)
+                process=true
+                docs_only=false
+                matched=true
+                ;;
+            esac
+
+            case "$file" in
+              docs/*|AGENTS.md|CLAUDE.md|.github/copilot-instructions.md|.claude/skills/*)
+                matched=true
+                ;;
+            esac
+
+            if [ "$matched" = false ]; then
+              runtime=true
+              docs_only=false
+              unknown=true
+            fi
+          done
+
+          if [ "${#changed_files[@]}" -eq 0 ]; then
+            docs_only=false
+          fi
+
+          should_deploy=false
+          if [ "$runtime" = true ] || [ "$process" = true ]; then
+            should_deploy=true
+          fi
+
+          changed_files_json="$(printf '%s\n' "${changed_files[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')"
+
+          {
+            echo "runtime_affecting=$runtime"
+            echo "process_affecting=$process"
+            echo "docs_only=$docs_only"
+            echo "unknown_files=$unknown"
+            echo "should_deploy=$should_deploy"
+            echo "changed_files_json=$changed_files_json"
+          } >> "$GITHUB_OUTPUT"
+
+  skip_deploy:
+    runs-on: ubuntu-latest
+    needs:
+      - classify
+    if: needs.classify.outputs.should_deploy != 'true'
+    steps:
+      - name: Skip deploy for docs-only or non-runtime changes
+        run: echo "No runtime-affecting or deploy-process changes detected; skipping deploy."
+
+  prepare_release_bundle:
+    runs-on: ubuntu-latest
+    needs:
+      - classify
+    if: needs.classify.outputs.should_deploy == 'true'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Try to promote PR release bundle
+        id: promote
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          mark_not_promoted() {
+            echo "promoted=false" >> "$GITHUB_OUTPUT"
+            echo "reason=$1" >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+
+          current_tree_sha="$(git rev-parse "${GITHUB_SHA}^{tree}")"
+          echo "current_tree_sha=$current_tree_sha" >> "$GITHUB_OUTPUT"
+
+          pulls_json="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls")"
+          pr_json="$(jq -cr --arg sha "$GITHUB_SHA" 'map(select(.merge_commit_sha == $sha and .merged_at != null)) | sort_by(.merged_at) | last // empty' <<< "$pulls_json")"
+
+          if [ -z "$pr_json" ]; then
+            mark_not_promoted no-associated-pr
+          fi
+
+          pr_number="$(jq -r '.number | tostring' <<< "$pr_json")"
+          pr_head_sha="$(jq -r '.head.sha' <<< "$pr_json")"
+          echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
+
+          runs_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/quality-gates.yml/runs?event=pull_request&per_page=100")"
+          run_json="$(jq -cr --arg head_sha "$pr_head_sha" '.workflow_runs | map(select(.conclusion == "success" and .head_sha == $head_sha)) | sort_by(.created_at) | last // empty' <<< "$runs_json")"
+
+          if [ -z "$run_json" ]; then
+            mark_not_promoted no-successful-pr-run
+          fi
+
+          run_id="$(jq -r '.id | tostring' <<< "$run_json")"
+          artifacts_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts")"
+          artifact_json="$(jq -cr '.artifacts | map(select(.name == "pr-release-bundle" and .expired == false)) | sort_by(.created_at) | last // empty' <<< "$artifacts_json")"
+
+          if [ -z "$artifact_json" ]; then
+            mark_not_promoted no-pr-artifact
+          fi
+
+          artifact_id="$(jq -r '.id | tostring' <<< "$artifact_json")"
+          mkdir -p release/promoted/files release/promoted/unpacked
+
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" --output release/promoted/pr-release-bundle.zip
+          unzip -q release/promoted/pr-release-bundle.zip -d release/promoted/files
+
+          bundle_path="$(find release/promoted/files -type f -name '*.tar.gz' | head -n 1)"
+          if [ -z "$bundle_path" ]; then
+            mark_not_promoted artifact-zip-missing-bundle
+          fi
+
+          tar -xzf "$bundle_path" -C release/promoted/unpacked
+
+          metadata_path="release/promoted/unpacked/release-metadata.json"
+          if [ ! -f "$metadata_path" ]; then
+            mark_not_promoted artifact-metadata-missing
+          fi
+
+          metadata_tree_sha="$(jq -r '.tree_sha // empty' "$metadata_path")"
+          metadata_pr_number="$(jq -r 'if .pr_number == null then "" else (.pr_number | tostring) end' "$metadata_path")"
+          metadata_event_name="$(jq -r '.event_name // empty' "$metadata_path")"
+
+          if [ "$metadata_tree_sha" != "$current_tree_sha" ]; then
+            mark_not_promoted tree-sha-mismatch
+          fi
+
+          if [ "$metadata_pr_number" != "$pr_number" ]; then
+            mark_not_promoted pr-number-mismatch
+          fi
+
+          if [ "$metadata_event_name" != "pull_request" ]; then
+            mark_not_promoted invalid-artifact-event
+          fi
+
+          cp "$bundle_path" "kollegan-deploy-bundle-${GITHUB_SHA}.tar.gz"
+          echo "promoted=true" >> "$GITHUB_OUTPUT"
+          echo "reason=matched-pr-artifact" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v5
+        if: steps.promote.outputs.promoted != 'true'
         with:
           node-version: 24
           cache: npm
 
       - name: Restore build caches
+        if: steps.promote.outputs.promoted != 'true'
         id: build-cache
         uses: actions/cache/restore@v4
         with:
@@ -42,23 +229,42 @@ jobs:
             ${{ runner.os }}-deploy-build-${{ hashFiles('package-lock.json', 'next.config.ts', 'tsconfig*.json', 'prisma/schema/**/*.prisma') }}-
 
       - name: Install dependencies
+        if: steps.promote.outputs.promoted != 'true'
         run: npm ci --include=dev --prefer-offline --no-audit --ignore-scripts
 
       - name: Prisma client generate
+        if: steps.promote.outputs.promoted != 'true'
         env:
           DATABASE_URL: postgresql://user:pass@localhost:5432/kollegan?schema=public
         run: npx prisma generate
 
       - name: Build
+        if: steps.promote.outputs.promoted != 'true'
         env:
           NODE_OPTIONS: --max-old-space-size=4096
         run: npm run build
 
       - name: Package Next build artifact
-        run: tar -czf kollegan-next-build-${{ github.sha }}.tar.gz .next
+        if: steps.promote.outputs.promoted != 'true'
+        run: tar -czf kollegan-next-build.tar.gz .next
+
+      - name: Write release metadata
+        if: steps.promote.outputs.promoted != 'true'
+        shell: bash
+        env:
+          PR_NUMBER: ${{ steps.promote.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          build_commit_sha="$(git rev-parse HEAD)"
+          tree_sha="$(git rev-parse HEAD^{tree})"
+
+          BUILD_COMMIT_SHA="$build_commit_sha" \
+          TREE_SHA="$tree_sha" \
+          node -e "const fs = require('node:fs'); const prNumber = process.env.PR_NUMBER ? Number(process.env.PR_NUMBER) : null; const data = { bundle_version: 1, source: 'push-rebuild', event_name: process.env.GITHUB_EVENT_NAME, pr_number: Number.isFinite(prNumber) ? prNumber : null, run_id: Number(process.env.GITHUB_RUN_ID), run_attempt: Number(process.env.GITHUB_RUN_ATTEMPT), build_commit_sha: process.env.BUILD_COMMIT_SHA, tree_sha: process.env.TREE_SHA, created_at: new Date().toISOString() }; fs.writeFileSync('release-metadata.json', JSON.stringify(data, null, 2));"
 
       - name: Package deploy bundle
-        run: tar -czf kollegan-deploy-bundle-${{ github.sha }}.tar.gz kollegan-next-build-${{ github.sha }}.tar.gz scripts/deploy-release.sh
+        if: steps.promote.outputs.promoted != 'true'
+        run: tar -czf kollegan-deploy-bundle-${{ github.sha }}.tar.gz kollegan-next-build.tar.gz release-metadata.json scripts/deploy-release.sh
 
       - name: Upload deploy bundle
         uses: actions/upload-artifact@v4
@@ -69,7 +275,7 @@ jobs:
           retention-days: 1
 
       - name: Save build caches
-        if: steps.build-cache.outputs.cache-hit != 'true'
+        if: steps.promote.outputs.promoted != 'true' && steps.build-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
@@ -80,7 +286,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs:
-      - build_release
+      - classify
+      - prepare_release_bundle
+    if: needs.classify.outputs.should_deploy == 'true'
     steps:
       - name: Download deploy bundle
         uses: actions/download-artifact@v4
@@ -138,7 +346,7 @@ jobs:
             install -m 755 "$stage_dir/scripts/deploy-release.sh" "$app_dir/deploy_kollegan.sh"
 
             artifact_path="$incoming_dir/kollegan-next-build-${{ github.sha }}.tar.gz"
-            mv "$stage_dir/kollegan-next-build-${{ github.sha }}.tar.gz" "$artifact_path"
+            mv "$stage_dir/kollegan-next-build.tar.gz" "$artifact_path"
 
             APP_DIR="$app_dir" \
             APP_BASE_URL="${{ env.NEXT_PUBLIC_APP_URL }}" \
