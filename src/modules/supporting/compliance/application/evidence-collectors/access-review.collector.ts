@@ -8,7 +8,7 @@ export async function accessReviewCollector(
   controlId: string
 ): Promise<CollectorResult> {
   // Look for the most recent access-review API call in audit logs.
-  // The access-review endpoint is at /api/admin/access-review and is
+  // The access-review endpoint is at /api/v1/admin/access-review and is
   // logged via the createHandler middleware with tag 'Admin:AccessReview'.
   const lastReview = await prisma.auditLog.findFirst({
     where: {
