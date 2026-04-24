@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiDelete, apiGet } from '../../src/shared/lib/api-client';
 import { seedHotelDemoStaff } from '../../src/modules/demos/hotel/api/seed';
 import { listAnnouncements } from '../../src/shared/lib/api/announcements.api';
+import { getCalendarEventsConfig } from '../../src/shared/lib/api/calendar.api';
 import { getThemeProfile, updateThemePreferences } from '../../src/shared/lib/api/branding.api';
 import { listCompanies, removeCompanyMember } from '../../src/shared/lib/api/companies.api';
 import { createRisk, deletePolicy, getAccessReview, listComplianceControls, listRisks } from '../../src/shared/lib/api/compliance.api';
@@ -126,6 +127,19 @@ describe('feature API clients', () => {
 
     await expect(listCustomers({ search: 'anna', limit: 8, offset: 0 })).resolves.toMatchObject({ total: 0 });
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/kunder?search=anna&limit=8&offset=0', expect.any(Object));
+  });
+
+  it('uses v1 calendar routes for Google Calendar configuration reads', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      data: { configured: true, embedUrl: 'https://calendar.google.com/calendar/embed?src=test' },
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(getCalendarEventsConfig()).resolves.toMatchObject({ configured: true });
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/calendar/events', expect.any(Object));
   });
 
   it('uses v1 offer wizard routes through shared API clients', async () => {

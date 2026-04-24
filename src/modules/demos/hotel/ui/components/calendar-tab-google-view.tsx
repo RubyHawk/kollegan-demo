@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getCalendarEventsConfig } from '@shared/lib/api/calendar.api';
 import { GoogleCalendarIcon } from './calendar-tab-shared';
 
 const FUTURE_INTEGRATIONS = [
@@ -61,8 +62,7 @@ export function GoogleCalendarView() {
   const [hovered, setHovered]       = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/calendar/events')
-      .then((r) => r.json())
+    getCalendarEventsConfig()
       .then((data) => { setConfigured(data.configured ?? false); setEmbedUrl(data.embedUrl ?? null); })
       .catch(() => {})
       .finally(() => setLoading(false));
