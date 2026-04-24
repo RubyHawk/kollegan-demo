@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       runtime_affecting: ${{ steps.classify.outputs.runtime_affecting }}
-      process_affecting: ${{ steps.classify.outputs.process_affecting }}
+      deploy_process_affecting: ${{ steps.classify.outputs.deploy_process_affecting }}
       docs_only: ${{ steps.classify.outputs.docs_only }}
       unknown_files: ${{ steps.classify.outputs.unknown_files }}
       should_deploy: ${{ steps.classify.outputs.should_deploy }}
@@ -53,7 +53,7 @@ jobs:
           fi
 
           runtime=false
-          process=false
+          deploy_process=false
           docs_only=true
           unknown=false
 
@@ -70,8 +70,15 @@ jobs:
             esac
 
             case "$file" in
-              .github/workflows/*|scripts/deploy-release.sh|scripts/check-*.mjs|scripts/codebase-inventory.mjs)
-                process=true
+              .github/workflows/deploy.yml|scripts/deploy-release.sh)
+                deploy_process=true
+                docs_only=false
+                matched=true
+                ;;
+            esac
+
+            case "$file" in
+              .github/workflows/*|scripts/check-*.mjs|scripts/codebase-inventory.mjs)
                 docs_only=false
                 matched=true
                 ;;
@@ -95,7 +102,7 @@ jobs:
           fi
 
           should_deploy=false
-          if [ "$runtime" = true ] || [ "$process" = true ]; then
+          if [ "$runtime" = true ] || [ "$deploy_process" = true ]; then
             should_deploy=true
           fi
 
@@ -103,7 +110,7 @@ jobs:
 
           {
             echo "runtime_affecting=$runtime"
-            echo "process_affecting=$process"
+            echo "deploy_process_affecting=$deploy_process"
             echo "docs_only=$docs_only"
             echo "unknown_files=$unknown"
             echo "should_deploy=$should_deploy"
@@ -116,8 +123,8 @@ jobs:
       - classify
     if: needs.classify.outputs.should_deploy != 'true'
     steps:
-      - name: Skip deploy for docs-only or non-runtime changes
-        run: echo "No runtime-affecting or deploy-process changes detected; skipping deploy."
+      - name: Skip deploy for docs-only or non-release-path changes
+        run: echo "No runtime-affecting or deploy-path changes detected; skipping deploy."
 
   prepare_release_bundle:
     runs-on: ubuntu-latest
