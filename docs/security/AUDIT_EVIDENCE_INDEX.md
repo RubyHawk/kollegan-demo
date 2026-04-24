@@ -15,6 +15,8 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Feature-flag rollouts: `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`
 - Incidents and drills: `docs/security/INCIDENT_POSTMORTEM_LOG.md`
 - Vulnerability reviews: `docs/security/VULNERABILITY_REVIEW_LOG.md`
+- Access review workflow: `docs/security/ACCESS_REVIEW_CHECKLIST.md`
+- Restore-test workflow: `docs/security/RESTORE_TEST_PLAYBOOK.md`
 - Internal audit workflow: `docs/security/INTERNAL_AUDIT_PLAYBOOK.md`
 - Management review workflow: `docs/security/MANAGEMENT_REVIEW_AGENDA.md`
 
@@ -47,6 +49,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 | 2026-04-24 | Security operations evidence logs                           | PR #585 / `6cc847f`                                        | Added repo-backed operational log templates for access reviews, restore tests, internal audits, management reviews, incidents, and vulnerability triage; linked those logs from the security policies, audit evidence index, and SoA without creating fake records | Engineering lead |
 | 2026-04-24 | Feature-flag rollout evidence log                           | PR #586 / `75d17e1`                                        | Added a repo-backed rollout log for production-impacting release flags and linked it from change management, the audit evidence index, and the SoA so rollout/rollback evidence can be recorded without inventing fake entries | Engineering lead |
 | 2026-04-24 | Internal audit and management review playbooks              | PR #587 / `1e2d343`                                        | Added repo-backed internal audit and management review workflows, linked them from the corresponding logs, and tightened the evidence index so those two remaining operating gaps are executable without inventing records | Engineering lead |
+| 2026-04-24 | Access review and restore test workflows                    | PR #588 / `3bb1250`                                        | Added repo-backed workflows for quarterly access reviews and non-production restore tests, linked them from the corresponding logs, and tightened the evidence index and SoA so those operating gaps are executable without inventing records | Engineering lead |
 
 ## Feature Flag Rollout Evidence
 
@@ -64,13 +67,13 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 
 | Date                      | Scope                                                                 | Result                                                      | Owner        |
 | ------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------- | ------------ |
-| Open gap as of 2026-04-24 | Application admin, repository, VPS, database, and CI/CD secret access | Repo-backed log path now exists in `ACCESS_REVIEW_LOG.md`, but no completed quarterly review record is committed yet | ISMS Manager |
+| Open gap as of 2026-04-24 | Application admin, repository, VPS, database, and CI/CD secret access | Repo-backed log and checklist now exist in `ACCESS_REVIEW_LOG.md` and `ACCESS_REVIEW_CHECKLIST.md`, but no completed quarterly review record is committed yet | ISMS Manager |
 
 ## Backup Restore Tests
 
 | Date                      | Backup ref                                            | Restore target                                             | Result  | Owner            |
 | ------------------------- | ----------------------------------------------------- | ---------------------------------------------------------- | ------- | ---------------- |
-| Open gap as of 2026-04-24 | Production backup references are external to the repo | Repo-backed log path now exists in `RESTORE_TEST_LOG.md`, but no completed quarterly restore-test record is committed yet | Pending | Engineering lead |
+| Open gap as of 2026-04-24 | Production backup references are external to the repo | Repo-backed log and playbook now exist in `RESTORE_TEST_LOG.md` and `RESTORE_TEST_PLAYBOOK.md`, but no completed quarterly restore-test record is committed yet | Pending | Engineering lead |
 
 ## Internal Audit And Management Review
 

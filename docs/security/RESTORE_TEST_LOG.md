@@ -12,6 +12,7 @@ Use this register for completed restore tests only. Do not commit backup files, 
 - Record the backup reference, target environment, smoke tests, and outcome.
 - Link the relevant migration or change evidence if the restore test supported a schema deployment.
 - Record corrective actions when a restore test fails or exposes drift.
+- Use `RESTORE_TEST_PLAYBOOK.md` to prepare the restore target, validation steps, and recorded outcome.
 
 ## Restore Records
 
@@ -19,4 +20,3 @@ No restore-test records are committed yet as of 2026-04-24.
 
 | Date | Backup reference | Restore target | Validation | Result | Follow-up actions | Evidence link |
 | --- | --- | --- | --- | --- | --- | --- |
-
