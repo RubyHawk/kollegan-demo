@@ -104,7 +104,7 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 8.11 | Data masking | Included | Baseline evidence linked | Engineering lead | `docs/security/DATA_PROTECTION_LIFECYCLE_STANDARD.md`, `docs/security/TEST_INFORMATION_STANDARD.md` |
 | 8.12 | Data leakage prevention | Included | Baseline evidence linked | Engineering lead | `docs/security/DATA_PROTECTION_LIFECYCLE_STANDARD.md`, `docs/security/INFORMATION_TRANSFER_STANDARD.md`, `docs/security/AI_USAGE_POLICY.md` |
 | 8.13 | Information backup | Included | Baseline evidence linked | Engineering lead | `docs/security/BACKUP_AND_RESTORE.md`, `docs/security/RESTORE_TEST_LOG.md` |
-| 8.14 | Redundancy of information processing facilities | Review required | Open gap | TBD | Record hosting resilience evidence or justified exclusion |
+| 8.14 | Redundancy of information processing facilities | Included | Baseline evidence linked | Engineering lead | `docs/security/HOSTING_RESILIENCE_STANDARD.md`, `docs/security/BUSINESS_CONTINUITY_STANDARD.md`, `docs/security/SUPPLIER_ASSURANCE_STANDARD.md` |
 | 8.15 | Logging | Included | Baseline evidence linked | Engineering lead | `docs/security/AUDIT_EVIDENCE_INDEX.md`, `.github/workflows/deploy.yml` |
 | 8.16 | Monitoring activities | Included | Baseline evidence linked | Engineering lead | `docs/security/ENDPOINT_AND_OPERATIONS_SECURITY_STANDARD.md`, `.github/workflows/deploy.yml`, `docs/security/INCIDENT_RESPONSE.md` |
 | 8.17 | Clock synchronization | Included | Baseline evidence linked | Engineering lead | `docs/security/ENDPOINT_AND_OPERATIONS_SECURITY_STANDARD.md`, `docs/vps-security-guide.html` |
@@ -113,7 +113,7 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 8.20 | Networks security | Included | Baseline evidence linked | Engineering lead | `docs/security/NETWORK_AND_SERVICE_SECURITY_STANDARD.md`, `docs/vps-security-guide.html` |
 | 8.21 | Security of network services | Included | Baseline evidence linked | Engineering lead | `docs/security/NETWORK_AND_SERVICE_SECURITY_STANDARD.md`, `.github/workflows/deploy.yml` |
 | 8.22 | Segregation of networks | Included | Baseline evidence linked | Engineering lead | `docs/security/NETWORK_AND_SERVICE_SECURITY_STANDARD.md`, `docs/security/REMOTE_WORKING_STANDARD.md` |
-| 8.23 | Web filtering | Review required | Open gap | TBD | Record justified exclusion or implemented control |
+| 8.23 | Web filtering | Included | Baseline evidence linked | Engineering lead | `docs/security/WEB_FILTERING_BASELINE.md`, `docs/security/NETWORK_AND_SERVICE_SECURITY_STANDARD.md`, `docs/security/REMOTE_WORKING_STANDARD.md` |
 | 8.24 | Use of cryptography | Included | Baseline evidence linked | Engineering lead | `docs/security/AUTHENTICATION_AND_CRYPTOGRAPHY_STANDARD.md`, `.github/workflows/deploy.yml` |
 | 8.25 | Secure development life cycle | Included | Baseline evidence linked | Engineering lead | `docs/security/SECURE_DEVELOPMENT.md`, `.github/workflows/quality-gates.yml` |
 | 8.26 | Application security requirements | Included | Baseline evidence linked | Engineering lead | `docs/security/CONFIGURATION_AND_APPLICATION_SECURITY_STANDARD.md`, `docs/AI_ENGINEERING.md`, `docs/PRODUCTION_DATA_SAFETY.md` |
