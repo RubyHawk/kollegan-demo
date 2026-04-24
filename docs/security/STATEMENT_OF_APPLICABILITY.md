@@ -23,7 +23,9 @@ This is a working SoA index for ISO/IEC 27001:2022 readiness. It must be complet
 The following clause-level operating evidence is tracked alongside this SoA and must contain real entries before certification readiness is claimed:
 
 - `docs/security/ACCESS_REVIEW_LOG.md`
+- `docs/security/ACCESS_REVIEW_CHECKLIST.md`
 - `docs/security/RESTORE_TEST_LOG.md`
+- `docs/security/RESTORE_TEST_PLAYBOOK.md`
 - `docs/security/INTERNAL_AUDIT_LOG.md`
 - `docs/security/MANAGEMENT_REVIEW_LOG.md`
 - `docs/security/INTERNAL_AUDIT_PLAYBOOK.md`
