@@ -1,3 +1,3 @@
 export const dynamic = 'force-dynamic';
 
-export { POST } from '../../../auth/login/route';
+export { handleLogin as POST } from '@modules/supporting/auth';

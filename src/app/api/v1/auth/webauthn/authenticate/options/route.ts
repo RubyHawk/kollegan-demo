@@ -1,3 +1,3 @@
 export const dynamic = 'force-dynamic';
 
-export { POST } from '../../../../../auth/webauthn/authenticate/options/route';
+export { handleAuthenticateOptions as POST } from '@modules/supporting/auth';

@@ -5,7 +5,7 @@
  * Cookie-based flows (login, logout, refresh) remain in their route files
  * because they need direct NextResponse cookie manipulation.
  *
- * app/api/ routes are thin re-export wrappers that point here.
+ * app/api/v1/auth/ routes are thin re-export wrappers that point here.
  */
 
 import { NextRequest, NextResponse } from 'next/server';

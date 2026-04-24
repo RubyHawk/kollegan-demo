@@ -1,1 +1,1 @@
-export { POST } from '../../../../auth/mfa/disable/route';
+export { handleMfaDisable as POST } from '@modules/supporting/auth';

@@ -1,7 +1,7 @@
 /**
  * WebAuthn API handlers — colocated with the auth module.
  *
- * app/api/auth/webauthn/ routes are thin re-export wrappers that point here.
+ * app/api/v1/auth/webauthn/ routes are thin re-export wrappers that point here.
  */
 
 import { z } from 'zod';

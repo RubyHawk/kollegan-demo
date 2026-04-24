@@ -1,1 +1,1 @@
-export { POST } from '../../../../auth/mfa/setup/route';
+export { handleMfaSetup as POST } from '@modules/supporting/auth';

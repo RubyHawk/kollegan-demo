@@ -1,3 +1,3 @@
 export const dynamic = 'force-dynamic';
 
-export { POST } from '../../../../auth/mfa/verify/route';
+export { handleMfaVerify as POST } from '@modules/supporting/auth';
