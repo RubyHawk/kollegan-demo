@@ -260,7 +260,24 @@ jobs:
 
           BUILD_COMMIT_SHA="$build_commit_sha" \
           TREE_SHA="$tree_sha" \
-          node -e "const fs = require('node:fs'); const prNumber = process.env.PR_NUMBER ? Number(process.env.PR_NUMBER) : null; const data = { bundle_version: 1, source: 'push-rebuild', event_name: process.env.GITHUB_EVENT_NAME, pr_number: Number.isFinite(prNumber) ? prNumber : null, run_id: Number(process.env.GITHUB_RUN_ID), run_attempt: Number(process.env.GITHUB_RUN_ATTEMPT), build_commit_sha: process.env.BUILD_COMMIT_SHA, tree_sha: process.env.TREE_SHA, created_at: new Date().toISOString() }; fs.writeFileSync('release-metadata.json', JSON.stringify(data, null, 2));"
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const prNumber = process.env.PR_NUMBER ? Number(process.env.PR_NUMBER) : null;
+          const data = {
+            bundle_version: 1,
+            source: 'push-rebuild',
+            event_name: process.env.GITHUB_EVENT_NAME,
+            pr_number: Number.isFinite(prNumber) ? prNumber : null,
+            run_id: Number(process.env.GITHUB_RUN_ID),
+            run_attempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+            build_commit_sha: process.env.BUILD_COMMIT_SHA,
+            tree_sha: process.env.TREE_SHA,
+            created_at: new Date().toISOString(),
+          };
+
+          fs.writeFileSync('release-metadata.json', JSON.stringify(data, null, 2));
+          NODE
 
       - name: Package deploy bundle
         if: steps.promote.outputs.promoted != 'true'

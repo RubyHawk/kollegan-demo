@@ -344,7 +344,27 @@ jobs:
 
           BUILD_COMMIT_SHA="$build_commit_sha" \
           TREE_SHA="$tree_sha" \
-          node -e "const fs = require('node:fs'); const data = { bundle_version: 1, source: 'pull_request', event_name: process.env.GITHUB_EVENT_NAME, pr_number: Number(process.env.PR_NUMBER), run_id: Number(process.env.GITHUB_RUN_ID), run_attempt: Number(process.env.GITHUB_RUN_ATTEMPT), build_commit_sha: process.env.BUILD_COMMIT_SHA, tree_sha: process.env.TREE_SHA, base_ref: process.env.PR_BASE_REF, base_sha: process.env.PR_BASE_SHA, head_ref: process.env.PR_HEAD_REF, head_sha: process.env.PR_HEAD_SHA, created_at: new Date().toISOString() }; fs.writeFileSync('release-metadata.json', JSON.stringify(data, null, 2));"
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const data = {
+            bundle_version: 1,
+            source: 'pull_request',
+            event_name: process.env.GITHUB_EVENT_NAME,
+            pr_number: Number(process.env.PR_NUMBER),
+            run_id: Number(process.env.GITHUB_RUN_ID),
+            run_attempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+            build_commit_sha: process.env.BUILD_COMMIT_SHA,
+            tree_sha: process.env.TREE_SHA,
+            base_ref: process.env.PR_BASE_REF,
+            base_sha: process.env.PR_BASE_SHA,
+            head_ref: process.env.PR_HEAD_REF,
+            head_sha: process.env.PR_HEAD_SHA,
+            created_at: new Date().toISOString(),
+          };
+
+          fs.writeFileSync('release-metadata.json', JSON.stringify(data, null, 2));
+          NODE
 
       - name: Package PR release bundle
         if: needs.classify.outputs.runtime_affecting == 'true'
