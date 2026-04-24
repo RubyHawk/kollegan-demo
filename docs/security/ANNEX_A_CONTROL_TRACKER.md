@@ -121,8 +121,8 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 8.28 | Secure coding | Included | Baseline evidence linked | Engineering lead | `docs/security/SECURE_DEVELOPMENT.md`, `docs/AI_ENGINEERING.md` |
 | 8.29 | Security testing in development and acceptance | Included | Baseline evidence linked | Engineering lead | `.github/workflows/quality-gates.yml`, `package.json` |
 | 8.30 | Outsourced development | Review required | Open gap | TBD | Record supplier/AI-assisted development control decision |
-| 8.31 | Separation of development, test and production environments | Review required | Open gap | TBD | Record environment separation evidence |
+| 8.31 | Separation of development, test and production environments | Included | Baseline evidence linked | Engineering lead | `docs/security/ENVIRONMENT_SEPARATION_STANDARD.md`, `.github/workflows/deploy.yml`, `.github/workflows/quality-gates.yml` |
 | 8.32 | Change management | Included | Baseline evidence linked | Engineering lead | `docs/security/CHANGE_MANAGEMENT.md`, `.github/workflows/deploy.yml` |
-| 8.33 | Test information | Review required | Open gap | TBD | Record test-data handling evidence |
+| 8.33 | Test information | Included | Baseline evidence linked | Engineering lead | `docs/security/TEST_INFORMATION_STANDARD.md`, `docs/security/RESTORE_TEST_PLAYBOOK.md`, `docs/PRODUCTION_DATA_SAFETY.md` |
 | 8.34 | Protection of information systems during audit testing | Review required | Open gap | TBD | Record audit-testing protection evidence |
 
