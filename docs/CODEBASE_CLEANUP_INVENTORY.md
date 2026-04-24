@@ -35,15 +35,15 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 893 |
-| Source files scanned | 758 |
+| Tracked files scanned | 890 |
+| Source files scanned | 755 |
 | Active production source files | 624 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 0 |
-| API route files | 161 |
+| API route files | 158 |
 | API v1 route files | 67 |
 | Feature API clients | 20 |
-| Legacy API compatibility wrappers | 59 |
+| Legacy API compatibility wrappers | 56 |
 | Demo API routes | 14 |
 | Public/integration API routes | 21 |
 | Retained non-versioned API routes | 35 |
@@ -133,8 +133,6 @@ These are compatibility or alias routes kept while browser, mobile, and external
 | src/app/api/offers/[id]/route.ts |
 | src/app/api/offers/bulk-send/route.ts |
 | src/app/api/offers/counts/route.ts |
-| src/app/api/offers/products/[id]/route.ts |
-| src/app/api/offers/products/categories/[id]/route.ts |
 | src/app/api/offers/products/categories/route.ts |
 | src/app/api/offers/products/route.ts |
 | src/app/api/offers/route.ts |
@@ -150,7 +148,6 @@ These are compatibility or alias routes kept while browser, mobile, and external
 | src/app/api/projekt/[id]/route.ts |
 | src/app/api/projekt/counts/route.ts |
 | src/app/api/projekt/route.ts |
-| src/app/api/templates/[id]/route.ts |
 | src/app/api/templates/assets/route.ts |
 | src/app/api/templates/preview/route.ts |
 | src/app/api/templates/route.ts |
