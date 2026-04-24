@@ -35,15 +35,15 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 841 |
-| Source files scanned | 706 |
-| Active production source files | 628 |
+| Tracked files scanned | 843 |
+| Source files scanned | 708 |
+| Active production source files | 632 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 0 |
-| API route files | 105 |
-| API v1 route files | 68 |
+| API route files | 107 |
+| API v1 route files | 72 |
 | Feature API clients | 20 |
-| Legacy API compatibility wrappers | 2 |
+| Legacy API compatibility wrappers | 0 |
 | Demo API routes | 14 |
 | Public/integration API routes | 21 |
 | Retained non-versioned API routes | 35 |
@@ -93,10 +93,7 @@ These are browser-facing API contract wrappers. They are active infrastructure e
 
 These are compatibility or alias routes kept while browser, mobile, and external callers migrate away from legacy `/api/*` paths. They are not junk until usage proves they can be retired.
 
-| File |
-| --- |
-| src/app/api/crm/contacts/[id]/route.ts |
-| src/app/api/crm/contacts/route.ts |
+_None._
 
 ## Retained Non-Versioned API Routes
 
