@@ -15,9 +15,9 @@ function extractId(req: NextRequest): string {
 
 function slugify(s: string): string {
   return s
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .replace(/[Ã¥Ã¤]/g, 'a')
-    .replace(/[Ã¶]/g, 'o')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 60);
