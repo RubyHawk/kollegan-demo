@@ -35,11 +35,11 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 5.16 | Identity management | Included | Baseline evidence linked | Engineering lead | `docs/security/ACCESS_CONTROL.md`, `docs/security/AUDIT_EVIDENCE_INDEX.md` |
 | 5.17 | Authentication information | Included | Baseline evidence linked | Engineering lead | `docs/security/ACCESS_CONTROL.md`, `docs/security/AUDIT_EVIDENCE_INDEX.md` |
 | 5.18 | Access rights | Included | Baseline evidence linked | ISMS Manager | `docs/security/ACCESS_CONTROL.md`, `docs/security/ACCESS_REVIEW_CHECKLIST.md` |
-| 5.19 | Information security in supplier relationships | Included | Baseline evidence linked | ISMS Manager | `docs/security/SUPPLIER_MANAGEMENT.md` |
-| 5.20 | Addressing information security within supplier agreements | Review required | Open gap | TBD | Record how supplier terms are reviewed |
-| 5.21 | Managing information security in the ICT supply chain | Review required | Open gap | TBD | Record supply-chain review method |
-| 5.22 | Monitoring, review and change management of supplier services | Review required | Open gap | TBD | Record supplier-review cadence and evidence |
-| 5.23 | Information security for use of cloud services | Included | Baseline evidence linked | Engineering lead | `docs/security/SUPPLIER_MANAGEMENT.md`, `.github/workflows/deploy.yml` |
+| 5.19 | Information security in supplier relationships | Included | Baseline evidence linked | ISMS Manager | `docs/security/SUPPLIER_MANAGEMENT.md`, `docs/security/SUPPLIER_REVIEW_LOG.md` |
+| 5.20 | Addressing information security within supplier agreements | Review required | Open gap | TBD | Supplier review workflow now exists in `docs/security/SUPPLIER_REVIEW_PLAYBOOK.md`; record agreement evidence before readiness claim |
+| 5.21 | Managing information security in the ICT supply chain | Review required | Open gap | TBD | Supplier review workflow now exists in `docs/security/SUPPLIER_REVIEW_PLAYBOOK.md`; record supply-chain evidence before readiness claim |
+| 5.22 | Monitoring, review and change management of supplier services | Included | Baseline evidence linked | ISMS Manager | `docs/security/SUPPLIER_REVIEW_LOG.md`, `docs/security/SUPPLIER_REVIEW_PLAYBOOK.md` |
+| 5.23 | Information security for use of cloud services | Included | Baseline evidence linked | Engineering lead | `docs/security/SUPPLIER_MANAGEMENT.md`, `docs/security/SUPPLIER_REVIEW_LOG.md`, `.github/workflows/deploy.yml` |
 | 5.24 | Information security incident management planning and preparation | Included | Baseline evidence linked | ISMS Manager | `docs/security/INCIDENT_RESPONSE.md` |
 | 5.25 | Assessment and decision on information security events | Included | Baseline evidence linked | ISMS Manager | `docs/security/INCIDENT_RESPONSE.md`, `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md` |
 | 5.26 | Response to information security incidents | Included | Baseline evidence linked | ISMS Manager | `docs/security/INCIDENT_RESPONSE.md`, `docs/security/INCIDENT_POSTMORTEM_LOG.md` |

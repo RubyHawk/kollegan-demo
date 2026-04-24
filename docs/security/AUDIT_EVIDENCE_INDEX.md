@@ -15,6 +15,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Feature-flag rollouts: `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`
 - Incidents and drills: `docs/security/INCIDENT_POSTMORTEM_LOG.md`
 - Vulnerability reviews: `docs/security/VULNERABILITY_REVIEW_LOG.md`
+- Supplier reviews: `docs/security/SUPPLIER_REVIEW_LOG.md`
 - Access review workflow: `docs/security/ACCESS_REVIEW_CHECKLIST.md`
 - Restore-test workflow: `docs/security/RESTORE_TEST_PLAYBOOK.md`
 - Incident drill workflow: `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md`
@@ -22,6 +23,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Internal audit workflow: `docs/security/INTERNAL_AUDIT_PLAYBOOK.md`
 - Management review workflow: `docs/security/MANAGEMENT_REVIEW_AGENDA.md`
 - Detailed Annex A tracker: `docs/security/ANNEX_A_CONTROL_TRACKER.md`
+- Supplier review workflow: `docs/security/SUPPLIER_REVIEW_PLAYBOOK.md`
 
 ## Change Evidence
 
@@ -54,6 +56,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 | 2026-04-24 | Internal audit and management review playbooks              | PR #587 / `1e2d343`                                        | Added repo-backed internal audit and management review workflows, linked them from the corresponding logs, and tightened the evidence index so those two remaining operating gaps are executable without inventing records | Engineering lead |
 | 2026-04-24 | Access review and restore test workflows                    | PR #589 / `0163ea5`                                        | Added repo-backed workflows for quarterly access reviews and non-production restore tests, linked them from the corresponding logs, and tightened the evidence index and SoA so those operating gaps are executable without inventing records | Engineering lead |
 | 2026-04-24 | Incident and vulnerability workflows                        | PR #590 / `1b54dd3`                                        | Added repo-backed workflows for incident-response drills and vulnerability reviews, linked them from the corresponding logs and policies, and corrected the evidence index so the merged access/restore work points at PR #589 | Engineering lead |
+| 2026-04-24 | Supplier review workflows                                   | PR #593 / `c0b694a`                                        | Added repo-backed supplier review log and playbook, linked them from supplier management and the evidence index, and made the supplier-relationship controls more actionable without inventing review records | Engineering lead |
 | 2026-04-24 | Annex A control tracker                                     | PR #591 / `b4ee8f2`                                        | Added a repo-backed tracker for all 93 ISO/IEC 27001:2022 Annex A controls, upgraded the SoA to a structured baseline that points at that tracker, linked the tracker from the evidence index, and fixed the mojibake risk-score formula | Engineering lead |
 
 ## Feature Flag Rollout Evidence
@@ -93,3 +96,9 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 | ------------------------- | ----------------------- | -------------------------------------------------------------------------------------- | ---------------- |
 | Open gap as of 2026-04-24 | Incident drill/response | Repo-backed log and drill workflow now exist in `INCIDENT_POSTMORTEM_LOG.md` and `INCIDENT_RESPONSE_DRILL_PLAYBOOK.md`, but no record is committed yet | ISMS Manager     |
 | Open gap as of 2026-04-24 | Vulnerability review    | Repo-backed log and review workflow now exist in `VULNERABILITY_REVIEW_LOG.md` and `VULNERABILITY_REVIEW_PLAYBOOK.md`, but no review record is committed yet | Engineering lead |
+
+## Supplier Reviews
+
+| Date                      | Scope          | Result                                                                                         | Owner        |
+| ------------------------- | -------------- | ---------------------------------------------------------------------------------------------- | ------------ |
+| Open gap as of 2026-04-24 | In-scope SaaS, hosting, database, and AI suppliers | Repo-backed log and review workflow now exist in `SUPPLIER_REVIEW_LOG.md` and `SUPPLIER_REVIEW_PLAYBOOK.md`, but no completed supplier review record is committed yet | ISMS Manager |
