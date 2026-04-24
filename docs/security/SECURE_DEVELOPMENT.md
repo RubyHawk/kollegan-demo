@@ -12,6 +12,7 @@ Status: Draft baseline
 - Run migration safety checks before schema deploys.
 - Run file-size checks to prevent new monoliths.
 - Run dependency-boundary and text-encoding guards in PR CI.
+- Keep security-relevant PRs linked to repo-backed security/evidence docs.
 - Do not commit secrets.
 - Use synthetic/redacted data in tests and prompts.
 - Add tests before high-risk refactors.
@@ -23,6 +24,7 @@ Status: Draft baseline
 npm run check:migrations
 npm run check:file-size
 npm run check:ai-proxies
+npm run check:security-evidence
 npm run check:encoding
 npm run lint:deps
 npm run lint
@@ -34,4 +36,3 @@ npm run build
 If a check cannot run, record why in the PR.
 
 Pull-request checks are the required merge gate. The production deploy workflow is a separate release process and must use Git-tracked artifacts and deploy scripts rather than manual server-only changes.
-

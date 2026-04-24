@@ -114,6 +114,9 @@ jobs:
       - name: AI proxy consistency
         run: node scripts/check-ai-proxies.mjs
 
+      - name: Security evidence guard
+        run: node scripts/check-security-evidence.mjs
+
       - name: Text encoding guard
         run: node scripts/check-text-encoding.mjs
 
@@ -175,6 +178,10 @@ jobs:
             case "$file" in
               scripts/check-ai-proxies.mjs)
                 node scripts/check-ai-proxies.mjs
+                ran_policy_script=true
+                ;;
+              scripts/check-security-evidence.mjs)
+                QUALITY_BASE_SHA="$QUALITY_BASE_SHA" QUALITY_HEAD_SHA="$QUALITY_HEAD_SHA" node scripts/check-security-evidence.mjs
                 ran_policy_script=true
                 ;;
               scripts/check-migration-safety.mjs)
