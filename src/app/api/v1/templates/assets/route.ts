@@ -1,4 +1,4 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export { POST } from '../../../templates/assets/route';
+export { handleUploadTemplateAsset as POST } from '@modules/supporting/offers';

@@ -1,1 +1,1 @@
-export { POST } from '../../../templates/preview/route';
+export { handlePreviewTemplate as POST } from '@modules/supporting/offers';

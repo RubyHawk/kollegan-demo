@@ -117,6 +117,8 @@ export {
   handleUpdateTemplate,
   handleDeleteTemplate,
 } from './api/handlers/template.handler';
+export { handlePreviewTemplate } from './api/handlers/template-preview.handler';
+export { handleUploadTemplateAsset } from './api/handlers/template-assets.handler';
 
 export {
   handleListProducts,
