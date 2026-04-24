@@ -22,3 +22,8 @@ At least quarterly:
 
 Never commit backup files to the repository.
 
+## Evidence
+
+- Record completed restore tests in `RESTORE_TEST_LOG.md`.
+- Keep `AUDIT_EVIDENCE_INDEX.md` as the high-level index for restore-test cycles tied to migrations or release changes.
+

@@ -6,6 +6,15 @@ Status: Baseline in progress
 
 Use this file as an index to evidence. Do not commit secrets, backups, customer exports, or sensitive logs.
 
+## Operational Record Locations
+
+- Access reviews: `docs/security/ACCESS_REVIEW_LOG.md`
+- Restore tests: `docs/security/RESTORE_TEST_LOG.md`
+- Internal audits: `docs/security/INTERNAL_AUDIT_LOG.md`
+- Management reviews: `docs/security/MANAGEMENT_REVIEW_LOG.md`
+- Incidents and drills: `docs/security/INCIDENT_POSTMORTEM_LOG.md`
+- Vulnerability reviews: `docs/security/VULNERABILITY_REVIEW_LOG.md`
+
 ## Change Evidence
 
 | Date       | Change                                                      | PR/commit                                                  | Evidence                                                                                                                                                                                                                                        | Owner            |
@@ -49,17 +58,24 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 
 | Date                      | Scope                                                                 | Result                                                      | Owner        |
 | ------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------- | ------------ |
-| Open gap as of 2026-04-24 | Application admin, repository, VPS, database, and CI/CD secret access | No repo-backed quarterly access review record committed yet | ISMS Manager |
+| Open gap as of 2026-04-24 | Application admin, repository, VPS, database, and CI/CD secret access | Repo-backed log path now exists in `ACCESS_REVIEW_LOG.md`, but no completed quarterly review record is committed yet | ISMS Manager |
 
 ## Backup Restore Tests
 
 | Date                      | Backup ref                                            | Restore target                                             | Result  | Owner            |
 | ------------------------- | ----------------------------------------------------- | ---------------------------------------------------------- | ------- | ---------------- |
-| Open gap as of 2026-04-24 | Production backup references are external to the repo | No repo-backed quarterly restore-test record committed yet | Pending | Engineering lead |
+| Open gap as of 2026-04-24 | Production backup references are external to the repo | Repo-backed log path now exists in `RESTORE_TEST_LOG.md`, but no completed quarterly restore-test record is committed yet | Pending | Engineering lead |
 
 ## Internal Audit And Management Review
 
 | Date                      | Activity          | Findings                                                | Corrective actions                                                 | Owner        |
 | ------------------------- | ----------------- | ------------------------------------------------------- | ------------------------------------------------------------------ | ------------ |
-| Open gap as of 2026-04-24 | Internal audit    | No repo-backed internal audit evidence committed yet    | Schedule independent review and record findings/corrective actions | ISMS Manager |
-| Open gap as of 2026-04-24 | Management review | No repo-backed management review evidence committed yet | Record management review decisions, owners, and follow-up actions  | Management   |
+| Open gap as of 2026-04-24 | Internal audit    | Repo-backed log path now exists in `INTERNAL_AUDIT_LOG.md`, but no completed internal audit record is committed yet | Schedule independent review and record findings/corrective actions | ISMS Manager |
+| Open gap as of 2026-04-24 | Management review | Repo-backed log path now exists in `MANAGEMENT_REVIEW_LOG.md`, but no completed management review record is committed yet | Record management review decisions, owners, and follow-up actions  | Management   |
+
+## Incident And Vulnerability Operations
+
+| Date                      | Activity                | Result                                                                                 | Owner            |
+| ------------------------- | ----------------------- | -------------------------------------------------------------------------------------- | ---------------- |
+| Open gap as of 2026-04-24 | Incident drill/response | Repo-backed log path now exists in `INCIDENT_POSTMORTEM_LOG.md`, but no record is committed yet | ISMS Manager     |
+| Open gap as of 2026-04-24 | Vulnerability review    | Repo-backed log path now exists in `VULNERABILITY_REVIEW_LOG.md`, but no review record is committed yet | Engineering lead |
