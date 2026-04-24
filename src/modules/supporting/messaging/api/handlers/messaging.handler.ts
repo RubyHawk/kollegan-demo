@@ -41,7 +41,7 @@ function extractConvId(req: NextRequest): string {
   return parts[idx + 1] ?? '';
 }
 
-// ─── GET /api/messages/conversations ─────────────────────────────────────────
+// ─── GET /api/v1/messages/conversations ──────────────────────────────────────
 
 const ListConversationsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -73,7 +73,7 @@ export const handleListConversations = createHandler(
   },
 );
 
-// ─── POST /api/messages/conversations ────────────────────────────────────────
+// ─── POST /api/v1/messages/conversations ─────────────────────────────────────
 
 const CreateConversationBodySchema = z.object({
   title: z.string().max(200).optional(),
@@ -109,7 +109,7 @@ export const handleCreateConversation = createHandler(
   },
 );
 
-// ─── GET /api/messages/conversations/[id]/messages ───────────────────────────
+// ─── GET /api/v1/messages/conversations/[id]/messages ────────────────────────
 
 const ListMessagesQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(100),
@@ -143,7 +143,7 @@ export const handleListMessages = createHandler(
   },
 );
 
-// ─── POST /api/messages/conversations/[id]/messages ──────────────────────────
+// ─── POST /api/v1/messages/conversations/[id]/messages ───────────────────────
 
 const SendMessageBodySchema = z.object({
   body: z.string().min(1).max(10000),
