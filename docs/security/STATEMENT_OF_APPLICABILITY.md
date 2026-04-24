@@ -32,7 +32,9 @@ The following clause-level operating evidence is tracked alongside this SoA and 
 - `docs/security/MANAGEMENT_REVIEW_AGENDA.md`
 - `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`
 - `docs/security/INCIDENT_POSTMORTEM_LOG.md`
+- `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md`
 - `docs/security/VULNERABILITY_REVIEW_LOG.md`
+- `docs/security/VULNERABILITY_REVIEW_PLAYBOOK.md`
 
 ## Completion Rule
 

@@ -12,6 +12,7 @@ Use this register for real incidents and incident-response exercises. Do not com
 - Record severity, impact, containment, recovery, and postmortem status.
 - Link corrective actions or follow-up work where possible.
 - Note when communication or notification obligations were triggered.
+- Use `INCIDENT_RESPONSE_DRILL_PLAYBOOK.md` to prepare incident-response exercises and capture drill outcomes consistently.
 
 ## Incident Records
 
@@ -19,4 +20,3 @@ No incident or drill records are committed yet as of 2026-04-24.
 
 | Date | Type | Severity | Scope and impact | Resolution summary | Postmortem status | Follow-up actions | Evidence link |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-
