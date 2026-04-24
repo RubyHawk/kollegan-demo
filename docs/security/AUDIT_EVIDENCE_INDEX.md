@@ -12,6 +12,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Restore tests: `docs/security/RESTORE_TEST_LOG.md`
 - Internal audits: `docs/security/INTERNAL_AUDIT_LOG.md`
 - Management reviews: `docs/security/MANAGEMENT_REVIEW_LOG.md`
+- Feature-flag rollouts: `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`
 - Incidents and drills: `docs/security/INCIDENT_POSTMORTEM_LOG.md`
 - Vulnerability reviews: `docs/security/VULNERABILITY_REVIEW_LOG.md`
 
@@ -47,7 +48,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 
 | Date | Flag                 | Environment | Rollout evidence                                                                                      | Rollback evidence                                                                                  | Owner            |
 | ---- | -------------------- | ----------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------- |
-| TBD  | Public offer rewrite | production  | Implementation exists behind the feature-flag foundation; no production rollout evidence recorded yet | Roll back by disabling the renderer flag and falling back to `legacy` in the public offer renderer | Engineering lead |
+| Open gap as of 2026-04-24 | Public offer rewrite | production  | Repo-backed rollout log now exists in `FEATURE_FLAG_ROLLOUT_LOG.md`, but no completed production rollout record is committed yet | Roll back by disabling the renderer flag and falling back to `legacy` in the public offer renderer | Engineering lead |
 
 ## Migration Evidence
 

@@ -13,7 +13,7 @@ This is a working SoA index for ISO/IEC 27001:2022 readiness. It must be complet
 | Supplier relationships | Included | GitHub, hosting, database, email, AI providers are in scope. | ISMS Manager | `docs/security/SUPPLIER_MANAGEMENT.md` |
 | Access control | Included | Admin, repo, production, and app access must be controlled. | Engineering lead | `docs/security/ACCESS_CONTROL.md`, `docs/security/ACCESS_REVIEW_LOG.md` |
 | Backup | Included | Business data must be recoverable. | Engineering lead | `docs/security/BACKUP_AND_RESTORE.md`, `docs/security/RESTORE_TEST_LOG.md` |
-| Logging and monitoring | Included | Feature flags, deployments, security events, and admin changes need evidence. | Engineering lead | `docs/security/AUDIT_EVIDENCE_INDEX.md`, `docs/security/INCIDENT_POSTMORTEM_LOG.md`, `.github/workflows/deploy.yml` |
+| Logging and monitoring | Included | Feature flags, deployments, security events, and admin changes need evidence. | Engineering lead | `docs/security/AUDIT_EVIDENCE_INDEX.md`, `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`, `docs/security/INCIDENT_POSTMORTEM_LOG.md`, `.github/workflows/deploy.yml` |
 | Secure development lifecycle | Included | App is actively developed with AI-assisted workflows. | Engineering lead | `docs/security/SECURE_DEVELOPMENT.md`, `.github/workflows/quality-gates.yml` |
 | Change management | Included | Refactor and releases need auditable controls. | Engineering lead | `docs/security/CHANGE_MANAGEMENT.md`, `.github/workflows/deploy.yml` |
 | Vulnerability management | Included | Dependencies and app vulnerabilities require triage. | Engineering lead | `docs/security/VULNERABILITY_MANAGEMENT.md`, `docs/security/VULNERABILITY_REVIEW_LOG.md` |
@@ -26,6 +26,7 @@ The following clause-level operating evidence is tracked alongside this SoA and 
 - `docs/security/RESTORE_TEST_LOG.md`
 - `docs/security/INTERNAL_AUDIT_LOG.md`
 - `docs/security/MANAGEMENT_REVIEW_LOG.md`
+- `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`
 - `docs/security/INCIDENT_POSTMORTEM_LOG.md`
 - `docs/security/VULNERABILITY_REVIEW_LOG.md`
 
