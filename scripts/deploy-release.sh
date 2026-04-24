@@ -6,18 +6,27 @@ ARTIFACT_PATH="${1:-}"
 DEPLOY_SHA="${2:-}"
 SERVICE_NAME="${SERVICE_NAME:-kollegan}"
 DEPLOY_STATE_DIR="${DEPLOY_STATE_DIR:-$APP_DIR/.deploy-state}"
-HEALTHCHECK_URLS_CSV="${HEALTHCHECK_URLS:-http://127.0.0.1:3000/api/health,http://localhost:3000/api/health,http://127.0.0.1/api/health,http://localhost/api/health}"
+APP_BASE_URL="${APP_BASE_URL:-}"
+DEFAULT_LOCAL_HEALTHCHECK_URLS="http://127.0.0.1:3000/api/health,http://localhost:3000/api/health,http://127.0.0.1/api/health,http://localhost/api/health"
 HEALTHCHECK_ATTEMPTS="${HEALTHCHECK_ATTEMPTS:-15}"
 HEALTHCHECK_DELAY_SECONDS="${HEALTHCHECK_DELAY_SECONDS:-2}"
 
 if [ -z "$ARTIFACT_PATH" ] || [ -z "$DEPLOY_SHA" ]; then
-  echo "Usage: bash scripts/deploy-release.sh /tmp/kollegan-release/kollegan-next-build.tar.gz <commit-sha>" >&2
+  echo "Usage: /var/www/offert/deploy_kollegan.sh <artifact.tar.gz> <commit-sha>" >&2
   exit 1
 fi
 
 if [ ! -f "$ARTIFACT_PATH" ]; then
   echo "Artifact not found: $ARTIFACT_PATH" >&2
   exit 1
+fi
+
+if [ -n "${HEALTHCHECK_URLS:-}" ]; then
+  HEALTHCHECK_URLS_CSV="$HEALTHCHECK_URLS"
+elif [ -n "$APP_BASE_URL" ]; then
+  HEALTHCHECK_URLS_CSV="${APP_BASE_URL%/}/api/health"
+else
+  HEALTHCHECK_URLS_CSV="$DEFAULT_LOCAL_HEALTHCHECK_URLS"
 fi
 
 cd "$APP_DIR"
@@ -40,7 +49,7 @@ if [ -f "$DEPLOY_STATE_DIR/package-lock.sha256" ]; then
 fi
 
 if [ ! -d node_modules ] || [ "$lock_hash" != "$previous_lock_hash" ]; then
-  npm ci --omit=dev --prefer-offline --no-audit
+  npm ci --omit=dev --prefer-offline --no-audit --ignore-scripts
   printf '%s' "$lock_hash" > "$DEPLOY_STATE_DIR/package-lock.sha256"
 fi
 
@@ -53,16 +62,20 @@ npx prisma migrate deploy
 sudo systemctl restart "$SERVICE_NAME"
 
 IFS=',' read -r -a health_urls <<< "$HEALTHCHECK_URLS_CSV"
+last_error=""
 
 for ((attempt=1; attempt<=HEALTHCHECK_ATTEMPTS; attempt+=1)); do
   for url in "${health_urls[@]}"; do
-    if curl --fail --silent --show-error "$url" >/dev/null; then
+    if output="$(curl --fail --silent --show-error --connect-timeout 2 --max-time 5 "$url" 2>&1 >/dev/null)"; then
       exit 0
     fi
+
+    last_error="$url :: ${output:-curl failed}"
   done
 
   sleep "$HEALTHCHECK_DELAY_SECONDS"
 done
 
-echo "Health check failed on all known local endpoints after restart" >&2
+echo "Health check failed after restart. Last probe error: ${last_error:-unknown}" >&2
+sudo systemctl --no-pager --full status "$SERVICE_NAME" || true
 exit 1
