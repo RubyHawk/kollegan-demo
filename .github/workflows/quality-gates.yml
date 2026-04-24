@@ -117,6 +117,9 @@ jobs:
       - name: Security evidence guard
         run: node scripts/check-security-evidence.mjs
 
+      - name: Security readiness status
+        run: node scripts/check-security-readiness.mjs
+
       - name: Text encoding guard
         run: node scripts/check-text-encoding.mjs
 
@@ -194,6 +197,10 @@ jobs:
                 ;;
               scripts/check-file-size.mjs)
                 QUALITY_BASE_SHA="$QUALITY_BASE_SHA" QUALITY_HEAD_SHA="$QUALITY_HEAD_SHA" node scripts/check-file-size.mjs
+                ran_policy_script=true
+                ;;
+              scripts/check-security-readiness.mjs)
+                node scripts/check-security-readiness.mjs
                 ran_policy_script=true
                 ;;
               scripts/codebase-inventory.mjs)
