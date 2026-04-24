@@ -135,3 +135,9 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 | Date                      | Scope                          | Result                                                                                         | Owner        |
 | ------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------- | ------------ |
 | Open gap as of 2026-04-24 | In-scope engineering and admin/support awareness | Repo-backed log and workflow now exist in `SECURITY_AWARENESS_LOG.md` and `SECURITY_AWARENESS_PLAYBOOK.md`, but no completed awareness or training record is committed yet | ISMS Manager |
+
+## Asset Lifecycle
+
+| Date                      | Scope                          | Result                                                                                         | Owner        |
+| ------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------- | ------------ |
+| Open gap as of 2026-04-24 | Offboarding asset return and secure disposal/reuse events | Repo-backed lifecycle log and baselines now exist in `ASSET_LIFECYCLE_LOG.md`, `OFFBOARDING_AND_ASSET_RETURN_STANDARD.md`, and `ASSET_DISPOSAL_AND_REUSE_STANDARD.md`, but no completed lifecycle record is committed yet | ISMS Manager |
