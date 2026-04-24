@@ -23,3 +23,8 @@ Status: Baseline identified
 - Record review evidence.
 - Next quarterly supplier review should capture explicit evidence for the identified providers above.
 
+## Evidence
+
+- Record completed supplier reviews in `SUPPLIER_REVIEW_LOG.md`.
+- Use `SUPPLIER_REVIEW_PLAYBOOK.md` to prepare the review scope, findings, and follow-up actions.
+

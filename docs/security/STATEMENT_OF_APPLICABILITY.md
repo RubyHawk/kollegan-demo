@@ -10,7 +10,7 @@ This is a working SoA index for ISO/IEC 27001:2022 readiness. The detailed per-c
 |---|---|---|---|---|
 | Information security policies | Included | ERP handles customer and business data. | Management | `docs/security/ISMS_SCOPE.md` |
 | Information security roles and responsibilities | Included | Access and release approvals need named owners. | Management | `docs/security/ACCESS_CONTROL.md` |
-| Supplier relationships | Included | GitHub, hosting, database, email, AI providers are in scope. | ISMS Manager | `docs/security/SUPPLIER_MANAGEMENT.md` |
+| Supplier relationships | Included | GitHub, hosting, database, email, AI providers are in scope. | ISMS Manager | `docs/security/SUPPLIER_MANAGEMENT.md`, `docs/security/SUPPLIER_REVIEW_LOG.md` |
 | Access control | Included | Admin, repo, production, and app access must be controlled. | Engineering lead | `docs/security/ACCESS_CONTROL.md`, `docs/security/ACCESS_REVIEW_LOG.md` |
 | Backup | Included | Business data must be recoverable. | Engineering lead | `docs/security/BACKUP_AND_RESTORE.md`, `docs/security/RESTORE_TEST_LOG.md` |
 | Logging and monitoring | Included | Feature flags, deployments, security events, and admin changes need evidence. | Engineering lead | `docs/security/AUDIT_EVIDENCE_INDEX.md`, `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`, `docs/security/INCIDENT_POSTMORTEM_LOG.md`, `.github/workflows/deploy.yml` |
@@ -33,6 +33,8 @@ The following clause-level operating evidence is tracked alongside this SoA and 
 - `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`
 - `docs/security/INCIDENT_POSTMORTEM_LOG.md`
 - `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md`
+- `docs/security/SUPPLIER_REVIEW_LOG.md`
+- `docs/security/SUPPLIER_REVIEW_PLAYBOOK.md`
 - `docs/security/VULNERABILITY_REVIEW_LOG.md`
 - `docs/security/VULNERABILITY_REVIEW_PLAYBOOK.md`
 
