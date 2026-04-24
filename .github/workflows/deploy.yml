@@ -78,6 +78,13 @@ jobs:
             esac
 
             case "$file" in
+              .github/workflows/*|scripts/check-*.mjs|scripts/codebase-inventory.mjs)
+                docs_only=false
+                matched=true
+                ;;
+            esac
+
+            case "$file" in
               docs/*|AGENTS.md|CLAUDE.md|.github/copilot-instructions.md|.claude/skills/*)
                 matched=true
                 ;;
