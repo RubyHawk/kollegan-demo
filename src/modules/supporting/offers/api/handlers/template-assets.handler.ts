@@ -4,9 +4,6 @@ import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@platform/auth/jwt';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 const ALLOWED_TYPES = new Map<string, string>([
   ['image/jpeg', 'jpg'],
   ['image/png', 'png'],
@@ -24,7 +21,7 @@ function extractToken(req: NextRequest): string {
   );
 }
 
-export async function POST(req: NextRequest) {
+export async function handleUploadTemplateAsset(req: NextRequest) {
   try {
     const token = extractToken(req);
     if (!token) {

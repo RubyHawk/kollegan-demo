@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { generateDocument, generateFallbackDocument } from '@modules/supporting/offers/application/document-generator';
-import type { Offer } from '@modules/supporting/offers/domain/offer.entity';
-import { resolveOfferBranding } from '@modules/supporting/offers/application/company-branding';
-import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '@modules/supporting/offers/domain/pricing';
-import { computeOfferValidUntil } from '@modules/supporting/offers/domain/validity';
+import { generateDocument, generateFallbackDocument } from '../../application/document-generator';
+import type { Offer } from '../../domain/offer.entity';
+import { resolveOfferBranding } from '../../application/company-branding';
+import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '../../domain/pricing';
+import { computeOfferValidUntil } from '../../domain/validity';
 
 const PREVIEW_SENTINELS = {
   title: '__PREVIEW_TITLE__',
@@ -90,7 +90,7 @@ function decoratePreviewHtml(html: string): string {
     );
 }
 
-export async function POST(req: Request) {
+export async function handlePreviewTemplate(req: Request) {
   try {
     const body = await req.json() as {
       content?: string;
@@ -107,17 +107,17 @@ export async function POST(req: Request) {
 
     const partialItems = body.offer?.lineItems;
     const lineItems = partialItems && partialItems.length > 0
-      ? partialItems.map((li, i) => ({ id: `li-${i}`, ...li }))
+      ? partialItems.map((li, index) => ({ id: `li-${index}`, ...li }))
       : [];
 
     let exVat = 0;
     let vatAmount = 0;
 
-    for (const li of lineItems) {
-      const discountMultiplier = 1 - ((li.discount ?? 0) / 100);
-      const line = li.quantity * li.unitPrice * discountMultiplier;
+    for (const lineItem of lineItems) {
+      const discountMultiplier = 1 - ((lineItem.discount ?? 0) / 100);
+      const line = lineItem.quantity * lineItem.unitPrice * discountMultiplier;
       exVat += line;
-      vatAmount += line * li.vatRate;
+      vatAmount += line * lineItem.vatRate;
     }
 
     const offer: Offer = {
@@ -153,9 +153,9 @@ export async function POST(req: Request) {
       : generateFallbackDocument(offer, branding);
 
     return NextResponse.json({ html: decoratePreviewHtml(html) });
-  } catch (err) {
+  } catch (error) {
     return NextResponse.json(
-      { detail: err instanceof Error ? err.message : 'Preview error' },
+      { detail: error instanceof Error ? error.message : 'Preview error' },
       { status: 500 },
     );
   }
