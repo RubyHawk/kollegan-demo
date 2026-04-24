@@ -120,6 +120,9 @@ jobs:
       - name: Security readiness status
         run: node scripts/check-security-readiness.mjs
 
+      - name: Legacy API literal guard
+        run: node scripts/check-legacy-api-literals.mjs
+
       - name: Text encoding guard
         run: node scripts/check-text-encoding.mjs
 
@@ -201,6 +204,10 @@ jobs:
                 ;;
               scripts/check-security-readiness.mjs)
                 node scripts/check-security-readiness.mjs
+                ran_policy_script=true
+                ;;
+              scripts/check-legacy-api-literals.mjs)
+                node scripts/check-legacy-api-literals.mjs
                 ran_policy_script=true
                 ;;
               scripts/codebase-inventory.mjs)

@@ -28,6 +28,8 @@ Handlers own:
 
 Browser code uses feature API clients, not inline fetch.
 
+Literal non-versioned `/api/*` references outside route files are exceptions, not the default. New exceptions are allowed only for documented public-document routes, demos, OpenAPI specs, proxy allowlists, or infrastructure/integration endpoints. Browser and ERP product flows must prefer `/api/v1/**`, and CI blocks new unapproved non-versioned literals outside route files.
+
 Target clients:
 
 ```txt
@@ -40,4 +42,3 @@ procurement.api.ts
 branding.api.ts
 feature-flags.api.ts
 ```
-
