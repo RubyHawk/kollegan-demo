@@ -146,8 +146,13 @@ jobs:
           current_tree_sha="$(git rev-parse "${GITHUB_SHA}^{tree}")"
           echo "current_tree_sha=$current_tree_sha" >> "$GITHUB_OUTPUT"
 
-          pulls_json="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls")"
-          pr_json="$(jq -cr --arg sha "$GITHUB_SHA" 'map(select(.merge_commit_sha == $sha and .merged_at != null)) | sort_by(.merged_at) | last // empty' <<< "$pulls_json")"
+          if ! pulls_json="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls")"; then
+            mark_not_promoted pr-lookup-failed
+          fi
+
+          if ! pr_json="$(jq -cr --arg sha "$GITHUB_SHA" 'map(select(.merge_commit_sha == $sha and .merged_at != null)) | sort_by(.merged_at) | last // empty' <<< "$pulls_json")"; then
+            mark_not_promoted pr-json-invalid
+          fi
 
           if [ -z "$pr_json" ]; then
             mark_not_promoted no-associated-pr
@@ -157,16 +162,26 @@ jobs:
           pr_head_sha="$(jq -r '.head.sha' <<< "$pr_json")"
           echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
 
-          runs_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/quality-gates.yml/runs?event=pull_request&per_page=100")"
-          run_json="$(jq -cr --arg head_sha "$pr_head_sha" '.workflow_runs | map(select(.conclusion == "success" and .head_sha == $head_sha)) | sort_by(.created_at) | last // empty' <<< "$runs_json")"
+          if ! runs_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/quality-gates.yml/runs?event=pull_request&per_page=100")"; then
+            mark_not_promoted pr-run-lookup-failed
+          fi
+
+          if ! run_json="$(jq -cr --arg head_sha "$pr_head_sha" '.workflow_runs | map(select(.conclusion == "success" and .head_sha == $head_sha)) | sort_by(.created_at) | last // empty' <<< "$runs_json")"; then
+            mark_not_promoted pr-run-json-invalid
+          fi
 
           if [ -z "$run_json" ]; then
             mark_not_promoted no-successful-pr-run
           fi
 
           run_id="$(jq -r '.id | tostring' <<< "$run_json")"
-          artifacts_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts")"
-          artifact_json="$(jq -cr '.artifacts | map(select(.name == "pr-release-bundle" and .expired == false)) | sort_by(.created_at) | last // empty' <<< "$artifacts_json")"
+          if ! artifacts_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts")"; then
+            mark_not_promoted pr-artifact-lookup-failed
+          fi
+
+          if ! artifact_json="$(jq -cr '.artifacts | map(select(.name == "pr-release-bundle" and .expired == false)) | sort_by(.created_at) | last // empty' <<< "$artifacts_json")"; then
+            mark_not_promoted pr-artifact-json-invalid
+          fi
 
           if [ -z "$artifact_json" ]; then
             mark_not_promoted no-pr-artifact
@@ -175,24 +190,39 @@ jobs:
           artifact_id="$(jq -r '.id | tostring' <<< "$artifact_json")"
           mkdir -p release/promoted/files release/promoted/unpacked
 
-          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" --output release/promoted/pr-release-bundle.zip
-          unzip -q release/promoted/pr-release-bundle.zip -d release/promoted/files
+          if ! gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" > release/promoted/pr-release-bundle.zip; then
+            mark_not_promoted artifact-download-failed
+          fi
+
+          if ! unzip -q release/promoted/pr-release-bundle.zip -d release/promoted/files; then
+            mark_not_promoted artifact-unzip-failed
+          fi
 
           bundle_path="$(find release/promoted/files -type f -name '*.tar.gz' | head -n 1)"
           if [ -z "$bundle_path" ]; then
             mark_not_promoted artifact-zip-missing-bundle
           fi
 
-          tar -xzf "$bundle_path" -C release/promoted/unpacked
+          if ! tar -xzf "$bundle_path" -C release/promoted/unpacked; then
+            mark_not_promoted artifact-bundle-invalid
+          fi
 
           metadata_path="release/promoted/unpacked/release-metadata.json"
           if [ ! -f "$metadata_path" ]; then
             mark_not_promoted artifact-metadata-missing
           fi
 
-          metadata_tree_sha="$(jq -r '.tree_sha // empty' "$metadata_path")"
-          metadata_pr_number="$(jq -r 'if .pr_number == null then "" else (.pr_number | tostring) end' "$metadata_path")"
-          metadata_event_name="$(jq -r '.event_name // empty' "$metadata_path")"
+          if ! metadata_tree_sha="$(jq -r '.tree_sha // empty' "$metadata_path")"; then
+            mark_not_promoted artifact-metadata-invalid
+          fi
+
+          if ! metadata_pr_number="$(jq -r 'if .pr_number == null then "" else (.pr_number | tostring) end' "$metadata_path")"; then
+            mark_not_promoted artifact-metadata-invalid
+          fi
+
+          if ! metadata_event_name="$(jq -r '.event_name // empty' "$metadata_path")"; then
+            mark_not_promoted artifact-metadata-invalid
+          fi
 
           if [ "$metadata_tree_sha" != "$current_tree_sha" ]; then
             mark_not_promoted tree-sha-mismatch
@@ -206,7 +236,10 @@ jobs:
             mark_not_promoted invalid-artifact-event
           fi
 
-          cp "$bundle_path" "kollegan-deploy-bundle-${GITHUB_SHA}.tar.gz"
+          if ! cp "$bundle_path" "kollegan-deploy-bundle-${GITHUB_SHA}.tar.gz"; then
+            mark_not_promoted artifact-copy-failed
+          fi
+
           echo "promoted=true" >> "$GITHUB_OUTPUT"
           echo "reason=matched-pr-artifact" >> "$GITHUB_OUTPUT"
 
