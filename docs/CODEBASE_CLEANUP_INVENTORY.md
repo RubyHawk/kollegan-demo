@@ -35,15 +35,15 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 896 |
-| Source files scanned | 761 |
+| Tracked files scanned | 893 |
+| Source files scanned | 758 |
 | Active production source files | 624 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 0 |
-| API route files | 164 |
+| API route files | 161 |
 | API v1 route files | 67 |
 | Feature API clients | 20 |
-| Legacy API compatibility wrappers | 62 |
+| Legacy API compatibility wrappers | 59 |
 | Demo API routes | 14 |
 | Public/integration API routes | 21 |
 | Retained non-versioned API routes | 35 |
@@ -121,9 +121,6 @@ These are compatibility or alias routes kept while browser, mobile, and external
 | src/app/api/auth/webauthn/authenticate/verify/route.ts |
 | src/app/api/auth/webauthn/register/options/route.ts |
 | src/app/api/auth/webauthn/register/verify/route.ts |
-| src/app/api/companies/[id]/members/route.ts |
-| src/app/api/companies/[id]/route.ts |
-| src/app/api/companies/route.ts |
 | src/app/api/crm/contacts/[id]/route.ts |
 | src/app/api/crm/contacts/route.ts |
 | src/app/api/feature-flags/[id]/audit/route.ts |
