@@ -23,5 +23,8 @@ Status: Draft baseline
 8. Write postmortem.
 9. Track corrective actions.
 
-Incident drills or real incidents should be linked in `AUDIT_EVIDENCE_INDEX.md`.
+## Evidence
+
+- Record completed incident drills and real incidents in `INCIDENT_POSTMORTEM_LOG.md`.
+- Link major incidents or drills in `AUDIT_EVIDENCE_INDEX.md` when they materially affect change management, risk treatment, or audit readiness.
 
