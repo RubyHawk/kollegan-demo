@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Room } from '@demos/hotel/domain/room.entity';
 import { resetRooms } from '@demos/hotel/api/rooms';
+import { seedHotelDemoStaff } from '@demos/hotel/api/seed';
 import { useRealtimeStore, selectRooms, selectActivities, selectOnCall, selectConnected, selectAvailableCount, selectBookedCount, selectLockedCount, selectOccupancy } from '@demos/hotel/ui/stores/hotel-realtime-store';
 import { useToast } from '@shared/ui/toast/toast-context';
 import { CheckCircleIcon, XCircleIcon, LockIcon, PhoneIcon, PhoneOffIcon } from '@shared/ui/icons';
@@ -295,7 +296,7 @@ export default function HotelDemoPage() {
 
               {activeTab === 'setup' && (
                 <motion.div key="setup" {...TAB_TRANSITION}>
-                  <SetupTab />
+                  <SetupTab onSeedDemo={seedHotelDemoStaff} />
                 </motion.div>
               )}
             </AnimatePresence>

@@ -35,9 +35,9 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 905 |
-| Source files scanned | 770 |
-| Active production source files | 620 |
+| Tracked files scanned | 906 |
+| Source files scanned | 771 |
+| Active production source files | 621 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 0 |
 | API route files | 177 |
@@ -47,7 +47,7 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 | Demo API routes | 14 |
 | Public/integration API routes | 21 |
 | Retained non-versioned API routes | 35 |
-| Literal legacy `/api/*` references outside route files | 51 |
+| Literal legacy `/api/*` references outside route files | 47 |
 | Dead-candidate review rows | 0 |
 
 ## Current Monolith Inventory
@@ -241,10 +241,6 @@ These are literal `/api/*` strings outside route files. Not every row is a migra
 | demo-client | `src/modules/demos/hotel/domain/seed.entity.ts:1` | `/api/demos/hotel/seed` |
 | feature-ui | `src/modules/demos/hotel/ui/components/calendar-tab-google-view.tsx:64` | `/api/calendar/events` |
 | feature-ui | `src/modules/demos/hotel/ui/hooks/use-hotel-sse.ts:23` | `/api/sse` |
-| feature-ui | `src/modules/generic/dashboard/components/setup-tab.tsx:80` | `/api/staff` |
-| feature-ui | `src/modules/generic/dashboard/components/setup-tab.tsx:100` | `/api/demo/seed-staff` |
-| feature-ui | `src/modules/generic/dashboard/components/setup-tab.tsx:257` | `/api/staff` |
-| feature-ui | `src/modules/generic/dashboard/components/setup-tab.tsx:269` | `/api/staff?id=${id}` |
 | handler | `src/modules/supporting/auth/api/handlers/staff.handler.ts:58` | `/api/staff` |
 | handler | `src/modules/supporting/compliance/api/handlers/compliance.handler.ts:41` | `/api/admin/compliance` |
 | handler | `src/modules/supporting/offers/api/handlers/company.handler.ts:159` | `/api/companies/${company.id}` |

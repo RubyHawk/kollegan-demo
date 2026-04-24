@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiDelete, apiGet } from '../../src/shared/lib/api-client';
+import { seedHotelDemoStaff } from '../../src/modules/demos/hotel/api/seed';
 import { listAnnouncements } from '../../src/shared/lib/api/announcements.api';
 import { getThemeProfile, updateThemePreferences } from '../../src/shared/lib/api/branding.api';
 import { listCompanies, removeCompanyMember } from '../../src/shared/lib/api/companies.api';
@@ -10,6 +11,7 @@ import { updateMeeting } from '../../src/shared/lib/api/meetings.api';
 import { sendMessage } from '../../src/shared/lib/api/messages.api';
 import { createOffer, getOfferPdfUrl, updateOffer } from '../../src/shared/lib/api/offers.api';
 import { deleteProduct, deleteProductCategory, listProducts } from '../../src/shared/lib/api/products.api';
+import { createStaffUser, deleteStaffUser, listStaffUsers } from '../../src/shared/lib/api/staff.api';
 import { getTemplate, listTemplates, previewTemplate } from '../../src/shared/lib/api/templates.api';
 
 afterEach(() => {
@@ -210,6 +212,54 @@ describe('feature API clients', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(6, '/api/v1/kunder?search=anna&limit=8&offset=0', expect.any(Object));
     expect(fetchMock).toHaveBeenNthCalledWith(7, '/api/v1/offers', expect.objectContaining({ method: 'POST' }));
     expect(fetchMock).toHaveBeenNthCalledWith(8, '/api/v1/offers/offer_1', expect.objectContaining({ method: 'PATCH' }));
+  });
+
+  it('uses shared staff API clients for staff account management', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { users: [{ id: 'staff_1', email: 'anna@hotellet.se', role: 'admin', createdAt: '', lastLogin: null }] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        data: { user: { id: 'staff_2', email: 'elsa@hotellet.se', role: 'manager', createdAt: '', lastLogin: null } },
+      }), {
+        status: 201,
+        headers: { 'content-type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(null, { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(listStaffUsers()).resolves.toHaveLength(1);
+    await expect(createStaffUser({
+      email: 'elsa@hotellet.se',
+      password: 'superhemligt123',
+      role: 'manager',
+    })).resolves.toMatchObject({ id: 'staff_2' });
+    await expect(deleteStaffUser('550e8400-e29b-41d4-a716-446655440000')).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/v1/staff', expect.any(Object));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/v1/staff', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      '/api/v1/staff?id=550e8400-e29b-41d4-a716-446655440000',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+  });
+
+  it('uses a demo API client for hotel demo staff seeding', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      data: { summary: { created: 3, updated: 0 } },
+    }), {
+      status: 201,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(seedHotelDemoStaff()).resolves.toBe('3 demokonton seedade (demo1234).');
+    expect(fetchMock).toHaveBeenCalledWith('/api/demos/hotel/seed', expect.objectContaining({ method: 'POST' }));
   });
 
   it('builds v1 offer PDF links through the shared offers API client', () => {
