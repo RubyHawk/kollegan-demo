@@ -16,8 +16,10 @@ It summarizes what the repository can currently prove about ISO/IEC 27001:2022 r
 | Included controls | 93 |
 | Excluded controls | 0 |
 | Review required controls | 0 |
+| Controls missing applicability decision | 0 |
 | Controls with baseline evidence linked | 93 |
 | Controls with open gaps | 0 |
+| Controls missing implementation status | 0 |
 | Operational evidence registers tracked | 10 |
 | Empty operational evidence registers | 10 |
 | Open gap rows in audit evidence index | 9 |
@@ -25,6 +27,7 @@ It summarizes what the repository can currently prove about ISO/IEC 27001:2022 r
 ## Structural Readiness Observations
 
 - All 93 Annex A controls currently have an applicability decision in `ANNEX_A_CONTROL_TRACKER.md`.
+- All tracked Annex A controls currently have an implementation-status value.
 - Remaining readiness gaps in the repository are primarily missing operating records, not missing baseline structure.
 - Certification readiness still must not be claimed until the operating logs contain real completed entries.
 
