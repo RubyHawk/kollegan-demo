@@ -35,8 +35,8 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 906 |
-| Source files scanned | 771 |
+| Tracked files scanned | 907 |
+| Source files scanned | 772 |
 | Active production source files | 621 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 0 |
@@ -224,6 +224,7 @@ These are literal `/api/*` strings outside route files. Not every row is a migra
 | demo-client | `src/modules/demos/hotel/api/rooms.ts:16` | `/api/demos/hotel/rooms/book` |
 | demo-client | `src/modules/demos/hotel/api/rooms.ts:20` | `/api/demos/hotel/rooms/cancel` |
 | demo-client | `src/modules/demos/hotel/api/rooms.ts:24` | `/api/demos/hotel/rooms` |
+| demo-client | `src/modules/demos/hotel/api/seed.ts:4` | `/api/demos/hotel/seed` |
 | demo-client | `src/modules/demos/hotel/api/services.ts:7` | `/api/demos/hotel/${type` |
 | demo-client | `src/modules/demos/hotel/api/services.ts:14` | `/api/demos/hotel/restaurants` |
 | demo-client | `src/modules/demos/hotel/api/services.ts:19` | `/api/demos/hotel/restaurants` |
@@ -239,7 +240,6 @@ These are literal `/api/*` strings outside route files. Not every row is a migra
 | demo-client | `src/modules/demos/hotel/api/services.ts:65` | `/api/demos/hotel/amenities/${id}` |
 | demo-client | `src/modules/demos/hotel/api/services.ts:71` | `/api/demos/hotel/info` |
 | demo-client | `src/modules/demos/hotel/domain/seed.entity.ts:1` | `/api/demos/hotel/seed` |
-| feature-ui | `src/modules/demos/hotel/ui/components/calendar-tab-google-view.tsx:64` | `/api/calendar/events` |
 | feature-ui | `src/modules/demos/hotel/ui/hooks/use-hotel-sse.ts:23` | `/api/sse` |
 | handler | `src/modules/supporting/auth/api/handlers/staff.handler.ts:58` | `/api/staff` |
 | handler | `src/modules/supporting/compliance/api/handlers/compliance.handler.ts:41` | `/api/admin/compliance` |
