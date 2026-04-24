@@ -174,12 +174,18 @@ function evidenceDocTouched(file) {
   );
 }
 
+function evidenceDocExists(file) {
+  return fs.existsSync(file);
+}
+
 const changedFiles = getChangedFiles();
 const relevantFindings = [];
 const evidenceDocs = new Set();
 
 for (const file of changedFiles) {
-  if (evidenceDocTouched(file)) evidenceDocs.add(file);
+  if (evidenceDocTouched(file) && evidenceDocExists(file)) {
+    evidenceDocs.add(file);
+  }
 
   for (const matcher of securityRelevantMatchers) {
     if (matcher.test(file)) {
