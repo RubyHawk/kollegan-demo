@@ -1,3 +1,8 @@
 export const dynamic = 'force-dynamic';
 
-export { POST } from '../../../auth/register/route';
+import { NextResponse } from 'next/server';
+
+// Registration is disabled. Accounts are created by administrators via /settings/users.
+export function POST() {
+  return NextResponse.json({ error: 'Registration is disabled.' }, { status: 403 });
+}

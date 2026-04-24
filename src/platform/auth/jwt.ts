@@ -59,7 +59,7 @@ export function hashOpaqueToken(raw: string): string {
 // ─── MFA challenge token ────────────────────────────────────────────────────────
 //
 // Short-lived JWT (5 minutes) set in an httpOnly cookie after password verification
-// when MFA is required. Consumed by /api/auth/mfa/verify or the WebAuthn verify route.
+// when MFA is required. Consumed by /api/v1/auth/mfa/verify or the WebAuthn verify route.
 // Contains only userId + type — no roles, no org claims.
 
 const MFA_CHALLENGE_TTL = '5m';

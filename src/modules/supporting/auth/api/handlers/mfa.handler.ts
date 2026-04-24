@@ -1,7 +1,7 @@
 /**
  * MFA API handlers — colocated with the auth module.
  *
- * app/api/auth/mfa/ routes are thin re-export wrappers that point here.
+ * app/api/v1/auth/mfa/ routes are thin re-export wrappers that point here.
  */
 
 import { z } from 'zod';

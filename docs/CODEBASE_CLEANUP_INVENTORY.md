@@ -35,15 +35,15 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 857 |
-| Source files scanned | 722 |
-| Active production source files | 627 |
+| Tracked files scanned | 841 |
+| Source files scanned | 706 |
+| Active production source files | 628 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 0 |
-| API route files | 121 |
-| API v1 route files | 67 |
+| API route files | 105 |
+| API v1 route files | 68 |
 | Feature API clients | 20 |
-| Legacy API compatibility wrappers | 19 |
+| Legacy API compatibility wrappers | 2 |
 | Demo API routes | 14 |
 | Public/integration API routes | 21 |
 | Retained non-versioned API routes | 35 |
@@ -95,23 +95,6 @@ These are compatibility or alias routes kept while browser, mobile, and external
 
 | File |
 | --- |
-| src/app/api/auth/change-password/route.ts |
-| src/app/api/auth/dev-login/route.ts |
-| src/app/api/auth/login/route.ts |
-| src/app/api/auth/logout/route.ts |
-| src/app/api/auth/mfa/backup-codes/regenerate/route.ts |
-| src/app/api/auth/mfa/backup-codes/route.ts |
-| src/app/api/auth/mfa/disable/route.ts |
-| src/app/api/auth/mfa/enable/route.ts |
-| src/app/api/auth/mfa/setup/route.ts |
-| src/app/api/auth/mfa/verify/route.ts |
-| src/app/api/auth/profile/route.ts |
-| src/app/api/auth/refresh/route.ts |
-| src/app/api/auth/register/route.ts |
-| src/app/api/auth/webauthn/authenticate/options/route.ts |
-| src/app/api/auth/webauthn/authenticate/verify/route.ts |
-| src/app/api/auth/webauthn/register/options/route.ts |
-| src/app/api/auth/webauthn/register/verify/route.ts |
 | src/app/api/crm/contacts/[id]/route.ts |
 | src/app/api/crm/contacts/route.ts |
 

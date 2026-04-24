@@ -1,3 +1,3 @@
 export const dynamic = 'force-dynamic';
 
-export { POST } from '../../../auth/refresh/route';
+export { handleRefresh as POST } from '@modules/supporting/auth';
