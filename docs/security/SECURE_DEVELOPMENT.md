@@ -11,9 +11,11 @@ Status: Draft baseline
 - Keep Prisma in repositories and HTTP behavior in handlers.
 - Run migration safety checks before schema deploys.
 - Run file-size checks to prevent new monoliths.
+- Run dependency-boundary and text-encoding guards in PR CI.
 - Do not commit secrets.
 - Use synthetic/redacted data in tests and prompts.
 - Add tests before high-risk refactors.
+- Keep deploy automation reproducible from Git-tracked workflow and script changes.
 
 ## Required Checks
 
@@ -21,6 +23,8 @@ Status: Draft baseline
 npm run check:migrations
 npm run check:file-size
 npm run check:ai-proxies
+npm run check:encoding
+npm run lint:deps
 npm run lint
 npm run typecheck
 npm test
@@ -28,4 +32,6 @@ npm run build
 ```
 
 If a check cannot run, record why in the PR.
+
+Pull-request checks are the required merge gate. The production deploy workflow is a separate release process and must use Git-tracked artifacts and deploy scripts rather than manual server-only changes.
 

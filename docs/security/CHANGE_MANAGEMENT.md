@@ -27,6 +27,13 @@ High-risk changes include:
 
 High-risk changes require explicit review and evidence link.
 
+## Current Enforced Controls
+
+- Pull-request quality gates run lint, tests, typecheck, build, migration safety, AI proxy consistency, dependency boundaries, encoding, and file-size checks before merge.
+- Deploys to production are versioned from Git: the deploy workflow builds the release artifact in CI, ships the tracked deploy script with the release bundle, installs that script to the fixed VPS path, and then deploys the exact merged commit.
+- Schema changes remain additive-first and must link migration evidence in `docs/security/AUDIT_EVIDENCE_INDEX.md`.
+- Healthcheck failures after deploy must fail the release so rollback or follow-up correction can happen intentionally instead of silently.
+
 ## Emergency Change
 
 Emergency changes must be documented after the fact with:
