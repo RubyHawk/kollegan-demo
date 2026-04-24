@@ -27,7 +27,7 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 5.8 | Information security in project management | Included | Baseline evidence linked | Engineering lead | `docs/security/CHANGE_MANAGEMENT.md`, `docs/REFACTORING_PLAYBOOK.md` |
 | 5.9 | Inventory of information and other associated assets | Included | Baseline evidence linked | ISMS Manager | `docs/security/ASSET_INVENTORY.md`, `docs/security/ISMS_SCOPE.md` |
 | 5.10 | Acceptable use of information and other associated assets | Included | Baseline evidence linked | ISMS Manager | `docs/security/INFORMATION_HANDLING_STANDARD.md`, `docs/AI_ENGINEERING.md` |
-| 5.11 | Return of assets | Review required | Open gap | TBD | Record offboarding evidence source |
+| 5.11 | Return of assets | Included | Baseline evidence linked | ISMS Manager | `docs/security/PEOPLE_AND_EMPLOYMENT_SECURITY_STANDARD.md`, `docs/security/ACCESS_REVIEW_CHECKLIST.md` |
 | 5.12 | Classification of information | Included | Baseline evidence linked | ISMS Manager | `docs/security/INFORMATION_HANDLING_STANDARD.md`, `docs/security/ASSET_INVENTORY.md` |
 | 5.13 | Labelling of information | Included | Baseline evidence linked | ISMS Manager | `docs/security/INFORMATION_HANDLING_STANDARD.md` |
 | 5.14 | Information transfer | Included | Baseline evidence linked | ISMS Manager | `docs/security/INFORMATION_TRANSFER_STANDARD.md`, `docs/PRODUCTION_DATA_SAFETY.md` |
@@ -59,12 +59,12 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 
 | Control | Title | Applicability | Implementation status | Owner | Evidence or notes |
 | --- | --- | --- | --- | --- | --- |
-| 6.1 | Screening | Review required | Open gap | TBD | Record hiring control or justified exclusion |
-| 6.2 | Terms and conditions of employment | Review required | Open gap | TBD | Record HR/legal evidence source |
+| 6.1 | Screening | Included | Baseline evidence linked | ISMS Manager | `docs/security/PEOPLE_AND_EMPLOYMENT_SECURITY_STANDARD.md` |
+| 6.2 | Terms and conditions of employment | Included | Baseline evidence linked | ISMS Manager | `docs/security/PEOPLE_AND_EMPLOYMENT_SECURITY_STANDARD.md` |
 | 6.3 | Information security awareness, education and training | Included | Baseline evidence linked | ISMS Manager | `docs/security/SECURITY_AWARENESS_LOG.md`, `docs/security/SECURITY_AWARENESS_PLAYBOOK.md`, `docs/security/AI_USAGE_POLICY.md` |
-| 6.4 | Disciplinary process | Review required | Open gap | TBD | Record HR/legal evidence source |
+| 6.4 | Disciplinary process | Included | Baseline evidence linked | ISMS Manager | `docs/security/PEOPLE_AND_EMPLOYMENT_SECURITY_STANDARD.md` |
 | 6.5 | Responsibilities after termination or change of employment | Included | Baseline evidence linked | ISMS Manager | `docs/security/ACCESS_CONTROL.md`, `docs/security/ACCESS_REVIEW_CHECKLIST.md` |
-| 6.6 | Confidentiality or non-disclosure agreements | Review required | Open gap | TBD | Record HR/legal evidence source |
+| 6.6 | Confidentiality or non-disclosure agreements | Included | Baseline evidence linked | ISMS Manager | `docs/security/PEOPLE_AND_EMPLOYMENT_SECURITY_STANDARD.md` |
 | 6.7 | Remote working | Included | Baseline evidence linked | ISMS Manager | `docs/security/REMOTE_WORKING_STANDARD.md`, `docs/security/ACCESS_CONTROL.md`, `docs/vps-security-guide.html` |
 | 6.8 | Information security event reporting | Included | Baseline evidence linked | ISMS Manager | `docs/security/INCIDENT_RESPONSE.md`, `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md` |
 
@@ -72,47 +72,47 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 
 | Control | Title | Applicability | Implementation status | Owner | Evidence or notes |
 | --- | --- | --- | --- | --- | --- |
-| 7.1 | Physical security perimeters | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
-| 7.2 | Physical entry | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
-| 7.3 | Securing offices, rooms and facilities | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
-| 7.4 | Physical security monitoring | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
-| 7.5 | Protecting against physical and environmental threats | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
-| 7.6 | Working in secure areas | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
-| 7.7 | Clear desk and clear screen | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
-| 7.8 | Equipment siting and protection | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
-| 7.9 | Security of assets off-premises | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
-| 7.10 | Storage media | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
-| 7.11 | Supporting utilities | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
-| 7.12 | Cabling security | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
-| 7.13 | Equipment maintenance | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
-| 7.14 | Secure disposal or re-use of equipment | Review required | Open gap | TBD | Likely outside repo-backed evidence; record source or justified exclusion |
+| 7.1 | Physical security perimeters | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/SUPPLIER_MANAGEMENT.md` |
+| 7.2 | Physical entry | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/REMOTE_WORKING_STANDARD.md` |
+| 7.3 | Securing offices, rooms and facilities | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/REMOTE_WORKING_STANDARD.md` |
+| 7.4 | Physical security monitoring | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/SUPPLIER_MANAGEMENT.md` |
+| 7.5 | Protecting against physical and environmental threats | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/SUPPLIER_ASSURANCE_STANDARD.md` |
+| 7.6 | Working in secure areas | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/REMOTE_WORKING_STANDARD.md` |
+| 7.7 | Clear desk and clear screen | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/REMOTE_WORKING_STANDARD.md` |
+| 7.8 | Equipment siting and protection | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/REMOTE_WORKING_STANDARD.md` |
+| 7.9 | Security of assets off-premises | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/REMOTE_WORKING_STANDARD.md` |
+| 7.10 | Storage media | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/LEGAL_RECORDS_AND_PRIVACY_STANDARD.md` |
+| 7.11 | Supporting utilities | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/BUSINESS_CONTINUITY_STANDARD.md` |
+| 7.12 | Cabling security | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/SUPPLIER_MANAGEMENT.md` |
+| 7.13 | Equipment maintenance | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/SUPPLIER_ASSURANCE_STANDARD.md` |
+| 7.14 | Secure disposal or re-use of equipment | Included | Baseline evidence linked | ISMS Manager | `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`, `docs/security/LEGAL_RECORDS_AND_PRIVACY_STANDARD.md` |
 
 ## A.8 Technological Controls
 
 | Control | Title | Applicability | Implementation status | Owner | Evidence or notes |
 | --- | --- | --- | --- | --- | --- |
-| 8.1 | User endpoint devices | Review required | Open gap | TBD | Record endpoint-management evidence source |
+| 8.1 | User endpoint devices | Included | Baseline evidence linked | Engineering lead | `docs/security/ENDPOINT_AND_OPERATIONS_SECURITY_STANDARD.md`, `docs/security/REMOTE_WORKING_STANDARD.md` |
 | 8.2 | Privileged access rights | Included | Baseline evidence linked | ISMS Manager | `docs/security/ACCESS_CONTROL.md`, `docs/security/ACCESS_REVIEW_LOG.md` |
 | 8.3 | Information access restriction | Included | Baseline evidence linked | Engineering lead | `docs/security/ACCESS_CONTROL.md`, `docs/security/AUDIT_EVIDENCE_INDEX.md` |
 | 8.4 | Access to source code | Included | Baseline evidence linked | Engineering lead | `docs/security/ACCESS_CONTROL.md`, `.github/workflows/quality-gates.yml` |
 | 8.5 | Secure authentication | Included | Baseline evidence linked | Engineering lead | `docs/security/AUTHENTICATION_AND_CRYPTOGRAPHY_STANDARD.md`, `docs/security/ACCESS_CONTROL.md` |
-| 8.6 | Capacity management | Review required | Open gap | TBD | Record monitoring/capacity evidence source |
-| 8.7 | Protection against malware | Review required | Open gap | TBD | Record endpoint/server anti-malware approach |
+| 8.6 | Capacity management | Included | Baseline evidence linked | Engineering lead | `docs/security/ENDPOINT_AND_OPERATIONS_SECURITY_STANDARD.md`, `docs/security/BUSINESS_CONTINUITY_STANDARD.md` |
+| 8.7 | Protection against malware | Included | Baseline evidence linked | Engineering lead | `docs/security/ENDPOINT_AND_OPERATIONS_SECURITY_STANDARD.md`, `docs/security/REMOTE_WORKING_STANDARD.md` |
 | 8.8 | Management of technical vulnerabilities | Included | Baseline evidence linked | Engineering lead | `docs/security/VULNERABILITY_MANAGEMENT.md`, `docs/security/VULNERABILITY_REVIEW_LOG.md` |
 | 8.9 | Configuration management | Included | Baseline evidence linked | Engineering lead | `docs/security/CONFIGURATION_AND_APPLICATION_SECURITY_STANDARD.md`, `.github/workflows/quality-gates.yml`, `.github/workflows/deploy.yml` |
-| 8.10 | Information deletion | Review required | Open gap | TBD | Record deletion control set and evidence |
-| 8.11 | Data masking | Review required | Open gap | TBD | Record masking approach or justified exclusion |
-| 8.12 | Data leakage prevention | Review required | Open gap | TBD | Record DLP approach or justified exclusion |
+| 8.10 | Information deletion | Included | Baseline evidence linked | Engineering lead | `docs/security/DATA_PROTECTION_LIFECYCLE_STANDARD.md`, `docs/PRODUCTION_DATA_SAFETY.md` |
+| 8.11 | Data masking | Included | Baseline evidence linked | Engineering lead | `docs/security/DATA_PROTECTION_LIFECYCLE_STANDARD.md`, `docs/security/TEST_INFORMATION_STANDARD.md` |
+| 8.12 | Data leakage prevention | Included | Baseline evidence linked | Engineering lead | `docs/security/DATA_PROTECTION_LIFECYCLE_STANDARD.md`, `docs/security/INFORMATION_TRANSFER_STANDARD.md`, `docs/security/AI_USAGE_POLICY.md` |
 | 8.13 | Information backup | Included | Baseline evidence linked | Engineering lead | `docs/security/BACKUP_AND_RESTORE.md`, `docs/security/RESTORE_TEST_LOG.md` |
 | 8.14 | Redundancy of information processing facilities | Review required | Open gap | TBD | Record hosting resilience evidence or justified exclusion |
 | 8.15 | Logging | Included | Baseline evidence linked | Engineering lead | `docs/security/AUDIT_EVIDENCE_INDEX.md`, `.github/workflows/deploy.yml` |
-| 8.16 | Monitoring activities | Review required | Open gap | TBD | Record monitoring evidence or justified exclusion |
-| 8.17 | Clock synchronization | Review required | Open gap | TBD | Record platform evidence or justified exclusion |
-| 8.18 | Use of privileged utility programs | Review required | Open gap | TBD | Record administrative utility controls |
+| 8.16 | Monitoring activities | Included | Baseline evidence linked | Engineering lead | `docs/security/ENDPOINT_AND_OPERATIONS_SECURITY_STANDARD.md`, `.github/workflows/deploy.yml`, `docs/security/INCIDENT_RESPONSE.md` |
+| 8.17 | Clock synchronization | Included | Baseline evidence linked | Engineering lead | `docs/security/ENDPOINT_AND_OPERATIONS_SECURITY_STANDARD.md`, `docs/vps-security-guide.html` |
+| 8.18 | Use of privileged utility programs | Included | Baseline evidence linked | Engineering lead | `docs/security/ENDPOINT_AND_OPERATIONS_SECURITY_STANDARD.md`, `docs/security/ACCESS_CONTROL.md` |
 | 8.19 | Installation of software on operational systems | Included | Baseline evidence linked | Engineering lead | `docs/security/CONFIGURATION_AND_APPLICATION_SECURITY_STANDARD.md`, `docs/security/CHANGE_MANAGEMENT.md`, `scripts/deploy-release.sh` |
-| 8.20 | Networks security | Review required | Open gap | TBD | Record hosting/network control evidence |
-| 8.21 | Security of network services | Review required | Open gap | TBD | Record hosting/network control evidence |
-| 8.22 | Segregation of networks | Review required | Open gap | TBD | Record hosting/network control evidence |
+| 8.20 | Networks security | Included | Baseline evidence linked | Engineering lead | `docs/security/NETWORK_AND_SERVICE_SECURITY_STANDARD.md`, `docs/vps-security-guide.html` |
+| 8.21 | Security of network services | Included | Baseline evidence linked | Engineering lead | `docs/security/NETWORK_AND_SERVICE_SECURITY_STANDARD.md`, `.github/workflows/deploy.yml` |
+| 8.22 | Segregation of networks | Included | Baseline evidence linked | Engineering lead | `docs/security/NETWORK_AND_SERVICE_SECURITY_STANDARD.md`, `docs/security/REMOTE_WORKING_STANDARD.md` |
 | 8.23 | Web filtering | Review required | Open gap | TBD | Record justified exclusion or implemented control |
 | 8.24 | Use of cryptography | Included | Baseline evidence linked | Engineering lead | `docs/security/AUTHENTICATION_AND_CRYPTOGRAPHY_STANDARD.md`, `.github/workflows/deploy.yml` |
 | 8.25 | Secure development life cycle | Included | Baseline evidence linked | Engineering lead | `docs/security/SECURE_DEVELOPMENT.md`, `.github/workflows/quality-gates.yml` |

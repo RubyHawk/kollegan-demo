@@ -22,6 +22,8 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Asset inventory baseline: `docs/security/ASSET_INVENTORY.md`
 - Information handling baseline: `docs/security/INFORMATION_HANDLING_STANDARD.md`
 - Information transfer baseline: `docs/security/INFORMATION_TRANSFER_STANDARD.md`
+- People/employment baseline: `docs/security/PEOPLE_AND_EMPLOYMENT_SECURITY_STANDARD.md`
+- Physical/hosting baseline: `docs/security/PHYSICAL_AND_HOSTING_SECURITY_STANDARD.md`
 - Environment separation baseline: `docs/security/ENVIRONMENT_SEPARATION_STANDARD.md`
 - Test information baseline: `docs/security/TEST_INFORMATION_STANDARD.md`
 - Supplier assurance baseline: `docs/security/SUPPLIER_ASSURANCE_STANDARD.md`
@@ -30,6 +32,9 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Remote working baseline: `docs/security/REMOTE_WORKING_STANDARD.md`
 - Authentication and cryptography baseline: `docs/security/AUTHENTICATION_AND_CRYPTOGRAPHY_STANDARD.md`
 - Configuration and application-security baseline: `docs/security/CONFIGURATION_AND_APPLICATION_SECURITY_STANDARD.md`
+- Endpoint/operations baseline: `docs/security/ENDPOINT_AND_OPERATIONS_SECURITY_STANDARD.md`
+- Data-protection lifecycle baseline: `docs/security/DATA_PROTECTION_LIFECYCLE_STANDARD.md`
+- Network/service baseline: `docs/security/NETWORK_AND_SERVICE_SECURITY_STANDARD.md`
 - Access review workflow: `docs/security/ACCESS_REVIEW_CHECKLIST.md`
 - Restore-test workflow: `docs/security/RESTORE_TEST_PLAYBOOK.md`
 - Incident drill workflow: `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md`
