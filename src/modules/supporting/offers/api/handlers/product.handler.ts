@@ -14,6 +14,7 @@ import {
   updateProduct,
   deleteProduct,
 } from '../../application/products.service';
+import { productLocation } from './resource-location';
 
 function extractToken(req: NextRequest): string {
   return req.headers.get('authorization')?.slice(7) ?? req.cookies.get('at')?.value ?? '';
@@ -84,7 +85,7 @@ export const handleCreateProduct = createHandler(
       minQuantity: body.minQuantity,
       maxQuantity: body.maxQuantity,
     }, payload.sub);
-    return created(product, `/api/offers/products/${product.id}`);
+    return created(product, productLocation(product.id));
   },
 );
 

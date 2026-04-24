@@ -14,6 +14,7 @@ import {
   updateProductCategory,
   deleteProductCategory,
 } from '../../application/product-categories.service';
+import { productCategoryLocation } from './resource-location';
 
 function extractToken(req: NextRequest): string {
   return req.headers.get('authorization')?.slice(7) ?? req.cookies.get('at')?.value ?? '';
@@ -89,7 +90,7 @@ export const handleCreateProductCategory = createHandler(
         name: body.name,
         parentId: body.parentId ?? null,
       });
-      return created(category, `/api/offers/products/categories/${category.id}`);
+      return created(category, productCategoryLocation(category.id));
     } catch (error) {
       translateCategoryError(error);
     }
