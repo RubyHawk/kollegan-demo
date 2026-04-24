@@ -12,6 +12,7 @@ Use this register for completed internal audits only. Keep detailed evidence in 
 - Record the auditor or audit team, the scope reviewed, and the main findings.
 - Record nonconformities and corrective actions with owners and due dates.
 - Link supporting evidence, notes, or follow-up work items where possible.
+- Use `INTERNAL_AUDIT_PLAYBOOK.md` to prepare the audit and define the sampled evidence set.
 
 ## Audit Records
 
@@ -19,4 +20,3 @@ No internal-audit records are committed yet as of 2026-04-24.
 
 | Date | Auditor | Scope | Findings summary | Nonconformities | Corrective actions | Due date | Evidence link |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-

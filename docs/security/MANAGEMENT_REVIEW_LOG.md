@@ -12,6 +12,7 @@ Use this register for completed management reviews only. Do not commit confident
 - Record the key inputs reviewed, such as risks, incidents, audit findings, metrics, supplier issues, and corrective actions.
 - Record decisions, owners, and due dates for follow-up actions.
 - Link supporting notes, tickets, or meeting minutes when appropriate.
+- Use `MANAGEMENT_REVIEW_AGENDA.md` to prepare the inputs and capture the required review topics.
 
 ## Review Records
 
@@ -19,4 +20,3 @@ No management-review records are committed yet as of 2026-04-24.
 
 | Date | Participants | Inputs reviewed | Decisions | Actions and owners | Due date | Evidence link |
 | --- | --- | --- | --- | --- | --- | --- |
-

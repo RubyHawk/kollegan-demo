@@ -26,6 +26,8 @@ The following clause-level operating evidence is tracked alongside this SoA and 
 - `docs/security/RESTORE_TEST_LOG.md`
 - `docs/security/INTERNAL_AUDIT_LOG.md`
 - `docs/security/MANAGEMENT_REVIEW_LOG.md`
+- `docs/security/INTERNAL_AUDIT_PLAYBOOK.md`
+- `docs/security/MANAGEMENT_REVIEW_AGENDA.md`
 - `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`
 - `docs/security/INCIDENT_POSTMORTEM_LOG.md`
 - `docs/security/VULNERABILITY_REVIEW_LOG.md`

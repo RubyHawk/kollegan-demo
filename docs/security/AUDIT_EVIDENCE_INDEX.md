@@ -15,6 +15,8 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Feature-flag rollouts: `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`
 - Incidents and drills: `docs/security/INCIDENT_POSTMORTEM_LOG.md`
 - Vulnerability reviews: `docs/security/VULNERABILITY_REVIEW_LOG.md`
+- Internal audit workflow: `docs/security/INTERNAL_AUDIT_PLAYBOOK.md`
+- Management review workflow: `docs/security/MANAGEMENT_REVIEW_AGENDA.md`
 
 ## Change Evidence
 
@@ -73,8 +75,8 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 
 | Date                      | Activity          | Findings                                                | Corrective actions                                                 | Owner        |
 | ------------------------- | ----------------- | ------------------------------------------------------- | ------------------------------------------------------------------ | ------------ |
-| Open gap as of 2026-04-24 | Internal audit    | Repo-backed log path now exists in `INTERNAL_AUDIT_LOG.md`, but no completed internal audit record is committed yet | Schedule independent review and record findings/corrective actions | ISMS Manager |
-| Open gap as of 2026-04-24 | Management review | Repo-backed log path now exists in `MANAGEMENT_REVIEW_LOG.md`, but no completed management review record is committed yet | Record management review decisions, owners, and follow-up actions  | Management   |
+| Open gap as of 2026-04-24 | Internal audit    | Repo-backed log and audit workflow now exist in `INTERNAL_AUDIT_LOG.md` and `INTERNAL_AUDIT_PLAYBOOK.md`, but no completed internal audit record is committed yet | Schedule independent review and record findings/corrective actions | ISMS Manager |
+| Open gap as of 2026-04-24 | Management review | Repo-backed log and agenda now exist in `MANAGEMENT_REVIEW_LOG.md` and `MANAGEMENT_REVIEW_AGENDA.md`, but no completed management review record is committed yet | Record management review decisions, owners, and follow-up actions  | Management   |
 
 ## Incident And Vulnerability Operations
 
