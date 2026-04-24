@@ -1,1 +1,4 @@
-export { GET, PUT } from '../../../org/email-settings/route';
+export {
+  handleGetOrgEmailSettings as GET,
+  handleUpdateOrgEmailSettings as PUT,
+} from '@modules/supporting/identity';
