@@ -10,6 +10,7 @@ import { Errors } from '@platform/api/errors';
 import { verifyToken } from '@platform/auth/jwt';
 import { companiesRepository } from '../../infrastructure/companies.repository';
 import { upsertCompanyMember } from '../../application/company-members.service';
+import { companyLocation } from './resource-location';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -156,7 +157,7 @@ export const handleCreateCompany = createHandler(
       createdBy: payload.sub,
     });
     await upsertCompanyMember(company.id, payload.orgId!, payload.sub, 'admin', payload.sub);
-    return created(company, `/api/companies/${company.id}`);
+    return created(company, companyLocation(company.id));
   },
 );
 

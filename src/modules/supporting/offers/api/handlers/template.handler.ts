@@ -1,7 +1,7 @@
 /**
  * Offer Template API handlers.
  *
- * app/api/templates/ route files are thin re-export wrappers pointing here.
+ * app/api/v1/templates/ route files are thin re-export wrappers pointing here.
  */
 
 import { z } from 'zod';
@@ -17,6 +17,7 @@ import {
   updateTemplate,
   deleteTemplate,
 } from '../../application/templates.service';
+import { templateLocation } from './resource-location';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -85,7 +86,7 @@ export const handleCreateTemplate = createHandler(
       },
       payload.sub,
     );
-    return created(template, `/api/templates/${template.id}`);
+    return created(template, templateLocation(template.id));
   },
 );
 

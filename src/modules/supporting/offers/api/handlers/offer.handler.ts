@@ -1,7 +1,7 @@
 /**
  * Offer API handlers — colocated with the offers module.
  *
- * app/api/offers/ routes are thin re-export wrappers that point here.
+ * app/api/v1/offers/ routes are thin re-export wrappers that point here.
  */
 
 import { z } from 'zod';
@@ -30,6 +30,7 @@ import {
 } from '../../application/offers.service';
 import { resolveOfferBrandingForOffer } from '../../application/offer-branding-profile';
 import { sanitizeGeneratedOfferDocument } from '../../application/document-generator';
+import { offerLocation } from './resource-location';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -148,7 +149,7 @@ export const handleCreateOffer = createHandler(
         unit: item.unit ?? undefined,
       })),
     }, payload.sub);
-    return created(offer, `/api/offers/${offer.id}`);
+    return created(offer, offerLocation(offer.id));
   },
 );
 
@@ -208,7 +209,7 @@ export const handleUpdateOffer = createHandler(
     if (query.action === 'duplicate') {
       const dup = await duplicateOffer(id, payload.orgId!, payload.sub);
       if (!dup) throw Errors.notFound('Offer not found');
-      return created(dup, `/api/offers/${dup.id}`);
+      return created(dup, offerLocation(dup.id));
     }
 
     let updated;
