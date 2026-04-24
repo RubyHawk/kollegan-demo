@@ -33,6 +33,8 @@ The following clause-level operating evidence is tracked alongside this SoA and 
 - `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`
 - `docs/security/INCIDENT_POSTMORTEM_LOG.md`
 - `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md`
+- `docs/security/SECURITY_AWARENESS_LOG.md`
+- `docs/security/SECURITY_AWARENESS_PLAYBOOK.md`
 - `docs/security/SUPPLIER_REVIEW_LOG.md`
 - `docs/security/SUPPLIER_REVIEW_PLAYBOOK.md`
 - `docs/security/VULNERABILITY_REVIEW_LOG.md`

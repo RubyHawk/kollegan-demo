@@ -61,7 +61,7 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | --- | --- | --- | --- | --- | --- |
 | 6.1 | Screening | Review required | Open gap | TBD | Record hiring control or justified exclusion |
 | 6.2 | Terms and conditions of employment | Review required | Open gap | TBD | Record HR/legal evidence source |
-| 6.3 | Information security awareness, education and training | Review required | Open gap | TBD | Record training evidence source |
+| 6.3 | Information security awareness, education and training | Included | Baseline evidence linked | ISMS Manager | `docs/security/SECURITY_AWARENESS_LOG.md`, `docs/security/SECURITY_AWARENESS_PLAYBOOK.md`, `docs/security/AI_USAGE_POLICY.md` |
 | 6.4 | Disciplinary process | Review required | Open gap | TBD | Record HR/legal evidence source |
 | 6.5 | Responsibilities after termination or change of employment | Included | Baseline evidence linked | ISMS Manager | `docs/security/ACCESS_CONTROL.md`, `docs/security/ACCESS_REVIEW_CHECKLIST.md` |
 | 6.6 | Confidentiality or non-disclosure agreements | Review required | Open gap | TBD | Record HR/legal evidence source |

@@ -16,6 +16,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Incidents and drills: `docs/security/INCIDENT_POSTMORTEM_LOG.md`
 - Vulnerability reviews: `docs/security/VULNERABILITY_REVIEW_LOG.md`
 - Supplier reviews: `docs/security/SUPPLIER_REVIEW_LOG.md`
+- Security awareness: `docs/security/SECURITY_AWARENESS_LOG.md`
 - Access review workflow: `docs/security/ACCESS_REVIEW_CHECKLIST.md`
 - Restore-test workflow: `docs/security/RESTORE_TEST_PLAYBOOK.md`
 - Incident drill workflow: `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md`
@@ -24,6 +25,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Management review workflow: `docs/security/MANAGEMENT_REVIEW_AGENDA.md`
 - Detailed Annex A tracker: `docs/security/ANNEX_A_CONTROL_TRACKER.md`
 - Supplier review workflow: `docs/security/SUPPLIER_REVIEW_PLAYBOOK.md`
+- Security awareness workflow: `docs/security/SECURITY_AWARENESS_PLAYBOOK.md`
 
 ## Change Evidence
 
@@ -57,7 +59,8 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 | 2026-04-24 | Access review and restore test workflows                    | PR #589 / `0163ea5`                                        | Added repo-backed workflows for quarterly access reviews and non-production restore tests, linked them from the corresponding logs, and tightened the evidence index and SoA so those operating gaps are executable without inventing records | Engineering lead |
 | 2026-04-24 | Incident and vulnerability workflows                        | PR #590 / `1b54dd3`                                        | Added repo-backed workflows for incident-response drills and vulnerability reviews, linked them from the corresponding logs and policies, and corrected the evidence index so the merged access/restore work points at PR #589 | Engineering lead |
 | 2026-04-24 | Supplier review workflows                                   | PR #593 / `c0b694a`                                        | Added repo-backed supplier review log and playbook, linked them from supplier management and the evidence index, and made the supplier-relationship controls more actionable without inventing review records | Engineering lead |
-| 2026-04-24 | Annex A control tracker                                     | PR #591 / `b4ee8f2`                                        | Added a repo-backed tracker for all 93 ISO/IEC 27001:2022 Annex A controls, upgraded the SoA to a structured baseline that points at that tracker, linked the tracker from the evidence index, and fixed the mojibake risk-score formula | Engineering lead |
+| 2026-04-24 | Annex A control tracker                                     | PR #592 / `cbb51a4`                                        | Added a repo-backed tracker for all 93 ISO/IEC 27001:2022 Annex A controls, upgraded the SoA to a structured baseline that points at that tracker, linked the tracker from the evidence index, and fixed the mojibake risk-score formula | Engineering lead |
+| 2026-04-24 | Security awareness workflows                                | PR #594 / `98d1806`                                        | Added repo-backed security awareness log and playbook, linked awareness tracking into AI usage policy and the evidence index, and made the awareness/training control more actionable without inventing completion records | Engineering lead |
 
 ## Feature Flag Rollout Evidence
 
@@ -102,3 +105,9 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 | Date                      | Scope          | Result                                                                                         | Owner        |
 | ------------------------- | -------------- | ---------------------------------------------------------------------------------------------- | ------------ |
 | Open gap as of 2026-04-24 | In-scope SaaS, hosting, database, and AI suppliers | Repo-backed log and review workflow now exist in `SUPPLIER_REVIEW_LOG.md` and `SUPPLIER_REVIEW_PLAYBOOK.md`, but no completed supplier review record is committed yet | ISMS Manager |
+
+## Awareness And Training
+
+| Date                      | Scope                          | Result                                                                                         | Owner        |
+| ------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------- | ------------ |
+| Open gap as of 2026-04-24 | In-scope engineering and admin/support awareness | Repo-backed log and workflow now exist in `SECURITY_AWARENESS_LOG.md` and `SECURITY_AWARENESS_PLAYBOOK.md`, but no completed awareness or training record is committed yet | ISMS Manager |
