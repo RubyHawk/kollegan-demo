@@ -35,19 +35,19 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 864 |
-| Source files scanned | 729 |
-| Active production source files | 626 |
+| Tracked files scanned | 857 |
+| Source files scanned | 722 |
+| Active production source files | 627 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 0 |
-| API route files | 130 |
+| API route files | 121 |
 | API v1 route files | 67 |
 | Feature API clients | 20 |
-| Legacy API compatibility wrappers | 28 |
+| Legacy API compatibility wrappers | 19 |
 | Demo API routes | 14 |
 | Public/integration API routes | 21 |
 | Retained non-versioned API routes | 35 |
-| Literal legacy `/api/*` references outside route files | 46 |
+| Literal legacy `/api/*` references outside route files | 45 |
 | Dead-candidate review rows | 0 |
 
 ## Current Monolith Inventory
@@ -95,15 +95,6 @@ These are compatibility or alias routes kept while browser, mobile, and external
 
 | File |
 | --- |
-| src/app/api/admin/access-review/route.ts |
-| src/app/api/admin/compliance/controls/[id]/evidence/route.ts |
-| src/app/api/admin/compliance/controls/route.ts |
-| src/app/api/admin/compliance/evidence/collect/route.ts |
-| src/app/api/admin/compliance/policies/[id]/route.ts |
-| src/app/api/admin/compliance/policies/route.ts |
-| src/app/api/admin/compliance/report/route.ts |
-| src/app/api/admin/compliance/risks/[id]/route.ts |
-| src/app/api/admin/compliance/risks/route.ts |
 | src/app/api/auth/change-password/route.ts |
 | src/app/api/auth/dev-login/route.ts |
 | src/app/api/auth/login/route.ts |
@@ -194,7 +185,6 @@ These are literal `/api/*` strings outside route files. Not every row is a migra
 | demo-client | `src/modules/demos/hotel/api/services.ts:71` | `/api/demos/hotel/info` |
 | demo-client | `src/modules/demos/hotel/domain/seed.entity.ts:1` | `/api/demos/hotel/seed` |
 | feature-ui | `src/modules/demos/hotel/ui/hooks/use-hotel-sse.ts:23` | `/api/sse` |
-| handler | `src/modules/supporting/compliance/api/handlers/compliance.handler.ts:41` | `/api/admin/compliance` |
 | handler | `src/modules/supporting/offers/api/handlers/company.handler.ts:159` | `/api/companies/${company.id}` |
 | handler | `src/modules/supporting/offers/api/handlers/offer.handler.ts:151` | `/api/offers/${offer.id}` |
 | handler | `src/modules/supporting/offers/api/handlers/offer.handler.ts:211` | `/api/offers/${dup.id}` |

@@ -7,7 +7,7 @@
  *   - Zod validation
  *   - RFC 9110 / 9457 compliant error responses
  *
- * app/api/admin/compliance/ routes are thin re-export wrappers that point here.
+ * app/api/v1/admin/compliance/ routes are thin re-export wrappers that point here.
  */
 
 import { z } from 'zod';
@@ -34,11 +34,8 @@ function extractToken(req: NextRequest): string {
     ?? '';
 }
 
-function complianceApiBasePath(req: NextRequest): string {
-  const pathname = new URL(req.url).pathname;
-  return pathname.startsWith('/api/v1/')
-    ? '/api/v1/admin/compliance'
-    : '/api/admin/compliance';
+function complianceApiBasePath(): string {
+  return '/api/v1/admin/compliance';
 }
 
 async function requireAdmin(req: NextRequest): Promise<{ orgId: string; userId: string; roles: string[] }> {
@@ -177,7 +174,7 @@ export const handleCreateRisk = createHandler(
       dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
       createdBy: userId,
     });
-    return created(risk, `${complianceApiBasePath(req)}/risks/${risk.id}`);
+    return created(risk, `${complianceApiBasePath()}/risks/${risk.id}`);
   },
 );
 
@@ -267,7 +264,7 @@ export const handleCreatePolicy = createHandler(
       version: body.version, reviewCycleDays: body.reviewCycleDays, owner: body.owner,
       createdBy: userId,
     });
-    return created(policy, `${complianceApiBasePath(req)}/policies/${policy.id}`);
+    return created(policy, `${complianceApiBasePath()}/policies/${policy.id}`);
   },
 );
 
