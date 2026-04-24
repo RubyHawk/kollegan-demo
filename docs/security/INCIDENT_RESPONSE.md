@@ -26,5 +26,5 @@ Status: Draft baseline
 ## Evidence
 
 - Record completed incident drills and real incidents in `INCIDENT_POSTMORTEM_LOG.md`.
+- Use `INCIDENT_RESPONSE_DRILL_PLAYBOOK.md` for planned drills so scenarios, participants, findings, and corrective actions are captured consistently.
 - Link major incidents or drills in `AUDIT_EVIDENCE_INDEX.md` when they materially affect change management, risk treatment, or audit readiness.
-
