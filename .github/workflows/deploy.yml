@@ -57,11 +57,14 @@ jobs:
       - name: Package Next build artifact
         run: tar -czf kollegan-next-build-${{ github.sha }}.tar.gz .next
 
-      - name: Upload Next build artifact
+      - name: Package deploy bundle
+        run: tar -czf kollegan-deploy-bundle-${{ github.sha }}.tar.gz kollegan-next-build-${{ github.sha }}.tar.gz scripts/deploy-release.sh
+
+      - name: Upload deploy bundle
         uses: actions/upload-artifact@v4
         with:
-          name: next-build-${{ github.sha }}
-          path: kollegan-next-build-${{ github.sha }}.tar.gz
+          name: deploy-bundle-${{ github.sha }}
+          path: kollegan-deploy-bundle-${{ github.sha }}.tar.gz
           if-no-files-found: error
           retention-days: 1
 
@@ -79,10 +82,10 @@ jobs:
     needs:
       - build_release
     steps:
-      - name: Download Next build artifact
+      - name: Download deploy bundle
         uses: actions/download-artifact@v4
         with:
-          name: next-build-${{ github.sha }}
+          name: deploy-bundle-${{ github.sha }}
           path: .
 
       - name: Prepare VPS deploy directories
@@ -96,14 +99,14 @@ jobs:
             set -euo pipefail
             mkdir -p "${{ env.DEPLOY_APP_DIR }}/.deploy-state/incoming"
 
-      - name: Copy Next build artifact to VPS
+      - name: Copy deploy bundle to VPS
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 2222
-          source: kollegan-next-build-${{ github.sha }}.tar.gz
+          source: kollegan-deploy-bundle-${{ github.sha }}.tar.gz
           target: ${{ env.DEPLOY_APP_DIR }}/.deploy-state/incoming
           overwrite: true
 
@@ -116,15 +119,30 @@ jobs:
           port: 2222
           script: |
             set -euo pipefail
-            artifact_path="${{ env.DEPLOY_APP_DIR }}/.deploy-state/incoming/kollegan-next-build-${{ github.sha }}.tar.gz"
-            if [ ! -x "${{ env.DEPLOY_APP_DIR }}/deploy_kollegan.sh" ]; then
-              chmod +x "${{ env.DEPLOY_APP_DIR }}/deploy_kollegan.sh"
-            fi
-            if [ ! -f "$artifact_path" ]; then
-              echo "Artifact missing on VPS: $artifact_path" >&2
+            app_dir="${{ env.DEPLOY_APP_DIR }}"
+            state_dir="$app_dir/.deploy-state"
+            incoming_dir="$state_dir/incoming"
+            bundle_path="$incoming_dir/kollegan-deploy-bundle-${{ github.sha }}.tar.gz"
+            stage_dir="$(mktemp -d "$state_dir/release.XXXXXX")"
+            cleanup() {
+              rm -rf "$stage_dir"
+            }
+            trap cleanup EXIT
+
+            if [ ! -f "$bundle_path" ]; then
+              echo "Deploy bundle missing on VPS: $bundle_path" >&2
               exit 1
             fi
-            APP_DIR="${{ env.DEPLOY_APP_DIR }}" \
+
+            tar -xzf "$bundle_path" -C "$stage_dir"
+            install -m 755 "$stage_dir/scripts/deploy-release.sh" "$app_dir/deploy_kollegan.sh"
+
+            artifact_path="$incoming_dir/kollegan-next-build-${{ github.sha }}.tar.gz"
+            mv "$stage_dir/kollegan-next-build-${{ github.sha }}.tar.gz" "$artifact_path"
+
+            APP_DIR="$app_dir" \
             APP_BASE_URL="${{ env.NEXT_PUBLIC_APP_URL }}" \
             HEALTHCHECK_URLS="${{ secrets.DEPLOY_HEALTHCHECK_URLS }}" \
-            "${{ env.DEPLOY_APP_DIR }}/deploy_kollegan.sh" "$artifact_path" ${{ github.sha }}
+            "$app_dir/deploy_kollegan.sh" "$artifact_path" ${{ github.sha }}
+
+            rm -f "$bundle_path"

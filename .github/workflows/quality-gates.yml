@@ -4,9 +4,6 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -76,20 +73,6 @@ jobs:
       - name: File-size guard
         run: npm run check:file-size
 
-      - name: Save npm cache
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.npm-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.npm
-          key: ${{ steps.npm-cache.outputs.cache-primary-key }}
-
-      - name: Save lint cache
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.lint-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: .next/cache/eslint
-          key: ${{ steps.lint-cache.outputs.cache-primary-key }}
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -131,15 +114,6 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=4096
         run: npm run build
-
-      - name: Save build caches
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.build-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            .next/cache
-            tsconfig.tsbuildinfo
-          key: ${{ steps.build-cache.outputs.cache-primary-key }}
 
   safety:
     runs-on: ubuntu-latest
