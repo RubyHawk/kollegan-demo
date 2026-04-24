@@ -1,1 +1,4 @@
-export { DELETE, PATCH } from '../../../announcements/[id]/route';
+export {
+  handleDeleteAnnouncement as DELETE,
+  handleUpdateAnnouncement as PATCH,
+} from '@modules/generic/team-hub';

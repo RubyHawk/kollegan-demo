@@ -37,13 +37,13 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 |---|---:|
 | Tracked files scanned | 907 |
 | Source files scanned | 772 |
-| Active production source files | 621 |
+| Active production source files | 624 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 0 |
-| API route files | 177 |
-| API v1 route files | 66 |
-| Feature API clients | 19 |
-| Legacy API compatibility wrappers | 76 |
+| API route files | 175 |
+| API v1 route files | 67 |
+| Feature API clients | 20 |
+| Legacy API compatibility wrappers | 73 |
 | Demo API routes | 14 |
 | Public/integration API routes | 21 |
 | Retained non-versioned API routes | 35 |
@@ -72,6 +72,7 @@ These are browser-facing API contract wrappers. They are active infrastructure e
 | src/shared/lib/api/auth-account.api.ts |
 | src/shared/lib/api/auth-session.api.ts |
 | src/shared/lib/api/branding.api.ts |
+| src/shared/lib/api/calendar.api.ts |
 | src/shared/lib/api/companies.api.ts |
 | src/shared/lib/api/compliance.api.ts |
 | src/shared/lib/api/customers.api.ts |
@@ -103,8 +104,6 @@ These are compatibility or alias routes kept while browser, mobile, and external
 | src/app/api/admin/compliance/report/route.ts |
 | src/app/api/admin/compliance/risks/[id]/route.ts |
 | src/app/api/admin/compliance/risks/route.ts |
-| src/app/api/announcements/[id]/route.ts |
-| src/app/api/announcements/route.ts |
 | src/app/api/auth/change-password/route.ts |
 | src/app/api/auth/dev-login/route.ts |
 | src/app/api/auth/login/route.ts |
@@ -122,7 +121,6 @@ These are compatibility or alias routes kept while browser, mobile, and external
 | src/app/api/auth/webauthn/authenticate/verify/route.ts |
 | src/app/api/auth/webauthn/register/options/route.ts |
 | src/app/api/auth/webauthn/register/verify/route.ts |
-| src/app/api/calendar/events/route.ts |
 | src/app/api/companies/[id]/members/route.ts |
 | src/app/api/companies/[id]/route.ts |
 | src/app/api/companies/route.ts |
