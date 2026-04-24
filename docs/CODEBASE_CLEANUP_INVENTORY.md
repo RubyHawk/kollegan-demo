@@ -35,19 +35,19 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 907 |
-| Source files scanned | 772 |
+| Tracked files scanned | 906 |
+| Source files scanned | 771 |
 | Active production source files | 624 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 0 |
-| API route files | 175 |
+| API route files | 174 |
 | API v1 route files | 67 |
 | Feature API clients | 20 |
-| Legacy API compatibility wrappers | 73 |
+| Legacy API compatibility wrappers | 72 |
 | Demo API routes | 14 |
 | Public/integration API routes | 21 |
 | Retained non-versioned API routes | 35 |
-| Literal legacy `/api/*` references outside route files | 47 |
+| Literal legacy `/api/*` references outside route files | 46 |
 | Dead-candidate review rows | 0 |
 
 ## Current Monolith Inventory
@@ -163,7 +163,6 @@ These are compatibility or alias routes kept while browser, mobile, and external
 | src/app/api/projekt/[id]/route.ts |
 | src/app/api/projekt/counts/route.ts |
 | src/app/api/projekt/route.ts |
-| src/app/api/staff/route.ts |
 | src/app/api/templates/[id]/route.ts |
 | src/app/api/templates/assets/route.ts |
 | src/app/api/templates/preview/route.ts |
@@ -239,7 +238,6 @@ These are literal `/api/*` strings outside route files. Not every row is a migra
 | demo-client | `src/modules/demos/hotel/api/services.ts:71` | `/api/demos/hotel/info` |
 | demo-client | `src/modules/demos/hotel/domain/seed.entity.ts:1` | `/api/demos/hotel/seed` |
 | feature-ui | `src/modules/demos/hotel/ui/hooks/use-hotel-sse.ts:23` | `/api/sse` |
-| handler | `src/modules/supporting/auth/api/handlers/staff.handler.ts:58` | `/api/staff` |
 | handler | `src/modules/supporting/compliance/api/handlers/compliance.handler.ts:41` | `/api/admin/compliance` |
 | handler | `src/modules/supporting/offers/api/handlers/company.handler.ts:159` | `/api/companies/${company.id}` |
 | handler | `src/modules/supporting/offers/api/handlers/offer.handler.ts:151` | `/api/offers/${offer.id}` |
