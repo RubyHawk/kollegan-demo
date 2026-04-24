@@ -40,6 +40,8 @@
   --status-viewed-text:   oklch(0.75 0.12 300);
   --status-accepted-bg:   oklch(0.22 0.06 145);
   --status-accepted-text: oklch(0.75 0.15 145);
+  --status-danger-bg:     oklch(0.22 0.06 25);
+  --status-danger-text:   oklch(0.78 0.15 25);
   --status-declined-bg:   oklch(0.22 0.06 25);
   --status-declined-text: oklch(0.78 0.15 25);
   --status-expired-bg:    oklch(0.22 0.06 70);

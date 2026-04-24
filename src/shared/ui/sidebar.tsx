@@ -150,9 +150,11 @@ function SidebarFooter({
   const displayName =
     [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
 
-  const roleBadge: Record<string, string> = {
-    admin:        'Admin',
-    manager:      'Manager',
+  const roleLabel: Record<string, string> = {
+    admin: 'Admin',
+    super_admin: 'Superadmin',
+    user: 'Staff',
+    manager: 'Manager',
     receptionist: 'Receptionist',
   };
 
@@ -222,7 +224,7 @@ function SidebarFooter({
       )}
     >
       {/* User info */}
-      <div className="px-4 pt-4 pb-3">
+      <div className="px-4 pt-3.5 pb-3">
         <div className="flex items-center gap-3">
           {user.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -234,16 +236,18 @@ function SidebarFooter({
               </span>
             </div>
           )}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{displayName}</p>
-            <p className="text-xs text-[var(--text-muted)] truncate">{user.email}</p>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <p className="min-w-0 truncate text-sm font-semibold text-[var(--text-primary)]">{displayName}</p>
+              {user.role ? (
+                <span className="shrink-0 rounded-md bg-[var(--surface-alt)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-secondary)]">
+                  {roleLabel[user.role] ?? user.role}
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)] truncate">{user.email}</p>
           </div>
         </div>
-        {user.role && (
-          <span className="mt-2 inline-flex items-center rounded-md bg-[var(--accent)]/10 px-2 py-0.5 text-[10px] font-semibold text-[var(--accent)]">
-            {roleBadge[user.role] ?? user.role}
-          </span>
-        )}
       </div>
 
       <div className="h-px bg-[var(--border)]" />
@@ -274,7 +278,7 @@ function SidebarFooter({
       <div className="py-1.5 px-1.5">
         <button
           onClick={() => { setPopoverOpen(false); onLogout(); }}
-          className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[var(--text-secondary)] hover:bg-red-500/8 hover:text-red-500 transition-colors"
+          className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[var(--status-danger-text)] hover:bg-[var(--status-danger-bg)] hover:text-[var(--status-danger-text)] transition-colors"
         >
           <LogOutIcon size={14} className="shrink-0" />
           Logga ut
