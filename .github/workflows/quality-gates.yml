@@ -120,6 +120,9 @@ jobs:
       - name: Security readiness status
         run: node scripts/check-security-readiness.mjs
 
+      - name: Plan status snapshot
+        run: node scripts/check-plan-status.mjs
+
       - name: Text encoding guard
         run: node scripts/check-text-encoding.mjs
 
@@ -201,6 +204,10 @@ jobs:
                 ;;
               scripts/check-security-readiness.mjs)
                 node scripts/check-security-readiness.mjs
+                ran_policy_script=true
+                ;;
+              scripts/check-plan-status.mjs)
+                node scripts/check-plan-status.mjs
                 ran_policy_script=true
                 ;;
               scripts/codebase-inventory.mjs)

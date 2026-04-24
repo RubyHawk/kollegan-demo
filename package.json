@@ -20,6 +20,8 @@
     "check:security-evidence": "node scripts/check-security-evidence.mjs",
     "check:security-readiness": "node scripts/check-security-readiness.mjs",
     "check:security-readiness:write": "node scripts/check-security-readiness.mjs --write",
+    "check:plan-status": "node scripts/check-plan-status.mjs",
+    "check:plan-status:write": "node scripts/check-plan-status.mjs --write",
     "inventory:codebase": "node scripts/codebase-inventory.mjs",
     "inventory:codebase:write": "node scripts/codebase-inventory.mjs --write",
     "test:e2e:mobile": "playwright test tests/e2e/mobile-qa.spec.ts --reporter=line",
