@@ -49,7 +49,7 @@ jobs:
           if [[ "$before_sha" =~ ^0+$ ]]; then
             mapfile -t changed_files < <(git ls-tree -r --name-only "$head_sha")
           else
-            mapfile -t changed_files < <(git diff --name-only --diff-filter=ACMR "$before_sha" "$head_sha")
+            mapfile -t changed_files < <(git diff --name-only --diff-filter=ACMRD "$before_sha" "$head_sha")
           fi
 
           runtime=false
