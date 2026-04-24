@@ -21,6 +21,11 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 | 2026-04-23 | Reports boundary cleanup | PR #546 / `db30c64` | Reports page now loads customers, leads, offers, projects, meetings, and announcements through shared feature API loaders instead of inline endpoint descriptors | Engineering lead |
 | 2026-04-23 | Branding and theme precedence convergence | PRs #547-#549 / `aa943c7`, `d91c55c`, `cc8fbe8` | Shared branding resolver introduced, organization theme fallbacks added, theme-settings handlers kept behind thin routes, and precedence covered by branding/theme bootstrap tests | Engineering lead |
 | 2026-04-23 | Offer browser API boundary cleanup | PRs #550-#551 / `1309c31`, `124fc23` | Offer wizard lifecycle/lookups/submit flows and dashboard PDF actions now use shared `/api/v1` clients/helpers instead of direct browser fetches or legacy inline paths | Engineering lead |
+| 2026-04-23 | Governance evidence baseline refresh | PR #552 / `e15c560` | Audit evidence, supplier register, and risk register updated so already-completed refactor work has traceable repo-backed references instead of placeholder-only `TBD` rows | Engineering lead |
+| 2026-04-23 | Branding API client and cleanup inventory refresh | PR #553 / `0365c7c` | Dedicated `branding.api.ts` client added for theme sync, appearance flows use the shared client surface, and the generated cleanup inventory reflects the active feature API client set | Engineering lead |
+| 2026-04-23 | PR quality gate expansion | PRs #554-#555 / `2c9f5d6`, `b8171b7` | Pull-request CI now enforces lint, tests, typecheck, build, migration safety, AI proxy consistency, dependency boundaries, encoding, and file-size checks with explicit Prisma client generation in CI | Engineering lead |
+| 2026-04-23 | Legacy API inventory refinement | PRs #556-#557 / `8a86836`, `cbcd10e` | Cleanup inventory distinguishes compatibility wrappers from retained non-versioned routes, tracks literal legacy `/api/*` references, and reuses cache state more effectively in CI | Engineering lead |
+| 2026-04-24 | Reproducible VPS deploy workflow | PRs #558-#561 / `0397b5f`, `9614340`, `c61224b`, `90e6a12` | Deploys build release artifacts in GitHub, sync the tracked deploy script onto the VPS, use the fixed deploy path under `/var/www/offert`, keep build artifacts in `.deploy-state`, and stop rerunning the full PR quality pipeline after merge | Engineering lead |
 
 ## Feature Flag Rollout Evidence
 
@@ -38,17 +43,17 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 
 | Date | Scope | Result | Owner |
 |---|---|---|---|
-| TBD | TBD | TBD | TBD |
+| Open gap as of 2026-04-24 | Application admin, repository, VPS, database, and CI/CD secret access | No repo-backed quarterly access review record committed yet | ISMS Manager |
 
 ## Backup Restore Tests
 
 | Date | Backup ref | Restore target | Result | Owner |
 |---|---|---|---|---|
-| TBD | TBD | TBD | TBD | TBD |
+| Open gap as of 2026-04-24 | Production backup references are external to the repo | No repo-backed quarterly restore-test record committed yet | Pending | Engineering lead |
 
 ## Internal Audit And Management Review
 
 | Date | Activity | Findings | Corrective actions | Owner |
 |---|---|---|---|---|
-| TBD | Internal audit | TBD | TBD | TBD |
-| TBD | Management review | TBD | TBD | TBD |
+| Open gap as of 2026-04-24 | Internal audit | No repo-backed internal audit evidence committed yet | Schedule independent review and record findings/corrective actions | ISMS Manager |
+| Open gap as of 2026-04-24 | Management review | No repo-backed management review evidence committed yet | Record management review decisions, owners, and follow-up actions | Management |
