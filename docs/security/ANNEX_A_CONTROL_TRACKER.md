@@ -19,11 +19,11 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | --- | --- | --- | --- | --- | --- |
 | 5.1 | Policies for information security | Included | Baseline evidence linked | ISMS Manager | `docs/security/ISMS_SCOPE.md`, `docs/security/SECURE_DEVELOPMENT.md` |
 | 5.2 | Information security roles and responsibilities | Included | Baseline evidence linked | ISMS Manager | `docs/security/ACCESS_CONTROL.md`, `docs/security/CHANGE_MANAGEMENT.md` |
-| 5.3 | Segregation of duties | Review required | Open gap | TBD | Record decision and evidence before readiness claim |
+| 5.3 | Segregation of duties | Included | Baseline evidence linked | ISMS Manager | `docs/security/SEGREGATION_OF_DUTIES.md`, `.github/workflows/quality-gates.yml`, `.github/workflows/deploy.yml` |
 | 5.4 | Management responsibilities | Included | Baseline evidence linked | Management | `docs/security/MANAGEMENT_REVIEW_LOG.md`, `docs/security/MANAGEMENT_REVIEW_AGENDA.md` |
-| 5.5 | Contact with authorities | Review required | Open gap | TBD | Record operational owner and evidence source |
-| 5.6 | Contact with special interest groups | Review required | Open gap | TBD | Record operational owner and evidence source |
-| 5.7 | Threat intelligence | Review required | Open gap | TBD | Record review method or justified exclusion |
+| 5.5 | Contact with authorities | Included | Baseline evidence linked | ISMS Manager | `docs/security/GOVERNANCE_CONTACTS_AND_THREAT_INTELLIGENCE.md`, `docs/security/INCIDENT_RESPONSE.md` |
+| 5.6 | Contact with special interest groups | Included | Baseline evidence linked | ISMS Manager | `docs/security/GOVERNANCE_CONTACTS_AND_THREAT_INTELLIGENCE.md`, `docs/security/SUPPLIER_MANAGEMENT.md` |
+| 5.7 | Threat intelligence | Included | Baseline evidence linked | ISMS Manager | `docs/security/GOVERNANCE_CONTACTS_AND_THREAT_INTELLIGENCE.md`, `docs/security/VULNERABILITY_REVIEW_LOG.md` |
 | 5.8 | Information security in project management | Included | Baseline evidence linked | Engineering lead | `docs/security/CHANGE_MANAGEMENT.md`, `docs/REFACTORING_PLAYBOOK.md` |
 | 5.9 | Inventory of information and other associated assets | Included | Baseline evidence linked | ISMS Manager | `docs/security/ASSET_INVENTORY.md`, `docs/security/ISMS_SCOPE.md` |
 | 5.10 | Acceptable use of information and other associated assets | Included | Baseline evidence linked | ISMS Manager | `docs/security/INFORMATION_HANDLING_STANDARD.md`, `docs/AI_ENGINEERING.md` |
@@ -36,8 +36,8 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 5.17 | Authentication information | Included | Baseline evidence linked | Engineering lead | `docs/security/ACCESS_CONTROL.md`, `docs/security/AUDIT_EVIDENCE_INDEX.md` |
 | 5.18 | Access rights | Included | Baseline evidence linked | ISMS Manager | `docs/security/ACCESS_CONTROL.md`, `docs/security/ACCESS_REVIEW_CHECKLIST.md` |
 | 5.19 | Information security in supplier relationships | Included | Baseline evidence linked | ISMS Manager | `docs/security/SUPPLIER_MANAGEMENT.md`, `docs/security/SUPPLIER_REVIEW_LOG.md` |
-| 5.20 | Addressing information security within supplier agreements | Review required | Open gap | TBD | Supplier review workflow now exists in `docs/security/SUPPLIER_REVIEW_PLAYBOOK.md`; record agreement evidence before readiness claim |
-| 5.21 | Managing information security in the ICT supply chain | Review required | Open gap | TBD | Supplier review workflow now exists in `docs/security/SUPPLIER_REVIEW_PLAYBOOK.md`; record supply-chain evidence before readiness claim |
+| 5.20 | Addressing information security within supplier agreements | Included | Baseline evidence linked | ISMS Manager | `docs/security/SUPPLIER_ASSURANCE_STANDARD.md`, `docs/security/SUPPLIER_REVIEW_PLAYBOOK.md` |
+| 5.21 | Managing information security in the ICT supply chain | Included | Baseline evidence linked | ISMS Manager | `docs/security/SUPPLIER_ASSURANCE_STANDARD.md`, `docs/security/SUPPLIER_MANAGEMENT.md` |
 | 5.22 | Monitoring, review and change management of supplier services | Included | Baseline evidence linked | ISMS Manager | `docs/security/SUPPLIER_REVIEW_LOG.md`, `docs/security/SUPPLIER_REVIEW_PLAYBOOK.md` |
 | 5.23 | Information security for use of cloud services | Included | Baseline evidence linked | Engineering lead | `docs/security/SUPPLIER_MANAGEMENT.md`, `docs/security/SUPPLIER_REVIEW_LOG.md`, `.github/workflows/deploy.yml` |
 | 5.24 | Information security incident management planning and preparation | Included | Baseline evidence linked | ISMS Manager | `docs/security/INCIDENT_RESPONSE.md` |
@@ -45,12 +45,12 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 5.26 | Response to information security incidents | Included | Baseline evidence linked | ISMS Manager | `docs/security/INCIDENT_RESPONSE.md`, `docs/security/INCIDENT_POSTMORTEM_LOG.md` |
 | 5.27 | Learning from information security incidents | Included | Baseline evidence linked | ISMS Manager | `docs/security/INCIDENT_POSTMORTEM_LOG.md`, `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md` |
 | 5.28 | Collection of evidence | Included | Baseline evidence linked | ISMS Manager | `docs/security/INCIDENT_RESPONSE.md`, `docs/security/AUDIT_EVIDENCE_INDEX.md` |
-| 5.29 | Information security during disruption | Review required | Open gap | TBD | Record continuity evidence or justified exclusion |
-| 5.30 | ICT readiness for business continuity | Review required | Open gap | TBD | Record continuity testing evidence or justified exclusion |
-| 5.31 | Legal, statutory, regulatory and contractual requirements | Review required | Open gap | TBD | Record legal register or justified exclusion |
-| 5.32 | Intellectual property rights | Review required | Open gap | TBD | Record policy or contractual evidence |
-| 5.33 | Protection of records | Review required | Open gap | TBD | Record retention and protection controls |
-| 5.34 | Privacy and protection of PII | Review required | Open gap | TBD | Record privacy control set and evidence |
+| 5.29 | Information security during disruption | Included | Baseline evidence linked | ISMS Manager | `docs/security/BUSINESS_CONTINUITY_STANDARD.md`, `docs/security/INCIDENT_RESPONSE.md` |
+| 5.30 | ICT readiness for business continuity | Included | Baseline evidence linked | Engineering lead | `docs/security/BUSINESS_CONTINUITY_STANDARD.md`, `docs/security/RESTORE_TEST_PLAYBOOK.md`, `.github/workflows/deploy.yml` |
+| 5.31 | Legal, statutory, regulatory and contractual requirements | Included | Baseline evidence linked | ISMS Manager | `docs/security/LEGAL_RECORDS_AND_PRIVACY_STANDARD.md`, `docs/security/SUPPLIER_MANAGEMENT.md` |
+| 5.32 | Intellectual property rights | Included | Baseline evidence linked | ISMS Manager | `docs/security/LEGAL_RECORDS_AND_PRIVACY_STANDARD.md`, `docs/security/SUPPLIER_ASSURANCE_STANDARD.md` |
+| 5.33 | Protection of records | Included | Baseline evidence linked | ISMS Manager | `docs/security/LEGAL_RECORDS_AND_PRIVACY_STANDARD.md`, `docs/security/AUDIT_EVIDENCE_INDEX.md` |
+| 5.34 | Privacy and protection of PII | Included | Baseline evidence linked | ISMS Manager | `docs/security/LEGAL_RECORDS_AND_PRIVACY_STANDARD.md`, `docs/PRODUCTION_DATA_SAFETY.md`, `docs/security/INFORMATION_HANDLING_STANDARD.md` |
 | 5.35 | Independent review of information security | Included | Baseline evidence linked | ISMS Manager | `docs/security/INTERNAL_AUDIT_LOG.md`, `docs/security/INTERNAL_AUDIT_PLAYBOOK.md` |
 | 5.36 | Compliance with policies, rules and standards for information security | Included | Baseline evidence linked | ISMS Manager | `docs/security/INTERNAL_AUDIT_LOG.md`, `docs/security/STATEMENT_OF_APPLICABILITY.md` |
 | 5.37 | Documented operating procedures | Included | Baseline evidence linked | Engineering lead | `docs/security/CHANGE_MANAGEMENT.md`, `docs/security/RESTORE_TEST_PLAYBOOK.md`, `docs/security/ACCESS_REVIEW_CHECKLIST.md` |
@@ -65,7 +65,7 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 6.4 | Disciplinary process | Review required | Open gap | TBD | Record HR/legal evidence source |
 | 6.5 | Responsibilities after termination or change of employment | Included | Baseline evidence linked | ISMS Manager | `docs/security/ACCESS_CONTROL.md`, `docs/security/ACCESS_REVIEW_CHECKLIST.md` |
 | 6.6 | Confidentiality or non-disclosure agreements | Review required | Open gap | TBD | Record HR/legal evidence source |
-| 6.7 | Remote working | Review required | Open gap | TBD | Record remote-working control set |
+| 6.7 | Remote working | Included | Baseline evidence linked | ISMS Manager | `docs/security/REMOTE_WORKING_STANDARD.md`, `docs/security/ACCESS_CONTROL.md`, `docs/vps-security-guide.html` |
 | 6.8 | Information security event reporting | Included | Baseline evidence linked | ISMS Manager | `docs/security/INCIDENT_RESPONSE.md`, `docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md` |
 
 ## A.7 Physical Controls
@@ -95,11 +95,11 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 8.2 | Privileged access rights | Included | Baseline evidence linked | ISMS Manager | `docs/security/ACCESS_CONTROL.md`, `docs/security/ACCESS_REVIEW_LOG.md` |
 | 8.3 | Information access restriction | Included | Baseline evidence linked | Engineering lead | `docs/security/ACCESS_CONTROL.md`, `docs/security/AUDIT_EVIDENCE_INDEX.md` |
 | 8.4 | Access to source code | Included | Baseline evidence linked | Engineering lead | `docs/security/ACCESS_CONTROL.md`, `.github/workflows/quality-gates.yml` |
-| 8.5 | Secure authentication | Review required | Open gap | TBD | Record auth control decision and evidence |
+| 8.5 | Secure authentication | Included | Baseline evidence linked | Engineering lead | `docs/security/AUTHENTICATION_AND_CRYPTOGRAPHY_STANDARD.md`, `docs/security/ACCESS_CONTROL.md` |
 | 8.6 | Capacity management | Review required | Open gap | TBD | Record monitoring/capacity evidence source |
 | 8.7 | Protection against malware | Review required | Open gap | TBD | Record endpoint/server anti-malware approach |
 | 8.8 | Management of technical vulnerabilities | Included | Baseline evidence linked | Engineering lead | `docs/security/VULNERABILITY_MANAGEMENT.md`, `docs/security/VULNERABILITY_REVIEW_LOG.md` |
-| 8.9 | Configuration management | Review required | Open gap | TBD | Record configuration-management evidence |
+| 8.9 | Configuration management | Included | Baseline evidence linked | Engineering lead | `docs/security/CONFIGURATION_AND_APPLICATION_SECURITY_STANDARD.md`, `.github/workflows/quality-gates.yml`, `.github/workflows/deploy.yml` |
 | 8.10 | Information deletion | Review required | Open gap | TBD | Record deletion control set and evidence |
 | 8.11 | Data masking | Review required | Open gap | TBD | Record masking approach or justified exclusion |
 | 8.12 | Data leakage prevention | Review required | Open gap | TBD | Record DLP approach or justified exclusion |
@@ -109,20 +109,20 @@ This tracker lists all 93 ISO/IEC 27001:2022 Annex A controls so the Statement o
 | 8.16 | Monitoring activities | Review required | Open gap | TBD | Record monitoring evidence or justified exclusion |
 | 8.17 | Clock synchronization | Review required | Open gap | TBD | Record platform evidence or justified exclusion |
 | 8.18 | Use of privileged utility programs | Review required | Open gap | TBD | Record administrative utility controls |
-| 8.19 | Installation of software on operational systems | Review required | Open gap | TBD | Record change/release control evidence |
+| 8.19 | Installation of software on operational systems | Included | Baseline evidence linked | Engineering lead | `docs/security/CONFIGURATION_AND_APPLICATION_SECURITY_STANDARD.md`, `docs/security/CHANGE_MANAGEMENT.md`, `scripts/deploy-release.sh` |
 | 8.20 | Networks security | Review required | Open gap | TBD | Record hosting/network control evidence |
 | 8.21 | Security of network services | Review required | Open gap | TBD | Record hosting/network control evidence |
 | 8.22 | Segregation of networks | Review required | Open gap | TBD | Record hosting/network control evidence |
 | 8.23 | Web filtering | Review required | Open gap | TBD | Record justified exclusion or implemented control |
-| 8.24 | Use of cryptography | Review required | Open gap | TBD | Record crypto control evidence |
+| 8.24 | Use of cryptography | Included | Baseline evidence linked | Engineering lead | `docs/security/AUTHENTICATION_AND_CRYPTOGRAPHY_STANDARD.md`, `.github/workflows/deploy.yml` |
 | 8.25 | Secure development life cycle | Included | Baseline evidence linked | Engineering lead | `docs/security/SECURE_DEVELOPMENT.md`, `.github/workflows/quality-gates.yml` |
-| 8.26 | Application security requirements | Review required | Open gap | TBD | Record requirement-setting evidence |
+| 8.26 | Application security requirements | Included | Baseline evidence linked | Engineering lead | `docs/security/CONFIGURATION_AND_APPLICATION_SECURITY_STANDARD.md`, `docs/AI_ENGINEERING.md`, `docs/PRODUCTION_DATA_SAFETY.md` |
 | 8.27 | Secure system architecture and engineering principles | Included | Baseline evidence linked | Engineering lead | `docs/AI_ENGINEERING.md`, `docs/ARCHITECTURE.md`, `docs/PLATFORM_ARCHITECTURE.md` |
 | 8.28 | Secure coding | Included | Baseline evidence linked | Engineering lead | `docs/security/SECURE_DEVELOPMENT.md`, `docs/AI_ENGINEERING.md` |
 | 8.29 | Security testing in development and acceptance | Included | Baseline evidence linked | Engineering lead | `.github/workflows/quality-gates.yml`, `package.json` |
-| 8.30 | Outsourced development | Review required | Open gap | TBD | Record supplier/AI-assisted development control decision |
+| 8.30 | Outsourced development | Included | Baseline evidence linked | Engineering lead | `docs/security/SUPPLIER_ASSURANCE_STANDARD.md`, `docs/security/AI_USAGE_POLICY.md`, `docs/security/SECURE_DEVELOPMENT.md` |
 | 8.31 | Separation of development, test and production environments | Included | Baseline evidence linked | Engineering lead | `docs/security/ENVIRONMENT_SEPARATION_STANDARD.md`, `.github/workflows/deploy.yml`, `.github/workflows/quality-gates.yml` |
 | 8.32 | Change management | Included | Baseline evidence linked | Engineering lead | `docs/security/CHANGE_MANAGEMENT.md`, `.github/workflows/deploy.yml` |
 | 8.33 | Test information | Included | Baseline evidence linked | Engineering lead | `docs/security/TEST_INFORMATION_STANDARD.md`, `docs/security/RESTORE_TEST_PLAYBOOK.md`, `docs/PRODUCTION_DATA_SAFETY.md` |
-| 8.34 | Protection of information systems during audit testing | Review required | Open gap | TBD | Record audit-testing protection evidence |
+| 8.34 | Protection of information systems during audit testing | Included | Baseline evidence linked | Engineering lead | `docs/security/CONFIGURATION_AND_APPLICATION_SECURITY_STANDARD.md`, `docs/security/RESTORE_TEST_PLAYBOOK.md`, `docs/security/INFORMATION_HANDLING_STANDARD.md` |
 
