@@ -51,7 +51,7 @@ The following clause-level operating evidence is tracked alongside this SoA and 
 
 ## Detailed Annex A Tracking
 
-Use `docs/security/ANNEX_A_CONTROL_TRACKER.md` as the canonical detailed matrix for all 93 Annex A controls, including applicability decisions, owners, and evidence links.
+Use `docs/security/ANNEX_A_CONTROL_TRACKER.md` as the canonical detailed matrix for all 93 Annex A controls, including applicability decisions, owners, and evidence links. Use `docs/security/READINESS_STATUS.md` as the generated summary of tracker completion and still-empty operating records.
 
 ## Completion Rule
 
