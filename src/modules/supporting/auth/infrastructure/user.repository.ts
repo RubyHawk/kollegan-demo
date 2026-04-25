@@ -96,14 +96,6 @@ export const userRepository = {
         themeAccent: true,
         themeFontFamily: true,
         themeFontSize: true,
-        organization: {
-          select: {
-            themeMode: true,
-            themeAccent: true,
-            themeFontFamily: true,
-            themeFontSize: true,
-          },
-        },
       },
     });
 
@@ -119,10 +111,10 @@ export const userRepository = {
       themeAccent: profile.themeAccent,
       themeFontFamily: profile.themeFontFamily,
       themeFontSize: profile.themeFontSize,
-      organizationThemeMode: profile.organization?.themeMode ?? null,
-      organizationThemeAccent: profile.organization?.themeAccent ?? null,
-      organizationThemeFontFamily: profile.organization?.themeFontFamily ?? null,
-      organizationThemeFontSize: profile.organization?.themeFontSize ?? null,
+      organizationThemeMode: null,
+      organizationThemeAccent: null,
+      organizationThemeFontFamily: null,
+      organizationThemeFontSize: null,
     };
   },
 

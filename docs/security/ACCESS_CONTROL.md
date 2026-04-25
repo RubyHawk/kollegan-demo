@@ -35,4 +35,4 @@ Status: Draft baseline
 
 - Record completed quarterly reviews in `ACCESS_REVIEW_LOG.md`.
 - Keep `AUDIT_EVIDENCE_INDEX.md` as the high-level index for completed review cycles and related follow-up changes.
-
+- Auth profile and theme-default resolution changes should stay behind the auth account service and the identity module, so repository-layer auth changes do not silently broaden cross-module access paths.

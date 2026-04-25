@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { identityService } from '@modules/supporting/identity';
 import { userRepository } from '../infrastructure/user.repository';
 import { revokeAllSessions } from './auth.service';
 import type {
@@ -27,7 +28,22 @@ export interface ChangeAccountPasswordInput {
 }
 
 export async function getAccountProfile(userId: string): Promise<AccountProfile | null> {
-  return userRepository.findAccountProfile(userId);
+  const profile = await userRepository.findAccountProfile(userId);
+  if (!profile) return null;
+
+  const organizationId = await userRepository.findOrganizationIdById(userId);
+  if (!organizationId) return profile;
+
+  const organization = await identityService.getOrg(organizationId);
+  if (!organization) return profile;
+
+  return {
+    ...profile,
+    organizationThemeMode: organization.themeMode ?? null,
+    organizationThemeAccent: organization.themeAccent ?? null,
+    organizationThemeFontFamily: organization.themeFontFamily ?? null,
+    organizationThemeFontSize: organization.themeFontSize ?? null,
+  };
 }
 
 export async function updateAccountProfile(userId: string, input: UpdateAccountProfileInput): Promise<void> {
