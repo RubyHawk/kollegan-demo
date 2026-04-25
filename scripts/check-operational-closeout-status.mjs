@@ -7,6 +7,7 @@ import {
   parseOperationalEvidenceIndexGaps,
   parseOperationalRegisterStatus,
   readText,
+  renderCadenceSummary,
 } from "./lib/operational-evidence.mjs";
 
 const root = process.cwd();
@@ -48,6 +49,7 @@ function renderMarkdown() {
     parseOperationalRegisterStatus(root, item),
   );
   const openGaps = parseOperationalEvidenceIndexGaps(root);
+  const cadenceSummary = renderCadenceSummary(operationalEvidenceRegistry);
   const openGapKeys = new Set(
     openGaps.map((gap) => `${gap.section}::${gap.scope}`),
   );
@@ -81,6 +83,19 @@ Use \`docs/security/OPERATIONAL_RECORD_ENTRY_STANDARD.md\` together with the log
 - Keep detailed operational evidence outside the repo when needed and link a safe summary or ticket reference instead.
 - Close an evidence gap only after a completed record row is committed in the corresponding log.
 - If a log gets its first completed row, change the status line to \`Active register; last updated YYYY-MM-DD\`.
+
+## Minimum Operating Cadence
+
+Use this as the lean operating rhythm for stage-2 readiness. It is intentionally small: do the scheduled reviews, do the event-driven reviews when real events happen, and record safe summaries in the linked logs.
+
+| Operating window | Activities | Owners | Evidence logs |
+| --- | --- | --- | --- |
+${cadenceSummary
+  .map(
+    (item) =>
+      `| ${escapeTableCell(item.bucket)} | ${escapeTableCell(item.activities)} | ${escapeTableCell(item.owners)} | ${item.evidence} |`,
+  )
+  .join("\n")}
 
 ## Closeout Queue
 

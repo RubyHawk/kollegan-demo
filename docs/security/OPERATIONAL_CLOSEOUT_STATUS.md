@@ -27,6 +27,20 @@ Use `docs/security/OPERATIONAL_RECORD_ENTRY_STANDARD.md` together with the log-s
 - Close an evidence gap only after a completed record row is committed in the corresponding log.
 - If a log gets its first completed row, change the status line to `Active register; last updated YYYY-MM-DD`.
 
+## Minimum Operating Cadence
+
+Use this as the lean operating rhythm for stage-2 readiness. It is intentionally small: do the scheduled reviews, do the event-driven reviews when real events happen, and record safe summaries in the linked logs.
+
+| Operating window | Activities | Owners | Evidence logs |
+| --- | --- | --- | --- |
+| Per release / rollout | Feature-flag rollouts | Engineering lead | `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md` |
+| Monthly | Vulnerability reviews | Engineering lead | `docs/security/VULNERABILITY_REVIEW_LOG.md` |
+| Quarterly | Feature-flag rollouts, Access reviews, Restore tests, Supplier reviews, Security awareness, Asset lifecycle | Engineering lead, ISMS Manager | `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`, `docs/security/ACCESS_REVIEW_LOG.md`, `docs/security/RESTORE_TEST_LOG.md`, `docs/security/SUPPLIER_REVIEW_LOG.md`, `docs/security/SECURITY_AWARENESS_LOG.md`, `docs/security/ASSET_LIFECYCLE_LOG.md` |
+| Annual | Internal audits, Management reviews | ISMS Manager, Management | `docs/security/INTERNAL_AUDIT_LOG.md`, `docs/security/MANAGEMENT_REVIEW_LOG.md` |
+| Event-driven | Incidents and drills, Asset lifecycle | ISMS Manager | `docs/security/INCIDENT_POSTMORTEM_LOG.md`, `docs/security/ASSET_LIFECYCLE_LOG.md` |
+| After major changes | Internal audits, Management reviews, Supplier reviews, Security awareness | ISMS Manager, Management | `docs/security/INTERNAL_AUDIT_LOG.md`, `docs/security/MANAGEMENT_REVIEW_LOG.md`, `docs/security/SUPPLIER_REVIEW_LOG.md`, `docs/security/SECURITY_AWARENESS_LOG.md` |
+| As findings arrive | Vulnerability reviews | Engineering lead | `docs/security/VULNERABILITY_REVIEW_LOG.md` |
+
 ## Closeout Queue
 
 | Register | Owner | Review cadence | Status | Gap row | Primary workflow |
