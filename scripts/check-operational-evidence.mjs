@@ -103,6 +103,53 @@ function gapKey({ section, scope }) {
   return `${section}::${scope}`;
 }
 
+function countRecordRows(text) {
+  const lines = text.split(/\r?\n/);
+  let inRecordSection = false;
+  let sawHeaderRow = false;
+  let sawSeparatorRow = false;
+  let recordRows = 0;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith("## ")) {
+      if (inRecordSection) break;
+      inRecordSection = /Records$/i.test(trimmed);
+      sawHeaderRow = false;
+      sawSeparatorRow = false;
+      continue;
+    }
+
+    if (!inRecordSection || !trimmed.startsWith("|")) {
+      continue;
+    }
+
+    const columns = parseMarkdownRow(trimmed);
+    if (columns.length === 0) continue;
+
+    if (!sawHeaderRow) {
+      sawHeaderRow = true;
+      continue;
+    }
+
+    const isSeparatorRow = columns.every((cell) =>
+      /^:?-{3,}:?$/.test(cell.replace(/\s/g, "")),
+    );
+
+    if (!sawSeparatorRow && isSeparatorRow) {
+      sawSeparatorRow = true;
+      continue;
+    }
+
+    if (sawHeaderRow && sawSeparatorRow) {
+      recordRows += 1;
+    }
+  }
+
+  return recordRows;
+}
+
 function parseRegisterStatus(item) {
   const fullPath = path.join(root, item.file);
 
@@ -116,15 +163,13 @@ function parseRegisterStatus(item) {
   }
 
   const text = readText(fullPath);
-  const emptyStatusMatch = text.match(/^Status:\s+Empty register as of (.+)$/m);
-  const noRecordsMatch = text.match(
-    /^No .* records are committed yet as of (.+)\.$/m,
-  );
+  const recordRows = countRecordRows(text);
 
   return {
     ...item,
     exists: true,
-    empty: Boolean(emptyStatusMatch || noRecordsMatch),
+    empty: recordRows === 0,
+    recordRows,
     status: text.match(/^Status:\s+(.+)$/m)?.[1] ?? "Unknown",
   };
 }
@@ -219,7 +264,9 @@ if (
       "Open-gap rows still exist for registers that are no longer marked empty:",
     );
     for (const item of staleGapRows) {
-      console.error(`- ${item.label} -> ${item.section} / ${item.scope}`);
+      console.error(
+        `- ${item.label} -> ${item.section} / ${item.scope} (${item.recordRows} record rows detected)`,
+      );
     }
   }
 
