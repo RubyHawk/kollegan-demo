@@ -30,6 +30,7 @@ High-risk changes require explicit review and evidence link.
 ## Current Enforced Controls
 
 - Pull-request quality gates run lint, tests, typecheck, build, migration safety, AI proxy consistency, dependency boundaries, encoding, and file-size checks before merge.
+- Pull-request quality gates also block new unapproved non-versioned `/api/*` literals outside route files, so the `/api/v1` migration cannot silently regress through inline fetches or stray helper constants.
 - Pull-request quality gates also require security-relevant changes to touch security/evidence docs, so release workflow, migration, auth, feature-flag, and public-offer/signing changes cannot merge without repo-backed governance context.
 - High-risk progressive-delivery changes should record rollout/rollback decisions in `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`.
 - Deploys to production are versioned from Git: the deploy workflow builds the release artifact in CI, ships the tracked deploy script with the release bundle, installs that script to the fixed VPS path, and then deploys the exact merged commit.
