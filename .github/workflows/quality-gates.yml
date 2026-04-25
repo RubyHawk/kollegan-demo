@@ -55,7 +55,7 @@ jobs:
             esac
 
             case "$file" in
-              .github/workflows/*|scripts/deploy-release.sh|scripts/check-*.mjs|scripts/codebase-inventory.mjs)
+              .github/workflows/*|scripts/deploy-release.sh|scripts/check-*.mjs|scripts/codebase-inventory.mjs|scripts/lib/operational-evidence.mjs)
                 process=true
                 docs_only=false
                 matched=true
@@ -222,6 +222,12 @@ jobs:
                 ;;
               scripts/check-legacy-api-literals.mjs)
                 node scripts/check-legacy-api-literals.mjs
+                ran_policy_script=true
+                ;;
+              scripts/lib/operational-evidence.mjs)
+                node scripts/check-operational-evidence.mjs
+                node scripts/check-security-readiness.mjs
+                node scripts/check-plan-status.mjs
                 ran_policy_script=true
                 ;;
               scripts/codebase-inventory.mjs)
