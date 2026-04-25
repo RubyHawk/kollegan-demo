@@ -8,6 +8,8 @@ npm run check:security-readiness:write
 
 It summarizes what the repository can currently prove about ISO/IEC 27001:2022 readiness structure and which operating records are still missing. It does not invent evidence that has not been recorded.
 
+Use `docs/security/OPERATIONAL_CLOSEOUT_STATUS.md` as the operator-facing checklist for closing the remaining evidence gaps.
+
 ## Snapshot Summary
 
 | Metric | Value |

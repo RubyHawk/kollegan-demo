@@ -18,6 +18,8 @@
     "check:encoding:all": "node scripts/check-text-encoding.mjs --all",
     "check:legacy-api-literals": "node scripts/check-legacy-api-literals.mjs",
     "check:operational-evidence": "node scripts/check-operational-evidence.mjs",
+    "check:operational-closeout-status": "node scripts/check-operational-closeout-status.mjs",
+    "check:operational-closeout-status:write": "node scripts/check-operational-closeout-status.mjs --write",
     "check:ai-proxies": "node scripts/check-ai-proxies.mjs",
     "check:security-evidence": "node scripts/check-security-evidence.mjs",
     "check:security-readiness": "node scripts/check-security-readiness.mjs",

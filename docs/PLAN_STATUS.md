@@ -6,15 +6,23 @@ This document is generated from the current checkout. Run:
 npm run check:plan-status:write
 ```
 
-It summarizes what the repository can currently prove about the ERP refactor and ISO readiness plan. It does not estimate percentages or invent completed operational evidence.
+It summarizes what the repository can currently prove about the ERP refactor and ISO readiness plan. It only reports repo-backed completion for structural work and does not invent completed operational evidence.
+
+## Repo-Backed Completion
+
+| Area | Status | Repo-backed completion | Evidence |
+| --- | --- | ---: | --- |
+| Engineering / refactor structure | Complete | 100% | All 18 implementation-order items are structurally covered in the repo; inventory shows 0 legacy wrappers, 0 files above 1000 lines, 0 files above 500 lines, and 0 dead-candidate rows. |
+| Governance / evidence structure | Complete | 100% | 93 Annex A controls are tracked, 93 have baseline evidence linked, 0 are missing applicability, 0 have structural open gaps, 0 are missing implementation status, and ISMS scope has no pending-decision language. |
+| Total repo-backed plan structure | Complete | 100% | All currently-detectable repo-side structural plan requirements are present; the remaining work is operating the ISMS and recording real events. |
 
 ## Snapshot Summary
 
 | Metric | Value |
 |---|---:|
 | Implementation-order items in plan | 18 |
-| Tracked files scanned | 893 |
-| Source files scanned | 715 |
+| Tracked files scanned | 897 |
+| Source files scanned | 717 |
 | API route files | 107 |
 | API v1 route files | 72 |
 | Feature API clients | 20 |
@@ -50,6 +58,13 @@ It summarizes what the repository can currently prove about the ERP refactor and
 ## Remaining Repo-Side Work
 
 - No major repo-structure gaps are currently detected; the remaining plan work is primarily operational evidence.
+
+## Operational Readiness Snapshot
+
+- Repo-backed structural completion is currently `100%`, but practical readiness is still limited by real operating evidence.
+- Operational evidence progress is currently `0/10` completed registers and `10` still-empty registers.
+- The audit evidence index currently reports `10` open-gap rows that must only close when real records are added.
+- Use `docs/security/OPERATIONAL_CLOSEOUT_STATUS.md` as the operator-facing checklist for closing the remaining evidence gaps.
 
 ## Remaining Operational Work
 
