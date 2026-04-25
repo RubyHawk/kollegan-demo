@@ -250,6 +250,79 @@ export function gapKey({ section, scope }) {
   return `${section}::${scope}`;
 }
 
+export function cadenceBucketsForRegister(item) {
+  if (item.label === "Asset lifecycle") {
+    return ["Quarterly", "Event-driven"];
+  }
+
+  const cadence = item.reviewCadence;
+
+  switch (cadence) {
+    case "Per rollout and quarterly review":
+      return ["Per release / rollout", "Quarterly"];
+    case "Quarterly":
+      return ["Quarterly"];
+    case "Monthly and as findings arrive":
+      return ["Monthly", "As findings arrive"];
+    case "After incidents or incident-response drills":
+      return ["Event-driven"];
+    case "Quarterly and after major supplier changes":
+    case "Quarterly and after major security/process changes":
+      return ["Quarterly", "After major changes"];
+    case "At least annually and after major process changes":
+    case "At least annually and after major ISMS changes":
+      return ["Annual", "After major changes"];
+    default:
+      return [cadence];
+  }
+}
+
+export function renderCadenceSummary(registers) {
+  const groups = new Map([
+    ["Per release / rollout", []],
+    ["Monthly", []],
+    ["Quarterly", []],
+    ["Annual", []],
+    ["Event-driven", []],
+    ["After major changes", []],
+    ["As findings arrive", []],
+  ]);
+
+  for (const item of registers) {
+    for (const bucket of cadenceBucketsForRegister(item)) {
+      const group = groups.get(bucket);
+      if (!group) continue;
+      group.push(item);
+    }
+  }
+
+  const orderedBuckets = [
+    "Per release / rollout",
+    "Monthly",
+    "Quarterly",
+    "Annual",
+    "Event-driven",
+    "After major changes",
+    "As findings arrive",
+  ];
+
+  return orderedBuckets
+    .filter((bucket) => (groups.get(bucket) ?? []).length > 0)
+    .map((bucket) => {
+      const items = groups.get(bucket) ?? [];
+      const activities = items.map((item) => item.label).join(", ");
+      const evidence = items.map((item) => `\`${item.file}\``).join(", ");
+      const owners = [...new Set(items.map((item) => item.owner))].join(", ");
+
+      return {
+        bucket,
+        activities,
+        evidence,
+        owners,
+      };
+    });
+}
+
 export function countRecordRows(text) {
   const lines = text.split(/\r?\n/);
   let inRecordSection = false;
