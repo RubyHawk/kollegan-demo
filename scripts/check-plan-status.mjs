@@ -7,8 +7,18 @@ const writeMode = process.argv.includes("--write");
 
 const planPath = path.join(root, "docs", "ERP_REFACTOR_PLAN.md");
 const outputPath = path.join(root, "docs", "PLAN_STATUS.md");
-const readinessPath = path.join(root, "docs", "security", "READINESS_STATUS.md");
-const evidenceIndexPath = path.join(root, "docs", "security", "AUDIT_EVIDENCE_INDEX.md");
+const readinessPath = path.join(
+  root,
+  "docs",
+  "security",
+  "READINESS_STATUS.md",
+);
+const evidenceIndexPath = path.join(
+  root,
+  "docs",
+  "security",
+  "AUDIT_EVIDENCE_INDEX.md",
+);
 const scopePath = path.join(root, "docs", "security", "ISMS_SCOPE.md");
 
 const requiredReadFirstDocs = [
@@ -75,7 +85,8 @@ function parseSummaryTableFromText(text, heading, sourceLabel) {
 
     const cells = parseMarkdownRow(line);
     if (cells.length < 2) continue;
-    if (cells[0] === "Metric" || /^-+$/.test(cells[0].replaceAll(":", ""))) continue;
+    if (cells[0] === "Metric" || /^-+$/.test(cells[0].replaceAll(":", "")))
+      continue;
     values.set(cells[0], cells[1]);
   }
 
@@ -121,7 +132,9 @@ function parseReadinessActions() {
   const heading = "## Next Highest-Value Actions";
   const headingIndex = lines.findIndex((line) => line.trim() === heading);
   if (headingIndex === -1) {
-    throw new Error(`Could not find heading "${heading}" in ${normalize(path.relative(root, readinessPath))}.`);
+    throw new Error(
+      `Could not find heading "${heading}" in ${normalize(path.relative(root, readinessPath))}.`,
+    );
   }
 
   const actions = [];
@@ -146,7 +159,8 @@ function parseReadinessActions() {
 function parseScope() {
   const text = readText(scopePath);
   const status = text.match(/^Status:\s+(.+)$/m)?.[1] ?? "Unknown";
-  const outOfScopeSection = text.split("## Out Of Scope")[1]?.split("## Scope Decisions")[0] ?? "";
+  const outOfScopeSection =
+    text.split("## Out Of Scope")[1]?.split("## Scope Decisions")[0] ?? "";
   const outOfScopeItems = outOfScopeSection
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -185,6 +199,15 @@ function verificationStatus() {
   };
 }
 
+function completionRow(area, complete, evidence) {
+  return {
+    area,
+    status: complete ? "Complete" : "Open",
+    percent: complete ? 100 : 0,
+    evidence,
+  };
+}
+
 function renderMarkdown() {
   const planText = readText(planPath);
   const implementationOrderCount = [...planText.matchAll(/^\d+\.\s+/gm)].length;
@@ -205,28 +228,52 @@ function renderMarkdown() {
   const verification = verificationStatus();
 
   const inventoryMetrics = {
-    trackedFiles: parseCount(inventorySummary.get("Tracked files scanned") ?? 0),
+    trackedFiles: parseCount(
+      inventorySummary.get("Tracked files scanned") ?? 0,
+    ),
     sourceFiles: parseCount(inventorySummary.get("Source files scanned") ?? 0),
-    filesAbove1000: parseCount(inventorySummary.get("Files above 1000 lines") ?? 0),
-    filesAbove500: parseCount(inventorySummary.get("Files above 500 lines") ?? 0),
+    filesAbove1000: parseCount(
+      inventorySummary.get("Files above 1000 lines") ?? 0,
+    ),
+    filesAbove500: parseCount(
+      inventorySummary.get("Files above 500 lines") ?? 0,
+    ),
     apiRouteFiles: parseCount(inventorySummary.get("API route files") ?? 0),
-    apiV1RouteFiles: parseCount(inventorySummary.get("API v1 route files") ?? 0),
-    featureApiClients: parseCount(inventorySummary.get("Feature API clients") ?? 0),
-    legacyWrappers: parseCount(inventorySummary.get("Legacy API compatibility wrappers") ?? 0),
-    deadCandidates: parseCount(inventorySummary.get("Dead-candidate review rows") ?? 0),
+    apiV1RouteFiles: parseCount(
+      inventorySummary.get("API v1 route files") ?? 0,
+    ),
+    featureApiClients: parseCount(
+      inventorySummary.get("Feature API clients") ?? 0,
+    ),
+    legacyWrappers: parseCount(
+      inventorySummary.get("Legacy API compatibility wrappers") ?? 0,
+    ),
+    deadCandidates: parseCount(
+      inventorySummary.get("Dead-candidate review rows") ?? 0,
+    ),
     legacyLiteralRefs: parseCount(
-      inventorySummary.get("Literal legacy `/api/*` references outside route files") ?? 0,
+      inventorySummary.get(
+        "Literal legacy `/api/*` references outside route files",
+      ) ?? 0,
     ),
   };
 
   const readinessMetrics = {
-    annexTracked: parseCount(readinessSummary.get("Annex A controls tracked") ?? 0),
-    includedControls: parseCount(readinessSummary.get("Included controls") ?? 0),
-    missingApplicability: parseCount(readinessSummary.get("Controls missing applicability decision") ?? 0),
+    annexTracked: parseCount(
+      readinessSummary.get("Annex A controls tracked") ?? 0,
+    ),
+    includedControls: parseCount(
+      readinessSummary.get("Included controls") ?? 0,
+    ),
+    missingApplicability: parseCount(
+      readinessSummary.get("Controls missing applicability decision") ?? 0,
+    ),
     baselineEvidenceLinked: parseCount(
       readinessSummary.get("Controls with baseline evidence linked") ?? 0,
     ),
-    openGapControls: parseCount(readinessSummary.get("Controls with open gaps") ?? 0),
+    openGapControls: parseCount(
+      readinessSummary.get("Controls with open gaps") ?? 0,
+    ),
     missingImplementation: parseCount(
       readinessSummary.get("Controls missing implementation status") ?? 0,
     ),
@@ -236,8 +283,56 @@ function renderMarkdown() {
     emptyOperationalRegisters: parseCount(
       readinessSummary.get("Empty operational evidence registers") ?? 0,
     ),
-    openGapRows: parseCount(readinessSummary.get("Open gap rows in audit evidence index") ?? 0),
+    openGapRows: parseCount(
+      readinessSummary.get("Open gap rows in audit evidence index") ?? 0,
+    ),
   };
+
+  const engineeringStructureComplete =
+    implementationOrderCount === 18 &&
+    readFirst.complete &&
+    verification.complete &&
+    inventoryMetrics.apiV1RouteFiles > 0 &&
+    inventoryMetrics.featureApiClients > 0 &&
+    inventoryMetrics.legacyWrappers === 0 &&
+    inventoryMetrics.filesAbove1000 === 0 &&
+    inventoryMetrics.filesAbove500 === 0 &&
+    inventoryMetrics.deadCandidates === 0;
+
+  const governanceStructureComplete =
+    readinessMetrics.annexTracked === 93 &&
+    readinessMetrics.baselineEvidenceLinked === 93 &&
+    readinessMetrics.missingApplicability === 0 &&
+    readinessMetrics.openGapControls === 0 &&
+    readinessMetrics.missingImplementation === 0 &&
+    readinessMetrics.operationalRegisters === 10 &&
+    !scope.hasPendingDecisionLanguage;
+
+  const repoBackedPlanComplete =
+    engineeringStructureComplete && governanceStructureComplete;
+  const completedOperationalRegisters =
+    readinessMetrics.operationalRegisters -
+    readinessMetrics.emptyOperationalRegisters;
+
+  const completionRows = [
+    completionRow(
+      "Engineering / refactor structure",
+      engineeringStructureComplete,
+      `All ${implementationOrderCount} implementation-order items are structurally covered in the repo; inventory shows ${inventoryMetrics.legacyWrappers} legacy wrappers, ${inventoryMetrics.filesAbove1000} files above 1000 lines, ${inventoryMetrics.filesAbove500} files above 500 lines, and ${inventoryMetrics.deadCandidates} dead-candidate rows.`,
+    ),
+    completionRow(
+      "Governance / evidence structure",
+      governanceStructureComplete,
+      `${readinessMetrics.annexTracked} Annex A controls are tracked, ${readinessMetrics.baselineEvidenceLinked} have baseline evidence linked, ${readinessMetrics.missingApplicability} are missing applicability, ${readinessMetrics.openGapControls} have structural open gaps, ${readinessMetrics.missingImplementation} are missing implementation status, and ISMS scope has no pending-decision language.`,
+    ),
+    completionRow(
+      "Total repo-backed plan structure",
+      repoBackedPlanComplete,
+      repoBackedPlanComplete
+        ? "All currently-detectable repo-side structural plan requirements are present; the remaining work is operating the ISMS and recording real events."
+        : "Some repo-side structural plan requirements are still missing or inconsistent.",
+    ),
+  ];
 
   const milestoneRows = [
     {
@@ -290,34 +385,52 @@ function renderMarkdown() {
     },
     {
       milestone: "Operational evidence execution",
-      status: readinessMetrics.emptyOperationalRegisters === 0 ? "Complete" : "Operational work remaining",
+      status:
+        readinessMetrics.emptyOperationalRegisters === 0
+          ? "Complete"
+          : "Operational work remaining",
       evidence:
         `${readinessMetrics.operationalRegisters} operational registers are tracked, ` +
         `${readinessMetrics.emptyOperationalRegisters} are still empty, and the audit evidence index still has ${readinessMetrics.openGapRows} open-gap rows.`,
     },
     {
       milestone: "ISMS scope decisions",
-      status: scope.hasPendingDecisionLanguage ? "Pending decisions remain" : "Complete structurally",
-      evidence:
-        `ISMS scope status is "${scope.status}" and the current out-of-scope list has ${scope.outOfScopeItems.length} explicit items.`,
+      status: scope.hasPendingDecisionLanguage
+        ? "Pending decisions remain"
+        : "Complete structurally",
+      evidence: `ISMS scope status is "${scope.status}" and the current out-of-scope list has ${scope.outOfScopeItems.length} explicit items.`,
     },
   ];
 
   const repoSideRemaining = [];
   if (!readFirst.complete) {
-    repoSideRemaining.push(`Restore or add any missing read-first docs: ${readFirst.missing.join(", ")}.`);
+    repoSideRemaining.push(
+      `Restore or add any missing read-first docs: ${readFirst.missing.join(", ")}.`,
+    );
   }
   if (!verification.complete) {
-    repoSideRemaining.push(`Restore or add any missing contract/baseline verification files: ${verification.missing.join(", ")}.`);
+    repoSideRemaining.push(
+      `Restore or add any missing contract/baseline verification files: ${verification.missing.join(", ")}.`,
+    );
   }
   if (scope.hasPendingDecisionLanguage) {
-    repoSideRemaining.push("Remove any remaining `Pending Decision` scope language and replace it with explicit scope criteria.");
+    repoSideRemaining.push(
+      "Remove any remaining `Pending Decision` scope language and replace it with explicit scope criteria.",
+    );
   }
-  if (readinessMetrics.openGapControls > 0 || readinessMetrics.missingImplementation > 0 || readinessMetrics.missingApplicability > 0) {
-    repoSideRemaining.push("Bring the Annex A tracker and readiness snapshot back to a zero-structural-gap state.");
+  if (
+    readinessMetrics.openGapControls > 0 ||
+    readinessMetrics.missingImplementation > 0 ||
+    readinessMetrics.missingApplicability > 0
+  ) {
+    repoSideRemaining.push(
+      "Bring the Annex A tracker and readiness snapshot back to a zero-structural-gap state.",
+    );
   }
   if (repoSideRemaining.length === 0) {
-    repoSideRemaining.push("No major repo-structure gaps are currently detected; the remaining plan work is primarily operational evidence.");
+    repoSideRemaining.push(
+      "No major repo-structure gaps are currently detected; the remaining plan work is primarily operational evidence.",
+    );
   }
 
   return `# Refactor Plan Status
@@ -328,7 +441,13 @@ This document is generated from the current checkout. Run:
 npm run check:plan-status:write
 \`\`\`
 
-It summarizes what the repository can currently prove about the ERP refactor and ISO readiness plan. It does not estimate percentages or invent completed operational evidence.
+It summarizes what the repository can currently prove about the ERP refactor and ISO readiness plan. It only reports repo-backed completion for structural work and does not invent completed operational evidence.
+
+## Repo-Backed Completion
+
+| Area | Status | Repo-backed completion | Evidence |
+| --- | --- | ---: | --- |
+${completionRows.map((row) => `| ${escapeTableCell(row.area)} | ${escapeTableCell(row.status)} | ${row.percent}% | ${escapeTableCell(row.evidence)} |`).join("\n")}
 
 ## Snapshot Summary
 
@@ -370,6 +489,12 @@ ${milestoneRows.map((row) => `| ${escapeTableCell(row.milestone)} | ${escapeTabl
 ## Remaining Repo-Side Work
 
 ${repoSideRemaining.map((item) => `- ${item}`).join("\n")}
+
+## Operational Readiness Snapshot
+
+- Repo-backed structural completion is currently \`${repoBackedPlanComplete ? 100 : 0}%\`, but practical readiness is still limited by real operating evidence.
+- Operational evidence progress is currently \`${completedOperationalRegisters}/${readinessMetrics.operationalRegisters}\` completed registers and \`${readinessMetrics.emptyOperationalRegisters}\` still-empty registers.
+- The audit evidence index currently reports \`${readinessMetrics.openGapRows}\` open-gap rows that must only close when real records are added.
 
 ## Remaining Operational Work
 

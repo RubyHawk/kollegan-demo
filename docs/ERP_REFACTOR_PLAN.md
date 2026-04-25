@@ -9,6 +9,8 @@ This plan has two goals:
 
 This plan supports ISO/IEC 27001:2022 readiness, but certification still depends on operating the company-wide ISMS over time.
 
+Current repo-backed completion and remaining operational work are tracked in [Plan status](PLAN_STATUS.md) and [Security readiness status](security/READINESS_STATUS.md).
+
 ## Core Principles
 
 - Existing business data is production data.

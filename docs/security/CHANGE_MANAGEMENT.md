@@ -2,7 +2,7 @@
 
 Owner: Engineering lead  
 Review cadence: Monthly during refactor, quarterly after stabilization  
-Status: Draft baseline
+Status: Structured baseline complete
 
 ## Standard Change
 

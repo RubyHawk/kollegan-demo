@@ -6,7 +6,15 @@ This document is generated from the current checkout. Run:
 npm run check:plan-status:write
 ```
 
-It summarizes what the repository can currently prove about the ERP refactor and ISO readiness plan. It does not estimate percentages or invent completed operational evidence.
+It summarizes what the repository can currently prove about the ERP refactor and ISO readiness plan. It only reports repo-backed completion for structural work and does not invent completed operational evidence.
+
+## Repo-Backed Completion
+
+| Area | Status | Repo-backed completion | Evidence |
+| --- | --- | ---: | --- |
+| Engineering / refactor structure | Open | 0% | All 18 implementation-order items are structurally covered in the repo; inventory shows 0 legacy wrappers, 0 files above 1000 lines, 1 files above 500 lines, and 0 dead-candidate rows. |
+| Governance / evidence structure | Complete | 100% | 93 Annex A controls are tracked, 93 have baseline evidence linked, 0 are missing applicability, 0 have structural open gaps, 0 are missing implementation status, and ISMS scope has no pending-decision language. |
+| Total repo-backed plan structure | Open | 0% | Some repo-side structural plan requirements are still missing or inconsistent. |
 
 ## Snapshot Summary
 
@@ -20,7 +28,7 @@ It summarizes what the repository can currently prove about the ERP refactor and
 | Feature API clients | 20 |
 | Legacy API compatibility wrappers | 0 |
 | Files above 1000 lines | 0 |
-| Files above 500 lines | 0 |
+| Files above 500 lines | 1 |
 | Dead-candidate review rows | 0 |
 | Literal legacy `/api/*` references outside route files | 40 |
 | Annex A controls tracked | 93 |
@@ -35,7 +43,7 @@ It summarizes what the repository can currently prove about the ERP refactor and
 | Read-first baseline docs | Complete | All listed read-first docs are present in `docs/`. |
 | Render and API contract baseline | Complete | Key contract and client verification files exist: `api-client.test.ts`, `feature-flags-api-contract.test.ts`, `public-offer-api-contract.test.ts`, and `theme-bootstrap.test.ts`. |
 | API v1 migration and wrappers | Complete | Inventory shows 72 `/api/v1` route files, 20 feature API clients, and 0 legacy compatibility wrappers. |
-| Cleanup and file-size enforcement | Complete | Inventory shows 0 files above 1000 lines, 0 files above 500 lines, and 0 dead-candidate review rows. |
+| Cleanup and file-size enforcement | Open | Inventory shows 0 files above 1000 lines, 1 files above 500 lines, and 0 dead-candidate review rows. |
 | ISO readiness structure | Complete structurally | 93 Annex A controls are tracked, 0 are missing applicability, 0 have open-gap implementation status, and 0 are missing implementation status. |
 | Operational evidence execution | Operational work remaining | 10 operational registers are tracked, 10 are still empty, and the audit evidence index still has 10 open-gap rows. |
 | ISMS scope decisions | Complete structurally | ISMS scope status is "Structured baseline" and the current out-of-scope list has 3 explicit items. |
@@ -50,6 +58,12 @@ It summarizes what the repository can currently prove about the ERP refactor and
 ## Remaining Repo-Side Work
 
 - No major repo-structure gaps are currently detected; the remaining plan work is primarily operational evidence.
+
+## Operational Readiness Snapshot
+
+- Repo-backed structural completion is currently `0%`, but practical readiness is still limited by real operating evidence.
+- Operational evidence progress is currently `0/10` completed registers and `10` still-empty registers.
+- The audit evidence index currently reports `10` open-gap rows that must only close when real records are added.
 
 ## Remaining Operational Work
 

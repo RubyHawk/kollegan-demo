@@ -2,7 +2,7 @@
 
 Owner: ISMS Manager  
 Review cadence: Monthly during refactor, quarterly after stabilization  
-Status: Baseline in progress
+Status: Structured baseline complete; operational evidence in progress
 
 Use this file as an index to evidence. Do not commit secrets, backups, customer exports, or sensitive logs.
 
