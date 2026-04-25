@@ -495,6 +495,7 @@ ${repoSideRemaining.map((item) => `- ${item}`).join("\n")}
 - Repo-backed structural completion is currently \`${repoBackedPlanComplete ? 100 : 0}%\`, but practical readiness is still limited by real operating evidence.
 - Operational evidence progress is currently \`${completedOperationalRegisters}/${readinessMetrics.operationalRegisters}\` completed registers and \`${readinessMetrics.emptyOperationalRegisters}\` still-empty registers.
 - The audit evidence index currently reports \`${readinessMetrics.openGapRows}\` open-gap rows that must only close when real records are added.
+- Use \`docs/security/OPERATIONAL_CLOSEOUT_STATUS.md\` as the operator-facing checklist for closing the remaining evidence gaps.
 
 ## Remaining Operational Work
 

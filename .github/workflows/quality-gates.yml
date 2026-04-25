@@ -123,6 +123,9 @@ jobs:
       - name: Operational evidence coverage
         run: node scripts/check-operational-evidence.mjs
 
+      - name: Operational closeout status
+        run: node scripts/check-operational-closeout-status.mjs
+
       - name: Plan status snapshot
         run: node scripts/check-plan-status.mjs
 
@@ -216,6 +219,10 @@ jobs:
                 node scripts/check-operational-evidence.mjs
                 ran_policy_script=true
                 ;;
+              scripts/check-operational-closeout-status.mjs)
+                node scripts/check-operational-closeout-status.mjs
+                ran_policy_script=true
+                ;;
               scripts/check-plan-status.mjs)
                 node scripts/check-plan-status.mjs
                 ran_policy_script=true
@@ -226,6 +233,7 @@ jobs:
                 ;;
               scripts/lib/operational-evidence.mjs)
                 node scripts/check-operational-evidence.mjs
+                node scripts/check-operational-closeout-status.mjs
                 node scripts/check-security-readiness.mjs
                 node scripts/check-plan-status.mjs
                 ran_policy_script=true

@@ -64,6 +64,7 @@ It summarizes what the repository can currently prove about the ERP refactor and
 - Repo-backed structural completion is currently `0%`, but practical readiness is still limited by real operating evidence.
 - Operational evidence progress is currently `0/10` completed registers and `10` still-empty registers.
 - The audit evidence index currently reports `10` open-gap rows that must only close when real records are added.
+- Use `docs/security/OPERATIONAL_CLOSEOUT_STATUS.md` as the operator-facing checklist for closing the remaining evidence gaps.
 
 ## Remaining Operational Work
 

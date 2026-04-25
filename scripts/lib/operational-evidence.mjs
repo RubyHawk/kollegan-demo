@@ -5,101 +5,198 @@ export const operationalEvidenceRegistry = [
   {
     label: "Feature-flag rollouts",
     file: "docs/security/FEATURE_FLAG_ROLLOUT_LOG.md",
+    workflow: "docs/security/FEATURE_FLAG_ROLLOUT_LOG.md",
+    relatedDocs: [
+      "docs/security/FEATURE_FLAG_ROLLOUT_LOG.md",
+      "docs/security/CHANGE_MANAGEMENT.md",
+    ],
     owner: "Engineering lead",
     reviewCadence: "Per rollout and quarterly review",
     section: "Feature Flag Rollout Evidence",
     scope: "Public offer rewrite",
+    externalInputs:
+      "Flag decision, rollout window, owner, rollback trigger, and any linked PRs or tickets.",
+    closeoutWhen:
+      "A completed production rollout, rollback, or expiry-cleanup row is committed in the rollout log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
       "Record the first completed production rollout or rollback in `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md` when the public-offer rewrite or another production-impacting release flag changes state.",
   },
   {
     label: "Access reviews",
     file: "docs/security/ACCESS_REVIEW_LOG.md",
+    workflow: "docs/security/ACCESS_REVIEW_CHECKLIST.md",
+    relatedDocs: [
+      "docs/security/ACCESS_REVIEW_LOG.md",
+      "docs/security/ACCESS_REVIEW_CHECKLIST.md",
+      "docs/security/ACCESS_CONTROL.md",
+    ],
     owner: "ISMS Manager",
     reviewCadence: "Quarterly",
     section: "Access Reviews",
     scope:
       "Application admin, repository, VPS, database, and CI/CD secret access",
+    externalInputs:
+      "Current access lists for app admin, repository, VPS, database, CI/CD, and third-party admin surfaces.",
+    closeoutWhen:
+      "A completed quarterly review row is committed in the access-review log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
       "Complete the first quarterly access review and record the outcome in `docs/security/ACCESS_REVIEW_LOG.md` using `docs/security/ACCESS_REVIEW_CHECKLIST.md`.",
   },
   {
     label: "Restore tests",
     file: "docs/security/RESTORE_TEST_LOG.md",
+    workflow: "docs/security/RESTORE_TEST_PLAYBOOK.md",
+    relatedDocs: [
+      "docs/security/RESTORE_TEST_LOG.md",
+      "docs/security/RESTORE_TEST_PLAYBOOK.md",
+      "docs/security/BACKUP_AND_RESTORE.md",
+    ],
     owner: "Engineering lead",
     reviewCadence: "Quarterly",
     section: "Backup Restore Tests",
     scope: "Production backup references are external to the repo",
+    externalInputs:
+      "Backup reference, restore target, smoke-test evidence, and any corrective actions from the exercise.",
+    closeoutWhen:
+      "A completed non-production restore-test row is committed in the restore log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
       "Run the first non-production restore test and record the outcome in `docs/security/RESTORE_TEST_LOG.md` using `docs/security/RESTORE_TEST_PLAYBOOK.md`.",
   },
   {
     label: "Internal audits",
     file: "docs/security/INTERNAL_AUDIT_LOG.md",
+    workflow: "docs/security/INTERNAL_AUDIT_PLAYBOOK.md",
+    relatedDocs: [
+      "docs/security/INTERNAL_AUDIT_LOG.md",
+      "docs/security/INTERNAL_AUDIT_PLAYBOOK.md",
+    ],
     owner: "ISMS Manager",
     reviewCadence: "At least annually and after major process changes",
     section: "Internal Audit And Management Review",
     scope: "Internal audit",
+    externalInputs:
+      "Audit scope, sampled evidence, findings, nonconformities, and corrective-action owners and dates.",
+    closeoutWhen:
+      "A completed internal-audit row is committed in the audit log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
       "Schedule and record the first internal audit and management review cycles in their respective logs using the linked playbooks and agenda.",
   },
   {
     label: "Management reviews",
     file: "docs/security/MANAGEMENT_REVIEW_LOG.md",
+    workflow: "docs/security/MANAGEMENT_REVIEW_AGENDA.md",
+    relatedDocs: [
+      "docs/security/MANAGEMENT_REVIEW_LOG.md",
+      "docs/security/MANAGEMENT_REVIEW_AGENDA.md",
+    ],
     owner: "Management",
     reviewCadence: "At least annually and after major ISMS changes",
     section: "Internal Audit And Management Review",
     scope: "Management review",
+    externalInputs:
+      "Reviewed inputs, decisions, action owners, and due dates from the management-review meeting.",
+    closeoutWhen:
+      "A completed management-review row is committed in the management log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
       "Schedule and record the first internal audit and management review cycles in their respective logs using the linked playbooks and agenda.",
   },
   {
     label: "Incidents and drills",
     file: "docs/security/INCIDENT_POSTMORTEM_LOG.md",
+    workflow: "docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md",
+    relatedDocs: [
+      "docs/security/INCIDENT_POSTMORTEM_LOG.md",
+      "docs/security/INCIDENT_RESPONSE_DRILL_PLAYBOOK.md",
+      "docs/security/INCIDENT_RESPONSE.md",
+    ],
     owner: "ISMS Manager",
     reviewCadence: "After incidents or incident-response drills",
     section: "Incident And Vulnerability Operations",
     scope: "Incident drill/response",
+    externalInputs:
+      "Incident or drill scope, severity, impact, containment, recovery outcome, and follow-up actions.",
+    closeoutWhen:
+      "A completed incident or drill row is committed in the incident log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
       "Run the first incident drill and vulnerability review cycle, then record both outcomes in the corresponding logs.",
   },
   {
     label: "Vulnerability reviews",
     file: "docs/security/VULNERABILITY_REVIEW_LOG.md",
+    workflow: "docs/security/VULNERABILITY_REVIEW_PLAYBOOK.md",
+    relatedDocs: [
+      "docs/security/VULNERABILITY_REVIEW_LOG.md",
+      "docs/security/VULNERABILITY_REVIEW_PLAYBOOK.md",
+      "docs/security/VULNERABILITY_MANAGEMENT.md",
+    ],
     owner: "Engineering lead",
     reviewCadence: "Monthly and as findings arrive",
     section: "Incident And Vulnerability Operations",
     scope: "Vulnerability review",
+    externalInputs:
+      "Finding source, severity, affected asset or package, disposition, owner, and remediation target date.",
+    closeoutWhen:
+      "A completed vulnerability-review row is committed in the vulnerability log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
       "Run the first incident drill and vulnerability review cycle, then record both outcomes in the corresponding logs.",
   },
   {
     label: "Supplier reviews",
     file: "docs/security/SUPPLIER_REVIEW_LOG.md",
+    workflow: "docs/security/SUPPLIER_REVIEW_PLAYBOOK.md",
+    relatedDocs: [
+      "docs/security/SUPPLIER_REVIEW_LOG.md",
+      "docs/security/SUPPLIER_REVIEW_PLAYBOOK.md",
+      "docs/security/SUPPLIER_MANAGEMENT.md",
+    ],
     owner: "ISMS Manager",
     reviewCadence: "Quarterly and after major supplier changes",
     section: "Supplier Reviews",
     scope: "In-scope SaaS, hosting, database, and AI suppliers",
+    externalInputs:
+      "Supplier list, reviewed risks, contract or assurance notes, and follow-up owners and due dates.",
+    closeoutWhen:
+      "A completed supplier-review row is committed in the supplier log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
       "Complete the first supplier review cycle for in-scope suppliers and record it in `docs/security/SUPPLIER_REVIEW_LOG.md`.",
   },
   {
     label: "Security awareness",
     file: "docs/security/SECURITY_AWARENESS_LOG.md",
+    workflow: "docs/security/SECURITY_AWARENESS_PLAYBOOK.md",
+    relatedDocs: [
+      "docs/security/SECURITY_AWARENESS_LOG.md",
+      "docs/security/SECURITY_AWARENESS_PLAYBOOK.md",
+      "docs/security/AI_USAGE_POLICY.md",
+    ],
     owner: "ISMS Manager",
     reviewCadence: "Quarterly and after major security/process changes",
     section: "Awareness And Training",
     scope: "In-scope engineering and admin/support awareness",
+    externalInputs:
+      "Audience, topic, delivery method, completion outcome, and any follow-up training actions.",
+    closeoutWhen:
+      "A completed awareness or training row is committed in the awareness log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
       "Run the first awareness or training cycle and record the completed activity in `docs/security/SECURITY_AWARENESS_LOG.md`.",
   },
   {
     label: "Asset lifecycle",
     file: "docs/security/ASSET_LIFECYCLE_LOG.md",
+    workflow: "docs/security/OFFBOARDING_AND_ASSET_RETURN_STANDARD.md",
+    relatedDocs: [
+      "docs/security/ASSET_LIFECYCLE_LOG.md",
+      "docs/security/OFFBOARDING_AND_ASSET_RETURN_STANDARD.md",
+      "docs/security/ASSET_DISPOSAL_AND_REUSE_STANDARD.md",
+    ],
     owner: "ISMS Manager",
     reviewCadence: "Quarterly",
     section: "Asset Lifecycle",
     scope: "Offboarding asset return and secure disposal/reuse events",
+    externalInputs:
+      "Lifecycle event type, asset class, safe summary of the result, and any follow-up or exception handling.",
+    closeoutWhen:
+      "A completed asset-lifecycle row is committed in the lifecycle log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
       "Record the first repo-safe asset return, secure disposal, reuse, or exception outcome in `docs/security/ASSET_LIFECYCLE_LOG.md` when such an event occurs.",
   },
