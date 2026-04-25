@@ -120,6 +120,9 @@ jobs:
       - name: Security readiness status
         run: node scripts/check-security-readiness.mjs
 
+      - name: Operational evidence coverage
+        run: node scripts/check-operational-evidence.mjs
+
       - name: Plan status snapshot
         run: node scripts/check-plan-status.mjs
 
@@ -207,6 +210,10 @@ jobs:
                 ;;
               scripts/check-security-readiness.mjs)
                 node scripts/check-security-readiness.mjs
+                ran_policy_script=true
+                ;;
+              scripts/check-operational-evidence.mjs)
+                node scripts/check-operational-evidence.mjs
                 ran_policy_script=true
                 ;;
               scripts/check-plan-status.mjs)
