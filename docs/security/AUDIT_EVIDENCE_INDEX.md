@@ -23,6 +23,7 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Asset lifecycle log: `docs/security/ASSET_LIFECYCLE_LOG.md`
 - Security readiness dashboard: `docs/security/READINESS_STATUS.md`
 - Operational closeout checklist: `docs/security/OPERATIONAL_CLOSEOUT_STATUS.md`
+- Operational record entry standard: `docs/security/OPERATIONAL_RECORD_ENTRY_STANDARD.md`
 - Information handling baseline: `docs/security/INFORMATION_HANDLING_STANDARD.md`
 - Information transfer baseline: `docs/security/INFORMATION_TRANSFER_STANDARD.md`
 - People/employment baseline: `docs/security/PEOPLE_AND_EMPLOYMENT_SECURITY_STANDARD.md`

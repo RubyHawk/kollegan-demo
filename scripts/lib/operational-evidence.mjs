@@ -16,6 +16,8 @@ export const operationalEvidenceRegistry = [
     scope: "Public offer rewrite",
     externalInputs:
       "Flag decision, rollout window, owner, rollback trigger, and any linked PRs or tickets.",
+    entryTemplate:
+      "| YYYY-MM-DD | flag-name | production | owner name or role | rolled out / rolled back / expired | exact rollback path | PR / ticket / follow-up | safe summary evidence link |",
     closeoutWhen:
       "A completed production rollout, rollback, or expiry-cleanup row is committed in the rollout log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
@@ -37,6 +39,8 @@ export const operationalEvidenceRegistry = [
       "Application admin, repository, VPS, database, and CI/CD secret access",
     externalInputs:
       "Current access lists for app admin, repository, VPS, database, CI/CD, and third-party admin surfaces.",
+    entryTemplate:
+      "| YYYY-MM-DD | reviewer name | reviewed access scope | access lists + checklist ref | findings summary | actions + owners | YYYY-MM-DD or N/A | PR / ticket / note |",
     closeoutWhen:
       "A completed quarterly review row is committed in the access-review log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
@@ -57,6 +61,8 @@ export const operationalEvidenceRegistry = [
     scope: "Production backup references are external to the repo",
     externalInputs:
       "Backup reference, restore target, smoke-test evidence, and any corrective actions from the exercise.",
+    entryTemplate:
+      "| YYYY-MM-DD | backup ref | restore environment | smoke tests + validation summary | pass / fail | follow-up actions | PR / ticket / note |",
     closeoutWhen:
       "A completed non-production restore-test row is committed in the restore log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
@@ -76,6 +82,8 @@ export const operationalEvidenceRegistry = [
     scope: "Internal audit",
     externalInputs:
       "Audit scope, sampled evidence, findings, nonconformities, and corrective-action owners and dates.",
+    entryTemplate:
+      "| YYYY-MM-DD | auditor name | audit scope | findings summary | none / listed nonconformities | corrective actions + owners | YYYY-MM-DD or N/A | ticket / note |",
     closeoutWhen:
       "A completed internal-audit row is committed in the audit log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
@@ -95,6 +103,8 @@ export const operationalEvidenceRegistry = [
     scope: "Management review",
     externalInputs:
       "Reviewed inputs, decisions, action owners, and due dates from the management-review meeting.",
+    entryTemplate:
+      "| YYYY-MM-DD | participant list | reviewed inputs | decisions summary | actions + owners | YYYY-MM-DD or N/A | meeting note / ticket |",
     closeoutWhen:
       "A completed management-review row is committed in the management log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
@@ -115,6 +125,8 @@ export const operationalEvidenceRegistry = [
     scope: "Incident drill/response",
     externalInputs:
       "Incident or drill scope, severity, impact, containment, recovery outcome, and follow-up actions.",
+    entryTemplate:
+      "| YYYY-MM-DD | incident / drill | sev-level | scope and impact summary | resolution summary | postmortem complete / pending | follow-up actions | note / ticket |",
     closeoutWhen:
       "A completed incident or drill row is committed in the incident log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
@@ -135,6 +147,8 @@ export const operationalEvidenceRegistry = [
     scope: "Vulnerability review",
     externalInputs:
       "Finding source, severity, affected asset or package, disposition, owner, and remediation target date.",
+    entryTemplate:
+      "| YYYY-MM-DD | advisory / scanner / manual review | severity | asset / package / scope | fixed / accepted / deferred | owner | YYYY-MM-DD or N/A | PR / advisory / ticket |",
     closeoutWhen:
       "A completed vulnerability-review row is committed in the vulnerability log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
@@ -155,6 +169,8 @@ export const operationalEvidenceRegistry = [
     scope: "In-scope SaaS, hosting, database, and AI suppliers",
     externalInputs:
       "Supplier list, reviewed risks, contract or assurance notes, and follow-up owners and due dates.",
+    entryTemplate:
+      "| YYYY-MM-DD | supplier name | reviewed scope | findings summary | actions + owners | YYYY-MM-DD or N/A | note / ticket / assurance link |",
     closeoutWhen:
       "A completed supplier-review row is committed in the supplier log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
@@ -175,6 +191,8 @@ export const operationalEvidenceRegistry = [
     scope: "In-scope engineering and admin/support awareness",
     externalInputs:
       "Audience, topic, delivery method, completion outcome, and any follow-up training actions.",
+    entryTemplate:
+      "| YYYY-MM-DD | audience | topic | workshop / doc / async review | complete / partial | follow-up actions | note / ticket / material link |",
     closeoutWhen:
       "A completed awareness or training row is committed in the awareness log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:
@@ -195,6 +213,8 @@ export const operationalEvidenceRegistry = [
     scope: "Offboarding asset return and secure disposal/reuse events",
     externalInputs:
       "Lifecycle event type, asset class, safe summary of the result, and any follow-up or exception handling.",
+    entryTemplate:
+      "| YYYY-MM-DD | return / disposal / reuse / exception | asset class | trigger or scope | result summary | follow-up actions | external note / ticket |",
     closeoutWhen:
       "A completed asset-lifecycle row is committed in the lifecycle log and the matching open-gap row is removed from `AUDIT_EVIDENCE_INDEX.md`.",
     nextAction:

@@ -27,8 +27,10 @@ function renderChecklist(item, hasGap) {
 - Owner: ${item.owner}
 - Review cadence: ${item.reviewCadence}
 - Primary workflow: \`${item.workflow}\`
+- Entry standard: \`docs/security/OPERATIONAL_RECORD_ENTRY_STANDARD.md\`
 - Files to open: ${relatedDocs}
 - External inputs to gather: ${item.externalInputs}
+- Suggested row template: \`${item.entryTemplate}\`
 
 Checklist:
 1. Open the workflow in \`${item.workflow}\` and prepare the evidence set described there.
@@ -61,6 +63,8 @@ npm run check:operational-closeout-status:write
 
 Use it as the operator-facing checklist for the remaining operational evidence work. It summarizes the 10 remaining evidence gaps without inventing completed records.
 
+Use \`docs/security/OPERATIONAL_RECORD_ENTRY_STANDARD.md\` together with the log-specific workflow before you add a completed row.
+
 ## Snapshot Summary
 
 | Metric | Value |
@@ -76,6 +80,7 @@ Use it as the operator-facing checklist for the remaining operational evidence w
 - Do not commit secrets, raw customer exports, backups, or sensitive incident/HR data.
 - Keep detailed operational evidence outside the repo when needed and link a safe summary or ticket reference instead.
 - Close an evidence gap only after a completed record row is committed in the corresponding log.
+- If a log gets its first completed row, change the status line to \`Active register; last updated YYYY-MM-DD\`.
 
 ## Closeout Queue
 
