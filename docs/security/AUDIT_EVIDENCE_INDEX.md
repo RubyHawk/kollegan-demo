@@ -24,6 +24,10 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 - Security readiness dashboard: `docs/security/READINESS_STATUS.md`
 - Operational closeout checklist: `docs/security/OPERATIONAL_CLOSEOUT_STATUS.md`
 - Operational record entry standard: `docs/security/OPERATIONAL_RECORD_ENTRY_STANDARD.md`
+- ISMS operating rhythm: `docs/security/ISMS_OPERATING_RHYTHM.md`
+- Release evidence checklist: `docs/security/RELEASE_EVIDENCE_CHECKLIST.md`
+- Quarterly evidence packet: `docs/security/QUARTERLY_EVIDENCE_PACKET.md`
+- Annual governance packet: `docs/security/ANNUAL_GOVERNANCE_PACKET.md`
 - Information handling baseline: `docs/security/INFORMATION_HANDLING_STANDARD.md`
 - Information transfer baseline: `docs/security/INFORMATION_TRANSFER_STANDARD.md`
 - People/employment baseline: `docs/security/PEOPLE_AND_EMPLOYMENT_SECURITY_STANDARD.md`
@@ -92,8 +96,9 @@ Use this file as an index to evidence. Do not commit secrets, backups, customer 
 | 2026-04-25 | Legacy API literal regression guard                         | PR #607 / `c89ce9c`                                        | Added a CI guard that blocks new unapproved non-versioned `/api/*` literals outside route files, documented the allowed exception classes in API versioning, and tied the rule into change-management evidence so the `/api/v1` migration cannot silently regress                    | Engineering lead |
 | 2026-04-25 | Operational evidence coverage guard                         | PR #609 / `c132f33`                                        | Added a CI guard that validates empty operational evidence registers, open-gap rows in `AUDIT_EVIDENCE_INDEX.md`, and owner assignments stay aligned so readiness tracking cannot silently drift away from the actual repo-backed operating logs                                     | Engineering lead |
 | 2026-04-25 | Shared operational evidence registry                        | PR #610 / `89d3b23`                                        | Consolidated operational evidence ownership, review cadence, and next-action metadata into a shared registry used by the readiness dashboard and operational-evidence guard, and tightened CI classification so registry-only changes stay on the process-validation path            | Engineering lead |
-| 2026-04-25 | Lean operational cadence summary                            | PR #612 / `c8cb96c`                                        | Added a generated minimum operating-cadence section to the operational closeout dashboard so the remaining stage-2 work is easier to run as a small, recurring operating rhythm instead of a pile of disconnected checklists                                                       | Engineering lead |
-| 2026-04-25 | Auth profile theme fallback typecheck fix                  | PR #613 / `fb8d637`                                        | Moved organization theme fallback assembly out of the auth repository and into the auth account service via the identity module, restoring a clean typecheck baseline for auth profile theming without schema or production-data changes                                          | Engineering lead |
+| 2026-04-25 | Lean operational cadence summary                            | PR #612 / `c8cb96c`                                        | Added a generated minimum operating-cadence section to the operational closeout dashboard so the remaining stage-2 work is easier to run as a small, recurring operating rhythm instead of a pile of disconnected checklists                                                         | Engineering lead |
+| 2026-04-25 | Auth profile theme fallback typecheck fix                   | PR #613 / `fb8d637`                                        | Moved organization theme fallback assembly out of the auth repository and into the auth account service via the identity module, restoring a clean typecheck baseline for auth profile theming without schema or production-data changes                                             | Engineering lead |
+| 2026-04-25 | ISMS operations packet                                      | PR #614 / `d755b1d`                                        | Added a lightweight operating-rhythm doc plus release, quarterly, and annual execution packets so the remaining stage-2 work can be run in larger, practical batches without inventing evidence or building more governance machinery                                                | Engineering lead |
 
 ## Feature Flag Rollout Evidence
 

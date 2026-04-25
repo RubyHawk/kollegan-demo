@@ -165,7 +165,9 @@ function parseCount(value) {
 }
 
 function readFirstStatus(root) {
-  const missing = requiredReadFirstDocs.filter((file) => !fileExists(root, file));
+  const missing = requiredReadFirstDocs.filter(
+    (file) => !fileExists(root, file),
+  );
   return {
     complete: missing.length === 0,
     missing,
@@ -173,7 +175,9 @@ function readFirstStatus(root) {
 }
 
 function verificationStatus(root) {
-  const missing = keyVerificationFiles.filter((file) => !fileExists(root, file));
+  const missing = keyVerificationFiles.filter(
+    (file) => !fileExists(root, file),
+  );
   return {
     complete: missing.length === 0,
     missing,
@@ -199,7 +203,12 @@ function runScript(root, relativePath) {
 
 export function renderPlanStatus(root) {
   const planPath = path.join(root, "docs", "ERP_REFACTOR_PLAN.md");
-  const readinessPath = path.join(root, "docs", "security", "READINESS_STATUS.md");
+  const readinessPath = path.join(
+    root,
+    "docs",
+    "security",
+    "READINESS_STATUS.md",
+  );
   const evidenceIndexPath = path.join(
     root,
     "docs",
@@ -227,14 +236,20 @@ export function renderPlanStatus(root) {
   const verification = verificationStatus(root);
 
   const inventoryMetrics = {
-    trackedFiles: parseCount(inventorySummary.get("Tracked files scanned") ?? 0),
+    trackedFiles: parseCount(
+      inventorySummary.get("Tracked files scanned") ?? 0,
+    ),
     sourceFiles: parseCount(inventorySummary.get("Source files scanned") ?? 0),
     filesAbove1000: parseCount(
       inventorySummary.get("Files above 1000 lines") ?? 0,
     ),
-    filesAbove500: parseCount(inventorySummary.get("Files above 500 lines") ?? 0),
+    filesAbove500: parseCount(
+      inventorySummary.get("Files above 500 lines") ?? 0,
+    ),
     apiRouteFiles: parseCount(inventorySummary.get("API route files") ?? 0),
-    apiV1RouteFiles: parseCount(inventorySummary.get("API v1 route files") ?? 0),
+    apiV1RouteFiles: parseCount(
+      inventorySummary.get("API v1 route files") ?? 0,
+    ),
     featureApiClients: parseCount(
       inventorySummary.get("Feature API clients") ?? 0,
     ),
@@ -252,7 +267,9 @@ export function renderPlanStatus(root) {
   };
 
   const readinessMetrics = {
-    annexTracked: parseCount(readinessSummary.get("Annex A controls tracked") ?? 0),
+    annexTracked: parseCount(
+      readinessSummary.get("Annex A controls tracked") ?? 0,
+    ),
     baselineEvidenceLinked: parseCount(
       readinessSummary.get("Controls with baseline evidence linked") ?? 0,
     ),
@@ -386,8 +403,7 @@ export function renderPlanStatus(root) {
       status: scope.hasPendingDecisionLanguage
         ? "Pending decisions remain"
         : "Complete structurally",
-      evidence:
-        `ISMS scope status is "${scope.status}" and the current out-of-scope list has ${scope.outOfScopeItems.length} explicit items.`,
+      evidence: `ISMS scope status is "${scope.status}" and the current out-of-scope list has ${scope.outOfScopeItems.length} explicit items.`,
     },
   ];
 
@@ -485,6 +501,7 @@ ${repoSideRemaining.map((item) => `- ${item}`).join("\n")}
 - Operational evidence progress is currently \`${completedOperationalRegisters}/${readinessMetrics.operationalRegisters}\` completed registers and \`${readinessMetrics.emptyOperationalRegisters}\` still-empty registers.
 - The audit evidence index currently reports \`${readinessMetrics.openGapRows}\` open-gap rows that must only close when real records are added.
 - Use \`docs/security/OPERATIONAL_CLOSEOUT_STATUS.md\` as the operator-facing checklist for closing the remaining evidence gaps.
+- Use \`docs/security/ISMS_OPERATING_RHYTHM.md\`, \`docs/security/RELEASE_EVIDENCE_CHECKLIST.md\`, \`docs/security/QUARTERLY_EVIDENCE_PACKET.md\`, and \`docs/security/ANNUAL_GOVERNANCE_PACKET.md\` to run the remaining stage-2 work in practical batches instead of disconnected one-off tasks.
 
 ## Remaining Operational Work
 
