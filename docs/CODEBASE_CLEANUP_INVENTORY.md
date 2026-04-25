@@ -35,9 +35,9 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 
 | Metric | Count |
 |---|---:|
-| Tracked files scanned | 843 |
-| Source files scanned | 708 |
-| Active production source files | 632 |
+| Tracked files scanned | 901 |
+| Source files scanned | 717 |
+| Active production source files | 640 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 0 |
 | API route files | 107 |
@@ -47,7 +47,7 @@ Static analysis is a triage tool, not deletion proof. A `dead-candidate` still n
 | Demo API routes | 14 |
 | Public/integration API routes | 21 |
 | Retained non-versioned API routes | 35 |
-| Literal legacy `/api/*` references outside route files | 39 |
+| Literal legacy `/api/*` references outside route files | 40 |
 | Dead-candidate review rows | 0 |
 
 ## Current Monolith Inventory
@@ -165,6 +165,7 @@ These are literal `/api/*` strings outside route files. Not every row is a migra
 | demo-client | `src/modules/demos/hotel/api/services.ts:71` | `/api/demos/hotel/info` |
 | demo-client | `src/modules/demos/hotel/domain/seed.entity.ts:1` | `/api/demos/hotel/seed` |
 | feature-ui | `src/modules/demos/hotel/ui/hooks/use-hotel-sse.ts:23` | `/api/sse` |
+| handler | `src/modules/supporting/offers/api/handlers/resource-location.ts:1` | `/api/v1` |
 | openapi | `src/platform/api/openapi-ai-paths.ts:2` | `/api/ai/availability/check` |
 | openapi | `src/platform/api/openapi-ai-paths.ts:46` | `/api/ai/rooms/lock` |
 | openapi | `src/platform/api/openapi-ai-paths.ts:75` | `/api/ai/rooms/cancel` |

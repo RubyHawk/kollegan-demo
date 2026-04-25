@@ -55,7 +55,7 @@ jobs:
             esac
 
             case "$file" in
-              .github/workflows/*|scripts/deploy-release.sh|scripts/check-*.mjs|scripts/codebase-inventory.mjs|scripts/lib/operational-evidence.mjs|scripts/lib/plan-status.mjs)
+              .github/workflows/*|scripts/deploy-release.sh|scripts/check-*.mjs|scripts/codebase-inventory.mjs|scripts/lib/operational-evidence.mjs|scripts/lib/plan-status.mjs|scripts/lib/plan-status/*.mjs)
                 process=true
                 docs_only=false
                 matched=true
@@ -238,7 +238,7 @@ jobs:
                 node scripts/check-plan-status.mjs
                 ran_policy_script=true
                 ;;
-              scripts/lib/plan-status.mjs)
+              scripts/lib/plan-status.mjs|scripts/lib/plan-status/*.mjs)
                 node scripts/check-plan-status.mjs
                 ran_policy_script=true
                 ;;

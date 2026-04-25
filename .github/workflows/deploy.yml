@@ -78,7 +78,7 @@ jobs:
             esac
 
             case "$file" in
-              .github/workflows/*|scripts/check-*.mjs|scripts/codebase-inventory.mjs|scripts/lib/operational-evidence.mjs|scripts/lib/plan-status.mjs)
+              .github/workflows/*|scripts/check-*.mjs|scripts/codebase-inventory.mjs|scripts/lib/operational-evidence.mjs|scripts/lib/plan-status.mjs|scripts/lib/plan-status/*.mjs)
                 docs_only=false
                 matched=true
                 ;;
