@@ -6,7 +6,7 @@ This document is generated from the current checkout. Run:
 npm run check:operational-closeout-status:write
 ```
 
-Use it as the operator-facing checklist for the remaining operational evidence work. It summarizes the 10 remaining evidence gaps without inventing completed records.
+Use it as the operator-facing checklist for the remaining operational evidence work. It summarizes the current 10 open operational evidence gap(s) without inventing completed records.
 
 Use `docs/security/OPERATIONAL_RECORD_ENTRY_STANDARD.md` together with the log-specific workflow before you add a completed row.
 
