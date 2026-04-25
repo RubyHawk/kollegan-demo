@@ -33,18 +33,18 @@ It summarizes what the repository can currently prove about ISO/IEC 27001:2022 r
 
 ## Operational Evidence Register Status
 
-| Register | Status | Owner | Note |
-| --- | --- | --- | --- |
-| Access reviews | Empty register | ISMS Manager | No repo-backed records committed as of 2026-04-24. |
-| Restore tests | Empty register | Engineering lead | No repo-backed records committed as of 2026-04-24. |
-| Internal audits | Empty register | ISMS Manager | No repo-backed records committed as of 2026-04-24. |
-| Management reviews | Empty register | Management | No repo-backed records committed as of 2026-04-24. |
-| Feature-flag rollouts | Empty register | Engineering lead | No repo-backed records committed as of 2026-04-24. |
-| Incidents and drills | Empty register | ISMS Manager | No repo-backed records committed as of 2026-04-24. |
-| Vulnerability reviews | Empty register | Engineering lead | No repo-backed records committed as of 2026-04-24. |
-| Supplier reviews | Empty register | ISMS Manager | No repo-backed records committed as of 2026-04-24. |
-| Security awareness | Empty register | ISMS Manager | No repo-backed records committed as of 2026-04-24. |
-| Asset lifecycle | Empty register | ISMS Manager | No repo-backed records committed as of 2026-04-24. |
+| Register | Review cadence | Status | Owner | Note |
+| --- | --- | --- | --- | --- |
+| Feature-flag rollouts | Per rollout and quarterly review | Empty register | Engineering lead | No repo-backed records committed as of 2026-04-24. |
+| Access reviews | Quarterly | Empty register | ISMS Manager | No repo-backed records committed as of 2026-04-24. |
+| Restore tests | Quarterly | Empty register | Engineering lead | No repo-backed records committed as of 2026-04-24. |
+| Internal audits | At least annually and after major process changes | Empty register | ISMS Manager | No repo-backed records committed as of 2026-04-24. |
+| Management reviews | At least annually and after major ISMS changes | Empty register | Management | No repo-backed records committed as of 2026-04-24. |
+| Incidents and drills | After incidents or incident-response drills | Empty register | ISMS Manager | No repo-backed records committed as of 2026-04-24. |
+| Vulnerability reviews | Monthly and as findings arrive | Empty register | Engineering lead | No repo-backed records committed as of 2026-04-24. |
+| Supplier reviews | Quarterly and after major supplier changes | Empty register | ISMS Manager | No repo-backed records committed as of 2026-04-24. |
+| Security awareness | Quarterly and after major security/process changes | Empty register | ISMS Manager | No repo-backed records committed as of 2026-04-24. |
+| Asset lifecycle | Quarterly | Empty register | ISMS Manager | No repo-backed records committed as of 2026-04-24. |
 
 ## Open Gaps From Audit Evidence Index
 
