@@ -8,7 +8,7 @@ export function ProjectStageBadge({ offer }: { offer: Offer }) {
 
   if (!project) {
     return (
-      <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dashed border-[var(--border)] bg-[var(--surface-1)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-muted)]">
+      <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-muted)]">
         <span className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)]" />
         Projekt saknas
       </span>

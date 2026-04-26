@@ -33,14 +33,7 @@ import {
   type ProjectStage,
   type PurchaseOrder,
 } from '../_store/types';
-
-const STAGE_STYLE: Record<ProjectStage, string> = {
-  details: 'bg-[var(--status-draft-bg)] text-[var(--status-draft-text)] border-[var(--status-draft-border)]',
-  ordered: 'bg-[var(--status-sent-bg)] text-[var(--status-sent-text)] border-transparent',
-  arrived: 'bg-[var(--status-viewed-bg)] text-[var(--status-viewed-text)] border-transparent',
-  in_progress: 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted-text)] border-transparent',
-  completed: 'bg-[var(--surface-alt)] text-[var(--text-muted)] border-[var(--border)]',
-};
+import { STAGE_STYLE, fmtSEK, fmtDate, fmtActor } from '../_lib/project-display';
 
 const PO_LABEL: Record<string, string> = {
   draft: 'Utkast',
@@ -48,15 +41,6 @@ const PO_LABEL: Record<string, string> = {
   received: 'Ankommen',
   cancelled: 'Makulerad',
 };
-
-function fmtSEK(value: number) {
-  return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(value);
-}
-
-function fmtDate(iso: string | null) {
-  if (!iso) return 'Ej satt';
-  return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
-}
 
 function nextStage(stage: ProjectStage): ProjectStage | null {
   const index = PROJECT_STAGES.indexOf(stage);
@@ -73,6 +57,9 @@ function canAdvance(project: Project) {
   if (project.stage === 'ordered' && (!activePOs.length || activePOs.some((po) => po.status !== 'received'))) {
     return { target, allowed: false, reason: 'Alla aktiva inköpsorder måste vara ankomna.' };
   }
+  if (project.stage === 'in_progress' && activePOs.some((po) => po.status !== 'received')) {
+    return { target, allowed: false, reason: 'Alla aktiva inköpsorder måste vara mottagna.' };
+  }
   return { target, allowed: true, reason: null };
 }
 
@@ -80,25 +67,46 @@ function StageStepper({ project }: { project: Project }) {
   const currentIndex = PROJECT_STAGES.indexOf(project.stage);
   return (
     <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-      <div className="grid grid-cols-5 gap-2">
+      {/* Mobile: compact progress bar */}
+      <div className="sm:hidden">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-xs font-semibold text-[var(--text-primary)]">
+            {PROJECT_STAGE_LABELS[project.stage]}
+          </span>
+          <span className="text-xs text-[var(--text-muted)]">
+            Steg {currentIndex + 1} av {PROJECT_STAGES.length}
+          </span>
+        </div>
+        <div className="flex gap-1">
+          {PROJECT_STAGES.map((_, i) => (
+            <div
+              key={i}
+              className={cn('h-1.5 flex-1 rounded-full', i <= currentIndex ? 'bg-[var(--accent)]' : 'bg-[var(--surface-alt)]')}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop: full step grid */}
+      <div className="hidden grid-cols-5 gap-2 sm:grid">
         {PROJECT_STAGES.map((stage, index) => {
           const complete = index < currentIndex;
           const current = index === currentIndex;
           return (
             <div key={stage} className="min-w-0">
               <div className={cn('h-2 rounded-full', complete || current ? 'bg-[var(--accent)]' : 'bg-[var(--surface-alt)]')} />
-              <div className="mt-3 flex items-center gap-2">
+              <div className="mt-3 flex items-center gap-1.5">
                 <span
                   className={cn(
-                    'grid h-7 w-7 shrink-0 place-items-center rounded-full border text-xs font-semibold',
+                    'grid h-6 w-6 shrink-0 place-items-center rounded-full border text-[10px] font-semibold',
                     complete && 'border-[var(--accent)] bg-[var(--accent)] text-white',
                     current && 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]',
                     !complete && !current && 'border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-muted)]',
                   )}
                 >
-                  {complete ? <CheckCircleIcon size={15} weight="fill" /> : index + 1}
+                  {complete ? <CheckCircleIcon size={14} weight="fill" /> : index + 1}
                 </span>
-                <span className={cn('truncate text-xs font-semibold', current ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]')}>
+                <span className={cn('truncate text-[10px] font-semibold', current ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]')}>
                   {PROJECT_STAGE_LABELS[stage]}
                 </span>
               </div>
@@ -117,6 +125,61 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
       <div className="mt-1 text-sm text-[var(--text-primary)]">{value || 'Ej satt'}</div>
     </div>
   );
+}
+
+function ContextualNextStep({
+  project,
+  gate,
+  onPoOpen,
+}: {
+  project: Project;
+  gate: ReturnType<typeof canAdvance>;
+  onPoOpen: () => void;
+}) {
+  if (project.stage === 'completed') return null;
+
+  if (project.stage === 'details') {
+    return (
+      <Card className="border-[var(--accent-border)] bg-[var(--accent-subtle)]">
+        <CardContent className="p-4">
+          <p className="text-sm font-semibold text-[var(--text-primary)]">Nästa steg</p>
+          <p className="mt-1 text-xs text-[var(--text-secondary)]">
+            Skapa och skicka en inköpsorder för att beställa material från leverantör.
+          </p>
+          <Button className="mt-3 w-full" size="sm" onClick={onPoOpen}>
+            <PlusIcon />
+            Skapa inköpsorder
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (gate.reason && !gate.allowed) {
+    return (
+      <Card className="border-[var(--border)]">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-2 text-sm">
+            <WarningCircleIcon size={15} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
+            <p className="text-[var(--text-secondary)]">{gate.reason}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (gate.allowed && gate.target) {
+    return (
+      <Card className="border-[var(--border)]">
+        <CardContent className="p-4 text-sm text-[var(--text-secondary)]">
+          Projektet är redo att gå vidare till{' '}
+          <span className="font-semibold text-[var(--text-primary)]">{PROJECT_STAGE_LABELS[gate.target]}</span>.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return null;
 }
 
 export default function ProjectDetailPage() {
@@ -210,13 +273,6 @@ export default function ProjectDetailPage() {
         <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-primary)]">
           <span>{error}</span>
           <Button variant="ghost" size="sm" onClick={() => setError(null)}>Stäng</Button>
-        </div>
-      )}
-
-      {gate.reason && (
-        <div className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-primary)]">
-          <WarningCircleIcon size={18} />
-          <span>{gate.reason}</span>
         </div>
       )}
 
@@ -360,6 +416,20 @@ export default function ProjectDetailPage() {
         </div>
 
         <aside className="space-y-6">
+          <ContextualNextStep project={project} gate={gate} onPoOpen={() => setPoOpen(true)} />
+
+          {project.stage === 'completed' && (
+            <Card className="border-[var(--border)]">
+              <CardContent className="p-4 text-center">
+                <CheckCircleIcon size={28} className="mx-auto text-[var(--status-accepted-text)]" weight="fill" />
+                <p className="mt-2 text-sm font-semibold text-[var(--text-primary)]">Projekt avslutat</p>
+                {project.completedAt && (
+                  <p className="mt-0.5 text-xs text-[var(--text-muted)]">{fmtDate(project.completedAt)}</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="border-[var(--border)]">
             <CardHeader>
               <CardTitle className="text-lg">Aktivitet</CardTitle>
@@ -372,11 +442,16 @@ export default function ProjectDetailPage() {
                       <ClockCounterClockwiseIcon size={16} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-[var(--text-primary)]">{PROJECT_STAGE_LABELS[event.toStage]}</p>
-                        <p className="text-xs text-[var(--text-muted)]">{fmtDate(event.createdAt)} · {event.actorId ?? 'system'}</p>
+                        <p className="text-xs text-[var(--text-muted)]">
+                          {fmtDate(event.createdAt)} · {fmtActor(event.actorId)}
+                        </p>
                       </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
+                {(project.stageEvents ?? []).length === 0 && (
+                  <p className="text-sm text-[var(--text-muted)]">Ingen aktivitet registrerad.</p>
+                )}
               </div>
             </CardContent>
           </Card>

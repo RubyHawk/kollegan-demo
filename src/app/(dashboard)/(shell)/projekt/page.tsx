@@ -18,23 +18,7 @@ import {
   type Project,
   type ProjectStage,
 } from './_store/types';
-
-const STAGE_STYLE: Record<ProjectStage, string> = {
-  details: 'bg-[var(--status-draft-bg)] text-[var(--status-draft-text)] border-[var(--status-draft-border)]',
-  ordered: 'bg-[var(--status-sent-bg)] text-[var(--status-sent-text)] border-transparent',
-  arrived: 'bg-[var(--status-viewed-bg)] text-[var(--status-viewed-text)] border-transparent',
-  in_progress: 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted-text)] border-transparent',
-  completed: 'bg-[var(--surface-alt)] text-[var(--text-muted)] border-[var(--border)]',
-};
-
-function fmtSEK(value: number) {
-  return new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(value);
-}
-
-function fmtDate(iso: string | null) {
-  if (!iso) return null;
-  return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
-}
+import { STAGE_STYLE, fmtSEK, fmtDate } from './_lib/project-display';
 
 function poSummary(project: Project) {
   const orders = project.purchaseOrders ?? [];
@@ -62,7 +46,12 @@ function ProjectCard({ project }: { project: Project }) {
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
       <Link
         href={`/projekt/${project.id}`}
-        className="block rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm transition-colors hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+        className={cn(
+          'block rounded-xl border bg-[var(--surface)] p-4 shadow-sm transition-colors hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]',
+          blocker
+            ? 'border-[var(--border)] border-l-[3px] border-l-[var(--status-danger-text)]'
+            : 'border-[var(--border)]',
+        )}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -87,18 +76,18 @@ function ProjectCard({ project }: { project: Project }) {
 
         <div className="mt-4 space-y-2 text-xs text-[var(--text-secondary)]">
           <div className="flex items-center gap-2">
-            <PackageIcon size={14} />
+            <PackageIcon size={14} className="shrink-0" />
             <span className="truncate">{summary.text}</span>
           </div>
           {installDate && (
             <div className="flex items-center gap-2">
-              <CalendarBlankIcon size={14} />
+              <CalendarBlankIcon size={14} className="shrink-0" />
               <span>{installDate}</span>
             </div>
           )}
           {blocker && (
-            <div className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-2 py-1.5 text-[var(--text-primary)]">
-              <WarningCircleIcon size={14} />
+            <div className="flex items-center gap-1.5 text-[var(--status-danger-text)]">
+              <WarningCircleIcon size={13} className="shrink-0" />
               <span className="truncate">{blocker}</span>
             </div>
           )}
@@ -149,6 +138,8 @@ export default function ProjectsBoardPage() {
     return grouped;
   }, [projects]);
 
+  const hasMore = total > projects.length;
+
   return (
     <div className="mx-auto max-w-[1520px] space-y-8 px-8 py-10">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -194,6 +185,12 @@ export default function ProjectsBoardPage() {
         </div>
       )}
 
+      {hasMore && !loading && (
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-muted)]">
+          Visar {projects.length} av {total} projekt. Använd scenefilter för att begränsa vyn.
+        </div>
+      )}
+
       {loading ? (
         <div className="grid min-h-[420px] place-items-center rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--accent)]" />
@@ -202,11 +199,16 @@ export default function ProjectsBoardPage() {
         <div className="grid min-h-[420px] place-items-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-6 text-center">
           <div>
             <p className="text-base font-semibold text-[var(--text-primary)]">Inga projekt än</p>
-            <p className="mt-2 max-w-md text-sm text-[var(--text-muted)]">När en kund accepterar en offert skapas projektet automatiskt här.</p>
+            <p className="mt-2 max-w-md text-sm text-[var(--text-muted)]">
+              När en kund accepterar en offert skapas projektet automatiskt här.
+            </p>
+            <Button asChild variant="outline" size="sm" className="mt-4">
+              <Link href="/offerter/ny">Skapa offert</Link>
+            </Button>
           </div>
         </div>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {visibleStages.map((stage) => {
             const columnProjects = projectsByStage.get(stage) ?? [];
             return (

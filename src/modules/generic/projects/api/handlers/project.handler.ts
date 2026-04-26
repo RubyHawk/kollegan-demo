@@ -1,11 +1,12 @@
 import { z } from 'zod';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createHandler } from '@platform/api/handler';
 import { ok } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
 import { verifyToken } from '@platform/auth/jwt';
 import {
   advanceProjectStage,
+  backfillAllOrganizations,
   countProjects,
   getProject,
   listProjects,
@@ -50,7 +51,7 @@ const ListQuerySchema = z.object({
   stage: z.string().optional(),
   search: z.string().max(100).optional(),
   customerId: z.string().uuid().optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
 
@@ -137,6 +138,15 @@ export const handleUpdateProjectDetails = createHandler(
 const AdvanceBodySchema = z.object({
   toStage: ProjectStageSchema,
 });
+
+export async function handleProjectBackfillCron(req: NextRequest): Promise<NextResponse> {
+  const secret = req.headers.get('authorization')?.replace('Bearer ', '');
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const created = await backfillAllOrganizations();
+  return NextResponse.json({ ok: true, created });
+}
 
 export const handleAdvanceProjectStage = createHandler(
   { auth: 'jwt', tag: 'Projects:Advance', body: AdvanceBodySchema, rateLimit: { max: 60, windowMs: 60_000 } },
