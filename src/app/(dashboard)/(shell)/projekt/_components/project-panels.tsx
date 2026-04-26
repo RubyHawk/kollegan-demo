@@ -45,6 +45,19 @@ function Field({ label, children, className }: { label: string; children: React.
   );
 }
 
+function formatVatRatePercent(vatRate: string) {
+  const parsed = Number(vatRate);
+  return Number.isFinite(parsed) ? String(parsed * 100) : '';
+}
+
+function parseVatRatePercentInput(value: string, fallback: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? String(parsed / 100) : fallback;
+}
+
 export function EditProjectDetailsPanel({
   open,
   onOpenChange,
@@ -217,8 +230,8 @@ export function CreatePurchaseOrderPanel({
                     max={100}
                     step={1}
                     placeholder="25"
-                    value={String(Number(line.vatRate) * 100)}
-                    onChange={(e) => setLine(index, { vatRate: String(Number(e.target.value) / 100) })}
+                    value={formatVatRatePercent(line.vatRate)}
+                    onChange={(e) => setLine(index, { vatRate: parseVatRatePercentInput(e.target.value, line.vatRate) })}
                   />
                   <Button type="button" variant="ghost" size="icon" onClick={() => removeLine(index)} disabled={draft.items.length === 1} aria-label="Ta bort rad">
                     <TrashIcon />

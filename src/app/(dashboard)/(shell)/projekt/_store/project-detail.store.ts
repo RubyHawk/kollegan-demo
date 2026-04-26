@@ -219,14 +219,17 @@ export const useProjectDetailStore = create<ProjectDetailState>()((set, get) => 
       }
       const items = draft.items
         .filter((line) => line.description.trim() && Number(line.quantity) > 0)
-        .map((line) => ({
-          projectLineItemId: line.projectLineItemId || null,
-          description: line.description.trim(),
-          quantity: Number(line.quantity),
-          unit: line.unit.trim() || 'st',
-          unitCost: Number(line.unitCost || 0),
-          vatRate: Number(line.vatRate || 0.25),
-        }));
+        .map((line) => {
+          const vatRate = Number(line.vatRate);
+          return {
+            projectLineItemId: line.projectLineItemId || null,
+            description: line.description.trim(),
+            quantity: Number(line.quantity),
+            unit: line.unit.trim() || 'st',
+            unitCost: Number(line.unitCost || 0),
+            vatRate: Number.isFinite(vatRate) ? vatRate : 0.25,
+          };
+        });
       const purchaseOrder = await createProjectPurchaseOrder(project.id, {
         supplierId,
         items,

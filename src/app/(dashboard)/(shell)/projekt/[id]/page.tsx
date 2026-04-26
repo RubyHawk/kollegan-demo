@@ -42,12 +42,18 @@ const PO_LABEL: Record<string, string> = {
   cancelled: 'Makulerad',
 };
 
+type StageGate = {
+  target: ProjectStage | null;
+  allowed: boolean;
+  reason: string | null;
+};
+
 function nextStage(stage: ProjectStage): ProjectStage | null {
   const index = PROJECT_STAGES.indexOf(stage);
   return index >= 0 ? PROJECT_STAGES[index + 1] ?? null : null;
 }
 
-function canAdvance(project: Project) {
+function canAdvance(project: Project): StageGate {
   const target = nextStage(project.stage);
   if (!target) return { target: null, allowed: false, reason: 'Projektet är klart.' };
   const activePOs = (project.purchaseOrders ?? []).filter((po) => po.status !== 'cancelled');
@@ -133,7 +139,7 @@ function ContextualNextStep({
   onPoOpen,
 }: {
   project: Project;
-  gate: ReturnType<typeof canAdvance>;
+  gate: StageGate;
   onPoOpen: () => void;
 }) {
   if (project.stage === 'completed') return null;
@@ -205,7 +211,10 @@ export default function ProjectDetailPage() {
     void loadSuppliers();
   }, [loadProject, loadSuppliers, projectId]);
 
-  const gate = useMemo(() => project ? canAdvance(project) : { target: null, allowed: false, reason: null }, [project]);
+  const gate = useMemo<StageGate>(
+    () => project ? canAdvance(project) : { target: null, allowed: false, reason: null },
+    [project],
+  );
 
   async function onAdvance() {
     if (!gate.target) return;

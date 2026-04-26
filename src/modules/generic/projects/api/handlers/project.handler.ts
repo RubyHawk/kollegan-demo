@@ -4,6 +4,7 @@ import { createHandler } from '@platform/api/handler';
 import { ok } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
 import { verifyToken } from '@platform/auth/jwt';
+import { constantTimeEqual } from '@platform/security/sanitize';
 import {
   advanceProjectStage,
   backfillAllOrganizations,
@@ -140,8 +141,10 @@ const AdvanceBodySchema = z.object({
 });
 
 export async function handleProjectBackfillCron(req: NextRequest): Promise<NextResponse> {
-  const secret = req.headers.get('authorization')?.replace('Bearer ', '');
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  const secret =
+    req.headers.get('x-cron-secret')
+    ?? req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!process.env.CRON_SECRET || !secret || !constantTimeEqual(secret, process.env.CRON_SECRET)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const created = await backfillAllOrganizations();
