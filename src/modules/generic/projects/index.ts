@@ -13,6 +13,7 @@ export {
 } from './domain/stage-machine';
 export {
   advanceProjectStage,
+  backfillAllOrganizations,
   backfillProjectsFromAcceptedOffers,
   countProjects,
   createProjectFromOffer,
@@ -37,6 +38,7 @@ export {
   handleAdvanceProjectStage,
   handleGetProject,
   handleListProjects,
+  handleProjectBackfillCron,
   handleProjectCounts,
   handleUpdateProjectDetails,
 } from './api/handlers/project.handler';

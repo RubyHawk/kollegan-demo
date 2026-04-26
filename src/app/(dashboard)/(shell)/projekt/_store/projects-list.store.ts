@@ -54,7 +54,7 @@ export const useProjectsListStore = create<ProjectsListState>()((set, get) => ({
     set({ error: null });
     try {
       const result = await listProjects({
-        limit: 100,
+        limit: 200,
         offset: 0,
         stage: state.stageFilter !== 'all' ? state.stageFilter : undefined,
         search: state.search.trim() || undefined,

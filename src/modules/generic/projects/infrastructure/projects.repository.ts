@@ -211,6 +211,16 @@ const PROJECT_INCLUDE = {
 };
 
 export const projectsRepository = {
+  async findOrgsWithPendingBackfill(limit = 50): Promise<string[]> {
+    const rows = await prisma.offer.findMany({
+      where: { status: 'accepted', deletedAt: null, projects: { none: {} } },
+      select: { organizationId: true },
+      distinct: ['organizationId'],
+      take: limit,
+    });
+    return rows.map((r) => r.organizationId);
+  },
+
   async findAcceptedOfferIdsWithoutProjects(orgId: string, limit = 100): Promise<string[]> {
     const rows = await prisma.offer.findMany({
       where: {

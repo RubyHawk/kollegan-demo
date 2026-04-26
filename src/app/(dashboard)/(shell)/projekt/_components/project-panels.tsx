@@ -13,6 +13,13 @@ import {
 } from '@shared/ui/dialog';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@shared/ui/select';
 import { cn } from '@shared/lib/utils';
 import { useProjectDetailStore } from '../_store/project-detail.store';
 import type { PurchaseOrder } from '../_store/types';
@@ -36,6 +43,19 @@ function Field({ label, children, className }: { label: string; children: React.
       {children}
     </div>
   );
+}
+
+function formatVatRatePercent(vatRate: string) {
+  const parsed = Number(vatRate);
+  return Number.isFinite(parsed) ? String(parsed * 100) : '';
+}
+
+function parseVatRatePercentInput(value: string, fallback: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? String(parsed / 100) : fallback;
 }
 
 export function EditProjectDetailsPanel({
@@ -153,16 +173,20 @@ export function CreatePurchaseOrderPanel({
           <div className="grid gap-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Leverantör">
-                <select
-                  value={draft.supplierId}
-                  onChange={(e) => setDraft({ supplierId: e.target.value })}
-                  className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                <Select
+                  value={draft.supplierId || '__new__'}
+                  onValueChange={(value) => setDraft({ supplierId: value === '__new__' ? '' : value })}
                 >
-                  <option value="">Ny leverantör</option>
-                  {suppliers.map((supplier) => (
-                    <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__new__">Ny leverantör</SelectItem>
+                    {suppliers.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
               <Field label="Förväntad leverans">
                 <Input type="date" value={draft.expectedDeliveryDate} onChange={(e) => setDraft({ expectedDeliveryDate: e.target.value })} />
@@ -186,21 +210,29 @@ export function CreatePurchaseOrderPanel({
             </div>
 
             <div className="overflow-hidden rounded-xl border border-[var(--border)]">
-              <div className="grid grid-cols-[1.7fr_0.65fr_0.55fr_0.75fr_0.55fr_2.5rem] gap-2 border-b border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)]">
+              <div className="grid grid-cols-[1.7fr_0.65fr_0.55fr_0.75fr_0.6fr_2.5rem] gap-2 border-b border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)]">
                 <span>Rad</span>
                 <span>Antal</span>
                 <span>Enhet</span>
                 <span>Kostnad</span>
-                <span>Moms</span>
+                <span>Moms %</span>
                 <span />
               </div>
               {draft.items.map((line, index) => (
-                <div key={index} className="grid grid-cols-[1.7fr_0.65fr_0.55fr_0.75fr_0.55fr_2.5rem] gap-2 border-b border-[var(--border-light)] px-3 py-2 last:border-b-0">
+                <div key={index} className="grid grid-cols-[1.7fr_0.65fr_0.55fr_0.75fr_0.6fr_2.5rem] gap-2 border-b border-[var(--border-light)] px-3 py-2 last:border-b-0">
                   <Input value={line.description} onChange={(e) => setLine(index, { description: e.target.value })} />
                   <Input type="number" min={0} value={line.quantity} onChange={(e) => setLine(index, { quantity: e.target.value })} />
                   <Input value={line.unit} onChange={(e) => setLine(index, { unit: e.target.value })} />
                   <Input type="number" min={0} value={line.unitCost} onChange={(e) => setLine(index, { unitCost: e.target.value })} />
-                  <Input type="number" min={0} max={1} step={0.01} value={line.vatRate} onChange={(e) => setLine(index, { vatRate: e.target.value })} />
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={1}
+                    placeholder="25"
+                    value={formatVatRatePercent(line.vatRate)}
+                    onChange={(e) => setLine(index, { vatRate: parseVatRatePercentInput(e.target.value, line.vatRate) })}
+                  />
                   <Button type="button" variant="ghost" size="icon" onClick={() => removeLine(index)} disabled={draft.items.length === 1} aria-label="Ta bort rad">
                     <TrashIcon />
                   </Button>

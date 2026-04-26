@@ -36,5 +36,12 @@ export function validateStageTransition(project: Project, toStage: ProjectStage)
     if (!allReceived) return 'Alla aktiva inköpsorder måste vara mottagna innan projektet kan markeras som ankommet.';
   }
 
+  if (project.stage === 'in_progress' && toStage === 'completed') {
+    const unresolvedPOs = activePurchaseOrders.filter((po) => po.status !== 'received');
+    if (unresolvedPOs.length > 0) {
+      return 'Alla aktiva inköpsorder måste vara mottagna innan projektet kan avslutas.';
+    }
+  }
+
   return null;
 }

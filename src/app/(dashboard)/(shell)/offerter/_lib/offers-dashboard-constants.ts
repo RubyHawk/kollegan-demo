@@ -32,7 +32,7 @@ export const PROJECT_STAGE_META: Record<OfferProjectStage, { label: string; bg: 
   ordered: { label: 'Beställt', bg: 'var(--status-sent-bg)', color: 'var(--status-sent-text)' },
   arrived: { label: 'Ankommet', bg: 'var(--status-viewed-bg)', color: 'var(--status-viewed-text)' },
   in_progress: { label: 'Pågår', bg: 'var(--accent-subtle)', color: 'var(--accent)' },
-  completed: { label: 'Klart', bg: 'var(--status-accepted-bg)', color: 'var(--status-accepted-text)' },
+  completed: { label: 'Klart', bg: 'var(--surface-alt)', color: 'var(--text-muted)' },
 };
 
 export const VALIDITY_OPTIONS = [

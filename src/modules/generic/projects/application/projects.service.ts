@@ -113,7 +113,6 @@ export async function listProjects(
   orgId: string,
   filter: ListProjectsFilter,
 ): Promise<{ projects: Project[]; total: number }> {
-  await backfillProjectsFromAcceptedOffers(orgId);
   return projectsRepository.list(orgId, filter);
 }
 
@@ -121,8 +120,16 @@ export async function countProjects(
   orgId: string,
   filter: Pick<ListProjectsFilter, 'search' | 'customerId'>,
 ): Promise<Record<ProjectStage, number>> {
-  await backfillProjectsFromAcceptedOffers(orgId);
   return projectsRepository.counts(orgId, filter);
+}
+
+export async function backfillAllOrganizations(): Promise<number> {
+  const orgIds = await projectsRepository.findOrgsWithPendingBackfill(50);
+  let total = 0;
+  for (const orgId of orgIds) {
+    total += await backfillProjectsFromAcceptedOffers(orgId);
+  }
+  return total;
 }
 
 export async function getProject(id: string, orgId: string): Promise<Project | null> {
