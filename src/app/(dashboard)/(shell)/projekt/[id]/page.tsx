@@ -47,6 +47,13 @@ const PO_LABEL: Record<string, string> = {
   cancelled: 'Makulerad',
 };
 
+const PO_STATUS_CLASS: Record<string, string> = {
+  draft: 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)]',
+  submitted: 'border-transparent bg-[var(--status-warning-bg)] text-[var(--status-warning-text)]',
+  received: 'border-transparent bg-[var(--status-success-bg)] text-[var(--status-success-text)]',
+  cancelled: 'border-transparent bg-[var(--status-danger-bg)] text-[var(--status-danger-text)]',
+};
+
 function nextStage(stage: ProjectStage): ProjectStage | null {
   const index = PROJECT_STAGES.indexOf(stage);
   return index >= 0 ? PROJECT_STAGES[index + 1] ?? null : null;
@@ -296,58 +303,131 @@ export default function ProjectDetailPage() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-3">
-              {purchaseOrders.map((po) => (
-                <div key={po.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <PackageIcon size={17} />
-                        <p className="font-semibold text-[var(--text-primary)]">
-                          {po.poNumber ? `IO-${String(po.poNumber).padStart(4, '0')}` : 'Ink\u00F6psorder'}
-                        </p>
-                        <Badge variant="secondary">{PO_LABEL[po.status] ?? po.status}</Badge>
+              {purchaseOrders.map((po) => {
+                const deliveryDate = fmtDate(po.expectedDeliveryDate);
+                const submittedDate = fmtDate(po.submittedAt);
+                const receivedDate = fmtDate(po.receivedAt);
+                const lineItems = po.lineItems ?? [];
+                const completedLines = lineItems.filter((line) => line.receivedQuantity >= line.quantity).length;
+
+                return (
+                  <div key={po.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex items-center gap-2">
+                            <PackageIcon size={17} className="text-[var(--text-muted)]" />
+                            <p className="font-semibold text-[var(--text-primary)]">
+                              {po.poNumber ? `IO-${String(po.poNumber).padStart(4, '0')}` : 'Ink\u00F6psorder'}
+                            </p>
+                          </div>
+                          <Badge className={cn('border', PO_STATUS_CLASS[po.status] ?? PO_STATUS_CLASS.draft)}>
+                            {PO_LABEL[po.status] ?? po.status}
+                          </Badge>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <span className="rounded-full bg-[var(--surface-alt)] px-2.5 py-1 font-medium text-[var(--text-secondary)]">
+                            {po.supplier?.name ?? 'Leverant\u00F6r saknas'}
+                          </span>
+                          <span className="rounded-full bg-[var(--surface-alt)] px-2.5 py-1 text-[var(--text-muted)]">
+                            {deliveryDate ? `Planerad leverans ${deliveryDate}` : 'Ingen leverans satt'}
+                          </span>
+                          <span className="rounded-full bg-[var(--surface-alt)] px-2.5 py-1 text-[var(--text-muted)]">
+                            {lineItems.length} rader
+                          </span>
+                          <span className="rounded-full bg-[var(--surface-alt)] px-2.5 py-1 font-medium text-[var(--text-secondary)]">
+                            {fmtSEK(po.totalIncVat)}
+                          </span>
+                        </div>
                       </div>
-                      <p className="mt-1 text-sm text-[var(--text-muted)]">
-                        {po.supplier?.name ?? 'Leverant\u00F6r saknas'}
-                        {' \u00B7 '}
-                        {fmtSEK(po.totalIncVat)}
-                      </p>
+
+                      <div className="flex gap-2">
+                        {po.status === 'draft' && (
+                          <Button variant="outline" size="sm" onClick={() => void submitPO(po.id)}>
+                            <TruckIcon />
+                            Skicka
+                          </Button>
+                        )}
+                        {po.status === 'submitted' && (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setReceiptPO(po);
+                              setReceiptOpen(true);
+                            }}
+                          >
+                            <TruckIcon />
+                            Registrera ankomst
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex gap-2">
-                      {po.status === 'draft' && (
-                        <Button variant="outline" size="sm" onClick={() => void submitPO(po.id)}>
-                          <TruckIcon />
-                          Skicka
-                        </Button>
-                      )}
-                      {po.status === 'submitted' && (
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setReceiptPO(po);
-                            setReceiptOpen(true);
-                          }}
-                        >
-                          <TruckIcon />
-                          Registrera ankomst
-                        </Button>
-                      )}
+                    {(submittedDate || receivedDate || lineItems.length > 0) && (
+                      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[var(--border-light)] pt-3 text-xs text-[var(--text-muted)]">
+                        {submittedDate ? <span>{`Skickad ${submittedDate}`}</span> : null}
+                        {receivedDate ? <span>{`Ankommen ${receivedDate}`}</span> : null}
+                        {lineItems.length > 0 ? <span>{`${completedLines}/${lineItems.length} rader klara`}</span> : null}
+                      </div>
+                    )}
+
+                    {po.notes ? (
+                      <div className="mt-4 rounded-xl border border-[var(--border-light)] bg-[var(--surface-alt)] px-3 py-2.5 text-sm text-[var(--text-secondary)]">
+                        {po.notes}
+                      </div>
+                    ) : null}
+
+                    <div className="mt-4 space-y-3">
+                      {lineItems.map((line) => {
+                        const progress =
+                          line.quantity > 0 ? Math.max(0, Math.min(100, Math.round((line.receivedQuantity / line.quantity) * 100))) : 0;
+
+                        return (
+                          <div
+                            key={line.id}
+                            className="rounded-xl border border-[var(--border-light)] bg-[var(--surface-alt)] px-3 py-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-[var(--text-primary)]">{line.description}</p>
+                                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                                  {line.quantity} {line.unit} best\u00E4llt
+                                </p>
+                              </div>
+                              <span
+                                className={cn(
+                                  'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold',
+                                  progress >= 100
+                                    ? 'bg-[var(--status-success-bg)] text-[var(--status-success-text)]'
+                                    : 'bg-[var(--surface)] text-[var(--text-secondary)]',
+                                )}
+                              >
+                                {line.receivedQuantity}/{line.quantity} {line.unit}
+                              </span>
+                            </div>
+                            <div className="mt-2 h-1.5 rounded-full bg-[var(--surface)]">
+                              <div
+                                className={cn(
+                                  'h-1.5 rounded-full transition-[width]',
+                                  progress >= 100 ? 'bg-[var(--status-success-text)]' : 'bg-[var(--accent)]',
+                                )}
+                                style={{ width: `${progress === 0 ? 0 : Math.max(progress, 8)}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {lineItems.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
+                          Inga rader p\u00E5 ink\u00F6psordern.
+                        </div>
+                      ) : null}
                     </div>
                   </div>
-
-                  <div className="mt-4 space-y-2">
-                    {(po.lineItems ?? []).map((line) => (
-                      <div key={line.id} className="flex items-center justify-between gap-3 text-sm">
-                        <span className="truncate text-[var(--text-primary)]">{line.description}</span>
-                        <span className="shrink-0 text-[var(--text-muted)]">
-                          {line.receivedQuantity}/{line.quantity} {line.unit}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               {purchaseOrders.length === 0 && (
                 <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-4 py-8 text-center text-sm text-[var(--text-muted)]">
