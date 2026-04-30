@@ -27,6 +27,7 @@ const SEG_LABELS: Record<string, string> = {
   ny: 'Ny offert',
   mallar: 'Mallar',
   produkter: 'Produkter',
+  projekt: 'Projekt',
   installningar: 'Inställningar',
   anvandare: 'Användare',
   profil: 'Profil',
@@ -47,11 +48,18 @@ const SEG_LABELS: Record<string, string> = {
   integrations: 'Integrationer',
 };
 
+const UUID_SEGMENT = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function labelForSegment(segment: string, previous?: string) {
+  if (previous === 'projekt' && UUID_SEGMENT.test(segment)) return 'Projektdetalj';
+  return SEG_LABELS[segment] ?? (segment.charAt(0).toUpperCase() + segment.slice(1));
+}
+
 function buildCrumbs(pathname: string) {
   const segs = pathname.split('/').filter(Boolean);
   if (segs.length === 0) return [{ label: 'Översikt', href: null as string | null }];
   return segs.map((seg, i) => ({
-    label: SEG_LABELS[seg] ?? (seg.charAt(0).toUpperCase() + seg.slice(1)),
+    label: labelForSegment(seg, segs[i - 1]),
     href: i < segs.length - 1 ? `/${segs.slice(0, i + 1).join('/')}` : null,
   }));
 }
