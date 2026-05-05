@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarBlankIcon, MagnifyingGlassIcon, PackageIcon, WarningCircleIcon } from '@phosphor-icons/react';
-import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { cn } from '@shared/lib/utils';
@@ -46,35 +45,34 @@ function ProjectCard({ project }: { project: Project }) {
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
       <Link
         href={`/projekt/${project.id}`}
-        className={cn(
-          'block rounded-xl border bg-[var(--surface)] p-4 shadow-sm transition-colors hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]',
-          blocker
-            ? 'border-[var(--border)] border-l-[3px] border-l-[var(--status-danger-text)]'
-            : 'border-[var(--border)]',
-        )}
+        className="block rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm transition-[border-color,box-shadow,transform] hover:border-[var(--accent-border)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{project.name}</p>
-            <p className="mt-1 truncate text-xs text-[var(--text-muted)]">
+            <p className="truncate text-[15px] font-semibold leading-5 text-[var(--text-primary)]">{project.name}</p>
+            <p className="mt-1 truncate text-sm text-[var(--text-secondary)]">
               {customer?.company || customer?.name || 'Kund saknas'}
             </p>
           </div>
-          <Badge className={cn('shrink-0 border', STAGE_STYLE[project.stage])}>{PROJECT_STAGE_LABELS[project.stage]}</Badge>
+          {project.offerNumber ? (
+            <span className="shrink-0 rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-muted)]">
+              Offert {project.offerNumber}
+            </span>
+          ) : null}
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-          <div className="rounded-lg bg-[var(--surface-alt)] px-3 py-2">
+          <div className="rounded-xl bg-[var(--surface-alt)] px-3 py-2.5">
             <p className="text-[var(--text-muted)]">Värde</p>
             <p className="mt-0.5 font-semibold text-[var(--text-primary)]">{fmtSEK(project.totalIncVat)}</p>
           </div>
-          <div className="rounded-lg bg-[var(--surface-alt)] px-3 py-2">
+          <div className="rounded-xl bg-[var(--surface-alt)] px-3 py-2.5">
             <p className="text-[var(--text-muted)]">Rader</p>
             <p className="mt-0.5 font-semibold text-[var(--text-primary)]">{project.lineItems?.length ?? 0}</p>
           </div>
         </div>
 
-        <div className="mt-4 space-y-2 text-xs text-[var(--text-secondary)]">
+        <div className="mt-4 space-y-2.5 border-t border-[var(--border-light)] pt-3 text-xs text-[var(--text-secondary)]">
           <div className="flex items-center gap-2">
             <PackageIcon size={14} className="shrink-0" />
             <span className="truncate">{summary.text}</span>
@@ -86,7 +84,7 @@ function ProjectCard({ project }: { project: Project }) {
             </div>
           )}
           {blocker && (
-            <div className="flex items-center gap-1.5 text-[var(--status-danger-text)]">
+            <div className="flex items-center gap-2 rounded-lg bg-[var(--status-danger-bg)] px-3 py-2 text-[11px] font-medium text-[var(--status-danger-text)]">
               <WarningCircleIcon size={13} className="shrink-0" />
               <span className="truncate">{blocker}</span>
             </div>
@@ -141,7 +139,7 @@ export default function ProjectsBoardPage() {
   const hasMore = total > projects.length;
 
   return (
-    <div className="mx-auto max-w-[1520px] space-y-8 px-8 py-10">
+    <div className="mx-auto max-w-[1520px] space-y-6 px-6 py-8 xl:px-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)]">Projekt</h1>
@@ -208,12 +206,12 @@ export default function ProjectsBoardPage() {
           </div>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
           {visibleStages.map((stage) => {
             const columnProjects = projectsByStage.get(stage) ?? [];
             return (
-              <section key={stage} className="min-h-[520px] rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)]">
-                <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3">
+              <section key={stage} className="self-start overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+                <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3">
                   <div className="flex items-center gap-2">
                     <span className={cn('h-2.5 w-2.5 rounded-full border', STAGE_STYLE[stage])} />
                     <h2 className="text-sm font-semibold text-[var(--text-primary)]">{PROJECT_STAGE_LABELS[stage]}</h2>
@@ -229,7 +227,7 @@ export default function ProjectsBoardPage() {
                     ))}
                   </AnimatePresence>
                   {columnProjects.length === 0 && (
-                    <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] px-4 py-8 text-center text-xs text-[var(--text-muted)]">
+                    <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
                       Inga projekt i {PROJECT_STAGE_LABELS[stage].toLowerCase()}.
                     </div>
                   )}

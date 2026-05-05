@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -14,17 +13,24 @@ import {
   PencilSimpleIcon,
   PlusIcon,
   TruckIcon,
-  WarningCircleIcon,
 } from '@phosphor-icons/react';
+import { cn } from '@shared/lib/utils';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
-import { cn } from '@shared/lib/utils';
+import {
+  ContextualNextStep,
+  DetailStat,
+  InfoRow,
+  StageStepper,
+  type StageGate,
+} from '../_components/project-detail-chrome';
 import {
   CreatePurchaseOrderPanel,
   EditProjectDetailsPanel,
   RecordPurchaseOrderReceiptPanel,
 } from '../_components/project-panels';
+import { STAGE_STYLE, fmtActor, fmtDate, fmtSEK } from '../_lib/project-display';
 import { useProjectDetailStore } from '../_store/project-detail.store';
 import {
   PROJECT_STAGE_LABELS,
@@ -33,7 +39,6 @@ import {
   type ProjectStage,
   type PurchaseOrder,
 } from '../_store/types';
-import { STAGE_STYLE, fmtSEK, fmtDate, fmtActor } from '../_lib/project-display';
 
 const PO_LABEL: Record<string, string> = {
   draft: 'Utkast',
@@ -42,10 +47,11 @@ const PO_LABEL: Record<string, string> = {
   cancelled: 'Makulerad',
 };
 
-type StageGate = {
-  target: ProjectStage | null;
-  allowed: boolean;
-  reason: string | null;
+const PO_STATUS_CLASS: Record<string, string> = {
+  draft: 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)]',
+  submitted: 'border-transparent bg-[var(--status-warning-bg)] text-[var(--status-warning-text)]',
+  received: 'border-transparent bg-[var(--status-success-bg)] text-[var(--status-success-text)]',
+  cancelled: 'border-transparent bg-[var(--status-danger-bg)] text-[var(--status-danger-text)]',
 };
 
 function nextStage(stage: ProjectStage): ProjectStage | null {
@@ -55,137 +61,23 @@ function nextStage(stage: ProjectStage): ProjectStage | null {
 
 function canAdvance(project: Project): StageGate {
   const target = nextStage(project.stage);
-  if (!target) return { target: null, allowed: false, reason: 'Projektet är klart.' };
+  if (!target) return { target: null, allowed: false, reason: 'Projektet \u00E4r klart.' };
+
   const activePOs = (project.purchaseOrders ?? []).filter((po) => po.status !== 'cancelled');
+
   if (project.stage === 'details' && !activePOs.some((po) => po.status === 'submitted' || po.status === 'received')) {
-    return { target, allowed: false, reason: 'Skapa och skicka minst en inköpsorder.' };
+    return { target, allowed: false, reason: 'Skapa och skicka minst en ink\u00F6psorder.' };
   }
+
   if (project.stage === 'ordered' && (!activePOs.length || activePOs.some((po) => po.status !== 'received'))) {
-    return { target, allowed: false, reason: 'Alla aktiva inköpsorder måste vara ankomna.' };
+    return { target, allowed: false, reason: 'Alla aktiva ink\u00F6psorder m\u00E5ste vara ankomna.' };
   }
+
   if (project.stage === 'in_progress' && activePOs.some((po) => po.status !== 'received')) {
-    return { target, allowed: false, reason: 'Alla aktiva inköpsorder måste vara mottagna.' };
+    return { target, allowed: false, reason: 'Alla aktiva ink\u00F6psorder m\u00E5ste vara mottagna.' };
   }
+
   return { target, allowed: true, reason: null };
-}
-
-function StageStepper({ project }: { project: Project }) {
-  const currentIndex = PROJECT_STAGES.indexOf(project.stage);
-  return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
-      {/* Mobile: compact progress bar */}
-      <div className="sm:hidden">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-[var(--text-primary)]">
-            {PROJECT_STAGE_LABELS[project.stage]}
-          </span>
-          <span className="text-xs text-[var(--text-muted)]">
-            Steg {currentIndex + 1} av {PROJECT_STAGES.length}
-          </span>
-        </div>
-        <div className="flex gap-1">
-          {PROJECT_STAGES.map((_, i) => (
-            <div
-              key={i}
-              className={cn('h-1.5 flex-1 rounded-full', i <= currentIndex ? 'bg-[var(--accent)]' : 'bg-[var(--surface-alt)]')}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Desktop: full step grid */}
-      <div className="hidden grid-cols-5 gap-2 sm:grid">
-        {PROJECT_STAGES.map((stage, index) => {
-          const complete = index < currentIndex;
-          const current = index === currentIndex;
-          return (
-            <div key={stage} className="min-w-0">
-              <div className={cn('h-2 rounded-full', complete || current ? 'bg-[var(--accent)]' : 'bg-[var(--surface-alt)]')} />
-              <div className="mt-3 flex items-center gap-1.5">
-                <span
-                  className={cn(
-                    'grid h-6 w-6 shrink-0 place-items-center rounded-full border text-[10px] font-semibold',
-                    complete && 'border-[var(--accent)] bg-[var(--accent)] text-white',
-                    current && 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]',
-                    !complete && !current && 'border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-muted)]',
-                  )}
-                >
-                  {complete ? <CheckCircleIcon size={14} weight="fill" /> : index + 1}
-                </span>
-                <span className={cn('truncate text-[10px] font-semibold', current ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]')}>
-                  {PROJECT_STAGE_LABELS[stage]}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="rounded-xl bg-[var(--surface-alt)] px-3 py-2">
-      <p className="text-xs font-semibold text-[var(--text-muted)]">{label}</p>
-      <div className="mt-1 text-sm text-[var(--text-primary)]">{value || 'Ej satt'}</div>
-    </div>
-  );
-}
-
-function ContextualNextStep({
-  project,
-  gate,
-  onPoOpen,
-}: {
-  project: Project;
-  gate: StageGate;
-  onPoOpen: () => void;
-}) {
-  if (project.stage === 'completed') return null;
-
-  if (project.stage === 'details') {
-    return (
-      <Card className="border-[var(--accent-border)] bg-[var(--accent-subtle)]">
-        <CardContent className="p-4">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Nästa steg</p>
-          <p className="mt-1 text-xs text-[var(--text-secondary)]">
-            Skapa och skicka en inköpsorder för att beställa material från leverantör.
-          </p>
-          <Button className="mt-3 w-full" size="sm" onClick={onPoOpen}>
-            <PlusIcon />
-            Skapa inköpsorder
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (gate.reason && !gate.allowed) {
-    return (
-      <Card className="border-[var(--border)]">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-2 text-sm">
-            <WarningCircleIcon size={15} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
-            <p className="text-[var(--text-secondary)]">{gate.reason}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (gate.allowed && gate.target) {
-    return (
-      <Card className="border-[var(--border)]">
-        <CardContent className="p-4 text-sm text-[var(--text-secondary)]">
-          Projektet är redo att gå vidare till{' '}
-          <span className="font-semibold text-[var(--text-primary)]">{PROJECT_STAGE_LABELS[gate.target]}</span>.
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return null;
 }
 
 export default function ProjectDetailPage() {
@@ -212,7 +104,7 @@ export default function ProjectDetailPage() {
   }, [loadProject, loadSuppliers, projectId]);
 
   const gate = useMemo<StageGate>(
-    () => project ? canAdvance(project) : { target: null, allowed: false, reason: null },
+    () => (project ? canAdvance(project) : { target: null, allowed: false, reason: null }),
     [project],
   );
 
@@ -233,7 +125,9 @@ export default function ProjectDetailPage() {
     return (
       <div className="mx-auto max-w-3xl px-8 py-10">
         <Button asChild variant="ghost" className="mb-6">
-          <Link href="/projekt"><ArrowLeftIcon /> Till projekt</Link>
+          <Link href="/projekt">
+            <ArrowLeftIcon /> Till projekt
+          </Link>
         </Button>
         <Card className="border-[var(--border)]">
           <CardContent className="p-8 text-center">
@@ -247,11 +141,14 @@ export default function ProjectDetailPage() {
 
   const customer = project.customer;
   const purchaseOrders = project.purchaseOrders ?? [];
+  const acceptedDate = fmtDate(project.offerAcceptedAt);
 
   return (
-    <div className="mx-auto max-w-[1320px] space-y-6 px-8 py-10">
+    <div className="mx-auto max-w-[1360px] space-y-5 px-6 py-8 xl:px-8">
       <Button asChild variant="ghost" className="w-fit">
-        <Link href="/projekt"><ArrowLeftIcon /> Till projekt</Link>
+        <Link href="/projekt">
+          <ArrowLeftIcon /> Till projekt
+        </Link>
       </Button>
 
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -262,9 +159,17 @@ export default function ProjectDetailPage() {
           </div>
           <h1 className="font-heading text-3xl font-semibold text-[var(--text-primary)]">{project.name}</h1>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
-            {customer?.company || customer?.name || 'Kund saknas'} · {fmtSEK(project.totalIncVat)}
+            {customer?.company || customer?.name || 'Kund saknas'}
+            {' \u00B7 '}
+            {fmtSEK(project.totalIncVat)}
           </p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            <DetailStat label={'V\u00E4rde'} value={fmtSEK(project.totalIncVat)} />
+            <DetailStat label="Produktrader" value={project.lineItems?.length ?? 0} />
+            <DetailStat label="Accepterad" value={acceptedDate ?? 'Ej satt'} />
+          </div>
         </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={() => setDetailsOpen(true)}>
             <PencilSimpleIcon />
@@ -281,7 +186,9 @@ export default function ProjectDetailPage() {
       {error && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-primary)]">
           <span>{error}</span>
-          <Button variant="ghost" size="sm" onClick={() => setError(null)}>Stäng</Button>
+          <Button variant="ghost" size="sm" onClick={() => setError(null)}>
+            {'St\u00E4ng'}
+          </Button>
         </div>
       )}
 
@@ -293,7 +200,9 @@ export default function ProjectDetailPage() {
             <CardHeader className="flex-row items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-lg">Kund och installation</CardTitle>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">Uppgifter för montage och kontakt på plats.</p>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">
+                  {'Uppgifter f\u00F6r montage och kontakt p\u00E5 plats.'}
+                </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => setDetailsOpen(true)}>
                 <PencilSimpleIcon />
@@ -303,13 +212,25 @@ export default function ProjectDetailPage() {
             <CardContent>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <InfoRow label="Kund" value={customer?.name} />
-                <InfoRow label="Företag" value={customer?.company} />
-                <InfoRow label="Kontakt" value={[project.onsiteContactPhone, project.onsiteContactEmail].filter(Boolean).join(' · ')} />
-                <InfoRow label="Adress" value={[project.siteAddress, project.sitePostalCode, project.siteCity].filter(Boolean).join(', ')} />
-                <InfoRow label="Kvadratmeter" value={project.squareMeters ? `${project.squareMeters} m²` : null} />
-                <InfoRow label="Önskat datum" value={project.wishedInstallDateText || fmtDate(project.wishedInstallDate)} />
-                <InfoRow label="Objekt" value={[project.objectType, project.objectDescription].filter(Boolean).join(' · ')} />
-                <InfoRow label="Tillträde" value={project.accessNotes} />
+                <InfoRow label={'F\u00F6retag'} value={customer?.company} />
+                <InfoRow
+                  label="Kontakt"
+                  value={[project.onsiteContactPhone, project.onsiteContactEmail].filter(Boolean).join(' \u00B7 ')}
+                />
+                <InfoRow
+                  label="Adress"
+                  value={[project.siteAddress, project.sitePostalCode, project.siteCity].filter(Boolean).join(', ')}
+                />
+                <InfoRow label="Kvadratmeter" value={project.squareMeters ? `${project.squareMeters} m\u00B2` : null} />
+                <InfoRow
+                  label={'\u00D6nskat datum'}
+                  value={project.wishedInstallDateText || fmtDate(project.wishedInstallDate)}
+                />
+                <InfoRow
+                  label="Objekt"
+                  value={[project.objectType, project.objectDescription].filter(Boolean).join(' \u00B7 ')}
+                />
+                <InfoRow label={'Tilltr\u00E4de'} value={project.accessNotes} />
                 <InfoRow label="Intern notering" value={project.internalNotes} />
               </div>
             </CardContent>
@@ -319,10 +240,12 @@ export default function ProjectDetailPage() {
             <CardHeader className="flex-row items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-lg">Accepterad offert</CardTitle>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">Snapshot från accepttillfället.</p>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">{'Snapshot fr\u00E5n accepttillf\u00E4llet.'}</p>
               </div>
               <Button asChild variant="outline" size="sm">
-                <Link href={`/offerter/${project.offerId}`}><FileTextIcon /> Öppna offert</Link>
+                <Link href={`/offerter/${project.offerId}`}>
+                  <FileTextIcon /> {'\u00D6ppna offert'}
+                </Link>
               </Button>
             </CardHeader>
             <CardContent>
@@ -331,11 +254,14 @@ export default function ProjectDetailPage() {
                   <span>Produkt</span>
                   <span>Antal</span>
                   <span>Enhet</span>
-                  <span>À-pris</span>
+                  <span>{'\u00C0-pris'}</span>
                   <span className="text-right">Summa</span>
                 </div>
                 {(project.lineItems ?? []).map((line) => (
-                  <div key={line.id} className="grid grid-cols-[1.6fr_0.55fr_0.55fr_0.75fr_0.8fr] gap-3 border-t border-[var(--border-light)] px-4 py-3 text-sm">
+                  <div
+                    key={line.id}
+                    className="grid grid-cols-[1.6fr_0.55fr_0.55fr_0.75fr_0.8fr] gap-3 border-t border-[var(--border-light)] px-4 py-3 text-sm"
+                  >
                     <div className="min-w-0">
                       <p className="truncate font-medium text-[var(--text-primary)]">{line.productName}</p>
                       <p className="truncate text-xs text-[var(--text-muted)]">{line.description}</p>
@@ -366,65 +292,153 @@ export default function ProjectDetailPage() {
           <Card className="border-[var(--border)]">
             <CardHeader className="flex-row items-center justify-between gap-3">
               <div>
-                <CardTitle className="text-lg">Inköpsorder</CardTitle>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">Leverantörsbeställningar och materialankomst.</p>
+                <CardTitle className="text-lg">{'Ink\u00F6psorder'}</CardTitle>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">
+                  {'Leverant\u00F6rsbest\u00E4llningar och materialankomst.'}
+                </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => setPoOpen(true)}>
                 <PlusIcon />
-                Ny inköpsorder
+                {'Ny ink\u00F6psorder'}
               </Button>
             </CardHeader>
             <CardContent className="space-y-3">
-              {purchaseOrders.map((po) => (
-                <div key={po.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <PackageIcon size={17} />
-                        <p className="font-semibold text-[var(--text-primary)]">
-                          {po.poNumber ? `IO-${String(po.poNumber).padStart(4, '0')}` : 'Inköpsorder'}
-                        </p>
-                        <Badge variant="secondary">{PO_LABEL[po.status] ?? po.status}</Badge>
+              {purchaseOrders.map((po) => {
+                const deliveryDate = fmtDate(po.expectedDeliveryDate);
+                const submittedDate = fmtDate(po.submittedAt);
+                const receivedDate = fmtDate(po.receivedAt);
+                const lineItems = po.lineItems ?? [];
+                const completedLines = lineItems.filter((line) => line.receivedQuantity >= line.quantity).length;
+
+                return (
+                  <div key={po.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex items-center gap-2">
+                            <PackageIcon size={17} className="text-[var(--text-muted)]" />
+                            <p className="font-semibold text-[var(--text-primary)]">
+                              {po.poNumber ? `IO-${String(po.poNumber).padStart(4, '0')}` : 'Ink\u00F6psorder'}
+                            </p>
+                          </div>
+                          <Badge className={cn('border', PO_STATUS_CLASS[po.status] ?? PO_STATUS_CLASS.draft)}>
+                            {PO_LABEL[po.status] ?? po.status}
+                          </Badge>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <span className="rounded-full bg-[var(--surface-alt)] px-2.5 py-1 font-medium text-[var(--text-secondary)]">
+                            {po.supplier?.name ?? 'Leverant\u00F6r saknas'}
+                          </span>
+                          <span className="rounded-full bg-[var(--surface-alt)] px-2.5 py-1 text-[var(--text-muted)]">
+                            {deliveryDate ? `Planerad leverans ${deliveryDate}` : 'Ingen leverans satt'}
+                          </span>
+                          <span className="rounded-full bg-[var(--surface-alt)] px-2.5 py-1 text-[var(--text-muted)]">
+                            {lineItems.length} rader
+                          </span>
+                          <span className="rounded-full bg-[var(--surface-alt)] px-2.5 py-1 font-medium text-[var(--text-secondary)]">
+                            {fmtSEK(po.totalIncVat)}
+                          </span>
+                        </div>
                       </div>
-                      <p className="mt-1 text-sm text-[var(--text-muted)]">{po.supplier?.name ?? 'Leverantör saknas'} · {fmtSEK(po.totalIncVat)}</p>
+
+                      <div className="flex gap-2">
+                        {po.status === 'draft' && (
+                          <Button variant="outline" size="sm" onClick={() => void submitPO(po.id)}>
+                            <TruckIcon />
+                            Skicka
+                          </Button>
+                        )}
+                        {po.status === 'submitted' && (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setReceiptPO(po);
+                              setReceiptOpen(true);
+                            }}
+                          >
+                            <TruckIcon />
+                            Registrera ankomst
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      {po.status === 'draft' && (
-                        <Button variant="outline" size="sm" onClick={() => void submitPO(po.id)}>
-                          <TruckIcon />
-                          Skicka
-                        </Button>
-                      )}
-                      {po.status === 'submitted' && (
-                        <Button size="sm" onClick={() => { setReceiptPO(po); setReceiptOpen(true); }}>
-                          <TruckIcon />
-                          Registrera ankomst
-                        </Button>
-                      )}
+
+                    {(submittedDate || receivedDate || lineItems.length > 0) && (
+                      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[var(--border-light)] pt-3 text-xs text-[var(--text-muted)]">
+                        {submittedDate ? <span>{`Skickad ${submittedDate}`}</span> : null}
+                        {receivedDate ? <span>{`Ankommen ${receivedDate}`}</span> : null}
+                        {lineItems.length > 0 ? <span>{`${completedLines}/${lineItems.length} rader klara`}</span> : null}
+                      </div>
+                    )}
+
+                    {po.notes ? (
+                      <div className="mt-4 rounded-xl border border-[var(--border-light)] bg-[var(--surface-alt)] px-3 py-2.5 text-sm text-[var(--text-secondary)]">
+                        {po.notes}
+                      </div>
+                    ) : null}
+
+                    <div className="mt-4 space-y-3">
+                      {lineItems.map((line) => {
+                        const progress =
+                          line.quantity > 0 ? Math.max(0, Math.min(100, Math.round((line.receivedQuantity / line.quantity) * 100))) : 0;
+
+                        return (
+                          <div
+                            key={line.id}
+                            className="rounded-xl border border-[var(--border-light)] bg-[var(--surface-alt)] px-3 py-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-[var(--text-primary)]">{line.description}</p>
+                                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                                  {line.quantity} {line.unit} best\u00E4llt
+                                </p>
+                              </div>
+                              <span
+                                className={cn(
+                                  'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold',
+                                  progress >= 100
+                                    ? 'bg-[var(--status-success-bg)] text-[var(--status-success-text)]'
+                                    : 'bg-[var(--surface)] text-[var(--text-secondary)]',
+                                )}
+                              >
+                                {line.receivedQuantity}/{line.quantity} {line.unit}
+                              </span>
+                            </div>
+                            <div className="mt-2 h-1.5 rounded-full bg-[var(--surface)]">
+                              <div
+                                className={cn(
+                                  'h-1.5 rounded-full transition-[width]',
+                                  progress >= 100 ? 'bg-[var(--status-success-text)]' : 'bg-[var(--accent)]',
+                                )}
+                                style={{ width: `${progress === 0 ? 0 : Math.max(progress, 8)}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {lineItems.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
+                          Inga rader p\u00E5 ink\u00F6psordern.
+                        </div>
+                      ) : null}
                     </div>
                   </div>
-                  <div className="mt-4 space-y-2">
-                    {(po.lineItems ?? []).map((line) => (
-                      <div key={line.id} className="flex items-center justify-between gap-3 text-sm">
-                        <span className="truncate text-[var(--text-primary)]">{line.description}</span>
-                        <span className="shrink-0 text-[var(--text-muted)]">
-                          {line.receivedQuantity}/{line.quantity} {line.unit}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+
               {purchaseOrders.length === 0 && (
                 <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-4 py-8 text-center text-sm text-[var(--text-muted)]">
-                  Ingen inköpsorder skapad.
+                  {'Ingen ink\u00F6psorder skapad.'}
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        <aside className="space-y-6">
+        <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
           <ContextualNextStep project={project} gate={gate} onPoOpen={() => setPoOpen(true)} />
 
           {project.stage === 'completed' && (
@@ -432,9 +446,7 @@ export default function ProjectDetailPage() {
               <CardContent className="p-4 text-center">
                 <CheckCircleIcon size={28} className="mx-auto text-[var(--status-accepted-text)]" weight="fill" />
                 <p className="mt-2 text-sm font-semibold text-[var(--text-primary)]">Projekt avslutat</p>
-                {project.completedAt && (
-                  <p className="mt-0.5 text-xs text-[var(--text-muted)]">{fmtDate(project.completedAt)}</p>
-                )}
+                {project.completedAt && <p className="mt-0.5 text-xs text-[var(--text-muted)]">{fmtDate(project.completedAt)}</p>}
               </CardContent>
             </Card>
           )}
@@ -447,17 +459,25 @@ export default function ProjectDetailPage() {
               <div className="space-y-3">
                 <AnimatePresence initial={false}>
                   {(project.stageEvents ?? []).map((event) => (
-                    <motion.div key={event.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 rounded-xl bg-[var(--surface-alt)] p-3">
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex gap-3 rounded-xl bg-[var(--surface-alt)] p-3"
+                    >
                       <ClockCounterClockwiseIcon size={16} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-[var(--text-primary)]">{PROJECT_STAGE_LABELS[event.toStage]}</p>
                         <p className="text-xs text-[var(--text-muted)]">
-                          {fmtDate(event.createdAt)} · {fmtActor(event.actorId)}
+                          {fmtDate(event.createdAt)}
+                          {' \u00B7 '}
+                          {fmtActor(event.actorId)}
                         </p>
                       </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
+
                 {(project.stageEvents ?? []).length === 0 && (
                   <p className="text-sm text-[var(--text-muted)]">Ingen aktivitet registrerad.</p>
                 )}
@@ -469,7 +489,11 @@ export default function ProjectDetailPage() {
 
       <EditProjectDetailsPanel open={detailsOpen} onOpenChange={setDetailsOpen} />
       <CreatePurchaseOrderPanel open={poOpen} onOpenChange={setPoOpen} />
-      <RecordPurchaseOrderReceiptPanel open={receiptOpen} onOpenChange={setReceiptOpen} purchaseOrder={receiptPO} />
+      <RecordPurchaseOrderReceiptPanel
+        open={receiptOpen}
+        onOpenChange={setReceiptOpen}
+        purchaseOrder={receiptPO}
+      />
     </div>
   );
 }
