@@ -182,32 +182,75 @@ export default function DashboardView({
       >
         <motion.header
           variants={fadeUp}
-          className="flex flex-col gap-4 rounded-xl border border-[var(--border-light)] bg-[var(--surface-0)] px-4 py-4 shadow-[0_10px_26px_rgba(15,23,42,0.05)] sm:px-5 lg:flex-row lg:items-center lg:justify-between"
+          className="grid gap-5 rounded-[24px] border border-[var(--border-light)] bg-[color-mix(in_srgb,var(--surface-0)_82%,var(--accent-subtle))] px-5 py-5 shadow-[0_18px_40px_rgba(15,23,42,0.045)] lg:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)] lg:px-6"
         >
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-[var(--accent-border)] bg-[var(--accent-subtle)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
+              <span className="rounded-full border border-[var(--accent-border)] bg-[var(--surface-0)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
                 {dateLabel}
               </span>
               <DashboardClock />
             </div>
-            <h1 className="mt-3 text-xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-2xl">
+            <h1 className="mt-4 text-[30px] font-semibold tracking-[-0.03em] text-[var(--text-primary)] sm:text-[36px]">
               {greetingText}
             </h1>
-            <p className="mt-1 max-w-2xl text-sm leading-5 text-[var(--text-secondary)]">{greetingSub}</p>
+            <p className="mt-2 max-w-2xl text-[15px] leading-6 text-[var(--text-secondary)]">{greetingSub}</p>
+
+            <div className="mt-5 grid gap-2 sm:grid-cols-3">
+              {[
+                { label: 'Accepterat', value: acceptedCount, helper: 'vunna affärer' },
+                { label: 'Pipeline', value: activePipeline, helper: 'öppna lägen' },
+                { label: 'Utgångna', value: expiredCount, helper: 'behöver städas' },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-2xl border border-[color-mix(in_srgb,var(--border-light)_80%,transparent)] bg-[color-mix(in_srgb,var(--surface-0)_88%,var(--surface-1))] px-3.5 py-3"
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--text-muted)]">{item.label}</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{item.value.toLocaleString('sv-SE')}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{item.helper}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <Button asChild size="sm" className="h-9 w-full shadow-[0_8px_18px_rgba(15,23,42,0.12)] sm:w-auto">
-            <Link href="/offerter/ny">
-              <PlusIcon />
-              Ny offert
-            </Link>
-          </Button>
+          <div className="flex flex-col gap-3 rounded-[22px] border border-[color-mix(in_srgb,var(--accent-border)_70%,var(--border-light))] bg-[color-mix(in_srgb,var(--surface-0)_72%,var(--accent-subtle))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--accent-border)] bg-[var(--surface-0)] text-[var(--accent)]">
+                <FocusIcon />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--text-muted)]">{focusInsight.label}</p>
+                <p className="mt-1 text-base font-semibold leading-6 text-[var(--text-primary)]">{focusInsight.title}</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">{focusInsight.detail}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: 'Skickade', value: sentCount, helper: 'väntar svar' },
+                { label: 'Visade', value: viewedCount, helper: 'heta spår' },
+                { label: 'Utgår snart', value: expiringSoon, helper: '7 dagar' },
+              ].map((item) => (
+                <div key={item.label} className="rounded-2xl bg-[var(--surface-0)] px-3 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--text-muted)]">{item.label}</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{item.value.toLocaleString('sv-SE')}</p>
+                  <p className="text-[11px] text-[var(--text-secondary)]">{item.helper}</p>
+                </div>
+              ))}
+            </div>
+
+            <Button asChild size="sm" className="mt-1 h-10 w-full justify-center rounded-2xl shadow-[0_10px_20px_rgba(15,23,42,0.12)]">
+              <Link href="/offerter/ny">
+                <PlusIcon />
+                Ny offert
+              </Link>
+            </Button>
+          </div>
         </motion.header>
 
-        <motion.section variants={stagger} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <motion.section variants={stagger} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard
-            featured
             icon={<CheckIcon />}
             label="Accepterat värde"
             value={acceptedValue > 0 ? <Counter to={acceptedValue} suffix=" kr" /> : '0 kr'}
@@ -235,33 +278,6 @@ export default function DashboardView({
             sub={expiringSoon > 0 ? 'Behöver följas upp inom 7 dagar' : 'Inga akuta datum'}
             tone={expiringSoon > 0 ? 'danger' : 'neutral'}
           />
-        </motion.section>
-
-        <motion.section
-          variants={fadeUp}
-          className="grid gap-3 rounded-xl border border-[var(--border-light)] bg-[var(--surface-0)] p-3 shadow-[0_10px_26px_rgba(15,23,42,0.045)] lg:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,0.8fr))]"
-        >
-          <div className="flex items-start gap-3 rounded-lg bg-[var(--surface-1)] p-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--accent-border)] bg-[var(--accent-subtle)] text-[var(--accent)]">
-              <FocusIcon />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{focusInsight.label}</p>
-              <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{focusInsight.title}</p>
-              <p className="mt-0.5 text-xs leading-5 text-[var(--text-secondary)]">{focusInsight.detail}</p>
-            </div>
-          </div>
-          {[
-            { label: 'Skickade', value: sentCount, helper: 'väntar svar' },
-            { label: 'Visade', value: viewedCount, helper: 'varma affärer' },
-            { label: 'Utgångna', value: expiredCount, helper: 'bör städas' },
-          ].map((item) => (
-            <div key={item.label} className="rounded-lg border border-[var(--border-light)] bg-[var(--surface-0)] px-3 py-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{item.label}</p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{item.value.toLocaleString('sv-SE')}</p>
-              <p className="text-xs text-[var(--text-secondary)]">{item.helper}</p>
-            </div>
-          ))}
         </motion.section>
 
         <motion.div variants={stagger} className="grid gap-4 xl:grid-cols-12">

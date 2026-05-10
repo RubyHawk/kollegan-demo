@@ -225,22 +225,33 @@ export function TrendCard({ activityData }: { activityData: OfferActivityPoint[]
         <div className="hidden items-center gap-2 text-[11px] sm:flex">
           <span className="font-semibold tabular-nums text-[var(--text-primary)]">{createdTotal}</span>
           <span className="text-[var(--text-muted)]">skapade</span>
-          <span className="h-3 w-px bg-[var(--border)]" />
-          <span className="font-semibold tabular-nums text-[var(--text-primary)]">{successRate}%</span>
         </div>
       )}
     >
       <div className="p-4">
+        <div className="mb-3 grid grid-cols-3 gap-2">
+          {[
+            { label: 'Skapade', value: createdTotal.toLocaleString('sv-SE') },
+            { label: 'Accepterade', value: acceptedTotal.toLocaleString('sv-SE') },
+            { label: 'Träff', value: `${successRate}%` },
+          ].map((item) => (
+            <div key={item.label} className="rounded-2xl border border-[var(--border-light)] bg-[color-mix(in_srgb,var(--surface-0)_84%,var(--surface-1))] px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--text-muted)]">{item.label}</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{item.value}</p>
+            </div>
+          ))}
+        </div>
+
         {createdTotal === 0 ? (
-          <div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface-1)] text-center">
+          <div className="flex h-[200px] items-center justify-center rounded-[20px] border border-dashed border-[var(--border)] bg-[var(--surface-1)] text-center">
             <div>
               <p className="text-sm font-semibold text-[var(--text-primary)]">Inga offerter i vald period</p>
               <p className="mt-1 text-xs text-[var(--text-secondary)]">Prova ett längre intervall.</p>
             </div>
           </div>
         ) : (
-          <div className="rounded-lg border border-[var(--border-light)] bg-[var(--surface-1)] px-2 pt-3 pb-1">
-            <ResponsiveContainer width="100%" height={220}>
+          <div className="rounded-[20px] border border-[var(--border-light)] bg-[color-mix(in_srgb,var(--surface-0)_82%,var(--surface-1))] px-2 pt-3 pb-1">
+            <ResponsiveContainer width="100%" height={190}>
               <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                 <defs>
                   <linearGradient id="dashboardCreated" x1="0" y1="0" x2="0" y2="1">

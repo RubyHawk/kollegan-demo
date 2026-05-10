@@ -154,8 +154,8 @@ export function LatestOffersCard({
 
   return (
     <DashboardCard
-      title="Senaste offerter"
-      description={offers.length > 0 ? `${visibleOffers.length} prioriterade av ${total} offerter` : 'Dina senaste offerter visas här när de finns.'}
+      title="Affärskö"
+      description={offers.length > 0 ? `Starkaste signal först · ${visibleOffers.length} visade av ${total}` : 'Dina senaste offerter visas här när de finns.'}
       action={(
         <Link href="/offerter" className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-[var(--accent)] transition-colors hover:bg-[var(--accent-subtle)]">
           Visa alla
@@ -184,70 +184,68 @@ export function LatestOffersCard({
               { label: 'Varmt', value: visibleWarm, helper: 'visade' },
               { label: 'Vunnet', value: visibleWon, helper: 'accepterade' },
             ].map((item) => (
-              <div key={item.label} className="bg-[var(--surface-1)] px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{item.label}</p>
-                <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{item.value.toLocaleString('sv-SE')}</p>
-                <p className="text-[11px] text-[var(--text-secondary)]">{item.helper}</p>
+              <div key={item.label} className="bg-[color-mix(in_srgb,var(--surface-0)_85%,var(--surface-1))] px-4 py-3.5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--text-muted)]">{item.label}</p>
+                <p className="mt-1 text-[24px] font-semibold leading-none tabular-nums text-[var(--text-primary)]">{item.value.toLocaleString('sv-SE')}</p>
+                <p className="mt-1 text-[11px] text-[var(--text-secondary)]">{item.helper}</p>
               </div>
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[700px] text-left">
-              <thead className="bg-[var(--surface-1)] text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                <tr>
-                  <th className="px-4 py-2.5">ID</th>
-                  <th className="px-3 py-2.5">Offert</th>
-                  <th className="px-3 py-2.5">Kund</th>
-                  <th className="px-3 py-2.5">Signal</th>
-                  <th className="px-3 py-2.5 text-right">Belopp</th>
-                  <th className="px-4 py-2.5 text-right">Datum</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-light)]">
-                {visibleOffers.map((offer) => {
-                  const signal = getOfferSignal(offer);
+          <div className="hidden md:block">
+            <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(190px,0.9fr)_minmax(150px,0.75fr)_auto] gap-4 border-b border-[var(--border-light)] px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--text-muted)]">
+              <span>Affär</span>
+              <span>Kund</span>
+              <span>Signal</span>
+              <span className="text-right">Värde</span>
+            </div>
 
-                  return (
-                    <tr
-                      key={offer.id}
-                      className={cn(
-                        'group border-l-2 border-l-transparent transition-colors hover:bg-[var(--surface-1)]',
-                        offer.status === 'expired' && 'border-l-[var(--status-expired-text)] bg-[color-mix(in_srgb,var(--status-expired-bg)_32%,var(--surface-0))]',
-                        offer.status === 'accepted' && 'border-l-[var(--status-accepted-text)] bg-[color-mix(in_srgb,var(--status-accepted-bg)_28%,var(--surface-0))]',
-                      )}
-                    >
-                      <td className="px-4 py-3 font-mono text-xs text-[var(--text-muted)]">
-                        <Link href={`/offerter/${offer.id}`} className="block">
-                          {offer.offerNumber ? `#${offer.offerNumber}` : '-'}
-                        </Link>
-                      </td>
-                      <td className="max-w-[230px] px-3 py-3">
-                        <Link href={`/offerter/${offer.id}`} className="block min-w-0">
-                          <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">{offer.title}</span>
-                          <span className="mt-1 block"><ProjectStageBadge project={offer.project} /></span>
-                        </Link>
-                      </td>
-                      <td className="max-w-[190px] px-3 py-3 text-xs text-[var(--text-secondary)]">
-                        <Link href={`/offerter/${offer.id}`} className="block truncate">
-                          <OfferRecipient offer={offer} />
-                        </Link>
-                      </td>
-                      <td className="w-[150px] px-3 py-3">
-                        <div className="flex flex-col items-start gap-1">
-                          <SignalBadge offer={offer} />
-                          <span className="whitespace-nowrap text-[11px] text-[var(--text-muted)]">{signal.helper}</span>
+            <div className="divide-y divide-[var(--border-light)]">
+              {visibleOffers.map((offer) => {
+                const signal = getOfferSignal(offer);
+
+                return (
+                  <Link
+                    key={offer.id}
+                    href={`/offerter/${offer.id}`}
+                    className={cn(
+                      'group block border-l-2 border-l-transparent px-4 py-4 transition-colors hover:bg-[var(--surface-1)]',
+                      offer.status === 'expired' && 'border-l-[var(--status-expired-text)] bg-[color-mix(in_srgb,var(--status-expired-bg)_24%,var(--surface-0))]',
+                      offer.status === 'accepted' && 'border-l-[var(--status-accepted-text)] bg-[color-mix(in_srgb,var(--status-accepted-bg)_20%,var(--surface-0))]',
+                    )}
+                  >
+                    <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(190px,0.9fr)_minmax(150px,0.75fr)_auto] items-start gap-4">
+                      <div className="min-w-0">
+                        <p className="truncate text-[12px] font-medium text-[var(--text-muted)]">
+                          {offer.offerNumber ? `#${offer.offerNumber}` : 'Ingen ID'}
+                        </p>
+                        <p className="mt-1 truncate text-[15px] font-semibold text-[var(--text-primary)]">{offer.title}</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <ProjectStageBadge project={offer.project} />
                         </div>
-                      </td>
-                      <td className="px-3 py-3 text-right text-sm font-semibold tabular-nums text-[var(--text-primary)]">
-                        {fmtSEK(offer.totalIncVat)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-xs text-[var(--text-muted)]">{fmtDate(offer.createdAt)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-[var(--text-primary)]">
+                          <OfferRecipient offer={offer} />
+                        </p>
+                        <p className="mt-1 text-[12px] text-[var(--text-secondary)]">Skapad {fmtDate(offer.createdAt)}</p>
+                      </div>
+
+                      <div className="min-w-0">
+                        <SignalBadge offer={offer} />
+                        <p className="mt-2 text-[12px] leading-5 text-[var(--text-secondary)]">{signal.helper}</p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-[22px] font-semibold leading-none tabular-nums text-[var(--text-primary)]">{fmtSEK(offer.totalIncVat)}</p>
+                        <p className="mt-2 text-[12px] text-[var(--text-muted)]">{offer.status === 'expired' ? 'Kräver åtgärd' : 'Aktuellt läge'}</p>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
           <div className="divide-y divide-[var(--border-light)] md:hidden">
@@ -283,16 +281,16 @@ export function LatestOffersCard({
             })}
           </div>
 
-          <div className="grid grid-cols-2 gap-px border-t border-[var(--border-light)] bg-[var(--border-light)] sm:grid-cols-4">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[var(--border-light)] px-4 py-3 text-[12px] text-[var(--text-secondary)]">
             {[
               ['Totalt', total.toLocaleString('sv-SE')],
               ['Accepterade', acceptedCount.toLocaleString('sv-SE')],
               ['Utgående', expiringSoon.toLocaleString('sv-SE')],
               ['Vinstgrad', acceptanceRate !== null ? `${acceptanceRate}%` : '-'],
             ].map(([label, value]) => (
-              <div key={label} className="bg-[var(--surface-1)] px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{label}</p>
-                <p className="mt-1 text-sm font-semibold tabular-nums text-[var(--text-primary)]">{value}</p>
+              <div key={label} className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.13em] text-[var(--text-muted)]">{label}</span>
+                <span className="font-semibold tabular-nums text-[var(--text-primary)]">{value}</span>
               </div>
             ))}
           </div>

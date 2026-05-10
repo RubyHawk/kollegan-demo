@@ -91,7 +91,7 @@ export default function AppShell({ user, children }: Props) {
   const isImmersiveTemplateEditor = pathname.startsWith('/mallar/') && pathname !== '/mallar';
 
   const topbar = (
-    <div className="glass-header hidden h-12 shrink-0 items-center justify-between border-b border-[var(--border)] px-5 md:flex">
+    <div className="glass-header hidden h-14 shrink-0 items-center justify-between border-b border-[var(--border-light)] px-6 md:flex">
       <nav aria-label="Breadcrumb" className="flex items-center gap-1">
         {crumbs.map((crumb, i) => (
           <span key={i} className="flex items-center gap-1">
@@ -99,12 +99,12 @@ export default function AppShell({ user, children }: Props) {
             {crumb.href ? (
               <Link
                 href={crumb.href}
-                className="text-sm text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+                className="text-[13px] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
               >
                 {crumb.label}
               </Link>
             ) : (
-              <span className="text-sm font-medium text-[var(--text-primary)]">{crumb.label}</span>
+              <span className="text-[15px] font-semibold text-[var(--text-primary)]">{crumb.label}</span>
             )}
           </span>
         ))}
@@ -143,7 +143,7 @@ export default function AppShell({ user, children }: Props) {
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {!isImmersiveTemplateEditor && (
-          <div className="glass-header flex items-center gap-3 border-b border-[var(--border)] px-4 py-3 md:hidden">
+          <div className="glass-header flex items-center gap-3 border-b border-[var(--border-light)] px-4 py-3 md:hidden">
             <button
               onClick={() => setMobileOpen(true)}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-1)]"

@@ -138,14 +138,14 @@ export function DashboardCard({
     <motion.section
       variants={fadeUp}
       className={cn(
-        'overflow-hidden rounded-xl border border-[var(--border-light)] bg-[var(--surface-0)] shadow-[0_10px_26px_rgba(15,23,42,0.045)]',
+        'overflow-hidden rounded-[22px] border border-[var(--border-light)] bg-[var(--surface-0)] shadow-[0_16px_34px_rgba(15,23,42,0.04)]',
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-3 border-b border-[var(--border-light)] px-4 py-3.5">
+      <div className="flex items-start justify-between gap-3 border-b border-[var(--border-light)] px-4 py-4">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">{title}</h2>
-          {description ? <p className="mt-0.5 text-xs leading-5 text-[var(--text-secondary)]">{description}</p> : null}
+          <h2 className="text-[15px] font-semibold tracking-tight text-[var(--text-primary)]">{title}</h2>
+          {description ? <p className="mt-1 text-[13px] leading-5 text-[var(--text-secondary)]">{description}</p> : null}
         </div>
         {action}
       </div>
@@ -155,46 +155,51 @@ export function DashboardCard({
 }
 
 export function MetricCard({
-  featured = false,
   icon,
   label,
   value,
   sub,
   tone,
 }: {
-  featured?: boolean;
   icon: ReactNode;
   label: string;
   value: ReactNode;
   sub: string;
   tone: 'accent' | 'success' | 'warning' | 'danger' | 'neutral';
 }) {
-  const toneClass = {
+  const iconToneClass = {
     accent: 'bg-[var(--accent-subtle)] text-[var(--accent)] border-[var(--accent-border)]',
     success: 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted-text)] border-[color-mix(in_srgb,var(--status-accepted-text)_20%,var(--border))]',
     warning: 'bg-[var(--status-expired-bg)] text-[var(--status-expired-text)] border-[color-mix(in_srgb,var(--status-expired-text)_20%,var(--border))]',
     danger: 'bg-[var(--status-danger-bg)] text-[var(--status-danger-text)] border-[color-mix(in_srgb,var(--status-danger-text)_20%,var(--border))]',
     neutral: 'bg-[var(--surface-1)] text-[var(--text-muted)] border-[var(--border-light)]',
   }[tone];
+  const surfaceToneClass = {
+    accent: 'bg-[color-mix(in_srgb,var(--surface-0)_84%,var(--accent-subtle))]',
+    success: 'bg-[color-mix(in_srgb,var(--surface-0)_88%,var(--status-accepted-bg))]',
+    warning: 'bg-[color-mix(in_srgb,var(--surface-0)_90%,var(--status-expired-bg))]',
+    danger: 'bg-[color-mix(in_srgb,var(--surface-0)_88%,var(--status-danger-bg))]',
+    neutral: 'bg-[color-mix(in_srgb,var(--surface-0)_86%,var(--surface-1))]',
+  }[tone];
 
   return (
     <motion.div
       variants={fadeUp}
       className={cn(
-        'group rounded-xl border border-[var(--border-light)] bg-[var(--surface-0)] p-3.5 shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition-colors hover:border-[var(--border)] hover:bg-[color-mix(in_srgb,var(--surface-0)_88%,var(--surface-1))]',
-        featured && 'sm:col-span-2 xl:col-span-2',
+        'group rounded-[20px] border border-[var(--border-light)] p-3.5 shadow-[0_10px_22px_rgba(15,23,42,0.035)] transition-colors hover:border-[var(--border)]',
+        surfaceToneClass,
       )}
     >
       <div className="flex items-start gap-3">
-        <div className={cn('flex shrink-0 items-center justify-center rounded-lg border', featured ? 'h-11 w-11' : 'h-9 w-9', toneClass)}>
+        <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border', iconToneClass)}>
           {icon}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{label}</p>
-          <p className={cn('mt-1 flex items-baseline gap-0.5 font-semibold leading-none tabular-nums text-[var(--text-primary)]', featured ? 'text-[26px]' : 'text-[20px]')}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--text-muted)]">{label}</p>
+          <p className="mt-1.5 flex items-baseline gap-0.5 text-[21px] font-semibold leading-none tabular-nums text-[var(--text-primary)]">
             {value}
           </p>
-          <p className="mt-1.5 text-xs leading-4 text-[var(--text-secondary)]">{sub}</p>
+          <p className="mt-2 text-[12px] leading-5 text-[var(--text-secondary)]">{sub}</p>
         </div>
       </div>
     </motion.div>
@@ -204,11 +209,12 @@ export function MetricCard({
 export function ProjectStatsCard({ stats }: { stats: ProjectStats }) {
   const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
   const hasProjects = stats.total > 0;
+  const leadingStage = PROJECT_STAGE_ORDER.find((stage) => (stats.stages[stage] ?? 0) > 0) ?? 'details';
 
   return (
     <DashboardCard
       title="Projektläge"
-      description="Leveransstatus för accepterade offerter"
+      description="Workflow från uppgifter till klart"
       action={(
         <Link href="/projekt" className="rounded-lg px-2 py-1 text-xs font-semibold text-[var(--accent)] transition-colors hover:bg-[var(--accent-subtle)]">
           Alla projekt
@@ -216,74 +222,90 @@ export function ProjectStatsCard({ stats }: { stats: ProjectStats }) {
       )}
     >
       <div className="p-4">
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: 'Aktiva', value: stats.active, color: 'var(--text-primary)' },
-            { label: 'Klart', value: stats.completed, color: 'var(--status-accepted-text)' },
-            { label: 'Andel', value: `${completionRate}%`, color: 'var(--accent)' },
-          ].map((item) => (
-            <div key={item.label} className="rounded-lg border border-[var(--border-light)] bg-[var(--surface-1)] px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{item.label}</p>
-              <p className="mt-1 text-lg font-semibold tabular-nums" style={{ color: item.color }}>{item.value}</p>
+        <div className="rounded-[20px] border border-[var(--border-light)] bg-[color-mix(in_srgb,var(--surface-0)_84%,var(--surface-1))] p-3.5">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--text-muted)]">
+                {hasProjects ? 'Aktivt flöde' : 'Vilande flöde'}
+              </p>
+              <p className="mt-1 text-[28px] font-semibold leading-none tabular-nums text-[var(--text-primary)]">
+                {stats.active}
+              </p>
+              <p className="mt-2 text-[13px] leading-5 text-[var(--text-secondary)]">
+                {hasProjects ? `${stats.completed} klara · ${completionRate}% genomförda` : 'Nästa accepterade offert startar projektflödet här.'}
+              </p>
             </div>
-          ))}
+            <span className="rounded-full border border-[var(--border-light)] bg-[var(--surface-0)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--text-muted)]">
+              {PROJECT_STAGE_META[leadingStage].label}
+            </span>
+          </div>
+
+          <div className="mt-4 grid grid-cols-5 gap-2">
+            {PROJECT_STAGE_ORDER.map((stage) => {
+              const meta = PROJECT_STAGE_META[stage];
+              const count = stats.stages[stage] ?? 0;
+              const isLeading = stage === leadingStage && hasProjects;
+
+              return (
+                <div
+                  key={stage}
+                  className={cn(
+                    'rounded-2xl border px-2.5 py-2.5',
+                    isLeading
+                      ? 'border-[var(--accent-border)] bg-[var(--surface-0)]'
+                      : 'border-[var(--border-light)] bg-[color-mix(in_srgb,var(--surface-0)_72%,var(--surface-1))]',
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="flex h-6 w-6 items-center justify-center rounded-full border"
+                      style={{
+                        background: meta.bg,
+                        color: meta.color,
+                        borderColor: `color-mix(in srgb, ${meta.color} 25%, var(--border))`,
+                      }}
+                    >
+                      <span className="h-2 w-2 rounded-full" style={{ background: meta.color }} />
+                    </span>
+                    <span className="truncate text-[11px] font-semibold text-[var(--text-primary)]">{meta.label}</span>
+                  </div>
+                  <p className="mt-2 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{count}</p>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        {hasProjects ? (
-          <>
-            <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
-              {PROJECT_STAGE_ORDER.map((stage) => {
-                const count = stats.stages[stage] ?? 0;
-                const width = (count / stats.total) * 100;
-                return (
-                  <span
-                    key={stage}
-                    className={count > 0 ? 'min-w-[2px]' : ''}
-                    style={{ width: `${width}%`, background: PROJECT_STAGE_META[stage].color }}
-                    title={`${PROJECT_STAGE_META[stage].label}: ${count}`}
-                  />
-                );
-              })}
-            </div>
+        <div className="mt-4 space-y-2.5">
+          {PROJECT_STAGE_ORDER.map((stage) => {
+            const meta = PROJECT_STAGE_META[stage];
+            const count = stats.stages[stage] ?? 0;
+            const percent = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
 
-            <div className="mt-3 space-y-2">
-              {PROJECT_STAGE_ORDER.map((stage) => {
-                const meta = PROJECT_STAGE_META[stage];
-                const count = stats.stages[stage] ?? 0;
-                const percent = Math.round((count / stats.total) * 100);
-                return (
-                  <Link
-                    key={stage}
-                    href={`/projekt?stage=${meta.query}`}
-                    className="grid grid-cols-[minmax(74px,auto)_minmax(0,1fr)_42px] items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-[var(--surface-1)]"
-                  >
-                    <span className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
-                      <span className="h-2 w-2 rounded-full" style={{ background: meta.color }} />
-                      {meta.label}
-                    </span>
-                    <span className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
-                      <motion.span
-                        initial={{ width: 0 }}
-                        animate={{ width: `${percent}%` }}
-                        transition={{ duration: 0.35, ease: 'easeOut' }}
-                        className="block h-full rounded-full"
-                        style={{ background: meta.color }}
-                      />
-                    </span>
-                    <span className="text-right text-xs font-semibold tabular-nums text-[var(--text-primary)]">{count}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </>
-        ) : (
-          <div className="mt-3 rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface-1)] px-3 py-4">
-            <p className="text-sm font-semibold text-[var(--text-primary)]">Inga projekt i arbete</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-              När en offert accepteras dyker projektflödet upp här med material, ankomst och färdigställande.
-            </p>
-          </div>
-        )}
+            return (
+              <Link
+                key={stage}
+                href={`/projekt?stage=${meta.query}`}
+                className="grid grid-cols-[minmax(88px,auto)_minmax(0,1fr)_48px] items-center gap-2 rounded-xl px-2 py-1.5 transition-colors hover:bg-[var(--surface-1)]"
+              >
+                <span className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
+                  <span className="h-2 w-2 rounded-full" style={{ background: meta.color }} />
+                  {meta.label}
+                </span>
+                <span className="h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                  <motion.span
+                    initial={{ width: 0 }}
+                    animate={{ width: `${percent}%` }}
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
+                    className="block h-full rounded-full"
+                    style={{ background: meta.color }}
+                  />
+                </span>
+                <span className="text-right text-xs font-semibold tabular-nums text-[var(--text-primary)]">{count}</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </DashboardCard>
   );
@@ -314,15 +336,15 @@ export function StatusDistributionCard({ countMap, total }: { countMap: Record<s
         </div>
       ) : (
         <div className="space-y-4 p-4">
-          <div className="rounded-lg border border-[var(--border-light)] bg-[var(--surface-1)] p-3">
+          <div className="rounded-[20px] border border-[var(--border-light)] bg-[color-mix(in_srgb,var(--surface-0)_84%,var(--surface-1))] p-3.5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Största status</p>
-                <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{highlightedRow.label}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--text-muted)]">Största status</p>
+                <p className="mt-1 text-[28px] font-semibold leading-none text-[var(--text-primary)]">{highlightedRow.label}</p>
               </div>
               <div className="text-right">
-                <p className="text-xl font-semibold tabular-nums text-[var(--text-primary)]">{highlightedRow.count}</p>
-                <p className="text-[11px] text-[var(--text-secondary)]">{highlightedRow.percent}% av totalen</p>
+                <p className="text-[34px] font-semibold leading-none tabular-nums text-[var(--text-primary)]">{highlightedRow.count}</p>
+                <p className="mt-1 text-[11px] text-[var(--text-secondary)]">{highlightedRow.percent}% av totalen</p>
               </div>
             </div>
             <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
@@ -338,13 +360,13 @@ export function StatusDistributionCard({ countMap, total }: { countMap: Record<s
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg border border-[var(--border-light)] bg-[var(--surface-0)] px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Öppet</p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--accent)]">{openCount}</p>
+            <div className="rounded-2xl border border-[var(--border-light)] bg-[var(--surface-0)] px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--text-muted)]">Öppet</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--accent)]">{openCount}</p>
             </div>
-            <div className="rounded-lg border border-[var(--border-light)] bg-[var(--surface-0)] px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Avslutat</p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{closedCount}</p>
+            <div className="rounded-2xl border border-[var(--border-light)] bg-[var(--surface-0)] px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--text-muted)]">Avslutat</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--text-primary)]">{closedCount}</p>
             </div>
           </div>
 
@@ -357,8 +379,8 @@ export function StatusDistributionCard({ countMap, total }: { countMap: Record<s
                 onMouseEnter={() => setActiveStatus(row.status)}
                 onMouseLeave={() => setActiveStatus(null)}
                 className={cn(
-                  'grid w-full grid-cols-[minmax(96px,auto)_minmax(0,1fr)_44px] items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors',
-                  highlightedRow.status === row.status ? 'bg-[var(--accent-subtle)]' : 'hover:bg-[var(--surface-1)]',
+                  'grid w-full grid-cols-[minmax(96px,auto)_minmax(0,1fr)_44px] items-center gap-2 rounded-xl px-2.5 py-2 text-left transition-colors',
+                  highlightedRow.status === row.status ? 'bg-[color-mix(in_srgb,var(--surface-0)_70%,var(--accent-subtle))]' : 'hover:bg-[var(--surface-1)]',
                 )}
               >
                 <span className="flex min-w-0 items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">

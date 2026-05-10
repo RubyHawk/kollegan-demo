@@ -80,10 +80,10 @@ export function SearchTrigger() {
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          'flex items-center gap-2 h-8 px-3 rounded-lg',
-          'border border-[var(--border)] bg-[var(--surface-0)]',
+          'flex items-center gap-2 h-9 px-3.5 rounded-2xl',
+          'border border-[var(--border-light)] bg-[color-mix(in_srgb,var(--surface-0)_84%,var(--surface-1))]',
           'text-sm text-[var(--text-muted)]',
-          'hover:border-[var(--text-muted)]/40 hover:bg-[var(--surface-hover)]',
+          'hover:border-[var(--border)] hover:bg-[var(--surface-hover)]',
           'transition-colors duration-150',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30',
         )}
@@ -91,7 +91,7 @@ export function SearchTrigger() {
       >
         <SearchIcon size={14} />
         <span className="hidden sm:inline text-[13px]">Sök sidor och genvägar...</span>
-        <kbd className="hidden sm:inline-flex items-center gap-0.5 ml-2 px-1.5 py-0.5 rounded bg-[var(--surface-alt)] border border-[var(--border-light)] text-[10px] font-medium text-[var(--text-muted)]">
+        <kbd className="hidden sm:inline-flex items-center gap-0.5 ml-2 px-1.5 py-0.5 rounded-lg bg-[var(--surface-0)] border border-[var(--border-light)] text-[10px] font-medium text-[var(--text-muted)]">
           {isMac ? '⌘' : 'Ctrl'}K
         </kbd>
       </button>
