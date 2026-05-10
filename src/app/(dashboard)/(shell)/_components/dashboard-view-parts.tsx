@@ -155,12 +155,14 @@ export function DashboardCard({
 }
 
 export function MetricCard({
+  featured = false,
   icon,
   label,
   value,
   sub,
   tone,
 }: {
+  featured?: boolean;
   icon: ReactNode;
   label: string;
   value: ReactNode;
@@ -178,15 +180,18 @@ export function MetricCard({
   return (
     <motion.div
       variants={fadeUp}
-      className="group rounded-xl border border-[var(--border-light)] bg-[var(--surface-0)] p-3.5 shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition-colors hover:border-[var(--border)] hover:bg-[color-mix(in_srgb,var(--surface-0)_88%,var(--surface-1))]"
+      className={cn(
+        'group rounded-xl border border-[var(--border-light)] bg-[var(--surface-0)] p-3.5 shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition-colors hover:border-[var(--border)] hover:bg-[color-mix(in_srgb,var(--surface-0)_88%,var(--surface-1))]',
+        featured && 'sm:col-span-2 xl:col-span-2',
+      )}
     >
       <div className="flex items-start gap-3">
-        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border', toneClass)}>
+        <div className={cn('flex shrink-0 items-center justify-center rounded-lg border', featured ? 'h-11 w-11' : 'h-9 w-9', toneClass)}>
           {icon}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{label}</p>
-          <p className="mt-1 flex items-baseline gap-0.5 text-[20px] font-semibold leading-none tabular-nums text-[var(--text-primary)]">
+          <p className={cn('mt-1 flex items-baseline gap-0.5 font-semibold leading-none tabular-nums text-[var(--text-primary)]', featured ? 'text-[26px]' : 'text-[20px]')}>
             {value}
           </p>
           <p className="mt-1.5 text-xs leading-4 text-[var(--text-secondary)]">{sub}</p>
@@ -198,6 +203,7 @@ export function MetricCard({
 
 export function ProjectStatsCard({ stats }: { stats: ProjectStats }) {
   const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+  const hasProjects = stats.total > 0;
 
   return (
     <DashboardCard
@@ -223,50 +229,61 @@ export function ProjectStatsCard({ stats }: { stats: ProjectStats }) {
           ))}
         </div>
 
-        <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
-          {PROJECT_STAGE_ORDER.map((stage) => {
-            const count = stats.stages[stage] ?? 0;
-            const width = stats.total > 0 ? (count / stats.total) * 100 : 0;
-            return (
-              <span
-                key={stage}
-                className="min-w-[2px]"
-                style={{ width: `${width}%`, background: PROJECT_STAGE_META[stage].color }}
-                title={`${PROJECT_STAGE_META[stage].label}: ${count}`}
-              />
-            );
-          })}
-        </div>
-
-        <div className="mt-3 space-y-2">
-          {PROJECT_STAGE_ORDER.map((stage) => {
-            const meta = PROJECT_STAGE_META[stage];
-            const count = stats.stages[stage] ?? 0;
-            const percent = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
-            return (
-              <Link
-                key={stage}
-                href={`/projekt?stage=${meta.query}`}
-                className="grid grid-cols-[minmax(74px,auto)_minmax(0,1fr)_42px] items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-[var(--surface-1)]"
-              >
-                <span className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
-                  <span className="h-2 w-2 rounded-full" style={{ background: meta.color }} />
-                  {meta.label}
-                </span>
-                <span className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
-                  <motion.span
-                    initial={{ width: 0 }}
-                    animate={{ width: `${percent}%` }}
-                    transition={{ duration: 0.35, ease: 'easeOut' }}
-                    className="block h-full rounded-full"
-                    style={{ background: meta.color }}
+        {hasProjects ? (
+          <>
+            <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
+              {PROJECT_STAGE_ORDER.map((stage) => {
+                const count = stats.stages[stage] ?? 0;
+                const width = (count / stats.total) * 100;
+                return (
+                  <span
+                    key={stage}
+                    className={count > 0 ? 'min-w-[2px]' : ''}
+                    style={{ width: `${width}%`, background: PROJECT_STAGE_META[stage].color }}
+                    title={`${PROJECT_STAGE_META[stage].label}: ${count}`}
                   />
-                </span>
-                <span className="text-right text-xs font-semibold tabular-nums text-[var(--text-primary)]">{count}</span>
-              </Link>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-3 space-y-2">
+              {PROJECT_STAGE_ORDER.map((stage) => {
+                const meta = PROJECT_STAGE_META[stage];
+                const count = stats.stages[stage] ?? 0;
+                const percent = Math.round((count / stats.total) * 100);
+                return (
+                  <Link
+                    key={stage}
+                    href={`/projekt?stage=${meta.query}`}
+                    className="grid grid-cols-[minmax(74px,auto)_minmax(0,1fr)_42px] items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-[var(--surface-1)]"
+                  >
+                    <span className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
+                      <span className="h-2 w-2 rounded-full" style={{ background: meta.color }} />
+                      {meta.label}
+                    </span>
+                    <span className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                      <motion.span
+                        initial={{ width: 0 }}
+                        animate={{ width: `${percent}%` }}
+                        transition={{ duration: 0.35, ease: 'easeOut' }}
+                        className="block h-full rounded-full"
+                        style={{ background: meta.color }}
+                      />
+                    </span>
+                    <span className="text-right text-xs font-semibold tabular-nums text-[var(--text-primary)]">{count}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <div className="mt-3 rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface-1)] px-3 py-4">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Inga projekt i arbete</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+              När en offert accepteras dyker projektflödet upp här med material, ankomst och färdigställande.
+            </p>
+          </div>
+        )}
       </div>
     </DashboardCard>
   );
@@ -283,16 +300,10 @@ export function StatusDistributionCard({ countMap, total }: { countMap: Record<s
       ...STATUS_META[status],
     };
   }), [countMap, total]);
-  const populated = rows.filter((row) => row.count > 0);
-  const highlightedStatus = activeStatus ?? populated[0]?.status ?? null;
-  const highlightedRow = rows.find((row) => row.status === highlightedStatus);
-  const radius = 42;
-  const circumference = 2 * Math.PI * radius;
-  const segments = populated.map((row, index) => ({
-    ...row,
-    segment: circumference * (row.count / total),
-    dashOffset: populated.slice(0, index).reduce((sum, previous) => sum + circumference * (previous.count / total), 0),
-  }));
+  const sortedRows = [...rows].sort((a, b) => b.count - a.count);
+  const highlightedRow = rows.find((row) => row.status === activeStatus) ?? sortedRows[0];
+  const openCount = (countMap.sent ?? 0) + (countMap.viewed ?? 0);
+  const closedCount = (countMap.accepted ?? 0) + (countMap.declined ?? 0) + (countMap.expired ?? 0);
 
   return (
     <DashboardCard title="Statusfördelning" description="Pipeline och avslut just nu">
@@ -302,40 +313,42 @@ export function StatusDistributionCard({ countMap, total }: { countMap: Record<s
           <p className="mt-1 text-xs text-[var(--text-secondary)]">När offerter börjar skickas fylls fördelningen på automatiskt.</p>
         </div>
       ) : (
-        <div className="grid gap-4 p-4 sm:grid-cols-[118px_minmax(0,1fr)]">
-          <div className="relative mx-auto h-[118px] w-[118px]">
-            <svg viewBox="0 0 118 118" className="h-[118px] w-[118px] -rotate-90">
-              <circle cx="59" cy="59" r={radius} fill="none" stroke="var(--surface-2)" strokeWidth="13" />
-              {segments.map((row) => (
-                <circle
+        <div className="space-y-4 p-4">
+          <div className="rounded-lg border border-[var(--border-light)] bg-[var(--surface-1)] p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Största status</p>
+                <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{highlightedRow.label}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-semibold tabular-nums text-[var(--text-primary)]">{highlightedRow.count}</p>
+                <p className="text-[11px] text-[var(--text-secondary)]">{highlightedRow.percent}% av totalen</p>
+              </div>
+            </div>
+            <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
+              {rows.map((row) => (
+                <span
                   key={row.status}
-                  cx="59"
-                  cy="59"
-                  r={radius}
-                  fill="none"
-                  stroke={row.color}
-                  strokeLinecap="round"
-                  strokeWidth={highlightedStatus === row.status ? 15 : 12}
-                  opacity={highlightedStatus && highlightedStatus !== row.status ? 0.32 : 1}
-                  strokeDasharray={`${row.segment} ${circumference - row.segment}`}
-                  strokeDashoffset={-row.dashOffset}
-                  className="cursor-pointer transition-all"
-                  onMouseEnter={() => setActiveStatus(row.status)}
-                  onMouseLeave={() => setActiveStatus(null)}
-                >
-                  <title>{`${row.label}: ${row.count}`}</title>
-                </circle>
+                  className={row.count > 0 ? 'min-w-[2px]' : ''}
+                  style={{ width: `${row.percent}%`, background: row.color }}
+                  title={`${row.label}: ${row.count}`}
+                />
               ))}
-            </svg>
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-semibold leading-none tabular-nums text-[var(--text-primary)]">
-                {highlightedRow?.count ?? total}
-              </span>
-              <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">totalt</span>
             </div>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-[var(--border-light)] bg-[var(--surface-0)] px-3 py-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Öppet</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--accent)]">{openCount}</p>
+            </div>
+            <div className="rounded-lg border border-[var(--border-light)] bg-[var(--surface-0)] px-3 py-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Avslutat</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{closedCount}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
             {rows.map((row) => (
               <button
                 key={row.status}
@@ -344,23 +357,18 @@ export function StatusDistributionCard({ countMap, total }: { countMap: Record<s
                 onMouseEnter={() => setActiveStatus(row.status)}
                 onMouseLeave={() => setActiveStatus(null)}
                 className={cn(
-                  'rounded-lg border px-2.5 py-2 text-left transition-colors',
-                  highlightedStatus === row.status ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)]' : 'border-[var(--border-light)] bg-[var(--surface-1)] hover:bg-[var(--surface-hover)]',
+                  'grid w-full grid-cols-[minmax(96px,auto)_minmax(0,1fr)_44px] items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors',
+                  highlightedRow.status === row.status ? 'bg-[var(--accent-subtle)]' : 'hover:bg-[var(--surface-1)]',
                 )}
               >
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5">
-                  <span className="flex min-w-0 items-center gap-1.5 text-[10px] font-semibold text-[var(--text-primary)]">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: row.color }} />
-                    <span className="truncate">{row.label}</span>
-                  </span>
-                  <span className="shrink-0 text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">{row.count}</span>
-                </div>
-                <div className="mt-1.5 flex items-center gap-2">
-                  <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--surface-2)]">
-                    <span className="block h-full rounded-full" style={{ width: `${row.percent}%`, background: row.color }} />
-                  </span>
-                  <span className="w-8 text-right text-[10px] tabular-nums text-[var(--text-muted)]">{row.percent}%</span>
-                </div>
+                <span className="flex min-w-0 items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: row.color }} />
+                  <span className="truncate">{row.label}</span>
+                </span>
+                <span className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                  <span className="block h-full rounded-full" style={{ width: `${row.percent}%`, background: row.color }} />
+                </span>
+                <span className="text-right text-xs font-semibold tabular-nums text-[var(--text-primary)]">{row.count}</span>
               </button>
             ))}
           </div>
