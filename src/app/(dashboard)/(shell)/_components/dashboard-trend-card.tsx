@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Area,
   AreaChart,
@@ -10,18 +10,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { motion } from 'framer-motion';
 import type { OfferActivityPoint } from '@modules/generic/dashboard';
 import { cn } from '@shared/lib/utils';
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 14 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { type: 'spring' as const, stiffness: 300, damping: 30 },
-  },
-};
+import { DashboardCard } from './dashboard-view-parts';
 
 type RangePreset = '7d' | '30d' | '90d' | '365d' | 'custom';
 
@@ -33,35 +24,68 @@ interface TrendBucket {
 }
 
 const RANGE_OPTIONS: Array<{ id: RangePreset; label: string; days?: number }> = [
-  { id: '7d',    label: '1 v',   days: 7 },
-  { id: '30d',   label: '1 mån', days: 30 },
-  { id: '90d',   label: '3 mån', days: 90 },
-  { id: '365d',  label: '1 år',  days: 365 },
-  { id: 'custom',label: 'Datum' },
+  { id: '7d', label: '1v', days: 7 },
+  { id: '30d', label: '1 mån', days: 30 },
+  { id: '90d', label: '3 mån', days: 90 },
+  { id: '365d', label: '1 år', days: 365 },
+  { id: 'custom', label: 'Datum' },
 ];
 
-function startOfDay(d: Date) { const n = new Date(d); n.setHours(0,0,0,0); return n; }
-function endOfDay(d: Date)   { const n = new Date(d); n.setHours(23,59,59,999); return n; }
-function addDays(d: Date, days: number) { const n = new Date(d); n.setDate(n.getDate()+days); return n; }
-function addMonths(d: Date, m: number)  { const n = new Date(d); n.setMonth(n.getMonth()+m); return n; }
-function monthStart(d: Date) { return new Date(d.getFullYear(), d.getMonth(), 1); }
-function monthEnd(d: Date)   { return endOfDay(new Date(d.getFullYear(), d.getMonth()+1, 0)); }
-function dayDiff(s: Date, e: Date) {
-  return Math.max(1, Math.floor((endOfDay(e).getTime() - startOfDay(s).getTime()) / 86400000) + 1);
+function startOfDay(date: Date) {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
 }
-function toInputDate(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+function endOfDay(date: Date) {
+  const next = new Date(date);
+  next.setHours(23, 59, 59, 999);
+  return next;
 }
-function fmtShort(d: Date) {
-  return new Intl.DateTimeFormat('sv-SE', { day:'numeric', month:'short' }).format(d);
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
 }
-function fmtLong(d: Date) {
-  return new Intl.DateTimeFormat('sv-SE', { day:'numeric', month:'long', year:'numeric' }).format(d);
+
+function addMonths(date: Date, months: number) {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + months);
+  return next;
 }
-function fmtMonth(d: Date) {
-  return new Intl.DateTimeFormat('sv-SE', { month:'short' }).format(d);
+
+function monthStart(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
 }
-function fmtRangeLabel(s: Date, e: Date) { return `${fmtLong(s)} – ${fmtLong(e)}`; }
+
+function monthEnd(date: Date) {
+  return endOfDay(new Date(date.getFullYear(), date.getMonth() + 1, 0));
+}
+
+function dayDiff(start: Date, end: Date) {
+  return Math.max(1, Math.floor((endOfDay(end).getTime() - startOfDay(start).getTime()) / 86400000) + 1);
+}
+
+function toInputDate(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function fmtShort(date: Date) {
+  return new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'short' }).format(date);
+}
+
+function fmtLong(date: Date) {
+  return new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+}
+
+function fmtMonth(date: Date) {
+  return new Intl.DateTimeFormat('sv-SE', { month: 'short' }).format(date);
+}
+
+function fmtRangeLabel(start: Date, end: Date) {
+  return `${fmtLong(start)} - ${fmtLong(end)}`;
+}
 
 function clampDateRange(startValue: string, endValue: string) {
   if (!startValue || !endValue || startValue <= endValue) return { startValue, endValue };
@@ -73,262 +97,261 @@ function getRangeBounds(range: RangePreset, customStart: string, customEnd: stri
   if (range === 'custom' && customStart && customEnd) {
     return { start: startOfDay(new Date(customStart)), end: endOfDay(new Date(customEnd)) };
   }
-  const opt = RANGE_OPTIONS.find(o => o.id === range);
-  return { start: startOfDay(addDays(today, -((opt?.days ?? 30) - 1))), end: endOfDay(today) };
+  const option = RANGE_OPTIONS.find((item) => item.id === range);
+  return { start: startOfDay(addDays(today, -((option?.days ?? 30) - 1))), end: endOfDay(today) };
 }
 
 function buildTrendBuckets(activityData: OfferActivityPoint[], start: Date, end: Date): TrendBucket[] {
-  const filtered = activityData.filter(e => {
-    const d = new Date(e.createdAt); return d >= start && d <= end;
+  const filtered = activityData.filter((event) => {
+    const date = new Date(event.createdAt);
+    return date >= start && date <= end;
   });
   const totalDays = dayDiff(start, end);
   const buckets: TrendBucket[] = [];
 
   if (totalDays <= 14) {
-    for (let c = startOfDay(start); c <= end; c = addDays(c, 1)) {
-      const bs = startOfDay(c), be = endOfDay(c);
-      const m = filtered.filter(e => { const d = new Date(e.createdAt); return d >= bs && d <= be; });
-      buckets.push({ label: fmtShort(bs), longLabel: fmtLong(bs), count: m.length, accepted: m.filter(e => e.status === 'accepted').length });
+    for (let current = startOfDay(start); current <= end; current = addDays(current, 1)) {
+      const bucketStart = startOfDay(current);
+      const bucketEnd = endOfDay(current);
+      const matches = filtered.filter((event) => {
+        const date = new Date(event.createdAt);
+        return date >= bucketStart && date <= bucketEnd;
+      });
+      buckets.push({
+        label: fmtShort(bucketStart),
+        longLabel: fmtLong(bucketStart),
+        count: matches.length,
+        accepted: matches.filter((event) => event.status === 'accepted').length,
+      });
     }
     return buckets;
   }
 
   if (totalDays <= 62) {
-    for (let c = startOfDay(start); c <= end; c = addDays(c, 7)) {
-      const bs = startOfDay(c), we = addDays(c, 6), be = endOfDay(we <= end ? we : end);
-      const m = filtered.filter(e => { const d = new Date(e.createdAt); return d >= bs && d <= be; });
-      buckets.push({ label: fmtShort(bs), longLabel: `${fmtShort(bs)}–${fmtShort(addDays(c,6))}`, count: m.length, accepted: m.filter(e => e.status === 'accepted').length });
+    for (let current = startOfDay(start); current <= end; current = addDays(current, 7)) {
+      const bucketStart = startOfDay(current);
+      const weekEnd = addDays(current, 6);
+      const bucketEnd = endOfDay(weekEnd <= end ? weekEnd : end);
+      const matches = filtered.filter((event) => {
+        const date = new Date(event.createdAt);
+        return date >= bucketStart && date <= bucketEnd;
+      });
+      buckets.push({
+        label: fmtShort(bucketStart),
+        longLabel: `${fmtShort(bucketStart)} - ${fmtShort(bucketEnd)}`,
+        count: matches.length,
+        accepted: matches.filter((event) => event.status === 'accepted').length,
+      });
     }
     return buckets;
   }
 
-  for (let c = monthStart(start); c <= end; c = addMonths(c, 1)) {
-    const bs = monthStart(c), me = monthEnd(c), be = me <= end ? me : end;
-    const m = filtered.filter(e => { const d = new Date(e.createdAt); return d >= bs && d <= be; });
+  for (let current = monthStart(start); current <= end; current = addMonths(current, 1)) {
+    const bucketStart = monthStart(current);
+    const bucketEnd = monthEnd(current) <= end ? monthEnd(current) : end;
+    const matches = filtered.filter((event) => {
+      const date = new Date(event.createdAt);
+      return date >= bucketStart && date <= bucketEnd;
+    });
     buckets.push({
-      label: fmtMonth(bs),
-      longLabel: new Intl.DateTimeFormat('sv-SE', { month:'long', year:'numeric' }).format(bs),
-      count: m.length, accepted: m.filter(e => e.status === 'accepted').length,
+      label: fmtMonth(bucketStart),
+      longLabel: new Intl.DateTimeFormat('sv-SE', { month: 'long', year: 'numeric' }).format(bucketStart),
+      count: matches.length,
+      accepted: matches.filter((event) => event.status === 'accepted').length,
     });
   }
   return buckets;
 }
 
-function ChartTooltip({ active, payload, label }: {
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
   active?: boolean;
   payload?: Array<{ value: number; name: string; color: string }>;
   label?: string;
 }) {
   if (!active || !payload?.length) return null;
+
   return (
-    <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.14)]">
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">{label}</p>
-      {payload.map(p => (
-        <div key={p.name} className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full" style={{ background: p.color }}/>
-          <span className="text-xs text-[var(--text-secondary)]">
-            {p.name === 'count' ? 'Skapade' : 'Accepterade'}
-          </span>
-          <span className="ml-1 text-xs font-semibold tabular-nums text-[var(--text-primary)]">{p.value}</span>
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2 shadow-[0_10px_22px_rgba(15,23,42,0.12)]">
+      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{label}</p>
+      {payload.map((item) => (
+        <div key={item.name} className="flex items-center gap-2 text-xs">
+          <span className="h-2 w-2 rounded-full" style={{ background: item.color }} />
+          <span className="text-[var(--text-secondary)]">{item.name === 'count' ? 'Skapade' : 'Accepterade'}</span>
+          <span className="ml-auto font-semibold tabular-nums text-[var(--text-primary)]">{item.value}</span>
         </div>
       ))}
     </div>
   );
 }
 
-// ─── Trend card ────────────────────────────────────────────────────────────────
-
 export function TrendCard({ activityData }: { activityData: OfferActivityPoint[] }) {
   const [range, setRange] = useState<RangePreset>('90d');
   const [customStart, setCustomStart] = useState(toInputDate(addDays(new Date(), -29)));
-  const [customEnd, setCustomEnd]     = useState(toInputDate(new Date()));
+  const [customEnd, setCustomEnd] = useState(toInputDate(new Date()));
 
-  const { start, end } = getRangeBounds(range, customStart, customEnd);
-  const buckets = buildTrendBuckets(activityData, start, end);
-  const createdTotal  = buckets.reduce((s, b) => s + b.count, 0);
-  const acceptedTotal = buckets.reduce((s, b) => s + b.accepted, 0);
-  const successRate   = createdTotal > 0 ? Math.round((acceptedTotal / createdTotal) * 100) : 0;
-
-  const stride    = Math.max(1, Math.ceil(buckets.length / 8));
-  const chartData = buckets.map((b, i) => ({ ...b, displayLabel: i % stride === 0 ? b.label : '' }));
-  const yMax      = Math.max(...buckets.map(b => b.count), 1);
-  const yTicks    = Array.from({ length: Math.min(yMax, 5) + 1 }, (_, i) =>
-    Math.round((yMax / Math.min(yMax, 5)) * i),
+  const { start, end } = useMemo(
+    () => getRangeBounds(range, customStart, customEnd),
+    [customEnd, customStart, range],
   );
+
+  const buckets = useMemo(
+    () => buildTrendBuckets(activityData, start, end),
+    [activityData, end, start],
+  );
+  const createdTotal = buckets.reduce((sum, bucket) => sum + bucket.count, 0);
+  const acceptedTotal = buckets.reduce((sum, bucket) => sum + bucket.accepted, 0);
+  const successRate = createdTotal > 0 ? Math.round((acceptedTotal / createdTotal) * 100) : 0;
+
+  const chartData = useMemo(() => {
+    const stride = Math.max(1, Math.ceil(buckets.length / 6));
+    return buckets.map((bucket, index) => ({
+      ...bucket,
+      displayLabel: index % stride === 0 ? bucket.label : '',
+    }));
+  }, [buckets]);
+  const yMax = Math.max(...buckets.map((bucket) => bucket.count), 1);
+  const tickCount = Math.min(yMax, 4);
+  const yTicks = Array.from({ length: tickCount + 1 }, (_, index) => Math.round((yMax / tickCount) * index));
 
   return (
-    <motion.div variants={fadeUp} className="rounded-[20px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] px-4 pt-4 pb-3 shadow-[0_14px_34px_rgba(0,0,0,0.06)]">
-
-      {/* Header */}
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div>
-          <h2 className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">Tidsöversikt</h2>
-          <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">{fmtRangeLabel(start, end)}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3 text-[11px]">
-          {[
-            { lbl: 'Skapade', val: createdTotal },
-            { lbl: 'Vunna',   val: acceptedTotal },
-            { lbl: 'Vinstgrad',   val: `${successRate}%` },
-          ].map((item, i) => (
-            <div key={item.lbl} className="flex items-center gap-1.5">
-              {i > 0 && <span className="h-3 w-px bg-[var(--border)]"/>}
-              <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">{item.lbl}</span>
-              <span className="font-semibold tabular-nums text-[var(--text-primary)]">{item.val}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Chart */}
-      {createdTotal === 0 ? (
-        <div className="flex h-[320px] items-center justify-center rounded-[16px] border border-dashed border-[var(--border)] bg-[var(--surface-0)]">
-          <div className="text-center">
-            <p className="text-xs font-medium text-[var(--text-primary)]">Inga offerter i vald period</p>
-            <p className="mt-1 text-[11px] text-[var(--text-secondary)]">Prova ett längre intervall.</p>
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-0)] px-3 pt-3 pb-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
-          <ResponsiveContainer width="100%" height={320}>
-            <AreaChart data={chartData} margin={{ top: 10, right: 14, left: 2, bottom: 8 }}>
-              <defs>
-                <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="var(--accent)" stopOpacity={0.22}/>
-                  <stop offset="95%" stopColor="var(--accent)" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="gradAccepted" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="var(--status-accepted-text)" stopOpacity={0.14}/>
-                  <stop offset="95%" stopColor="var(--status-accepted-text)" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-
-              <CartesianGrid
-                strokeDasharray="4 6"
-                stroke="color-mix(in srgb, var(--border) 70%, transparent)"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="displayLabel"
-                tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Inter, system-ui, sans-serif' }}
-                tickLine={false}
-                axisLine={false}
-                interval={0}
-              />
-              <YAxis
-                ticks={yTicks}
-                tick={{ fill: 'var(--text-muted)', fontSize: 10, fontFamily: 'Inter, system-ui, sans-serif' }}
-                tickLine={false}
-                axisLine={false}
-                allowDecimals={false}
-                width={44}
-                label={{
-                  value: 'Antal',
-                  angle: -90,
-                  position: 'insideLeft',
-                  offset: -2,
-                  fill: 'var(--text-muted)',
-                  fontSize: 10,
-                }}
-              />
-              <Tooltip
-                content={<ChartTooltip/>}
-                cursor={{ stroke: 'var(--accent)', strokeWidth: 1, strokeDasharray: '4 4', opacity: 0.5 }}
-              />
-              <Area
-                type="monotone"
-                dataKey="count"
-                stroke="var(--accent)"
-                strokeWidth={2.5}
-                fill="url(#gradTotal)"
-                dot={{ r: 3, fill: 'var(--surface-0)', stroke: 'var(--accent)', strokeWidth: 2.5 }}
-                activeDot={{ r: 5, fill: 'var(--surface-0)', stroke: 'var(--accent)', strokeWidth: 3 }}
-              />
-              <Area
-                type="monotone"
-                dataKey="accepted"
-                stroke="var(--status-accepted-text)"
-                strokeWidth={2}
-                strokeDasharray="6 5"
-                fill="url(#gradAccepted)"
-                dot={{ r: 2.5, fill: 'var(--status-accepted-text)', strokeWidth: 0 }}
-                activeDot={{ r: 4.5, fill: 'var(--status-accepted-text)', strokeWidth: 0 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+    <DashboardCard
+      title="Tidsöversikt"
+      description={fmtRangeLabel(start, end)}
+      action={(
+        <div className="hidden items-center gap-2 text-[11px] sm:flex">
+          <span className="font-semibold tabular-nums text-[var(--text-primary)]">{createdTotal}</span>
+          <span className="text-[var(--text-muted)]">skapade</span>
+          <span className="h-3 w-px bg-[var(--border)]" />
+          <span className="font-semibold tabular-nums text-[var(--text-primary)]">{successRate}%</span>
         </div>
       )}
-
-      {/* Bottom control bar — all on one line */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-
-        {/* Legend */}
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full" style={{ background: 'var(--accent)' }}/>
-            <span className="text-[10px] text-[var(--text-secondary)]">Skapade</span>
+    >
+      <div className="p-4">
+        {createdTotal === 0 ? (
+          <div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface-1)] text-center">
+            <div>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Inga offerter i vald period</p>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">Prova ett längre intervall.</p>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full" style={{ background: 'var(--status-accepted-text)' }}/>
-            <span className="text-[10px] text-[var(--text-secondary)]">Accepterade</span>
+        ) : (
+          <div className="rounded-lg border border-[var(--border-light)] bg-[var(--surface-1)] px-2 pt-3 pb-1">
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="dashboardCreated" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="dashboardAccepted" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--status-accepted-text)" stopOpacity={0.14} />
+                    <stop offset="95%" stopColor="var(--status-accepted-text)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 6"
+                  stroke="color-mix(in srgb, var(--border) 70%, transparent)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="displayLabel"
+                  tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={0}
+                />
+                <YAxis
+                  ticks={yTicks}
+                  tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                  width={36}
+                />
+                <Tooltip
+                  content={<ChartTooltip />}
+                  cursor={{ stroke: 'var(--accent)', strokeWidth: 1, strokeDasharray: '4 4', opacity: 0.55 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="count"
+                  name="count"
+                  stroke="var(--accent)"
+                  strokeWidth={2.2}
+                  fill="url(#dashboardCreated)"
+                  dot={false}
+                  activeDot={{ r: 4, fill: 'var(--surface-0)', stroke: 'var(--accent)', strokeWidth: 2 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="accepted"
+                  name="accepted"
+                  stroke="var(--status-accepted-text)"
+                  strokeWidth={2}
+                  fill="url(#dashboardAccepted)"
+                  dot={false}
+                  activeDot={{ r: 4, fill: 'var(--status-accepted-text)', strokeWidth: 0 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
-        </div>
+        )}
 
-        <span className="hidden h-3 w-px bg-[var(--border)] sm:block"/>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 pr-1 text-[11px] text-[var(--text-secondary)]">
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[var(--accent)]" />Skapade</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[var(--status-accepted-text)]" />Accepterade</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-1">
+            {RANGE_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setRange(option.id)}
+                className={cn(
+                  'rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors',
+                  range === option.id
+                    ? 'bg-[var(--accent)] text-white'
+                    : 'border border-[var(--border-light)] bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]',
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
 
-        {/* Range preset buttons */}
-        <div className="flex items-center gap-1">
-          {RANGE_OPTIONS.map(opt => (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => setRange(opt.id)}
-              className={cn(
-                'rounded-full px-2.5 py-1 text-[10px] font-medium transition-all',
-                range === opt.id
-                  ? 'bg-[var(--accent)] font-semibold text-white shadow-[0_4px_10px_rgba(0,0,0,0.12)]'
-                  : 'border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]',
-              )}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Inline date inputs — reserve space always, hide with opacity */}
-        <div
-          className={cn(
-            'ml-auto flex items-center gap-1.5 transition-opacity duration-150',
-            range !== 'custom' && 'pointer-events-none opacity-0',
-          )}
-          aria-hidden={range !== 'custom'}
-        >
-          <input
-            type="date"
-            value={customStart}
-            tabIndex={range !== 'custom' ? -1 : undefined}
-            onChange={e => {
-              const n = clampDateRange(e.target.value, customEnd);
-              setCustomStart(n.startValue); setCustomEnd(n.endValue);
-            }}
-            className="h-8 w-[118px] rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-3 text-[11px] font-medium text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
-          />
-          <span className="text-[10px] text-[var(--text-muted)]">→</span>
-          <input
-            type="date"
-            value={customEnd}
-            min={customStart}
-            tabIndex={range !== 'custom' ? -1 : undefined}
-            onChange={e => {
-              const n = clampDateRange(customStart, e.target.value);
-              setCustomStart(n.startValue); setCustomEnd(n.endValue);
-            }}
-            className="h-8 w-[118px] rounded-full border border-[var(--border)] bg-[var(--surface-1)] px-3 text-[11px] font-medium text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
-          />
+          {range === 'custom' ? (
+            <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 sm:ml-auto sm:w-auto">
+              <input
+                type="date"
+                value={customStart}
+                onChange={(event) => {
+                  const next = clampDateRange(event.target.value, customEnd);
+                  setCustomStart(next.startValue);
+                  setCustomEnd(next.endValue);
+                }}
+                className="h-8 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-2 text-[11px] font-medium text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+              />
+              <span className="text-[10px] text-[var(--text-muted)]">till</span>
+              <input
+                type="date"
+                value={customEnd}
+                min={customStart}
+                onChange={(event) => {
+                  const next = clampDateRange(customStart, event.target.value);
+                  setCustomStart(next.startValue);
+                  setCustomEnd(next.endValue);
+                }}
+                className="h-8 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--surface-1)] px-2 text-[11px] font-medium text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-[var(--accent)]"
+              />
+            </div>
+          ) : null}
         </div>
       </div>
-    </motion.div>
+    </DashboardCard>
   );
 }
-
-// ─── Paginated offers ──────────────────────────────────────────────────────────
