@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Optional note for why the current main release is being redeployed
+        required: false
+        type: string
 
 concurrency:
   group: deploy-production
@@ -43,8 +49,21 @@ jobs:
         run: |
           set -euo pipefail
 
+          event_name="${{ github.event_name }}"
           before_sha="${{ github.event.before }}"
           head_sha="${{ github.sha }}"
+
+          if [ "$event_name" = "workflow_dispatch" ]; then
+            {
+              echo "runtime_affecting=true"
+              echo "deploy_process_affecting=true"
+              echo "docs_only=false"
+              echo "unknown_files=false"
+              echo "should_deploy=true"
+              echo 'changed_files_json=["workflow_dispatch:manual-redeploy"]'
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           if [[ "$before_sha" =~ ^0+$ ]]; then
             mapfile -t changed_files < <(git ls-tree -r --name-only "$head_sha")
