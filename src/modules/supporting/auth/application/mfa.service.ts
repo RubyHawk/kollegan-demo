@@ -23,6 +23,8 @@ const TAG = 'MfaService';
 const BACKUP_CODE_COUNT = 10;
 const BACKUP_CODE_LENGTH = 8;
 const BCRYPT_COST = 12;
+const TOTP_REPLAY_TTL_SEC = 90;
+const usedTotpTimeSteps = new Map<string, number>();
 
 export interface TotpSetupResult {
   secret: string;
@@ -62,7 +64,11 @@ export async function verifyTotpCode(
   if (!secret) return false;
 
   const result = await totpVerify({ token: code.replace(/\s/g, ''), secret, epochTolerance: 30 });
-  return result.valid;
+  if (!result.valid) return false;
+
+  const matchedTimeStep = (result as { timeStep?: number }).timeStep;
+  if (typeof matchedTimeStep !== 'number') return false;
+  return markTotpTimeStepUsed(userId, matchedTimeStep);
 }
 
 export async function enableTotp(userId: string, code: string): Promise<string[]> {
@@ -153,9 +159,8 @@ export async function consumeBackupCode(userId: string, rawCode: string): Promis
   const remaining = [...state.backupCodes];
   remaining.splice(matchIndex, 1);
 
-  await userRepository.updateMfaFields(userId, {
-    backupCodes: remaining,
-  });
+  const consumed = await userRepository.consumeBackupCodeHash(userId, state.backupCodes[matchIndex], remaining);
+  if (!consumed) return false;
 
   logger.info(TAG, 'Backup code consumed', { userId, remaining: remaining.length });
 
@@ -194,4 +199,31 @@ async function generateBackupCodesInternal(): Promise<{ plainCodes: string[]; ha
   );
 
   return { plainCodes, hashedCodes };
+}
+
+async function markTotpTimeStepUsed(userId: string, timeStep: number): Promise<boolean> {
+  const key = `mfa:totp:${userId}:${timeStep}`;
+  try {
+    const { redis } = await import('@platform/cache/redis');
+    const result = await redis.set(key, '1', 'EX', TOTP_REPLAY_TTL_SEC, 'NX');
+    return result === 'OK';
+  } catch {
+    cleanupTotpReplayMemory();
+    const now = Date.now();
+    const existingExpiry = usedTotpTimeSteps.get(key);
+    if (existingExpiry && existingExpiry > now) {
+      return false;
+    }
+    usedTotpTimeSteps.set(key, now + TOTP_REPLAY_TTL_SEC * 1000);
+    return true;
+  }
+}
+
+function cleanupTotpReplayMemory(): void {
+  const now = Date.now();
+  for (const [key, expiresAt] of usedTotpTimeSteps) {
+    if (expiresAt <= now) {
+      usedTotpTimeSteps.delete(key);
+    }
+  }
 }

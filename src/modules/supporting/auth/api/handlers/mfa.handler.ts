@@ -76,6 +76,14 @@ export const handleMfaSetup = createHandler(
     const user = await userRepository.findById(payload.sub);
     const userEmail = user?.email ?? payload.sub;
     const setup = await generateTotpSetup(payload.sub, userEmail);
+    await recordAuthAudit({
+      action: AUTH_AUDIT_ACTIONS.USER_MFA_TOTP_SETUP_STARTED,
+      organizationId: user?.organizationId ?? null,
+      actorId: payload.sub,
+      actorType: 'user',
+      resourceType: 'User',
+      resourceId: payload.sub,
+    }).catch(() => {});
     return ok({ secret: setup.secret, qrDataUrl: setup.qrDataUrl, otpAuthUrl: setup.otpAuthUrl });
   },
 );
@@ -101,6 +109,15 @@ export const handleMfaEnable = createHandler(
       }
       throw err;
     }
+    const user = await userRepository.findById(payload.sub);
+    await recordAuthAudit({
+      action: AUTH_AUDIT_ACTIONS.USER_MFA_TOTP_ENABLED,
+      organizationId: user?.organizationId ?? null,
+      actorId: payload.sub,
+      actorType: 'user',
+      resourceType: 'User',
+      resourceId: payload.sub,
+    }).catch(() => {});
     return ok({ backupCodes, message: 'MFA enabled. Store these backup codes safely — they will not be shown again.' });
   },
 );
@@ -118,6 +135,16 @@ export const handleMfaDisable = createHandler(
       if (code === 'LAST_PRIMARY_FACTOR') throw Errors.forbidden('Add another sign-in method before removing your authenticator app');
       throw err;
     }
+
+    const user = await userRepository.findById(payload.sub);
+    await recordAuthAudit({
+      action: AUTH_AUDIT_ACTIONS.USER_MFA_TOTP_DISABLED,
+      organizationId: user?.organizationId ?? null,
+      actorId: payload.sub,
+      actorType: 'user',
+      resourceType: 'User',
+      resourceId: payload.sub,
+    }).catch(() => {});
 
     const res = NextResponse.json({
       data: { message: 'Authenticator app removed. Sign in again to continue.' },
@@ -151,6 +178,16 @@ export const handleRegenerateBackupCodes = createHandler(
       }
       throw err;
     }
+    const user = await userRepository.findById(payload.sub);
+    await recordAuthAudit({
+      action: AUTH_AUDIT_ACTIONS.USER_MFA_BACKUP_CODES_REGENERATED,
+      organizationId: user?.organizationId ?? null,
+      actorId: payload.sub,
+      actorType: 'user',
+      resourceType: 'User',
+      resourceId: payload.sub,
+      metadata: { count: backupCodes.length },
+    }).catch(() => {});
     return ok({ backupCodes, message: 'Backup codes regenerated. Store these safely — they will not be shown again.' });
   },
 );
@@ -281,6 +318,7 @@ export async function handleMfaVerify(req: NextRequest): Promise<NextResponse> {
   const userAgent = req.headers.get('user-agent') ?? undefined;
   const ipAddress = ip !== 'unknown' ? ip : undefined;
 
+  let mfaMethod: 'totp' | 'backup_code' = 'totp';
   const totpValid = await verifyTotpCode(userId, code);
   if (!totpValid) {
     const backupValid = await consumeBackupCode(userId, code);
@@ -299,9 +337,22 @@ export async function handleMfaVerify(req: NextRequest): Promise<NextResponse> {
         { status: 401, headers: { 'Content-Type': 'application/problem+json' } },
       );
     }
+    mfaMethod = 'backup_code';
   }
 
   const result = await completeMfaLogin(userId, 'otp', ipAddress, userAgent, rememberMe);
+
+  if (mfaMethod === 'backup_code') {
+    await recordAuthAudit({
+      action: AUTH_AUDIT_ACTIONS.USER_MFA_BACKUP_CODE_USED,
+      organizationId: result.user.orgId,
+      actorId: result.user.id,
+      actorType: 'user',
+      resourceType: 'User',
+      resourceId: result.user.id,
+      metadata: { ip: ipAddress ?? null },
+    }).catch(() => {});
+  }
 
   await recordAuthAudit({
     action: AUTH_AUDIT_ACTIONS.USER_LOGIN,
@@ -310,7 +361,7 @@ export async function handleMfaVerify(req: NextRequest): Promise<NextResponse> {
     actorType: 'user',
     resourceType: 'User',
     resourceId: result.user.id,
-    metadata: { ip: ipAddress ?? null, mfaMethod: 'totp' },
+    metadata: { ip: ipAddress ?? null, mfaMethod },
   }).catch(() => {});
 
   const isCustomer = result.user.userType === 'customer';

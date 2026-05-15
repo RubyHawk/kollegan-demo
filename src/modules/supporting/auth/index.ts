@@ -39,6 +39,7 @@ export {
   beginAuthentication,
   completeAuthentication,
   listCredentials,
+  renameCredential,
   deleteCredential,
 } from './application/webauthn.service';
 
@@ -90,5 +91,6 @@ export {
   handleAuthenticateOptions,
   handleAuthenticateVerify,
   handleListPasskeys,
+  handleRenamePasskey,
   handleDeletePasskey,
 } from './api/handlers/webauthn.handler';

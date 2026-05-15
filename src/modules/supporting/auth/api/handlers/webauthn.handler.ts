@@ -17,6 +17,7 @@ import {
   beginAuthentication,
   completeAuthentication,
   listCredentials,
+  renameCredential,
   deleteCredential,
 } from '../../application/webauthn.service';
 import { completeMfaLogin } from '../../application/auth.service';
@@ -84,6 +85,14 @@ export const handleRegisterVerify = createHandler(
     await assertStepUpForFactorMutation(payload.sub, payload.amr);
     try {
       const result = await completeRegistration(payload.sub, body.response as unknown as RegistrationResponseJSON, body.name);
+      await recordAuthAudit({
+        action: AUTH_AUDIT_ACTIONS.USER_PASSKEY_REGISTERED,
+        organizationId: payload.orgId ?? null,
+        actorId: payload.sub,
+        actorType: 'user',
+        resourceType: 'WebAuthnCredential',
+        resourceId: result.credentialId,
+      }).catch(() => {});
       return ok({ credentialId: result.credentialId, message: 'Passkey registered successfully.' });
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
@@ -248,12 +257,49 @@ export const handleListPasskeys = createHandler(
   },
 );
 
+const RenamePasskeySchema = z.object({
+  name: z.string().trim().min(1).max(64),
+});
+
+export const handleRenamePasskey = createHandler(
+  { auth: 'jwt', tag: 'WebAuthn:Credentials:Rename', body: RenamePasskeySchema, rateLimit: { max: 20, windowMs: 60_000 } },
+  async (ctx) => {
+    const { body, req } = ctx as { body: z.infer<typeof RenamePasskeySchema>; req: NextRequest };
+    const payload = await verifyAccessPayload(req);
+    await assertStepUpForFactorMutation(payload.sub, payload.amr);
+    const url = new URL(req.url);
+    const segments = url.pathname.split('/');
+    const credentialId = segments[segments.length - 1];
+    if (!credentialId) throw Errors.badRequest('Credential id is required');
+
+    try {
+      await renameCredential(credentialId, payload.sub, body.name);
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (code === 'CREDENTIAL_NOT_FOUND') throw Errors.notFound('Passkey');
+      if (code === 'INVALID_NAME') throw Errors.badRequest('Passkey name is required');
+      throw err;
+    }
+
+    await recordAuthAudit({
+      action: AUTH_AUDIT_ACTIONS.USER_PASSKEY_RENAMED,
+      organizationId: payload.orgId ?? null,
+      actorId: payload.sub,
+      actorType: 'user',
+      resourceType: 'WebAuthnCredential',
+      resourceId: credentialId,
+      metadata: { name: body.name },
+    }).catch(() => {});
+
+    return ok({ message: 'Passkey renamed successfully.' });
+  },
+);
+
 export const handleDeletePasskey = createHandler(
   { auth: 'jwt', requireMfa: true, tag: 'WebAuthn:Credentials:Delete', rateLimit: { max: 10, windowMs: 60_000 } },
   async (ctx) => {
     const { req } = ctx as { req: NextRequest };
     const payload = await verifyAccessPayload(req);
-
     const url = new URL(req.url);
     const segments = url.pathname.split('/');
     const credentialId = segments[segments.length - 1];
@@ -275,6 +321,15 @@ export const handleDeletePasskey = createHandler(
       }
       throw err;
     }
+
+    await recordAuthAudit({
+      action: AUTH_AUDIT_ACTIONS.USER_PASSKEY_DELETED,
+      organizationId: payload.orgId ?? null,
+      actorId: payload.sub,
+      actorType: 'user',
+      resourceType: 'WebAuthnCredential',
+      resourceId: credentialId,
+    }).catch(() => {});
 
     const res = NextResponse.json({
       data: { message: 'Passkey removed. Sign in again to continue.' },
