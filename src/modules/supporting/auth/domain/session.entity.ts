@@ -33,5 +33,7 @@ export interface SessionUser {
   avatarUrl: string | null;
   userType: string;
   role: string;
+  roles: string[];
   mfaEnabled: boolean;
+  mfaAuthenticated: boolean;
 }

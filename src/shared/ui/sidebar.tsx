@@ -153,6 +153,7 @@ function SidebarFooter({
   const roleLabel: Record<string, string> = {
     admin: 'Admin',
     super_admin: 'Superadmin',
+    helpdesk: 'Helpdesk',
     user: 'Staff',
     manager: 'Manager',
     receptionist: 'Receptionist',
@@ -391,7 +392,7 @@ export default function Sidebar({
   }
 
   const visibleSections = NAV_CONFIG.filter(
-    (s) => !s.adminOnly || user.role === 'admin',
+    (s) => !s.adminOnly || user.role === 'admin' || user.role === 'super_admin',
   );
   const routeOpenDropdowns = NAV_CONFIG.flatMap((section) =>
     section.items.flatMap((entry) =>

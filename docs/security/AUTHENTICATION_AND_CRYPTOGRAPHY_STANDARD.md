@@ -12,6 +12,10 @@ This standard defines the minimum baseline for secure authentication information
 - Avoid shared accounts unless explicitly documented with compensating controls.
 - Keep secrets, tokens, passwords, and private keys out of the repository.
 - Prefer stronger administrative authentication controls, including MFA-capable paths where supported by the provider.
+- Kollegan application MFA for staff users and `customer_admin` users is based on verified passkeys (`WebAuthn`) or verified authenticator-app TOTP. Backup codes are recovery-only and do not count as a primary factor.
+- SMS OTP and email OTP are not approved as primary MFA factors for the application baseline because they are weaker against phishing and SIM or inbox compromise.
+- MFA factor changes, backup-code regeneration, and MFA recovery actions require an MFA-authenticated operator or session at the application layer.
+- MFA recovery via the in-app helpdesk path is organization-scoped, requires an operator-provided reason, revokes target-user sessions, and grants only a short re-enrollment grace window.
 
 ## Cryptography Baseline
 
@@ -26,3 +30,4 @@ This standard defines the minimum baseline for secure authentication information
 - `docs/security/AI_USAGE_POLICY.md`
 - `docs/PRODUCTION_DATA_SAFETY.md`
 - `.github/workflows/deploy.yml`
+- `docs/security/AUDIT_EVIDENCE_INDEX.md`

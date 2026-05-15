@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  actions: read
+  actions: write
   contents: read
   pull-requests: read
 
@@ -322,6 +322,35 @@ jobs:
       - name: Package deploy bundle
         if: steps.promote.outputs.promoted != 'true'
         run: tar -czf kollegan-deploy-bundle-${{ github.sha }}.tar.gz kollegan-next-build.tar.gz release-metadata.json scripts/deploy-release.sh
+
+      - name: Trim artifact backlog
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          max_artifacts=9
+          if ! artifact_lines="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" --paginate --jq '.artifacts | map(select(.expired == false)) | sort_by(.created_at) | .[] | [.id, .name] | @tsv')"; then
+            echo "Artifact cleanup skipped because the artifact inventory could not be loaded."
+            exit 0
+          fi
+
+          mapfile -t artifacts < <(printf '%s\n' "$artifact_lines" | sed '/^$/d')
+          artifact_count="${#artifacts[@]}"
+
+          if [ "$artifact_count" -le "$max_artifacts" ]; then
+            echo "Artifact backlog already within limit ($artifact_count <= $max_artifacts)."
+            exit 0
+          fi
+
+          delete_count=$((artifact_count - max_artifacts))
+          for ((i=0; i<delete_count; i++)); do
+            artifact_id="$(cut -f1 <<< "${artifacts[$i]}")"
+            artifact_name="$(cut -f2 <<< "${artifacts[$i]}")"
+            echo "Deleting artifact ${artifact_id} (${artifact_name}) to keep the active backlog within ${max_artifacts} before uploading this run's bundle."
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}" >/dev/null
+          done
 
       - name: Upload deploy bundle
         uses: actions/upload-artifact@v4

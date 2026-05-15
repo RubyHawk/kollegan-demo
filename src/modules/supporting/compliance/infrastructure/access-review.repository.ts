@@ -20,6 +20,7 @@ type AccessReviewUserRecord = {
 };
 
 function toAccessReviewUserRow(user: AccessReviewUserRecord): AccessReviewUserRow {
+  const derivedMfaEnabled = user.mfaEnabled || !!user.totpSecret || user._count.webAuthnCredentials > 0;
   return {
     id: user.id,
     email: user.email,
@@ -29,7 +30,7 @@ function toAccessReviewUserRow(user: AccessReviewUserRecord): AccessReviewUserRo
     organizationId: user.organizationId,
     roles: user.roles.map((r) => r.role.name),
     lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
-    mfaEnabled: user.mfaEnabled,
+    mfaEnabled: derivedMfaEnabled,
     totpConfigured: !!user.totpSecret,
     passkeysRegistered: user._count.webAuthnCredentials,
     mfaGraceExpiresAt: user.mfaGraceExpiresAt?.toISOString() ?? null,

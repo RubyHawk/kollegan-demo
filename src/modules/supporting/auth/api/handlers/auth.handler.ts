@@ -103,7 +103,7 @@ export async function handleLogin(req: NextRequest): Promise<NextResponse> {
         'mfa-setup-required',
         'MFA Setup Required',
         403,
-        'Your account requires MFA. Please contact your administrator or log in from a previous session to configure it.',
+        'Tvåstegsverifiering måste aktiveras innan du kan logga in. Be en administratör återställa din MFA-åtkomst eller använd en tidigare betrodd session för att slutföra aktiveringen.',
       );
     }
 

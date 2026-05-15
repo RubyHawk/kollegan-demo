@@ -70,4 +70,10 @@ export const webAuthnRepository = {
       where: { id, userId },
     });
   },
+
+  async deleteAllForUser(userId: string): Promise<void> {
+    await prisma.webAuthnCredential.deleteMany({
+      where: { userId },
+    });
+  },
 };

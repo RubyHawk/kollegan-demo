@@ -8,16 +8,21 @@
 import bcrypt from 'bcryptjs';
 import { generateSecret, verify as totpVerify, generateURI } from 'otplib';
 import qrcode from 'qrcode';
-import { prisma } from '@platform/database/prisma';
 import { logger } from '@platform/logging/logger';
 import { BRAND_NAME } from '@shared/branding';
+import { revokeAllSessions } from './auth.service';
+import {
+  getMfaStatus as getComputedMfaStatus,
+  getStoredFactorState,
+  type MfaStatus,
+} from './mfa-state.service';
+import { userRepository } from '../infrastructure/user.repository';
+import { webAuthnRepository } from '../infrastructure/webauthn.repository';
 
 const TAG = 'MfaService';
 const BACKUP_CODE_COUNT = 10;
 const BACKUP_CODE_LENGTH = 8;
 const BCRYPT_COST = 12;
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
 
 export interface TotpSetupResult {
   secret: string;
@@ -25,20 +30,13 @@ export interface TotpSetupResult {
   otpAuthUrl: string;
 }
 
-export interface MfaStatus {
-  enabled: boolean;
-  totpConfigured: boolean;
-  backupCodesRemaining: number;
-}
-
-// ─── TOTP ──────────────────────────────────────────────────────────────────────
+export type { MfaStatus } from './mfa-state.service';
 
 export async function generateTotpSetup(userId: string, userEmail: string): Promise<TotpSetupResult> {
   const secret = generateSecret();
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { totpSecret: secret },
+  await userRepository.updateMfaFields(userId, {
+    pendingTotpSecret: secret,
   });
 
   const otpAuthUrl = generateURI({
@@ -53,29 +51,38 @@ export async function generateTotpSetup(userId: string, userEmail: string): Prom
   return { secret, qrDataUrl, otpAuthUrl };
 }
 
-export async function verifyTotpCode(userId: string, code: string): Promise<boolean> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { totpSecret: true },
-  });
+export async function verifyTotpCode(
+  userId: string,
+  code: string,
+  options: { pending?: boolean } = {},
+): Promise<boolean> {
+  const state = await getStoredFactorState(userId);
+  const secret = options.pending ? state?.pendingTotpSecret : state?.totpSecret;
 
-  if (!user?.totpSecret) return false;
+  if (!secret) return false;
 
-  const result = await totpVerify({ token: code.replace(/\s/g, ''), secret: user.totpSecret, epochTolerance: 30 });
+  const result = await totpVerify({ token: code.replace(/\s/g, ''), secret, epochTolerance: 30 });
   return result.valid;
 }
 
 export async function enableTotp(userId: string, code: string): Promise<string[]> {
-  const valid = await verifyTotpCode(userId, code);
+  const valid = await verifyTotpCode(userId, code, { pending: true });
   if (!valid) {
     throw Object.assign(new Error('Invalid TOTP code'), { code: 'INVALID_TOTP' });
   }
 
+  const state = await getStoredFactorState(userId);
+  if (!state?.pendingTotpSecret) {
+    throw Object.assign(new Error('No pending TOTP setup found'), { code: 'TOTP_SETUP_NOT_STARTED' });
+  }
+
   const { plainCodes, hashedCodes } = await generateBackupCodesInternal();
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { mfaEnabled: true, backupCodes: hashedCodes },
+  await userRepository.updateMfaFields(userId, {
+    mfaEnabled: true,
+    totpSecret: state.pendingTotpSecret,
+    pendingTotpSecret: null,
+    backupCodes: hashedCodes,
   });
 
   logger.info(TAG, 'TOTP MFA enabled', { userId });
@@ -83,36 +90,37 @@ export async function enableTotp(userId: string, code: string): Promise<string[]
   return plainCodes;
 }
 
-export async function disableMfa(userId: string, code: string): Promise<void> {
-  const codeValid = await verifyTotpCode(userId, code);
-  if (!codeValid) {
-    const backupValid = await consumeBackupCode(userId, code);
-    if (!backupValid) {
-      throw Object.assign(new Error('Invalid code'), { code: 'INVALID_CODE' });
-    }
+export async function disableMfa(userId: string): Promise<void> {
+  const state = await getStoredFactorState(userId);
+  if (!state?.totpSecret) {
+    throw Object.assign(new Error('TOTP is not enabled'), { code: 'TOTP_NOT_ENABLED' });
   }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { mfaEnabled: false, totpSecret: null, backupCodes: [], mfaGraceExpiresAt: null },
-  });
+  const status = await getComputedMfaStatus(userId);
+  if (status.enrolledMethods.length <= 1) {
+    throw Object.assign(new Error('Cannot remove the last primary factor'), { code: 'LAST_PRIMARY_FACTOR' });
+  }
 
-  logger.info(TAG, 'MFA disabled', { userId });
+  await userRepository.updateMfaFields(userId, {
+    totpSecret: null,
+    pendingTotpSecret: null,
+  });
+  await getComputedMfaStatus(userId);
+  await revokeAllSessions(userId);
+
+  logger.info(TAG, 'TOTP factor removed', { userId });
 }
 
-// ─── Backup codes ───────────────────────────────────────────────────────────────
-
-export async function regenerateBackupCodes(userId: string, totpCode: string): Promise<string[]> {
-  const valid = await verifyTotpCode(userId, totpCode);
-  if (!valid) {
-    throw Object.assign(new Error('Invalid TOTP code'), { code: 'INVALID_TOTP' });
+export async function regenerateBackupCodes(userId: string): Promise<string[]> {
+  const status = await getComputedMfaStatus(userId);
+  if (!status.enabled) {
+    throw Object.assign(new Error('MFA is not enabled'), { code: 'MFA_NOT_ENABLED' });
   }
 
   const { plainCodes, hashedCodes } = await generateBackupCodesInternal();
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { backupCodes: hashedCodes },
+  await userRepository.updateMfaFields(userId, {
+    backupCodes: hashedCodes,
   });
 
   logger.info(TAG, 'Backup codes regenerated', { userId });
@@ -121,37 +129,32 @@ export async function regenerateBackupCodes(userId: string, totpCode: string): P
 }
 
 export async function getBackupCodeCount(userId: string): Promise<number> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { backupCodes: true },
-  });
-  return user?.backupCodes.length ?? 0;
+  const state = await getStoredFactorState(userId);
+  return state?.backupCodes.length ?? 0;
 }
 
 export async function consumeBackupCode(userId: string, rawCode: string): Promise<boolean> {
   const normalised = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const state = await getStoredFactorState(userId);
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, backupCodes: true },
-  });
-
-  if (!user) return false;
+  if (!state) return false;
 
   let matchIndex = -1;
-  for (let i = 0; i < user.backupCodes.length; i++) {
-    const matches = await bcrypt.compare(normalised, user.backupCodes[i]);
-    if (matches) { matchIndex = i; break; }
+  for (let i = 0; i < state.backupCodes.length; i++) {
+    const matches = await bcrypt.compare(normalised, state.backupCodes[i]);
+    if (matches) {
+      matchIndex = i;
+      break;
+    }
   }
 
   if (matchIndex === -1) return false;
 
-  const remaining = [...user.backupCodes];
+  const remaining = [...state.backupCodes];
   remaining.splice(matchIndex, 1);
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { backupCodes: remaining },
+  await userRepository.updateMfaFields(userId, {
+    backupCodes: remaining,
   });
 
   logger.info(TAG, 'Backup code consumed', { userId, remaining: remaining.length });
@@ -160,34 +163,34 @@ export async function consumeBackupCode(userId: string, rawCode: string): Promis
 }
 
 export async function getMfaStatus(userId: string): Promise<MfaStatus> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { mfaEnabled: true, totpSecret: true, backupCodes: true },
-  });
-
-  return {
-    enabled: user?.mfaEnabled ?? false,
-    totpConfigured: !!user?.totpSecret,
-    backupCodesRemaining: user?.backupCodes.length ?? 0,
-  };
+  return getComputedMfaStatus(userId);
 }
 
-// ─── Internal helpers ──────────────────────────────────────────────────────────
+export async function resetMfaForRecovery(userId: string, graceExpiresAt: Date): Promise<void> {
+  await webAuthnRepository.deleteAllForUser(userId);
+  await userRepository.updateMfaFields(userId, {
+    mfaEnabled: false,
+    totpSecret: null,
+    pendingTotpSecret: null,
+    backupCodes: [],
+    mfaGraceExpiresAt: graceExpiresAt,
+  });
+  await revokeAllSessions(userId);
+
+  logger.info(TAG, 'MFA reset for recovery', { userId, graceExpiresAt: graceExpiresAt.toISOString() });
+}
 
 async function generateBackupCodesInternal(): Promise<{ plainCodes: string[]; hashedCodes: string[] }> {
-  // Generate BACKUP_CODE_LENGTH random alphanumeric characters per code.
-  // Use 5 random bytes per code: base32-hex (0-9A-V) gives 8 chars from 5 bytes
-  // with full byte entropy — no slicing required.
   const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const plainCodes: string[] = [];
   for (let i = 0; i < BACKUP_CODE_COUNT; i++) {
     const bytes = crypto.getRandomValues(new Uint8Array(BACKUP_CODE_LENGTH));
-    const code = Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]).join('');
+    const code = Array.from(bytes, (byte) => ALPHABET[byte % ALPHABET.length]).join('');
     plainCodes.push(code);
   }
 
   const hashedCodes = await Promise.all(
-    plainCodes.map((c) => bcrypt.hash(c, BCRYPT_COST))
+    plainCodes.map((plainCode) => bcrypt.hash(plainCode, BCRYPT_COST))
   );
 
   return { plainCodes, hashedCodes };

@@ -22,7 +22,6 @@ import { prisma } from '@platform/database/prisma';
 import { logger } from '@platform/logging/logger';
 import {
   signAccessToken,
-  signRefreshToken,
   blacklistUserTokens,
   generateOpaqueToken,
   hashOpaqueToken,
@@ -30,6 +29,7 @@ import {
 import { userRepository } from '../infrastructure/user.repository';
 import { sessionRepository } from '../infrastructure/session.repository';
 import type { User } from '../domain/user.entity';
+import { syncMfaState } from './mfa-state.service';
 // SessionMfaMethod: the subset stored on the session row (backup_code maps to 'totp' for AMR purposes)
 type SessionMfaMethod = 'totp' | 'webauthn';
 
@@ -183,24 +183,16 @@ export async function login(input: LoginInput): Promise<LoginOutcome> {
   }
 
   await userRepository.updateLastLogin(user.id, input.ipAddress ?? null);
+  const factorStatus = await syncMfaState(user.id);
 
   // Step 2: MFA enforcement
   if (requiresMfa(user.userType, roles)) {
-    if (user.mfaEnabled) {
-      // User has MFA configured — require challenge completion
-      const methods: MfaMethod[] = [];
-      if (user.totpSecret) methods.push('totp');
-      if (user.backupCodes.length > 0) methods.push('backup_code');
-      // WebAuthn: check separately (avoid eager DB query for every login)
-      const webAuthnCount = await prisma.webAuthnCredential.count({ where: { userId: user.id } });
-      if (webAuthnCount > 0) methods.push('webauthn');
-
+    if (factorStatus.enabled) {
       logger.info(TAG, `Login step 1 complete — MFA required: ${email}`, { userId: user.id });
-
-      return { status: 'mfa_required', userId: user.id, methods };
+      return { status: 'mfa_required', userId: user.id, methods: factorStatus.loginMethods };
     }
 
-    if (isGracePeriodExpired(user.mfaGraceExpiresAt)) {
+    if (isGracePeriodExpired(factorStatus.graceExpiresAt)) {
       // Grace period expired — hard block until MFA is configured
       throw Object.assign(
         new Error('MFA setup required'),
@@ -214,7 +206,7 @@ export async function login(input: LoginInput): Promise<LoginOutcome> {
     return {
       ...tokens,
       user: { id: user.id, email: user.email, userType: user.userType as 'staff' | 'customer', orgId: user.organizationId, roles },
-      mfaWarning: { expiresAt: user.mfaGraceExpiresAt! },
+      mfaWarning: { expiresAt: factorStatus.graceExpiresAt! },
     };
   }
 
@@ -284,6 +276,10 @@ export async function revokeAllSessions(userId: string): Promise<void> {
     blacklistUserTokens(userId),
   ]);
   logger.info(TAG, 'All sessions revoked', { userId });
+}
+
+export async function listActiveSessions(userId: string) {
+  return sessionRepository.listActiveForUser(userId);
 }
 
 // ─── refreshTokens ─────────────────────────────────────────────────────────────

@@ -24,6 +24,7 @@ function mapUser(raw: {
   deletedAt: Date | null;
   mfaEnabled: boolean;
   totpSecret: string | null;
+  pendingTotpSecret: string | null;
   backupCodes: string[];
   mfaGraceExpiresAt: Date | null;
 }): User {
@@ -150,6 +151,16 @@ export const userRepository = {
     await prisma.user.update({ where: { id }, data });
   },
 
+  async updateMfaFields(id: string, data: {
+    mfaEnabled?: boolean;
+    totpSecret?: string | null;
+    pendingTotpSecret?: string | null;
+    backupCodes?: string[];
+    mfaGraceExpiresAt?: Date | null;
+  }): Promise<void> {
+    await prisma.user.update({ where: { id }, data });
+  },
+
   async markEmailVerified(id: string): Promise<void> {
     await prisma.user.update({
       where: { id },
@@ -193,5 +204,37 @@ export const userRepository = {
       where: { id },
       select: { mfaEnabled: true, mfaGraceExpiresAt: true },
     });
+  },
+
+  async findFactorState(id: string): Promise<{
+    mfaEnabled: boolean;
+    totpSecret: string | null;
+    pendingTotpSecret: string | null;
+    backupCodes: string[];
+    mfaGraceExpiresAt: Date | null;
+    passkeysRegistered: number;
+  } | null> {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        mfaEnabled: true,
+        totpSecret: true,
+        pendingTotpSecret: true,
+        backupCodes: true,
+        mfaGraceExpiresAt: true,
+        _count: { select: { webAuthnCredentials: true } },
+      },
+    });
+
+    if (!user) return null;
+
+    return {
+      mfaEnabled: user.mfaEnabled,
+      totpSecret: user.totpSecret,
+      pendingTotpSecret: user.pendingTotpSecret,
+      backupCodes: user.backupCodes,
+      mfaGraceExpiresAt: user.mfaGraceExpiresAt,
+      passkeysRegistered: user._count.webAuthnCredentials,
+    };
   },
 };
