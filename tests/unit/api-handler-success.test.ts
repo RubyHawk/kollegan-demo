@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { NextResponse } from 'next/server';
 
 vi.mock('@platform/auth/vapi-auth', () => ({
   validateVapiAuth: vi.fn(),
@@ -94,6 +95,24 @@ describe('API handler success envelope', () => {
     const handler = createHandler({ tag: 'Test', auth: 'none' }, async () => ok({}));
     const res = await handler(makeReq({ method: 'GET', contentType: null }));
 
+    expect(res.headers.get('X-Request-Id')).toMatch(/^req_/);
+    expect(res.headers.get('X-Version')).toBe('2025-11-01');
+    expect(res.headers.get('X-Duration-Ms')).toMatch(/^\d+$/);
+  });
+
+  it('preserves raw NextResponse cookies while attaching observability headers', async () => {
+    const handler = createHandler(
+      { tag: 'Test', auth: 'none' },
+      async () => {
+        const res = NextResponse.json({ data: { message: 'signed out' } });
+        res.cookies.set('token', '', { httpOnly: true, maxAge: 0, path: '/' });
+        return res;
+      }
+    );
+    const res = await handler(makeReq({ method: 'POST', body: {} }));
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('set-cookie')).toContain('token=');
     expect(res.headers.get('X-Request-Id')).toMatch(/^req_/);
     expect(res.headers.get('X-Version')).toBe('2025-11-01');
     expect(res.headers.get('X-Duration-Ms')).toMatch(/^\d+$/);

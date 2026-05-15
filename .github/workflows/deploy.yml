@@ -323,43 +323,6 @@ jobs:
         if: steps.promote.outputs.promoted != 'true'
         run: tar -czf kollegan-deploy-bundle-${{ github.sha }}.tar.gz kollegan-next-build.tar.gz release-metadata.json scripts/deploy-release.sh
 
-      - name: Trim artifact backlog
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          max_artifacts=9
-          if ! artifact_lines="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" --paginate --jq '.artifacts | map(select(.expired == false)) | sort_by(.created_at) | .[] | [.id, .name] | @tsv')"; then
-            echo "Artifact cleanup skipped because the artifact inventory could not be loaded."
-            exit 0
-          fi
-
-          mapfile -t artifacts < <(printf '%s\n' "$artifact_lines" | sed '/^$/d')
-          artifact_count="${#artifacts[@]}"
-
-          if [ "$artifact_count" -le "$max_artifacts" ]; then
-            echo "Artifact backlog already within limit ($artifact_count <= $max_artifacts)."
-            exit 0
-          fi
-
-          delete_count=$((artifact_count - max_artifacts))
-          for ((i=0; i<delete_count; i++)); do
-            artifact_id="$(cut -f1 <<< "${artifacts[$i]}")"
-            artifact_name="$(cut -f2 <<< "${artifacts[$i]}")"
-            echo "Deleting artifact ${artifact_id} (${artifact_name}) to keep the active backlog within ${max_artifacts} before uploading this run's bundle."
-            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}" >/dev/null
-          done
-
-      - name: Upload deploy bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: deploy-bundle-${{ github.sha }}
-          path: kollegan-deploy-bundle-${{ github.sha }}.tar.gz
-          if-no-files-found: error
-          retention-days: 1
-
       - name: Save build caches
         if: steps.promote.outputs.promoted != 'true' && steps.build-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
@@ -368,19 +331,6 @@ jobs:
             .next/cache
             tsconfig.tsbuildinfo
           key: ${{ steps.build-cache.outputs.cache-primary-key }}
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs:
-      - classify
-      - prepare_release_bundle
-    if: needs.classify.outputs.should_deploy == 'true'
-    steps:
-      - name: Download deploy bundle
-        uses: actions/download-artifact@v4
-        with:
-          name: deploy-bundle-${{ github.sha }}
-          path: .
 
       - name: Prepare VPS deploy directories
         uses: appleboy/ssh-action@v1.2.0
