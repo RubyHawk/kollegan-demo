@@ -52,8 +52,21 @@ jobs:
           event_name="${{ github.event_name }}"
           before_sha="${{ github.event.before }}"
           head_sha="${{ github.sha }}"
+          ref_name="${{ github.ref_name }}"
 
           if [ "$event_name" = "workflow_dispatch" ]; then
+            if [ "$ref_name" != "main" ]; then
+              {
+                echo "runtime_affecting=false"
+                echo "deploy_process_affecting=false"
+                echo "docs_only=false"
+                echo "unknown_files=false"
+                echo "should_deploy=false"
+                echo "changed_files_json=[]"
+              } >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
             {
               echo "runtime_affecting=true"
               echo "deploy_process_affecting=true"
