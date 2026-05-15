@@ -9,6 +9,10 @@ export interface WebAuthnCredential {
   publicKey: Uint8Array;      // COSE-encoded public key
   counter: bigint;            // signature counter — monotonically increasing; detect cloning
   name: string;               // user-assigned label: "MacBook Touch ID", "YubiKey 5"
+  aaguid: string | null;
+  credentialDeviceType: string | null;
+  credentialBackedUp: boolean | null;
+  transports: string[];
   createdAt: Date;
   lastUsedAt: Date | null;
 }
@@ -19,4 +23,8 @@ export interface CreateWebAuthnCredentialInput {
   publicKey: Uint8Array;
   counter: bigint;
   name: string;
+  aaguid?: string | null;
+  credentialDeviceType?: string | null;
+  credentialBackedUp?: boolean | null;
+  transports?: string[];
 }

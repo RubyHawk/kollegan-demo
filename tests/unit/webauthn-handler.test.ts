@@ -29,6 +29,7 @@ vi.mock('@modules/supporting/auth/application/webauthn.service', () => ({
   beginAuthentication: vi.fn(),
   completeAuthentication: vi.fn(),
   listCredentials: vi.fn(),
+  renameCredential: vi.fn(),
   deleteCredential: vi.fn(),
 }));
 
@@ -40,8 +41,9 @@ vi.mock('@modules/supporting/auth/application/auth-audit.service', () => ({
   AUTH_AUDIT_ACTIONS: {
     USER_LOGIN: 'USER_LOGIN',
     USER_LOGIN_FAILED: 'USER_LOGIN_FAILED',
+    USER_PASSKEY_DELETED: 'USER_PASSKEY_DELETED',
   },
-  recordAuthAudit: vi.fn(),
+  recordAuthAudit: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@modules/supporting/auth/infrastructure/user.repository', () => ({

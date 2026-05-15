@@ -5,9 +5,9 @@
  * Challenges are stored in Redis with a 5-minute TTL.
  *
  * RP configuration:
- *   rpId:   kollegan.dev
+ *   rpId:   offert.soleria.se in production
  *   rpName: Kollegan
- *   origin: https://kollegan.dev
+ *   origin: https://offert.soleria.se in production
  */
 
 import {
@@ -113,7 +113,12 @@ export async function completeRegistration(
     throw Object.assign(new Error('Registration verification failed'), { code: 'WEBAUTHN_FAILED' });
   }
 
-  const { credential } = verification.registrationInfo;
+  const {
+    credential,
+    aaguid,
+    credentialDeviceType,
+    credentialBackedUp,
+  } = verification.registrationInfo;
 
   const stored = await webAuthnRepository.create({
     userId,
@@ -121,6 +126,10 @@ export async function completeRegistration(
     publicKey: Buffer.from(credential.publicKey),
     counter: BigInt(credential.counter),
     name: credentialName.trim().slice(0, 64) || 'Passkey',
+    aaguid,
+    credentialDeviceType,
+    credentialBackedUp,
+    transports: response.response.transports ?? [],
   });
   await syncMfaState(userId);
 
@@ -200,6 +209,10 @@ export async function completeAuthentication(
 export async function listCredentials(userId: string): Promise<Array<{
   id: string;
   name: string;
+  aaguid: string | null;
+  credentialDeviceType: string | null;
+  credentialBackedUp: boolean | null;
+  transports: string[];
   createdAt: Date;
   lastUsedAt: Date | null;
 }>> {
@@ -207,9 +220,27 @@ export async function listCredentials(userId: string): Promise<Array<{
   return creds.map((c) => ({
     id: c.id,
     name: c.name,
+    aaguid: c.aaguid,
+    credentialDeviceType: c.credentialDeviceType,
+    credentialBackedUp: c.credentialBackedUp,
+    transports: c.transports,
     createdAt: c.createdAt,
     lastUsedAt: c.lastUsedAt,
   }));
+}
+
+export async function renameCredential(credentialId: string, userId: string, rawName: string): Promise<void> {
+  const name = rawName.trim().slice(0, 64);
+  if (!name) {
+    throw Object.assign(new Error('Passkey name is required'), { code: 'INVALID_NAME' });
+  }
+
+  const renamed = await webAuthnRepository.rename(credentialId, userId, name);
+  if (!renamed) {
+    throw Object.assign(new Error('Credential not found'), { code: 'CREDENTIAL_NOT_FOUND' });
+  }
+
+  logger.info(TAG, 'Passkey renamed', { userId, credentialId });
 }
 
 export async function deleteCredential(credentialId: string, userId: string): Promise<void> {

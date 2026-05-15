@@ -161,6 +161,17 @@ export const userRepository = {
     await prisma.user.update({ where: { id }, data });
   },
 
+  async consumeBackupCodeHash(id: string, matchedHash: string, remainingCodes: string[]): Promise<boolean> {
+    const result = await prisma.user.updateMany({
+      where: {
+        id,
+        backupCodes: { has: matchedHash },
+      },
+      data: { backupCodes: remainingCodes },
+    });
+    return result.count === 1;
+  },
+
   async markEmailVerified(id: string): Promise<void> {
     await prisma.user.update({
       where: { id },

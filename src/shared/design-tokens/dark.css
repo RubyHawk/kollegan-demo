@@ -40,6 +40,10 @@
   --status-viewed-text:   oklch(0.75 0.12 300);
   --status-accepted-bg:   oklch(0.22 0.06 145);
   --status-accepted-text: oklch(0.75 0.15 145);
+  --status-success-bg:    var(--status-accepted-bg);
+  --status-success-text:  var(--status-accepted-text);
+  --status-warning-bg:    oklch(0.22 0.06 70);
+  --status-warning-text:  oklch(0.78 0.15 70);
   --status-danger-bg:     oklch(0.22 0.06 25);
   --status-danger-text:   oklch(0.78 0.15 25);
   --status-declined-bg:   oklch(0.22 0.06 25);

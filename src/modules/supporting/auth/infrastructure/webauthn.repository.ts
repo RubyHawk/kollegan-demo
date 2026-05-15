@@ -12,6 +12,10 @@ type PrismaRow = {
   publicKey: Uint8Array;
   counter: bigint;
   name: string;
+  aaguid: string | null;
+  credentialDeviceType: string | null;
+  credentialBackedUp: boolean | null;
+  transports: string[];
   createdAt: Date;
   lastUsedAt: Date | null;
 };
@@ -24,6 +28,10 @@ function toEntity(row: PrismaRow): WebAuthnCredential {
     publicKey: Buffer.from(row.publicKey),
     counter: row.counter,
     name: row.name,
+    aaguid: row.aaguid,
+    credentialDeviceType: row.credentialDeviceType,
+    credentialBackedUp: row.credentialBackedUp,
+    transports: row.transports,
     createdAt: row.createdAt,
     lastUsedAt: row.lastUsedAt,
   };
@@ -38,6 +46,10 @@ export const webAuthnRepository = {
         publicKey: Buffer.from(input.publicKey),
         counter: input.counter,
         name: input.name,
+        aaguid: input.aaguid ?? null,
+        credentialDeviceType: input.credentialDeviceType ?? null,
+        credentialBackedUp: input.credentialBackedUp ?? null,
+        transports: input.transports ?? [],
       },
     });
     return toEntity(row as PrismaRow);
@@ -63,6 +75,14 @@ export const webAuthnRepository = {
       where: { id },
       data: { counter, lastUsedAt: new Date() },
     });
+  },
+
+  async rename(id: string, userId: string, name: string): Promise<boolean> {
+    const result = await prisma.webAuthnCredential.updateMany({
+      where: { id, userId },
+      data: { name },
+    });
+    return result.count === 1;
   },
 
   async delete(id: string, userId: string): Promise<void> {

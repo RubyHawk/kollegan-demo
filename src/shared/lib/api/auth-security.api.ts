@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPost } from '../api-client';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../api-client';
 
 const AUTH_BASE_URL = '/api/v1/auth';
 
@@ -31,6 +31,10 @@ export interface PasskeyRecord {
   name: string;
   createdAt: string;
   lastUsedAt: string | null;
+  aaguid: string | null;
+  credentialDeviceType: string | null;
+  credentialBackedUp: boolean | null;
+  transports: string[];
 }
 
 export interface ActiveSessionRecord {
@@ -93,6 +97,11 @@ export async function listPasskeys() {
 
 export async function deletePasskey(id: string) {
   await apiDelete(`${AUTH_BASE_URL}/webauthn/credentials/${id}`);
+}
+
+export async function renamePasskey(id: string, name: string) {
+  const res = await apiPatch<Envelope<{ message?: string }>>(`${AUTH_BASE_URL}/webauthn/credentials/${id}`, { name });
+  return res.data;
 }
 
 export async function resetUserMfaRecovery(payload: { userId: string; reason: string }) {
