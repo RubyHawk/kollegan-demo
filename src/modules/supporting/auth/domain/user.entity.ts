@@ -23,6 +23,7 @@ export interface User {
   // Phase 2: MFA
   mfaEnabled: boolean;
   totpSecret: string | null;
+  pendingTotpSecret: string | null;
   backupCodes: string[];         // bcrypt-hashed one-time codes
   mfaGraceExpiresAt: Date | null; // null = enforce immediately; non-null = deadline
 }

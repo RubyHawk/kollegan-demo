@@ -9,30 +9,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHandler } from '@platform/api/handler';
 import { ok } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
-import { verifyToken, verifyMfaChallengeToken } from '@platform/auth/jwt';
+import { verifyMfaChallengeToken } from '@platform/auth/jwt';
 import { checkRateLimit } from '@platform/cache/rate-limiter';
 import {
   beginRegistration,
   completeRegistration,
   beginAuthentication,
   completeAuthentication,
+  listCredentials,
+  deleteCredential,
 } from '../../application/webauthn.service';
 import { completeMfaLogin } from '../../application/auth.service';
 import { AUTH_AUDIT_ACTIONS, recordAuthAudit } from '../../application/auth-audit.service';
 import { userRepository } from '../../infrastructure/user.repository';
 import type { RegistrationResponseJSON, AuthenticationResponseJSON } from '@simplewebauthn/browser';
 import { BRAND_PROBLEM_BASE } from '@shared/branding';
+import {
+  assertStepUpForFactorMutation,
+  verifyAccessPayload,
+} from './auth-handler.utils';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 // Reads the access JWT (at cookie) or Bearer token. The opaque refresh token
 // cookies (token/portal_token) are NOT JWTs and must not be used here.
-function extractToken(req: NextRequest): string {
-  return req.headers.get('authorization')?.slice(7)
-    ?? req.cookies.get('at')?.value
-    ?? '';
-}
-
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const REFRESH_TTL_SEC_STAFF          = 60 * 60 * 24 * 7;
@@ -47,13 +47,21 @@ const cookieOpts = {
   path: '/',
 };
 
+function clearAuthCookies(res: NextResponse): void {
+  res.cookies.set('token', '', { ...cookieOpts, maxAge: 0 });
+  res.cookies.set('portal_token', '', { ...cookieOpts, maxAge: 0 });
+  res.cookies.set('at', '', { ...cookieOpts, maxAge: 0 });
+  res.cookies.set('mfa_challenge', '', { maxAge: 0, path: '/' });
+}
+
 // ── Register Options ─────────────────────────────────────────────────────────
 
 export const handleRegisterOptions = createHandler(
   { auth: 'jwt', tag: 'WebAuthn:RegisterOptions', rateLimit: { max: 10, windowMs: 60_000 } },
   async (ctx) => {
     const { req } = ctx as { req: NextRequest };
-    const payload = await verifyToken(extractToken(req));
+    const payload = await verifyAccessPayload(req);
+    await assertStepUpForFactorMutation(payload.sub, payload.amr);
     const user = await userRepository.findById(payload.sub);
     const userEmail = user?.email ?? payload.sub;
     const options = await beginRegistration(payload.sub, userEmail);
@@ -72,7 +80,8 @@ export const handleRegisterVerify = createHandler(
   { auth: 'jwt', tag: 'WebAuthn:RegisterVerify', body: RegisterVerifySchema, rateLimit: { max: 10, windowMs: 60_000 } },
   async (ctx) => {
     const { body, req } = ctx as { body: { response: Record<string, unknown>; name: string }; req: NextRequest };
-    const payload = await verifyToken(extractToken(req));
+    const payload = await verifyAccessPayload(req);
+    await assertStepUpForFactorMutation(payload.sub, payload.amr);
     try {
       const result = await completeRegistration(payload.sub, body.response as unknown as RegistrationResponseJSON, body.name);
       return ok({ credentialId: result.credentialId, message: 'Passkey registered successfully.' });
@@ -227,5 +236,53 @@ export async function handleAuthenticateVerify(req: NextRequest): Promise<NextRe
   res.cookies.set('at', result.accessToken, { ...cookieOpts, maxAge: ACCESS_TTL_SEC });
   res.cookies.set('mfa_challenge', '', { maxAge: 0, path: '/' });
 
+  return res;
+}
+
+export const handleListPasskeys = createHandler(
+  { auth: 'jwt', tag: 'WebAuthn:Credentials:List', rateLimit: { max: 30, windowMs: 60_000 } },
+  async (ctx) => {
+    const { req } = ctx as { req: NextRequest };
+    const payload = await verifyAccessPayload(req);
+    return ok({ credentials: await listCredentials(payload.sub) });
+  },
+);
+
+export async function handleDeletePasskey(req: NextRequest): Promise<NextResponse> {
+  const payload = await verifyAccessPayload(req);
+  const amr = payload.amr ?? [];
+  if (!amr.includes('otp') && !amr.includes('hwk')) {
+    return NextResponse.json(
+      { type: `${BRAND_PROBLEM_BASE}/forbidden`, title: 'Forbidden', status: 403, detail: 'This action requires multi-factor authentication' },
+      { status: 403, headers: { 'Content-Type': 'application/problem+json' } },
+    );
+  }
+
+  const url = new URL(req.url);
+  const segments = url.pathname.split('/');
+  const credentialId = segments[segments.length - 1];
+  if (!credentialId) {
+    return NextResponse.json(
+      { type: `${BRAND_PROBLEM_BASE}/bad-request`, title: 'Bad Request', status: 400, detail: 'Credential id is required' },
+      { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
+    );
+  }
+
+  try {
+    await deleteCredential(credentialId, payload.sub);
+  } catch (err: unknown) {
+    if ((err as { code?: string }).code === 'LAST_PRIMARY_FACTOR') {
+      return NextResponse.json(
+        { type: `${BRAND_PROBLEM_BASE}/forbidden`, title: 'Forbidden', status: 403, detail: 'Add another sign-in method before removing your last passkey' },
+        { status: 403, headers: { 'Content-Type': 'application/problem+json' } },
+      );
+    }
+    throw err;
+  }
+
+  const res = NextResponse.json({
+    data: { message: 'Passkey removed. Sign in again to continue.' },
+  });
+  clearAuthCookies(res);
   return res;
 }

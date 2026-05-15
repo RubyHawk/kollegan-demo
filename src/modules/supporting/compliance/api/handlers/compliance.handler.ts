@@ -48,8 +48,10 @@ async function requireAdmin(req: NextRequest): Promise<{ orgId: string; userId: 
 
 async function requireAccessReviewAdmin(req: NextRequest): Promise<{ orgId: string | null; roles: string[] }> {
   const payload = await verifyToken(extractToken(req));
-  const isAdmin = payload.roles.includes('super_admin') || payload.roles.includes('admin');
-  if (!isAdmin) throw Errors.forbidden('Access review requires admin role');
+  const isAdmin = payload.roles.includes('super_admin')
+    || payload.roles.includes('admin')
+    || payload.roles.includes('helpdesk');
+  if (!isAdmin) throw Errors.forbidden('Access review requires admin or helpdesk role');
   return { orgId: payload.orgId ?? null, roles: payload.roles };
 }
 

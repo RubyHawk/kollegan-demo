@@ -3,6 +3,7 @@
 export type RoleName =
   | 'super_admin'
   | 'admin'
+  | 'helpdesk'
   | 'user'
   | 'viewer'
   | 'customer_admin'
@@ -39,11 +40,19 @@ export const SYSTEM_ROLES: Array<{ name: RoleName; displayName: string; permissi
       'leads.read', 'leads.write', 'leads.delete', 'leads.admin',
       'crm.read', 'crm.write', 'crm.admin',
       'portal.read', 'portal.write', 'portal.admin', 'portal.provision',
-      'users.read', 'users.write', 'users.delete', 'users.admin',
+      'users.read', 'users.write', 'users.delete', 'users.admin', 'users.mfa_reset',
       'audit.read', 'audit.export',
       'org.read', 'org.write', 'org.admin',
       'demo.read', 'demo.write',
       'analytics.read',
+    ],
+  },
+  {
+    name: 'helpdesk',
+    displayName: 'Helpdesk',
+    permissions: [
+      'users.read',
+      'users.mfa_reset',
     ],
   },
   {

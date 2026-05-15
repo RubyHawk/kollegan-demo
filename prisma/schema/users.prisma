@@ -25,6 +25,7 @@ model User {
   // MFA
   mfaEnabled        Boolean   @default(false)
   totpSecret        String?   // base32 TOTP secret
+  pendingTotpSecret String?   // base32 TOTP secret awaiting verification
   backupCodes       String[]  @default([])
   mfaGraceExpiresAt DateTime?
 

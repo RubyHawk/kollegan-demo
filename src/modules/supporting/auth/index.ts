@@ -1,7 +1,7 @@
 // ─── Auth module public API ───────────────────────────────────────────────────
 // Only export what other modules and route handlers are allowed to import.
 
-export { login, logout, refreshTokens, revokeAllSessions, completeMfaLogin, getUserOrganizationId } from './application/auth.service';
+export { login, logout, refreshTokens, revokeAllSessions, completeMfaLogin, getUserOrganizationId, listActiveSessions } from './application/auth.service';
 export type { LoginInput, LoginResult, MfaChallengeResult, LoginOutcome } from './application/auth.service';
 export { changeAccountPassword, getAccountProfile, updateAccountProfile } from './application/account.service';
 export { getSessionUser } from './application/server-session.service';
@@ -29,6 +29,7 @@ export {
   getBackupCodeCount,
   consumeBackupCode,
   getMfaStatus,
+  resetMfaForRecovery,
 } from './application/mfa.service';
 export type { TotpSetupResult, MfaStatus } from './application/mfa.service';
 
@@ -73,11 +74,14 @@ export {
   handleListStaff,
 } from './api/handlers/staff.handler';
 export {
+  handleMfaStatus,
   handleMfaSetup,
   handleMfaEnable,
   handleMfaDisable,
   handleBackupCodeCount,
   handleRegenerateBackupCodes,
+  handleListSessions,
+  handleResetUserMfa,
   handleMfaVerify,
 } from './api/handlers/mfa.handler';
 export {
@@ -85,4 +89,6 @@ export {
   handleRegisterVerify,
   handleAuthenticateOptions,
   handleAuthenticateVerify,
+  handleListPasskeys,
+  handleDeletePasskey,
 } from './api/handlers/webauthn.handler';

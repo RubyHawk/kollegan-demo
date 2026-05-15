@@ -94,4 +94,21 @@ describe('API handler JWT authentication', () => {
     }));
     expect(res.status).toBe(401);
   });
+
+  it('returns 403 when the route requires MFA and the token lacks otp or hwk amr', async () => {
+    vi.mocked(verifyToken).mockResolvedValue({
+      sub: 'usr_1',
+      role: 'admin',
+      roles: ['admin'],
+      type: 'access',
+      amr: ['pwd'],
+    } as JWTPayload);
+
+    const handler = createHandler({ tag: 'Test', auth: 'jwt', requireMfa: true }, async () => ok({ ok: true }));
+    const res = await handler(makeReq({
+      headers: { authorization: 'Bearer valid.jwt.token' },
+    }));
+
+    expect(res.status).toBe(403);
+  });
 });

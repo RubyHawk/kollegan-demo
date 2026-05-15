@@ -12,7 +12,9 @@ export interface UserProps {
   lastName: string | null;
   avatarUrl?: string | null;
   role: string;
+  roles?: string[];
   mfaEnabled?: boolean;
+  mfaAuthenticated?: boolean;
 }
 
 // ─── Icon ──────────────────────────────────────────────────────────────────────

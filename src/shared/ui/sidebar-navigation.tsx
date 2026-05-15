@@ -350,7 +350,7 @@ export function SectionGroup({
   isFirst,
 }: SectionGroupProps) {
   const visibleItems = section.items.filter(
-    (item) => !item.adminOnly || userRole === 'admin',
+    (item) => !item.adminOnly || userRole === 'admin' || userRole === 'super_admin',
   );
   if (visibleItems.length === 0) return null;
 

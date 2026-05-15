@@ -21,6 +21,8 @@ import {
 import { logger } from '@platform/logging/logger';
 import { webAuthnRepository } from '../infrastructure/webauthn.repository';
 import { BRAND_DEFAULT_PUBLIC_ORIGIN, BRAND_NAME } from '@shared/branding';
+import { revokeAllSessions } from './auth.service';
+import { getStoredFactorState, syncMfaState } from './mfa-state.service';
 
 const TAG = 'WebAuthnService';
 
@@ -120,6 +122,7 @@ export async function completeRegistration(
     counter: BigInt(credential.counter),
     name: credentialName.trim().slice(0, 64) || 'Passkey',
   });
+  await syncMfaState(userId);
 
   logger.info(TAG, 'Passkey registered', { userId, credentialId: stored.id });
 
@@ -210,6 +213,18 @@ export async function listCredentials(userId: string): Promise<Array<{
 }
 
 export async function deleteCredential(credentialId: string, userId: string): Promise<void> {
+  const factorState = await getStoredFactorState(userId);
+  if (!factorState) {
+    return;
+  }
+
+  const wouldRemoveLastPrimaryFactor = factorState.passkeysRegistered <= 1 && !factorState.totpSecret;
+  if (wouldRemoveLastPrimaryFactor) {
+    throw Object.assign(new Error('Cannot remove the last primary factor'), { code: 'LAST_PRIMARY_FACTOR' });
+  }
+
   await webAuthnRepository.delete(credentialId, userId);
+  await syncMfaState(userId);
+  await revokeAllSessions(userId);
   logger.info(TAG, 'Passkey deleted', { userId, credentialId });
 }

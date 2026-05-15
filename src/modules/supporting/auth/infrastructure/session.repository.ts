@@ -5,6 +5,23 @@
 import { prisma } from '@platform/database/prisma';
 import type { Session, CreateSessionInput, MfaMethod, SessionUser } from '../domain/session.entity';
 
+const ROLE_PRIORITY = [
+  'super_admin',
+  'admin',
+  'helpdesk',
+  'user',
+  'viewer',
+  'customer_admin',
+  'customer_viewer',
+] as const;
+
+function pickPrimaryRole(roles: string[], fallback: string): string {
+  for (const role of ROLE_PRIORITY) {
+    if (roles.includes(role)) return role;
+  }
+  return roles[0] ?? fallback;
+}
+
 export const sessionRepository = {
   async create(input: CreateSessionInput): Promise<Session> {
     return prisma.session.create({
@@ -42,12 +59,19 @@ export const sessionRepository = {
     });
     if (!user) return null;
 
-    const userRole = await prisma.userRole
-      .findFirst({ where: { userId: session.userId }, include: { role: true } })
-      .catch(() => null);
-    const role = (userRole as { role?: { name: string } } | null)?.role?.name ?? user.userType ?? 'staff';
+    const userRoles = await prisma.userRole.findMany({
+      where: { userId: session.userId },
+      include: { role: true },
+    }).catch(() => []);
+    const roles = userRoles.map((userRole) => userRole.role.name);
+    const role = pickPrimaryRole(roles, user.userType ?? 'staff');
 
-    return { ...user, role };
+    return {
+      ...user,
+      role,
+      roles,
+      mfaAuthenticated: !!session.mfaVerifiedAt && !!session.mfaMethod,
+    };
   },
 
   async revoke(hash: string): Promise<void> {

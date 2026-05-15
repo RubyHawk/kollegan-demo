@@ -1,7 +1,7 @@
 /**
  * /admin/access-review
  *
- * Quarterly access review page for admins.
+ * Quarterly access review page for admins and helpdesk operators.
  * Displays a table of all users with their roles, MFA status, and last login.
  * Provides CSV export for audit evidence.
  *
@@ -100,7 +100,7 @@ export default function AccessReviewPage() {
       setData(await getAccessReview());
     } catch (e) {
       const status = typeof e === 'object' && e && 'status' in e ? (e as { status?: number }).status : undefined;
-      setError(status === 403 ? 'Åtkomst nekad — admin-roll krävs' : (e as Error).message);
+      setError(status === 403 ? 'Åtkomst nekad — admin- eller helpdesk-roll krävs' : (e as Error).message);
     } finally {
       setLoading(false);
     }

@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHandler } from '@platform/api/handler';
 import { ok } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
-import { verifyToken, verifyMfaChallengeToken } from '@platform/auth/jwt';
+import { verifyMfaChallengeToken } from '@platform/auth/jwt';
 import { checkRateLimit } from '@platform/cache/rate-limiter';
 import {
   generateTotpSetup,
@@ -19,27 +19,60 @@ import {
   regenerateBackupCodes,
   verifyTotpCode,
   consumeBackupCode,
+  getMfaStatus,
+  resetMfaForRecovery,
 } from '../../application/mfa.service';
-import { completeMfaLogin } from '../../application/auth.service';
+import { completeMfaLogin, listActiveSessions } from '../../application/auth.service';
 import { AUTH_AUDIT_ACTIONS, recordAuthAudit } from '../../application/auth-audit.service';
+import { hasPermission } from '../../application/rbac.service';
 import { userRepository } from '../../infrastructure/user.repository';
 import { BRAND_PROBLEM_BASE } from '@shared/branding';
+import {
+  assertStepUpForFactorMutation,
+  isMfaAuthenticated,
+  verifyAccessPayload,
+} from './auth-handler.utils';
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+const REFRESH_TTL_SEC_STAFF = 60 * 60 * 24 * 7;
+const REFRESH_TTL_SEC_STAFF_REMEMBER = 60 * 60 * 24 * 30;
+const REFRESH_TTL_SEC_CUSTOMER = 60 * 60 * 24 * 30;
+const ACCESS_TTL_SEC = 60 * 15;
+const RECOVERY_GRACE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
-function extractToken(req: NextRequest): string {
-  return req.headers.get('authorization')?.slice(7)
-    ?? req.cookies.get('at')?.value
-    ?? '';
+const clearCookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: 0,
+};
+
+function clearAuthCookies(res: NextResponse): void {
+  res.cookies.set('token', '', clearCookieOptions);
+  res.cookies.set('portal_token', '', clearCookieOptions);
+  res.cookies.set('at', '', clearCookieOptions);
+  res.cookies.set('mfa_challenge', '', clearCookieOptions);
 }
 
-// ── Setup ────────────────────────────────────────────────────────────────────
+export const handleMfaStatus = createHandler(
+  { auth: 'jwt', tag: 'MFA:Status', rateLimit: { max: 30, windowMs: 60_000 } },
+  async (ctx) => {
+    const { req } = ctx as { req: NextRequest };
+    const payload = await verifyAccessPayload(req);
+    const status = await getMfaStatus(payload.sub);
+    return ok({
+      ...status,
+      currentSessionMfaAuthenticated: isMfaAuthenticated(payload.amr),
+    });
+  },
+);
 
 export const handleMfaSetup = createHandler(
   { auth: 'jwt', tag: 'MFA:Setup', rateLimit: { max: 10, windowMs: 60_000 } },
   async (ctx) => {
     const { req } = ctx as { req: NextRequest };
-    const payload = await verifyToken(extractToken(req));
+    const payload = await verifyAccessPayload(req);
+    await assertStepUpForFactorMutation(payload.sub, payload.amr);
     const user = await userRepository.findById(payload.sub);
     const userEmail = user?.email ?? payload.sub;
     const setup = await generateTotpSetup(payload.sub, userEmail);
@@ -47,84 +80,150 @@ export const handleMfaSetup = createHandler(
   },
 );
 
-// ── Enable ───────────────────────────────────────────────────────────────────
-
 const EnableSchema = z.object({ code: z.string().min(6).max(8) });
 
 export const handleMfaEnable = createHandler(
   { auth: 'jwt', tag: 'MFA:Enable', body: EnableSchema, rateLimit: { max: 10, windowMs: 60_000 } },
   async (ctx) => {
     const { body, req } = ctx as { body: z.infer<typeof EnableSchema>; req: NextRequest };
-    const payload = await verifyToken(extractToken(req));
+    const payload = await verifyAccessPayload(req);
+    await assertStepUpForFactorMutation(payload.sub, payload.amr);
     let backupCodes: string[];
     try {
       backupCodes = await enableTotp(payload.sub, body.code);
     } catch (err: unknown) {
-      if ((err as { code?: string }).code === 'INVALID_TOTP')
+      const code = (err as { code?: string }).code;
+      if (code === 'INVALID_TOTP') {
         throw Errors.unauthorized('Invalid TOTP code — check your authenticator app and try again');
+      }
+      if (code === 'TOTP_SETUP_NOT_STARTED') {
+        throw Errors.badRequest('Start TOTP setup before confirming it');
+      }
       throw err;
     }
     return ok({ backupCodes, message: 'MFA enabled. Store these backup codes safely — they will not be shown again.' });
   },
 );
 
-// ── Disable ──────────────────────────────────────────────────────────────────
-
-const DisableSchema = z.object({ code: z.string().min(1).max(20) });
-
 export const handleMfaDisable = createHandler(
-  { auth: 'jwt', tag: 'MFA:Disable', body: DisableSchema, rateLimit: { max: 5, windowMs: 60_000 } },
+  { auth: 'jwt', tag: 'MFA:Disable', requireMfa: true, rateLimit: { max: 5, windowMs: 60_000 } },
   async (ctx) => {
-    const { body, req } = ctx as { body: z.infer<typeof DisableSchema>; req: NextRequest };
-    const payload = await verifyToken(extractToken(req));
+    const { req } = ctx as { req: NextRequest };
+    const payload = await verifyAccessPayload(req);
     try {
-      await disableMfa(payload.sub, body.code);
+      await disableMfa(payload.sub);
     } catch (err: unknown) {
-      if ((err as { code?: string }).code === 'INVALID_CODE') throw Errors.unauthorized('Invalid code');
+      const code = (err as { code?: string }).code;
+      if (code === 'TOTP_NOT_ENABLED') throw Errors.badRequest('No authenticator app is configured on this account');
+      if (code === 'LAST_PRIMARY_FACTOR') throw Errors.forbidden('Add another sign-in method before removing your authenticator app');
       throw err;
     }
-    return ok({ message: 'MFA has been disabled.' });
+
+    const res = NextResponse.json({
+      data: { message: 'Authenticator app removed. Sign in again to continue.' },
+    });
+    clearAuthCookies(res);
+    return res;
   },
 );
-
-// ── Backup Codes Count ───────────────────────────────────────────────────────
 
 export const handleBackupCodeCount = createHandler(
   { auth: 'jwt', tag: 'MFA:BackupCodes', rateLimit: { max: 30, windowMs: 60_000 } },
   async (ctx) => {
     const { req } = ctx as { req: NextRequest };
-    const payload = await verifyToken(extractToken(req));
+    const payload = await verifyAccessPayload(req);
     const remaining = await getBackupCodeCount(payload.sub);
     return ok({ remaining });
   },
 );
 
-// ── Regenerate Backup Codes ──────────────────────────────────────────────────
-
-const RegenerateSchema = z.object({ totpCode: z.string().min(6).max(8) });
-
 export const handleRegenerateBackupCodes = createHandler(
-  { auth: 'jwt', tag: 'MFA:RegenerateBackupCodes', body: RegenerateSchema, requireMfa: true, rateLimit: { max: 5, windowMs: 60_000 } },
+  { auth: 'jwt', tag: 'MFA:RegenerateBackupCodes', requireMfa: true, rateLimit: { max: 5, windowMs: 60_000 } },
   async (ctx) => {
-    const { body, req } = ctx as { body: z.infer<typeof RegenerateSchema>; req: NextRequest };
-    const payload = await verifyToken(extractToken(req));
+    const { req } = ctx as { req: NextRequest };
+    const payload = await verifyAccessPayload(req);
     let backupCodes: string[];
     try {
-      backupCodes = await regenerateBackupCodes(payload.sub, body.totpCode);
+      backupCodes = await regenerateBackupCodes(payload.sub);
     } catch (err: unknown) {
-      if ((err as { code?: string }).code === 'INVALID_TOTP') throw Errors.unauthorized('Invalid TOTP code');
+      if ((err as { code?: string }).code === 'MFA_NOT_ENABLED') {
+        throw Errors.badRequest('Add a sign-in method before generating backup codes');
+      }
       throw err;
     }
     return ok({ backupCodes, message: 'Backup codes regenerated. Store these safely — they will not be shown again.' });
   },
 );
 
-// ── MFA Verify (login step 2) ────────────────────────────────────────────────
+export const handleListSessions = createHandler(
+  { auth: 'jwt', tag: 'MFA:Sessions', rateLimit: { max: 30, windowMs: 60_000 } },
+  async (ctx) => {
+    const { req } = ctx as { req: NextRequest };
+    const payload = await verifyAccessPayload(req);
+    const sessions = await listActiveSessions(payload.sub);
+    return ok({
+      sessions: sessions.map((session) => ({
+        id: session.id,
+        userAgent: session.userAgent,
+        ipAddress: session.ipAddress,
+        issuedAt: session.issuedAt,
+        expiresAt: session.expiresAt,
+        mfaMethod: session.mfaMethod,
+        mfaVerifiedAt: session.mfaVerifiedAt,
+      })),
+    });
+  },
+);
 
-const REFRESH_TTL_SEC_STAFF          = 60 * 60 * 24 * 7;
-const REFRESH_TTL_SEC_STAFF_REMEMBER = 60 * 60 * 24 * 30;
-const REFRESH_TTL_SEC_CUSTOMER       = 60 * 60 * 24 * 30;
-const ACCESS_TTL_SEC                 = 60 * 15;
+const ResetMfaSchema = z.object({
+  userId: z.string().uuid(),
+  reason: z.string().trim().min(8).max(500),
+});
+
+export const handleResetUserMfa = createHandler(
+  { auth: 'jwt', tag: 'MFA:RecoveryReset', body: ResetMfaSchema, requireMfa: true, rateLimit: { max: 10, windowMs: 60_000 } },
+  async (ctx) => {
+    const { body, req } = ctx as { body: z.infer<typeof ResetMfaSchema>; req: NextRequest };
+    const payload = await verifyAccessPayload(req);
+    const canResetMfa = await hasPermission(payload.roles, 'users.mfa_reset');
+    if (!canResetMfa) {
+      throw Errors.forbidden('You do not have permission to reset MFA');
+    }
+
+    const targetUser = await userRepository.findById(body.userId);
+    if (!targetUser) {
+      throw Errors.notFound('User');
+    }
+
+    const isCrossOrgReset = !payload.roles.includes('super_admin')
+      && payload.orgId !== targetUser.organizationId;
+    if (isCrossOrgReset) {
+      throw Errors.forbidden('You can only reset MFA for users in your own organization');
+    }
+
+    const graceExpiresAt = new Date(Date.now() + RECOVERY_GRACE_WINDOW_MS);
+    await resetMfaForRecovery(targetUser.id, graceExpiresAt);
+
+    await recordAuthAudit({
+      action: AUTH_AUDIT_ACTIONS.USER_MFA_RESET,
+      organizationId: targetUser.organizationId,
+      actorId: payload.sub,
+      actorType: 'user',
+      resourceType: 'User',
+      resourceId: targetUser.id,
+      metadata: {
+        reason: body.reason,
+        actorRoles: payload.roles,
+        graceExpiresAt: graceExpiresAt.toISOString(),
+      },
+    }).catch(() => {});
+
+    return ok({
+      message: 'MFA was reset and a new enrollment grace period has started.',
+      graceExpiresAt,
+    });
+  },
+);
 
 const VerifySchema = z.object({ code: z.string().min(1).max(20) });
 
@@ -161,7 +260,9 @@ export async function handleMfaVerify(req: NextRequest): Promise<NextResponse> {
   }
 
   let body: unknown;
-  try { body = await req.json(); } catch {
+  try {
+    body = await req.json();
+  } catch {
     return NextResponse.json(
       { type: `${BRAND_PROBLEM_BASE}/bad-request`, title: 'Bad Request', status: 400 },
       { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
@@ -186,13 +287,15 @@ export async function handleMfaVerify(req: NextRequest): Promise<NextResponse> {
     if (!backupValid) {
       await recordAuthAudit({
         action: AUTH_AUDIT_ACTIONS.USER_LOGIN_FAILED,
-        actorId: userId, actorType: 'user',
-        resourceType: 'User', resourceId: userId,
+        actorId: userId,
+        actorType: 'user',
+        resourceType: 'User',
+        resourceId: userId,
         metadata: { ip: ipAddress ?? null, reason: 'INVALID_MFA_CODE' },
       }).catch(() => {});
 
       return NextResponse.json(
-      { type: `${BRAND_PROBLEM_BASE}/unauthorized`, title: 'Unauthorized', status: 401, detail: 'Invalid MFA code' },
+        { type: `${BRAND_PROBLEM_BASE}/unauthorized`, title: 'Unauthorized', status: 401, detail: 'Invalid MFA code' },
         { status: 401, headers: { 'Content-Type': 'application/problem+json' } },
       );
     }
@@ -203,14 +306,16 @@ export async function handleMfaVerify(req: NextRequest): Promise<NextResponse> {
   await recordAuthAudit({
     action: AUTH_AUDIT_ACTIONS.USER_LOGIN,
     organizationId: result.user.orgId,
-    actorId: result.user.id, actorType: 'user',
-    resourceType: 'User', resourceId: result.user.id,
+    actorId: result.user.id,
+    actorType: 'user',
+    resourceType: 'User',
+    resourceId: result.user.id,
     metadata: { ip: ipAddress ?? null, mfaMethod: 'totp' },
   }).catch(() => {});
 
   const isCustomer = result.user.userType === 'customer';
   const cookieName = isCustomer ? 'portal_token' : 'token';
-  const ttlSec     = isCustomer
+  const ttlSec = isCustomer
     ? REFRESH_TTL_SEC_CUSTOMER
     : (rememberMe ? REFRESH_TTL_SEC_STAFF_REMEMBER : REFRESH_TTL_SEC_STAFF);
 

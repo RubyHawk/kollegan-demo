@@ -10,6 +10,7 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   adminOnly?: boolean;
+  allowedRoles?: string[];
 }
 
 interface NavSection {
@@ -102,22 +103,33 @@ const NAV_SECTIONS: NavSection[] = [
         icon: <Icon path={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>} />,
         adminOnly: true,
       },
+      {
+        href: '/installningar/mfa-support',
+        label: 'MFA-support',
+        icon: <Icon path={<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></>} />,
+        allowedRoles: ['super_admin', 'admin', 'helpdesk'],
+      },
     ],
   },
 ];
 
 const ALL_ITEMS = NAV_SECTIONS.flatMap((section) => section.items);
 
+function canSeeItem(userRole: string, item: NavItem): boolean {
+  if (item.allowedRoles) return item.allowedRoles.includes(userRole);
+  if (item.adminOnly) return userRole === 'admin' || userRole === 'super_admin';
+  return true;
+}
+
 export default function SettingsNav({ userRole }: { userRole: string }) {
   const pathname = usePathname();
-  const isAdmin = userRole === 'admin';
 
   const visibleSections = NAV_SECTIONS.map((section) => ({
     ...section,
-    items: section.items.filter((item) => !item.adminOnly || isAdmin),
+    items: section.items.filter((item) => canSeeItem(userRole, item)),
   })).filter((section) => section.items.length > 0);
 
-  const mobileItems = ALL_ITEMS.filter((item) => !item.adminOnly || isAdmin);
+  const mobileItems = ALL_ITEMS.filter((item) => canSeeItem(userRole, item));
 
   return (
     <>
