@@ -52,10 +52,12 @@ jobs:
           event_name="${{ github.event_name }}"
           before_sha="${{ github.event.before }}"
           head_sha="${{ github.sha }}"
+          ref="${{ github.ref }}"
           ref_name="${{ github.ref_name }}"
+          ref_type="${{ github.ref_type }}"
 
           if [ "$event_name" = "workflow_dispatch" ]; then
-            if [ "$ref_name" != "main" ]; then
+            if [ "$ref_type" != "branch" ] || [ "$ref" != "refs/heads/main" ] || [ "$ref_name" != "main" ]; then
               {
                 echo "runtime_affecting=false"
                 echo "deploy_process_affecting=false"
