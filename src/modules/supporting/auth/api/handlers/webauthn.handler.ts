@@ -248,41 +248,38 @@ export const handleListPasskeys = createHandler(
   },
 );
 
-export async function handleDeletePasskey(req: NextRequest): Promise<NextResponse> {
-  const payload = await verifyAccessPayload(req);
-  const amr = payload.amr ?? [];
-  if (!amr.includes('otp') && !amr.includes('hwk')) {
-    return NextResponse.json(
-      { type: `${BRAND_PROBLEM_BASE}/forbidden`, title: 'Forbidden', status: 403, detail: 'This action requires multi-factor authentication' },
-      { status: 403, headers: { 'Content-Type': 'application/problem+json' } },
-    );
-  }
+export const handleDeletePasskey = createHandler(
+  { auth: 'jwt', requireMfa: true, tag: 'WebAuthn:Credentials:Delete', rateLimit: { max: 10, windowMs: 60_000 } },
+  async (ctx) => {
+    const { req } = ctx as { req: NextRequest };
+    const payload = await verifyAccessPayload(req);
 
-  const url = new URL(req.url);
-  const segments = url.pathname.split('/');
-  const credentialId = segments[segments.length - 1];
-  if (!credentialId) {
-    return NextResponse.json(
-      { type: `${BRAND_PROBLEM_BASE}/bad-request`, title: 'Bad Request', status: 400, detail: 'Credential id is required' },
-      { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
-    );
-  }
-
-  try {
-    await deleteCredential(credentialId, payload.sub);
-  } catch (err: unknown) {
-    if ((err as { code?: string }).code === 'LAST_PRIMARY_FACTOR') {
+    const url = new URL(req.url);
+    const segments = url.pathname.split('/');
+    const credentialId = segments[segments.length - 1];
+    if (!credentialId) {
       return NextResponse.json(
-        { type: `${BRAND_PROBLEM_BASE}/forbidden`, title: 'Forbidden', status: 403, detail: 'Add another sign-in method before removing your last passkey' },
-        { status: 403, headers: { 'Content-Type': 'application/problem+json' } },
+        { type: `${BRAND_PROBLEM_BASE}/bad-request`, title: 'Bad Request', status: 400, detail: 'Credential id is required' },
+        { status: 400, headers: { 'Content-Type': 'application/problem+json' } },
       );
     }
-    throw err;
-  }
 
-  const res = NextResponse.json({
-    data: { message: 'Passkey removed. Sign in again to continue.' },
-  });
-  clearAuthCookies(res);
-  return res;
-}
+    try {
+      await deleteCredential(credentialId, payload.sub);
+    } catch (err: unknown) {
+      if ((err as { code?: string }).code === 'LAST_PRIMARY_FACTOR') {
+        return NextResponse.json(
+          { type: `${BRAND_PROBLEM_BASE}/forbidden`, title: 'Forbidden', status: 403, detail: 'Add another sign-in method before removing your last passkey' },
+          { status: 403, headers: { 'Content-Type': 'application/problem+json' } },
+        );
+      }
+      throw err;
+    }
+
+    const res = NextResponse.json({
+      data: { message: 'Passkey removed. Sign in again to continue.' },
+    });
+    clearAuthCookies(res);
+    return res;
+  },
+);

@@ -223,6 +223,13 @@ function envelopeResponse<T>(
   });
 }
 
+function decorateRawResponse(res: NextResponse, meta: RequestMeta): NextResponse {
+  res.headers.set('X-Request-Id', meta.requestId);
+  res.headers.set('X-Version', meta.version);
+  res.headers.set('X-Duration-Ms', String(meta.durationMs));
+  return res;
+}
+
 // ─── createHandler ─────────────────────────────────────────────────────────────
 
 /**
@@ -428,13 +435,24 @@ export function createHandler<
       logger.info(config.tag, `${req.method} ${instance}`, { requestId });
 
       const raw = await fn(ctx);
+      const meta = buildMeta();
+
+      if (raw instanceof NextResponse) {
+        const res = decorateRawResponse(raw, meta);
+
+        logger.info(config.tag, `${req.method} ${instance} → ${res.status}`, {
+          requestId,
+          durationMs: meta.durationMs,
+        });
+
+        return res;
+      }
 
       // ── 7. Wrap in envelope ─────────────────────────────────────────────────
       const handlerResult: HandlerResult<unknown> = isHandlerResult(raw)
         ? raw
         : ok(raw);
 
-      const meta = buildMeta();
       const res  = envelopeResponse(handlerResult, meta);
 
       logger.info(config.tag, `${req.method} ${instance} → ${handlerResult.status}`, {
