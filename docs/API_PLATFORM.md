@@ -12,6 +12,8 @@ Policy:
 - Response-shape breaking changes require an adapter or future `/api/v2`.
 - Route migration PRs must not change response shape.
 - Public routes must be explicitly documented and tested.
+- Product routes need a canonical `/api/v1/**` replacement before legacy retirement. Temporary legacy/V1 overlap must be registered in `scripts/api-route-overlaps.json` with a feature flag key, owner, reason, and expiry date; missing replacements, expired overlaps, or unregistered duplicate product routes fail CI.
+- Feature-flagged implementation overlap and duplicate external routes are separate concerns: a rollout may keep one route while switching internal behavior behind a flag.
 
 See [API versioning](API_VERSIONING.md).
 
@@ -64,4 +66,3 @@ Critical contracts need tests:
 - companies,
 - products/categories,
 - auth-sensitive admin routes.
-

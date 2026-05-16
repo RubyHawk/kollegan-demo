@@ -59,7 +59,7 @@ jobs:
             esac
 
             case "$file" in
-              .github/workflows/*|scripts/deploy-release.sh|scripts/check-*.mjs|scripts/codebase-inventory.mjs|scripts/lib/operational-evidence.mjs|scripts/lib/plan-status.mjs)
+              .github/workflows/*|scripts/deploy-release.sh|scripts/check-*.mjs|scripts/codebase-inventory.mjs|scripts/api-route-overlaps.json|scripts/lib/api-route-lifecycle.mjs|scripts/lib/codebase-inventory-api-routes.mjs|scripts/lib/operational-evidence.mjs|scripts/lib/plan-status.mjs)
                 process=true
                 docs_only=false
                 matched=true
@@ -135,6 +135,9 @@ jobs:
 
       - name: Legacy API literal guard
         run: node scripts/check-legacy-api-literals.mjs
+
+      - name: API route lifecycle guard
+        run: node scripts/check-api-route-lifecycle.mjs
 
       - name: Text encoding guard
         run: node scripts/check-text-encoding.mjs
@@ -233,6 +236,15 @@ jobs:
                 ;;
               scripts/check-legacy-api-literals.mjs)
                 node scripts/check-legacy-api-literals.mjs
+                ran_policy_script=true
+                ;;
+              scripts/check-api-route-lifecycle.mjs)
+                node scripts/check-api-route-lifecycle.mjs
+                ran_policy_script=true
+                ;;
+              scripts/api-route-overlaps.json|scripts/lib/api-route-lifecycle.mjs|scripts/lib/codebase-inventory-api-routes.mjs)
+                node scripts/check-api-route-lifecycle.mjs
+                node scripts/codebase-inventory.mjs >/dev/null
                 ran_policy_script=true
                 ;;
               scripts/lib/operational-evidence.mjs)

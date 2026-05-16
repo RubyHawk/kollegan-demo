@@ -135,7 +135,11 @@ const securityRelevantMatchers = [
       file === "scripts/deploy-release.sh" ||
       file === "scripts/check-migration-safety.mjs" ||
       file === "scripts/check-ai-proxies.mjs" ||
-      file === "scripts/check-security-evidence.mjs",
+      file === "scripts/check-security-evidence.mjs" ||
+      file === "scripts/check-api-route-lifecycle.mjs" ||
+      file === "scripts/api-route-overlaps.json" ||
+      file === "scripts/lib/api-route-lifecycle.mjs" ||
+      file === "scripts/lib/codebase-inventory-api-routes.mjs",
   },
   {
     label: "authentication or access-control change",
