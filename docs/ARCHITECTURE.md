@@ -49,7 +49,7 @@ Dependency boundaries are enforced with dependency-cruiser and documented in `sr
 
 `src/app/api/**/route.ts` files should thinly re-export handlers from modules.
 
-New browser clients should use `/api/v1/**` through feature API clients. Legacy `/api/**` routes remain only as compatibility wrappers until usage is verified gone.
+New browser clients should use `/api/v1/**` through feature API clients. Legacy product routes may exist only as explicitly registered, expiring rollout overlaps while migration is in progress; once usage is verified gone, the duplicate route is removed. Public-document, demo, AI/integration, and ops routes stay non-versioned only when they are documented exceptions.
 
 ## Data Rules
 
@@ -75,4 +75,3 @@ _types/
 ```
 
 See [Frontend guidelines](FRONTEND_GUIDELINES.md).
-

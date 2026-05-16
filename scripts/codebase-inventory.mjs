@@ -1,6 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import {
+  apiRouteKind,
+  auditApiRouteLifecycle,
+  readTemporaryApiRouteOverlaps,
+} from './lib/api-route-lifecycle.mjs';
+import { renderApiRouteLifecycleSection } from './lib/codebase-inventory-api-routes.mjs';
 
 const root = process.cwd();
 const writeMode = process.argv.includes('--write');
@@ -115,28 +121,6 @@ function isGenerated(file) {
 
 function isApiRoute(file) {
   return file.startsWith('src/app/api/') && file.endsWith('/route.ts');
-}
-
-function isV1ApiRoute(file) {
-  return file.startsWith('src/app/api/v1/') && file.endsWith('/route.ts');
-}
-
-function apiRouteKind(file) {
-  if (!isApiRoute(file)) return null;
-  if (isV1ApiRoute(file)) return 'api-v1';
-  if (file.startsWith('src/app/api/demos/')) return 'demo-api-route';
-  if (file.startsWith('src/app/api/offers/public/')) return 'public-document-route';
-  if (
-    file.startsWith('src/app/api/ai/')
-    || file.startsWith('src/app/api/cron/')
-    || file.startsWith('src/app/api/docs/')
-    || file.startsWith('src/app/api/health/')
-    || file.startsWith('src/app/api/n8n/')
-    || file.startsWith('src/app/api/sse/')
-  ) {
-    return 'integration-or-ops-route';
-  }
-  return 'legacy-compat-wrapper';
 }
 
 function isLegacyWrapper(file) {
@@ -328,6 +312,10 @@ function renderInventory() {
     .filter(isApiRoute)
     .sort()
     .map((file) => ({ file, kind: apiRouteKind(file) }));
+  const apiRouteLifecycle = auditApiRouteLifecycle(
+    apiRoutes.map((route) => route.file),
+    readTemporaryApiRouteOverlaps(root),
+  );
   const graph = buildImportGraph(sourceFiles);
 
   const largeFiles = countedFiles
@@ -423,6 +411,10 @@ Static analysis is a triage tool, not deletion proof. A \`dead-candidate\` still
 | Files above 500 lines | ${largeFiles.length} |
 | API route files | ${apiRoutes.length} |
 | API v1 route files | ${apiRoutes.filter((route) => route.kind === 'api-v1').length} |
+| Canonical v1 API families | ${apiRouteLifecycle.counts.canonicalV1} |
+| Approved non-versioned API families | ${apiRouteLifecycle.counts.approvedNonVersionedExceptions} |
+| Temporary API route overlaps | ${apiRouteLifecycle.counts.temporaryRolloutOverlaps} |
+| Duplicate-removal API families | ${apiRouteLifecycle.counts.removableDuplicates} |
 | Feature API clients | ${featureApiClients.length} |
 | Legacy API compatibility wrappers | ${legacyWrappers.length} |
 | Demo API routes | ${demoApiRoutes.length} |
@@ -450,6 +442,7 @@ ${markdownTable(['File'], featureApiClients)}
 These are compatibility or alias routes kept while browser, mobile, and external callers migrate away from legacy \`/api/*\` paths. They are not junk until usage proves they can be retired.
 
 ${markdownTable(['File'], legacyWrappers)}
+${renderApiRouteLifecycleSection(apiRouteLifecycle, markdownTable)}
 ## Retained Non-Versioned API Routes
 
 These are not part of the \`/api/v1\` migration target. They stay non-versioned because they are public document routes, demos, or infrastructure/integration endpoints.
