@@ -79,4 +79,23 @@ describe('api route lifecycle audit', () => {
     ]);
     expect(audit.counts.removableDuplicates).toBe(1);
   });
+
+  it('rejects an impossible temporary overlap expiry date', () => {
+    const audit = auditApiRouteLifecycle([
+      'src/app/api/offers/route.ts',
+      'src/app/api/v1/offers/route.ts',
+    ], [{
+      legacyPath: '/api/offers',
+      canonicalPath: '/api/v1/offers',
+      featureFlagKey: 'offers-v1-rollout',
+      owner: 'Engineering lead',
+      reason: 'Short-lived migration overlap during staged rollout.',
+      expiresOn: '2026-02-31',
+    }], today);
+
+    expect(audit.issues).toEqual([
+      expect.objectContaining({ code: 'invalid-expiry' }),
+    ]);
+    expect(audit.counts.removableDuplicates).toBe(1);
+  });
 });

@@ -83,6 +83,24 @@ function createIssue(code, message, overlap = null) {
   return { code, message, overlap };
 }
 
+function parseIsoDate(value) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const roundTrip = [
+    String(date.getUTCFullYear()).padStart(4, '0'),
+    String(date.getUTCMonth() + 1).padStart(2, '0'),
+    String(date.getUTCDate()).padStart(2, '0'),
+  ].join('-');
+
+  return roundTrip === value ? date : null;
+}
+
 export function validateTemporaryApiRouteOverlaps(overlaps, today = new Date()) {
   const issues = [];
   const validOverlaps = [];
@@ -121,8 +139,8 @@ export function validateTemporaryApiRouteOverlaps(overlaps, today = new Date()) 
       continue;
     }
 
-    const expiry = new Date(`${overlap.expiresOn}T00:00:00.000Z`);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(overlap.expiresOn) || Number.isNaN(expiry.getTime())) {
+    const expiry = parseIsoDate(overlap.expiresOn);
+    if (!expiry) {
       issues.push(createIssue(
         'invalid-expiry',
         `Temporary overlap expiresOn must be an ISO date (YYYY-MM-DD): ${overlap.expiresOn}.`,
