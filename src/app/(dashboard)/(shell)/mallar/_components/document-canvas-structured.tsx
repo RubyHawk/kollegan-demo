@@ -41,14 +41,12 @@ export function StructuredOfferCanvas({
 
   return (
     <div
-      className="relative overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] md:p-8"
+      className="relative bg-white px-6 py-7 md:px-10 md:py-10"
       style={{
         minHeight: 840,
         fontFamily: `${fontFamily}, Arial, sans-serif`,
       }}
     >
-      <div className="pointer-events-none absolute inset-[18px] rounded-lg border border-slate-100" />
-
       {settings?.backgroundImageSrc && (
         <div
           className="pointer-events-none absolute inset-0"
@@ -69,9 +67,9 @@ export function StructuredOfferCanvas({
 
       <div className="relative z-10 space-y-5">
         <header className="grid gap-6 border-b border-slate-200/90 pb-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="flex items-start gap-4 rounded-[26px] border border-white/80 bg-white/70 px-4 py-4 shadow-[0_14px_28px_rgba(148,163,184,0.12)] backdrop-blur-sm">
+          <div className="flex items-start gap-4 border-l-4 border-emerald-500 bg-slate-50 px-5 py-4">
             {settings?.showLogo !== false && (
-              <div className="mt-1 h-16 w-16 rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f5f9ff_100%)] shadow-sm" />
+              <div className="mt-1 h-16 w-16 rounded-md border border-slate-200 bg-white shadow-sm" />
             )}
             <div className="space-y-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{'Avs\u00e4ndare'}</p>
@@ -88,9 +86,9 @@ export function StructuredOfferCanvas({
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-blue-100 bg-[linear-gradient(180deg,#fdfefe_0%,#eef5ff_100%)] p-5 shadow-[0_18px_40px_rgba(96,165,250,0.12)]">
+          <div className="border border-slate-200 bg-white p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700">
+              <div className="inline-flex border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700">
                 Offertstatus
               </div>
               <CanvasHintPill tone="system">Metadata</CanvasHintPill>
@@ -110,14 +108,14 @@ export function StructuredOfferCanvas({
           className={cn(
             'grid gap-6',
             settings?.showCustomerBlock !== false ? 'lg:grid-cols-[minmax(0,1fr)_280px]' : 'grid-cols-1'
-          )}
+          )} 
         >
-          <div className="space-y-4 rounded-[28px] border border-white/80 bg-white/65 px-5 py-5 shadow-[0_16px_32px_rgba(148,163,184,0.12)] backdrop-blur-sm">
+          <div className="space-y-4 border-l-4 border-sky-500 bg-white px-5 py-5">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Offertsida</p>
               <CanvasHintPill tone="dialog">{'Rubrik styrs i panelen'}</CanvasHintPill>
             </div>
-            <h1 className="max-w-[12ch] text-[34px] font-semibold leading-[1.03] tracking-[-0.05em] text-slate-950 md:text-[40px]">
+            <h1 className="max-w-[12ch] text-[34px] font-semibold leading-[1.03] text-slate-950 md:text-[40px]">
               {title}
             </h1>
             <p className="max-w-[50ch] text-sm leading-7 text-slate-600">
@@ -126,7 +124,7 @@ export function StructuredOfferCanvas({
           </div>
 
           {settings?.showCustomerBlock !== false && (
-            <aside className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f6f9ff_100%)] p-5 shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
+            <aside className="border border-slate-200 bg-slate-50 p-5">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Kundblock</p>
                 <CanvasHintPill tone="system">Systemblock</CanvasHintPill>
@@ -144,7 +142,7 @@ export function StructuredOfferCanvas({
           {settings?.showIntro !== false && (
             <div
               className={cn(
-                'rounded-[28px] border border-blue-100 bg-[linear-gradient(180deg,#ffffff_0%,#f3f8ff_100%)] shadow-[0_18px_34px_rgba(96,165,250,0.10)]',
+                'border border-slate-200 bg-white',
                 introLayout === 'roomy' ? 'p-7' : 'p-5'
               )}
             >
@@ -162,7 +160,7 @@ export function StructuredOfferCanvas({
                   {introLayout === 'roomy' ? 'Rymlig' : 'Kompakt'}
                 </span>
               </div>
-              <div className="rounded-[24px] border border-dashed border-blue-200 bg-white/88 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+              <div className="border border-dashed border-sky-300 bg-sky-50/35 p-4">
                 <EditorContent
                   key={`structured-editor:${pageKey}`}
                   editor={pageReady ? editor : null}
@@ -173,7 +171,7 @@ export function StructuredOfferCanvas({
           )}
 
           {settings?.showLineItems !== false && (
-            <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f6f8fb_100%)] p-5 shadow-[0_16px_34px_rgba(15,23,42,0.06)]">
+            <div className="border border-slate-200 bg-white p-5">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Prisdel</p>
@@ -181,8 +179,8 @@ export function StructuredOfferCanvas({
                 </div>
                 <CanvasHintPill tone="system">Systemblock</CanvasHintPill>
               </div>
-              <div className="rounded-[22px] border border-slate-200 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                <div className="grid grid-cols-[minmax(220px,1.6fr)_86px_110px_90px_112px] gap-4 rounded-t-[22px] border-b border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              <div className="border border-slate-200 bg-white">
+                <div className="grid grid-cols-[minmax(220px,1.6fr)_86px_110px_90px_112px] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                   <span>{'Produkt eller tj\u00e4nst'}</span>
                   <span className="text-right">Antal</span>
                   <span className="text-right">{'A-pris'}</span>
@@ -210,7 +208,7 @@ export function StructuredOfferCanvas({
           )}
 
           {settings?.showTerms !== false && (
-            <div className="rounded-[28px] border border-amber-100 bg-[linear-gradient(180deg,#ffffff_0%,#fff9ef_100%)] p-5 shadow-[0_16px_34px_rgba(245,158,11,0.08)]">
+            <div className="border-l-4 border-amber-500 bg-amber-50/50 p-5">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Juridik</p>
                 <CanvasHintPill tone="dialog">{'Redigeras i dialog'}</CanvasHintPill>
@@ -223,7 +221,7 @@ export function StructuredOfferCanvas({
           )}
 
           {settings?.showNotes !== false && (
-            <div className="rounded-[28px] border border-dashed border-indigo-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(238,242,255,0.86)_100%)] p-5 shadow-[0_14px_28px_rgba(99,102,241,0.06)]">
+            <div className="border border-dashed border-slate-300 bg-slate-50 p-5">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Anteckningar</p>
                 <CanvasHintPill tone="dialog">{'Redigeras i dialog'}</CanvasHintPill>
@@ -238,7 +236,7 @@ export function StructuredOfferCanvas({
         {settings?.showFooter !== false && (
           <footer className="grid gap-4 border-t border-slate-200/90 pt-5 text-sm text-slate-600 md:grid-cols-3">
             {['Soleria', 'Ansvarig', 'Kontakt'].map((label) => (
-              <div key={label} className="rounded-[22px] border border-white/80 bg-white/70 px-4 py-4 shadow-[0_10px_20px_rgba(148,163,184,0.08)]">
+              <div key={label} className="border border-slate-200 bg-white px-4 py-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
                 <div className="mt-2 space-y-2">
                   <div className="h-2.5 w-24 rounded-full bg-slate-200" />
@@ -266,7 +264,7 @@ function SummaryCard({ className }: { className?: string }) {
   return (
     <aside
       className={cn(
-        'overflow-hidden rounded-[28px] border border-blue-100 bg-[linear-gradient(180deg,#ffffff_0%,#eef5ff_100%)] shadow-[0_18px_34px_rgba(96,165,250,0.12)]',
+        'overflow-hidden border border-slate-300 bg-white',
         className,
       )}
     >
@@ -276,11 +274,11 @@ function SummaryCard({ className }: { className?: string }) {
           <CanvasHintPill tone="system">Systemblock</CanvasHintPill>
         </div>
         <div className="mt-4 space-y-3">
-          <div className="flex items-center justify-between gap-4 rounded-2xl bg-white/80 px-3 py-3">
+          <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-3 py-3">
             <span className="text-sm text-slate-600">Delsumma</span>
             <div className="h-3 w-24 rounded-full bg-slate-200" />
           </div>
-          <div className="flex items-center justify-between gap-4 rounded-2xl bg-white/80 px-3 py-3">
+          <div className="flex items-center justify-between gap-4 px-3 py-3">
             <span className="text-sm text-slate-600">Moms</span>
             <div className="h-3 w-20 rounded-full bg-slate-200" />
           </div>
@@ -305,15 +303,15 @@ function CanvasHintPill({
 }) {
   const toneClassName =
     tone === 'editable'
-      ? 'border-blue-200 bg-blue-50 text-blue-700'
+      ? 'border-sky-300 bg-sky-50 text-sky-800'
       : tone === 'dialog'
-        ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-        : 'border-emerald-200 bg-emerald-50 text-emerald-700';
+        ? 'border-slate-300 bg-white text-slate-700'
+        : 'border-emerald-300 bg-emerald-50 text-emerald-800';
 
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em]',
+        'inline-flex items-center border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]',
         toneClassName,
       )}
     >
