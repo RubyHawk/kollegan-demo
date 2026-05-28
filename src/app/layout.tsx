@@ -169,6 +169,15 @@ const jetbrainsMono = localFont({
   display: 'swap',
 });
 
+const instrumentSerif = localFont({
+  src: [
+    { path: '../../public/fonts/instrument-serif-400.woff2', weight: '400', style: 'normal' },
+    { path: '../../public/fonts/instrument-serif-400-italic.woff2', weight: '400', style: 'italic' },
+  ],
+  variable: '--font-instrument-serif',
+  display: 'swap',
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -184,6 +193,7 @@ export default function RootLayout({
         inter.variable,
         cormorant.variable,
         jetbrainsMono.variable,
+        instrumentSerif.variable,
       )}
     >
       <head>

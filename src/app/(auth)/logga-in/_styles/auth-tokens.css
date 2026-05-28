@@ -1,0 +1,105 @@
+/* Scoped tokens for the login page. Applied via .auth-scope on the root element
+ * so they cannot leak into the rest of the app. */
+.auth-scope {
+  --auth-bg-base: oklch(0.18 0.04 255);
+  --auth-bg-layer-1: oklch(0.27 0.07 255);
+  --auth-bg-layer-2: oklch(0.14 0.03 255);
+  --auth-accent: oklch(0.55 0.20 258);
+  --auth-accent-hover: oklch(0.60 0.20 258);
+  --auth-accent-soft: oklch(0.65 0.18 258);
+  --auth-accent-glow: oklch(0.55 0.20 258 / 0.18);
+  --auth-accent-glow-danger: oklch(0.55 0.20 25 / 0.16);
+  --auth-border-hairline: oklch(1 0 0 / 0.08);
+  --auth-text-on-dark: oklch(0.98 0 0);
+  --auth-text-on-dark-muted: oklch(0.98 0 0 / 0.62);
+  --auth-success: oklch(0.62 0.16 145);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.auth-scope .auth-floating-label {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 15px;
+  pointer-events: none;
+  transition:
+    transform 180ms var(--ease-out-soft),
+    color 180ms var(--ease-out-soft),
+    font-size 180ms var(--ease-out-soft);
+}
+
+.auth-scope .auth-input-wrapper:focus-within .auth-floating-label,
+.auth-scope .auth-input-wrapper[data-filled="true"] .auth-floating-label {
+  transform: translateY(-22px) scale(0.85);
+  transform-origin: left center;
+}
+
+.auth-scope .auth-input-wrapper:focus-within .auth-floating-label {
+  color: var(--auth-accent);
+}
+
+.auth-scope .auth-input-wrapper[data-filled="true"]:not(:focus-within) .auth-floating-label {
+  color: var(--text-secondary);
+}
+
+.auth-scope .auth-input-wrapper {
+  position: relative;
+  height: 52px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-0);
+  transition:
+    border-color 160ms var(--ease-out-soft),
+    box-shadow 160ms var(--ease-out-soft);
+}
+
+@media (max-width: 1023px) {
+  .auth-scope .auth-input-wrapper {
+    height: 48px;
+  }
+}
+
+.auth-scope .auth-input-wrapper:focus-within {
+  border-color: var(--auth-accent);
+  box-shadow: 0 0 0 4px var(--auth-accent-glow);
+}
+
+.auth-scope .auth-input-wrapper[data-error="true"] {
+  border-color: var(--status-danger-text);
+}
+
+.auth-scope .auth-input-wrapper[data-error="true"]:focus-within {
+  box-shadow: 0 0 0 4px var(--auth-accent-glow-danger);
+}
+
+.auth-scope .auth-input {
+  width: 100%;
+  height: 100%;
+  padding: 22px 14px 6px;
+  font-size: 15px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.auth-scope .auth-input-wrapper[data-has-trailing="true"] .auth-input {
+  padding-right: 44px;
+}
+
+.auth-scope .auth-input:-webkit-autofill,
+.auth-scope .auth-input:-webkit-autofill:hover,
+.auth-scope .auth-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-0) inset;
+  caret-color: var(--text-primary);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .auth-scope .auth-crosshair-rotor {
+    will-change: transform;
+  }
+}
