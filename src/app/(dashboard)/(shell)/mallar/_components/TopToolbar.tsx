@@ -133,8 +133,8 @@ export default function TopToolbar() {
 
   return (
     <div className="border-b border-[var(--border)] bg-[var(--surface-1)] px-2 py-1">
-      <div className="overflow-x-auto">
-        <div className="flex min-w-max items-center gap-1">
+      <div className="overflow-hidden">
+        <div className="flex min-w-0 flex-wrap items-center gap-1">
           <ToolbarGroup>
             <ToolbarIconButton title="Ångra (Ctrl+Z)" onClick={() => currentEditor.chain().focus().undo().run()} disabled={!currentEditor.can().undo()}>
               <ArrowUUpLeft size={14} />

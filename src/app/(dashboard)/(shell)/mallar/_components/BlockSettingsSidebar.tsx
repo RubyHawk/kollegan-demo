@@ -46,7 +46,7 @@ export default function BlockSettingsSidebar() {
   if (!hf) return null;
 
   return (
-    <aside className="hidden w-[288px] shrink-0 xl:flex flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface-1)]">
+    <aside className="hidden min-h-0 shrink-0 flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface-1)] xl:flex xl:w-[clamp(300px,24vw,400px)]">
       {isDocumentPage ? (
         <StructuredOfferInspector key={activePage?.id ?? 'document-page'} hf={hf} />
       ) : (

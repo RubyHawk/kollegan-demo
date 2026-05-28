@@ -39,6 +39,9 @@ function fmtDate(iso: string): string {
 }
 
 interface EmailDesignConfig {
+  meta: {
+    preheader?: string;
+  };
   header: {
     logoUrl?: string;
     companyName?: string;
@@ -73,6 +76,9 @@ interface EmailDesignConfig {
 }
 
 const DESIGN_DEFAULTS: EmailDesignConfig = {
+  meta: {
+    preheader: '',
+  },
   header: {
     companyName: BRAND_NAME,
     tagline: BRAND_TAGLINE,
@@ -121,6 +127,7 @@ function parseDesignConfig(configJson?: string): EmailDesignConfig | null {
 
   const d = raw as Partial<EmailDesignConfig>;
   return {
+    meta: { ...DESIGN_DEFAULTS.meta, ...d.meta },
     header: { ...DESIGN_DEFAULTS.header, ...d.header },
     body: { ...DESIGN_DEFAULTS.body, ...d.body },
     cta: { ...DESIGN_DEFAULTS.cta, ...d.cta },
@@ -229,6 +236,7 @@ export function sendToRecipientHtml(p: SendToRecipientPayload): string {
   const d = parseDesignConfig(p.emailHeaderConfig);
   const b = d?.body ?? DESIGN_DEFAULTS.body;
   const c = d?.cta ?? DESIGN_DEFAULTS.cta;
+  const configuredPreheader = d?.meta.preheader?.trim();
 
   const headerHtml = renderHeader((d ?? DESIGN_DEFAULTS).header);
   const footerHtml = renderFooter((d ?? DESIGN_DEFAULTS).footer);
@@ -247,7 +255,7 @@ export function sendToRecipientHtml(p: SendToRecipientPayload): string {
         </div>
       </div>
       ${footerHtml}
-    </div>`, b.bgColor, `Offert ${p.offerTitle} från Soleria`);
+    </div>`, b.bgColor, configuredPreheader || `Offert ${p.offerTitle} från Soleria`);
   }
 
   return wrapEmailDocument(`
@@ -267,7 +275,7 @@ export function sendToRecipientHtml(p: SendToRecipientPayload): string {
         </div>
       </div>
       ${footerHtml}
-    </div>`, b.bgColor, `Ny offert ${p.offerTitle}. Giltig till ${fmtDate(p.validUntil)}.`);
+    </div>`, b.bgColor, configuredPreheader || `Ny offert ${p.offerTitle}. Giltig till ${fmtDate(p.validUntil)}.`);
 }
 
 export function notifyCreatorHtml(p: NotifyCreatorPayload): string {
