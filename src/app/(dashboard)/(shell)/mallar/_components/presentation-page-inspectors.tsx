@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import type { HFCtxValue } from './header-footer-context';
 import { PAGE_ROLE_LABELS } from './template-doc';
