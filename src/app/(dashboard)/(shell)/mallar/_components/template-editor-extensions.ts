@@ -24,6 +24,8 @@ export function createBodyExtensions() {
   return [
     StarterKit.configure({
       dropcursor: { color: 'var(--accent)', width: 2 },
+      link: false,
+      underline: false,
     }),
     CustomImage.configure({ allowBase64: true }),
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
@@ -53,7 +55,7 @@ export function createBodyExtensions() {
 }
 
 export const MINI_EXTENSIONS = [
-  StarterKit.configure({ dropcursor: false }),
+  StarterKit.configure({ dropcursor: false, underline: false }),
   TextAlign.configure({ types: ['heading', 'paragraph'] }),
   TextStyle,
   Color,

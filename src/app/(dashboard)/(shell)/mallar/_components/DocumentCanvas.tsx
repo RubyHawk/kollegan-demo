@@ -3,18 +3,27 @@
 import { BubbleMenu } from '@tiptap/react/menus';
 import { EditorContent } from '@tiptap/react';
 import { NodeSelection } from '@tiptap/pm/state';
+import { useMemo, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import { PRESENTATION_PAGE_HEIGHT, PRESENTATION_PAGE_WIDTH } from './presentation-page-height';
 import { cn } from '@shared/lib/utils';
-import { Link as LinkIcon } from '@phosphor-icons/react';
+import { Link as LinkIcon, MagnifyingGlassMinus, MagnifyingGlassPlus, NotePencil, Plus, TextHOne } from '@phosphor-icons/react';
 import { PresentationPageLoadingState, StructuredOfferCanvas } from './document-canvas-structured';
+import {
+  TEMPLATE_BLOCK_MIME,
+  decodeInsertPayload,
+  insertTemplatePayload,
+  isTipTapDocEmpty,
+} from './template-insert-actions';
 
 const MARGIN_PRESETS = { tight: 40, normal: 56, wide: 80 } as const;
+const ZOOM_STEPS = [0.75, 0.9, 1, 1.15, 1.3] as const;
 
 export default function DocumentCanvas() {
   const editor = useTemplateEditor();
   const hf = useHeaderFooter();
+  const [zoom, setZoom] = useState<'fit' | number>('fit');
 
   const activePage = hf?.pages[hf.activeIdx] ?? null;
   const isDocumentPage = activePage?.kind === 'document';
@@ -33,22 +42,105 @@ export default function DocumentCanvas() {
   const pagePadding = MARGIN_PRESETS[hf?.docSettings?.pageMargin ?? 'normal'];
   const docFont = hf?.docSettings?.defaultFont ?? 'Calibri';
   const activePageReady = hf?.activePageReady ?? true;
+  const isEmptyPage = useMemo(() => isTipTapDocEmpty(activePage?.body), [activePage?.body]);
+  const numericZoom = zoom === 'fit' ? 1 : zoom;
 
   if (!editor || !activePage) return null;
+
+  function stepZoom(direction: -1 | 1) {
+    const current = zoom === 'fit' ? 1 : zoom;
+    const currentIdx = ZOOM_STEPS.findIndex((value) => value >= current);
+    const baseIdx = currentIdx === -1 ? ZOOM_STEPS.indexOf(1) : currentIdx;
+    const nextIdx = Math.min(ZOOM_STEPS.length - 1, Math.max(0, baseIdx + direction));
+    setZoom(ZOOM_STEPS[nextIdx]);
+  }
+
+  function handleCanvasDragOver(event: React.DragEvent<HTMLDivElement>) {
+    const hasBlock = event.dataTransfer.types.includes(TEMPLATE_BLOCK_MIME);
+    const hasImageFile = Array.from(event.dataTransfer.files).some((file) => file.type.startsWith('image/'));
+    if (hasBlock || hasImageFile) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+    }
+  }
+
+  function handleCanvasDrop(event: React.DragEvent<HTMLDivElement>) {
+    const payload = decodeInsertPayload(event.dataTransfer.getData(TEMPLATE_BLOCK_MIME));
+    if (!payload) return;
+    event.preventDefault();
+    if (!activePageReady || isDocumentPage) return;
+    const currentEditor = editor;
+    if (!currentEditor) return;
+    insertTemplatePayload(currentEditor, payload);
+  }
 
   return (
     <div className="flex-1 overflow-hidden bg-[var(--surface-2)]">
       <BubbleFormattingMenu />
 
-      <div className="h-full overflow-auto px-3 py-4 md:px-4 md:py-6">
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
+          <div className="min-w-0">
+            <p className="truncate text-[12px] font-semibold text-[var(--text-primary)]">{activePage.label}</p>
+            <p className="text-[11px] text-[var(--text-muted)]">
+              {isDocumentPage ? 'Strukturerad offertsida' : activePage.includeInCustomerPdf === false ? 'Intern presentationssida' : 'Kundvy + PDF'}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--surface)] p-1">
+            <button
+              type="button"
+              onClick={() => stepZoom(-1)}
+              className="inline-flex h-7 w-7 items-center justify-center rounded text-[var(--text-secondary)] hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]"
+              title="Zooma ut"
+            >
+              <MagnifyingGlassMinus size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoom('fit')}
+              className={cn(
+                'h-7 rounded px-2 text-[11px] font-semibold',
+                zoom === 'fit' ? 'bg-[var(--accent-subtle)] text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-active)]',
+              )}
+            >
+              Anpassa
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoom(1)}
+              className={cn(
+                'h-7 rounded px-2 text-[11px] font-semibold',
+                zoom === 1 ? 'bg-[var(--accent-subtle)] text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-active)]',
+              )}
+            >
+              {zoom === 'fit' ? 'Fit' : `${Math.round(numericZoom * 100)}%`}
+            </button>
+            <button
+              type="button"
+              onClick={() => stepZoom(1)}
+              className="inline-flex h-7 w-7 items-center justify-center rounded text-[var(--text-secondary)] hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]"
+              title="Zooma in"
+            >
+              <MagnifyingGlassPlus size={14} />
+            </button>
+          </div>
+        </div>
+
+      <div className="min-h-0 flex-1 overflow-auto px-3 py-4 md:px-5 md:py-6">
         <div
           className="mx-auto w-full"
-          style={{ maxWidth: isDocumentPage ? 820 : PRESENTATION_PAGE_WIDTH }}
+          style={{
+            maxWidth: zoom === 'fit' ? (isDocumentPage ? 900 : PRESENTATION_PAGE_WIDTH) : undefined,
+            width: zoom === 'fit' ? '100%' : (isDocumentPage ? 860 : PRESENTATION_PAGE_WIDTH) * numericZoom,
+          }}
         >
+          <div style={{ transform: zoom === 'fit' ? undefined : `scale(${numericZoom})`, transformOrigin: 'top center' }}>
           <div
             key={pageRenderKey}
             data-a4-page={!isDocumentPage ? 'presentation' : undefined}
-            className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-[0_8px_28px_rgba(15,23,42,0.08)]"
+            onDragOver={handleCanvasDragOver}
+            onDrop={handleCanvasDrop}
+            className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-white shadow-[0_12px_34px_rgba(15,23,42,0.12)]"
             style={{ minHeight: isDocumentPage ? 840 : PRESENTATION_PAGE_HEIGHT }}
           >
             {!isDocumentPage && headerEditor && (
@@ -76,11 +168,20 @@ export default function DocumentCanvas() {
                   style={{ padding: `${pagePadding}px ${pagePadding}px`, fontFamily: `${docFont}, Arial, sans-serif` }}
                 >
                   {activePageReady ? (
-                    <EditorContent
-                      key={`presentation-editor:${pageRenderKey}`}
-                      editor={editor}
-                      className="doc-editor doc-editor--presentation"
-                    />
+                    <>
+                      {isEmptyPage && (
+                        <BlankPageEmptyState
+                          onInsertHeading={() => insertTemplatePayload(editor, { kind: 'heading1' })}
+                          onAddCover={() => hf?.addPage({ label: 'Omslag', role: 'cover', kind: 'presentation', includeInCustomerPdf: true })}
+                          onAddOfferPage={() => hf?.addPage({ label: 'Offertsida', role: 'offer', kind: 'document', includeInCustomerPdf: true })}
+                        />
+                      )}
+                      <EditorContent
+                        key={`presentation-editor:${pageRenderKey}`}
+                        editor={editor}
+                        className="doc-editor doc-editor--presentation"
+                      />
+                    </>
                   ) : (
                     <PresentationPageLoadingState role={activePage.role} />
                   )}
@@ -96,7 +197,9 @@ export default function DocumentCanvas() {
               />
             )}
           </div>
+          </div>
         </div>
+      </div>
       </div>
 
       <style>{`
@@ -277,6 +380,36 @@ function BubbleFormattingMenu() {
         <LinkIcon size={12} />
       </InlineButton>
     </BubbleMenu>
+  );
+}
+
+function BlankPageEmptyState({
+  onInsertHeading,
+  onAddCover,
+  onAddOfferPage,
+}: {
+  onInsertHeading: () => void;
+  onAddCover: () => void;
+  onAddOfferPage: () => void;
+}) {
+  return (
+    <div className="mb-6 rounded-lg border border-dashed border-[var(--accent-border)] bg-[var(--accent-subtle)] px-4 py-4">
+      <p className="text-sm font-semibold text-[var(--text-primary)]">Börja från en tom sida</p>
+      <p className="mt-1 max-w-[58ch] text-xs leading-5 text-[var(--text-secondary)]">
+        Klicka in en byggsten från vänster, dra ett block hit eller starta med en vanlig rubrik. Omslag och offertsida kan läggas till när flödet växer.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" onClick={onInsertHeading} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white">
+          <TextHOne size={13} /> Lägg till rubrik
+        </button>
+        <button type="button" onClick={onAddCover} className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-active)]">
+          <Plus size={13} /> Omslag
+        </button>
+        <button type="button" onClick={onAddOfferPage} className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-active)]">
+          <NotePencil size={13} /> Offertsida
+        </button>
+      </div>
+    </div>
   );
 }
 

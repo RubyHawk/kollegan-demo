@@ -11,7 +11,7 @@
  * interpolateEmailText() in document-generator can substitute them at send time.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
@@ -41,6 +41,9 @@ import {
 // ── Design config (mirrors EmailDesignConfig in offer-email.jobs.ts) ──────────
 
 interface DesignConfig {
+  meta: {
+    preheader?: string;
+  };
   header: {
     companyName?: string;
     logoUrl?:     string;
@@ -67,6 +70,7 @@ interface DesignConfig {
 }
 
 const DEFAULT_DESIGN: DesignConfig = {
+  meta:   { preheader: 'Här är offerten med sammanfattning, pris och nästa steg.' },
   header: { bgColor: '#0f172a', textColor: '#ffffff', accentColor: '#94a3b8', alignment: 'center', showDivider: true },
   cta:    { bgColor: '#0f172a', textColor: '#ffffff', borderRadius: 8, label: 'Visa & signera offert' },
   footer: { bgColor: '#0f172a', textColor: '#94a3b8', showSocial: false },
@@ -94,19 +98,21 @@ interface Props {
   initialHtml?:         string;
   initialHeaderConfig?: string;
   editorRef?: React.MutableRefObject<EmailEditorHandle | null>;
+  onUpdate?: () => void;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function EmailEditor({ initialSubject, initialHtml, initialHeaderConfig, editorRef }: Props) {
+export default function EmailEditor({ initialSubject, initialHtml, initialHeaderConfig, editorRef, onUpdate }: Props) {
   const [subject,    setSubject]    = useState(initialSubject ?? '');
   const [showDesign, setShowDesign] = useState(false);
   const [design,     setDesign]     = useState<DesignConfig>(() => parseDesign(initialHeaderConfig));
+  const didMountRef = useRef(false);
 
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit.configure({ dropcursor: false }),
+      StarterKit.configure({ dropcursor: false, link: false, underline: false }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       TextStyle,
       Color,
@@ -116,6 +122,7 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
     ],
     content: initialHtml || DEFAULT_BODY,
     editorProps: { attributes: { class: 'email-prose', spellcheck: 'true' } },
+    onUpdate,
   });
 
   // ── Expose handle ──────────────────────────────────────────────────────────
@@ -139,6 +146,8 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
 
   const ph = (patch: Partial<DesignConfig['header']>) =>
     setDesign((d) => ({ ...d, header: { ...d.header, ...patch } }));
+  const pm = (patch: Partial<DesignConfig['meta']>) =>
+    setDesign((d) => ({ ...d, meta: { ...d.meta, ...patch } }));
   const pc = (patch: Partial<DesignConfig['cta']>) =>
     setDesign((d) => ({ ...d, cta: { ...d.cta, ...patch } }));
   const pf = (patch: Partial<DesignConfig['footer']>) =>
@@ -148,18 +157,41 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
     editor?.chain().focus().insertContent({ type: 'variable', attrs: { key, label } }).run();
 
   const { header: h, cta, footer: f } = design;
+  const preheader = design.meta.preheader ?? '';
   const hasHeader = !!(h.companyName || h.logoUrl);
   const hasFooter = !!(f.companyInfo || f.legalText);
+  const emailStatus = subject.trim() || initialHtml || initialHeaderConfig ? 'Anpassad' : 'Standardutkast';
 
   // Variables shown in toolbar
-  const EMAIL_VARS = OFFER_PLACEHOLDERS.filter((p) =>
-    ['recipientName', 'offerTitle', 'totalIncVat', 'validUntil', 'recipientCompany'].includes(
-      p.key.replace(/[{}]/g, ''),
-    ),
-  );
+  const EMAIL_VARS = OFFER_PLACEHOLDERS.filter((p) => p.key !== '{{lineItems}}' && p.key !== '{{signature}}');
+
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+    onUpdate?.();
+  }, [design, onUpdate, subject]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--surface-1)' }}>
+      <div className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">E-postmall</p>
+            <span className="rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--accent)]">
+              {emailStatus}
+            </span>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
+            Skriv meddelandet kunden får innan de öppnar offerten. Variabler fylls med riktig offertdata vid utskick.
+          </p>
+        </div>
+        <div className="hidden shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2 text-right md:block">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Exempel</p>
+          <p className="mt-0.5 text-xs font-semibold text-[var(--text-primary)]">Kundnamn · 128 000 kr</p>
+        </div>
+      </div>
 
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
       <div style={{
@@ -202,7 +234,7 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
         <Sep />
 
         {/* Variable chips */}
-        <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'system-ui,sans-serif', marginLeft: 2 }}>Infoga:</span>
+        <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'system-ui,sans-serif', marginLeft: 2 }}>Variabler:</span>
         {EMAIL_VARS.map((p) => {
           const key = p.key.replace(/[{}]/g, '');
           return (
@@ -238,21 +270,32 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
           }}
         >
           <SettingsIcon />
-          Design
+          Design & avsändare
         </button>
       </div>
 
       {/* ── Subject line ─────────────────────────────────────────────────────── */}
       <div style={{
         borderBottom: '1px solid var(--border)', background: 'var(--surface)',
-        padding: '8px 20px', display: 'flex', alignItems: 'center',
-        gap: 10, flexShrink: 0,
+        padding: '10px 20px', display: 'grid',
+        gridTemplateColumns: '72px minmax(0,1fr)', gap: '8px 10px', flexShrink: 0,
       }}>
         <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', fontFamily: 'system-ui,sans-serif', minWidth: 56, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Ämne</span>
         <input
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="t.ex. Offert: {{offerTitle}}"
+          style={{
+            flex: 1, fontSize: 13, border: 'none', outline: 'none',
+            color: 'var(--text-primary)', fontFamily: 'system-ui,sans-serif',
+            background: 'transparent',
+          }}
+        />
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', fontFamily: 'system-ui,sans-serif', minWidth: 56, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Preview</span>
+        <input
+          value={preheader}
+          onChange={(e) => pm({ preheader: e.target.value })}
+          placeholder="Kort förhandsrad i kundens inkorg"
           style={{
             flex: 1, fontSize: 13, border: 'none', outline: 'none',
             color: 'var(--text-primary)', fontFamily: 'system-ui,sans-serif',
@@ -269,6 +312,9 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
           <div style={{ maxWidth: 600, margin: '0 auto', borderRadius: 8, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.13)' }}>
 
             {/* Header preview */}
+            <div style={{ display: 'none', maxHeight: 0, overflow: 'hidden', opacity: 0 }}>
+              {preheader}
+            </div>
             {hasHeader && (
               <div style={{
                 background: h.bgColor,
@@ -277,6 +323,7 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
                 fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
               }}>
                 {h.logoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={h.logoUrl} alt="" style={{ maxHeight: 48, maxWidth: 200, marginBottom: 10, display: h.alignment === 'center' ? 'block' : 'inline', margin: h.alignment === 'center' ? '0 auto 10px' : '0 0 10px 0' }} />
                 )}
                 {h.companyName && (
@@ -292,7 +339,6 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
             )}
 
             {/* Editable email body */}
-            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
             <div
               style={{ background: '#ffffff', padding: '28px 28px 8px', cursor: 'text' }}
               onClick={() => editor?.commands.focus()}
@@ -346,6 +392,9 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
           }}>
 
             <DesignSection title="Sidhuvud">
+              <Field label="Preheader">
+                <textarea value={preheader} onChange={(e) => pm({ preheader: e.target.value })} rows={2} style={{ ...inputStyle, resize: 'vertical' }} placeholder="Kort förhandsrad i kundens inkorg" />
+              </Field>
               <Field label="Företagsnamn">
                 <input value={h.companyName ?? ''} onChange={(e) => ph({ companyName: e.target.value })} style={inputStyle} placeholder="Ditt företag" />
               </Field>
@@ -444,6 +493,7 @@ function parseDesign(configJson?: string): DesignConfig {
       return { ...DEFAULT_DESIGN, header: { ...DEFAULT_DESIGN.header, ...(parsed as unknown as Partial<DesignConfig['header']>) } };
     }
     return {
+      meta:   { ...DEFAULT_DESIGN.meta,   ...parsed.meta },
       header: { ...DEFAULT_DESIGN.header, ...parsed.header },
       cta:    { ...DEFAULT_DESIGN.cta,    ...parsed.cta },
       footer: { ...DEFAULT_DESIGN.footer, ...parsed.footer },
