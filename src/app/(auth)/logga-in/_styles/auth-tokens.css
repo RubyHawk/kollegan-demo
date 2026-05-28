@@ -1,17 +1,19 @@
 /* Scoped tokens for the login page. Applied via .auth-scope on the root element
  * so they cannot leak into the rest of the app. */
 .auth-scope {
-  --auth-bg-base: oklch(0.18 0.04 255);
-  --auth-bg-layer-1: oklch(0.27 0.07 255);
-  --auth-bg-layer-2: oklch(0.14 0.03 255);
-  --auth-accent: oklch(0.55 0.20 258);
-  --auth-accent-hover: oklch(0.60 0.20 258);
-  --auth-accent-soft: oklch(0.65 0.18 258);
-  --auth-accent-glow: oklch(0.55 0.20 258 / 0.18);
+  /* Brand palette from soleria.se — deep purple-black base (#1a1126),
+     dark navy-teal mid (#142f45), brand blue accents (#3d9be9 / #2061b7) */
+  --auth-bg-base: oklch(0.14 0.06 295);
+  --auth-bg-layer-1: oklch(0.22 0.05 242);
+  --auth-bg-layer-2: oklch(0.10 0.05 295);
+  --auth-accent: oklch(0.47 0.17 254);
+  --auth-accent-hover: oklch(0.54 0.17 254);
+  --auth-accent-soft: oklch(0.64 0.13 232);
+  --auth-accent-glow: oklch(0.47 0.17 254 / 0.20);
   --auth-accent-glow-danger: oklch(0.55 0.20 25 / 0.16);
   --auth-border-hairline: oklch(1 0 0 / 0.08);
   --auth-text-on-dark: oklch(0.98 0 0);
-  --auth-text-on-dark-muted: oklch(0.98 0 0 / 0.62);
+  --auth-text-on-dark-muted: oklch(0.98 0 0 / 0.60);
   --auth-success: oklch(0.62 0.16 145);
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
