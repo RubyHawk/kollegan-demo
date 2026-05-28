@@ -59,6 +59,7 @@ export default function TemplateEditorPage() {
   const [previewing, setPreviewing] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+  const [emailIsDirty, setEmailIsDirty] = useState(false);
   const [draftBanner, setDraftBanner] = useState(false);
   const [migrationNotice, setMigrationNotice] = useState<string | null>(null);
 
@@ -183,6 +184,7 @@ export default function TemplateEditorPage() {
         router.replace(`/mallar/${savedTemplate.id}`);
       } else {
         setIsDirty(false);
+        setEmailIsDirty(false);
         setDraftBanner(false);
         try {
           localStorage.removeItem(draftKey);
@@ -232,7 +234,7 @@ export default function TemplateEditorPage() {
       <TemplateWorkflowDock
         activeTab={activeTab}
         companies={companies}
-        emailConfigured={emailConfigured || isDirty}
+        emailConfigured={emailConfigured || emailIsDirty}
         error={error}
         isDirty={isDirty}
         isNew={isNew}
@@ -330,7 +332,7 @@ export default function TemplateEditorPage() {
                 initialHtml={initEmailBody}
                 initialHeaderConfig={initEmailHdrCfg}
                 editorRef={emailEditorRef}
-                onUpdate={() => setIsDirty(true)}
+                onUpdate={() => { setIsDirty(true); setEmailIsDirty(true); }}
               />
             </div>
           )}

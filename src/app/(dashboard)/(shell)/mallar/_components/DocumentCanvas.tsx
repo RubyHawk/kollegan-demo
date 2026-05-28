@@ -15,6 +15,7 @@ import { uploadTemplateImage } from './template-image-upload';
 import { TEMPLATE_BLOCK_MIME, decodeInsertPayload, insertTemplatePayload, isTipTapDocEmpty } from './template-insert-actions';
 
 const MARGIN_PRESETS = { tight: 40, normal: 56, wide: 80 } as const;
+const IS_MAC = typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent);
 export default function DocumentCanvas() {
   const editor = useTemplateEditor();
   const hf = useHeaderFooter();
@@ -343,13 +344,18 @@ export default function DocumentCanvas() {
 
 function UndoRedoControls({ className }: { className?: string }) {
   const editor = useTemplateEditor();
-  const [, forceUpdate] = useState(0);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
   useEffect(() => {
     if (!editor) return;
-    const handler = () => forceUpdate((n) => n + 1);
-    editor.on('transaction', handler);
-    return () => { editor.off('transaction', handler); };
+    const update = () => {
+      setCanUndo(editor.can().undo());
+      setCanRedo(editor.can().redo());
+    };
+    update();
+    editor.on('transaction', update);
+    return () => editor.off('transaction', update);
   }, [editor]);
 
   if (!editor) return null;
@@ -358,18 +364,18 @@ function UndoRedoControls({ className }: { className?: string }) {
     <div className={cn('flex items-center rounded-lg bg-[var(--surface)] p-0.5 shadow-sm ring-1 ring-inset ring-[var(--border)]', className)}>
       <button
         type="button"
-        title="Ångra (Ctrl+Z)"
+        title={IS_MAC ? 'Ångra (⌘Z)' : 'Ångra (Ctrl+Z)'}
         onClick={() => editor.chain().focus().undo().run()}
-        disabled={!editor.can().undo()}
+        disabled={!canUndo}
         className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)] disabled:opacity-30"
       >
         <ArrowCounterClockwise size={14} />
       </button>
       <button
         type="button"
-        title="Gör om (Ctrl+Y)"
+        title={IS_MAC ? 'Gör om (⌘⇧Z)' : 'Gör om (Ctrl+Y)'}
         onClick={() => editor.chain().focus().redo().run()}
-        disabled={!editor.can().redo()}
+        disabled={!canRedo}
         className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)] disabled:opacity-30"
       >
         <ArrowClockwise size={14} />

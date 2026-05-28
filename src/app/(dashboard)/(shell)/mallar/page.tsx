@@ -168,7 +168,12 @@ export default function TemplatesPage() {
           onMouseEnter={() => {
             if (selectedCompanyId) router.prefetch('/mallar/ny');
           }}
-          className="flex shrink-0 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          title={!companiesLoading && companies.length > 0 && !selectedCompanyId ? 'Välj ett företag nedan för att skapa en mall' : undefined}
+          className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-opacity ${
+            !companiesLoading && companies.length > 0 && !selectedCompanyId
+              ? 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:opacity-70'
+              : 'bg-[var(--accent)] text-white hover:opacity-90'
+          }`}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19" />
