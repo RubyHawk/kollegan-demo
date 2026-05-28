@@ -218,7 +218,7 @@ export default function TemplateEditorPage() {
   }, [save]);
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <TemplateWorkflowDock
         activeTab={activeTab}
         companies={companies}
