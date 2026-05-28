@@ -158,6 +158,28 @@ function getPageBadge(page: PageDoc) {
   return PAGE_ROLE_LABELS[page.role ?? 'custom'];
 }
 
+function getPageTone(page: PageDoc) {
+  if (page.kind === 'document') {
+    return {
+      rail: 'bg-slate-900',
+      badge: 'border-slate-300 bg-white text-slate-700',
+      short: 'OF',
+    };
+  }
+  switch (page.role) {
+    case 'cover':
+      return { rail: 'bg-emerald-500', badge: 'border-emerald-200 bg-emerald-50 text-emerald-800', short: 'OM' };
+    case 'appendix':
+      return { rail: 'bg-amber-500', badge: 'border-amber-200 bg-amber-50 text-amber-800', short: 'BI' };
+    case 'terms':
+      return { rail: 'bg-stone-500', badge: 'border-stone-200 bg-stone-50 text-stone-700', short: 'VI' };
+    case 'references':
+      return { rail: 'bg-violet-500', badge: 'border-violet-200 bg-violet-50 text-violet-800', short: 'RE' };
+    default:
+      return { rail: 'bg-sky-500', badge: 'border-sky-200 bg-sky-50 text-sky-800', short: 'PR' };
+  }
+}
+
 export default function PageNavigator() {
   const hf = useHeaderFooter();
   const [showBlueprints, setShowBlueprints] = useState(false);
@@ -241,7 +263,7 @@ export default function PageNavigator() {
                     }}
                     className="flex w-full items-start gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-[var(--surface-active)]"
                   >
-                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[var(--surface-2)] text-[var(--accent)]">
+                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-secondary)]">
                       {blueprint.icon}
                     </span>
                     <span className="min-w-0 flex-1">
@@ -256,7 +278,7 @@ export default function PageNavigator() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+      <div className="mall-page-list min-h-0 flex-1 overflow-y-auto px-2 py-2">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={hf.pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-1.5">
@@ -276,6 +298,15 @@ export default function PageNavigator() {
           </SortableContext>
         </DndContext>
       </div>
+      <style>{`
+        .mall-page-list {
+          scrollbar-width: none;
+        }
+        .mall-page-list::-webkit-scrollbar {
+          width: 0;
+          height: 0;
+        }
+      `}</style>
     </div>
   );
 }
@@ -298,6 +329,7 @@ function SortablePageRow({
   onRemove?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id });
+  const tone = getPageTone(page);
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -313,14 +345,15 @@ function SortablePageRow({
       style={style}
       onClick={onSelect}
       className={cn(
-        'group rounded-lg border bg-[var(--surface)] p-2 transition-colors',
+        'group relative overflow-hidden rounded-md border bg-[var(--surface)] p-2 transition-colors',
         isDragging
-          ? 'z-10 border-[var(--accent-border)] bg-[var(--accent-subtle)] shadow-[0_10px_24px_rgba(15,23,42,0.18)]'
+          ? 'z-10 border-slate-400 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]'
           : isActive
-            ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)]'
-            : 'border-[var(--border)] hover:bg-[var(--surface-active)]',
+            ? 'border-slate-400 bg-white shadow-sm'
+            : 'border-[var(--border)] hover:border-slate-300 hover:bg-white',
       )}
     >
+      <span className={cn('absolute inset-y-0 left-0 w-1', tone.rail)} />
       <div className="flex items-start gap-2">
         <button
           type="button"
@@ -332,6 +365,10 @@ function SortablePageRow({
         >
           <DotsSixVertical size={14} />
         </button>
+
+        <div className="mt-0.5 flex h-9 w-7 shrink-0 items-center justify-center rounded-sm border border-slate-200 bg-white text-[9px] font-bold uppercase tracking-[0.08em] text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
+          {tone.short}
+        </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
@@ -351,16 +388,16 @@ function SortablePageRow({
           <div className="mt-1 flex flex-wrap items-center gap-1">
             <span
               className={cn(
-                'rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em]',
-                page.kind === 'document' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600',
+                'rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em]',
+                tone.badge,
               )}
             >
               {getPageBadge(page)}
             </span>
             <span
               className={cn(
-                'rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em]',
-                page.includeInCustomerPdf === false ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700',
+                'rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em]',
+                page.includeInCustomerPdf === false ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-slate-200 bg-white text-slate-600',
               )}
             >
               {page.includeInCustomerPdf === false ? 'Intern' : 'Kund + PDF'}
