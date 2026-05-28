@@ -14,7 +14,7 @@
  * Content is serialized as a TemplateDoc v3 object (see template-doc.ts).
  *
  * Layout:
- *   [BlocksSidebar 208px] | [TopToolbar + DocumentCanvas flex-1] | [BlockSettingsSidebar 256px]
+ *   [BlocksSidebar] | [DocumentCanvas flex-1] | [BlockSettingsSidebar]
  */
 
 import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
@@ -34,7 +34,6 @@ import {
 import type { PageDoc } from './template-doc';
 import BlocksSidebar from './BlocksSidebar';
 import BlockSettingsSidebar from './BlockSettingsSidebar';
-import TopToolbar from './TopToolbar';
 import { MINI_EXTENSIONS, createBodyExtensions } from './template-editor-extensions';
 
 const DocumentCanvas = dynamic(() => import('./DocumentCanvas'), { ssr: false });
@@ -441,7 +440,6 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
           <BlocksSidebar />
 
           <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-            <TopToolbar />
             <DocumentCanvas />
           </div>
 

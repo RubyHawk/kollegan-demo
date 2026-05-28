@@ -12,6 +12,7 @@ import {
   ChoiceButton,
   Field,
   InspectorCard,
+  SegmentedControl,
   inputClass,
 } from './block-settings-controls';
 
@@ -75,8 +76,8 @@ export default function BlockSettingsSidebar() {
 
 function InspectorHeader({ title, meta, pdfLabel }: { title: string; meta: string; pdfLabel: string }) {
   return (
-    <div className="shrink-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3 shadow-[inset_3px_0_0_var(--accent)]">
-      <div className="mb-2 flex items-center justify-between gap-3">
+    <div className="shrink-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 shadow-[inset_3px_0_0_var(--accent)]">
+      <div className="mb-1.5 flex items-center justify-between gap-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Inspektor</p>
         <span className="rounded bg-[var(--accent-subtle)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
           {pdfLabel}
@@ -98,7 +99,7 @@ function TableInspector() {
       title="Tabell"
       subtitle="Tabeller justeras direkt i dokumentytan. Markera celler och använd den fria layouten på sidan."
     >
-      <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-2 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+      <div className="border-l-2 border-[var(--border)] px-3 py-1.5 text-[12px] leading-5 text-[var(--text-secondary)]">
         Ändra tabellinnehåll direkt i canvasen — markera celler för att redigera.
       </div>
     </InspectorCard>
@@ -114,7 +115,7 @@ function SignatureInspector({ editor }: { editor: Editor }) {
     <InspectorCard title="Signaturfält" subtitle="Avancerat block för presentationssidor.">
       <div className="space-y-2">
         <Field label="Fälttyp">
-          <div className="grid grid-cols-3 gap-2">
+          <SegmentedControl columns={3}>
             {[
               { value: 'signature', label: 'Signatur' },
               { value: 'name', label: 'Namn' },
@@ -128,7 +129,7 @@ function SignatureInspector({ editor }: { editor: Editor }) {
                 {option.label}
               </ChoiceButton>
             ))}
-          </div>
+          </SegmentedControl>
         </Field>
 
         <Field label="Etikett">
@@ -153,12 +154,12 @@ function VariableInspector({ editor }: { editor: Editor }) {
     <InspectorCard title="Variabel" subtitle="Fält som fylls med offertdata automatiskt.">
       <div className="space-y-2">
         <Field label="Variabelnamn">
-          <code className="block break-all rounded-md border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] text-violet-700">
+          <code className="block break-all rounded-xl bg-[var(--accent-subtle)] px-3 py-2 text-[12px] font-medium text-[var(--accent)]">
             {`{{${key}}}`}
           </code>
         </Field>
         <Field label="Etikett">
-          <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5 text-[12px] text-[var(--text-primary)]">
+          <div className="rounded-xl bg-[var(--surface-active)] px-3 py-2 text-[13px] font-medium text-[var(--text-primary)]">
             {label}
           </div>
         </Field>

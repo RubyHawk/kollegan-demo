@@ -29,7 +29,7 @@ export function InspectorDisclosure({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-start justify-between gap-3 px-5 py-3.5 text-left transition-colors hover:bg-[var(--surface-0)]"
+        className="flex w-full items-start justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[var(--surface-0)]"
         aria-expanded={open}
       >
         <div className="min-w-0 flex-1">
@@ -49,7 +49,7 @@ export function InspectorDisclosure({
           className={cn('mt-0.5 shrink-0 text-[var(--text-muted)] transition-transform', open && 'rotate-180')}
         />
       </button>
-      {open ? <div className="border-t border-[var(--border)] px-5 py-4">{children}</div> : null}
+      {open ? <div className="border-t border-[var(--border)] px-4 py-2.5">{children}</div> : null}
     </section>
   );
 }
@@ -68,7 +68,7 @@ export function EditableSummaryCard({
   onClick: () => void;
 }) {
   return (
-    <div className="py-2">
+    <div className="py-1">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{label}</p>
@@ -104,11 +104,11 @@ export function InspectorCard({
 }) {
   return (
     <section className="relative border-b border-[var(--border)] bg-[var(--surface)] before:absolute before:left-0 before:top-3 before:h-8 before:w-0.5 before:rounded-r before:bg-[var(--accent)] last:border-b-0">
-      <div className="px-5 py-3.5">
+      <div className="px-4 py-2.5">
         <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--text-primary)]">{title}</p>
         {subtitle && <p className="mt-1 text-[12px] leading-5 text-[var(--text-secondary)]">{subtitle}</p>}
       </div>
-      <div className="border-t border-[var(--border)] px-5 py-4">{children}</div>
+      <div className="border-t border-[var(--border)] px-4 py-2.5">{children}</div>
     </section>
   );
 }
@@ -130,6 +130,38 @@ export function Field({
   );
 }
 
+export function ModernSelect({
+  value,
+  onChange,
+  options,
+  title,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+  title?: string;
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        title={title}
+        className="h-8 w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 pr-8 text-[12px] font-medium text-[var(--text-primary)] shadow-sm shadow-black/[0.02] transition focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)]"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>{option.label}</option>
+        ))}
+      </select>
+      <CaretDown
+        size={14}
+        weight="bold"
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+      />
+    </div>
+  );
+}
+
 export function ChoiceButton({
   active,
   onClick,
@@ -144,14 +176,33 @@ export function ChoiceButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-md border px-2 py-1 text-[11px] font-medium transition-colors',
+        'min-h-7 rounded-md border border-transparent px-2.5 py-1 text-[11px] font-medium transition-all',
         active
-          ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)] text-[var(--accent)]'
-          : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]'
+          ? 'bg-[var(--surface)] text-[var(--accent)] shadow-sm ring-1 ring-inset ring-[var(--accent-border)]'
+          : 'text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]'
       )}
     >
       {children}
     </button>
+  );
+}
+
+export function SegmentedControl({
+  children,
+  columns = 2,
+}: {
+  children: ReactNode;
+  columns?: 2 | 3;
+}) {
+  return (
+    <div
+      className={cn(
+        'grid gap-0.5 rounded-lg bg-[var(--surface-active)] p-0.5',
+        columns === 3 ? 'grid-cols-3' : 'grid-cols-2'
+      )}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -167,7 +218,7 @@ export function ToggleCard({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="py-2">
+    <div className="py-1">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[12px] font-semibold text-[var(--text-primary)]">{title}</p>
@@ -189,7 +240,7 @@ export function StaticCard({
   badge: string;
 }) {
   return (
-    <div className="py-2">
+    <div className="py-1">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[12px] font-semibold text-[var(--text-primary)]">{title}</p>
@@ -213,7 +264,7 @@ export function ToggleRow({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="py-2">
+    <div className="py-1">
       <div className="flex items-center justify-between gap-2">
         <span className="min-w-0 flex-1 text-[12px] leading-4 text-[var(--text-primary)]">{label}</span>
         <ToggleSwitch checked={checked} onChange={onChange} />
@@ -234,8 +285,8 @@ export function ToggleSwitch({
       type="button"
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]',
-        checked ? 'bg-[var(--accent)]' : 'bg-[var(--surface-active)]'
+        'relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]',
+        checked ? 'bg-[var(--accent)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]' : 'bg-[var(--surface-active)] ring-1 ring-inset ring-[var(--border)]'
       )}
       aria-pressed={checked}
     >
@@ -249,6 +300,6 @@ export function ToggleSwitch({
   );
 }
 
-export const inputClass = 'w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-[12px] text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-border)]';
+export const inputClass = 'w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-[12px] text-[var(--text-primary)] shadow-sm shadow-black/[0.02] transition focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)]';
 export const textareaClass = `${inputClass} min-h-[72px] resize-y`;
-export const secondaryButtonClass = 'flex-1 rounded-md border border-[var(--border)] px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]';
+export const secondaryButtonClass = 'flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--text-secondary)] shadow-sm shadow-black/[0.02] transition-colors hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]';

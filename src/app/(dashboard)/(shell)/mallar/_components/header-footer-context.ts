@@ -2,7 +2,7 @@
 
 /**
  * Header/Footer context — shared between TemplateEditor (provider),
- * DocumentCanvas (renders the HF zones), and TopToolbar (controls).
+ * DocumentCanvas (renders the HF zones), zoom controls, and inspectors.
  *
  * v3 multi-page format: per-page header/footer with optional override editors.
  */

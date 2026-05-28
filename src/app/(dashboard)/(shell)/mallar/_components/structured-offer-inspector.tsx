@@ -5,7 +5,7 @@ import type { HFCtxValue } from './header-footer-context';
 import { DEFAULT_DOCUMENT_NOTES_HEADING, DEFAULT_DOCUMENT_TERMS_BODY, DEFAULT_DOCUMENT_TERMS_HEADING } from './template-doc';
 import { uploadTemplateImage } from './template-image-upload';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, ModalActionFooter, ModalBody } from '@shared/ui/dialog';
-import { ChoiceButton, EditableSummaryCard, Field, InspectorDisclosure, StaticCard, ToggleCard, ToggleRow, inputClass, secondaryButtonClass, textareaClass, truncateText } from './block-settings-controls';
+import { ChoiceButton, EditableSummaryCard, Field, InspectorDisclosure, SegmentedControl, StaticCard, ToggleCard, ToggleRow, inputClass, secondaryButtonClass, textareaClass, truncateText } from './block-settings-controls';
 
 export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
   const uploadRef = useRef<HTMLInputElement>(null);
@@ -117,7 +117,7 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
             </Field>
 
             <Field label={'Fri textyta'}>
-              <div className="grid grid-cols-2 gap-2">
+              <SegmentedControl>
                 <ChoiceButton
                   active={(document.introLayout ?? 'compact') === 'compact'}
                   onClick={() => hf.patchActivePage({ document: { ...document, introLayout: 'compact' } })}
@@ -130,7 +130,7 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
                 >
                   Rymlig
                 </ChoiceButton>
-              </div>
+              </SegmentedControl>
             </Field>
           </div>
         </InspectorDisclosure>
@@ -221,7 +221,7 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
             </Field>
 
             <Field label="Placering">
-              <div className="grid grid-cols-3 gap-2">
+              <SegmentedControl columns={3}>
                 {[
                   { value: 'top', label: 'Topp' },
                   { value: 'bottom', label: 'Botten' },
@@ -235,7 +235,7 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
                     {option.label}
                   </ChoiceButton>
                 ))}
-              </div>
+              </SegmentedControl>
             </Field>
           </div>
         </InspectorDisclosure>
