@@ -54,6 +54,7 @@ export function MfaStep({ methods, onSuccess, onBack }: MfaStepProps) {
   async function runPasskey() {
     setPasskeyState('loading');
     setError(null);
+
     try {
       const options = await startPasskeyAuthentication();
       const { startAuthentication } = await import('@simplewebauthn/browser');
@@ -69,6 +70,7 @@ export function MfaStep({ methods, onSuccess, onBack }: MfaStepProps) {
         setPasskeyState('idle');
         return;
       }
+
       setError('Passkey-verifiering misslyckades. Försök igen.');
       setPasskeyState('error');
       setTimeout(() => setPasskeyState('idle'), 450);
@@ -79,6 +81,7 @@ export function MfaStep({ methods, onSuccess, onBack }: MfaStepProps) {
     event.preventDefault();
     setError(null);
     setState('loading');
+
     try {
       await verifyMfa(view === 'backup_code' ? backupCode : totpCode);
       setState('success');
@@ -93,17 +96,13 @@ export function MfaStep({ methods, onSuccess, onBack }: MfaStepProps) {
   }
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={onBack}
-        className="mb-5 text-xs text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)]"
-      >
+    <div className="auth-mfa-shell">
+      <button type="button" onClick={onBack} className="auth-mfa-back">
         ← Tillbaka
       </button>
 
       {availableViews.length > 1 ? (
-        <div className="mb-5 grid grid-cols-3 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] p-1 text-xs">
+        <div className="auth-mfa-tabs">
           {availableViews.map((method) => (
             <button
               key={method}
@@ -112,10 +111,8 @@ export function MfaStep({ methods, onSuccess, onBack }: MfaStepProps) {
                 setError(null);
                 setView(method);
               }}
-              className={`rounded-md px-2 py-2 font-medium transition-colors ${
-                view === method
-                  ? 'bg-[var(--surface-0)] text-[var(--text-primary)] shadow-sm'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+              className={`auth-mfa-tab ${
+                view === method ? 'auth-mfa-tab--active' : 'auth-mfa-tab--idle'
               }`}
             >
               {VIEW_LABEL[method]}
@@ -126,9 +123,9 @@ export function MfaStep({ methods, onSuccess, onBack }: MfaStepProps) {
 
       {view === 'webauthn' ? (
         <div className="grid gap-4">
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-0)] p-4">
+          <div className="auth-passkey-card">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--surface-alt)] text-[var(--text-secondary)]">
+              <div className="auth-passkey-card__icon">
                 <Fingerprint size={20} />
               </div>
               <div>
@@ -136,7 +133,8 @@ export function MfaStep({ methods, onSuccess, onBack }: MfaStepProps) {
                   Passkey redo
                 </p>
                 <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
-                  Webbläsarens prompt öppnas automatiskt. Använd passkey:n som sparats på den här enheten eller en annan godkänd enhet.
+                  Webbläsarens prompt öppnas automatiskt. Använd passkeyn som
+                  sparats på den här enheten eller en annan godkänd enhet.
                 </p>
               </div>
             </div>
@@ -145,7 +143,7 @@ export function MfaStep({ methods, onSuccess, onBack }: MfaStepProps) {
           <SubmitButton
             type="button"
             state={passkeyState}
-            loadingLabel="Väntar på passkey…"
+            loadingLabel="Väntar på passkey..."
             onClick={() => void runPasskey()}
           >
             Fortsätt med passkey
@@ -167,24 +165,19 @@ export function MfaStep({ methods, onSuccess, onBack }: MfaStepProps) {
                 label="Säkerhetskod"
                 autoFocus
                 value={backupCode}
+                placeholder="Ange din säkerhetskod"
                 onChange={(event) =>
                   setBackupCode(
                     event.target.value.toUpperCase().replace(/\s/g, '').slice(0, 8),
                   )
                 }
                 maxLength={8}
-                className="auth-input"
+                className="auth-input auth-input--mono"
                 style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.22em' }}
               />
-              <p
-                className="mt-3 rounded-lg border px-3 py-2 text-sm"
-                style={{
-                  borderColor: 'oklch(0.40 0.16 70 / 0.2)',
-                  background: 'oklch(0.96 0.04 70)',
-                  color: 'oklch(0.40 0.16 70)',
-                }}
-              >
-                Varje säkerhetskod kan användas en gång. Detta förbrukar en av dina tio återställningskoder.
+              <p className="auth-backup-note">
+                Varje säkerhetskod kan användas en gång. Detta förbrukar en av
+                dina tio återställningskoder.
               </p>
             </div>
           )}
@@ -193,7 +186,7 @@ export function MfaStep({ methods, onSuccess, onBack }: MfaStepProps) {
 
           <SubmitButton
             state={state}
-            loadingLabel="Verifierar…"
+            loadingLabel="Verifierar..."
             disabled={view === 'totp' ? totpCode.length !== 6 : backupCode.length !== 8}
           >
             Verifiera
