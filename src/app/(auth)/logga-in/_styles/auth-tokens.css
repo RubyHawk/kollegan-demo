@@ -29,10 +29,13 @@
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.auth-scope .auth-page-shell {
+.auth-scope.auth-page-shell {
   position: relative;
+  isolation: isolate;
   display: flex;
+  width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -572,7 +575,7 @@
 }
 
 @media (max-width: 1100px) {
-  .auth-scope .auth-page-shell {
+  .auth-scope.auth-page-shell {
     padding: 1.1rem;
   }
 
@@ -595,7 +598,7 @@
 }
 
 @media (max-height: 820px) and (min-width: 1101px) {
-  .auth-scope .auth-page-shell {
+  .auth-scope.auth-page-shell {
     padding: 0.9rem;
   }
 
@@ -626,7 +629,7 @@
 }
 
 @media (max-width: 640px) {
-  .auth-scope .auth-page-shell {
+  .auth-scope.auth-page-shell {
     padding: 0.7rem;
   }
 
