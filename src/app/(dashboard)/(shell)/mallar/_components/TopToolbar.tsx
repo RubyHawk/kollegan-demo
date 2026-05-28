@@ -10,6 +10,8 @@ import {
   Link as LinkIcon,
   ListBullets,
   ListNumbers,
+  MagnifyingGlassMinus,
+  MagnifyingGlassPlus,
   Minus,
   NotePencil,
   Table,
@@ -59,6 +61,7 @@ export default function TopToolbar() {
 
   const activePage = hf?.pages[hf.activeIdx];
   const isDocumentPage = activePage?.kind === 'document';
+  const zoom = hf?.canvasZoom ?? 'fit';
 
   useEffect(() => {
     if (!editor) return;
@@ -227,11 +230,39 @@ export default function TopToolbar() {
             <LinkButton editor={currentEditor} />
           </ToolbarGroup>
 
-          <div className="ml-auto hidden items-center gap-1.5 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-[11px] text-[var(--text-secondary)] md:flex">
-            {isDocumentPage ? <NotePencil size={12} /> : <TextColumns size={12} />}
-            <span className="font-medium text-[var(--text-primary)]">
-              {isDocumentPage ? 'Offertsida' : 'Presentation'}
-            </span>
+          <div className="ml-auto hidden min-w-0 items-center gap-1.5 md:flex">
+            <div className="flex min-w-0 items-center gap-1.5 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-[11px] text-[var(--text-secondary)]">
+              {isDocumentPage ? <NotePencil size={12} /> : <TextColumns size={12} />}
+              <span className="max-w-[110px] truncate font-medium text-[var(--text-primary)]">
+                {activePage?.label ?? (isDocumentPage ? 'Offertsida' : 'Presentation')}
+              </span>
+              <span className="text-[var(--text-muted)]">·</span>
+              <span>{isDocumentPage ? 'System' : activePage?.includeInCustomerPdf === false ? 'Intern' : 'PDF'}</span>
+            </div>
+            <ToolbarGroup className="gap-0">
+              <ToolbarIconButton title="Zooma ut" onClick={() => hf?.stepCanvasZoom(-1)}>
+                <MagnifyingGlassMinus size={14} />
+              </ToolbarIconButton>
+              <button
+                type="button"
+                onClick={() => hf?.setCanvasZoom('fit')}
+                className={cn('h-7 rounded px-2 text-[11px] font-semibold', zoom === 'fit' ? 'bg-[var(--accent-subtle)] text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-active)]')}
+                title="Anpassa till bredd"
+              >
+                Anpassa
+              </button>
+              <button
+                type="button"
+                onClick={() => hf?.setCanvasZoom(1)}
+                className={cn('h-7 rounded px-2 text-[11px] font-semibold', zoom === 1 ? 'bg-[var(--accent-subtle)] text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-active)]')}
+                title="Visa i 100%"
+              >
+                {zoom === 'fit' ? 'Fit' : `${Math.round(zoom * 100)}%`}
+              </button>
+              <ToolbarIconButton title="Zooma in" onClick={() => hf?.stepCanvasZoom(1)}>
+                <MagnifyingGlassPlus size={14} />
+              </ToolbarIconButton>
+            </ToolbarGroup>
           </div>
         </div>
       </div>

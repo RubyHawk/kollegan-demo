@@ -11,6 +11,8 @@ import { createContext, useContext } from 'react';
 import type { Editor } from '@tiptap/core';
 import type { PageDoc } from './template-doc';
 
+export type CanvasZoom = 'fit' | number;
+
 /** @legacy kept for backward compat with any code that imported HFSettings */
 export interface HFSettings {
   headerEnabled:      boolean;
@@ -50,6 +52,10 @@ export interface HFCtxValue {
     defaultFont: string;
   };
   patchDocSettings: (p: Partial<HFCtxValue['docSettings']>) => void;
+
+  canvasZoom: CanvasZoom;
+  setCanvasZoom: (zoom: CanvasZoom) => void;
+  stepCanvasZoom: (direction: -1 | 1) => void;
 
   // Whether the shared editor has finished hydrating the currently active page.
   activePageReady: boolean;

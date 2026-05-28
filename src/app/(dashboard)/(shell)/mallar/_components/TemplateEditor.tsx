@@ -25,6 +25,7 @@ import type { EditorView } from '@tiptap/pm/view';
 import dynamic from 'next/dynamic';
 import { EditorCtx } from './editor-context';
 import { HFCtx } from './header-footer-context';
+import type { CanvasZoom } from './header-footer-context';
 import { uploadTemplateImage } from './template-image-upload';
 import { insertTemplateImageIntoView } from './template-image-insert';
 import {
@@ -37,6 +38,7 @@ import TopToolbar from './TopToolbar';
 import { MINI_EXTENSIONS, createBodyExtensions } from './template-editor-extensions';
 
 const DocumentCanvas = dynamic(() => import('./DocumentCanvas'), { ssr: false });
+const CANVAS_ZOOM_STEPS = [0.75, 0.9, 1, 1.15, 1.3] as const;
 
 // Public handle ─────────────────────────────────────────────────────────────
 
@@ -347,8 +349,17 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
 
   // ── Document settings ─────────────────────────────────────────────────────
   const [docSettings, setDocSettings] = useState({ pageMargin: 'normal' as 'tight' | 'normal' | 'wide', defaultFont: 'Calibri' });
+  const [canvasZoom, setCanvasZoom] = useState<CanvasZoom>('fit');
   const patchDocSettings = useCallback((p: Partial<typeof docSettings>) => {
     setDocSettings((prev) => ({ ...prev, ...p }));
+  }, []);
+  const stepCanvasZoom = useCallback((direction: -1 | 1) => {
+    setCanvasZoom((currentZoom) => {
+      const current = currentZoom === 'fit' ? 1 : currentZoom;
+      const currentIdx = CANVAS_ZOOM_STEPS.findIndex((value) => value >= current);
+      const baseIdx = currentIdx === -1 ? CANVAS_ZOOM_STEPS.indexOf(1) : currentIdx;
+      return CANVAS_ZOOM_STEPS[Math.min(CANVAS_ZOOM_STEPS.length - 1, Math.max(0, baseIdx + direction))];
+    });
   }, []);
 
   useEffect(() => {
@@ -421,6 +432,9 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
         patchActiveFooter,
         docSettings,
         patchDocSettings,
+        canvasZoom,
+        setCanvasZoom,
+        stepCanvasZoom,
         activePageReady,
       }}>
         <div className="template-editor-light grid h-full min-h-0 grid-cols-[clamp(260px,20vw,340px)_minmax(0,1fr)_clamp(300px,24vw,400px)] overflow-hidden bg-[var(--surface-2)] max-xl:grid-cols-1">
