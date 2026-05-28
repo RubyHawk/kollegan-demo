@@ -1,5 +1,6 @@
 'use client';
 
+import { EnvelopeSimple, LockKey, ShieldCheck } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
@@ -7,7 +8,7 @@ import {
   login,
   type MfaMethod,
 } from '@shared/lib/api/auth-session.api';
-import { BrandLockup } from '@shared/ui/brand';
+import { BrandMark } from '@shared/ui/brand';
 import { TooltipProvider } from '@shared/ui/tooltip';
 import { FloatingInput } from './FloatingInput';
 import { InlineError } from './InlineError';
@@ -15,13 +16,19 @@ import { MfaStep } from './MfaStep';
 import { PasswordVisibilityToggle } from './PasswordVisibilityToggle';
 import { RememberDeviceSwitch } from './RememberDeviceSwitch';
 import { SubmitButton, type SubmitState } from './SubmitButton';
-import { EASE_OUT_SOFT, fadeUp, stepVariants } from './motion';
+import { EASE_OUT_SOFT } from './motion';
 
 type Step = 'login' | 'mfa';
 
 const HEADLINES: Record<Step, { title: string; sub: string }> = {
-  login: { title: 'Logga in', sub: 'Använd ditt arbetskonto för att fortsätta.' },
-  mfa: { title: 'Bekräfta att det är du', sub: 'Välj en av dina registrerade metoder.' },
+  login: {
+    title: 'Välkommen tillbaka',
+    sub: 'Logga in för att fortsätta arbeta.',
+  },
+  mfa: {
+    title: 'Bekräfta att det är du',
+    sub: 'Välj en av dina registrerade metoder.',
+  },
 };
 
 interface LoginFormProps {
@@ -62,6 +69,7 @@ export function LoginForm({ redirect }: LoginFormProps) {
   async function handleLoginSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+
     if (!email || !email.includes('@')) {
       setError('Ange en giltig e-postadress.');
       setLoginState('error');
@@ -69,6 +77,7 @@ export function LoginForm({ redirect }: LoginFormProps) {
       emailInputRef.current?.focus();
       return;
     }
+
     if (!password) {
       setError('Ange ditt lösenord.');
       setLoginState('error');
@@ -76,7 +85,9 @@ export function LoginForm({ redirect }: LoginFormProps) {
       passwordInputRef.current?.focus();
       return;
     }
+
     setLoginState('loading');
+
     try {
       const result = await login({ email, password, rememberMe });
       if (result.status === 'mfa_required') {
@@ -85,6 +96,7 @@ export function LoginForm({ redirect }: LoginFormProps) {
         setStep('mfa');
         return;
       }
+
       setLoginState('success');
       setTimeout(handleSuccessRedirect, 240);
     } catch (err) {
@@ -104,71 +116,45 @@ export function LoginForm({ redirect }: LoginFormProps) {
 
   return (
     <TooltipProvider delayDuration={150}>
-      <main className="flex flex-1 flex-col items-center justify-center bg-white px-8 py-14 sm:px-12">
+      <main className="auth-login-panel">
         <AnimatePresence onExitComplete={handleExitComplete}>
           {!exiting ? (
             <motion.div
               key="card"
-              className="w-full max-w-[400px]"
+              className="auth-login-card"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.985 }}
               transition={{ delay: 0.08, duration: 0.36, ease: EASE_OUT_SOFT }}
             >
-              <motion.div
-                className="mb-10 flex justify-center lg:hidden"
-                initial="hidden"
-                animate="visible"
-                variants={fadeUp}
-              >
-                <BrandLockup
-                  size={40}
-                  priority
-                  align="center"
-                  className="flex flex-col items-center gap-2"
-                  textClassName="text-[18px] font-semibold"
-                />
-              </motion.div>
+              <div className="auth-product-pill">
+                <BrandMark size={22} priority />
+                <span>Soleria Workspace</span>
+              </div>
 
-              <header className="mb-7 min-h-[68px]">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={step}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.2, ease: EASE_OUT_SOFT }}
-                  >
-                    <h1 className="text-[30px] font-bold tracking-[-0.03em] text-gray-900">
-                      {header.title}
-                    </h1>
-                    <p className="mt-1.5 text-[14px] leading-6 text-gray-500">
-                      {header.sub}
-                    </p>
-                  </motion.div>
-                </AnimatePresence>
+              <header className="auth-login-header">
+                <p className="auth-login-kicker">Intern arbetsportal</p>
+                <h1 className="auth-login-title">{header.title}</h1>
+                <p className="auth-login-subtitle">{header.sub}</p>
               </header>
 
-              <AnimatePresence mode="wait">
-                {step === 'login' ? (
-                  <motion.form
-                    key="login-step"
-                    onSubmit={handleLoginSubmit}
-                    variants={stepVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    className="flex flex-col gap-3.5"
-                  >
+              {step === 'login' ? (
+                <form onSubmit={handleLoginSubmit} className="auth-login-form">
                     <FloatingInput
                       ref={emailInputRef}
                       label="E-postadress"
                       type="email"
                       autoComplete="email"
+                      placeholder="Ange din e-postadress"
                       required
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
                       error={Boolean(error) && !email.includes('@')}
+                      trailing={
+                        <span className="auth-input-icon" aria-hidden="true">
+                          <EnvelopeSimple size={18} weight="duotone" />
+                        </span>
+                      }
                     />
 
                     <FloatingInput
@@ -176,21 +162,27 @@ export function LoginForm({ redirect }: LoginFormProps) {
                       label="Lösenord"
                       type={showPassword ? 'text' : 'password'}
                       autoComplete="current-password"
+                      placeholder="Ange ditt lösenord"
                       required
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
                       error={Boolean(error) && email.includes('@')}
                       trailing={
-                        <PasswordVisibilityToggle
-                          visible={showPassword}
-                          onToggle={() => setShowPassword((v) => !v)}
-                        />
+                        <div className="auth-input-trailing">
+                          <span className="auth-input-icon" aria-hidden="true">
+                            <LockKey size={18} weight="duotone" />
+                          </span>
+                          <PasswordVisibilityToggle
+                            visible={showPassword}
+                            onToggle={() => setShowPassword((v) => !v)}
+                          />
+                        </div>
                       }
                     />
 
                     <InlineError message={error} />
 
-                    <div className="mt-1 flex items-center justify-between">
+                    <div className="mt-1">
                       <RememberDeviceSwitch
                         checked={rememberMe}
                         onCheckedChange={setRememberMe}
@@ -200,32 +192,27 @@ export function LoginForm({ redirect }: LoginFormProps) {
                     <SubmitButton state={loginState}>Logga in</SubmitButton>
 
                     {process.env.NODE_ENV !== 'production' ? (
-                      <div className="mt-3 border-t border-gray-100 pt-4 text-center">
-                        <a
-                          href={devLoginUrl(redirect)}
-                          className="text-xs text-gray-400 underline decoration-dotted underline-offset-4 transition-colors hover:text-gray-600"
-                        >
+                      <div className="auth-dev-login">
+                        <a href={devLoginUrl(redirect)} className="auth-dev-login__link">
                           Dev: logga in utan konto →
                         </a>
                       </div>
                     ) : null}
-                  </motion.form>
-                ) : (
-                  <motion.div
-                    key="mfa-step"
-                    variants={stepVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                  >
-                    <MfaStep
-                      methods={mfaMethods}
-                      onSuccess={handleMfaSuccess}
-                      onBack={() => setStep('login')}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  </form>
+              ) : (
+                <MfaStep
+                  methods={mfaMethods}
+                  onSuccess={handleMfaSuccess}
+                  onBack={() => setStep('login')}
+                />
+              )}
+
+              <div className="auth-login-note">
+                <ShieldCheck size={18} weight="duotone" />
+                <span>
+                  Säker intern åtkomst för offert, order, planering och installation.
+                </span>
+              </div>
             </motion.div>
           ) : null}
         </AnimatePresence>

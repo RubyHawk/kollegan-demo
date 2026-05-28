@@ -18,12 +18,7 @@ interface SubmitButtonProps {
 
 function Spinner() {
   return (
-    <svg
-      className="h-4 w-4 animate-spin"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
+    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle
         className="opacity-25"
         cx="12"
@@ -44,7 +39,7 @@ function Spinner() {
 export function SubmitButton({
   state,
   children,
-  loadingLabel = 'Loggar in…',
+  loadingLabel = 'Loggar in...',
   disabled,
   type = 'submit',
   onClick,
@@ -73,8 +68,7 @@ export function SubmitButton({
   }, [state, controls]);
 
   const isInteractive = state === 'idle';
-  const background =
-    state === 'success' ? 'var(--auth-success)' : 'var(--auth-accent)';
+  const background = state === 'success' ? 'var(--auth-success)' : 'var(--auth-accent)';
 
   return (
     <motion.button
@@ -83,7 +77,7 @@ export function SubmitButton({
       onClick={onClick}
       disabled={disabled || state === 'loading' || state === 'success'}
       animate={controls}
-      className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-[10px] text-[15px] font-semibold text-white outline-none transition-[background-color,transform,box-shadow] duration-[140ms] disabled:cursor-not-allowed"
+      className="auth-submit-button group"
       style={{
         background,
         transitionTimingFunction: 'var(--ease-out-soft)',
@@ -93,6 +87,7 @@ export function SubmitButton({
       whileHover={isInteractive ? { y: -1 } : undefined}
       whileTap={isInteractive ? { y: 0 } : undefined}
     >
+      <span className="auth-submit-button__sheen" aria-hidden="true" />
       <AnimatePresence initial={false} mode="wait">
         {state === 'success' ? (
           <motion.span
