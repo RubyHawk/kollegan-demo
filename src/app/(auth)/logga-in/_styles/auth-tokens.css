@@ -98,8 +98,3 @@
   caret-color: var(--text-primary);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .auth-scope .auth-crosshair-rotor {
-    will-change: transform;
-  }
-}
