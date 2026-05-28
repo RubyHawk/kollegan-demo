@@ -3,19 +3,16 @@
 import { BubbleMenu } from '@tiptap/react/menus';
 import { EditorContent } from '@tiptap/react';
 import { NodeSelection } from '@tiptap/pm/state';
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import { PRESENTATION_PAGE_HEIGHT, PRESENTATION_PAGE_WIDTH } from './presentation-page-height';
 import { cn } from '@shared/lib/utils';
 import { Link as LinkIcon, MagnifyingGlassMinus, MagnifyingGlassPlus, NotePencil, Plus, TextHOne } from '@phosphor-icons/react';
 import { PresentationPageLoadingState, StructuredOfferCanvas } from './document-canvas-structured';
-import {
-  TEMPLATE_BLOCK_MIME,
-  decodeInsertPayload,
-  insertTemplatePayload,
-  isTipTapDocEmpty,
-} from './template-insert-actions';
+import { insertTemplateImageIntoEditor } from './template-image-insert';
+import { uploadTemplateImage } from './template-image-upload';
+import { TEMPLATE_BLOCK_MIME, decodeInsertPayload, insertTemplatePayload, isTipTapDocEmpty } from './template-insert-actions';
 
 const MARGIN_PRESETS = { tight: 40, normal: 56, wide: 80 } as const;
 const ZOOM_STEPS = [0.75, 0.9, 1, 1.15, 1.3] as const;
@@ -24,11 +21,17 @@ export default function DocumentCanvas() {
   const editor = useTemplateEditor();
   const hf = useHeaderFooter();
   const [zoom, setZoom] = useState<'fit' | number>('fit');
+  const pageRef = useRef<HTMLDivElement>(null);
+  const [measuredPageHeight, setMeasuredPageHeight] = useState<number | null>(null);
 
   const activePage = hf?.pages[hf.activeIdx] ?? null;
   const isDocumentPage = activePage?.kind === 'document';
   const documentSettings = activePage?.document;
   const pageRenderKey = activePage ? `${activePage.id}:${activePage.kind ?? 'presentation'}` : 'page';
+  const pageBodyAttrs = (activePage?.body as { attrs?: Record<string, unknown> } | null | undefined)?.attrs ?? {};
+  const storedPresentationHeight = typeof pageBodyAttrs.pageHeight === 'number' ? pageBodyAttrs.pageHeight : null;
+  const basePageWidth = isDocumentPage ? 860 : PRESENTATION_PAGE_WIDTH;
+  const basePageMinHeight = isDocumentPage ? 840 : storedPresentationHeight ?? PRESENTATION_PAGE_HEIGHT;
 
   const activeHeader = hf?.activeHeader ?? { enabled: false, useDefault: true };
   const activeFooter = hf?.activeFooter ?? { enabled: false, useDefault: true };
@@ -44,6 +47,21 @@ export default function DocumentCanvas() {
   const activePageReady = hf?.activePageReady ?? true;
   const isEmptyPage = useMemo(() => isTipTapDocEmpty(activePage?.body), [activePage?.body]);
   const numericZoom = zoom === 'fit' ? 1 : zoom;
+
+  useLayoutEffect(() => {
+    if (!pageRef.current || zoom === 'fit') return;
+
+    const measure = () => {
+      const rect = pageRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setMeasuredPageHeight(rect.height);
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(pageRef.current);
+    return () => observer.disconnect();
+  }, [pageRenderKey, zoom]);
 
   if (!editor || !activePage) return null;
 
@@ -65,17 +83,30 @@ export default function DocumentCanvas() {
   }
 
   function handleCanvasDrop(event: React.DragEvent<HTMLDivElement>) {
+    if (event.defaultPrevented) return;
     const payload = decodeInsertPayload(event.dataTransfer.getData(TEMPLATE_BLOCK_MIME));
-    if (!payload) return;
+    const imageFile = Array.from(event.dataTransfer.files).find((file) => file.type.startsWith('image/'));
+    if (imageFile && event.target instanceof Element && event.target.closest('.ProseMirror')) return;
+    if (!payload && !imageFile) return;
     event.preventDefault();
     if (!activePageReady || isDocumentPage) return;
     const currentEditor = editor;
     if (!currentEditor) return;
-    insertTemplatePayload(currentEditor, payload);
+    if (payload) {
+      insertTemplatePayload(currentEditor, payload);
+      return;
+    }
+    if (imageFile) {
+      void uploadTemplateImage(imageFile)
+        .then((src) => insertTemplateImageIntoEditor(currentEditor, src))
+        .catch((error) => {
+          window.alert(error instanceof Error ? error.message : 'Kunde inte ladda upp bilden.');
+        });
+    }
   }
 
   return (
-    <div className="flex-1 overflow-hidden bg-[var(--surface-2)]">
+    <div className="flex-1 overflow-hidden bg-[#d8dde4]">
       <BubbleFormattingMenu />
 
       <div className="flex h-full min-h-0 flex-col">
@@ -126,22 +157,30 @@ export default function DocumentCanvas() {
           </div>
         </div>
 
-      <div className="min-h-0 flex-1 overflow-auto px-3 py-4 md:px-5 md:py-6">
+      <div className="min-h-0 flex-1 overflow-auto px-4 py-6 md:px-8 md:py-8">
         <div
-          className="mx-auto w-full"
+          className="mx-auto"
           style={{
-            maxWidth: zoom === 'fit' ? (isDocumentPage ? 900 : PRESENTATION_PAGE_WIDTH) : undefined,
-            width: zoom === 'fit' ? '100%' : (isDocumentPage ? 860 : PRESENTATION_PAGE_WIDTH) * numericZoom,
+            maxWidth: zoom === 'fit' ? basePageWidth : undefined,
+            width: zoom === 'fit' ? '100%' : basePageWidth * numericZoom,
+            height: zoom === 'fit' ? undefined : (measuredPageHeight ?? basePageMinHeight) * numericZoom,
           }}
         >
-          <div style={{ transform: zoom === 'fit' ? undefined : `scale(${numericZoom})`, transformOrigin: 'top center' }}>
+          <div
+            ref={pageRef}
+            style={{
+              width: zoom === 'fit' ? '100%' : basePageWidth,
+              transform: zoom === 'fit' ? undefined : `scale(${numericZoom})`,
+              transformOrigin: 'top left',
+            }}
+          >
           <div
             key={pageRenderKey}
             data-a4-page={!isDocumentPage ? 'presentation' : undefined}
             onDragOver={handleCanvasDragOver}
             onDrop={handleCanvasDrop}
-            className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-white shadow-[0_12px_34px_rgba(15,23,42,0.12)]"
-            style={{ minHeight: isDocumentPage ? 840 : PRESENTATION_PAGE_HEIGHT }}
+            className="relative border border-slate-300 bg-white shadow-[0_18px_44px_rgba(15,23,42,0.18)]"
+            style={{ minHeight: basePageMinHeight }}
           >
             {!isDocumentPage && headerEditor && (
               <HFZone
@@ -220,7 +259,7 @@ export default function DocumentCanvas() {
           margin: 0 0 14px 0;
           font-size: 32px;
           line-height: 1.1;
-          letter-spacing: -0.04em;
+          letter-spacing: 0;
           font-weight: 700;
           color: #0f172a;
         }
@@ -383,11 +422,7 @@ function BubbleFormattingMenu() {
   );
 }
 
-function BlankPageEmptyState({
-  onInsertHeading,
-  onAddCover,
-  onAddOfferPage,
-}: {
+function BlankPageEmptyState({ onInsertHeading, onAddCover, onAddOfferPage }: {
   onInsertHeading: () => void;
   onAddCover: () => void;
   onAddOfferPage: () => void;
