@@ -5,12 +5,13 @@ import { BRAND_NAME } from '@shared/branding';
 import { AuthBrandMark } from './AuthBrandMark';
 import { AuthHeadline } from './AuthHeadline';
 import { AuthSidebarBackground } from './AuthSidebarBackground';
-import { PipelineMockup } from './PipelineMockup';
+import { InstalledAreaCard } from './InstalledAreaCard';
+import { LiveInstallationsTicker } from './LiveInstallationsTicker';
 import { EASE_OUT_SOFT } from './motion';
 
 export function AuthSidebar() {
   return (
-    <aside className="relative hidden w-[440px] shrink-0 overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-10">
+    <aside className="relative hidden w-[520px] shrink-0 overflow-hidden lg:flex lg:flex-col lg:p-9">
       <AuthSidebarBackground />
 
       <motion.div
@@ -28,9 +29,13 @@ export function AuthSidebar() {
         </span>
       </motion.div>
 
-      <div className="relative z-10 flex flex-col gap-8">
+      <div className="relative z-10 mt-10">
         <AuthHeadline />
-        <PipelineMockup />
+      </div>
+
+      <div className="relative z-10 mt-auto flex flex-col gap-3 pt-10">
+        <InstalledAreaCard />
+        <LiveInstallationsTicker />
       </div>
     </aside>
   );
