@@ -89,12 +89,13 @@ function getChangedFiles() {
   const baseRef = process.env.GITHUB_BASE_REF;
   const eventName = process.env.GITHUB_EVENT_NAME;
   const pushBeforeSha = eventName === 'push' ? getPushBeforeSha() : null;
+  const includeUntracked = process.env.CHECK_FILE_SIZE_INCLUDE_UNTRACKED === '1';
   const commands = [
     baseRef ? `git diff --name-only --diff-filter=ACMR origin/${baseRef}...HEAD` : null,
     pushBeforeSha ? `git diff --name-only --diff-filter=ACMR ${pushBeforeSha} HEAD` : null,
     eventName === 'push' && !pushBeforeSha ? 'git diff --name-only --diff-filter=ACMR HEAD^ HEAD' : null,
     'git diff --name-only --diff-filter=ACMR',
-    'git ls-files --others --exclude-standard',
+    includeUntracked ? 'git ls-files --others --exclude-standard' : null,
   ].filter(Boolean);
   const files = new Set();
   for (const command of commands) {

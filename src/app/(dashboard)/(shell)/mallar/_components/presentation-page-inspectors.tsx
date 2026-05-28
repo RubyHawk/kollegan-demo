@@ -2,17 +2,17 @@
 
 import type { HFCtxValue } from './header-footer-context';
 import { PAGE_ROLE_LABELS } from './template-doc';
-import { ChoiceButton, Field, InspectorCard, ToggleCard, inputClass } from './block-settings-controls';
+import { ChoiceButton, Field, InspectorCard, ModernSelect, SegmentedControl, ToggleCard, inputClass } from './block-settings-controls';
 
 export function PresentationPageInspector({ hf }: { hf: HFCtxValue }) {
   const page = hf.pages[hf.activeIdx];
 
   return (
     <InspectorCard
-      title="Sida"
-      subtitle="Grundinställningar för presentationssidan."
+      title="Sidans identitet"
+      subtitle="Namn, roll och kundsynlighet."
     >
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Field label="Sidnamn">
           <input
             type="text"
@@ -23,7 +23,7 @@ export function PresentationPageInspector({ hf }: { hf: HFCtxValue }) {
         </Field>
 
         <Field label="Sidroll">
-          <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5 text-[12px] text-[var(--text-primary)]">
+          <div className="rounded-lg bg-[var(--surface-active)] px-2.5 py-1.5 text-[12px] font-medium text-[var(--text-primary)]">
             {PAGE_ROLE_LABELS[page.role ?? 'custom']}
           </div>
         </Field>
@@ -36,12 +36,12 @@ export function PresentationPageInspector({ hf }: { hf: HFCtxValue }) {
         />
 
         {page.role === 'cover' && (
-          <div className="rounded-md border border-[var(--accent-border)] bg-[var(--accent-subtle)] px-2.5 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+          <div className="border-l-2 border-[var(--accent)] bg-[var(--accent-subtle)] px-3 py-1.5 text-[11px] leading-5 text-[var(--text-secondary)]">
             Omslaget är en fri presentationssida. Lägg in titel, bild, logo och offertvariabler från vänsterpanelen och dra sedan sidan dit den ska ligga i flödet.
           </div>
         )}
 
-        <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2.5 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+        <div className="border-l-2 border-[var(--border)] px-3 py-1 text-[11px] leading-5 text-[var(--text-secondary)]">
           Sidtyp byts inte i efterhand. Lägg hellre till en ny offertsida eller presentationssida och ta bort den gamla om flödet ska ändras.
         </div>
       </div>
@@ -54,24 +54,21 @@ export function DocumentDefaultsInspector({ hf }: { hf: HFCtxValue }) {
 
   return (
     <InspectorCard
-      title="Dokumentstandard"
-      subtitle="Typsnitt och marginaler för presentationssidorna."
+      title="Typografi & marginaler"
+      subtitle="Basvärden för fria presentationssidor."
     >
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Field label="Standardteckensnitt">
-          <select
+          <ModernSelect
             value={hf.docSettings.defaultFont}
-            onChange={(event) => hf.patchDocSettings({ defaultFont: event.target.value })}
-            className={inputClass}
-          >
-            {fonts.map((font) => (
-              <option key={font} value={font}>{font}</option>
-            ))}
-          </select>
+            onChange={(value) => hf.patchDocSettings({ defaultFont: value })}
+            options={fonts.map((font) => ({ value: font, label: font }))}
+            title="Standardteckensnitt"
+          />
         </Field>
 
         <Field label="Sidmarginal">
-          <div className="grid grid-cols-3 gap-2">
+          <SegmentedControl columns={3}>
             {[
               { value: 'tight', label: 'Smal' },
               { value: 'normal', label: 'Normal' },
@@ -85,7 +82,7 @@ export function DocumentDefaultsInspector({ hf }: { hf: HFCtxValue }) {
                 {option.label}
               </ChoiceButton>
             ))}
-          </div>
+          </SegmentedControl>
         </Field>
       </div>
     </InspectorCard>

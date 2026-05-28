@@ -1,11 +1,11 @@
-﻿'use client';
+'use client';
 
 import { useRef, useState } from 'react';
 import type { HFCtxValue } from './header-footer-context';
 import { DEFAULT_DOCUMENT_NOTES_HEADING, DEFAULT_DOCUMENT_TERMS_BODY, DEFAULT_DOCUMENT_TERMS_HEADING } from './template-doc';
 import { uploadTemplateImage } from './template-image-upload';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, ModalActionFooter, ModalBody } from '@shared/ui/dialog';
-import { ChoiceButton, EditableSummaryCard, Field, InspectorDisclosure, StaticCard, ToggleCard, ToggleRow, inputClass, secondaryButtonClass, textareaClass, truncateText } from './block-settings-controls';
+import { ChoiceButton, EditableSummaryCard, Field, InspectorDisclosure, SegmentedControl, StaticCard, ToggleCard, ToggleRow, inputClass, secondaryButtonClass, textareaClass, truncateText } from './block-settings-controls';
 
 export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
   const uploadRef = useRef<HTMLInputElement>(null);
@@ -69,17 +69,10 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
 
   return (
     <>
-      <div className="space-y-2 p-2">
-        <div className="rounded-xl border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface)_0%,var(--surface-0)_100%)] px-3 py-3 shadow-sm">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Strukturerad offertsida</p>
-          <p className="mt-1 text-[12px] leading-5 text-[var(--text-secondary)]">
-            {'Tyngre textf\u00e4lt \u00f6ppnas i dialogrutor, medan layoutval och synliga block ligger i hopf\u00e4llbara sektioner.'}
-          </p>
-        </div>
-
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <InspectorDisclosure
-          title={'Sid\u00f6versikt'}
-          subtitle={'Rubrik, PDF-beteende och sidtyp f\u00f6r den h\u00e4r systemstyrda sidan.'}
+          title={'Sidans grund'}
+          subtitle={'Rubrik, PDF-status och låst offertmodell.'}
           badge="Grund"
           defaultOpen
         >
@@ -112,20 +105,19 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
         </InspectorDisclosure>
 
         <InspectorDisclosure
-          title="Layout & tydlighet"
-          subtitle={'Rytm, luft och hur de fasta blocken upplevs visuellt i canvasen.'}
+          title="Läsbarhet"
+          subtitle={'Rytm, summering och fri textyta.'}
           badge={document.introLayout === 'roomy' ? 'Rymlig' : 'Kompakt'}
-          defaultOpen
         >
           <div className="space-y-2">
             <Field label="Summering">
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 text-[11px] leading-5 text-[var(--text-secondary)]">
+              <div className="border-l-2 border-[var(--border)] px-3 py-1.5 text-[12px] leading-5 text-[var(--text-secondary)]">
                 {'Summeringen visas alltid som en smal box under produkter och tj\u00e4nster, precis innan juridiska villkor.'}
               </div>
             </Field>
 
             <Field label={'Fri textyta'}>
-              <div className="grid grid-cols-2 gap-2">
+              <SegmentedControl>
                 <ChoiceButton
                   active={(document.introLayout ?? 'compact') === 'compact'}
                   onClick={() => hf.patchActivePage({ document: { ...document, introLayout: 'compact' } })}
@@ -138,14 +130,14 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
                 >
                   Rymlig
                 </ChoiceButton>
-              </div>
+              </SegmentedControl>
             </Field>
           </div>
         </InspectorDisclosure>
 
         <InspectorDisclosure
-          title={'Synliga delar'}
-          subtitle={'Sl\u00e5 av eller p\u00e5 de systemblock som kunden ska se p\u00e5 offertsidan.'}
+          title={'Kundvyns delar'}
+          subtitle={'Vilka systemblock som visas.'}
           badge={`${visibleBlockCount}/9 aktiva`}
         >
           <div className="space-y-1">
@@ -162,8 +154,8 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
         </InspectorDisclosure>
 
         <InspectorDisclosure
-          title="Bakgrund & watermark"
-          subtitle={'Bakgrundsbild, styrka och placering f\u00f6r att skapa mer separation i sidan.'}
+          title="Visuell bakgrund"
+          subtitle={'Bild, styrka och placering.'}
           badge={document.backgroundImageSrc ? 'Aktiv' : 'Ingen'}
         >
           <div className="space-y-2">
@@ -229,7 +221,7 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
             </Field>
 
             <Field label="Placering">
-              <div className="grid grid-cols-3 gap-2">
+              <SegmentedControl columns={3}>
                 {[
                   { value: 'top', label: 'Topp' },
                   { value: 'bottom', label: 'Botten' },
@@ -243,16 +235,15 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
                     {option.label}
                   </ChoiceButton>
                 ))}
-              </div>
+              </SegmentedControl>
             </Field>
           </div>
         </InspectorDisclosure>
 
         <InspectorDisclosure
-          title={'Texter som g\u00e5r att \u00e4ndra'}
-          subtitle={'L\u00e4ngre textf\u00e4lt \u00f6ppnas i rena dialogrutor i st\u00e4llet f\u00f6r i sidpanelen.'}
+          title={'Standardtexter'}
+          subtitle={'Juridik och anteckningsrubrik.'}
           badge="Dialog"
-          defaultOpen
         >
           <div className="space-y-2">
             <EditableSummaryCard
@@ -271,9 +262,9 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
               onClick={() => openDialog('notes')}
             />
 
-            <div className="rounded-xl border border-dashed border-[var(--accent-border)] bg-[var(--accent-subtle)]/55 px-3 py-2.5">
-              <p className="text-[11px] font-semibold text-[var(--text-primary)]">{'Fri offerttext skrivs direkt i canvasen'}</p>
-              <p className="mt-1 text-[11px] leading-5 text-[var(--text-secondary)]">
+            <div className="border-l-2 border-[var(--accent)] bg-[var(--accent-subtle)] px-3 py-2">
+              <p className="text-[12px] font-semibold text-[var(--text-primary)]">{'Fri offerttext skrivs direkt i canvasen'}</p>
+              <p className="mt-1 text-[12px] leading-5 text-[var(--text-secondary)]">
                 {'Den stora introytan p\u00e5 sidan \u00e4r markerad som skrivbar, s\u00e5 du slipper fler textf\u00e4lt i panelen.'}
               </p>
             </div>

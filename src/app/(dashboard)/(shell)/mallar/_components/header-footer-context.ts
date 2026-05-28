@@ -2,7 +2,7 @@
 
 /**
  * Header/Footer context — shared between TemplateEditor (provider),
- * DocumentCanvas (renders the HF zones), and TopToolbar (controls).
+ * DocumentCanvas (renders the HF zones), zoom controls, and inspectors.
  *
  * v3 multi-page format: per-page header/footer with optional override editors.
  */
@@ -10,6 +10,8 @@
 import { createContext, useContext } from 'react';
 import type { Editor } from '@tiptap/core';
 import type { PageDoc } from './template-doc';
+
+export type CanvasZoom = 'fit' | number;
 
 /** @legacy kept for backward compat with any code that imported HFSettings */
 export interface HFSettings {
@@ -50,6 +52,10 @@ export interface HFCtxValue {
     defaultFont: string;
   };
   patchDocSettings: (p: Partial<HFCtxValue['docSettings']>) => void;
+
+  canvasZoom: CanvasZoom;
+  setCanvasZoom: (zoom: CanvasZoom) => void;
+  stepCanvasZoom: (direction: -1 | 1) => void;
 
   // Whether the shared editor has finished hydrating the currently active page.
   activePageReady: boolean;
