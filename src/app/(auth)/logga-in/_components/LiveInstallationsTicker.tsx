@@ -8,16 +8,16 @@ import { EASE_OUT_SOFT } from './motion';
 type EntryType = 'villa' | 'brf' | 'kontor' | 'restaurang';
 
 const POOL: { type: EntryType; name: string; city: string; area: number; film: string }[] = [
-  { type: 'brf',        name: 'Brf Vintergatan',     city: 'Göteborg',     area: 248, film: 'Privacy Frost' },
-  { type: 'villa',      name: 'Villa Karlström',     city: 'Saltsjöbaden', area:  64, film: 'Solar Bronze 35' },
-  { type: 'kontor',     name: 'Polhem AB',           city: 'Uppsala',      area: 184, film: 'Premium Black' },
-  { type: 'villa',      name: 'Villa Bergström',     city: 'Lidingö',      area:  92, film: 'Anti-Glare HD' },
-  { type: 'brf',        name: 'Brf Sjöutsikt',       city: 'Nacka',        area: 156, film: 'Solar Bronze 35' },
-  { type: 'restaurang', name: 'Solgården',           city: 'Malmö',        area:  86, film: 'Solar Silver 20' },
-  { type: 'kontor',     name: 'Sundbyberg Tech',     city: 'Sundbyberg',   area: 412, film: 'Energy Pro 70' },
-  { type: 'villa',      name: 'Villa Nordin',        city: 'Djursholm',    area:  48, film: 'UV-Skydd Plus' },
-  { type: 'brf',        name: 'Brf Solbacken',       city: 'Solna',        area: 192, film: 'Privacy Frost' },
-  { type: 'kontor',     name: 'Hagströms Arkitekt',  city: 'Stockholm',    area: 138, film: 'Energy Pro 70' },
+  { type: 'brf',        name: 'Bostadsrättsförening', city: 'Göteborg',     area: 248, film: 'Privacy Frost' },
+  { type: 'villa',      name: 'Privatbostad',         city: 'Saltsjöbaden', area:  64, film: 'Solar Bronze 35' },
+  { type: 'kontor',     name: 'Kontorslokaler',       city: 'Uppsala',      area: 184, film: 'Premium Black' },
+  { type: 'villa',      name: 'Privatbostad',         city: 'Lidingö',      area:  92, film: 'Anti-Glare HD' },
+  { type: 'brf',        name: 'Bostadsrättsförening', city: 'Nacka',        area: 156, film: 'Solar Bronze 35' },
+  { type: 'restaurang', name: 'Restauranglokal',      city: 'Malmö',        area:  86, film: 'Solar Silver 20' },
+  { type: 'kontor',     name: 'Kontorslokaler',       city: 'Sundbyberg',   area: 412, film: 'Energy Pro 70' },
+  { type: 'villa',      name: 'Privatbostad',         city: 'Djursholm',    area:  48, film: 'UV-Skydd Plus' },
+  { type: 'brf',        name: 'Bostadsrättsförening', city: 'Solna',        area: 192, film: 'Privacy Frost' },
+  { type: 'kontor',     name: 'Kontorslokaler',       city: 'Stockholm',    area: 138, film: 'Energy Pro 70' },
 ];
 
 const ICONS = { villa: House, brf: Buildings, kontor: Briefcase, restaurang: Storefront };
