@@ -74,6 +74,7 @@ export default function TemplateEditorPage() {
         : undefined,
     [selectedCompany],
   );
+  const emailConfigured = Boolean(initEmailSubject || initEmailBody || initEmailHdrCfg);
 
   useEffect(() => {
     if (isNew) return;
@@ -279,6 +280,13 @@ export default function TemplateEditorPage() {
                 }`}
               >
                 {label}
+                {tab === 'email' && (
+                  <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] ${
+                    active ? 'bg-white/20 text-white' : 'bg-[var(--surface-2)] text-[var(--text-muted)]'
+                  }`}>
+                    {emailConfigured || isDirty ? 'Aktiv' : 'Standard'}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -413,6 +421,7 @@ export default function TemplateEditorPage() {
                 initialHtml={initEmailBody}
                 initialHeaderConfig={initEmailHdrCfg}
                 editorRef={emailEditorRef}
+                onUpdate={() => setIsDirty(true)}
               />
             </div>
           )}

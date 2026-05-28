@@ -41,15 +41,13 @@ export function StructuredOfferCanvas({
 
   return (
     <div
-      className="relative overflow-hidden rounded-[24px] border border-slate-200/90 bg-[linear-gradient(180deg,#f8fbff_0%,#fcfdfd_30%,#f8fafc_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] md:rounded-[28px] md:p-8"
+      className="relative overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] md:p-8"
       style={{
         minHeight: 840,
         fontFamily: `${fontFamily}, Arial, sans-serif`,
       }}
     >
-      <div className="pointer-events-none absolute -right-16 top-[-72px] h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(96,165,250,0.18)_0%,rgba(96,165,250,0)_72%)]" />
-      <div className="pointer-events-none absolute -left-14 bottom-[-88px] h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(251,191,36,0.12)_0%,rgba(251,191,36,0)_72%)]" />
-      <div className="pointer-events-none absolute inset-[18px] rounded-[22px] border border-white/80" />
+      <div className="pointer-events-none absolute inset-[18px] rounded-lg border border-slate-100" />
 
       {settings?.backgroundImageSrc && (
         <div

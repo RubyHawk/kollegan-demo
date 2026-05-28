@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import type { HFCtxValue } from './header-footer-context';
 import { PAGE_ROLE_LABELS } from './template-doc';
@@ -35,19 +35,14 @@ export function PresentationPageInspector({ hf }: { hf: HFCtxValue }) {
           onChange={(checked) => hf.patchActivePage({ includeInCustomerPdf: checked })}
         />
 
-        <div className="grid grid-cols-2 gap-2">
-          <ChoiceButton
-            active={(page.kind ?? 'presentation') === 'presentation'}
-            onClick={() => hf.patchActivePage({ kind: 'presentation', role: page.role ?? 'custom' })}
-          >
-            Presentation
-          </ChoiceButton>
-          <ChoiceButton
-            active={(page.kind ?? 'presentation') === 'document'}
-            onClick={() => hf.patchActivePage({ kind: 'document', role: 'offer', includeInCustomerPdf: true })}
-          >
-            Gör till offertsida
-          </ChoiceButton>
+        {page.role === 'cover' && (
+          <div className="rounded-md border border-[var(--accent-border)] bg-[var(--accent-subtle)] px-2.5 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+            Omslaget är en fri presentationssida. Lägg in titel, bild, logo och offertvariabler från vänsterpanelen och dra sedan sidan dit den ska ligga i flödet.
+          </div>
+        )}
+
+        <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2.5 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+          Sidtyp byts inte i efterhand. Lägg hellre till en ny offertsida eller presentationssida och ta bort den gamla om flödet ska ändras.
         </div>
       </div>
     </InspectorCard>

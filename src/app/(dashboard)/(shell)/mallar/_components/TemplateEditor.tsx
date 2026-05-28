@@ -33,7 +33,6 @@ import {
 import type { PageDoc } from './template-doc';
 import BlocksSidebar from './BlocksSidebar';
 import BlockSettingsSidebar from './BlockSettingsSidebar';
-import PageRail from './PageRail';
 import TopToolbar from './TopToolbar';
 import { MINI_EXTENSIONS, createBodyExtensions } from './template-editor-extensions';
 
@@ -192,7 +191,6 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
       },
     };
     return updated;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, headerPageOverride, footerPageOverride]);
 
   const hydrateEditorsForPage = useCallback((page: PageDoc) => {
@@ -364,7 +362,7 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
     if (loadedPageIdRef.current === targetPage.id) return;
 
     hydrateEditorsForPage(targetPage);
-  }, [activeIdx, hydrateEditorsForPage, pages]);
+  }, [activeIdx, editor, footerPageOverride, headerPageOverride, hydrateEditorsForPage, pages]);
 
   // ── Expose handle to parent pages ────────────────────────────────────────────
 
@@ -387,7 +385,6 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
         const doc = parseTemplateDoc(
           typeof json === 'string' ? json : JSON.stringify(json),
         );
-        const firstPage = doc.pages[0] ?? makeEmptyPage();
         headerDefault?.commands.setContent(doc.defaultHeader as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
         footerDefault?.commands.setContent(doc.defaultFooter as Parameters<NonNullable<typeof editor>['commands']['setContent']>[0]);
         loadedPageIdRef.current = null;
@@ -426,13 +423,12 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
         patchDocSettings,
         activePageReady,
       }}>
-        <div className="template-editor-light flex h-full overflow-hidden bg-[var(--surface-2)]">
+        <div className="template-editor-light grid h-full min-h-0 grid-cols-[clamp(260px,20vw,340px)_minmax(0,1fr)_clamp(300px,24vw,400px)] overflow-hidden bg-[var(--surface-2)] max-xl:grid-cols-1">
           <BlocksSidebar />
 
           <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
             <TopToolbar />
             <DocumentCanvas />
-            <PageRail />
           </div>
 
           <BlockSettingsSidebar />

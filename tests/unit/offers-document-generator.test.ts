@@ -183,6 +183,41 @@ describe('offer document generator', () => {
     expect(html).not.toContain('offer-pricing-layout--split');
   });
 
+  it('keeps template page order and marks pages excluded from customer PDF', () => {
+    const template = JSON.stringify({
+      _v: 4,
+      pages: [
+        {
+          id: 'internal',
+          label: 'Intern',
+          role: 'custom',
+          kind: 'presentation',
+          includeInCustomerPdf: false,
+          body: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Intern notering' }] }] },
+          header: { enabled: false, useDefault: true, content: { type: 'doc', content: [] } },
+          footer: { enabled: false, useDefault: true, content: { type: 'doc', content: [] } },
+        },
+        {
+          id: 'cover',
+          label: 'Omslag',
+          role: 'cover',
+          kind: 'presentation',
+          includeInCustomerPdf: true,
+          body: { type: 'doc', content: [{ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Omslag först efter intern' }] }] },
+          header: { enabled: false, useDefault: true, content: { type: 'doc', content: [] } },
+          footer: { enabled: false, useDefault: true, content: { type: 'doc', content: [] } },
+        },
+      ],
+      defaultHeader: { type: 'doc', content: [] },
+      defaultFooter: { type: 'doc', content: [] },
+    });
+
+    const html = generateDocument(template, offer, branding);
+
+    expect(html.indexOf('Intern notering')).toBeLessThan(html.indexOf('Omslag först efter intern'));
+    expect(html).toContain('data-customer-pdf="false"');
+  });
+
   it('renders the footer with company, responsible and contact details', () => {
     const html = generateFallbackDocument(offer, branding);
 

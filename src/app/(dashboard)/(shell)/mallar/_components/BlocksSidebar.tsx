@@ -1,16 +1,24 @@
 'use client';
 
-import { useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
+import PageNavigator from './PageNavigator';
 import { uploadTemplateImage } from './template-image-upload';
 import { insertTemplateImageIntoEditor } from './template-image-insert';
 import { OFFER_PLACEHOLDERS } from '@modules/supporting/offers/domain/template.entity';
+import {
+  TEMPLATE_BLOCK_MIME,
+  encodeInsertPayload,
+  insertTemplatePayload,
+  type InsertPayload,
+} from './template-insert-actions';
 import {
   BracketsCurly,
   CalendarBlank,
   Image as PhImage,
   ListBullets,
+  MagnifyingGlass,
   Minus as PhMinus,
   PenNib,
   Table,
@@ -19,6 +27,19 @@ import {
   TextT,
   User,
 } from '@phosphor-icons/react';
+import { cn } from '@shared/lib/utils';
+
+type BuilderTab = 'pages' | 'blocks' | 'variables' | 'media';
+
+type LibraryItem = {
+  id: string;
+  label: string;
+  description?: string;
+  group: string;
+  icon: React.ReactNode;
+  payload: InsertPayload;
+  clickOnly?: boolean;
+};
 
 function toKey(placeholder: string) {
   return placeholder.replace(/[{}]/g, '');
@@ -28,19 +49,120 @@ const VISIBLE_VARIABLES = OFFER_PLACEHOLDERS.filter(
   (p) => p.key !== '{{lineItems}}' && p.key !== '{{signature}}',
 );
 
+function getVariableGroup(key: string) {
+  if (['offerNumber', 'offerTitle', 'quoteNumber'].includes(key)) return 'Offert';
+  if (['recipientName', 'recipientEmail', 'recipientCompany'].includes(key)) return 'Kund';
+  if (['totalExVat', 'totalIncVat', 'vatAmount'].includes(key)) return 'Pris';
+  if (['createdDate', 'validUntil'].includes(key)) return 'Datum';
+  return 'Innehåll';
+}
+
 export default function BlocksSidebar() {
   const editor = useTemplateEditor();
   const hf = useHeaderFooter();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [tab, setTab] = useState<BuilderTab>('pages');
+  const [query, setQuery] = useState('');
 
   const activePage = hf?.pages[hf.activeIdx];
   const isDocumentPage = activePage?.kind === 'document';
   const isAppendixPage = activePage?.role === 'appendix' && !isDocumentPage;
   const isPageReady = hf?.activePageReady ?? true;
 
+  const blockItems = useMemo<LibraryItem[]>(() => [
+    {
+      id: 'heading1',
+      label: 'Rubrik 1',
+      description: 'Stor rubrik för sidans huvudbudskap.',
+      group: 'Textblock',
+      icon: <TextHOne size={14} />,
+      payload: { kind: 'heading1' },
+    },
+    {
+      id: 'heading2',
+      label: 'Rubrik 2',
+      description: 'Mellanrubrik för avsnitt.',
+      group: 'Textblock',
+      icon: <TextHTwo size={14} />,
+      payload: { kind: 'heading2' },
+    },
+    {
+      id: 'paragraph',
+      label: 'Brödtext',
+      description: 'Vanlig textyta.',
+      group: 'Textblock',
+      icon: <TextT size={14} />,
+      payload: { kind: 'paragraph' },
+    },
+    {
+      id: 'bulletList',
+      label: 'Punktlista',
+      description: 'Lista för leveranser eller fördelar.',
+      group: 'Textblock',
+      icon: <ListBullets size={14} />,
+      payload: { kind: 'bulletList' },
+    },
+    {
+      id: 'table',
+      label: 'Tabell',
+      description: 'En enkel 3 x 3-tabell.',
+      group: 'Struktur',
+      icon: <Table size={14} />,
+      payload: { kind: 'table' },
+    },
+    {
+      id: 'divider',
+      label: 'Avdelare',
+      description: 'Tunn linje mellan avsnitt.',
+      group: 'Struktur',
+      icon: <PhMinus size={14} />,
+      payload: { kind: 'divider' },
+    },
+    {
+      id: 'signature',
+      label: 'Signatur',
+      description: 'Manuellt signaturfält på presentationssida.',
+      group: 'Signatur',
+      icon: <PenNib size={14} />,
+      payload: { kind: 'signature', label: 'Signatur' },
+    },
+    {
+      id: 'signatureName',
+      label: 'Namn',
+      description: 'Fält för fullständigt namn.',
+      group: 'Signatur',
+      icon: <User size={14} />,
+      payload: { kind: 'signatureName', label: 'Fullständigt namn' },
+    },
+    {
+      id: 'signatureDate',
+      label: 'Datum',
+      description: 'Fält för signeringsdatum.',
+      group: 'Signatur',
+      icon: <CalendarBlank size={14} />,
+      payload: { kind: 'signatureDate', label: 'Signeringsdatum' },
+    },
+  ], []);
+
+  const variableItems = useMemo<LibraryItem[]>(() => VISIBLE_VARIABLES.map((placeholder) => {
+    const key = toKey(placeholder.key);
+    return {
+      id: key,
+      label: placeholder.label,
+      description: placeholder.key,
+      group: getVariableGroup(key),
+      icon: <BracketsCurly size={14} />,
+      payload: { kind: 'variable', key, label: placeholder.label },
+    };
+  }), []);
+
+  const normalizedQuery = query.trim().toLocaleLowerCase('sv-SE');
+  const visibleBlocks = filterItems(blockItems, normalizedQuery);
+  const visibleVariables = filterItems(variableItems, normalizedQuery);
+
   if (!editor || !hf) {
     return (
-      <aside className="hidden w-[212px] shrink-0 border-r border-[var(--border)] bg-[var(--surface-1)] xl:flex" />
+      <aside className="hidden shrink-0 border-r border-[var(--border)] bg-[var(--surface-1)] xl:flex xl:w-[clamp(260px,20vw,340px)]" />
     );
   }
 
@@ -48,7 +170,7 @@ export default function BlocksSidebar() {
     const currentEditor = editor;
     if (!currentEditor) return;
     if (!hf?.activePageReady) {
-      window.alert('Vänta ett ögonblick tills sidan är färdigladdad innan du lägger in bilden.');
+      window.alert('Vänta tills sidan är färdigladdad innan du lägger in bilden.');
       return;
     }
     try {
@@ -59,211 +181,225 @@ export default function BlocksSidebar() {
     }
   }
 
+  function runPayload(payload: InsertPayload) {
+    if (!isPageReady) return;
+    if (payload.kind === 'image') {
+      fileRef.current?.click();
+      return;
+    }
+    const currentEditor = editor;
+    if (!currentEditor) return;
+    insertTemplatePayload(currentEditor, payload);
+  }
+
   return (
-    <aside className="hidden w-[212px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface-1)] xl:flex">
-      <div className="flex-1 overflow-y-auto px-2 py-2">
-        <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-          Byggstenar
+    <aside className="hidden min-h-0 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface-1)] xl:flex xl:w-[clamp(260px,20vw,340px)]">
+      <div className="shrink-0 border-b border-[var(--border)] px-3 py-3">
+        <p className="text-[12px] font-semibold text-[var(--text-primary)]">Mallbyggare</p>
+        <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">
+          Styr sidflödet, klicka in block eller dra dem till dokumentytan.
         </p>
-        <p className="mb-3 px-1 text-[10px] leading-4 text-[var(--text-muted)]">
-          Klicka för att infoga i sidan. Sidor hanteras i raden längst ner ↓
-        </p>
-
-        {isDocumentPage ? (
-          <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-2.5 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
-            Den här sidan är systemstyrd. Justera innehåll, juridik och layout i panelen till höger.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {!isPageReady && (
-              <div className="rounded-md border border-dashed border-[var(--accent-border)] bg-[var(--accent-subtle)] px-2.5 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
-                Laddar rätt sida i editorn. Vänta en halv sekund innan du lägger in bild eller text.
-              </div>
-            )}
-
-            {isAppendixPage && (
-              <Section
-                title="Bildbilaga"
-                hint="Bilagor startar tomma med flit. Lägg in en eller flera bilder här i stället för att börja med en rubrik."
-              >
-                <InsertButton
-                  icon={<PhImage size={13} />}
-                  label="Ladda upp första bilden"
-                  onClick={() => fileRef.current?.click()}
-                  disabled={!isPageReady}
-                />
-              </Section>
-            )}
-
-            <Section title="Textblock">
-              <InsertButton icon={<TextHOne size={13} />} label="Rubrik 1" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} disabled={!isPageReady} />
-              <InsertButton icon={<TextHTwo size={13} />} label="Rubrik 2" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} disabled={!isPageReady} />
-              <InsertButton icon={<TextT size={13} />} label="Brödtext" onClick={() => editor.chain().focus().setParagraph().run()} disabled={!isPageReady} />
-              <InsertButton icon={<ListBullets size={13} />} label="Punktlista" onClick={() => editor.chain().focus().toggleBulletList().run()} disabled={!isPageReady} />
-            </Section>
-
-            <Section title="Media & struktur">
-              <InsertButton icon={<PhImage size={13} />} label={isAppendixPage ? 'Lägg till bild till bilagan' : 'Bild'} onClick={() => fileRef.current?.click()} disabled={!isPageReady} />
-              <InsertButton icon={<Table size={13} />} label="Tabell" onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} disabled={!isPageReady} />
-              <InsertButton icon={<PhMinus size={13} />} label="Avdelare" onClick={() => editor.chain().focus().setHorizontalRule().run()} disabled={!isPageReady} />
-            </Section>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void insertImage(file);
-                event.target.value = '';
-              }}
-            />
-
-            <Section
-              title="Kunduppgifter"
-              hint="Fält som fylls automatiskt från offerten."
-            >
-              {VISIBLE_VARIABLES.map((placeholder) => (
-                <VariableButton
-                  key={placeholder.key}
-                  label={placeholder.label}
-                  tokenKey={placeholder.key}
-                  onClick={() =>
-                    editor
-                      .chain()
-                      .focus()
-                      .insertContent({
-                        type: 'variable',
-                        attrs: { key: toKey(placeholder.key), label: placeholder.label },
-                      })
-                      .run()
-                  }
-                  disabled={!isPageReady}
-                />
-              ))}
-            </Section>
-
-            <Section
-              title="Signatur"
-              hint="Underskriftsfält för kunden."
-            >
-              <InsertButton
-                icon={<PenNib size={13} />}
-                label="Signatur"
-                onClick={() =>
-                  editor
-                    .chain()
-                    .focus()
-                    .insertContent({ type: 'signatureBlock', attrs: { fieldType: 'signature', label: 'Signatur' } })
-                    .run()
-                }
-                disabled={!isPageReady}
-              />
-              <InsertButton
-                icon={<User size={13} />}
-                label="Namn"
-                onClick={() =>
-                  editor
-                    .chain()
-                    .focus()
-                    .insertContent({ type: 'signatureBlock', attrs: { fieldType: 'name', label: 'Fullständigt namn' } })
-                    .run()
-                }
-                disabled={!isPageReady}
-              />
-              <InsertButton
-                icon={<CalendarBlank size={13} />}
-                label="Datum"
-                onClick={() =>
-                  editor
-                    .chain()
-                    .focus()
-                    .insertContent({ type: 'signatureBlock', attrs: { fieldType: 'date', label: 'Signeringsdatum' } })
-                    .run()
-                }
-                disabled={!isPageReady}
-              />
-            </Section>
-          </div>
-        )}
       </div>
+
+      <div className="grid shrink-0 grid-cols-4 border-b border-[var(--border)] bg-[var(--surface)]">
+        {[
+          { key: 'pages', label: 'Sidor' },
+          { key: 'blocks', label: 'Block' },
+          { key: 'variables', label: 'Variabler' },
+          { key: 'media', label: 'Media' },
+        ].map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => setTab(item.key as BuilderTab)}
+            className={cn(
+              'h-9 border-r border-[var(--border)] text-[11px] font-semibold last:border-r-0',
+              tab === item.key
+                ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]',
+            )}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'pages' ? (
+        <PageNavigator />
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="shrink-0 px-3 py-3">
+            <label className="flex h-8 items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 text-[12px] text-[var(--text-primary)]">
+              <MagnifyingGlass size={13} className="shrink-0 text-[var(--text-muted)]" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={tab === 'variables' ? 'Sök variabel...' : 'Sök block...'}
+                className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--text-muted)]"
+              />
+            </label>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+            {isDocumentPage ? (
+              <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-3 py-3 text-[11px] leading-5 text-[var(--text-secondary)]">
+                Den här sidan är en strukturerad offertsida. Lägg till fria presentationssidor för manuell layout, bilder och variabler.
+              </div>
+            ) : (
+              <>
+                {!isPageReady && (
+                  <div className="mb-3 rounded-lg border border-dashed border-[var(--accent-border)] bg-[var(--accent-subtle)] px-3 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+                    Laddar rätt sida i editorn. Vänta en halv sekund innan du lägger in bild eller text.
+                  </div>
+                )}
+
+                {tab === 'blocks' && (
+                  <LibraryGroups
+                    items={visibleBlocks}
+                    onInsert={runPayload}
+                    disabled={!isPageReady}
+                  />
+                )}
+
+                {tab === 'variables' && (
+                  <LibraryGroups
+                    items={visibleVariables}
+                    onInsert={runPayload}
+                    disabled={!isPageReady}
+                    showToken
+                  />
+                )}
+
+                {tab === 'media' && (
+                  <div className="space-y-3">
+                    {isAppendixPage && (
+                      <div className="rounded-lg border border-[var(--accent-border)] bg-[var(--accent-subtle)] px-3 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+                        Bilagor passar bäst för en eller flera uppladdade bilder. Du kan också släppa bildfiler direkt på canvasen.
+                      </div>
+                    )}
+                    <LibraryItemButton
+                      item={{
+                        id: 'image',
+                        label: isAppendixPage ? 'Lägg till bild till bilagan' : 'Bild',
+                        description: 'Välj en bildfil eller släpp en bild direkt på sidan.',
+                        group: 'Media',
+                        icon: <PhImage size={14} />,
+                        payload: { kind: 'image' },
+                        clickOnly: true,
+                      }}
+                      disabled={!isPageReady}
+                      onInsert={runPayload}
+                    />
+                    <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-3 py-3 text-[11px] leading-5 text-[var(--text-secondary)]">
+                      Tips: dra en bildfil från datorn till dokumentytan för att placera den på aktiv sida.
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void insertImage(file);
+          event.target.value = '';
+        }}
+      />
     </aside>
   );
 }
 
-function Section({
-  title,
-  hint,
-  children,
+function filterItems(items: LibraryItem[], normalizedQuery: string) {
+  if (!normalizedQuery) return items;
+  return items.filter((item) => {
+    const haystack = `${item.label} ${item.description ?? ''} ${item.group}`.toLocaleLowerCase('sv-SE');
+    return haystack.includes(normalizedQuery);
+  });
+}
+
+function LibraryGroups({
+  items,
+  onInsert,
+  disabled,
+  showToken = false,
 }: {
-  title: string;
-  hint?: string;
-  children: React.ReactNode;
+  items: LibraryItem[];
+  onInsert: (payload: InsertPayload) => void;
+  disabled: boolean;
+  showToken?: boolean;
 }) {
+  const groups = Array.from(new Set(items.map((item) => item.group)));
+  if (items.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-3 py-3 text-[11px] text-[var(--text-muted)]">
+        Inga träffar.
+      </div>
+    );
+  }
   return (
-    <div>
-      <p className="mb-0.5 px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-        {title}
-      </p>
-      {hint && (
-        <p className="mb-1 px-1 text-[10px] leading-4 text-[var(--text-muted)]">{hint}</p>
-      )}
-      <div className="flex flex-col gap-1">{children}</div>
+    <div className="space-y-4">
+      {groups.map((group) => (
+        <section key={group}>
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{group}</p>
+          <div className="space-y-1.5">
+            {items.filter((item) => item.group === group).map((item) => (
+              <LibraryItemButton
+                key={item.id}
+                item={item}
+                disabled={disabled}
+                onInsert={onInsert}
+                showToken={showToken}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
 
-function InsertButton({
-  icon,
-  label,
-  onClick,
-  disabled = false,
+function LibraryItemButton({
+  item,
+  disabled,
+  onInsert,
+  showToken = false,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
+  item: LibraryItem;
+  disabled: boolean;
+  onInsert: (payload: InsertPayload) => void;
+  showToken?: boolean;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      draggable={!disabled && !item.clickOnly}
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = 'copy';
+        event.dataTransfer.setData(TEMPLATE_BLOCK_MIME, encodeInsertPayload(item.payload));
+        event.dataTransfer.setData('text/plain', item.label);
+      }}
+      onClick={() => onInsert(item.payload)}
       disabled={disabled}
-      className="flex w-full items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-left transition-colors hover:border-[var(--accent-border)] hover:bg-[var(--accent-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
+      title={item.clickOnly ? 'Klicka för att välja fil' : 'Klicka för att infoga eller dra till sidan'}
+      className="flex w-full items-start gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-2 text-left transition-colors hover:border-[var(--accent-border)] hover:bg-[var(--accent-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
     >
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[var(--surface-2)] text-[var(--accent)]">
-        {icon}
+      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[var(--surface-2)] text-[var(--accent)]">
+        {item.icon}
       </span>
-      <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-[var(--text-primary)]">{label}</span>
-    </button>
-  );
-}
-
-function VariableButton({
-  label,
-  tokenKey,
-  onClick,
-  disabled = false,
-}: {
-  label: string;
-  tokenKey: string;
-  onClick: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={`Infogar ${tokenKey}`}
-      className="flex w-full items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-left transition-colors hover:border-[var(--accent-border)] hover:bg-[var(--accent-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-violet-50 text-violet-600">
-        <BracketsCurly size={12} />
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-[11px] font-medium text-[var(--text-primary)]">{label}</span>
-        <span className="truncate font-mono text-[9px] text-[var(--text-muted)]">{tokenKey}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[12px] font-semibold text-[var(--text-primary)]">{item.label}</span>
+        {item.description && (
+          <span className={cn('mt-0.5 block text-[10px] leading-4 text-[var(--text-muted)]', showToken ? 'font-mono' : '')}>
+            {item.description}
+          </span>
+        )}
       </span>
     </button>
   );

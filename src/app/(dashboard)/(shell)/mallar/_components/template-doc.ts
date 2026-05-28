@@ -217,8 +217,7 @@ function normalizePage(
     label,
     role: inferredRole,
     kind: inferredKind,
-    includeInCustomerPdf:
-      page?.includeInCustomerPdf ?? (inferredKind === 'document' || inferredRole === 'cover' || inferredRole === 'appendix'),
+    includeInCustomerPdf: page?.includeInCustomerPdf ?? true,
     body: page?.body ?? EMPTY_DOC,
     header: page?.header ?? { enabled: false, useDefault: true, content: EMPTY_DOC },
     footer: page?.footer ?? { enabled: false, useDefault: true, content: EMPTY_DOC },
@@ -238,7 +237,7 @@ export function makeEmptyPage(label = 'Sida 1', role: PageRole = 'custom'): Page
     label,
     role,
     kind: role === 'offer' ? 'document' : 'presentation',
-    includeInCustomerPdf: role !== 'custom',
+    includeInCustomerPdf: true,
     body: EMPTY_DOC,
     header: { enabled: false, useDefault: true, content: EMPTY_DOC },
     footer: { enabled: false, useDefault: true, content: EMPTY_DOC },
