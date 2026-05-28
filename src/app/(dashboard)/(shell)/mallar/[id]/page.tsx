@@ -24,7 +24,17 @@ import { normalizeTemplateImages } from '../_components/template-image-upload';
 import { TemplateWorkflowDock } from '../_components/TemplateWorkflowDock';
 
 const TemplateEditor = dynamic(() => import('../_components/TemplateEditor'), { ssr: false });
-const EmailEditor = dynamic(() => import('../_components/EmailEditor'), { ssr: false });
+const EmailEditor = dynamic(() => import('../_components/EmailEditor'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center gap-3 text-[var(--text-muted)]">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+      </svg>
+      <span className="text-sm">Laddar e-postredigeraren...</span>
+    </div>
+  ),
+});
 
 type Tab = 'offer' | 'email';
 
@@ -232,6 +242,7 @@ export default function TemplateEditorPage() {
         saving={saving}
         selectedCompanyId={selectedCompanyId}
         onBack={() => router.push('/mallar')}
+        onErrorDismiss={() => setError(null)}
         onNameChange={(value) => {
           setName(value);
           setIsDirty(true);
@@ -311,15 +322,6 @@ export default function TemplateEditorPage() {
               onMigrationNotice={setMigrationNotice}
             />
           </div>
-
-          {activeTab === 'email' && !emailMounted && (
-            <div className="flex flex-1 items-center justify-center gap-3 text-[var(--text-muted)]">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-              </svg>
-              <span className="text-sm">Laddar e-postredigeraren...</span>
-            </div>
-          )}
 
           {emailMounted && (
             <div className={`flex-1 overflow-hidden ${activeTab === 'email' ? '' : 'hidden'}`}>

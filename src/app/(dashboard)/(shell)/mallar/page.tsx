@@ -266,10 +266,7 @@ export default function TemplatesPage() {
               deleting={deleting === template.id}
               onPreview={() => void handlePreview(template)}
               onDuplicate={() => void handleDuplicate(template)}
-              onEdit={() => {
-                router.prefetch(`/mallar/${template.id}`);
-                router.push(`/mallar/${template.id}`);
-              }}
+              onEdit={() => router.push(`/mallar/${template.id}`)}
               onDeleteRequest={() => setConfirmDelete({ id: template.id, name: template.name })}
             />
           ))}
@@ -435,10 +432,12 @@ type CardProps = {
 };
 
 function TemplateCard({ template, previewing, duplicating, deleting, onPreview, onDuplicate, onEdit, onDeleteRequest }: CardProps) {
+  const router = useRouter();
   return (
     <div
       className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[0_2px_8px_rgba(0,0,0,0.07)] transition-all hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,0,0,0.11)]"
       onClick={onEdit}
+      onMouseEnter={() => router.prefetch(`/mallar/${template.id}`)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onEdit(); }}
