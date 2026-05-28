@@ -355,7 +355,7 @@ function UndoRedoControls({ className }: { className?: string }) {
     };
     update();
     editor.on('transaction', update);
-    return () => editor.off('transaction', update);
+    return () => { editor.off('transaction', update); };
   }, [editor]);
 
   if (!editor) return null;
