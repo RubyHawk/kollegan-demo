@@ -1,67 +1,49 @@
 'use client';
 
-import { motion } from 'framer-motion';
-
-const ringStroke = 'var(--auth-border-hairline)';
-
 export function AuthSidebarBackground() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {/* Deep purple-black base (#1a1126) */}
       <div
         className="absolute inset-0"
         style={{ background: 'var(--auth-bg-base)' }}
       />
 
+      {/* Brand navy-teal highlight (#142f45) from top-left */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            'radial-gradient(60% 50% at 30% 35%, var(--auth-bg-layer-1) 0%, transparent 70%)',
+            'radial-gradient(75% 55% at 10% 12%, oklch(0.22 0.05 242 / 0.95) 0%, transparent 60%)',
         }}
       />
 
+      {/* Brand mid-purple swell from lower-right */}
       <div
-        className="absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2"
-        style={{ width: 520, height: 520 }}
-      >
-        <motion.svg
-          viewBox="0 0 520 520"
-          width={520}
-          height={520}
-          aria-hidden="true"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 240, repeat: Infinity, ease: 'linear' }}
-          className="auth-crosshair-rotor"
-        >
-          <g stroke={ringStroke} strokeWidth={1} fill="none">
-            <circle cx={260} cy={260} r={120} />
-            <circle cx={260} cy={260} r={200} />
-            <circle cx={260} cy={260} r={260} />
-            <line x1={0} y1={260} x2={520} y2={260} />
-            <line x1={260} y1={0} x2={260} y2={520} />
-            <line x1={260} y1={0} x2={260} y2={14} strokeWidth={1.5} />
-            <line x1={260} y1={506} x2={260} y2={520} strokeWidth={1.5} />
-            <line x1={0} y1={260} x2={14} y2={260} strokeWidth={1.5} />
-            <line x1={506} y1={260} x2={520} y2={260} strokeWidth={1.5} />
-          </g>
-        </motion.svg>
-      </div>
+        className="absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(50% 40% at 92% 82%, oklch(0.20 0.08 278 / 0.80) 0%, transparent 60%)',
+        }}
+      />
 
+      {/* Noise texture */}
       <div
         className="absolute inset-0"
         style={{
           backgroundImage: 'url(/auth/noise.png)',
           backgroundRepeat: 'repeat',
-          opacity: 0.04,
+          opacity: 0.045,
           mixBlendMode: 'overlay',
         }}
       />
 
+      {/* Bottom vignette */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-x-0 bottom-0 h-56"
         style={{
           background:
-            'linear-gradient(to bottom, transparent 55%, var(--auth-bg-layer-2) 100%)',
+            'linear-gradient(to top, oklch(0.10 0.05 295 / 0.90) 0%, transparent 100%)',
         }}
       />
     </div>
