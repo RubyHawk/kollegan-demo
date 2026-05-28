@@ -25,6 +25,7 @@ npm run check:migrations
 npm run check:file-size
 npm run check:ai-proxies
 npm run check:security-evidence
+npm run check:plan-status
 npm run check:encoding
 npm run lint:deps
 npm run lint

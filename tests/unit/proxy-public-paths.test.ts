@@ -3,6 +3,8 @@ import { isPublicPath } from '../../src/proxy';
 
 describe('proxy public path allowlist', () => {
   it('keeps legacy and v1 auth endpoints public for signed-out flows', () => {
+    expect(isPublicPath('/logga-in')).toBe(true);
+    expect(isPublicPath('/registrera')).toBe(true);
     expect(isPublicPath('/api/auth/login')).toBe(true);
     expect(isPublicPath('/api/v1/auth/login')).toBe(true);
     expect(isPublicPath('/api/v1/auth/mfa/verify')).toBe(true);

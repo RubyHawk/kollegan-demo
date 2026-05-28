@@ -8,24 +8,20 @@ export interface LoginPayload {
   rememberMe?: boolean;
 }
 
-export interface RegisterPayload {
-  email: string;
-  password: string;
-}
-
 export type LoginResult =
   | { status: 'signed_in' }
   | { status: 'mfa_required'; methods: MfaMethod[] };
 
 async function readAuthError(res: Response, fallback: string) {
   try {
-    const json = await res.json() as {
+    const json = (await res.json()) as {
       detail?: string;
       error?: string | { message?: string };
       message?: string;
       title?: string;
     };
-    const errorMessage = typeof json.error === 'string' ? json.error : json.error?.message;
+    const errorMessage =
+      typeof json.error === 'string' ? json.error : json.error?.message;
     return json.detail ?? errorMessage ?? json.message ?? json.title ?? fallback;
   } catch {
     return fallback;
@@ -56,7 +52,9 @@ export async function login(payload: LoginPayload): Promise<LoginResult> {
   });
 
   if (res.status === 202) {
-    const json = await res.json().catch(() => ({})) as { data?: { methods?: MfaMethod[] } };
+    const json = (await res.json().catch(() => ({}))) as {
+      data?: { methods?: MfaMethod[] };
+    };
     return { status: 'mfa_required', methods: json.data?.methods ?? ['totp'] };
   }
 
@@ -86,10 +84,6 @@ export async function verifyPasskeyAuthentication(response: unknown) {
     response,
     'Passkey-verifiering misslyckades.',
   );
-}
-
-export async function register(payload: RegisterPayload) {
-  await postJson(`${AUTH_BASE_URL}/register`, payload, 'Registreringen gick inte att slutföra.');
 }
 
 export function devLoginUrl(redirect: string) {
