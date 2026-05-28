@@ -8,8 +8,8 @@ import {
   login,
   type MfaMethod,
 } from '@shared/lib/api/auth-session.api';
-import { BrandMark } from '@shared/ui/brand';
 import { TooltipProvider } from '@shared/ui/tooltip';
+import { AuthBrandMark } from './AuthBrandMark';
 import { FloatingInput } from './FloatingInput';
 import { InlineError } from './InlineError';
 import { MfaStep } from './MfaStep';
@@ -128,18 +128,19 @@ export function LoginForm({ redirect }: LoginFormProps) {
               transition={{ delay: 0.08, duration: 0.36, ease: EASE_OUT_SOFT }}
             >
               <div className="auth-product-pill">
-                <BrandMark size={22} priority />
+                <AuthBrandMark size={44} />
                 <span>Soleria Workspace</span>
               </div>
 
-              <header className="auth-login-header">
-                <p className="auth-login-kicker">Intern arbetsportal</p>
-                <h1 className="auth-login-title">{header.title}</h1>
-                <p className="auth-login-subtitle">{header.sub}</p>
-              </header>
+              <section className="auth-login-surface">
+                <header className="auth-login-header">
+                  <p className="auth-login-kicker">Intern arbetsportal</p>
+                  <h1 className="auth-login-title">{header.title}</h1>
+                  <p className="auth-login-subtitle">{header.sub}</p>
+                </header>
 
-              {step === 'login' ? (
-                <form onSubmit={handleLoginSubmit} className="auth-login-form">
+                {step === 'login' ? (
+                  <form onSubmit={handleLoginSubmit} className="auth-login-form">
                     <FloatingInput
                       ref={emailInputRef}
                       label="E-postadress"
@@ -199,20 +200,22 @@ export function LoginForm({ redirect }: LoginFormProps) {
                       </div>
                     ) : null}
                   </form>
-              ) : (
-                <MfaStep
-                  methods={mfaMethods}
-                  onSuccess={handleMfaSuccess}
-                  onBack={() => setStep('login')}
-                />
-              )}
+                ) : (
+                  <MfaStep
+                    methods={mfaMethods}
+                    onSuccess={handleMfaSuccess}
+                    onBack={() => setStep('login')}
+                  />
+                )}
 
-              <div className="auth-login-note">
-                <ShieldCheck size={18} weight="duotone" />
-                <span>
-                  Säker intern åtkomst för offert, order, planering och installation.
-                </span>
-              </div>
+                <div className="auth-login-note">
+                  <ShieldCheck size={18} weight="duotone" />
+                  <span>
+                    Säker intern åtkomst för offert, order, planering och
+                    installation.
+                  </span>
+                </div>
+              </section>
             </motion.div>
           ) : null}
         </AnimatePresence>
