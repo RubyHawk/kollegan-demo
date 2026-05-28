@@ -43,11 +43,11 @@ export function TemplateWorkflowDock({
   onSelectedCompanyChange,
   onTabChange,
 }: Props) {
-  const saveStatus = saving ? 'saving' : saved ? 'saved' : isDirty ? 'dirty' : 'clean';
+  const saveStatus = saving ? 'saving' : isDirty ? 'dirty' : saved ? 'saved' : 'clean';
 
   return (
     <div className="flex shrink-0 flex-col">
-      <div className="flex h-12 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-[var(--surface)]/95 px-3 backdrop-blur">
+      <div className="flex h-12 shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--border)] bg-[var(--surface)]/95 px-3 backdrop-blur scrollbar-none">
 
         {/* Back to list */}
         <button
@@ -71,12 +71,12 @@ export function TemplateWorkflowDock({
           className="min-w-0 flex-1 rounded-md bg-transparent px-2 py-1 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none transition-colors hover:bg-[var(--surface-active)] focus:bg-[var(--surface-1)] focus:ring-1 focus:ring-[var(--accent-border)]"
         />
 
-        {/* Company selector */}
+        {/* Company selector — hidden on small screens, available once there is space */}
         {companies.length > 0 && (
           <select
             value={selectedCompanyId}
             onChange={(e) => onSelectedCompanyChange(e.target.value)}
-            className="h-7 max-w-[160px] shrink-0 cursor-pointer rounded-md border border-[var(--border)] bg-[var(--surface-alt)] px-2 text-xs font-medium text-[var(--text-secondary)] outline-none transition-colors hover:border-[var(--accent-border)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)]"
+            className="hidden h-7 max-w-[160px] shrink-0 cursor-pointer rounded-md border border-[var(--border)] bg-[var(--surface-alt)] px-2 text-xs font-medium text-[var(--text-secondary)] outline-none transition-colors hover:border-[var(--accent-border)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)] md:block"
           >
             <option value="">Välj företag</option>
             {companies.map((c) => (
@@ -109,8 +109,8 @@ export function TemplateWorkflowDock({
           })}
         </div>
 
-        {/* Save state indicator */}
-        <div className="flex w-[148px] shrink-0 items-center justify-end">
+        {/* Save state indicator — hidden on small screens */}
+        <div className="hidden w-[148px] shrink-0 items-center justify-end sm:flex">
           {saveStatus === 'saving' && (
             <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
