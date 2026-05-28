@@ -9,9 +9,9 @@ const accentWord = 'verktyg';
 
 export function AuthHeadline() {
   return (
-    <div className="relative z-10 max-w-[340px]">
-      <motion.h1
-        className="font-[family-name:var(--font-instrument-serif)] text-[44px] leading-[1.05] tracking-[-0.02em] text-[color:var(--auth-text-on-dark)]"
+    <div className="max-w-[340px]">
+      <motion.h2
+        className="font-[family-name:var(--font-instrument-serif)] text-[40px] leading-[1.05] tracking-[-0.02em] text-[color:var(--auth-text-on-dark)]"
         initial="hidden"
         animate="visible"
         variants={wordContainer}
@@ -27,7 +27,7 @@ export function AuthHeadline() {
           {line2WordsBefore.map((word) => (
             <motion.span key={word} variants={wordChild} className="inline-block">
               {word}
-              {' '}
+              {' '}
             </motion.span>
           ))}
           <motion.span
@@ -41,10 +41,10 @@ export function AuthHeadline() {
             .
           </motion.span>
         </span>
-      </motion.h1>
+      </motion.h2>
 
       <motion.p
-        className="mt-5 max-w-[320px] text-[14px] leading-[1.55] text-[color:var(--auth-text-on-dark-muted)]"
+        className="mt-4 max-w-[300px] text-[13px] leading-[1.6] text-[color:var(--auth-text-on-dark-muted)]"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.48, duration: 0.38, ease: EASE_OUT_SOFT }}

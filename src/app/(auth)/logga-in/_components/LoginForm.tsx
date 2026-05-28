@@ -21,7 +21,7 @@ import { EASE_OUT_SOFT, fadeUp, stepVariants } from './motion';
 type Step = 'email' | 'password' | 'mfa';
 
 const HEADLINES: Record<Step, { title: string; sub: string }> = {
-  email: { title: 'Logga in', sub: 'Använd ditt arbetskonto för att fortsätta.' },
+  email: { title: 'Välkommen tillbaka', sub: 'Logga in med ditt arbetskonto för att fortsätta.' },
   password: { title: 'Ange lösenord', sub: 'Skriv in lösenordet kopplat till ditt konto.' },
   mfa: { title: 'Bekräfta att det är du', sub: 'Välj en av dina registrerade metoder.' },
 };
@@ -47,7 +47,6 @@ export function LoginForm({ redirect }: LoginFormProps) {
 
   useEffect(() => {
     if (step === 'password') {
-      // Focus the password field once the step transition lands.
       const t = setTimeout(() => passwordInputRef.current?.focus(), 280);
       return () => clearTimeout(t);
     }
@@ -104,19 +103,19 @@ export function LoginForm({ redirect }: LoginFormProps) {
 
   return (
     <TooltipProvider delayDuration={150}>
-      <main className="flex flex-1 items-center justify-center px-5 py-10 sm:px-6">
+      <main className="flex flex-1 flex-col items-center justify-center bg-white px-10 py-14 sm:px-14">
         <AnimatePresence onExitComplete={handleExitComplete}>
           {!exiting ? (
             <motion.div
               key="card"
               className="w-full max-w-[400px]"
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.985 }}
               transition={{ delay: 0.08, duration: 0.36, ease: EASE_OUT_SOFT }}
             >
               <motion.div
-                className="mb-8 flex justify-center lg:hidden"
+                className="mb-10 flex justify-center lg:hidden"
                 initial="hidden"
                 animate="visible"
                 variants={fadeUp}
@@ -126,11 +125,11 @@ export function LoginForm({ redirect }: LoginFormProps) {
                   priority
                   align="center"
                   className="flex flex-col items-center gap-2"
-                  textClassName="text-[18px] font-semibold text-[var(--text-primary)]"
+                  textClassName="text-[18px] font-semibold"
                 />
               </motion.div>
 
-              <header className="mb-7 min-h-[64px]">
+              <header className="mb-8 min-h-[74px]">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={step}
@@ -139,10 +138,10 @@ export function LoginForm({ redirect }: LoginFormProps) {
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.2, ease: EASE_OUT_SOFT }}
                   >
-                    <h1 className="text-[26px] font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+                    <h1 className="text-[30px] font-bold tracking-[-0.03em] text-gray-900">
                       {header.title}
                     </h1>
-                    <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
+                    <p className="mt-1.5 text-[14px] leading-6 text-gray-500">
                       {header.sub}
                     </p>
                   </motion.div>
@@ -177,10 +176,10 @@ export function LoginForm({ redirect }: LoginFormProps) {
                     <SubmitButton state={emailState}>Fortsätt</SubmitButton>
 
                     {process.env.NODE_ENV !== 'production' ? (
-                      <div className="mt-2 border-t border-[var(--border)] pt-5 text-center">
+                      <div className="mt-2 border-t border-gray-100 pt-5 text-center">
                         <a
                           href={devLoginUrl(redirect)}
-                          className="text-xs text-[var(--text-muted)] underline decoration-dotted underline-offset-4 transition-colors hover:text-[var(--text-secondary)]"
+                          className="text-xs text-gray-400 underline decoration-dotted underline-offset-4 transition-colors hover:text-gray-600"
                         >
                           Dev: logga in utan konto →
                         </a>
@@ -203,7 +202,7 @@ export function LoginForm({ redirect }: LoginFormProps) {
                         setStep('email');
                         setPasswordError(null);
                       }}
-                      className="-mt-1 flex w-fit items-center gap-1.5 text-xs text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)]"
+                      className="-mt-1 flex w-fit items-center gap-1.5 text-xs text-gray-400 transition-colors hover:text-gray-600"
                     >
                       <ArrowLeft size={12} weight="bold" />
                       <span>{email}</span>
