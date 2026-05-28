@@ -83,8 +83,10 @@ export default function DocumentCanvas() {
   }
 
   function handleCanvasDrop(event: React.DragEvent<HTMLDivElement>) {
+    if (event.defaultPrevented) return;
     const payload = decodeInsertPayload(event.dataTransfer.getData(TEMPLATE_BLOCK_MIME));
     const imageFile = Array.from(event.dataTransfer.files).find((file) => file.type.startsWith('image/'));
+    if (imageFile && event.target instanceof Element && event.target.closest('.ProseMirror')) return;
     if (!payload && !imageFile) return;
     event.preventDefault();
     if (!activePageReady || isDocumentPage) return;
@@ -420,11 +422,7 @@ function BubbleFormattingMenu() {
   );
 }
 
-function BlankPageEmptyState({
-  onInsertHeading,
-  onAddCover,
-  onAddOfferPage,
-}: {
+function BlankPageEmptyState({ onInsertHeading, onAddCover, onAddOfferPage }: {
   onInsertHeading: () => void;
   onAddCover: () => void;
   onAddOfferPage: () => void;
