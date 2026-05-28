@@ -7,10 +7,12 @@ import { useHeaderFooter } from './header-footer-context';
 import { DocumentDefaultsInspector, PresentationPageInspector } from './presentation-page-inspectors';
 import { ImageInspector } from './image-inspector';
 import { StructuredOfferInspector } from './structured-offer-inspector';
+import { PAGE_ROLE_LABELS } from './template-doc';
 import {
   ChoiceButton,
   Field,
   InspectorCard,
+  SegmentedControl,
   inputClass,
 } from './block-settings-controls';
 
@@ -46,11 +48,16 @@ export default function BlockSettingsSidebar() {
   if (!hf) return null;
 
   return (
-    <aside className="hidden min-h-0 shrink-0 flex-col overflow-y-auto border-l border-[var(--border)] bg-[var(--surface-1)] xl:flex xl:w-[clamp(300px,24vw,400px)]">
+    <aside className="hidden min-h-0 shrink-0 flex-col border-l border-[var(--border)] bg-[var(--surface-0)] xl:flex xl:w-[clamp(300px,24vw,400px)]">
+      <InspectorHeader
+        title={activePage?.label ?? 'Sida'}
+        meta={isDocumentPage ? 'Strukturerad offertsida' : PAGE_ROLE_LABELS[activePage?.role ?? 'custom']}
+        pdfLabel={activePage?.includeInCustomerPdf === false ? 'Intern' : 'Kund + PDF'}
+      />
       {isDocumentPage ? (
         <StructuredOfferInspector key={activePage?.id ?? 'document-page'} hf={hf} />
       ) : (
-        <div className="space-y-2 p-2">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {active === 'image' && editor && <ImageInspector editor={editor} />}
           {active === 'table' && <TableInspector />}
           {active === 'signatureBlock' && editor && <SignatureInspector editor={editor} />}
@@ -67,13 +74,32 @@ export default function BlockSettingsSidebar() {
   );
 }
 
+function InspectorHeader({ title, meta, pdfLabel }: { title: string; meta: string; pdfLabel: string }) {
+  return (
+    <div className="shrink-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 shadow-[inset_3px_0_0_var(--accent)]">
+      <div className="mb-1.5 flex items-center justify-between gap-3">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Inspektor</p>
+        <span className="rounded bg-[var(--accent-subtle)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
+          {pdfLabel}
+        </span>
+      </div>
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-[14px] font-semibold text-[var(--text-primary)]">{title}</p>
+          <p className="mt-1 truncate text-[12px] text-[var(--text-secondary)]">{meta}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TableInspector() {
   return (
     <InspectorCard
       title="Tabell"
       subtitle="Tabeller justeras direkt i dokumentytan. Markera celler och använd den fria layouten på sidan."
     >
-      <div className="rounded-md border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-2 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+      <div className="border-l-2 border-[var(--border)] px-3 py-1.5 text-[12px] leading-5 text-[var(--text-secondary)]">
         Ändra tabellinnehåll direkt i canvasen — markera celler för att redigera.
       </div>
     </InspectorCard>
@@ -89,7 +115,7 @@ function SignatureInspector({ editor }: { editor: Editor }) {
     <InspectorCard title="Signaturfält" subtitle="Avancerat block för presentationssidor.">
       <div className="space-y-2">
         <Field label="Fälttyp">
-          <div className="grid grid-cols-3 gap-2">
+          <SegmentedControl columns={3}>
             {[
               { value: 'signature', label: 'Signatur' },
               { value: 'name', label: 'Namn' },
@@ -103,7 +129,7 @@ function SignatureInspector({ editor }: { editor: Editor }) {
                 {option.label}
               </ChoiceButton>
             ))}
-          </div>
+          </SegmentedControl>
         </Field>
 
         <Field label="Etikett">
@@ -128,12 +154,12 @@ function VariableInspector({ editor }: { editor: Editor }) {
     <InspectorCard title="Variabel" subtitle="Fält som fylls med offertdata automatiskt.">
       <div className="space-y-2">
         <Field label="Variabelnamn">
-          <code className="block break-all rounded-md border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] text-violet-700">
+          <code className="block break-all rounded-xl bg-[var(--accent-subtle)] px-3 py-2 text-[12px] font-medium text-[var(--accent)]">
             {`{{${key}}}`}
           </code>
         </Field>
         <Field label="Etikett">
-          <div className="rounded-md border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1.5 text-[12px] text-[var(--text-primary)]">
+          <div className="rounded-xl bg-[var(--surface-active)] px-3 py-2 text-[13px] font-medium text-[var(--text-primary)]">
             {label}
           </div>
         </Field>

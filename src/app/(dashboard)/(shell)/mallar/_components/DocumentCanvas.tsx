@@ -1,27 +1,26 @@
 'use client';
 
-import { BubbleMenu } from '@tiptap/react/menus';
 import { EditorContent } from '@tiptap/react';
-import { NodeSelection } from '@tiptap/pm/state';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import { PRESENTATION_PAGE_HEIGHT, PRESENTATION_PAGE_WIDTH } from './presentation-page-height';
 import { cn } from '@shared/lib/utils';
-import { Link as LinkIcon, MagnifyingGlassMinus, MagnifyingGlassPlus, NotePencil, Plus, TextHOne } from '@phosphor-icons/react';
+import { NotePencil, Plus, TextHOne } from '@phosphor-icons/react';
 import { PresentationPageLoadingState, StructuredOfferCanvas } from './document-canvas-structured';
+import { CanvasZoomControls } from './CanvasZoomControls';
+import { InlineFormattingMenu } from './InlineFormattingMenu';
 import { insertTemplateImageIntoEditor } from './template-image-insert';
 import { uploadTemplateImage } from './template-image-upload';
 import { TEMPLATE_BLOCK_MIME, decodeInsertPayload, insertTemplatePayload, isTipTapDocEmpty } from './template-insert-actions';
 
 const MARGIN_PRESETS = { tight: 40, normal: 56, wide: 80 } as const;
-const ZOOM_STEPS = [0.75, 0.9, 1, 1.15, 1.3] as const;
-
 export default function DocumentCanvas() {
   const editor = useTemplateEditor();
   const hf = useHeaderFooter();
-  const [zoom, setZoom] = useState<'fit' | number>('fit');
+  const viewportRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [measuredPageHeight, setMeasuredPageHeight] = useState<number | null>(null);
 
   const activePage = hf?.pages[hf.activeIdx] ?? null;
@@ -46,32 +45,42 @@ export default function DocumentCanvas() {
   const docFont = hf?.docSettings?.defaultFont ?? 'Calibri';
   const activePageReady = hf?.activePageReady ?? true;
   const isEmptyPage = useMemo(() => isTipTapDocEmpty(activePage?.body), [activePage?.body]);
+  const zoom = hf?.canvasZoom ?? 'fit';
   const numericZoom = zoom === 'fit' ? 1 : zoom;
+  const pageNaturalHeight = measuredPageHeight ?? basePageMinHeight;
+  const fitScale = zoom === 'fit' && viewportSize.width > 0 && viewportSize.height > 0
+    ? Math.min(1, Math.max(0.1, Math.min((viewportSize.width - 24) / basePageWidth, (viewportSize.height - 24) / pageNaturalHeight)))
+    : 1;
+  const renderedScale = zoom === 'fit' ? fitScale : numericZoom;
 
   useLayoutEffect(() => {
-    if (!pageRef.current || zoom === 'fit') return;
+    if (!pageRef.current) return;
 
     const measure = () => {
-      const rect = pageRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      setMeasuredPageHeight(rect.height);
+      if (!pageRef.current) return;
+      setMeasuredPageHeight(pageRef.current.offsetHeight);
     };
 
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(pageRef.current);
     return () => observer.disconnect();
-  }, [pageRenderKey, zoom]);
+  }, [pageRenderKey]);
+
+  useLayoutEffect(() => {
+    if (!viewportRef.current) return;
+    const measure = () => {
+      const rect = viewportRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setViewportSize({ width: rect.width, height: rect.height });
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(viewportRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   if (!editor || !activePage) return null;
-
-  function stepZoom(direction: -1 | 1) {
-    const current = zoom === 'fit' ? 1 : zoom;
-    const currentIdx = ZOOM_STEPS.findIndex((value) => value >= current);
-    const baseIdx = currentIdx === -1 ? ZOOM_STEPS.indexOf(1) : currentIdx;
-    const nextIdx = Math.min(ZOOM_STEPS.length - 1, Math.max(0, baseIdx + direction));
-    setZoom(ZOOM_STEPS[nextIdx]);
-  }
 
   function handleCanvasDragOver(event: React.DragEvent<HTMLDivElement>) {
     const hasBlock = event.dataTransfer.types.includes(TEMPLATE_BLOCK_MIME);
@@ -106,71 +115,24 @@ export default function DocumentCanvas() {
   }
 
   return (
-    <div className="flex-1 overflow-hidden bg-[#d8dde4]">
-      <BubbleFormattingMenu />
+    <div className="relative flex-1 overflow-hidden bg-[#d8dde4]">
+      <InlineFormattingMenu />
+      <CanvasZoomControls className="absolute right-3 top-3 z-20" />
 
       <div className="flex h-full min-h-0 flex-col">
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface-1)] px-3 py-2">
-          <div className="min-w-0">
-            <p className="truncate text-[12px] font-semibold text-[var(--text-primary)]">{activePage.label}</p>
-            <p className="text-[11px] text-[var(--text-muted)]">
-              {isDocumentPage ? 'Strukturerad offertsida' : activePage.includeInCustomerPdf === false ? 'Intern presentationssida' : 'Kundvy + PDF'}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--surface)] p-1">
-            <button
-              type="button"
-              onClick={() => stepZoom(-1)}
-              className="inline-flex h-7 w-7 items-center justify-center rounded text-[var(--text-secondary)] hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]"
-              title="Zooma ut"
-            >
-              <MagnifyingGlassMinus size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setZoom('fit')}
-              className={cn(
-                'h-7 rounded px-2 text-[11px] font-semibold',
-                zoom === 'fit' ? 'bg-[var(--accent-subtle)] text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-active)]',
-              )}
-            >
-              Anpassa
-            </button>
-            <button
-              type="button"
-              onClick={() => setZoom(1)}
-              className={cn(
-                'h-7 rounded px-2 text-[11px] font-semibold',
-                zoom === 1 ? 'bg-[var(--accent-subtle)] text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-active)]',
-              )}
-            >
-              {zoom === 'fit' ? 'Fit' : `${Math.round(numericZoom * 100)}%`}
-            </button>
-            <button
-              type="button"
-              onClick={() => stepZoom(1)}
-              className="inline-flex h-7 w-7 items-center justify-center rounded text-[var(--text-secondary)] hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]"
-              title="Zooma in"
-            >
-              <MagnifyingGlassPlus size={14} />
-            </button>
-          </div>
-        </div>
-
-      <div className="min-h-0 flex-1 overflow-auto px-4 py-6 md:px-8 md:py-8">
+      <div ref={viewportRef} className={cn('min-h-0 flex-1 px-3 py-3', zoom === 'fit' ? 'overflow-hidden' : 'overflow-auto')}>
         <div
           className="mx-auto"
           style={{
-            maxWidth: zoom === 'fit' ? basePageWidth : undefined,
-            width: zoom === 'fit' ? '100%' : basePageWidth * numericZoom,
-            height: zoom === 'fit' ? undefined : (measuredPageHeight ?? basePageMinHeight) * numericZoom,
+            width: basePageWidth * renderedScale,
+            height: pageNaturalHeight * renderedScale,
           }}
         >
           <div
             ref={pageRef}
             style={{
-              width: zoom === 'fit' ? '100%' : basePageWidth,
-              transform: zoom === 'fit' ? undefined : `scale(${numericZoom})`,
+              width: basePageWidth,
+              transform: `scale(${renderedScale})`,
               transformOrigin: 'top left',
             }}
           >
@@ -378,50 +340,6 @@ export default function DocumentCanvas() {
   );
 }
 
-function BubbleFormattingMenu() {
-  const editor = useTemplateEditor();
-  if (!editor) return null;
-
-  return (
-    <BubbleMenu
-      editor={editor}
-      options={{ placement: 'top' }}
-      shouldShow={({ state }) => {
-        const { selection } = state;
-        if (selection instanceof NodeSelection) return false;
-        return selection.from !== selection.to;
-      }}
-      className="flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-lg"
-    >
-      <InlineButton title="Fet" active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()}>
-        B
-      </InlineButton>
-      <InlineButton title="Kursiv" active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()}>
-        <em>I</em>
-      </InlineButton>
-      <InlineButton title="Understruken" active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()}>
-        <u>U</u>
-      </InlineButton>
-      <InlineButton
-        title="Länk"
-        active={editor.isActive('link')}
-        onClick={() => {
-          const previous = editor.getAttributes('link').href as string | undefined;
-          const url = window.prompt('Länkadress', previous ?? '');
-          if (url === null) return;
-          if (!url.trim()) {
-            editor.chain().focus().unsetLink().run();
-            return;
-          }
-          editor.chain().focus().setLink({ href: url.trim() }).run();
-        }}
-      >
-        <LinkIcon size={12} />
-      </InlineButton>
-    </BubbleMenu>
-  );
-}
-
 function BlankPageEmptyState({ onInsertHeading, onAddCover, onAddOfferPage }: {
   onInsertHeading: () => void;
   onAddCover: () => void;
@@ -469,28 +387,3 @@ function HFZone({
   );
 }
 
-function InlineButton({
-  title,
-  active,
-  children,
-  onClick,
-}: {
-  title: string;
-  active: boolean;
-  children: React.ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      className={cn(
-        'inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold text-[var(--text-secondary)] transition-colors',
-        active ? 'bg-[var(--accent-subtle)] text-[var(--accent)]' : 'hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]'
-      )}
-    >
-      {children}
-    </button>
-  );
-}

@@ -3,7 +3,7 @@
 import { useEffect, useState, type KeyboardEvent } from 'react';
 import type { Editor } from '@tiptap/core';
 import { useHeaderFooter } from './header-footer-context';
-import { ChoiceButton, Field, InspectorCard, inputClass, secondaryButtonClass } from './block-settings-controls';
+import { ChoiceButton, Field, InspectorCard, SegmentedControl, inputClass, secondaryButtonClass } from './block-settings-controls';
 import { PRESENTATION_PAGE_HEIGHT, PRESENTATION_PAGE_WIDTH, syncPresentationPageHeightForActivePage } from './presentation-page-height';
 import { cn } from '@shared/lib/utils';
 import { buildForegroundImageStack, getMaxForegroundImageLayer, getSelectedImagePosition, swapImageLayers } from './image-layer-utils';
@@ -196,7 +196,7 @@ export function ImageInspector({ editor }: { editor: Editor }) {
     >
       <div className="space-y-4">
         <Field label="Bildläge">
-          <div className="grid grid-cols-2 gap-2">
+          <SegmentedControl>
             {[
               { value: 'auto', label: 'Auto' },
               { value: 'inline', label: 'Infogad' },
@@ -213,12 +213,12 @@ export function ImageInspector({ editor }: { editor: Editor }) {
                 {option.label}
               </ChoiceButton>
             ))}
-          </div>
+          </SegmentedControl>
         </Field>
 
         {(mode === 'auto' || mode === 'inline') && (
           <Field label="Justering">
-            <div className="grid grid-cols-3 gap-2">
+            <SegmentedControl columns={3}>
               {[
                 { value: 'left', label: 'Vänster' },
                 { value: 'center', label: 'Center' },
@@ -232,12 +232,12 @@ export function ImageInspector({ editor }: { editor: Editor }) {
                   {option.label}
                 </ChoiceButton>
               ))}
-            </div>
+            </SegmentedControl>
           </Field>
         )}
 
         <Field label="Storlek">
-          <div className="grid grid-cols-2 gap-2">
+          <SegmentedControl>
             <ChoiceButton active={width == null && height == null} onClick={applyAutoSize}>
               Auto
             </ChoiceButton>
@@ -250,7 +250,7 @@ export function ImageInspector({ editor }: { editor: Editor }) {
             <ChoiceButton active={width === PRESENTATION_PAGE_WIDTH && height == null} onClick={() => setImageAttrs({ width: PRESENTATION_PAGE_WIDTH, height: null })}>
               Full bredd
             </ChoiceButton>
-          </div>
+          </SegmentedControl>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <input
               type="number"
@@ -374,7 +374,8 @@ export function ImageInspector({ editor }: { editor: Editor }) {
                 className={inputClass}
               />
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="mt-3">
+              <SegmentedControl>
               <ChoiceButton active={posX === 0 && posY === 0} onClick={() => setImageAttrs({ posX: 0, posY: 0 })}>
                 Övre vänster
               </ChoiceButton>
@@ -387,13 +388,14 @@ export function ImageInspector({ editor }: { editor: Editor }) {
               <ChoiceButton active={false} onClick={applyAutoSize}>
                 Auto storlek
               </ChoiceButton>
+              </SegmentedControl>
             </div>
           </Field>
         )}
 
         {mode === 'free' && (
           <Field label="Textflöde">
-            <div className="grid grid-cols-3 gap-2">
+            <SegmentedControl columns={3}>
               <ChoiceButton active={wrapText === 'none'} onClick={() => setImageAttrs({ wrapText: 'none' })}>
                 Ovanpå
               </ChoiceButton>
@@ -403,7 +405,7 @@ export function ImageInspector({ editor }: { editor: Editor }) {
               <ChoiceButton active={wrapText === 'right'} onClick={() => setImageAttrs({ wrapText: 'right' })}>
                 Text vänster
               </ChoiceButton>
-            </div>
+            </SegmentedControl>
           </Field>
         )}
 
