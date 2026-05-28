@@ -24,7 +24,17 @@ import { normalizeTemplateImages } from '../_components/template-image-upload';
 import { TemplateWorkflowDock } from '../_components/TemplateWorkflowDock';
 
 const TemplateEditor = dynamic(() => import('../_components/TemplateEditor'), { ssr: false });
-const EmailEditor = dynamic(() => import('../_components/EmailEditor'), { ssr: false });
+const EmailEditor = dynamic(() => import('../_components/EmailEditor'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center gap-3 text-[var(--text-muted)]">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+      </svg>
+      <span className="text-sm">Laddar e-postredigeraren...</span>
+    </div>
+  ),
+});
 
 type Tab = 'offer' | 'email';
 
@@ -49,6 +59,7 @@ export default function TemplateEditorPage() {
   const [previewing, setPreviewing] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+  const [emailIsDirty, setEmailIsDirty] = useState(false);
   const [draftBanner, setDraftBanner] = useState(false);
   const [migrationNotice, setMigrationNotice] = useState<string | null>(null);
 
@@ -173,6 +184,7 @@ export default function TemplateEditorPage() {
         router.replace(`/mallar/${savedTemplate.id}`);
       } else {
         setIsDirty(false);
+        setEmailIsDirty(false);
         setDraftBanner(false);
         try {
           localStorage.removeItem(draftKey);
@@ -218,11 +230,11 @@ export default function TemplateEditorPage() {
   }, [save]);
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <TemplateWorkflowDock
         activeTab={activeTab}
         companies={companies}
-        emailConfigured={emailConfigured || isDirty}
+        emailConfigured={emailConfigured || emailIsDirty}
         error={error}
         isDirty={isDirty}
         isNew={isNew}
@@ -232,6 +244,7 @@ export default function TemplateEditorPage() {
         saving={saving}
         selectedCompanyId={selectedCompanyId}
         onBack={() => router.push('/mallar')}
+        onErrorDismiss={() => setError(null)}
         onNameChange={(value) => {
           setName(value);
           setIsDirty(true);
@@ -319,7 +332,7 @@ export default function TemplateEditorPage() {
                 initialHtml={initEmailBody}
                 initialHeaderConfig={initEmailHdrCfg}
                 editorRef={emailEditorRef}
-                onUpdate={() => setIsDirty(true)}
+                onUpdate={() => { setIsDirty(true); setEmailIsDirty(true); }}
               />
             </div>
           )}

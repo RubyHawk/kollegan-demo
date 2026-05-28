@@ -1,12 +1,12 @@
 'use client';
 
 import { EditorContent } from '@tiptap/react';
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import { PRESENTATION_PAGE_HEIGHT, PRESENTATION_PAGE_WIDTH } from './presentation-page-height';
 import { cn } from '@shared/lib/utils';
-import { NotePencil, Plus, TextHOne } from '@phosphor-icons/react';
+import { ArrowClockwise, ArrowCounterClockwise, NotePencil, Plus, TextHOne } from '@phosphor-icons/react';
 import { PresentationPageLoadingState, StructuredOfferCanvas } from './document-canvas-structured';
 import { CanvasZoomControls } from './CanvasZoomControls';
 import { InlineFormattingMenu } from './InlineFormattingMenu';
@@ -15,6 +15,7 @@ import { uploadTemplateImage } from './template-image-upload';
 import { TEMPLATE_BLOCK_MIME, decodeInsertPayload, insertTemplatePayload, isTipTapDocEmpty } from './template-insert-actions';
 
 const MARGIN_PRESETS = { tight: 40, normal: 56, wide: 80 } as const;
+const IS_MAC = typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent);
 export default function DocumentCanvas() {
   const editor = useTemplateEditor();
   const hf = useHeaderFooter();
@@ -117,6 +118,7 @@ export default function DocumentCanvas() {
   return (
     <div className="relative flex-1 overflow-hidden bg-[#d8dde4]">
       <InlineFormattingMenu />
+      <UndoRedoControls className="absolute left-3 top-3 z-20" />
       <CanvasZoomControls className="absolute right-3 top-3 z-20" />
 
       <div className="flex h-full min-h-0 flex-col">
@@ -336,6 +338,48 @@ export default function DocumentCanvas() {
           opacity: 1;
         }
       `}</style>
+    </div>
+  );
+}
+
+function UndoRedoControls({ className }: { className?: string }) {
+  const editor = useTemplateEditor();
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => {
+      setCanUndo(editor.can().undo());
+      setCanRedo(editor.can().redo());
+    };
+    update();
+    editor.on('transaction', update);
+    return () => { editor.off('transaction', update); };
+  }, [editor]);
+
+  if (!editor) return null;
+
+  return (
+    <div className={cn('flex items-center rounded-lg bg-[var(--surface)] p-0.5 shadow-sm ring-1 ring-inset ring-[var(--border)]', className)}>
+      <button
+        type="button"
+        title={IS_MAC ? 'Ångra (⌘Z)' : 'Ångra (Ctrl+Z)'}
+        onClick={() => editor.chain().focus().undo().run()}
+        disabled={!canUndo}
+        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)] disabled:opacity-30"
+      >
+        <ArrowCounterClockwise size={14} />
+      </button>
+      <button
+        type="button"
+        title={IS_MAC ? 'Gör om (⌘⇧Z)' : 'Gör om (Ctrl+Y)'}
+        onClick={() => editor.chain().focus().redo().run()}
+        disabled={!canRedo}
+        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)] disabled:opacity-30"
+      >
+        <ArrowClockwise size={14} />
+      </button>
     </div>
   );
 }
