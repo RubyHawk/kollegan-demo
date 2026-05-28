@@ -16,7 +16,7 @@ export function LoginShell({ redirect }: LoginShellProps) {
         style={{ background: 'var(--auth-bg-base)' }}
       >
         <div
-          className="flex w-full max-w-[980px] overflow-hidden rounded-2xl"
+          className="flex w-full max-w-[1080px] overflow-hidden rounded-2xl"
           style={{
             boxShadow:
               '0 0 0 1px oklch(1 0 0 / 0.07), 0 40px 100px -16px oklch(0 0 0 / 0.65)',
