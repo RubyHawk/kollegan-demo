@@ -3,8 +3,11 @@
   justify-content: stretch;
   padding: 0;
   background:
-    radial-gradient(circle at 50% -12%, rgb(255 218 144 / 0.12), transparent 34%),
-    linear-gradient(180deg, rgb(12 31 45 / 0.97), rgb(7 19 31 / 0.98));
+    radial-gradient(circle at 72% 10%, rgb(255 224 154 / 0.18), transparent 28%),
+    linear-gradient(180deg, rgb(255 253 247), rgb(244 250 253));
+  box-shadow:
+    -1px 0 0 rgb(185 211 226 / 0.28),
+    -24px 0 64px rgb(35 77 103 / 0.08);
 }
 
 .auth-scope .auth-login-panel::before {
@@ -13,12 +16,12 @@
 
 .auth-scope .auth-login-panel__atmosphere {
   background:
-    radial-gradient(circle at 86% 18%, rgb(166 215 250 / 0.13), transparent 28%),
-    radial-gradient(circle at 12% 80%, rgb(255 229 172 / 0.07), transparent 30%);
+    radial-gradient(circle at 86% 18%, rgb(181 224 255 / 0.22), transparent 28%),
+    radial-gradient(circle at 8% 82%, rgb(255 227 166 / 0.16), transparent 30%);
 }
 
 .auth-scope .auth-login-panel__grid {
-  opacity: 0.42;
+  opacity: 0.08;
 }
 
 .auth-scope .auth-login-panel__inner {
@@ -30,7 +33,7 @@
 .auth-scope .auth-login-panel[data-state='success'] .auth-console__sun-anchor,
 .auth-scope .auth-login-panel[data-state='cinematic'] .auth-console__sun-anchor {
   border-color: rgb(248 205 111 / 0.42);
-  color: rgb(255 239 191 / 0.98);
+  color: rgb(126 95 42 / 0.98);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.12),
     0 0 26px rgb(248 205 111 / 0.14);
@@ -44,7 +47,7 @@
   min-height: 100%;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: clamp(1rem, 2.4vh, 1.5rem);
-  padding: clamp(1.45rem, 2.8vw, 2rem);
+  padding: clamp(1.35rem, 2.2vw, 1.75rem);
   overflow: hidden;
 }
 
@@ -53,17 +56,16 @@
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(90deg, rgb(255 255 255 / 0.08), transparent 1px),
-    linear-gradient(180deg, rgb(255 255 255 / 0.035), transparent 1px);
-  background-size: 100% 100%, 100% 5.6rem;
-  opacity: 0.4;
+    radial-gradient(circle at 22% 10%, rgb(166 218 255 / 0.14), transparent 28%),
+    radial-gradient(circle at 88% 72%, rgb(255 223 158 / 0.12), transparent 30%);
+  opacity: 0.8;
   pointer-events: none;
 }
 
 .auth-scope .auth-console__topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 1rem;
 }
 
@@ -71,7 +73,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.72rem;
-  color: rgb(250 248 236 / 0.96);
+  color: rgb(31 57 73 / 0.96);
 }
 
 .auth-scope .auth-console__brand-mark {
@@ -101,7 +103,7 @@
 }
 
 .auth-scope .auth-console__brand small {
-  color: rgb(205 224 237 / 0.68);
+  color: rgb(108 136 154 / 0.78);
   font-size: 0.64rem;
   font-weight: 720;
   letter-spacing: 0.18em;
@@ -110,7 +112,7 @@
 }
 
 .auth-scope .auth-console__sun-anchor {
-  display: inline-flex;
+  display: none;
   align-items: center;
   gap: 0.48rem;
   padding: 0.42rem 0.58rem 0.42rem 0.44rem;
@@ -148,17 +150,13 @@
 .auth-scope .auth-console__panel {
   align-self: center;
   display: grid;
-  gap: clamp(0.95rem, 1.8vh, 1.2rem);
-  padding: clamp(1rem, 2.5vw, 1.45rem);
-  border: 1px solid rgb(226 242 255 / 0.14);
-  border-radius: 1.55rem;
-  background:
-    radial-gradient(circle at 0% 0%, rgb(255 218 144 / 0.08), transparent 30%),
-    linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.02));
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.08),
-    0 28px 72px rgb(0 0 0 / 0.26);
-  backdrop-filter: blur(20px);
+  gap: clamp(1.05rem, 2vh, 1.35rem);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .auth-scope .auth-console-header {
@@ -168,7 +166,7 @@
 
 .auth-scope .auth-console-header__eyebrow {
   margin: 0;
-  color: rgb(170 211 239 / 0.84);
+  color: rgb(75 154 184 / 0.86);
   font-size: 0.68rem;
   font-weight: 820;
   letter-spacing: 0.22em;
@@ -178,17 +176,18 @@
 .auth-scope .auth-console-header__title {
   max-width: 12ch;
   margin: 0;
-  color: rgb(249 252 255 / 0.98);
-  font-size: clamp(2.1rem, 3vw, 2.85rem);
-  line-height: 0.95;
-  letter-spacing: -0.075em;
+  max-width: 9.5ch;
+  color: rgb(30 48 61 / 0.98);
+  font-size: clamp(1.72rem, 2.2vw, 2.15rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
 }
 
 .auth-scope .auth-console-header__subtitle {
   max-width: 23rem;
   margin: 0;
-  color: rgb(214 229 239 / 0.74);
-  font-size: 0.88rem;
+  color: rgb(93 113 128 / 0.86);
+  font-size: 0.84rem;
   line-height: 1.55;
 }
 
@@ -243,12 +242,12 @@
 @media (max-height: 820px) and (min-width: 1101px) {
   .auth-scope .auth-console {
     gap: 0.85rem;
-    padding: 1.25rem;
+    padding: 1.15rem;
   }
 
   .auth-scope .auth-console__panel {
     gap: 0.8rem;
-    padding: 1rem;
+    padding: 0;
   }
 
   .auth-scope .auth-console-header {
@@ -256,7 +255,7 @@
   }
 
   .auth-scope .auth-console-header__title {
-    font-size: clamp(2rem, 2.8vw, 2.65rem);
+    font-size: clamp(1.65rem, 2.2vw, 2rem);
   }
 }
 
