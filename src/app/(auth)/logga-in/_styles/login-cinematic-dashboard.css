@@ -1,0 +1,96 @@
+.auth-scope .auth-login-cinematic__dashboard {
+  position: absolute;
+  inset: clamp(1rem, 3vw, 2rem);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.93);
+}
+
+.auth-scope .auth-login-cinematic__dashboard-base {
+  filter: blur(10px) saturate(0.78) brightness(0.7);
+}
+
+.auth-scope .auth-login-cinematic__dashboard-reveal {
+  z-index: 8;
+  clip-path: inset(0 100% 0 0 round 1.8rem);
+  filter: saturate(1.04) contrast(1.02);
+}
+
+.auth-scope .auth-login-cinematic__dashboard-card {
+  display: grid;
+  width: min(68rem, 92%);
+  min-height: min(34rem, 78%);
+  grid-template-columns: 10.5rem minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid rgb(180 202 216 / 0.42);
+  border-radius: 1.7rem;
+  background: rgb(247 250 252);
+  box-shadow: 0 34px 90px rgb(0 0 0 / 0.28);
+}
+
+.auth-scope .auth-login-cinematic__dashboard-sidebar {
+  background:
+    linear-gradient(180deg, rgb(242 236 255), rgb(235 242 248)),
+    repeating-linear-gradient(180deg, transparent 0 2.5rem, rgb(108 117 125 / 0.14) 2.55rem 2.9rem, transparent 2.95rem 4.6rem);
+}
+
+.auth-scope .auth-login-cinematic__dashboard-main {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  padding: 1.05rem;
+  background:
+    radial-gradient(circle at 34% 4%, rgb(219 244 247), transparent 24%),
+    linear-gradient(180deg, rgb(252 254 255), rgb(244 247 250));
+}
+
+.auth-scope .auth-login-cinematic__dashboard-top,
+.auth-scope .auth-login-cinematic__dashboard-hero,
+.auth-scope .auth-login-cinematic__dashboard-grid span,
+.auth-scope .auth-login-cinematic__dashboard-lanes span {
+  display: block;
+  border: 1px solid rgb(191 204 216 / 0.6);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 0.92);
+}
+
+.auth-scope .auth-login-cinematic__dashboard-top {
+  width: 100%;
+  height: 2.5rem;
+}
+
+.auth-scope .auth-login-cinematic__dashboard-hero {
+  height: 8.2rem;
+  background:
+    linear-gradient(90deg, rgb(231 245 249), rgb(252 254 255)),
+    rgb(255 255 255);
+}
+
+.auth-scope .auth-login-cinematic__dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.auth-scope .auth-login-cinematic__dashboard-grid span {
+  height: 5.1rem;
+}
+
+.auth-scope .auth-login-cinematic__dashboard-lanes {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.auth-scope .auth-login-cinematic__dashboard-lanes span {
+  height: 2.85rem;
+}
+
+@media (max-width: 1100px) {
+  .auth-scope .auth-login-cinematic__dashboard-card {
+    width: 94%;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+  }
+}

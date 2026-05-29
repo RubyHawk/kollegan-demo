@@ -9,7 +9,6 @@ import {
   type MfaMethod,
 } from '@shared/lib/api/auth-session.api';
 import { TooltipProvider } from '@shared/ui/tooltip';
-import { AuthBrandMark } from './AuthBrandMark';
 import { FloatingInput } from './FloatingInput';
 import { InlineError } from './InlineError';
 import { LoginAccessConsole } from './LoginAccessConsole';
@@ -34,9 +33,10 @@ const HEADLINES: Record<Step, { title: string; sub: string }> = {
 
 interface LoginFormProps {
   redirect: string;
+  onCinematicStart: () => void;
 }
 
-export function LoginForm({ redirect }: LoginFormProps) {
+export function LoginForm({ redirect, onCinematicStart }: LoginFormProps) {
   const [step, setStep] = useState<Step>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -52,9 +52,10 @@ export function LoginForm({ redirect }: LoginFormProps) {
 
   function handleSuccessRedirect() {
     setExiting(true);
+    onCinematicStart();
     window.setTimeout(() => {
       window.location.replace(redirect);
-    }, 1700);
+    }, 4200);
   }
 
   function handleExitComplete() {
@@ -117,14 +118,6 @@ export function LoginForm({ redirect }: LoginFormProps) {
       >
         <div className="auth-login-panel__atmosphere" aria-hidden="true" />
         <div className="auth-login-panel__grid" aria-hidden="true" />
-        <div className="auth-login-cinematic" aria-hidden="true">
-          <div className="auth-login-cinematic__sun">
-            <AuthBrandMark size={34} />
-          </div>
-          <div className="auth-login-cinematic__glare" />
-          <div className="auth-login-cinematic__film" />
-          <div className="auth-login-cinematic__wipe" />
-        </div>
 
         <AnimatePresence onExitComplete={handleExitComplete}>
           {!exiting ? (
