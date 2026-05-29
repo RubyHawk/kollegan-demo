@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Analysis — Kollegan</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0e0e10; color: #e2e2e8; line-height: 1.5; }
+
+  .page { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+  h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+  h2 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  h3 { font-size: 14px; font-weight: 700; color: #b0b0c0; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 12px; }
+  p  { font-size: 14px; color: #9090a8; margin-bottom: 6px; }
+  .subtitle { font-size: 16px; color: #7070a0; margin-bottom: 48px; }
+
+  /* ── Section dividers ── */
+  .section { margin-bottom: 72px; }
+  .section-label {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 99px;
+    margin-bottom: 20px;
+  }
+  .label-now   { background: #2a1a1a; color: #e06060; border: 1px solid #6a2020; }
+  .label-why   { background: #1a1a2a; color: #8080e0; border: 1px solid #2a2a6a; }
+  .label-after { background: #0d2a1a; color: #40c870; border: 1px solid #1a6040; }
+
+  /* ── Wireframe container ── */
+  .wf { background: #17171c; border: 1px solid #2a2a38; border-radius: 16px; overflow: hidden; margin-bottom: 32px; }
+  .wf-topbar { background: #1e1e28; border-bottom: 1px solid #2a2a38; padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
+  .wf-dot    { width: 10px; height: 10px; border-radius: 50%; }
+  .wf-url    { font-size: 11px; color: #5050a0; background: #12121a; border-radius: 6px; padding: 4px 12px; flex: 1; max-width: 300px; }
+  .wf-body   { padding: 16px; }
+
+  /* ── Generic box primitives ── */
+  .box { background: #1e1e28; border: 1px solid #2a2a38; border-radius: 10px; padding: 12px 14px; }
+  .box-accent { border-color: #3a3a60; }
+  .box-warn   { border-color: #6a3a1a; background: #1e1610; }
+  .box-ok     { border-color: #1a4a2a; background: #101e14; }
+  .box-urgent { border-color: #8a2020; background: #1e0e0e; }
+
+  .label-xs { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #505080; margin-bottom: 4px; }
+  .val-lg { font-size: 20px; font-weight: 700; color: #e8e8f0; }
+  .val-md { font-size: 15px; font-weight: 600; color: #d0d0e0; }
+  .val-sm { font-size: 13px; color: #a0a0c0; }
+  .muted  { color: #505068; font-size: 12px; }
+
+  .row { display: flex; gap: 10px; align-items: stretch; }
+  .col { display: flex; flex-direction: column; gap: 10px; }
+  .flex1 { flex: 1; }
+  .w200 { width: 200px; flex-shrink: 0; }
+  .w260 { width: 260px; flex-shrink: 0; }
+
+  /* ── Hero bar ── */
+  .hero { background: linear-gradient(135deg, #1c1c28 0%, #14141e 100%); border: 1px solid #2a2a3e; border-radius: 14px; padding: 18px 20px; margin-bottom: 10px; }
+  .hero-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .hero-title { font-size: 20px; font-weight: 700; color: #e8e8f8; }
+  .hero-sub { font-size: 12px; color: #7070a0; margin-top: 2px; }
+  .btn { background: #e06040; color: #fff; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; display: inline-block; }
+
+  /* ── KPI strip ── */
+  .kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid #2a2a3e; margin: 0 -20px -18px; }
+  .kpi { padding: 14px 16px; border-right: 1px solid #2a2a3e; }
+  .kpi:last-child { border-right: none; }
+  .kpi-icon { width: 30px; height: 30px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .kpi-val { font-size: 17px; font-weight: 700; color: #e8e8f0; }
+  .kpi-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: #505080; margin-bottom: 2px; }
+  .kpi-sub { font-size: 11px; color: #7070a0; margin-top: 2px; }
+
+  /* ── Table rows ── */
+  .table-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid #1e1e2a; font-size: 12px; }
+  .table-row:last-child { border-bottom: none; }
+  .table-col-id { color: #404060; font-family: monospace; width: 50px; flex-shrink: 0; }
+  .table-col-name { flex: 1; color: #c0c0d8; }
+  .table-col-name .sub { font-size: 10px; color: #505070; }
+  .badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+  .badge-sent     { background: #1a2a4a; color: #6098e0; }
+  .badge-viewed   { background: #2a1a4a; color: #a060e0; }
+  .badge-accepted { background: #0d2a1a; color: #40c870; }
+  .badge-draft    { background: #1e1e28; color: #6060a0; border: 1px solid #2a2a40; }
+  .badge-expired  { background: #2a1a0a; color: #c07040; }
+  .badge-warn     { background: #3a1a0a; color: #e08040; }
+  .badge-alert    { background: #3a0a0a; color: #e04040; }
+  .badge-ok       { background: #0a2a18; color: #30b860; }
+
+  /* ── Donut placeholder ── */
+  .donut { width: 90px; height: 90px; border-radius: 50%; border: 14px solid #2a2a40; position: relative; flex-shrink: 0;
+    background: conic-gradient(#6098e0 0% 35%, #a060e0 35% 55%, #40c870 55% 75%, #e08040 75% 85%, #404060 85% 100%); }
+  .donut-inner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; color: #e8e8f0; background: #1e1e28; border-radius: 50%; margin: -2px; }
+
+  /* ── Bar ── */
+  .bar-wrap { background: #12121c; border-radius: 4px; height: 6px; overflow: hidden; margin-top: 4px; }
+  .bar { height: 100%; border-radius: 4px; }
+
+  /* ── Funnel ── */
+  .funnel { display: flex; align-items: flex-end; gap: 3px; padding: 12px 16px; }
+  .funnel-stage { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .funnel-bar { width: 100%; border-radius: 6px 6px 0 0; }
+  .funnel-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #505080; text-align: center; }
+  .funnel-val { font-size: 13px; font-weight: 700; color: #e0e0f0; text-align: center; }
+  .funnel-arrow { color: #303048; font-size: 16px; padding-bottom: 24px; flex-shrink: 0; }
+
+  /* ── Attention strip ── */
+  .attn { background: linear-gradient(135deg, #1e1410 0%, #1a1018 100%); border: 1px solid #4a2a14; border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; }
+  .attn-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: #c07040; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .attn-dot { width: 6px; height: 6px; border-radius: 50%; background: #e05030; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .attn-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: #12100e; border: 1px solid #3a2010; border-radius: 8px; margin-bottom: 6px; font-size: 12px; }
+  .attn-item:last-child { margin-bottom: 0; }
+  .attn-item-text { color: #c0a080; display: flex; align-items: center; gap: 8px; }
+  .attn-item-icon { font-size: 14px; }
+  .attn-cta { font-size: 11px; font-weight: 600; color: #e08040; background: #2a1808; border: 1px solid #5a2808; padding: 3px 10px; border-radius: 6px; }
+
+  /* ── Priority queue ── */
+  .pq-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; border: 1px solid transparent; transition: all 0.1s; }
+  .pq-urgent { background: #1e0c0c; border-color: #5a1a1a; }
+  .pq-warm   { background: #1e1408; border-color: #4a2e10; }
+  .pq-normal { background: #0e0e18; border-color: #2a2a40; }
+  .pq-avatar { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .pq-content { flex: 1; }
+  .pq-name { font-size: 13px; font-weight: 600; color: #d0d0e0; }
+  .pq-meta { font-size: 11px; color: #6060a0; margin-top: 1px; }
+  .pq-right { text-align: right; }
+  .pq-time { font-size: 11px; color: #8080c0; }
+  .pq-action { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; margin-top: 3px; display: inline-block; }
+  .act-follow  { background: #2a1808; color: #e08040; }
+  .act-expire  { background: #2a0808; color: #e04040; }
+  .act-new     { background: #0a1a2a; color: #4080d0; }
+
+  /* ── Activity feed ── */
+  .feed-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #1a1a28; font-size: 12px; }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-dot  { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+  .feed-text { flex: 1; color: #9090b0; line-height: 1.4; }
+  .feed-text strong { color: #c0c0d8; }
+  .feed-time { font-size: 10px; color: #404060; }
+
+  /* ── Forecast bar ── */
+  .forecast-bar { padding: 12px 14px; }
+  .fc-label { font-size: 11px; color: #6060a0; margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .fc-track { height: 24px; background: #12121c; border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
+  .fc-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 700; color: #fff; }
+
+  /* ── Diff callout ── */
+  .diff { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .diff-side { border-radius: 12px; padding: 16px; }
+  .diff-now  { background: #1a1010; border: 1px solid #3a1818; }
+  .diff-new  { background: #0a1a10; border: 1px solid #184030; }
+  .diff-h    { font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+  .diff-now .diff-h { color: #e06060; }
+  .diff-new .diff-h { color: #40c870; }
+  .diff-item { font-size: 12px; color: #9090b0; padding: 4px 0; padding-left: 14px; position: relative; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .diff-item:last-child { border-bottom: none; }
+  .diff-item::before { content: ''; position: absolute; left: 0; top: 10px; width: 6px; height: 6px; border-radius: 50%; }
+  .diff-now .diff-item::before { background: #6a2020; }
+  .diff-new .diff-item::before { background: #205040; }
+
+  /* ── Finding cards ── */
+  .findings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 32px; }
+  .finding { background: #14141e; border: 1px solid #2a2a40; border-radius: 12px; padding: 16px; }
+  .finding-num { font-size: 32px; font-weight: 800; color: #3a3a60; margin-bottom: 4px; }
+  .finding h4  { font-size: 14px; font-weight: 700; color: #c0c0e0; margin-bottom: 6px; }
+  .finding p   { font-size: 12px; color: #6060a0; line-height: 1.5; }
+
+  .separator { border: none; border-top: 1px solid #1e1e2e; margin: 48px 0; }
+  .tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-right: 6px; margin-bottom: 4px; }
+  .tag-red    { background: #2a0808; color: #e04040; }
+  .tag-orange { background: #2a1200; color: #e08040; }
+  .tag-blue   { background: #080e2a; color: #4080e0; }
+  .tag-green  { background: #082a14; color: #40c870; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div style="margin-bottom:8px">
+    <span class="section-label label-why">Kollegan Dashboard — Analys 2025</span>
+  </div>
+  <h1>Passiv statistik vs. Aktiva arbetsflöden</h1>
+  <p class="subtitle">En visuell jämförelse av nuläget och vad moderna ERP/CRM-dashboards gör annorlunda</p>
+
+  <!-- ═══ SECTION 1: NULÄGE ═══ -->
+  <div class="section">
+    <div class="section-label label-now">Nuläge — vad dashboarden visar idag</div>
+
+    <div class="wf">
+      <div class="wf-topbar">
+        <div class="wf-dot" style="background:#e05050"></div>
+        <div class="wf-dot" style="background:#e0a050"></div>
+        <div class="wf-dot" style="background:#50c050"></div>
+        <div class="wf-url">kollegan.app / översikt</div>
+      </div>
+      <div class="wf-body">
+
+        <!-- Hero -->
+        <div class="hero">
+          <div class="hero-row">
+            <div>
+              <div style="display:flex;gap:6px;margin-bottom:8px">
+                <span style="font-size:9px;font-weight:700;padding:3px 9px;border-radius:99px;background:#1e1e30;color:#5050a0;border:1px solid #2a2a40;text-transform:uppercase;letter-spacing:0.14em">Tors 29 maj</span>
+                <span style="font-size:9px;font-weight:700;padding:3px 9px;border-radius:99px;background:#1a1a28;color:#404060;border:1px solid #252535;text-transform:uppercase;letter-spacing:0.14em">Översikt</span>
+              </div>
+              <div style="display:inline-flex;align-items:center;gap:6px;background:#1a1a28;border:1px solid #262636;border-radius:99px;padding:5px 12px;margin-bottom:8px">
+                <span style="font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#404068">Stockholm</span>
+                <span style="font-size:14px;font-weight:700;font-family:monospace;color:#d0d0e8">14:32:01</span>
+              </div>
+              <div class="hero-title">God eftermiddag, Ali</div>
+              <div class="hero-sub">Du har 3 aktiva offerter i pipeline och 2 som löper ut snart.</div>
+            </div>
+            <div class="btn">+ Ny offert</div>
+          </div>
+
+          <div class="kpi-strip">
+            <div class="kpi">
+              <div class="kpi-icon" style="background:linear-gradient(135deg,#1e5fb8,#1d8cff)">📈</div>
+              <div class="kpi-label">Pipeline</div>
+              <div class="kpi-val">45 200 kr</div>
+              <div class="kpi-sub">3 aktiva offerter</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-icon" style="background:linear-gradient(135deg,#0d7d4f,#19a266)">✓</div>
+              <div class="kpi-label">Accepterat värde</div>
+              <div class="kpi-val">120 000 kr</div>
+              <div class="kpi-sub">5 affärer vunna</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-icon" style="background:linear-gradient(135deg,#8a4f00,#d6851a)">%</div>
+              <div class="kpi-label">Vinstgrad</div>
+              <div class="kpi-val">67%</div>
+              <div class="kpi-sub">Andel accepterade av avslutade</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-icon" style="background:linear-gradient(135deg,#c5543f,#ee7b5b)">⏰</div>
+              <div class="kpi-label">Utgår snart</div>
+              <div class="kpi-val">2</div>
+              <div class="kpi-sub">Offerter löper ut inom 7 dagar</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main grid -->
+        <div class="row" style="margin-top:10px;align-items:flex-start">
+
+          <!-- Left: offers list -->
+          <div class="box flex1" style="padding:0;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #1e1e2e">
+              <div>
+                <div class="val-md">Senaste offerter</div>
+                <div class="muted" style="margin-top:2px">30 offerter — bläddra med pilarna nedan</div>
+              </div>
+              <span style="font-size:11px;color:#6060c0">Visa alla →</span>
+            </div>
+            <div class="table-row">
+              <span class="table-col-id">#001</span>
+              <div class="table-col-name">Solpaneler Eriksson AB<div class="sub">Lars Eriksson · Eriksson AB</div></div>
+              <span class="badge badge-sent">Skickad</span>
+              <span style="font-size:12px;color:#9090b0;margin-left:auto">23 500 kr</span>
+              <span class="muted">24 maj</span>
+            </div>
+            <div class="table-row">
+              <span class="table-col-id">#002</span>
+              <div class="table-col-name">Installation vindskydd<div class="sub">Maria Svensson · Bygg AB</div></div>
+              <span class="badge badge-viewed">Visad</span>
+              <span style="font-size:12px;color:#9090b0;margin-left:auto">8 400 kr</span>
+              <span class="muted">22 maj</span>
+            </div>
+            <div class="table-row">
+              <span class="table-col-id">#003</span>
+              <div class="table-col-name">Fönsterbyte 12 st<div class="sub">Ingen mottagare ännu</div></div>
+              <span class="badge badge-draft">Utkast</span>
+              <span style="font-size:12px;color:#9090b0;margin-left:auto">—</span>
+              <span class="muted">21 maj</span>
+            </div>
+            <div class="table-row">
+              <span class="table-col-id">#004</span>
+              <div class="table-col-name">Värmepump + montering<div class="sub">Eva Carlsson · Hem &amp; Trädgård</div></div>
+              <span class="badge badge-accepted">Accepterad</span>
+              <span style="font-size:12px;color:#40c870;margin-left:auto">45 000 kr</span>
+              <span class="muted">18 maj</span>
+            </div>
+            <div class="table-row">
+              <span class="table-col-id">#005</span>
+              <div class="table-col-name">Altan trädäck 30m²<div class="sub">Johan Berg · Berg &amp; Co</div></div>
+              <span class="badge badge-expired">Utgången</span>
+              <span style="font-size:12px;color:#9090b0;margin-left:auto">12 200 kr</span>
+              <span class="muted">10 maj</span>
+            </div>
+            <!-- pagination -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-top:1px solid #1e1e2e">
+              <span class="muted">1–5 av 30</span>
+              <div style="display:flex;gap:4px">
+                <span style="font-size:11px;padding:4px 8px;border:1px solid #2a2a40;border-radius:6px;color:#5050a0">‹</span>
+                <span style="font-size:11px;padding:4px 8px;border-radius:6px;background:#5050c0;color:#fff">1</span>
+                <span style="font-size:11px;padding:4px 8px;border:1px solid #2a2a40;border-radius:6px;color:#5050a0">2</span>
+                <span style="font-size:11px;padding:4px 8px;border:1px solid #2a2a40;border-radius:6px;color:#5050a0">3</span>
+                <span style="font-size:11px;padding:4px 8px;border:1px solid #2a2a40;border-radius:6px;color:#5050a0">›</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right sidebar -->
+          <div class="col w260">
+
+            <!-- Project stats -->
+            <div class="box">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <div class="val-md">Projektläge</div>
+                <span style="font-size:10px;color:#5050c0;border:1px solid #2a2a50;border-radius:99px;padding:2px 8px">Alla projekt</span>
+              </div>
+              <div class="row" style="gap:6px;margin-bottom:10px">
+                <div class="box flex1" style="text-align:center;padding:8px">
+                  <div class="label-xs">Aktiva</div><div class="val-md">3</div>
+                </div>
+                <div class="box flex1" style="text-align:center;padding:8px">
+                  <div class="label-xs">Klart</div><div class="val-md" style="color:#40c870">5</div>
+                </div>
+                <div class="box flex1" style="text-align:center;padding:8px">
+                  <div class="label-xs">Andel</div><div class="val-md">62%</div>
+                </div>
+              </div>
+              <div style="font-size:11px;color:#7070a0;margin-bottom:6px">Pågår <span style="float:right;color:#6060b0">1</span></div>
+              <div class="bar-wrap"><div class="bar" style="width:14%;background:#5050c0"></div></div>
+              <div style="font-size:11px;color:#7070a0;margin:6px 0">Beställt <span style="float:right;color:#6060b0">2</span></div>
+              <div class="bar-wrap"><div class="bar" style="width:28%;background:#6098e0"></div></div>
+              <div style="font-size:11px;color:#7070a0;margin:6px 0">Klart <span style="float:right;color:#40c870">5</span></div>
+              <div class="bar-wrap"><div class="bar" style="width:62%;background:#30a060"></div></div>
+            </div>
+
+            <!-- Status distribution -->
+            <div class="box">
+              <div class="val-md" style="margin-bottom:8px">Statusfördelning</div>
+              <div style="display:flex;align-items:center;gap:12px">
+                <div class="donut"><div class="donut-inner">30</div></div>
+                <div style="flex:1">
+                  <div style="font-size:11px;color:#6098e0;margin-bottom:4px">● Skickad 35%</div>
+                  <div class="bar-wrap"><div class="bar" style="width:35%;background:#6098e0"></div></div>
+                  <div style="font-size:11px;color:#a060e0;margin:4px 0 4px">● Visad 20%</div>
+                  <div class="bar-wrap"><div class="bar" style="width:20%;background:#a060e0"></div></div>
+                  <div style="font-size:11px;color:#40c870;margin:4px 0 4px">● Accepterad 18%</div>
+                  <div class="bar-wrap"><div class="bar" style="width:18%;background:#40c870"></div></div>
+                  <div style="font-size:11px;color:#e08040;margin:4px 0 4px">● Utgången 10%</div>
+                  <div class="bar-wrap"><div class="bar" style="width:10%;background:#e08040"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Trend -->
+            <div class="box">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <div class="val-md">Tidsöversikt</div>
+                <div style="display:flex;gap:4px">
+                  <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#1a1a30;color:#4040a0">7d</span>
+                  <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#3030a0;color:#fff">30d</span>
+                  <span style="font-size:9px;padding:2px 6px;border-radius:4px;background:#1a1a30;color:#4040a0">90d</span>
+                </div>
+              </div>
+              <!-- rough chart placeholder -->
+              <div style="height:90px;background:#12121c;border-radius:8px;display:flex;align-items:flex-end;padding:8px;gap:3px;overflow:hidden">
+                <div style="flex:1;background:linear-gradient(to top,#3030a0,transparent);border-radius:3px 3px 0 0;height:40%"></div>
+                <div style="flex:1;background:linear-gradient(to top,#3030a0,transparent);border-radius:3px 3px 0 0;height:60%"></div>
+                <div style="flex:1;background:linear-gradient(to top,#3030a0,transparent);border-radius:3px 3px 0 0;height:45%"></div>
+                <div style="flex:1;background:linear-gradient(to top,#3030a0,transparent);border-radius:3px 3px 0 0;height:75%"></div>
+                <div style="flex:1;background:linear-gradient(to top,#3030a0,transparent);border-radius:3px 3px 0 0;height:55%"></div>
+                <div style="flex:1;background:linear-gradient(to top,#3030a0,transparent);border-radius:3px 3px 0 0;height:90%"></div>
+                <div style="flex:1;background:linear-gradient(to top,#3030a0,transparent);border-radius:3px 3px 0 0;height:70%"></div>
+              </div>
+              <div style="font-size:10px;color:#404068;margin-top:4px;text-align:center">Skapade vs. accepterade offerter</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CRM PAGE separate -->
+    <p style="font-size:12px;color:#404060;text-align:center;margin-bottom:8px">⬆ Huvuddashboard &nbsp;&nbsp;&nbsp; ⬇ CRM — helt separat sida, ingen koppling</p>
+    <div class="wf">
+      <div class="wf-topbar">
+        <div class="wf-dot" style="background:#e05050"></div>
+        <div class="wf-dot" style="background:#e0a050"></div>
+        <div class="wf-dot" style="background:#50c050"></div>
+        <div class="wf-url">kollegan.app / crm</div>
+      </div>
+      <div class="wf-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <div style="font-size:20px;font-weight:700;color:#e0e0f0">CRM</div>
+            <div class="muted">Kunder, kontakter och ärendehistorik.</div>
+          </div>
+          <div class="btn">+ Ny kontakt</div>
+        </div>
+        <div class="row" style="margin-bottom:16px">
+          <div class="box flex1" style="text-align:center"><div class="val-lg" style="color:#5050c0">24</div><div class="label-xs" style="margin-top:4px">Kontakter</div></div>
+          <div class="box flex1" style="text-align:center"><div class="val-lg" style="color:#a060e0">12</div><div class="label-xs" style="margin-top:4px">Leads totalt</div></div>
+          <div class="box flex1" style="text-align:center"><div class="val-lg" style="color:#6098e0">3</div><div class="label-xs" style="margin-top:4px">Nya leads</div></div>
+          <div class="box flex1" style="text-align:center"><div class="val-lg" style="color:#40c870">5</div><div class="label-xs" style="margin-top:4px">Vunna leads</div></div>
+        </div>
+        <div class="muted" style="text-align:center;padding:20px">Senaste leads, sökfält, snabblänkar...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SECTION 2: PROBLEM ANALYSIS ═══ -->
+  <hr class="separator">
+  <div class="section">
+    <div class="section-label label-why">Varför det inte räcker</div>
+    <h2 style="margin-bottom:16px">5 strukturella problem</h2>
+
+    <div class="findings">
+      <div class="finding">
+        <div class="finding-num">01</div>
+        <h4>Ingen handlingskö — bara siffror</h4>
+        <p>Dashboarden svarar på "vad har hänt?" men aldrig "vad ska jag göra nu?". Det räknas upp att 2 offerter utgår snart — men var är de? Vem är det? Vad är knappen för att agera?</p>
+        <div style="margin-top:10px">
+          <span class="tag tag-red">Passiv</span>
+          <span class="tag tag-orange">Ingen prioritering</span>
+        </div>
+      </div>
+      <div class="finding">
+        <div class="finding-num">02</div>
+        <h4>"Visade" offerter är hetaste leadsen — osynliga</h4>
+        <p>En offert med status "Visad" innebär att kunden faktiskt öppnat den. Det är det bästa tillfället att ringa. Men i listan ser den exakt likadan ut som alla andra — ingen urgency, ingen markering, inget som säger "RING NU".</p>
+        <div style="margin-top:10px">
+          <span class="tag tag-red">Hög prioritet ignoreras</span>
+        </div>
+      </div>
+      <div class="finding">
+        <div class="finding-num">03</div>
+        <h4>CRM och offertsystem lever i parallella universum</h4>
+        <p>En lead i CRM kan bli kvalificerad och redo för offert — men det syns ingenstans på dashboarden. Säljaren måste aktivt gå till CRM och minnas att kolla. Den naturliga flödet Lead → Offert → Projekt är bruten.</p>
+        <div style="margin-top:10px">
+          <span class="tag tag-orange">Siloing</span>
+          <span class="tag tag-blue">Workflow-brist</span>
+        </div>
+      </div>
+      <div class="finding">
+        <div class="finding-num">04</div>
+        <h4>Möten är helt osynliga</h4>
+        <p>Systemet har ett helt mötesmodul — men inget möte syns på dashboarden. Om du har ett möte om 30 minuter med en kund vars offert fortfarande är Visad — du skulle aldrig veta det om du bara tittar på overview-sidan.</p>
+        <div style="margin-top:10px">
+          <span class="tag tag-red">Kontextlöshet</span>
+        </div>
+      </div>
+      <div class="finding">
+        <div class="finding-num">05</div>
+        <h4>Statusdonutringen är bakåtblickande, inte framåtblickande</h4>
+        <p>En fördelning av status (17 skickade, 8 visade...) är statistik — bra för rapport men inte för action. Moderna CRM:er (HubSpot, Pipedrive) visar en pipeline-tratt med konverteringsgrad mellan steg och värde per steg.</p>
+        <div style="margin-top:10px">
+          <span class="tag tag-orange">Rapport, inte verktyg</span>
+        </div>
+      </div>
+      <div class="finding">
+        <div class="finding-num">06</div>
+        <h4>Ingen kontext om VAD som händer — bara tal</h4>
+        <p>Aktivitetsgrafen visar trender, men inte händelser. Moderna verktyg (Linear, Notion, Intercom) har en unified activity feed: "Eriksson AB öppnade offerten för 2 timmar sedan", "Ny lead inkom: Bergström Bygg". Det gör att du förstår vad som rör sig just nu.</p>
+        <div style="margin-top:10px">
+          <span class="tag tag-blue">Saknad: realtidsfeed</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side by side diff -->
+    <h3>Moderna verktyg vs. Kollegan — jämförelse</h3>
+    <div class="diff">
+      <div class="diff-side diff-now">
+        <div class="diff-h">❌ Kollegan idag</div>
+        <div class="diff-item">KPI-räknare utan handlingsval</div>
+        <div class="diff-item">Kronologisk lista — ingen prioritering</div>
+        <div class="diff-item">CRM-leads isolerade från dashboarden</div>
+        <div class="diff-item">Möten osynliga</div>
+        <div class="diff-item">Statusdonut — bakåtblickande</div>
+        <div class="diff-item">Ingen aktivitetsfeed</div>
+        <div class="diff-item">Ingen viktat pipeline-värde / prognos</div>
+      </div>
+      <div class="diff-side diff-new">
+        <div class="diff-h">✅ HubSpot / Pipedrive / Linear 2025</div>
+        <div class="diff-item">Attention queue: "3 offerter kräver uppföljning"</div>
+        <div class="diff-item">Prioriterad lista: urgency + recency + värde</div>
+        <div class="diff-item">Leads redo för offert syns på dashboarden</div>
+        <div class="diff-item">Dagens möten i context-panelen</div>
+        <div class="diff-item">Pipeline-tratt med konverteringsgrad per steg</div>
+        <div class="diff-item">Unified feed: vad som händer just nu</div>
+        <div class="diff-item">Prognos: sannolikt värde × sannolikhet per fas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SECTION 3: FÖRESLAGEN NY DASHBOARD ═══ -->
+  <hr class="separator">
+  <div class="section">
+    <div class="section-label label-after">Förslag — ny dashboardstruktur</div>
+    <h2 style="margin-bottom:6px">Från "vad hände?" till "vad gör jag nu?"</h2>
+    <p style="margin-bottom:24px;color:#6060a0">Tre konkreta förändringar med wireframes</p>
+
+    <!-- ── FÖRÄNDRING 1: ATTENTION STRIP ── -->
+    <h3 style="margin-bottom:12px">Förändring 1 — Attention Queue (ersätt hero-subtext)</h3>
+    <p style="margin-bottom:12px;color:#6060a0">Direkt under hälsningen: en röd/orange "kräver uppmärksamhet"-sektion som listar de exakta actionerna du behöver ta idag. Inte antal. Namnen. Med knappar.</p>
+
+    <div class="wf" style="margin-bottom:24px">
+      <div class="wf-topbar">
+        <div class="wf-dot" style="background:#e05050"></div>
+        <div class="wf-dot" style="background:#e0a050"></div>
+        <div class="wf-dot" style="background:#50c050"></div>
+        <div class="wf-url">kollegan.app / översikt</div>
+      </div>
+      <div class="wf-body">
+        <!-- Hero without attention -->
+        <div class="hero" style="margin-bottom:10px">
+          <div class="hero-row" style="margin-bottom:0">
+            <div>
+              <div class="hero-title">God eftermiddag, Ali</div>
+              <div class="hero-sub" style="color:#505080">Tors 29 maj · Stockholm 14:32</div>
+            </div>
+            <div class="btn">+ Ny offert</div>
+          </div>
+        </div>
+
+        <!-- NEW: Attention strip -->
+        <div class="attn">
+          <div class="attn-title">
+            <span class="attn-dot"></span>
+            Kräver din uppmärksamhet
+          </div>
+          <div class="attn-item">
+            <div class="attn-item-text">
+              <span class="attn-item-icon">👁</span>
+              <div>
+                <strong style="color:#e0c0a0">Eriksson AB</strong> öppnade offerten <strong style="color:#e0c0a0">Solpaneler 23 500 kr</strong>
+                <span style="font-size:10px;color:#805040;margin-left:6px">— visad för 3 dagar sedan</span>
+              </div>
+            </div>
+            <span class="attn-cta">Följ upp →</span>
+          </div>
+          <div class="attn-item">
+            <div class="attn-item-text">
+              <span class="attn-item-icon">⏰</span>
+              <div>
+                <strong style="color:#e09060">Svensson Bygg</strong> — offert <strong style="color:#e09060">Installation vindskydd 8 400 kr</strong>
+                <span style="font-size:10px;color:#805040;margin-left:6px;background:#2a1008;border-radius:4px;padding:1px 5px">utgår om 2 dagar</span>
+              </div>
+            </div>
+            <span class="attn-cta">Förläng →</span>
+          </div>
+          <div class="attn-item">
+            <div class="attn-item-text">
+              <span class="attn-item-icon">📅</span>
+              <div>
+                Möte idag <strong style="color:#c0a080">kl 15:00</strong> med <strong style="color:#c0a080">Carlsson AB</strong>
+                <span style="font-size:10px;color:#605030;margin-left:6px">— offert #007 är fortfarande Utkast</span>
+              </div>
+            </div>
+            <span class="attn-cta">Öppna offert →</span>
+          </div>
+          <div class="attn-item">
+            <div class="attn-item-text">
+              <span class="attn-item-icon">⚡</span>
+              <div>
+                Lead <strong style="color:#c0a060">Bergström Bygg</strong> är markerad <strong style="color:#c0a060">Kvalificerad</strong>
+                <span style="font-size:10px;color:#705030;margin-left:6px">— redo för offert</span>
+              </div>
+            </div>
+            <span class="attn-cta">Skapa offert →</span>
+          </div>
+        </div>
+
+        <!-- KPI strip as before but smaller -->
+        <div class="row" style="gap:8px;margin-top:10px">
+          <div class="box flex1" style="padding:10px 12px">
+            <div class="label-xs">Pipeline</div>
+            <div class="val-md">45 200 kr</div>
+            <div class="muted">3 aktiva</div>
+          </div>
+          <div class="box flex1" style="padding:10px 12px">
+            <div class="label-xs">Accepterat</div>
+            <div class="val-md" style="color:#40c870">120 000 kr</div>
+            <div class="muted">5 vunna</div>
+          </div>
+          <div class="box flex1" style="padding:10px 12px">
+            <div class="label-xs">Vinstgrad</div>
+            <div class="val-md">67%</div>
+            <div class="muted">av avslutade</div>
+          </div>
+          <div class="box flex1 box-warn" style="padding:10px 12px">
+            <div class="label-xs" style="color:#8a4020">Utgår snart</div>
+            <div class="val-md" style="color:#e08040">2</div>
+            <div class="muted">inom 7 dagar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FÖRÄNDRING 2: PIPELINE FUNNEL ── -->
+    <h3 style="margin-bottom:12px">Förändring 2 — Pipeline-tratt (ersätt statusdonuten)</h3>
+    <p style="margin-bottom:12px;color:#6060a0">En visuell tratt visar flödet från Lead till Vunnet, med värde och antal per steg. Du ser direkt var det stockar sig och vad nästa steg ska vara.</p>
+
+    <div class="wf" style="margin-bottom:24px">
+      <div class="wf-topbar">
+        <div class="wf-dot" style="background:#e05050"></div>
+        <div class="wf-dot" style="background:#e0a050"></div>
+        <div class="wf-dot" style="background:#50c050"></div>
+        <div class="wf-url">kollegan.app / översikt → Pipeline-panel</div>
+      </div>
+      <div class="wf-body">
+        <div class="box" style="padding:14px 16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div>
+              <div class="val-md">Pipeline-tratt</div>
+              <div class="muted">Lead till Vunnet — konvertering per steg</div>
+            </div>
+            <span style="font-size:11px;color:#4060c0;border:1px solid #2030a0;border-radius:6px;padding:3px 8px">Detaljer →</span>
+          </div>
+
+          <!-- Funnel stages -->
+          <div style="display:flex;align-items:stretch;gap:4px;margin-bottom:12px">
+            <div style="flex:1;background:#1a1830;border:1px solid #2a2850;border-radius:8px;padding:10px;text-align:center">
+              <div class="label-xs">Leads</div>
+              <div style="font-size:22px;font-weight:700;color:#a060e0">12</div>
+              <div style="font-size:10px;color:#5040a0;margin-top:4px">kontakter</div>
+            </div>
+            <div style="display:flex;align-items:center;color:#252545;font-size:18px;padding:0 2px">›</div>
+            <div style="flex:1;background:#18182e;border:1px solid #282858;border-radius:8px;padding:10px;text-align:center">
+              <div class="label-xs">Utkast</div>
+              <div style="font-size:22px;font-weight:700;color:#6060c0">4</div>
+              <div style="font-size:10px;color:#404090;margin-top:4px">offerter</div>
+              <div style="font-size:10px;color:#303060;margin-top:2px">33% →</div>
+            </div>
+            <div style="display:flex;align-items:center;color:#252545;font-size:18px;padding:0 2px">›</div>
+            <div style="flex:1;background:#0e1a30;border:1px solid #1a3060;border-radius:8px;padding:10px;text-align:center">
+              <div class="label-xs">Skickade</div>
+              <div style="font-size:22px;font-weight:700;color:#6098e0">8</div>
+              <div style="font-size:10px;color:#306080;margin-top:4px">63 200 kr</div>
+              <div style="font-size:10px;color:#204060;margin-top:2px">67% →</div>
+            </div>
+            <div style="display:flex;align-items:center;color:#252545;font-size:18px;padding:0 2px">›</div>
+            <div style="flex:1;background:#1a0e2e;border:1px solid #3a1a60;border-radius:8px;padding:10px;text-align:center;border-color:#4a2090">
+              <div class="label-xs" style="color:#8040c0">Visade 🔥</div>
+              <div style="font-size:22px;font-weight:700;color:#c060f0">3</div>
+              <div style="font-size:10px;color:#6030a0;margin-top:4px">23 100 kr</div>
+              <div style="font-size:10px;color:#502080;margin-top:2px">38% →</div>
+            </div>
+            <div style="display:flex;align-items:center;color:#252545;font-size:18px;padding:0 2px">›</div>
+            <div style="flex:1;background:#0a1e12;border:1px solid #1a5030;border-radius:8px;padding:10px;text-align:center">
+              <div class="label-xs">Vunna</div>
+              <div style="font-size:22px;font-weight:700;color:#30b860">5</div>
+              <div style="font-size:10px;color:#20703a;margin-top:4px">120 000 kr</div>
+              <div style="font-size:10px;color:#105030;margin-top:2px">+45% MoM</div>
+            </div>
+          </div>
+
+          <!-- Bottom insight bar -->
+          <div style="background:#0e0e18;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;font-size:11px">
+            <span style="color:#6040a0">💡 3 visade offerter kräver uppföljning — ring dem nu för bäst konvertering</span>
+            <span style="color:#5050a0;cursor:pointer">Visa alla →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FÖRÄNDRING 3: PRIORITIZED WORK QUEUE ── -->
+    <h3 style="margin-bottom:12px">Förändring 3 — Prioriterad offertlista (ersätt kronologisk lista)</h3>
+    <p style="margin-bottom:12px;color:#6060a0">Istället för "senaste 30 i tidsordning" — en lista grupperad efter vad som behöver göras. Visade offerter först, sedan utgående, sedan aktiva. Med kontextuell info (sedan när, vad händer).</p>
+
+    <div class="wf" style="margin-bottom:24px">
+      <div class="wf-topbar">
+        <div class="wf-dot" style="background:#e05050"></div>
+        <div class="wf-dot" style="background:#e0a050"></div>
+        <div class="wf-dot" style="background:#50c050"></div>
+        <div class="wf-url">kollegan.app / översikt → Offertlista (prioriterad)</div>
+      </div>
+      <div class="wf-body">
+        <div class="box" style="padding:0;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #1e1e2e">
+            <div>
+              <div class="val-md">Aktiva offerter</div>
+              <div class="muted">Prioriterade efter vad som kräver handling</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <span style="font-size:10px;padding:3px 8px;border-radius:6px;background:#2a1808;color:#e08040;border:1px solid #4a2810">Uppföljning (3)</span>
+              <span style="font-size:10px;padding:3px 8px;border-radius:6px;background:#1e1e28;color:#6060a0;border:1px solid #2a2a40">Alla</span>
+            </div>
+          </div>
+
+          <!-- Section: Needs follow-up -->
+          <div style="padding:8px 14px 4px;background:#110e0e;border-bottom:1px solid #1e1812">
+            <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#8a3020">⚡ Kräver uppföljning</span>
+          </div>
+
+          <div class="pq-item pq-warm">
+            <div class="pq-avatar" style="background:#2a1410;color:#e06040">EA</div>
+            <div class="pq-content">
+              <div class="pq-name">Eriksson AB — Solpaneler</div>
+              <div class="pq-meta">Visad för 3 dagar sedan · 23 500 kr</div>
+            </div>
+            <div class="pq-right">
+              <div class="pq-time">3d sedan visad</div>
+              <div class="pq-action act-follow">Följ upp</div>
+            </div>
+          </div>
+          <div class="pq-item pq-urgent">
+            <div class="pq-avatar" style="background:#200e0e;color:#e04040">SB</div>
+            <div class="pq-content">
+              <div class="pq-name">Svensson Bygg — Vindskydd</div>
+              <div class="pq-meta">Utgår om 2 dagar · 8 400 kr</div>
+            </div>
+            <div class="pq-right">
+              <div class="pq-time">2d kvar</div>
+              <div class="pq-action act-expire">Förläng</div>
+            </div>
+          </div>
+          <div class="pq-item pq-urgent">
+            <div class="pq-avatar" style="background:#200e0e;color:#e04040">ML</div>
+            <div class="pq-content">
+              <div class="pq-name">Mall Logistics — Transport Q2</div>
+              <div class="pq-meta">Visad igår · Utgår om 5 dagar · 34 000 kr</div>
+            </div>
+            <div class="pq-right">
+              <div class="pq-time">Igår visad</div>
+              <div class="pq-action act-follow">Ring nu</div>
+            </div>
+          </div>
+
+          <!-- Section: Active -->
+          <div style="padding:8px 14px 4px;background:#0e0e14;border-top:1px solid #1a1a28;border-bottom:1px solid #1a1a28">
+            <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#404080">AKTIVA</span>
+          </div>
+
+          <div class="pq-item pq-normal">
+            <div class="pq-avatar" style="background:#0e1828;color:#6098e0">CA</div>
+            <div class="pq-content">
+              <div class="pq-name">Carlsson AB — Värmepump</div>
+              <div class="pq-meta">Skickad 3 dagar sedan · 45 000 kr · Möte idag 15:00</div>
+            </div>
+            <div class="pq-right">
+              <div class="pq-time">Skickad 3d</div>
+              <div class="pq-action act-new">Möte →</div>
+            </div>
+          </div>
+
+          <!-- Section: Recently won -->
+          <div style="padding:8px 14px 4px;background:#0a0e0e;border-top:1px solid #1a2820;border-bottom:1px solid #1a2820">
+            <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#20804a">✓ NYLIGEN VUNNA</span>
+          </div>
+          <div class="pq-item pq-normal" style="opacity:0.7">
+            <div class="pq-avatar" style="background:#0a1a10;color:#30a060">TB</div>
+            <div class="pq-content">
+              <div class="pq-name">Tech Bygg AB — Solceller</div>
+              <div class="pq-meta">Accepterad igår · Projekt startat</div>
+            </div>
+            <div class="pq-right">
+              <div style="font-size:13px;font-weight:700;color:#30b060">45 000 kr</div>
+              <div class="pq-action" style="background:#0a1e10;color:#30a050">Projekt →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FULL PROPOSED DASHBOARD ── -->
+    <h3 style="margin-bottom:12px;margin-top:32px">Komplett — Så skulle det se ut ihopsatt</h3>
+    <p style="margin-bottom:16px;color:#6060a0">Alla tre förändringarna sammanslagna. Fortfarande samma layout-struktur, men med ett nytt informationshierarki.</p>
+
+    <div class="wf">
+      <div class="wf-topbar">
+        <div class="wf-dot" style="background:#e05050"></div>
+        <div class="wf-dot" style="background:#e0a050"></div>
+        <div class="wf-dot" style="background:#50c050"></div>
+        <div class="wf-url">kollegan.app / översikt — FÖRSLAG</div>
+        <span style="font-size:10px;color:#204040;margin-left:auto;background:#0a1e1e;padding:2px 8px;border-radius:4px">🔮 Wireframe — ny version</span>
+      </div>
+      <div class="wf-body">
+
+        <!-- Hero compact -->
+        <div class="hero" style="margin-bottom:8px">
+          <div class="hero-row" style="margin-bottom:12px">
+            <div>
+              <div class="hero-title">God eftermiddag, Ali</div>
+              <div class="hero-sub">Tors 29 maj · 3 saker kräver din uppmärksamhet idag</div>
+            </div>
+            <div class="btn">+ Ny offert</div>
+          </div>
+
+          <!-- Attention strip (inline) -->
+          <div style="background:#1a1010;border:1px solid #4a2010;border-radius:10px;padding:10px 12px;margin-bottom:12px">
+            <div style="font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#c05020;margin-bottom:8px;display:flex;align-items:center;gap:5px">
+              <span style="width:5px;height:5px;border-radius:50%;background:#e04020;display:inline-block"></span>
+              Kräver uppmärksamhet
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <div style="background:#140e08;border:1px solid #4a2010;border-radius:6px;padding:6px 10px;font-size:11px;color:#c09060;flex:1;min-width:180px">
+                👁 <strong>Eriksson AB</strong> öppnade offerten — ring nu
+                <span style="float:right;font-size:10px;color:#e06020;border:1px solid #5a2010;border-radius:4px;padding:1px 6px">Följ upp →</span>
+              </div>
+              <div style="background:#140808;border:1px solid #5a1010;border-radius:6px;padding:6px 10px;font-size:11px;color:#c06050;flex:1;min-width:180px">
+                ⏰ <strong>Svensson Bygg</strong> — offert utgår om 2 dagar
+                <span style="float:right;font-size:10px;color:#e04020;border:1px solid #601010;border-radius:4px;padding:1px 6px">Agera →</span>
+              </div>
+              <div style="background:#0c1008;border:1px solid #284018;border-radius:6px;padding:6px 10px;font-size:11px;color:#80b060;flex:1;min-width:180px">
+                ⚡ Lead <strong>Bergström Bygg</strong> redo för offert
+                <span style="float:right;font-size:10px;color:#50a030;border:1px solid #305020;border-radius:4px;padding:1px 6px">Skapa →</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI strip -->
+          <div class="kpi-strip">
+            <div class="kpi">
+              <div class="kpi-label">Pipeline</div>
+              <div class="kpi-val">45 200 kr</div>
+              <div class="kpi-sub">3 aktiva</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Accepterat</div>
+              <div class="kpi-val" style="color:#40c870">120 000 kr</div>
+              <div class="kpi-sub">5 vunna</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Prognos (viktat)</div>
+              <div class="kpi-val" style="color:#a060e0">68 000 kr</div>
+              <div class="kpi-sub">Sannolikt värde</div>
+            </div>
+            <div class="kpi" style="background:#180c0c">
+              <div class="kpi-label" style="color:#8a3020">Utgår snart</div>
+              <div class="kpi-val" style="color:#e06040">2</div>
+              <div class="kpi-sub" style="color:#a04030">Svensson, Mall</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main grid -->
+        <div class="row" style="margin-top:8px;align-items:flex-start">
+
+          <!-- Left: prioritized queue -->
+          <div class="box flex1" style="padding:0;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #1e1e2e">
+              <div class="val-md">Kräver handling</div>
+              <div style="display:flex;gap:5px">
+                <span style="font-size:9px;padding:2px 7px;border-radius:4px;background:#2a1808;color:#e08040;border:1px solid #4a2810">Uppföljning (3)</span>
+                <span style="font-size:9px;padding:2px 7px;border-radius:4px;background:#1e1e28;color:#5050a0">Alla</span>
+              </div>
+            </div>
+            <div style="padding:4px 8px 0;background:#110e0e"><span style="font-size:9px;font-weight:700;text-transform:uppercase;color:#8a3020;letter-spacing:0.12em">⚡ Uppföljning</span></div>
+            <div class="pq-item pq-warm" style="margin:4px 8px">
+              <div class="pq-avatar" style="background:#2a1410;color:#e06040">EA</div>
+              <div class="pq-content"><div class="pq-name">Eriksson AB — Solpaneler</div><div class="pq-meta">👁 Visad för 3 dagar · 23 500 kr</div></div>
+              <div class="pq-action act-follow">Följ upp</div>
+            </div>
+            <div class="pq-item pq-urgent" style="margin:4px 8px">
+              <div class="pq-avatar" style="background:#200e0e;color:#e04040">SB</div>
+              <div class="pq-content"><div class="pq-name">Svensson Bygg — Vindskydd</div><div class="pq-meta">⏰ Utgår om 2 dagar · 8 400 kr</div></div>
+              <div class="pq-action act-expire">Förläng</div>
+            </div>
+            <div style="padding:4px 8px 0;background:#0e0e14;border-top:1px solid #1a1a28;margin-top:4px"><span style="font-size:9px;font-weight:700;text-transform:uppercase;color:#404080;letter-spacing:0.12em">AKTIVA</span></div>
+            <div class="pq-item pq-normal" style="margin:4px 8px">
+              <div class="pq-avatar" style="background:#0e1828;color:#6098e0">CA</div>
+              <div class="pq-content"><div class="pq-name">Carlsson AB — Värmepump</div><div class="pq-meta">Skickad 3d · 45 000 kr · Möte idag 15:00 📅</div></div>
+              <div class="pq-action act-new">Möte</div>
+            </div>
+            <div class="pq-item pq-normal" style="margin:4px 8px">
+              <div class="pq-avatar" style="background:#0e1a28;color:#4080c0">MT</div>
+              <div class="pq-content"><div class="pq-name">Mall Transport — Q2 Avtal</div><div class="pq-meta">Skickad 1d · 34 000 kr</div></div>
+              <div class="pq-action" style="background:#0a1020;color:#4060c0;font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px">Visa</div>
+            </div>
+          </div>
+
+          <!-- Right col -->
+          <div class="col w260">
+
+            <!-- Pipeline funnel -->
+            <div class="box" style="padding:12px 14px">
+              <div class="val-md" style="margin-bottom:4px">Pipeline-tratt</div>
+              <div class="muted" style="margin-bottom:10px">Konvertering per fas</div>
+              <div style="display:flex;align-items:flex-end;gap:3px;margin-bottom:8px">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <div style="font-size:11px;font-weight:700;color:#a060e0">12</div>
+                  <div style="width:100%;height:48px;background:#2a1a4a;border-radius:5px 5px 0 0"></div>
+                  <div style="font-size:8px;color:#504080;text-align:center">Leads</div>
+                </div>
+                <div style="color:#252540;font-size:12px;padding-bottom:18px">›</div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <div style="font-size:11px;font-weight:700;color:#6098e0">8</div>
+                  <div style="width:100%;height:36px;background:#1a2850;border-radius:5px 5px 0 0"></div>
+                  <div style="font-size:8px;color:#304070;text-align:center">Skickade</div>
+                </div>
+                <div style="color:#252540;font-size:12px;padding-bottom:18px">›</div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <div style="font-size:11px;font-weight:700;color:#c060f0">3</div>
+                  <div style="width:100%;height:22px;background:#3a1a60;border-radius:5px 5px 0 0"></div>
+                  <div style="font-size:8px;color:#602090;text-align:center">Visade 🔥</div>
+                </div>
+                <div style="color:#252540;font-size:12px;padding-bottom:18px">›</div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <div style="font-size:11px;font-weight:700;color:#30c870">5</div>
+                  <div style="width:100%;height:14px;background:#1a5030;border-radius:5px 5px 0 0"></div>
+                  <div style="font-size:8px;color:#205040;text-align:center">Vunna</div>
+                </div>
+              </div>
+              <div style="background:#0e0e18;border-radius:6px;padding:8px;font-size:10px;color:#403080">
+                💡 Visade → Vunna: 38% — bra! Leads → Skickade: 67%
+              </div>
+            </div>
+
+            <!-- Activity feed (replaces trend chart) -->
+            <div class="box" style="padding:0;overflow:hidden">
+              <div style="padding:10px 12px;border-bottom:1px solid #1e1e2e">
+                <div class="val-md">Aktivitetsfeed</div>
+                <div class="muted">Vad som händer just nu</div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-dot" style="background:#a060e0"></div>
+                <div class="feed-text"><strong>Eriksson AB</strong> öppnade offerten Solpaneler</div>
+                <div class="feed-time">2h</div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-dot" style="background:#6098e0"></div>
+                <div class="feed-text">Ny lead tillagd: <strong>Bergström Bygg</strong></div>
+                <div class="feed-time">5h</div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-dot" style="background:#40c870"></div>
+                <div class="feed-text"><strong>Tech Bygg AB</strong> accepterade offert — 45 000 kr</div>
+                <div class="feed-time">igår</div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-dot" style="background:#e08040"></div>
+                <div class="feed-text">Projekt <strong>Carlsson Värmepump</strong> — Beställt klart</div>
+                <div class="feed-time">igår</div>
+              </div>
+              <div class="feed-item">
+                <div class="feed-dot" style="background:#c05050"></div>
+                <div class="feed-text"><strong>Mall Logistics</strong> — offert ej svarad på 8 dagar</div>
+                <div class="feed-time">8d</div>
+              </div>
+            </div>
+
+            <!-- Today's meetings -->
+            <div class="box" style="padding:12px 14px">
+              <div class="val-md" style="margin-bottom:8px">Idag · Möten</div>
+              <div style="background:#1a1810;border:1px solid #3a2810;border-radius:8px;padding:8px 10px;margin-bottom:6px">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:#c0a060">
+                  <strong>Carlsson AB</strong>
+                  <span>15:00</span>
+                </div>
+                <div style="font-size:10px;color:#70602a;margin-top:2px">Offert #007 — Värmepump ännu ej skickad</div>
+              </div>
+              <div style="background:#0e0e18;border:1px solid #2a2a40;border-radius:8px;padding:8px 10px">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:#8080c0">
+                  <strong>Team-standup</strong>
+                  <span>09:00 ✓</span>
+                </div>
+                <div style="font-size:10px;color:#404060;margin-top:2px">Avklarat</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SECTION 4: SUMMARY ═══ -->
+  <hr class="separator">
+  <div class="section">
+    <div class="section-label label-after">Sammanfattning</div>
+    <h2 style="margin-bottom:20px">Vad detta kräver tekniskt</h2>
+
+    <div class="findings">
+      <div class="finding">
+        <div class="finding-num" style="font-size:20px;margin-bottom:8px">🎯</div>
+        <h4>Attention Queue — backend-query</h4>
+        <p>Ny query som hämtar: viewed offers (sorterade på dagar-sedan-visad), expiring offers (sorterade på utgångsdatum), qualified leads (redo för offert), och dagens möten. Allt i ett API-anrop.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-num" style="font-size:20px;margin-bottom:8px">📊</div>
+        <h4>Pipeline-tratt — befintlig data</h4>
+        <p>All data finns redan i countMap och pipelineValue. Det handlar om en ny visualisering. Lägger till leads-count från CRM. Konverteringsgrad beräknas client-side.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-num" style="font-size:20px;margin-bottom:8px">📋</div>
+        <h4>Prioriterad lista — ny sorteringslogik</h4>
+        <p>Befintlig recentOffers kan kompletteras med ett priority-score-fält. Sortering: viewed + (dagar sedan visad × urgency) + expires_soon × (1/dagar kvar).</p>
+      </div>
+      <div class="finding">
+        <div class="finding-num" style="font-size:20px;margin-bottom:8px">📡</div>
+        <h4>Aktivitetsfeed — ny event-log</h4>
+        <p>Kräver en offer_events / lead_events tabell som loggar: opened, status change, meeting linked, lead qualified. Alternativ: härleds från befintlig statushistorik.</p>
+      </div>
+    </div>
+
+    <div style="background:#0e1a14;border:1px solid #1a4030;border-radius:12px;padding:20px;margin-top:8px">
+      <div style="font-size:13px;font-weight:700;color:#40b070;margin-bottom:10px">Prioritetsordning för implementation</div>
+      <div style="font-size:12px;color:#6090a0;line-height:1.8">
+        <div><span style="color:#40c870">1.</span> <strong style="color:#a0d0b0">Attention Queue</strong> — Högst impact, låg komplexitet. Ny server-query + ny UI-komponent (~3-4h)</div>
+        <div><span style="color:#40c870">2.</span> <strong style="color:#a0d0b0">Prioriterad offertlista</strong> — Ersätt kronologisk sort med urgency-sort (~2h)</div>
+        <div><span style="color:#40c870">3.</span> <strong style="color:#a0d0b0">Pipeline-tratt</strong> — Ny visualisering av befintlig data (~3h)</div>
+        <div><span style="color:#40c870">4.</span> <strong style="color:#a0d0b0">Möten på dashboarden</strong> — Hämta dagens möten från meetings-modulen (~2h)</div>
+        <div><span style="color:#5080a0">5.</span> <strong style="color:#8090a0">Aktivitetsfeed</strong> — Kräver ny event-log tabell (~6-8h)</div>
+        <div><span style="color:#5080a0">6.</span> <strong style="color:#8090a0">Viktat pipeline-värde</strong> — Probability per stage × summa (~2h när data finns)</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:24px 0 48px;color:#303050;font-size:11px">
+    Kollegan Dashboard Analysis · Visuella wireframes · Maj 2026
+  </div>
+</div>
+</body>
+</html>
