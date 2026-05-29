@@ -1,0 +1,491 @@
+.auth-scope .auth-login-cinematic {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.auth-scope .auth-login-cinematic::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    radial-gradient(circle at 78% 14%, rgb(255 224 146 / 0.5), transparent 20%),
+    radial-gradient(circle at 20% 18%, rgb(190 227 255 / 0.18), transparent 28%),
+    linear-gradient(180deg, rgb(229 244 255 / 0.2), rgb(24 55 77 / 0.32));
+  opacity: 0;
+  transform: scale(0.74);
+}
+
+.auth-scope .auth-login-cinematic__sun,
+.auth-scope .auth-login-cinematic__glass,
+.auth-scope .auth-login-cinematic__glare,
+.auth-scope .auth-login-cinematic__film-roll,
+.auth-scope .auth-login-cinematic__film,
+.auth-scope .auth-login-cinematic__mist,
+.auth-scope .auth-login-cinematic__wetness,
+.auth-scope .auth-login-cinematic__bubbles,
+.auth-scope .auth-login-cinematic__squeegee {
+  position: absolute;
+  pointer-events: none;
+}
+
+.auth-scope .auth-login-cinematic__sun {
+  top: 11%;
+  right: 12%;
+  z-index: 3;
+  display: grid;
+  width: 2.125rem;
+  height: 2.125rem;
+  place-items: center;
+  border-radius: 999px;
+  color: rgb(248 205 111 / 0.98);
+  opacity: 0;
+  transform-origin: center;
+}
+
+.auth-scope .auth-login-cinematic__sun::before,
+.auth-scope .auth-login-cinematic__sun::after {
+  content: "";
+  position: absolute;
+  border-radius: inherit;
+}
+
+.auth-scope .auth-login-cinematic__sun::before {
+  inset: -6rem;
+  background:
+    radial-gradient(circle, rgb(255 241 186 / 0.88), rgb(255 209 120 / 0.4) 30%, rgb(255 209 120 / 0.1) 58%, transparent 76%);
+  filter: blur(2px);
+}
+
+.auth-scope .auth-login-cinematic__sun::after {
+  inset: -0.26rem;
+  background: radial-gradient(circle, rgb(255 231 147 / 0.78), rgb(248 205 111 / 0.28) 58%, transparent 72%);
+}
+
+.auth-scope .auth-login-cinematic__sun svg {
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 10px 24px rgb(77 45 8 / 0.2));
+}
+
+.auth-scope .auth-login-cinematic__glass {
+  inset: 8% 7%;
+  z-index: 4;
+  border: 1px solid rgb(238 249 255 / 0.42);
+  border-radius: 1.9rem;
+  background:
+    linear-gradient(180deg, rgb(242 250 255 / 0.2), rgb(202 226 243 / 0.1)),
+    radial-gradient(circle at 74% 15%, rgb(255 235 178 / 0.13), transparent 26%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.24),
+    inset 0 -90px 120px rgb(6 21 23 / 0.28);
+  opacity: 0;
+  transform: scale(0.74);
+}
+
+.auth-scope .auth-login-cinematic__glare {
+  inset: -10%;
+  z-index: 7;
+  background:
+    radial-gradient(circle at 78% 13%, rgb(255 235 166 / 0.62), transparent 21%),
+    radial-gradient(ellipse at 62% 24%, rgb(255 255 255 / 0.18), transparent 42%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transform: translate3d(5%, -4%, 0);
+}
+
+.auth-scope .auth-login-cinematic__film-roll {
+  top: -1rem;
+  right: -2%;
+  left: -2%;
+  z-index: 11;
+  height: 2.65rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(ellipse at 50% 18%, rgb(255 255 255 / 0.95), transparent 34%),
+    linear-gradient(180deg, rgb(245 252 255), rgb(167 205 226) 45%, rgb(75 107 125)),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.42) 0 0.35rem, rgb(139 180 202 / 0.4) 0.36rem 0.7rem);
+  background-position: 0 0, 0 0, 0 0;
+  box-shadow:
+    0 1.2rem 2.6rem rgb(18 41 55 / 0.28),
+    inset 0 1px 0 rgb(255 255 255 / 0.72),
+    inset 0 -0.45rem 0.8rem rgb(35 70 91 / 0.28);
+  opacity: 0;
+  transform: translateY(-3rem) scaleX(0.78);
+}
+
+.auth-scope .auth-login-cinematic__film-roll::before,
+.auth-scope .auth-login-cinematic__film-roll::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 2.85rem;
+  height: 2.85rem;
+  border: 0.28rem solid rgb(239 250 255 / 0.92);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgb(84 125 148 / 0.38) 0 0.42rem, transparent 0.46rem),
+    radial-gradient(circle, rgb(255 255 255 / 0.86), rgb(154 195 218));
+  box-shadow: inset 0 0.35rem 0.7rem rgb(38 75 96 / 0.25);
+  transform: translateY(-50%);
+}
+
+.auth-scope .auth-login-cinematic__film-roll::before {
+  left: 0.6rem;
+}
+
+.auth-scope .auth-login-cinematic__film-roll::after {
+  right: 0.6rem;
+}
+
+.auth-scope .auth-login-cinematic__film {
+  inset: 0;
+  z-index: 6;
+  background:
+    linear-gradient(180deg, rgb(246 252 255 / 0.32), rgb(190 222 239 / 0.36) 17%, rgb(78 116 137 / 0.58)),
+    linear-gradient(90deg, rgb(255 255 255 / 0.08), transparent 18%, rgb(255 255 255 / 0.05) 54%, transparent);
+  box-shadow:
+    inset 0 0 0 1px rgb(232 248 255 / 0.2),
+    inset 0 18px 28px rgb(255 255 255 / 0.12);
+  opacity: 0;
+  transform: translateY(-102%);
+}
+
+.auth-scope .auth-login-cinematic__film::before {
+  content: "";
+  position: absolute;
+  top: 1.15rem;
+  right: 3%;
+  left: 3%;
+  height: 0.42rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, transparent, rgb(248 253 255 / 0.86), transparent),
+    rgb(176 216 238 / 0.42);
+  box-shadow: 0 18px 32px rgb(219 240 255 / 0.22);
+}
+
+.auth-scope .auth-login-cinematic__mist {
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.auth-scope .auth-login-cinematic__mist span,
+.auth-scope .auth-login-cinematic__wetness,
+.auth-scope .auth-login-cinematic__bubbles {
+  background:
+    radial-gradient(circle at 12% 22%, rgb(236 249 255 / 0.56) 0 2px, transparent 3px),
+    radial-gradient(circle at 33% 48%, rgb(236 249 255 / 0.44) 0 2px, transparent 3px),
+    radial-gradient(circle at 57% 34%, rgb(236 249 255 / 0.36) 0 1.8px, transparent 3px),
+    radial-gradient(circle at 79% 58%, rgb(236 249 255 / 0.4) 0 1.8px, transparent 3px);
+}
+
+.auth-scope .auth-login-cinematic__mist span {
+  position: absolute;
+  inset: 0;
+  display: block;
+  filter: blur(0.8px);
+  transform: translateX(-18%);
+}
+
+.auth-scope .auth-login-cinematic__mist span:nth-child(2) {
+  opacity: 0.68;
+  transform: translateX(8%) scaleY(1.08);
+}
+
+.auth-scope .auth-login-cinematic__mist span:nth-child(3) {
+  opacity: 0.46;
+  transform: translateX(24%) scaleY(0.94);
+}
+
+.auth-scope .auth-login-cinematic__wetness,
+.auth-scope .auth-login-cinematic__bubbles {
+  inset: 0;
+  z-index: 9;
+  opacity: 0;
+  filter: blur(0.25px);
+}
+
+.auth-scope .auth-login-cinematic__wetness {
+  background:
+    radial-gradient(circle at 18% 28%, rgb(255 255 255 / 0.72) 0 0.16rem, transparent 0.23rem),
+    radial-gradient(circle at 42% 46%, rgb(239 251 255 / 0.58) 0 0.13rem, transparent 0.2rem),
+    radial-gradient(circle at 68% 34%, rgb(239 251 255 / 0.48) 0 0.12rem, transparent 0.19rem),
+    linear-gradient(180deg, rgb(238 250 255 / 0.32), rgb(238 250 255 / 0.08)),
+    repeating-linear-gradient(90deg, transparent 0 4.4rem, rgb(255 255 255 / 0.16) 4.45rem 4.5rem, transparent 4.55rem 7.6rem);
+}
+
+.auth-scope .auth-login-cinematic__wetness::before,
+.auth-scope .auth-login-cinematic__wetness::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, transparent 0 10%, rgb(255 255 255 / 0.38) 10.5% 11%, transparent 21%),
+    linear-gradient(180deg, transparent 0 25%, rgb(227 246 255 / 0.34) 25.5% 26%, transparent 40%),
+    linear-gradient(180deg, transparent 0 52%, rgb(255 255 255 / 0.28) 52.5% 53%, transparent 68%);
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent 0 12%, black 16% 18%, transparent 20% 36%, black 38% 40%, transparent 42% 60%, black 64% 66%, transparent 68% 100%);
+  mask-image:
+    linear-gradient(90deg, transparent 0 12%, black 16% 18%, transparent 20% 36%, black 38% 40%, transparent 42% 60%, black 64% 66%, transparent 68% 100%);
+}
+
+.auth-scope .auth-login-cinematic__wetness::after {
+  opacity: 0.62;
+  transform: translateX(12%);
+}
+
+.auth-scope .auth-login-cinematic__bubbles {
+  background:
+    radial-gradient(circle at 13% 25%, rgb(255 255 255 / 0.72) 0 0.28rem, transparent 0.34rem),
+    radial-gradient(circle at 31% 58%, rgb(238 250 255 / 0.56) 0 0.22rem, transparent 0.3rem),
+    radial-gradient(circle at 47% 38%, rgb(238 250 255 / 0.46) 0 0.18rem, transparent 0.25rem),
+    radial-gradient(circle at 69% 52%, rgb(238 250 255 / 0.42) 0 0.2rem, transparent 0.27rem),
+    radial-gradient(circle at 84% 29%, rgb(238 250 255 / 0.38) 0 0.16rem, transparent 0.22rem);
+}
+
+.auth-scope .auth-login-cinematic__squeegee {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 12;
+  width: 5.2rem;
+  opacity: 0;
+  transform: translateX(-115%);
+}
+
+.auth-scope .auth-login-cinematic__squeegee-blade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 1.65rem;
+  width: 0.75rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgb(37 54 67), rgb(247 252 255) 45%, rgb(35 50 62));
+  box-shadow:
+    -1.35rem 0 1.9rem rgb(238 250 255 / 0.42),
+    0.65rem 0 1.2rem rgb(0 0 0 / 0.18);
+}
+
+.auth-scope .auth-login-cinematic__squeegee::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0.55rem;
+  width: 1.6rem;
+  background:
+    radial-gradient(circle at 50% 16%, rgb(255 255 255 / 0.76) 0 0.18rem, transparent 0.24rem),
+    radial-gradient(circle at 38% 38%, rgb(233 248 255 / 0.56) 0 0.13rem, transparent 0.2rem),
+    radial-gradient(circle at 54% 72%, rgb(255 255 255 / 0.58) 0 0.16rem, transparent 0.23rem),
+    linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent);
+  filter: blur(0.3px);
+}
+
+.auth-scope .auth-login-cinematic__squeegee-handle {
+  position: absolute;
+  top: 50%;
+  left: 2.25rem;
+  width: 3.9rem;
+  height: 0.86rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgb(247 252 255), rgb(102 124 140));
+  box-shadow: 0 0.7rem 1.4rem rgb(0 0 0 / 0.22);
+  transform: translateY(-50%) rotate(7deg);
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic {
+  opacity: 1;
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic::before,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__sun,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__sun svg,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__glass,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__glare,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__film-roll,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__film,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__mist,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__mist span,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__wetness,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__bubbles,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__squeegee,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__dashboard-reveal,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-sidebar,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-panel {
+  animation-duration: 5.35s;
+  animation-fill-mode: forwards;
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic::before {
+  animation-name: auth-cinematic-camera-approach;
+  animation-timing-function: var(--ease-out-soft);
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__sun {
+  animation-name: auth-cinematic-sun-bloom;
+  animation-timing-function: var(--ease-out-soft);
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__sun svg {
+  animation-name: auth-cinematic-sun-mark;
+  animation-timing-function: var(--ease-out-soft);
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__glass {
+  animation-name: auth-cinematic-glass-approach;
+  animation-timing-function: var(--ease-out-soft);
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__glare {
+  animation-name: auth-cinematic-glare;
+  animation-timing-function: var(--ease-out-soft);
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__film-roll {
+  animation-name: auth-cinematic-film-roll;
+  animation-timing-function: cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__film {
+  animation-name: auth-cinematic-film-cover;
+  animation-timing-function: cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__mist,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__wetness,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__bubbles {
+  animation-name: auth-cinematic-wet-surface;
+  animation-timing-function: var(--ease-out-soft);
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__mist span {
+  animation-name: auth-cinematic-mist-drift;
+  animation-timing-function: ease-out;
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__dashboard-reveal {
+  animation-name: auth-cinematic-dashboard-reveal;
+  animation-timing-function: cubic-bezier(0.62, 0, 0.16, 1);
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__squeegee {
+  animation-name: auth-cinematic-squeegee-pass;
+  animation-timing-function: cubic-bezier(0.62, 0, 0.16, 1);
+}
+
+.auth-scope .auth-shell[data-state='cinematic'] .auth-sidebar,
+.auth-scope .auth-shell[data-state='cinematic'] .auth-login-panel {
+  animation-name: auth-cinematic-shell-recede;
+  animation-timing-function: var(--ease-out-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic *,
+  .auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic::before,
+  .auth-scope .auth-shell[data-state='cinematic'] .auth-sidebar,
+  .auth-scope .auth-shell[data-state='cinematic'] .auth-login-panel {
+    animation: none !important;
+  }
+
+  .auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__dashboard-reveal {
+    clip-path: inset(0);
+    opacity: 1;
+  }
+}
+
+@keyframes auth-cinematic-camera-approach {
+  0% { opacity: 0; transform: scale(0.74); }
+  10% { opacity: 1; }
+  30% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.78; transform: scale(1.04); }
+}
+
+@keyframes auth-cinematic-shell-recede {
+  0%, 12% { opacity: 1; transform: scale(1); }
+  28%, 100% { opacity: 0; transform: scale(1.08); }
+}
+
+@keyframes auth-cinematic-sun-bloom {
+  0% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  14% { opacity: 1; transform: translate3d(0, 0, 0) scale(4.2); }
+  38% { opacity: 0.88; transform: translate3d(0, 0, 0) scale(11); }
+  100% { opacity: 0.38; transform: translate3d(0, 0, 0) scale(16); }
+}
+
+@keyframes auth-cinematic-sun-mark {
+  0%, 12% { opacity: 1; transform: scale(1); }
+  28% { opacity: 0.16; transform: scale(0.9); }
+  100% { opacity: 0; transform: scale(0.8); }
+}
+
+@keyframes auth-cinematic-glass-approach {
+  0% { opacity: 0; transform: scale(0.74); inset: 8% 7%; }
+  12% { opacity: 1; }
+  32%, 100% { opacity: 0.9; transform: scale(1); inset: 0; }
+}
+
+@keyframes auth-cinematic-glare {
+  0%, 6% { opacity: 0; transform: translate3d(5%, -4%, 0); }
+  18% { opacity: 0.9; }
+  48% { opacity: 0.5; transform: translate3d(-4%, 2%, 0); }
+  70%, 100% { opacity: 0.18; transform: translate3d(-8%, 4%, 0); }
+}
+
+@keyframes auth-cinematic-film-roll {
+  0%, 24% {
+    opacity: 0;
+    background-position: 0 0, 0 0, 0 0;
+    transform: translateY(-3rem) scaleX(0.78);
+  }
+  30% { opacity: 1; }
+  55% {
+    opacity: 1;
+    background-position: 0 0, 0 0, 8rem 0;
+    transform: translateY(calc(100vh - 1.3rem)) scaleX(1);
+  }
+  67%, 100% {
+    opacity: 0;
+    background-position: 0 0, 0 0, 10rem 0;
+    transform: translateY(calc(100vh + 1rem)) scaleX(1);
+  }
+}
+
+@keyframes auth-cinematic-film-cover {
+  0%, 25% { opacity: 0; transform: translateY(-102%); }
+  31% { opacity: 1; }
+  55%, 100% { opacity: 0.88; transform: translateY(0); }
+}
+
+@keyframes auth-cinematic-wet-surface {
+  0%, 50% { opacity: 0; }
+  60% { opacity: 0.84; }
+  72% { opacity: 0.64; }
+  95%, 100% { opacity: 0.08; }
+}
+
+@keyframes auth-cinematic-mist-drift {
+  0%, 50% { transform: translateX(-18%) scale(0.96); }
+  100% { transform: translateX(12%) scale(1.04); }
+}
+
+@keyframes auth-cinematic-dashboard-reveal {
+  0%, 66% { opacity: 0; clip-path: inset(0 100% 0 0); }
+  69% { opacity: 1; clip-path: inset(0 92% 0 0); }
+  94%, 100% { opacity: 1; clip-path: inset(0); }
+}
+
+@keyframes auth-cinematic-squeegee-pass {
+  0%, 64% { opacity: 0; transform: translateX(-115%); }
+  69% { opacity: 1; transform: translateX(0); }
+  94% { opacity: 1; transform: translateX(88vw); }
+  100% { opacity: 0; transform: translateX(97vw); }
+}

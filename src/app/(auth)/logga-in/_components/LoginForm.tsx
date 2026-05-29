@@ -1,17 +1,17 @@
 'use client';
 
-import { EnvelopeSimple, LockKey, ShieldCheck } from '@phosphor-icons/react';
+import { EnvelopeSimple, LockKey } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import {
   devLoginUrl,
   login,
   type MfaMethod,
 } from '@shared/lib/api/auth-session.api';
 import { TooltipProvider } from '@shared/ui/tooltip';
-import { AuthBrandMark } from './AuthBrandMark';
 import { FloatingInput } from './FloatingInput';
 import { InlineError } from './InlineError';
+import { LoginAccessConsole } from './LoginAccessConsole';
 import { MfaStep } from './MfaStep';
 import { PasswordVisibilityToggle } from './PasswordVisibilityToggle';
 import { RememberDeviceSwitch } from './RememberDeviceSwitch';
@@ -23,7 +23,7 @@ type Step = 'login' | 'mfa';
 const HEADLINES: Record<Step, { title: string; sub: string }> = {
   login: {
     title: 'Välkommen tillbaka',
-    sub: 'Logga in för att fortsätta arbeta.',
+    sub: 'Verifiera dig så tar arbetsytan vid.',
   },
   mfa: {
     title: 'Bekräfta att det är du',
@@ -33,9 +33,10 @@ const HEADLINES: Record<Step, { title: string; sub: string }> = {
 
 interface LoginFormProps {
   redirect: string;
+  onCinematicStart: () => void;
 }
 
-export function LoginForm({ redirect }: LoginFormProps) {
+export function LoginForm({ redirect, onCinematicStart }: LoginFormProps) {
   const [step, setStep] = useState<Step>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -49,21 +50,16 @@ export function LoginForm({ redirect }: LoginFormProps) {
   const passwordInputRef = useRef<HTMLInputElement | null>(null);
   const emailInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    if (step === 'login') {
-      const t = setTimeout(() => emailInputRef.current?.focus(), 240);
-      return () => clearTimeout(t);
-    }
-  }, [step]);
-
   function handleSuccessRedirect() {
     setExiting(true);
+    onCinematicStart();
+    window.setTimeout(() => {
+      window.location.replace(redirect);
+    }, 5600);
   }
 
   function handleExitComplete() {
-    if (exiting) {
-      window.location.replace(redirect);
-    }
+    return;
   }
 
   async function handleLoginSubmit(event: FormEvent) {
@@ -116,81 +112,79 @@ export function LoginForm({ redirect }: LoginFormProps) {
 
   return (
     <TooltipProvider delayDuration={150}>
-      <main className="auth-login-panel">
+      <main
+        className="auth-login-panel"
+        data-state={exiting ? 'cinematic' : loginState === 'success' ? 'success' : 'idle'}
+      >
+        <div className="auth-login-panel__atmosphere" aria-hidden="true" />
+        <div className="auth-login-panel__grid" aria-hidden="true" />
+
         <AnimatePresence onExitComplete={handleExitComplete}>
           {!exiting ? (
             <motion.div
-              key="card"
-              className="auth-login-card"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              key="console-shell"
+              className="auth-login-panel__inner"
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, scale: 0.985 }}
               transition={{ delay: 0.08, duration: 0.36, ease: EASE_OUT_SOFT }}
             >
-              <div className="auth-product-pill">
-                <AuthBrandMark size={44} />
-                <span>Soleria Workspace</span>
-              </div>
-
-              <section className="auth-login-surface">
-                <header className="auth-login-header">
-                  <p className="auth-login-kicker">Intern arbetsportal</p>
-                  <h1 className="auth-login-title">{header.title}</h1>
-                  <p className="auth-login-subtitle">{header.sub}</p>
-                </header>
-
+              <LoginAccessConsole
+                mode={step}
+                title={header.title}
+                subtitle={header.sub}
+              >
                 {step === 'login' ? (
-                  <form onSubmit={handleLoginSubmit} className="auth-login-form">
-                    <FloatingInput
-                      ref={emailInputRef}
-                      label="E-postadress"
-                      type="email"
-                      autoComplete="email"
-                      placeholder="Ange din e-postadress"
-                      required
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      error={Boolean(error) && !email.includes('@')}
-                      trailing={
-                        <span className="auth-input-icon" aria-hidden="true">
-                          <EnvelopeSimple size={18} weight="duotone" />
-                        </span>
-                      }
-                    />
+                  <form
+                    onSubmit={handleLoginSubmit}
+                    className="auth-console-form"
+                    noValidate
+                  >
+                    <div className="auth-console-fields">
+                      <FloatingInput
+                        ref={emailInputRef}
+                        label="E-postadress"
+                        labelIcon={<EnvelopeSimple size={14} weight="duotone" />}
+                        type="email"
+                        autoComplete="email"
+                        placeholder="Ange din e-postadress"
+                        required
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        error={Boolean(error) && !email.includes('@')}
+                      />
 
-                    <FloatingInput
-                      ref={passwordInputRef}
-                      label="Lösenord"
-                      type={showPassword ? 'text' : 'password'}
-                      autoComplete="current-password"
-                      placeholder="Ange ditt lösenord"
-                      required
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      error={Boolean(error) && email.includes('@')}
-                      trailing={
-                        <div className="auth-input-trailing">
-                          <span className="auth-input-icon" aria-hidden="true">
-                            <LockKey size={18} weight="duotone" />
-                          </span>
-                          <PasswordVisibilityToggle
-                            visible={showPassword}
-                            onToggle={() => setShowPassword((v) => !v)}
-                          />
-                        </div>
-                      }
-                    />
+                      <FloatingInput
+                        ref={passwordInputRef}
+                        label="Lösenord"
+                        labelIcon={<LockKey size={14} weight="duotone" />}
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="current-password"
+                        placeholder="Ange ditt lösenord"
+                        required
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        error={Boolean(error) && email.includes('@')}
+                        trailing={
+                          <div className="auth-input-trailing">
+                            <PasswordVisibilityToggle
+                              visible={showPassword}
+                              onToggle={() => setShowPassword((value) => !value)}
+                            />
+                          </div>
+                        }
+                      />
+                    </div>
 
                     <InlineError message={error} />
 
-                    <div className="mt-1">
+                    <div className="auth-console-action-tray">
                       <RememberDeviceSwitch
                         checked={rememberMe}
                         onCheckedChange={setRememberMe}
                       />
+                      <SubmitButton state={loginState}>Logga in</SubmitButton>
                     </div>
-
-                    <SubmitButton state={loginState}>Logga in</SubmitButton>
 
                     {process.env.NODE_ENV !== 'production' ? (
                       <div className="auth-dev-login">
@@ -207,15 +201,7 @@ export function LoginForm({ redirect }: LoginFormProps) {
                     onBack={() => setStep('login')}
                   />
                 )}
-
-                <div className="auth-login-note">
-                  <ShieldCheck size={18} weight="duotone" />
-                  <span>
-                    Säker intern åtkomst för offert, order, planering och
-                    installation.
-                  </span>
-                </div>
-              </section>
+              </LoginAccessConsole>
             </motion.div>
           ) : null}
         </AnimatePresence>

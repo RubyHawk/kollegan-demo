@@ -5,13 +5,14 @@ import { cn } from '@shared/lib/utils';
 
 interface FloatingInputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
+  labelIcon?: ReactNode;
   error?: boolean;
   trailing?: ReactNode;
 }
 
 export const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
   function FloatingInput(
-    { label, error, trailing, id, value, defaultValue, className, ...rest },
+    { label, labelIcon, error, trailing, id, value, defaultValue, className, ...rest },
     ref,
   ) {
     const generatedId = useId();
@@ -28,6 +29,11 @@ export const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
         data-has-trailing={trailing ? 'true' : 'false'}
       >
         <label htmlFor={inputId} className="auth-field-label">
+          {labelIcon ? (
+            <span className="auth-field-label__icon" aria-hidden="true">
+              {labelIcon}
+            </span>
+          ) : null}
           {label}
         </label>
         <div className="auth-input-shell">

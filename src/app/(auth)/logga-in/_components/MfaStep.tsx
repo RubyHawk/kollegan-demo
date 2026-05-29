@@ -122,7 +122,7 @@ export function MfaStep({ methods, onSuccess, onBack }: MfaStepProps) {
       ) : null}
 
       {view === 'webauthn' ? (
-        <div className="grid gap-4">
+        <div className="auth-mfa-form">
           <div className="auth-passkey-card">
             <div className="flex items-start gap-3">
               <div className="auth-passkey-card__icon">
@@ -139,7 +139,9 @@ export function MfaStep({ methods, onSuccess, onBack }: MfaStepProps) {
               </div>
             </div>
           </div>
+
           <InlineError message={error} />
+
           <SubmitButton
             type="button"
             state={passkeyState}
@@ -150,7 +152,7 @@ export function MfaStep({ methods, onSuccess, onBack }: MfaStepProps) {
           </SubmitButton>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="grid gap-4">
+        <form onSubmit={handleSubmit} className="auth-mfa-form">
           {view === 'totp' ? (
             <OtpInput
               value={totpCode}
