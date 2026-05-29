@@ -2,13 +2,14 @@
 
 import { EnvelopeSimple, LockKey } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import {
   devLoginUrl,
   login,
   type MfaMethod,
 } from '@shared/lib/api/auth-session.api';
 import { TooltipProvider } from '@shared/ui/tooltip';
+import { AuthBrandMark } from './AuthBrandMark';
 import { FloatingInput } from './FloatingInput';
 import { InlineError } from './InlineError';
 import { LoginAccessConsole } from './LoginAccessConsole';
@@ -23,7 +24,7 @@ type Step = 'login' | 'mfa';
 const HEADLINES: Record<Step, { title: string; sub: string }> = {
   login: {
     title: 'Välkommen tillbaka',
-    sub: 'Logga in för att fortsätta arbeta.',
+    sub: 'Verifiera dig så tar arbetsytan vid.',
   },
   mfa: {
     title: 'Bekräfta att det är du',
@@ -49,21 +50,15 @@ export function LoginForm({ redirect }: LoginFormProps) {
   const passwordInputRef = useRef<HTMLInputElement | null>(null);
   const emailInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    if (step === 'login') {
-      const t = setTimeout(() => emailInputRef.current?.focus(), 240);
-      return () => clearTimeout(t);
-    }
-  }, [step]);
-
   function handleSuccessRedirect() {
     setExiting(true);
+    window.setTimeout(() => {
+      window.location.replace(redirect);
+    }, 1700);
   }
 
   function handleExitComplete() {
-    if (exiting) {
-      window.location.replace(redirect);
-    }
+    return;
   }
 
   async function handleLoginSubmit(event: FormEvent) {
@@ -116,9 +111,20 @@ export function LoginForm({ redirect }: LoginFormProps) {
 
   return (
     <TooltipProvider delayDuration={150}>
-      <main className="auth-login-panel">
+      <main
+        className="auth-login-panel"
+        data-state={exiting ? 'cinematic' : loginState === 'success' ? 'success' : 'idle'}
+      >
         <div className="auth-login-panel__atmosphere" aria-hidden="true" />
         <div className="auth-login-panel__grid" aria-hidden="true" />
+        <div className="auth-login-cinematic" aria-hidden="true">
+          <div className="auth-login-cinematic__sun">
+            <AuthBrandMark size={82} />
+          </div>
+          <div className="auth-login-cinematic__glare" />
+          <div className="auth-login-cinematic__film" />
+          <div className="auth-login-cinematic__wipe" />
+        </div>
 
         <AnimatePresence onExitComplete={handleExitComplete}>
           {!exiting ? (

@@ -71,13 +71,13 @@ export function SubmitButton({
   const isInteractive = state === 'idle';
   const style = {
     '--auth-submit-start':
-      state === 'success' ? 'color-mix(in oklch, var(--auth-success) 78%, white)' : '#073f5c',
+      state === 'success' ? 'color-mix(in oklch, var(--auth-success) 78%, white)' : '#d7a84e',
     '--auth-submit-mid':
       state === 'success'
         ? 'color-mix(in oklch, var(--auth-success) 88%, var(--auth-accent))'
-        : '#0793aa',
+        : '#7f9f7d',
     '--auth-submit-end':
-      state === 'success' ? 'var(--auth-success)' : '#14cad5',
+      state === 'success' ? 'var(--auth-success)' : '#256a62',
     transitionTimingFunction: 'var(--ease-out-soft)',
     opacity: state === 'loading' ? 0.9 : 1,
     cursor: state === 'loading' ? 'wait' : undefined,

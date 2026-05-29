@@ -1,0 +1,165 @@
+.auth-scope .auth-login-cinematic {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.auth-scope .auth-login-cinematic__sun,
+.auth-scope .auth-login-cinematic__glare,
+.auth-scope .auth-login-cinematic__film,
+.auth-scope .auth-login-cinematic__wipe {
+  position: absolute;
+  pointer-events: none;
+}
+
+.auth-scope .auth-login-cinematic__sun {
+  top: 2.1rem;
+  right: 2.1rem;
+  z-index: 4;
+  display: grid;
+  width: 5.25rem;
+  height: 5.25rem;
+  place-items: center;
+  border-radius: 999px;
+  color: rgb(248 205 111 / 0.98);
+  opacity: 0;
+  transform: scale(0.28);
+}
+
+.auth-scope .auth-login-cinematic__sun::before {
+  content: "";
+  position: absolute;
+  inset: -5rem;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle, rgb(255 231 159 / 0.8), rgb(248 205 111 / 0.3) 32%, transparent 68%);
+  filter: blur(2px);
+}
+
+.auth-scope .auth-login-cinematic__sun svg {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-scope .auth-login-cinematic__glare {
+  inset: -20%;
+  z-index: 3;
+  background:
+    radial-gradient(circle at 74% 16%, rgb(255 231 159 / 0.5), transparent 22%),
+    linear-gradient(112deg, transparent 0 28%, rgb(255 246 217 / 0.18) 34%, transparent 44%);
+  opacity: 0;
+  transform: translate3d(8%, -6%, 0);
+}
+
+.auth-scope .auth-login-cinematic__film {
+  inset: 0;
+  z-index: 5;
+  background:
+    linear-gradient(90deg, rgb(133 202 184 / 0.18), rgb(8 24 25 / 0.72)),
+    repeating-linear-gradient(106deg, transparent 0 46px, rgb(255 255 255 / 0.055) 47px 48px, transparent 49px 96px);
+  opacity: 0;
+  transform: translateX(-102%);
+}
+
+.auth-scope .auth-login-cinematic__wipe {
+  top: 0;
+  bottom: 0;
+  left: -18%;
+  z-index: 6;
+  width: 18%;
+  background:
+    linear-gradient(90deg, transparent, rgb(255 255 255 / 0.5), transparent),
+    linear-gradient(180deg, rgb(218 247 239 / 0.22), rgb(4 17 19 / 0.16));
+  filter: blur(0.4px);
+  opacity: 0;
+  transform: skewX(-7deg);
+}
+
+.auth-scope .auth-login-panel[data-state='cinematic'] .auth-login-cinematic {
+  opacity: 1;
+}
+
+.auth-scope .auth-login-panel[data-state='cinematic'] .auth-login-cinematic__sun {
+  animation: auth-login-sun-bloom 1.35s var(--ease-out-soft) forwards;
+}
+
+.auth-scope .auth-login-panel[data-state='cinematic'] .auth-login-cinematic__glare {
+  animation: auth-login-glare-bloom 1.45s var(--ease-out-soft) forwards;
+}
+
+.auth-scope .auth-login-panel[data-state='cinematic'] .auth-login-cinematic__film {
+  animation: auth-login-film-cover 1.35s 0.22s var(--ease-out-soft) forwards;
+}
+
+.auth-scope .auth-login-panel[data-state='cinematic'] .auth-login-cinematic__wipe {
+  animation: auth-login-wipe 1.05s 0.5s var(--ease-out-soft) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-scope .auth-login-panel[data-state='cinematic'] .auth-login-cinematic__sun,
+  .auth-scope .auth-login-panel[data-state='cinematic'] .auth-login-cinematic__glare,
+  .auth-scope .auth-login-panel[data-state='cinematic'] .auth-login-cinematic__film,
+  .auth-scope .auth-login-panel[data-state='cinematic'] .auth-login-cinematic__wipe {
+    animation: none !important;
+  }
+}
+
+@keyframes auth-login-sun-bloom {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.28);
+  }
+  28% {
+    opacity: 1;
+    transform: translate3d(-12vw, 3vh, 0) scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(-46vw, 18vh, 0) scale(7.8);
+  }
+}
+
+@keyframes auth-login-glare-bloom {
+  0% {
+    opacity: 0;
+    transform: translate3d(8%, -6%, 0);
+  }
+  42% {
+    opacity: 0.84;
+  }
+  100% {
+    opacity: 0.36;
+    transform: translate3d(-10%, 3%, 0);
+  }
+}
+
+@keyframes auth-login-film-cover {
+  0% {
+    opacity: 0;
+    transform: translateX(-102%);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes auth-login-wipe {
+  0% {
+    opacity: 0;
+    transform: translateX(0) skewX(-7deg);
+  }
+  12% {
+    opacity: 0.72;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(760%) skewX(-7deg);
+  }
+}

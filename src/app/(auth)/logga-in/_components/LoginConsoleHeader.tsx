@@ -14,7 +14,7 @@ export function LoginConsoleHeader({
   return (
     <header className="auth-console-header">
       <p className="auth-console-header__eyebrow">
-        {mode === 'login' ? 'Intern arbetsportal' : 'Verifierad åtkomst'}
+        {mode === 'login' ? 'Åtkomst' : 'Verifiering'}
       </p>
       <h1 className="auth-console-header__title">{title}</h1>
       <p className="auth-console-header__subtitle">{subtitle}</p>

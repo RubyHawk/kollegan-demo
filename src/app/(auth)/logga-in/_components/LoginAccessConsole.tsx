@@ -23,34 +23,35 @@ export function LoginAccessConsole({
   return (
     <motion.section
       className="auth-console"
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.08, duration: 0.48, ease: EASE_OUT_SOFT }}
+      transition={{ delay: 0.08, duration: 0.42, ease: EASE_OUT_SOFT }}
     >
-      <div className="auth-console__backplate" aria-hidden="true" />
-      <div className="auth-console__laminate" aria-hidden="true" />
+      <div className="auth-console__wash" aria-hidden="true" />
 
-      <motion.div
-        className="auth-console__capsule"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.16, duration: 0.42, ease: EASE_OUT_SOFT }}
-      >
-        <AuthBrandMark size={36} />
-        <strong>Soleria Workspace</strong>
-      </motion.div>
-
-      <div className="auth-console__frame">
-        <div className="auth-console__edge" aria-hidden="true" />
-        <div className="auth-console__reflection" aria-hidden="true" />
-        <div className="auth-console__surface">
-          <LoginConsoleHeader mode={mode} title={title} subtitle={subtitle} />
-
-          <div className="auth-console__content">{children}</div>
-
-          <LoginConsoleFooter />
+      <div className="auth-console__topbar">
+        <div className="auth-console__brand">
+          <AuthBrandMark size={34} />
+          <span>
+            <strong>Soleria</strong>
+            <small>Intern arbetsyta</small>
+          </span>
         </div>
+        <span className="auth-console__sun-anchor">
+          <AuthBrandMark size={20} />
+          <span>
+            <strong>Solfilm</strong>
+            <small>redo</small>
+          </span>
+        </span>
       </div>
+
+      <div className="auth-console__panel">
+        <LoginConsoleHeader mode={mode} title={title} subtitle={subtitle} />
+        <div className="auth-console__content">{children}</div>
+      </div>
+
+      <LoginConsoleFooter />
     </motion.section>
   );
 }

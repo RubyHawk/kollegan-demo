@@ -1,5 +1,10 @@
 .auth-scope .auth-motion-stage {
-  --scene-inset: 4.2% 4.2% 10.5% 4.2%;
+  --install-night: #081412;
+  --install-deep: #0c211d;
+  --install-glass: #d9ece5;
+  --install-glass-edge: rgb(245 255 249 / 0.48);
+  --install-mint: #9fe0cf;
+  --install-sun: #f6c96d;
   position: relative;
   flex: 1 1 auto;
   width: 100%;
@@ -7,883 +12,364 @@
   overflow: hidden;
   isolation: isolate;
   background:
-    radial-gradient(circle at 10% 14%, rgb(255 218 134 / 0.12), transparent 18%),
-    radial-gradient(circle at 84% 18%, rgb(89 211 238 / 0.1), transparent 22%),
-    linear-gradient(155deg, rgb(5 14 24 / 0.96), rgb(10 22 36 / 0.78) 45%, rgb(20 35 51 / 0.58));
+    radial-gradient(circle at 17% 14%, rgb(246 201 109 / 0.18), transparent 23%),
+    radial-gradient(circle at 76% 18%, rgb(159 224 207 / 0.14), transparent 26%),
+    linear-gradient(155deg, var(--install-night), var(--install-deep) 52%, #122f28);
   box-shadow: inset -1px 0 0 rgb(255 255 255 / 0.08);
 }
 
-.auth-scope .auth-stage-atmosphere,
-.auth-scope .auth-stage-caustics,
-.auth-scope .auth-stage-window-shell,
-.auth-scope .auth-stage-outside,
-.auth-scope .auth-stage-sun,
-.auth-scope .auth-stage-raw-heat,
-.auth-scope .auth-stage-cool-film,
-.auth-scope .auth-stage-window-bars,
-.auth-scope .auth-stage-glass-reflections,
-.auth-scope .auth-stage-measurement,
-.auth-scope .auth-stage-film,
-.auth-scope .auth-stage-peel-liner,
-.auth-scope .auth-stage-film-roll,
-.auth-scope .auth-stage-adhesive-waves,
-.auth-scope .auth-stage-wake,
-.auth-scope .auth-stage-bubbles,
-.auth-scope .auth-stage-squeegee,
-.auth-scope .auth-stage-scan-line,
-.auth-scope .auth-stage-edge-ripple,
-.auth-scope .auth-stage-ambient-sheen,
-.auth-scope .auth-stage-caption-shield {
+.auth-scope .auth-motion-stage::before,
+.auth-scope .auth-motion-stage::after,
+.auth-scope .auth-install-sky,
+.auth-scope .auth-install-pane,
+.auth-scope .auth-install-brand,
+.auth-scope .auth-install-tools {
   position: absolute;
   pointer-events: none;
 }
 
-.auth-scope .auth-stage-atmosphere {
-  inset: -14%;
-  background:
-    radial-gradient(circle at 16% 18%, rgb(255 232 176 / 0.18), transparent 18%),
-    radial-gradient(circle at 82% 24%, rgb(104 222 241 / 0.1), transparent 22%),
-    repeating-linear-gradient(104deg, transparent 0 16%, rgb(255 255 255 / 0.08) 16.2% 16.42%, transparent 16.7% 100%);
-  opacity: 0.34;
-}
-
-.auth-scope .auth-stage-caustics {
-  inset: -10%;
-  z-index: 2;
-  background:
-    radial-gradient(circle at 18% 16%, rgb(255 255 255 / 0.18), transparent 18%),
-    radial-gradient(circle at 72% 22%, rgb(104 222 241 / 0.12), transparent 18%),
-    radial-gradient(circle at 42% 82%, rgb(5 45 72 / 0.32), transparent 22%);
-  filter: blur(24px);
-  animation: auth-scene-breathe 12s ease-in-out infinite;
-}
-
-.auth-scope .auth-stage-window-shell,
-.auth-scope .auth-stage-outside,
-.auth-scope .auth-stage-raw-heat,
-.auth-scope .auth-stage-cool-film,
-.auth-scope .auth-stage-window-bars,
-.auth-scope .auth-stage-glass-reflections,
-.auth-scope .auth-stage-measurement {
-  inset: var(--scene-inset);
-  border-radius: 2.3rem;
-}
-
-.auth-scope .auth-stage-window-shell {
+.auth-scope .auth-motion-stage::before {
+  content: "";
+  inset: -18%;
   z-index: 0;
-  border: 1px solid rgb(255 255 255 / 0.28);
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.03)),
-    linear-gradient(118deg, rgb(255 255 255 / 0.03), rgb(8 33 49 / 0.2));
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    inset 0 -56px 88px rgb(2 17 26 / 0.22),
-    0 30px 84px rgb(5 15 25 / 0.26);
+    linear-gradient(106deg, transparent 0 20%, rgb(255 247 224 / 0.06) 20.4%, transparent 21.2% 58%, rgb(159 224 207 / 0.05) 58.4%, transparent 59.2%),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.018) 0 1px, transparent 1px 118px);
+  opacity: 0.76;
+  transform: rotate(-7deg);
 }
 
-.auth-scope .auth-stage-outside {
+.auth-scope .auth-motion-stage::after {
+  content: "";
+  inset: auto 0 0;
+  z-index: 12;
+  height: 42%;
+  background:
+    linear-gradient(180deg, transparent, rgb(5 20 17 / 0.48) 48%, rgb(5 20 17 / 0.92)),
+    radial-gradient(circle at 24% 78%, rgb(5 20 17 / 0.94), transparent 48%);
+}
+
+.auth-scope .auth-install-sky {
+  inset: -12%;
   z-index: 1;
   background:
-    linear-gradient(90deg, rgb(2 16 28 / 0.88), rgb(255 255 255 / 0.02) 42%, rgb(255 255 255 / 0.07)),
-    url("data:image/svg+xml,%3Csvg width='1120' height='820' viewBox='0 0 1120 820' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='sky' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%23edf8ff'/%3E%3Cstop offset='.45' stop-color='%23bedaea'/%3E%3Cstop offset='1' stop-color='%2385aabd'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1120' height='820' fill='url(%23sky)'/%3E%3Cg opacity='.56'%3E%3Crect x='36' y='220' width='150' height='600' rx='12' fill='%23779eb0'/%3E%3Crect x='228' y='118' width='214' height='702' rx='12' fill='%2389b1c3'/%3E%3Crect x='486' y='188' width='156' height='632' rx='12' fill='%236d92a6'/%3E%3Crect x='690' y='72' width='268' height='748' rx='12' fill='%2395b8c9'/%3E%3C/g%3E%3Cg opacity='.18' stroke='%23fff' stroke-width='2'%3E%3Cpath d='M36 300h150M36 392h150M36 484h150M36 576h150M36 668h150M228 204h214M228 296h214M228 388h214M228 480h214M228 572h214M228 664h214M486 272h156M486 364h156M486 456h156M486 548h156M690 156h268M690 248h268M690 340h268M690 432h268M690 524h268M690 616h268'/%3E%3Cpath d='M112 220v600M336 118v702M564 188v632M780 72v748M870 72v748'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: cover;
-  background-position: center;
-  filter: saturate(0.92) contrast(1.08) brightness(0.9);
-  animation: auth-outside-drift 18s ease-in-out infinite;
+    radial-gradient(circle at 18% 12%, rgb(246 201 109 / 0.28), transparent 18%),
+    radial-gradient(circle at 70% 30%, rgb(159 224 207 / 0.14), transparent 22%),
+    linear-gradient(145deg, rgb(232 244 231 / 0.08), transparent 50%);
+  filter: blur(20px);
+  animation: auth-install-breathe 12s ease-in-out infinite;
 }
 
-.auth-scope .auth-stage-sun {
-  top: -8%;
-  left: -6%;
-  z-index: 3;
-  width: 48%;
-  height: 48%;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgb(255 255 255) 0 4%, rgb(255 214 112 / 0.72) 5% 14%, rgb(255 255 255 / 0.14) 15% 34%, transparent 66%);
-  mix-blend-mode: screen;
-  animation: auth-glare-breath 10.5s ease-in-out infinite;
-}
-
-.auth-scope .auth-stage-raw-heat {
+.auth-scope .auth-install-pane {
+  left: clamp(1.35rem, 4.4vw, 3.4rem);
+  right: clamp(1.35rem, 4.4vw, 3.4rem);
+  top: clamp(5.3rem, 9vh, 6.8rem);
+  bottom: clamp(12.6rem, 23vh, 15.7rem);
   z-index: 4;
+  overflow: hidden;
+  border: 1px solid var(--install-glass-edge);
+  border-radius: clamp(1.55rem, 3vw, 2.25rem);
   background:
-    linear-gradient(112deg, rgb(255 219 124 / 0.42), transparent 34%),
-    linear-gradient(90deg, rgb(255 255 255 / 0.08), transparent 48%);
-  animation: auth-raw-heat 10.5s ease-in-out infinite;
+    linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.045)),
+    linear-gradient(118deg, rgb(217 236 229 / 0.18), rgb(21 56 48 / 0.26));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    inset 0 -54px 90px rgb(4 21 28 / 0.2),
+    0 34px 90px rgb(2 12 10 / 0.36);
 }
 
-.auth-scope .auth-stage-cool-film {
-  z-index: 5;
-  background:
-    linear-gradient(115deg, rgb(7 110 135 / 0.46), rgb(48 201 221 / 0.16) 42%, rgb(255 255 255 / 0.04)),
-    linear-gradient(90deg, rgb(2 33 55 / 0.32), transparent 70%);
-  clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
-  mix-blend-mode: multiply;
-  animation: auth-treated-area 10.5s var(--ease-out-soft) infinite;
+.auth-scope .auth-install-pane::before {
+  content: "";
+  position: absolute;
+  inset: 1rem;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: calc(clamp(1.55rem, 3vw, 2.25rem) - 0.55rem);
+  pointer-events: none;
 }
 
-.auth-scope .auth-stage-window-bars {
-  z-index: 7;
-  background:
-    linear-gradient(90deg, transparent 0 23.4%, rgb(255 255 255 / 0.14) 23.55% 23.76%, transparent 23.94% 49.8%, rgb(7 37 58 / 0.06) 49.95% 50.14%, transparent 50.32% 74.8%, rgb(255 255 255 / 0.12) 74.95% 75.14%, transparent 75.32%),
-    linear-gradient(0deg, transparent 0 22%, rgb(255 255 255 / 0.08) 22.1% 22.28%, transparent 22.46% 56%, rgb(7 37 58 / 0.04) 56.12% 56.28%, transparent 56.4% 81.6%, rgb(255 255 255 / 0.06) 81.7% 81.84%, transparent 82%);
+.auth-scope .auth-install-sun {
+  position: absolute;
+  left: 9%;
+  top: 8%;
+  z-index: 2;
+  display: grid;
+  width: 4.8rem;
+  height: 4.8rem;
+  place-items: center;
+  border-radius: 999px;
+  color: rgb(246 201 109 / 0.92);
   opacity: 0.74;
 }
 
-.auth-scope .auth-stage-glass-reflections {
-  z-index: 8;
-  background:
-    linear-gradient(110deg, transparent 0 14%, rgb(255 255 255 / 0.18) 14.35%, transparent 17% 58%, rgb(255 255 255 / 0.1) 58.4%, transparent 61%),
-    linear-gradient(76deg, transparent 0 70%, rgb(255 255 255 / 0.07) 70.8%, transparent 73%);
-  opacity: 0.86;
-}
-
-.auth-scope .auth-stage-measurement {
-  z-index: 9;
-  background:
-    linear-gradient(90deg, transparent 0 7%, rgb(255 255 255 / 0.18) 7.08% 7.2%, transparent 7.28% 94%),
-    linear-gradient(0deg, transparent 0 82%, rgb(255 255 255 / 0.16) 82.08% 82.2%, transparent 82.28%);
-  mask: linear-gradient(90deg, transparent 0 10%, black 12% 78%, transparent 86%);
-  opacity: 0.42;
-  animation: auth-measure-fade 10.5s ease-in-out infinite;
-}
-
-.auth-scope .auth-stage-measurement::before,
-.auth-scope .auth-stage-measurement::after {
+.auth-scope .auth-install-sun::before {
   content: "";
   position: absolute;
-  width: 74px;
-  height: 74px;
-  border: 1px solid rgb(255 255 255 / 0.16);
-  border-right: 0;
-  border-bottom: 0;
-}
-
-.auth-scope .auth-stage-measurement::before {
-  left: 11%;
-  top: 16%;
-}
-
-.auth-scope .auth-stage-measurement::after {
-  right: 24%;
-  bottom: 20%;
-  transform: rotate(180deg);
-}
-
-.auth-scope .auth-stage-film {
-  top: 14%;
-  left: -24%;
-  z-index: 13;
-  width: 68%;
-  height: 50%;
-  border: 1px solid rgb(255 255 255 / 0.74);
-  border-radius: 38px 150px 44px 104px;
-  background:
-    linear-gradient(108deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.8) 30%, rgb(18 201 213 / 0.18) 46%, rgb(255 255 255 / 0.4) 62%, rgb(255 255 255 / 0.08)),
-    repeating-linear-gradient(76deg, rgb(255 255 255 / 0.28) 0 1px, transparent 1px 34px);
-  box-shadow:
-    inset 0 0 38px rgb(255 255 255 / 0.52),
-    0 22px 74px rgb(9 103 127 / 0.18);
-  clip-path: polygon(6% 10%, 91% 0, 100% 48%, 86% 97%, 0 84%);
-  backdrop-filter: blur(2px);
-  transform-origin: 18% 62%;
-  animation: auth-apply-film 10.5s var(--ease-out-soft) infinite;
-}
-
-.auth-scope .auth-stage-film::before,
-.auth-scope .auth-stage-film::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-}
-
-.auth-scope .auth-stage-film::before {
-  background: linear-gradient(120deg, transparent 18%, rgb(255 255 255 / 0.84) 28%, transparent 42%, transparent 56%, rgb(18 201 213 / 0.2) 66%, transparent 78%);
-  transform: translateX(-62%);
-  animation: auth-film-highlight 10.5s ease-in-out infinite;
-}
-
-.auth-scope .auth-stage-film::after {
-  background:
-    radial-gradient(circle at 43% 40%, rgb(255 255 255 / 0.82) 0 1.5%, transparent 1.9%),
-    radial-gradient(circle at 55% 48%, rgb(255 255 255 / 0.64) 0 1.2%, transparent 1.6%),
-    radial-gradient(circle at 63% 36%, rgb(255 255 255 / 0.58) 0 1.1%, transparent 1.5%);
+  inset: -3.4rem;
   border-radius: inherit;
-  animation: auth-trapped-bubbles 10.5s ease-in-out infinite;
-}
-
-.auth-scope .auth-stage-peel-liner {
-  top: 18%;
-  left: -18%;
-  z-index: 14;
-  width: 36%;
-  height: 48%;
-  border: 1px dashed rgb(255 255 255 / 0.32);
-  border-radius: 24px 96px 42px 70px;
-  background: linear-gradient(105deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.34), rgb(255 255 255 / 0.08));
-  clip-path: polygon(8% 14%, 100% 0, 84% 100%, 0 78%);
-  opacity: 0;
-  transform-origin: 82% 50%;
-  animation: auth-peel-away 10.5s var(--ease-out-soft) infinite;
-}
-
-.auth-scope .auth-stage-film-roll {
-  top: 22%;
-  left: 7%;
-  z-index: 15;
-  width: 36px;
-  height: 272px;
-  border-radius: 999px;
   background:
-    linear-gradient(90deg, #eefaff, #ffffff 22%, #abedf4 48%, #088ca1 52%, #e9fbff 74%, #ffffff),
-    linear-gradient(180deg, rgb(255 255 255 / 0.72), transparent);
-  box-shadow:
-    0 16px 36px rgb(4 64 91 / 0.18),
-    inset 0 0 0 1px rgb(255 255 255 / 0.7);
-  transform: rotate(-12deg);
-  animation: auth-roll-move 10.5s var(--ease-out-soft) infinite;
-}
-
-.auth-scope .auth-stage-adhesive-waves {
-  top: 25%;
-  left: 12%;
-  z-index: 16;
-  width: 54%;
-  height: 42%;
-  border: 1px solid rgb(255 255 255 / 0.26);
-  border-left: 0;
-  border-bottom: 0;
-  border-radius: 50%;
-  transform: rotate(-12deg) scale(0.48);
-  opacity: 0;
-  animation: auth-pressure 10.5s ease-in-out infinite;
-}
-
-.auth-scope .auth-stage-adhesive-waves::before,
-.auth-scope .auth-stage-adhesive-waves::after {
-  content: "";
-  position: absolute;
-  inset: 28px;
-  border: inherit;
-  border-radius: inherit;
-}
-
-.auth-scope .auth-stage-adhesive-waves::after {
-  inset: 56px;
-}
-
-.auth-scope .auth-stage-wake {
-  top: 30%;
-  left: 18%;
-  z-index: 17;
-  width: 46%;
-  height: 26%;
-  background: linear-gradient(120deg, transparent 0 38%, rgb(255 255 255 / 0.46) 44%, rgb(18 201 213 / 0.14) 48%, transparent 56%);
-  clip-path: polygon(0 44%, 100% 0, 82% 100%, 0 70%);
-  opacity: 0;
-  animation: auth-wake-sweep 10.5s ease-in-out infinite;
-}
-
-.auth-scope .auth-stage-bubbles {
-  inset: 0;
-  z-index: 19;
-  overflow: hidden;
-}
-
-.auth-scope .auth-stage-bubble {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.9);
-  box-shadow: 0 0 14px rgb(18 201 213 / 0.44);
-  opacity: 0;
-  animation: auth-bubble 10.5s ease-in-out infinite;
-}
-
-.auth-scope .auth-stage-bubble:nth-child(1) { left: 34%; top: 45%; animation-delay: 0s; }
-.auth-scope .auth-stage-bubble:nth-child(2) { left: 39%; top: 42%; animation-delay: 0.13s; width: 4px; height: 4px; }
-.auth-scope .auth-stage-bubble:nth-child(3) { left: 44%; top: 39%; animation-delay: 0.25s; }
-.auth-scope .auth-stage-bubble:nth-child(4) { left: 49%; top: 36%; animation-delay: 0.36s; width: 5px; height: 5px; }
-.auth-scope .auth-stage-bubble:nth-child(5) { left: 54%; top: 33%; animation-delay: 0.48s; }
-.auth-scope .auth-stage-bubble:nth-child(6) { left: 59%; top: 31%; animation-delay: 0.6s; width: 4px; height: 4px; }
-.auth-scope .auth-stage-bubble:nth-child(7) { left: 64%; top: 29%; animation-delay: 0.72s; }
-.auth-scope .auth-stage-bubble:nth-child(8) { left: 68%; top: 27%; animation-delay: 0.84s; width: 4px; height: 4px; }
-
-.auth-scope .auth-stage-squeegee {
-  top: 46%;
-  left: 25%;
-  z-index: 18;
-  width: 152px;
-  height: 50px;
-  filter: drop-shadow(0 16px 22px rgb(4 31 50 / 0.24));
-  animation: auth-sweep 10.5s var(--ease-out-soft) infinite;
-}
-
-.auth-scope .auth-stage-squeegee::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border: 1px solid rgb(255 255 255 / 0.78);
-  border-radius: 16px;
-  background: linear-gradient(180deg, #faffff, #c0d7e4 42%, #10b8c8 43% 61%, #086b80 62%);
-  transform: skewX(-12deg);
-}
-
-.auth-scope .auth-stage-squeegee::after {
-  content: "";
-  position: absolute;
-  top: 34px;
-  left: 62px;
-  width: 26px;
-  height: 94px;
-  border-radius: 12px;
-  background: linear-gradient(90deg, #143852, #071929);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
-  transform: rotate(12deg);
-}
-
-.auth-scope .auth-stage-scan-line {
-  top: 8%;
-  bottom: 12%;
-  left: -24%;
-  z-index: 21;
-  width: 14%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, rgb(118 237 242 / 0.22), transparent);
-  opacity: 0;
-  transform: skewX(-14deg);
-  animation: auth-final-scan 10.5s ease-in-out infinite;
-}
-
-.auth-scope .auth-stage-edge-ripple {
-  top: 20%;
-  left: 20%;
-  z-index: 20;
-  width: 44%;
-  height: 46%;
-  opacity: 0;
-  clip-path: polygon(2% 20%, 100% 0, 92% 100%, 0 78%);
-  background:
-    repeating-linear-gradient(103deg, transparent 0 18px, rgb(255 255 255 / 0.14) 19px 20px, transparent 21px 42px),
-    linear-gradient(115deg, transparent 0 46%, rgb(118 237 242 / 0.14) 50%, transparent 56%);
-  filter: blur(0.2px);
-  animation: auth-edge-ripple 10.5s ease-in-out infinite;
-}
-
-.auth-scope .auth-stage-ambient-sheen {
-  inset: 0;
-  z-index: 22;
-  background:
-    linear-gradient(104deg, transparent 0 18%, rgb(255 255 255 / 0.06) 22%, transparent 30%),
-    radial-gradient(circle at 30% 40%, rgb(118 237 242 / 0.06), transparent 18%),
-    radial-gradient(circle at 56% 58%, rgb(255 255 255 / 0.06), transparent 20%);
-  mix-blend-mode: screen;
-  opacity: 0.68;
-  animation: auth-scene-breathe 9.5s ease-in-out infinite;
-}
-
-.auth-scope .auth-stage-caption-shield {
-  left: 0;
-  right: 30%;
-  bottom: 0;
-  z-index: 23;
-  height: 42%;
-  background:
-    linear-gradient(180deg, transparent, rgb(3 14 24 / 0.22) 24%, rgb(3 14 24 / 0.76)),
-    radial-gradient(circle at 22% 84%, rgb(3 14 24 / 0.88), transparent 56%);
-}
-
-.auth-scope .auth-scene-brand {
-  position: absolute;
-  top: 2.3rem;
-  left: 2.4rem;
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  color: rgb(255 255 255 / 0.96);
-  font-size: 0.9rem;
-  font-weight: 760;
-  letter-spacing: 0.42em;
-  text-shadow: 0 12px 26px rgb(0 0 0 / 0.24);
-}
-
-.auth-scope .auth-scene-copy {
-  position: absolute;
-  left: 2.2rem;
-  bottom: 1.85rem;
-  z-index: 30;
-  width: min(18rem, 34%);
-  color: white;
-  text-shadow: 0 16px 30px rgb(4 25 42 / 0.46);
-}
-
-.auth-scope .auth-scene-copy__eyebrow {
-  margin: 0 0 0.85rem;
-  color: rgb(220 249 255 / 0.72);
-  font-size: 0.7rem;
-  font-weight: 780;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
-
-.auth-scope .auth-scene-copy h1 {
-  margin: 0;
-  max-width: 9ch;
-  font-size: clamp(1.95rem, 2.8vw, 3.15rem);
-  line-height: 0.9;
-  letter-spacing: -0.08em;
-  text-wrap: balance;
-}
-
-.auth-scope .auth-scene-copy h1 span {
-  color: #46e3ea;
-}
-
-.auth-scope .auth-scene-copy > p:last-child {
-  width: min(14rem, 100%);
-  margin: 0.85rem 0 0;
-  color: rgb(255 255 255 / 0.74);
-  font-size: 0.82rem;
-  line-height: 1.55;
-}
-
-.auth-scope .auth-workflow-rail {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  min-width: 0;
-  background:
-    linear-gradient(180deg, rgb(9 16 24 / 0.96), rgb(4 8 14 / 0.98));
-  border-left: 1px solid rgb(255 255 255 / 0.08);
-  border-right: 1px solid rgb(255 255 255 / 0.08);
-}
-
-.auth-scope .auth-workflow-rail::before,
-.auth-scope .auth-workflow-rail::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  width: 1px;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-.auth-scope .auth-workflow-rail::before {
-  top: 0;
-  bottom: 0;
-  background: linear-gradient(180deg, transparent, rgb(255 255 255 / 0.06), transparent);
-}
-
-.auth-scope .auth-workflow-rail::after {
-  top: 1.15rem;
-  bottom: 1.15rem;
-  background: linear-gradient(180deg, transparent, rgb(87 220 248 / 0.18), transparent);
-  opacity: 0.6;
-}
-
-.auth-scope .auth-workflow-rail__inner {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  align-content: start;
-  justify-items: stretch;
-  width: 100%;
-  padding: 1.5rem 0.75rem;
-}
-
-.auth-scope .auth-workflow-rail__eyebrow {
-  margin: 0 0 1.05rem;
-  color: rgb(170 196 212 / 0.58);
-  font-size: 0.62rem;
-  font-weight: 760;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-.auth-scope .auth-workflow-rail__track {
-  position: relative;
-  display: grid;
-  gap: 1.35rem;
-  justify-items: center;
-  align-content: center;
-  min-height: calc(100% - 2rem);
-  padding: 1rem 0 1.2rem;
-}
-
-.auth-scope .auth-workflow-rail__line,
-.auth-scope .auth-workflow-rail__scan {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-.auth-scope .auth-workflow-rail__line {
-  top: 0.65rem;
-  bottom: 0.65rem;
-  width: 1px;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.16) 18%, rgb(255 255 255 / 0.06) 82%, rgb(255 255 255 / 0.04));
-}
-
-.auth-scope .auth-workflow-rail__scan {
-  top: 0.7rem;
-  width: 0.72rem;
-  height: 2.5rem;
-  border-radius: 999px;
-  background: linear-gradient(180deg, transparent, rgb(112 230 248 / 0.82), transparent);
+    radial-gradient(circle, rgb(255 231 159 / 0.56), rgb(246 201 109 / 0.18) 36%, transparent 70%);
   filter: blur(2px);
-  animation: auth-workflow-scan 10.5s linear infinite;
+  animation: auth-install-sun-pulse 10s ease-in-out infinite;
 }
 
-.auth-scope .auth-workflow-stage {
+.auth-scope .auth-install-sun svg {
   position: relative;
   z-index: 1;
-  display: grid;
-  justify-items: center;
-  gap: 0.55rem;
-  width: 100%;
-  animation: auth-workflow-stage 10.5s ease-in-out infinite;
+  filter: drop-shadow(0 14px 28px rgb(87 50 10 / 0.18));
 }
 
-.auth-scope .auth-workflow-stage--2 { animation-delay: 2.6s; }
-.auth-scope .auth-workflow-stage--3 { animation-delay: 5.2s; }
-.auth-scope .auth-workflow-stage--4 { animation-delay: 7.8s; }
-
-.auth-scope .auth-workflow-stage__node {
-  width: 0.7rem;
-  height: 0.7rem;
-  border: 1px solid rgb(255 255 255 / 0.28);
-  border-radius: 999px;
-  background: rgb(6 25 40 / 0.9);
-  box-shadow: 0 0 0 0 rgb(87 220 248 / 0.2);
+.auth-scope .auth-install-city {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 0.14), transparent 42%, rgb(255 255 255 / 0.08)),
+    url("data:image/svg+xml,%3Csvg width='1120' height='760' viewBox='0 0 1120 760' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='sky' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%23e6f6f7'/%3E%3Cstop offset='.55' stop-color='%23b9d7dc'/%3E%3Cstop offset='1' stop-color='%2386a9b1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1120' height='760' fill='url(%23sky)'/%3E%3Cg opacity='.5' fill='%236f929b'%3E%3Crect x='62' y='360' width='86' height='400' rx='8'/%3E%3Crect x='196' y='274' width='116' height='486' rx='8'/%3E%3Crect x='360' y='220' width='92' height='540' rx='8'/%3E%3Crect x='522' y='326' width='132' height='434' rx='8'/%3E%3Crect x='714' y='246' width='98' height='514' rx='8'/%3E%3Crect x='880' y='182' width='138' height='578' rx='8'/%3E%3C/g%3E%3Cg opacity='.16' stroke='%23fff' stroke-width='2'%3E%3Cpath d='M62 440h86M62 520h86M62 600h86M196 354h116M196 434h116M196 514h116M196 594h116M360 300h92M360 380h92M360 460h92M360 540h92M522 406h132M522 486h132M522 566h132M714 326h98M714 406h98M714 486h98M714 566h98M880 262h138M880 342h138M880 422h138M880 502h138M880 582h138'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: cover;
+  background-position: center;
+  filter: saturate(0.86) contrast(1.04) brightness(0.96);
+  opacity: 0.88;
 }
 
-.auth-scope .auth-workflow-stage__body {
-  display: grid;
-  justify-items: center;
-  gap: 0.28rem;
-  text-align: center;
+.auth-scope .auth-install-glare {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background:
+    linear-gradient(112deg, rgb(255 235 170 / 0.4), transparent 34%),
+    linear-gradient(74deg, transparent 0 18%, rgb(255 255 255 / 0.26) 19%, transparent 23% 56%, rgb(255 255 255 / 0.12) 57%, transparent 61%);
+  mix-blend-mode: screen;
+  animation: auth-install-glare 9s ease-in-out infinite;
 }
 
-.auth-scope .auth-workflow-stage__icon {
-  display: inline-flex;
+.auth-scope .auth-install-mullions {
+  position: absolute;
+  inset: 1rem;
+  z-index: 5;
+  border-radius: 1.45rem;
+  background:
+    linear-gradient(90deg, transparent 0 49.3%, rgb(250 255 255 / 0.54) 49.7% 50.4%, transparent 50.8%),
+    linear-gradient(0deg, transparent 0 49.2%, rgb(250 255 255 / 0.42) 49.7% 50.5%, transparent 51%);
+  opacity: 0.72;
+}
+
+.auth-scope .auth-install-haze {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  background:
+    radial-gradient(circle at 18% 22%, rgb(255 255 255 / 0.18), transparent 18%),
+    radial-gradient(circle at 62% 62%, rgb(232 248 239 / 0.14), transparent 22%),
+    repeating-linear-gradient(106deg, transparent 0 44px, rgb(255 255 255 / 0.07) 45px 46px, transparent 47px 92px);
+  opacity: 0.74;
+}
+
+.auth-scope .auth-install-brand {
+  top: 2.1rem;
+  left: 2.25rem;
+  z-index: 16;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  gap: 0.72rem;
+  color: rgb(252 248 232 / 0.96);
+  font-size: 0.82rem;
+  font-weight: 780;
+  letter-spacing: 0.38em;
+  text-shadow: 0 12px 28px rgb(0 0 0 / 0.28);
+}
+
+.auth-scope .auth-install-tools {
+  left: 50%;
+  bottom: clamp(0.35rem, 1.4vh, 0.9rem);
+  z-index: 18;
+  width: min(98%, 62rem);
+  height: clamp(12rem, 25vh, 15.6rem);
+  transform: translateX(-50%);
+}
+
+.auth-scope .auth-install-tool-stack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.auth-scope .auth-install-tools-art {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.auth-scope .auth-install-spray {
+  position: absolute;
+  left: 29%;
+  bottom: 55%;
+  z-index: 4;
+  width: min(18vw, 12rem);
+  height: 4.6rem;
+  opacity: 0;
+  transform: rotate(-6deg) scaleX(0.62);
+  transform-origin: left center;
+  animation: auth-install-spray-cycle 5.8s ease-in-out infinite;
+}
+
+.auth-scope .auth-install-spray-cone,
+.auth-scope .auth-install-spray-drop {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.auth-scope .auth-install-spray-cone {
+  inset: 0;
+  background:
+    radial-gradient(circle at 7% 46%, rgb(224 253 247 / 0.72) 0 2px, transparent 3px),
+    radial-gradient(circle at 23% 34%, rgb(224 253 247 / 0.38) 0 2px, transparent 3px),
+    radial-gradient(circle at 42% 55%, rgb(224 253 247 / 0.28) 0 1.5px, transparent 2.5px),
+    radial-gradient(ellipse at left, rgb(214 251 244 / 0.44), transparent 68%);
+  filter: blur(0.2px);
+  mix-blend-mode: screen;
+}
+
+.auth-scope .auth-install-spray-drop {
+  width: 0.34rem;
+  height: 0.34rem;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.03);
-  color: rgb(205 222 233 / 0.84);
+  background: rgb(219 253 246 / 0.82);
+  box-shadow: 0 0 14px rgb(177 241 230 / 0.28);
+  filter: blur(0.2px);
 }
 
-.auth-scope .auth-workflow-stage__code {
-  color: rgb(176 198 212 / 0.56);
-  font-size: 0.56rem;
-  font-weight: 760;
-  letter-spacing: 0.18em;
+.auth-scope .auth-install-spray-drop-a {
+  left: 22%;
+  top: 34%;
+  animation: auth-install-spray-drop-a 5.8s ease-in-out infinite;
 }
 
-.auth-scope .auth-workflow-stage strong {
-  color: rgb(242 247 251 / 0.88);
-  font-size: 0.74rem;
-  font-weight: 620;
-  line-height: 1.2;
+.auth-scope .auth-install-spray-drop-b {
+  left: 35%;
+  top: 50%;
+  animation: auth-install-spray-drop-b 5.8s ease-in-out infinite;
 }
 
-@media (max-width: 1320px) {
-  .auth-scope .auth-scene-copy {
-    width: min(22rem, 42%);
-  }
+.auth-scope .auth-install-spray-drop-c {
+  left: 48%;
+  top: 42%;
+  width: 0.24rem;
+  height: 0.24rem;
+  animation: auth-install-spray-drop-c 5.8s ease-in-out infinite;
 }
 
 @media (max-width: 1100px) {
   .auth-scope .auth-motion-stage {
-    --scene-inset: 4.1% 3.8% 10.4% 3.9%;
     min-height: 34rem;
   }
 
-  .auth-scope .auth-workflow-rail {
-    display: none;
-  }
-
-  .auth-scope .auth-scene-copy {
-    left: 1.5rem;
-    bottom: 1.8rem;
-    width: min(16rem, 44%);
-  }
-
-  .auth-scope .auth-scene-copy h1 {
-    font-size: clamp(1.95rem, 4.6vw, 2.7rem);
+  .auth-scope .auth-install-pane {
+    top: 5rem;
+    bottom: 11rem;
   }
 }
 
 @media (max-width: 640px) {
   .auth-scope .auth-motion-stage {
-    min-height: 23.5rem;
+    min-height: 29rem;
   }
 
-  .auth-scope .auth-scene-brand {
-    top: 1.15rem;
-    left: 1.15rem;
-    gap: 0.7rem;
+  .auth-scope .auth-install-brand {
+    top: 1.45rem;
+    left: 1.4rem;
     font-size: 0.74rem;
-    letter-spacing: 0.3em;
   }
 
-  .auth-scope .auth-stage-film {
-    top: 18%;
-    left: -20%;
-    width: 82%;
-    height: 46%;
+  .auth-scope .auth-install-pane {
+    left: 1rem;
+    right: 1rem;
+    top: 4.7rem;
+    bottom: 9.2rem;
+    border-radius: 1.35rem;
   }
 
-  .auth-scope .auth-stage-film-roll {
-    top: 24%;
-    left: 10%;
-    height: 204px;
+  .auth-scope .auth-install-tools {
+    left: 50%;
+    bottom: 0.75rem;
+    width: min(98%, 42rem);
+    height: 8.8rem;
+    transform: translateX(-50%);
+    transform-origin: bottom center;
   }
 
-  .auth-scope .auth-stage-squeegee {
-    top: 51%;
-    left: 20%;
-    width: 128px;
-    height: 44px;
+  .auth-scope .auth-install-spray {
+    left: 8.8%;
+    bottom: 55%;
+    width: 7.2rem;
   }
 
-  .auth-scope .auth-stage-squeegee::after {
-    top: 28px;
-    left: 50px;
-    height: 78px;
-  }
-
-  .auth-scope .auth-stage-caption-shield {
-    right: 0;
-    height: 48%;
-  }
-
-  .auth-scope .auth-scene-copy {
-    left: 1.1rem;
-    right: 1.1rem;
-    bottom: 1.2rem;
-    width: auto;
-  }
-
-  .auth-scope .auth-scene-copy h1 {
-    font-size: clamp(1.9rem, 9vw, 2.7rem);
-  }
-
-  .auth-scope .auth-scene-copy > p:last-child {
-    width: min(15rem, 100%);
-    font-size: 0.8rem;
-  }
 }
 
 @media (max-height: 820px) and (min-width: 1101px) {
-  .auth-scope .auth-motion-stage {
-    --scene-inset: 4% 3.9% 10.2% 4%;
+  .auth-scope .auth-install-pane {
+    top: 5.2rem;
+    bottom: 11.4rem;
   }
 
-  .auth-scope .auth-stage-film {
-    top: 13%;
-    width: 72%;
-    height: 51%;
-  }
-
-  .auth-scope .auth-stage-film-roll {
-    height: 284px;
-  }
-
-  .auth-scope .auth-scene-copy {
-    left: 1.75rem;
-    bottom: 1.45rem;
-    width: min(17rem, 36%);
-  }
-
-  .auth-scope .auth-scene-copy h1 {
-    font-size: clamp(1.85rem, 2.6vw, 2.75rem);
+  .auth-scope .auth-install-tools {
+    bottom: 0.45rem;
+    height: 10.8rem;
+    transform: translateX(-50%);
+    transform-origin: bottom center;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .auth-scope .auth-stage-caustics,
-  .auth-scope .auth-stage-outside,
-  .auth-scope .auth-stage-sun,
-  .auth-scope .auth-stage-raw-heat,
-  .auth-scope .auth-stage-cool-film,
-  .auth-scope .auth-stage-measurement,
-  .auth-scope .auth-stage-film,
-  .auth-scope .auth-stage-film::before,
-  .auth-scope .auth-stage-film::after,
-  .auth-scope .auth-stage-peel-liner,
-  .auth-scope .auth-stage-film-roll,
-  .auth-scope .auth-stage-adhesive-waves,
-  .auth-scope .auth-stage-wake,
-  .auth-scope .auth-stage-bubble,
-  .auth-scope .auth-stage-squeegee,
-  .auth-scope .auth-stage-scan-line,
-  .auth-scope .auth-stage-edge-ripple,
-  .auth-scope .auth-stage-ambient-sheen,
-  .auth-scope .auth-workflow-rail__scan,
-  .auth-scope .auth-workflow-stage {
+  .auth-scope .auth-install-sky,
+  .auth-scope .auth-install-sun::before,
+  .auth-scope .auth-install-glare,
+  .auth-scope .auth-install-spray,
+  .auth-scope .auth-install-spray-drop {
     animation: none !important;
   }
-
-  .auth-scope .auth-stage-cool-film {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-    opacity: 0.78;
-  }
-
-  .auth-scope .auth-stage-film,
-  .auth-scope .auth-stage-peel-liner,
-  .auth-scope .auth-stage-film-roll,
-  .auth-scope .auth-stage-adhesive-waves,
-  .auth-scope .auth-stage-wake,
-  .auth-scope .auth-stage-bubbles,
-  .auth-scope .auth-stage-squeegee,
-  .auth-scope .auth-stage-scan-line {
-    display: none;
-  }
 }
 
-@keyframes auth-scene-breathe {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.6; }
-  50% { transform: translate3d(1.2%, -0.8%, 0) scale(1.02); opacity: 0.72; }
+@keyframes auth-install-breathe {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.74; }
+  50% { transform: translate3d(1.4%, -0.8%, 0) scale(1.02); opacity: 0.9; }
 }
 
-@keyframes auth-outside-drift {
-  0%, 100% { transform: scale(1.03) translate(0, 0); }
-  50% { transform: scale(1.06) translate(-1.4%, 0.7%); }
+@keyframes auth-install-sun-pulse {
+  0%, 100% { transform: scale(0.96); opacity: 0.62; }
+  48% { transform: scale(1.08); opacity: 0.86; }
 }
 
-@keyframes auth-glare-breath {
-  0%, 100% { opacity: 0.84; transform: translate(0, 0) scale(1); }
-  55% { opacity: 0.24; transform: translate(14%, 10%) scale(0.8); }
+@keyframes auth-install-glare {
+  0%, 100% { opacity: 0.72; transform: translate3d(0, 0, 0); }
+  52% { opacity: 0.5; transform: translate3d(1.8%, -1.2%, 0); }
 }
 
-@keyframes auth-raw-heat {
-  0%, 12%, 100% { opacity: 0.88; }
-  52%, 76% { opacity: 0.12; }
+@keyframes auth-install-spray-cycle {
+  0%, 12%, 100% { opacity: 0; transform: translate3d(0, 0, 0) rotate(-6deg) scaleX(0.52); }
+  16% { opacity: 0.95; transform: translate3d(0.35rem, -0.12rem, 0) rotate(-6deg) scaleX(0.92); }
+  24% { opacity: 0.28; transform: translate3d(1.2rem, -0.34rem, 0) rotate(-6deg) scaleX(1.12); }
+  31% { opacity: 0; transform: translate3d(1.7rem, -0.48rem, 0) rotate(-6deg) scaleX(1.18); }
 }
 
-@keyframes auth-treated-area {
-  0%, 8% { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); opacity: 0.18; }
-  24% { clip-path: polygon(0 0, 30% 0, 24% 100%, 0 100%); opacity: 0.78; }
-  50% { clip-path: polygon(0 0, 68% 0, 60% 100%, 0 100%); opacity: 0.9; }
-  70%, 88% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); opacity: 0.92; }
-  100% { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); opacity: 0.18; }
+@keyframes auth-install-spray-drop-a {
+  0%, 13%, 100% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.4); }
+  17% { opacity: 0.9; transform: translate3d(0.2rem, -0.2rem, 0) scale(1); }
+  28% { opacity: 0; transform: translate3d(2.5rem, -1rem, 0) scale(0.65); }
 }
 
-@keyframes auth-measure-fade {
-  0%, 18% { opacity: 0.42; transform: translateY(0); }
-  32%, 76% { opacity: 0.12; transform: translateY(-8px); }
-  100% { opacity: 0.42; transform: translateY(0); }
+@keyframes auth-install-spray-drop-b {
+  0%, 14%, 100% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.4); }
+  18% { opacity: 0.74; transform: translate3d(0.1rem, 0.1rem, 0) scale(0.9); }
+  30% { opacity: 0; transform: translate3d(2.2rem, 0.25rem, 0) scale(0.54); }
 }
 
-@keyframes auth-apply-film {
-  0%, 8% { transform: translate3d(-52%, 18%, 0) rotate(-18deg) scale(0.94); opacity: 0; }
-  16% { transform: translate3d(-30%, 12%, 0) rotate(-14deg) scale(0.98); opacity: 0.74; }
-  34% { transform: translate3d(-8%, 6%, 0) rotate(-10deg) scale(1); opacity: 0.96; }
-  52% { transform: translate3d(14%, 0, 0) rotate(-6deg) scale(1.02); opacity: 0.96; }
-  68% { transform: translate3d(28%, -5%, 0) rotate(-2deg) scale(1.02); opacity: 0.68; }
-  84% { transform: translate3d(38%, -8%, 0) rotate(0deg) scale(1.01); opacity: 0.18; }
-  100% { transform: translate3d(-52%, 18%, 0) rotate(-18deg) scale(0.94); opacity: 0; }
-}
-
-@keyframes auth-film-highlight {
-  0%, 18% { transform: translateX(-78%); opacity: 0; }
-  34% { opacity: 0.88; }
-  62% { transform: translateX(72%); opacity: 0.54; }
-  100% { transform: translateX(118%); opacity: 0; }
-}
-
-@keyframes auth-trapped-bubbles {
-  0%, 18% { opacity: 0; transform: translate(-16%, 12%); }
-  30% { opacity: 0.82; }
-  56% { opacity: 0.24; transform: translate(16%, -8%); }
-  78%, 100% { opacity: 0; transform: translate(30%, -14%); }
-}
-
-@keyframes auth-peel-away {
-  0%, 12% { opacity: 0; transform: translate(-36%, 18%) rotate(-18deg) scale(0.9); }
-  20% { opacity: 0.42; }
-  42% { opacity: 0.3; transform: translate(14%, -4%) rotate(-28deg) scale(1.02); }
-  62%, 100% { opacity: 0; transform: translate(34%, -14%) rotate(-40deg) scale(0.95); }
-}
-
-@keyframes auth-roll-move {
-  0%, 8% { transform: translate3d(-220px, 88px, 0) rotate(-16deg); opacity: 0; }
-  18% { transform: translate3d(-80px, 54px, 0) rotate(-14deg); opacity: 0.72; }
-  34% { transform: translate3d(84px, 8px, 0) rotate(-10deg); opacity: 1; }
-  52% { transform: translate3d(250px, -38px, 0) rotate(-6deg); opacity: 0.96; }
-  68% { transform: translate3d(392px, -84px, 0) rotate(-2deg); opacity: 0.68; }
-  84% { transform: translate3d(520px, -116px, 0) rotate(0deg); opacity: 0.16; }
-  100% { transform: translate3d(560px, -126px, 0) rotate(0deg); opacity: 0; }
-}
-
-@keyframes auth-pressure {
-  0%, 18% { opacity: 0; transform: rotate(-12deg) scale(0.4); }
-  36% { opacity: 0.54; transform: rotate(-12deg) scale(0.72); }
-  58% { opacity: 0.14; transform: rotate(-12deg) scale(1.04); }
-  76%, 100% { opacity: 0; transform: rotate(-12deg) scale(1.18); }
-}
-
-@keyframes auth-wake-sweep {
-  0%, 18% { opacity: 0; transform: translate(-20%, 16%) rotate(-2deg); }
-  34% { opacity: 0.4; }
-  58% { opacity: 0.14; transform: translate(30%, -16%) rotate(-2deg); }
-  76%, 100% { opacity: 0; transform: translate(40%, -22%) rotate(-2deg); }
-}
-
-@keyframes auth-bubble {
-  0%, 18% { opacity: 0; transform: translate(0, 0) scale(0.4); }
-  30% { opacity: 0.88; }
-  52% { opacity: 0.38; transform: translate(44px, -18px) scale(0.9); }
-  70% { opacity: 0.12; transform: translate(84px, -38px) scale(0.66); }
-  88%, 100% { opacity: 0; transform: translate(108px, -54px) scale(0.46); }
-}
-
-@keyframes auth-sweep {
-  0%, 10% { transform: translate3d(-100px, 74px, 0) rotate(-22deg); opacity: 0; }
-  18% { transform: translate3d(-44px, 52px, 0) rotate(-20deg); opacity: 0.66; }
-  34% { transform: translate3d(72px, 6px, 0) rotate(-17deg); opacity: 1; }
-  52% { transform: translate3d(214px, -46px, 0) rotate(-14deg); opacity: 1; }
-  68% { transform: translate3d(352px, -94px, 0) rotate(-10deg); opacity: 0.88; }
-  82% { transform: translate3d(466px, -128px, 0) rotate(-6deg); opacity: 0.42; }
-  100% { transform: translate3d(520px, -142px, 0) rotate(-4deg); opacity: 0; }
-}
-
-@keyframes auth-final-scan {
-  0%, 64% { opacity: 0; transform: translateX(0) skewX(-14deg); }
-  72% { opacity: 0.7; }
-  86% { opacity: 0.16; transform: translateX(620%) skewX(-14deg); }
-  100% { opacity: 0; transform: translateX(660%) skewX(-14deg); }
-}
-
-@keyframes auth-edge-ripple {
-  0%, 18% { opacity: 0; transform: translate(-12%, 8%) rotate(-8deg) scale(0.96); }
-  30% { opacity: 0.22; }
-  50% { opacity: 0.34; transform: translate(8%, -2%) rotate(-5deg) scale(1.01); }
-  72% { opacity: 0.12; transform: translate(22%, -8%) rotate(-1deg) scale(1.02); }
-  88%, 100% { opacity: 0; transform: translate(30%, -12%) rotate(0deg) scale(1.01); }
-}
-
-@keyframes auth-workflow-scan {
-  0%, 8% { transform: translate(-50%, 0); opacity: 0; }
-  16% { opacity: 0.7; }
-  28% { transform: translate(-50%, 5.8rem); opacity: 0.3; }
-  52% { transform: translate(-50%, 11.8rem); opacity: 0.7; }
-  76% { transform: translate(-50%, 17.2rem); opacity: 0.26; }
-  92% { transform: translate(-50%, 22rem); opacity: 0; }
-  100% { transform: translate(-50%, 22rem); opacity: 0; }
-}
-
-@keyframes auth-workflow-stage {
-  0%, 14%, 100% { opacity: 0.58; transform: translateY(0); }
-  22%, 40% { opacity: 1; transform: translateY(-2px); }
-  50%, 96% { opacity: 0.62; transform: translateY(0); }
+@keyframes auth-install-spray-drop-c {
+  0%, 15%, 100% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.4); }
+  19% { opacity: 0.68; transform: translate3d(0.1rem, -0.05rem, 0) scale(1); }
+  29% { opacity: 0; transform: translate3d(1.8rem, -0.55rem, 0) scale(0.48); }
 }
