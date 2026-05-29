@@ -29,7 +29,6 @@
 
       --blue-text:   oklch(0.75 0.14 250);
       --blue-bg:     oklch(0.22 0.05 250);
-      --blue-border: oklch(0.75 0.14 250 / 0.22);
 
       --green-text:  oklch(0.75 0.15 145);
       --green-bg:    oklch(0.22 0.06 145);
@@ -53,54 +52,38 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ══════════ NAV (unchanged from v3) ══════════ */
+    /* ══════════ NAV ══════════ */
     .nav {
-      position: fixed;
-      inset: 0 auto 0 0;
-      width: 212px;
-      background: var(--surface-0);
-      border-right: 1px solid var(--border-lt);
-      display: flex;
-      flex-direction: column;
-      z-index: 20;
+      position: fixed; inset: 0 auto 0 0; width: 212px;
+      background: var(--surface-0); border-right: 1px solid var(--border-lt);
+      display: flex; flex-direction: column; z-index: 20;
     }
     .nav-logo {
       display: flex; align-items: center; gap: 9px;
-      padding: 18px 16px 16px;
-      border-bottom: 1px solid var(--border-lt);
+      padding: 18px 16px 16px; border-bottom: 1px solid var(--border-lt);
     }
     .nav-mark {
-      width: 26px; height: 26px;
-      background: var(--accent); border-radius: 7px;
+      width: 26px; height: 26px; background: var(--accent); border-radius: 7px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 700; color: oklch(0.13 0.010 250);
-      flex-shrink: 0;
+      font-size: 13px; font-weight: 700; color: oklch(0.13 0.010 250); flex-shrink: 0;
     }
     .nav-brand { font-size: 14.5px; font-weight: 600; color: var(--text-1); letter-spacing: -0.01em; }
-    .nav-body { padding: 12px 8px 0; flex: 1; }
+    .nav-body  { padding: 12px 8px 0; flex: 1; }
     .nav-group-label {
       font-size: 10px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.10em; color: var(--text-4);
-      padding: 0 8px; margin-bottom: 3px; margin-top: 8px;
+      letter-spacing: 0.10em; color: var(--text-4); padding: 0 8px; margin-bottom: 3px; margin-top: 8px;
     }
     .nav-item {
-      display: flex; align-items: center; gap: 8px;
-      padding: 6px 8px; border-radius: var(--r-sm);
-      color: var(--text-3); font-size: 13px; font-weight: 440;
-      cursor: pointer; margin-bottom: 1px;
+      display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+      border-radius: var(--r-sm); color: var(--text-3); font-size: 13px;
+      font-weight: 440; cursor: pointer; margin-bottom: 1px;
       border-left: 2px solid transparent;
     }
     .nav-item:hover { background: oklch(0.96 0 0 / 0.04); color: var(--text-2); }
-    .nav-item.active {
-      background: var(--accent-sub); border-left-color: var(--accent);
-      color: var(--accent); font-weight: 500;
-    }
+    .nav-item.active { background: var(--accent-sub); border-left-color: var(--accent); color: var(--accent); font-weight: 500; }
     .nav-spacer { flex: 1; }
     .nav-foot { border-top: 1px solid var(--border-lt); padding: 8px; }
-    .nav-user {
-      display: flex; align-items: center; gap: 9px;
-      padding: 8px; border-radius: var(--r-sm); cursor: pointer;
-    }
+    .nav-user { display: flex; align-items: center; gap: 9px; padding: 8px; border-radius: var(--r-sm); cursor: pointer; }
     .nav-user:hover { background: oklch(0.96 0 0 / 0.04); }
     .nav-avatar {
       width: 28px; height: 28px; border-radius: 50%;
@@ -117,30 +100,25 @@
 
     /* ══════════ TOP BAR ══════════ */
     .topbar {
-      position: sticky; top: 0; z-index: 10;
-      height: 50px; background: var(--page-bg);
-      border-bottom: 1px solid var(--border-lt);
-      padding: 0 24px;
-      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10; height: 50px;
+      background: var(--page-bg); border-bottom: 1px solid var(--border-lt);
+      padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
     }
     .breadcrumb { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--text-4); }
     .breadcrumb .sep { opacity: 0.4; }
     .breadcrumb .current { color: var(--text-2); font-weight: 500; }
     .topbar-actions { display: flex; align-items: center; gap: 6px; }
     .icon-btn {
-      width: 30px; height: 30px;
-      display: flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
       border-radius: var(--r-sm); border: 1px solid var(--border-lt);
       background: transparent; color: var(--text-3); cursor: pointer;
     }
     .icon-btn:hover { background: var(--surface-1); color: var(--text-2); }
     .btn-primary {
-      display: flex; align-items: center; gap: 5px;
-      padding: 0 12px; height: 30px;
+      display: flex; align-items: center; gap: 5px; padding: 0 12px; height: 30px;
       background: var(--accent); color: oklch(0.13 0.010 250);
       font-size: 12.5px; font-weight: 600; border-radius: var(--r-sm);
-      border: none; cursor: pointer; white-space: nowrap; letter-spacing: -0.01em;
-      font-family: inherit;
+      border: none; cursor: pointer; white-space: nowrap; letter-spacing: -0.01em; font-family: inherit;
     }
     .btn-primary:hover { filter: brightness(1.06); }
 
@@ -148,16 +126,9 @@
     .page { padding: 20px 24px 48px; }
 
     /* ══════════════════════════════════════════
-       TOP ROW — hero (greeting + KPIs) | clock + weather
+       HERO CARD — full width, greeting | KPI strip
+       No height mismatch: standalone card, not in a shared grid row
        ══════════════════════════════════════════ */
-    .top-row {
-      display: grid;
-      grid-template-columns: 1fr 216px;
-      gap: 14px;
-      margin-bottom: 14px;
-    }
-
-    /* HERO CARD — horizontal layout: greeting | KPI strip */
     .hero-card {
       background: var(--surface-0);
       border: 1px solid var(--border-lt);
@@ -165,121 +136,41 @@
       display: flex;
       align-items: stretch;
       overflow: hidden;
+      margin-bottom: 14px;
     }
 
     .hero-greeting {
-      padding: 18px 24px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      flex-shrink: 0;
-      min-width: 196px;
+      padding: 14px 22px;
+      display: flex; flex-direction: column; justify-content: center;
+      flex-shrink: 0; width: 252px;
       border-right: 1px solid var(--border-lt);
     }
 
-    .greeting-date {
-      font-size: 11px; color: var(--text-4); font-weight: 400; margin-bottom: 4px;
-    }
+    .greeting-date  { font-size: 11px; color: var(--text-4); font-weight: 400; margin-bottom: 3px; white-space: nowrap; }
+    .greeting-title { font-size: 19px; font-weight: 650; color: var(--text-1); letter-spacing: -0.025em; line-height: 1.25; white-space: nowrap; }
 
-    .greeting-title {
-      font-size: 20px; font-weight: 650; color: var(--text-1);
-      letter-spacing: -0.025em; line-height: 1.2;
-    }
-
-    /* KPI strip — 4 cells with vertical dividers */
+    /* 4 KPI cells — vertical dividers, first is hero (larger number) */
     .kpi-strip { flex: 1; display: flex; }
 
     .kpi-cell {
-      flex: 1;
-      padding: 14px 18px;
+      flex: 1; padding: 12px 16px;
       border-right: 1px solid var(--border-lt);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 4px;
+      display: flex; flex-direction: column; justify-content: center; gap: 3px;
     }
     .kpi-cell:last-child { border-right: none; }
 
-    /* First cell (Accepterat) = hero — slightly larger number */
-    .kpi-cell.kpi-hero .kpi-val { font-size: 20px; }
-    .kpi-val { font-size: 17px; font-weight: 700; color: var(--text-1); letter-spacing: -0.02em; line-height: 1; }
+    .kpi-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-4); }
+    .kpi-val { font-size: 17px; font-weight: 700; color: var(--text-1); letter-spacing: -0.02em; line-height: 1.1; }
+    .kpi-cell.kpi-hero .kpi-val { font-size: 21px; }
 
-    .kpi-lbl {
-      font-size: 10px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.09em; color: var(--text-4);
-    }
-
-    .kpi-trend-row { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+    .kpi-trend-row { display: flex; align-items: center; gap: 4px; }
     .kpi-delta { display: flex; align-items: center; gap: 2px; font-size: 10.5px; font-weight: 550; }
     .kpi-delta.up   { color: var(--green-text); }
     .kpi-delta.down { color: var(--red-text); }
-    .kpi-delta.flat { color: var(--text-4); }
-    .kpi-ctx { font-size: 10.5px; color: var(--text-4); }
-
-    /* ══════════════════════════════════
-       CLOCK + WEATHER CARD (top-right)
-       ══════════════════════════════════ */
-    .clock-weather {
-      background: var(--surface-0);
-      border: 1px solid var(--border-lt);
-      border-radius: var(--r);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .clock-section {
-      padding: 14px 16px 12px;
-      text-align: center;
-      border-bottom: 1px solid var(--border-lt);
-    }
-
-    .clock-location {
-      font-size: 9.5px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.12em; color: var(--text-4); margin-bottom: 4px;
-    }
-
-    .clock-time {
-      font-size: 30px; font-weight: 700; letter-spacing: -0.03em;
-      color: var(--text-1); line-height: 1; font-variant-numeric: tabular-nums;
-    }
-
-    .clock-day {
-      font-size: 11px; color: var(--text-4); margin-top: 3px;
-    }
-
-    .weather-section {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--border-lt);
-    }
-
-    .w-emoji { font-size: 20px; line-height: 1; flex-shrink: 0; }
-    .w-main  { flex: 1; min-width: 0; }
-    .w-temp  { font-size: 15px; font-weight: 650; color: var(--text-1); letter-spacing: -0.02em; line-height: 1.2; }
-    .w-cond  { font-size: 10.5px; color: var(--text-4); }
-    .w-stats { text-align: right; }
-    .w-stat  { font-size: 10.5px; color: var(--text-4); }
-
-    .w-forecast { display: grid; grid-template-columns: repeat(3, 1fr); }
-    .w-day {
-      padding: 8px 4px; text-align: center;
-      border-right: 1px solid var(--border-lt);
-    }
-    .w-day:last-child { border-right: none; }
-    .w-day-name { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-4); }
-    .w-day-ico  { font-size: 14px; margin: 2px 0; line-height: 1; }
-    .w-day-hi   { font-size: 10.5px; font-weight: 500; color: var(--text-2); }
-    .w-day-lo   { font-size: 10.5px; color: var(--text-4); }
-
-    .smhi-badge {
-      font-size: 9px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--text-4);
-      text-align: right; padding: 4px 14px 6px;
-    }
+    .kpi-ctx  { font-size: 10.5px; color: var(--text-4); }
 
     /* ══════════════════════════════════════════
-       CONTENT GRID — left (narrower) | right (wider for charts)
+       CONTENT GRID — left (narrower) | right (wider, clock+pipeline+projects)
        ══════════════════════════════════════════ */
     .content-grid {
       display: grid;
@@ -287,35 +178,21 @@
       gap: 14px;
       align-items: start;
     }
-
     .col-left  { display: flex; flex-direction: column; gap: 12px; }
     .col-right { display: flex; flex-direction: column; gap: 12px; }
 
     /* ══════════ BASE CARD ══════════ */
     .card {
-      background: var(--surface-0);
-      border: 1px solid var(--border-lt);
-      border-radius: var(--r);
-      overflow: hidden;
+      background: var(--surface-0); border: 1px solid var(--border-lt);
+      border-radius: var(--r); overflow: hidden;
     }
-
     .card-head {
-      padding: 11px 16px;
-      border-bottom: 1px solid var(--border-lt);
+      padding: 11px 16px; border-bottom: 1px solid var(--border-lt);
       display: flex; align-items: center; justify-content: space-between;
     }
-
-    .card-title {
-      display: flex; align-items: center; gap: 7px;
-      font-size: 12.5px; font-weight: 600; color: var(--text-1);
-    }
-
-    .card-link {
-      font-size: 11.5px; color: var(--text-4);
-      cursor: pointer; padding: 2px 6px; border-radius: var(--r-xs);
-    }
+    .card-title { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--text-1); }
+    .card-link  { font-size: 11.5px; color: var(--text-4); cursor: pointer; padding: 2px 6px; border-radius: var(--r-xs); }
     .card-link:hover { color: var(--text-3); background: var(--surface-1); }
-
     .n-badge {
       font-size: 10px; font-weight: 600; color: var(--text-4);
       background: var(--surface-2); padding: 1px 6px;
@@ -327,15 +204,60 @@
     .viz-btn {
       font-size: 11px; font-weight: 500; padding: 3px 8px;
       border-radius: var(--r-xs); border: 1px solid transparent;
-      cursor: pointer; color: var(--text-4); background: transparent;
-      font-family: inherit;
+      cursor: pointer; color: var(--text-4); background: transparent; font-family: inherit;
     }
-    .viz-btn.active {
-      background: var(--accent-sub);
-      border-color: var(--accent-border);
-      color: var(--accent);
-    }
+    .viz-btn.active { background: var(--accent-sub); border-color: var(--accent-border); color: var(--accent); }
     .viz-btn:not(.active):hover { background: var(--surface-1); color: var(--text-3); }
+
+    /* ══════════════════════════════════
+       CLOCK + WEATHER — top of right sidebar
+       ══════════════════════════════════ */
+    .clock-section {
+      display: flex; align-items: center;
+      padding: 14px 18px; gap: 16px;
+      border-bottom: 1px solid var(--border-lt);
+    }
+
+    .clock-left {
+      flex-shrink: 0;
+    }
+    .clock-location { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-4); margin-bottom: 3px; }
+    .clock-time { font-size: 34px; font-weight: 700; letter-spacing: -0.04em; color: var(--text-1); line-height: 1; }
+    .clock-day  { font-size: 11px; color: var(--text-4); margin-top: 2px; }
+
+    /* vertical rule between clock and weather */
+    .clock-sep { width: 1px; height: 44px; background: var(--border-lt); flex-shrink: 0; margin: 0 2px; }
+
+    .clock-right {
+      flex: 1;
+      display: flex; flex-direction: column; justify-content: center; gap: 3px;
+    }
+    .w-top-row { display: flex; align-items: center; gap: 10px; }
+    .w-emoji { font-size: 26px; line-height: 1; flex-shrink: 0; }
+    .w-temp  { font-size: 20px; font-weight: 700; color: var(--text-1); letter-spacing: -0.025em; line-height: 1; }
+    .w-cond  { font-size: 10.5px; color: var(--text-4); margin-top: 1px; }
+
+    .weather-stats-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 18px;
+      border-bottom: 1px solid var(--border-lt);
+    }
+    .w-stat-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-4); }
+    .w-stat-item svg { opacity: 0.5; }
+
+    .w-forecast { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .w-day {
+      padding: 8px 0; text-align: center;
+      border-right: 1px solid var(--border-lt);
+    }
+    .w-day:last-child { border-right: none; }
+    .w-day-name { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-4); }
+    .w-day-ico  { font-size: 15px; margin: 3px 0 2px; line-height: 1; }
+    .w-day-hi   { font-size: 11px; font-weight: 500; color: var(--text-2); }
+    .w-day-lo   { font-size: 11px; color: var(--text-4); }
+
+    .smhi-row { padding: 4px 18px 6px; text-align: right; }
+    .smhi-badge { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); }
 
     /* ══════════ ATTENTION QUEUE ══════════ */
     .attn-card { border-left: 2px solid var(--accent); }
@@ -344,8 +266,7 @@
 
     .attn-row {
       display: flex; align-items: center; gap: 10px;
-      padding: 9px 14px;
-      border-bottom: 1px solid var(--border-lt);
+      padding: 9px 14px; border-bottom: 1px solid var(--border-lt);
     }
     .attn-row:last-child { border-bottom: none; }
     .attn-row:hover { background: oklch(0.96 0 0 / 0.015); }
@@ -353,41 +274,32 @@
     .attn-ico {
       width: 26px; height: 26px; flex-shrink: 0;
       background: var(--surface-1); border: 1px solid var(--border-lt);
-      border-radius: var(--r-xs);
-      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--r-xs); display: flex; align-items: center; justify-content: center;
       font-size: 12px; line-height: 1;
     }
-
     .attn-body { flex: 1; min-width: 0; }
     .attn-text { font-size: 12.5px; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .attn-text strong { font-weight: 600; }
-    .attn-sub { font-size: 11px; color: var(--text-4); margin-top: 1px; }
-
+    .attn-sub  { font-size: 11px; color: var(--text-4); margin-top: 1px; }
     .attn-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
     .attn-time { font-size: 11px; color: var(--text-4); white-space: nowrap; min-width: 48px; text-align: right; }
     .attn-time.urgent { color: var(--red-text); font-weight: 500; }
 
     .btn-ghost {
-      padding: 3px 9px; border-radius: var(--r-xs);
-      border: 1px solid var(--border); background: transparent;
-      font-size: 11.5px; font-weight: 500; color: var(--text-3);
+      padding: 3px 9px; border-radius: var(--r-xs); border: 1px solid var(--border);
+      background: transparent; font-size: 11.5px; font-weight: 500; color: var(--text-3);
       cursor: pointer; white-space: nowrap; font-family: inherit;
     }
     .btn-ghost:hover { background: var(--surface-1); color: var(--text-2); }
 
     /* ══════════ OFFER LIST ══════════ */
     .section-label {
-      padding: 7px 14px;
-      font-size: 10px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.09em; color: var(--text-4);
+      padding: 7px 14px; font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-4);
       border-bottom: 1px solid var(--border-lt);
       display: flex; align-items: center; justify-content: space-between;
     }
-
-    .offer-row {
-      display: flex; align-items: stretch;
-      border-bottom: 1px solid var(--border-lt);
-    }
+    .offer-row { display: flex; align-items: stretch; border-bottom: 1px solid var(--border-lt); }
     .offer-row:last-child { border-bottom: none; }
     .offer-row:hover { background: oklch(0.96 0 0 / 0.015); }
 
@@ -400,20 +312,14 @@
     .offer-name { font-size: 13px; font-weight: 550; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .offer-co   { font-size: 11px; color: var(--text-4); margin-top: 1px; }
 
-    .offer-right {
-      display: flex; align-items: center; gap: 8px;
-      padding: 10px 12px 10px 0; flex-shrink: 0;
-    }
-
+    .offer-right { display: flex; align-items: center; gap: 8px; padding: 10px 12px 10px 0; flex-shrink: 0; }
     .offer-amount { font-size: 12px; font-weight: 500; color: var(--text-3); min-width: 64px; text-align: right; }
-
     .offer-status { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-4); min-width: 52px; }
     .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
     .dot-sent     { background: var(--text-4); }
     .dot-viewed   { background: var(--blue-text); }
     .dot-accepted { background: var(--green-text); }
     .dot-draft    { background: transparent; border: 1px solid var(--text-4); }
-
     .tag-urgent {
       font-size: 10px; font-weight: 500; padding: 2px 6px; border-radius: 20px;
       background: var(--accent-sub); color: var(--accent); border: 1px solid var(--accent-border);
@@ -424,115 +330,72 @@
     }
 
     /* ══════════════════════════════════════
-       PIPELINE CHART — proper funnel viz
+       PIPELINE FUNNEL CHART
        ══════════════════════════════════════ */
-    .pipeline-body { padding: 14px 18px 6px; }
+    .pipeline-body { padding: 16px 18px 8px; }
 
     .funnel-row {
       display: flex; align-items: center; gap: 10px;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
-    .funnel-row:last-child { margin-bottom: 0; }
 
     .funnel-label {
       font-size: 11.5px; color: var(--text-3);
-      min-width: 108px; text-align: right; flex-shrink: 0;
+      min-width: 100px; text-align: right; flex-shrink: 0;
     }
 
+    /* Bar track — clean, no inline labels */
     .funnel-track {
-      flex: 1; height: 22px;
-      background: var(--surface-2); border-radius: var(--r-xs);
-      overflow: hidden; position: relative;
+      flex: 1; height: 26px;
+      background: var(--surface-1); border-radius: var(--r-xs); overflow: hidden;
     }
-
     .funnel-fill {
       height: 100%; border-radius: var(--r-xs);
       background: var(--surface-3);
-      transition: width 0.3s ease;
     }
-    .funnel-fill.f-active { background: oklch(0.75 0.14 250 / 0.55); }
+    .funnel-fill.f-active { background: oklch(0.75 0.14 250 / 0.50); }
     .funnel-fill.f-won    { background: oklch(0.75 0.15 145 / 0.55); }
 
-    /* inline label on the bar */
-    .funnel-track-inner {
-      position: absolute; inset: 0;
-      display: flex; align-items: center;
-      padding: 0 8px;
-    }
-    .funnel-inline-label {
-      font-size: 10.5px; font-weight: 500; color: var(--text-2);
-    }
+    .funnel-count  { font-size: 12.5px; font-weight: 600; color: var(--text-2); min-width: 18px; text-align: right; }
+    .funnel-amount { font-size: 11px; color: var(--text-3); min-width: 68px; text-align: right; }
 
-    .funnel-count {
-      font-size: 12.5px; font-weight: 600; color: var(--text-2);
-      min-width: 18px; text-align: right;
-    }
-
-    .funnel-amount {
-      font-size: 11px; color: var(--text-3);
-      min-width: 70px; text-align: right;
-    }
-
-    /* conversion rate between stages */
+    /* Compact conversion arrow — just percentage, no verbose text */
     .conv-row {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 6px; padding-left: 118px; /* align to bar area */
+      display: flex; align-items: center; gap: 5px;
+      padding: 1px 0 1px 110px; /* align to bar start */
+      margin-bottom: 4px;
     }
-    .conv-arrow { font-size: 9.5px; color: var(--text-4); }
-    .conv-rate  { font-size: 9.5px; color: var(--text-4); }
+    .conv-rate { font-size: 10px; color: var(--text-4); }
 
-    .pipeline-foot {
-      padding: 10px 18px;
+    /* Pipeline footer summary — 3 stats in a row */
+    .pipeline-summary {
+      display: grid; grid-template-columns: repeat(3, 1fr);
       border-top: 1px solid var(--border-lt);
       margin-top: 10px;
-      display: flex; align-items: baseline; justify-content: space-between;
-    }
-    .pipe-foot-label { font-size: 11.5px; color: var(--text-4); }
-    .pipe-foot-value { font-size: 17px; font-weight: 700; color: var(--text-1); letter-spacing: -0.02em; }
-
-    .pipeline-summary {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      border-top: 1px solid var(--border-lt);
     }
     .pipe-stat {
-      padding: 10px 14px;
-      border-right: 1px solid var(--border-lt);
+      padding: 10px 14px; border-right: 1px solid var(--border-lt);
     }
     .pipe-stat:last-child { border-right: none; }
     .pipe-stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); font-weight: 600; }
-    .pipe-stat-val { font-size: 15px; font-weight: 700; color: var(--text-1); letter-spacing: -0.02em; margin-top: 2px; }
+    .pipe-stat-val { font-size: 16px; font-weight: 700; color: var(--text-1); letter-spacing: -0.02em; margin-top: 3px; line-height: 1; }
 
     /* ══════════ PROJECTS ══════════ */
-    .proj-stats {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      padding: 12px 16px 10px; gap: 8px;
-    }
+    .proj-stats { display: grid; grid-template-columns: repeat(3, 1fr); padding: 12px 16px 10px; gap: 8px; }
     .proj-stat { text-align: center; }
     .proj-stat-n { font-size: 20px; font-weight: 700; color: var(--text-1); letter-spacing: -0.03em; line-height: 1; }
     .proj-stat-l { font-size: 10.5px; color: var(--text-4); margin-top: 3px; }
 
     .proj-list { border-top: 1px solid var(--border-lt); }
-    .proj-item {
-      display: flex; align-items: center;
-      padding: 9px 16px; border-bottom: 1px solid var(--border-lt);
-      gap: 12px;
-    }
+    .proj-item { display: flex; align-items: center; padding: 9px 16px; border-bottom: 1px solid var(--border-lt); gap: 12px; }
     .proj-item:last-child { border-bottom: none; }
     .proj-item-info { flex: 1; min-width: 0; }
     .proj-item-name { font-size: 12.5px; font-weight: 500; color: var(--text-1); }
     .proj-item-sub  { font-size: 11px; color: var(--text-4); margin-top: 1px; }
-
-    .proj-bar-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .proj-bar-track {
-      width: 80px; height: 4px;
-      background: var(--surface-2); border-radius: 2px; overflow: hidden;
-    }
-    .proj-bar-fill {
-      height: 100%; border-radius: 2px;
-      background: var(--blue-text); opacity: 0.6;
-    }
-    .proj-pct { font-size: 11.5px; font-weight: 500; color: var(--text-3); min-width: 28px; text-align: right; }
+    .proj-bar-wrap  { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .proj-bar-track { width: 80px; height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+    .proj-bar-fill  { height: 100%; border-radius: 2px; background: var(--blue-text); opacity: 0.6; }
+    .proj-pct       { font-size: 11.5px; font-weight: 500; color: var(--text-3); min-width: 28px; text-align: right; }
   </style>
 </head>
 <body>
@@ -604,118 +467,66 @@
 
   <div class="page">
 
-    <!-- ══════════ TOP ROW: hero card + clock/weather ══════════ -->
-    <div class="top-row">
+    <!-- ══════════ HERO CARD — full width, compact, no dead space ══════════ -->
+    <div class="hero-card">
 
-      <!-- HERO CARD: greeting (left) + KPI strip (right) in one horizontal card -->
-      <div class="hero-card">
-
-        <div class="hero-greeting">
-          <div class="greeting-date">Torsdag, 29 maj 2026</div>
-          <div class="greeting-title">God eftermiddag, Ali</div>
-        </div>
-
-        <!-- KPI strip — 4 cells, vertical dividers, first cell is hero -->
-        <div class="kpi-strip">
-
-          <div class="kpi-cell kpi-hero">
-            <div class="kpi-lbl">Accepterat</div>
-            <div class="kpi-val">120 000 kr</div>
-            <div class="kpi-trend-row">
-              <span class="kpi-delta up">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-                +18%
-              </span>
-              <span class="kpi-ctx">vs förra mån · 5 affärer</span>
-            </div>
-          </div>
-
-          <div class="kpi-cell">
-            <div class="kpi-lbl">Pipeline</div>
-            <div class="kpi-val">45 200 kr</div>
-            <div class="kpi-trend-row">
-              <span class="kpi-ctx">3 aktiva offerter</span>
-            </div>
-          </div>
-
-          <div class="kpi-cell">
-            <div class="kpi-lbl">Vinstgrad</div>
-            <div class="kpi-val">67%</div>
-            <div class="kpi-trend-row">
-              <span class="kpi-delta down">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                −4 pp
-              </span>
-              <span class="kpi-ctx">vs förra mån</span>
-            </div>
-          </div>
-
-          <div class="kpi-cell">
-            <div class="kpi-lbl">Snitt affär</div>
-            <div class="kpi-val">24 000 kr</div>
-            <div class="kpi-trend-row">
-              <span class="kpi-delta up">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-                +6%
-              </span>
-              <span class="kpi-ctx">per vunnen affär</span>
-            </div>
-          </div>
-
-        </div>
+      <div class="hero-greeting">
+        <div class="greeting-date">Torsdag, 29 maj 2026</div>
+        <div class="greeting-title">God eftermiddag, Ali</div>
       </div>
 
-      <!-- CLOCK + WEATHER (stacked, top-right) -->
-      <div class="clock-weather">
-        <div class="clock-section">
-          <div class="clock-location">Stockholm</div>
-          <div class="clock-time">14:32</div>
-          <div class="clock-day">Torsdag</div>
-        </div>
+      <div class="kpi-strip">
 
-        <div class="weather-section">
-          <div class="w-emoji">☀️</div>
-          <div class="w-main">
-            <div class="w-temp">22°C</div>
-            <div class="w-cond">Klart · Känns 20°</div>
-          </div>
-          <div class="w-stats">
-            <div class="w-stat">7,9 m/s</div>
-            <div class="w-stat">30% fukt</div>
+        <div class="kpi-cell kpi-hero">
+          <div class="kpi-lbl">Accepterat</div>
+          <div class="kpi-val">120 000 kr</div>
+          <div class="kpi-trend-row">
+            <span class="kpi-delta up">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>+18%
+            </span>
+            <span class="kpi-ctx">vs förra mån · 5 affärer</span>
           </div>
         </div>
 
-        <div class="w-forecast">
-          <div class="w-day">
-            <div class="w-day-name">Fre</div>
-            <div class="w-day-ico">⛅</div>
-            <div><span class="w-day-hi">22°</span> <span class="w-day-lo">14°</span></div>
-          </div>
-          <div class="w-day">
-            <div class="w-day-name">Lör</div>
-            <div class="w-day-ico">🌧️</div>
-            <div><span class="w-day-hi">19°</span> <span class="w-day-lo">13°</span></div>
-          </div>
-          <div class="w-day">
-            <div class="w-day-name">Sön</div>
-            <div class="w-day-ico">⛅</div>
-            <div><span class="w-day-hi">21°</span> <span class="w-day-lo">12°</span></div>
+        <div class="kpi-cell">
+          <div class="kpi-lbl">Pipeline</div>
+          <div class="kpi-val">45 200 kr</div>
+          <div class="kpi-trend-row">
+            <span class="kpi-ctx">3 aktiva offerter</span>
           </div>
         </div>
 
-        <div class="smhi-badge">SMHI</div>
+        <div class="kpi-cell">
+          <div class="kpi-lbl">Vinstgrad</div>
+          <div class="kpi-val">67%</div>
+          <div class="kpi-trend-row">
+            <span class="kpi-delta down">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>−4 pp
+            </span>
+            <span class="kpi-ctx">vs förra mån</span>
+          </div>
+        </div>
+
+        <div class="kpi-cell">
+          <div class="kpi-lbl">Snitt affär</div>
+          <div class="kpi-val">24 000 kr</div>
+          <div class="kpi-trend-row">
+            <span class="kpi-delta up">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>+6%
+            </span>
+            <span class="kpi-ctx">per vunnen affär</span>
+          </div>
+        </div>
+
       </div>
-
-    </div><!-- /top-row -->
-
+    </div>
 
     <!-- ══════════ CONTENT GRID ══════════ -->
     <div class="content-grid">
 
-      <!-- LEFT: attention queue + offer list -->
+      <!-- LEFT: attention + offers -->
       <div class="col-left">
 
-        <!-- ATTENTION QUEUE -->
         <div class="card attn-card">
           <div class="card-head">
             <div class="card-title">
@@ -775,7 +586,6 @@
           </div>
         </div>
 
-        <!-- OFFER LIST -->
         <div class="card">
           <div class="card-head">
             <div class="card-title">Offerter</div>
@@ -872,14 +682,64 @@
               <div class="offer-status"><span class="dot dot-accepted"></span>Accepterad</div>
             </div>
           </div>
-
         </div>
       </div>
 
-      <!-- RIGHT: pipeline chart + projects -->
+      <!-- RIGHT: clock/weather at top, then pipeline, then projects -->
       <div class="col-right">
 
-        <!-- PIPELINE CHART — full funnel viz with conversion rates -->
+        <!-- CLOCK + WEATHER — top of right column -->
+        <div class="card">
+          <div class="clock-section">
+            <div class="clock-left">
+              <div class="clock-location">Stockholm</div>
+              <div class="clock-time">14:32</div>
+              <div class="clock-day">Torsdag, 29 maj</div>
+            </div>
+            <div class="clock-sep"></div>
+            <div class="clock-right">
+              <div class="w-top-row">
+                <div class="w-emoji">☀️</div>
+                <div class="w-temp">22°C</div>
+              </div>
+              <div class="w-cond">Klart · Känns 20°</div>
+            </div>
+          </div>
+
+          <div class="weather-stats-row">
+            <div class="w-stat-item">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>
+              7,9 m/s
+            </div>
+            <div class="w-stat-item">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+              30% luftfukt
+            </div>
+            <div class="w-stat-item" style="margin-left:auto;">
+              <span class="smhi-badge">SMHI</span>
+            </div>
+          </div>
+
+          <div class="w-forecast">
+            <div class="w-day">
+              <div class="w-day-name">Fre</div>
+              <div class="w-day-ico">⛅</div>
+              <div><span class="w-day-hi">22°</span> <span class="w-day-lo">14°</span></div>
+            </div>
+            <div class="w-day">
+              <div class="w-day-name">Lör</div>
+              <div class="w-day-ico">🌧️</div>
+              <div><span class="w-day-hi">19°</span> <span class="w-day-lo">13°</span></div>
+            </div>
+            <div class="w-day">
+              <div class="w-day-name">Sön</div>
+              <div class="w-day-ico">⛅</div>
+              <div><span class="w-day-hi">21°</span> <span class="w-day-lo">12°</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PIPELINE FUNNEL — clean bars, no overflowing inline labels -->
         <div class="card">
           <div class="card-head">
             <div class="card-title">Pipeline — Tratt</div>
@@ -893,78 +753,57 @@
 
             <div class="funnel-row">
               <span class="funnel-label">Leads</span>
-              <div class="funnel-track">
-                <div class="funnel-fill" style="width:100%"></div>
-                <div class="funnel-track-inner"><span class="funnel-inline-label">Leads</span></div>
-              </div>
+              <div class="funnel-track"><div class="funnel-fill" style="width:100%"></div></div>
               <span class="funnel-count">8</span>
               <span class="funnel-amount">—</span>
             </div>
-
-            <!-- conversion arrow -->
             <div class="conv-row">
-              <span class="conv-arrow">↓</span>
-              <span class="conv-rate">75% gick vidare till Kontakt</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-4)"><polyline points="6 9 12 15 18 9"/></svg>
+              <span class="conv-rate">75% → Kontakt</span>
             </div>
 
             <div class="funnel-row">
               <span class="funnel-label">Kontakt</span>
-              <div class="funnel-track">
-                <div class="funnel-fill" style="width:75%"></div>
-                <div class="funnel-track-inner"><span class="funnel-inline-label">Kontakt</span></div>
-              </div>
+              <div class="funnel-track"><div class="funnel-fill" style="width:75%"></div></div>
               <span class="funnel-count">6</span>
               <span class="funnel-amount">—</span>
             </div>
-
             <div class="conv-row">
-              <span class="conv-arrow">↓</span>
-              <span class="conv-rate">67% gick vidare till Offert</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-4)"><polyline points="6 9 12 15 18 9"/></svg>
+              <span class="conv-rate">67% → Offert skickad</span>
             </div>
 
             <div class="funnel-row">
               <span class="funnel-label">Offert skickad</span>
-              <div class="funnel-track">
-                <div class="funnel-fill f-active" style="width:50%"></div>
-                <div class="funnel-track-inner"><span class="funnel-inline-label" style="color:var(--blue-text)">Offert skickad</span></div>
-              </div>
+              <div class="funnel-track"><div class="funnel-fill f-active" style="width:50%"></div></div>
               <span class="funnel-count">4</span>
               <span class="funnel-amount">45 200 kr</span>
             </div>
-
             <div class="conv-row">
-              <span class="conv-arrow">↓</span>
-              <span class="conv-rate">50% gick vidare till Förhandling</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-4)"><polyline points="6 9 12 15 18 9"/></svg>
+              <span class="conv-rate">50% → Förhandling</span>
             </div>
 
             <div class="funnel-row">
               <span class="funnel-label">Förhandling</span>
-              <div class="funnel-track">
-                <div class="funnel-fill" style="width:25%"></div>
-                <div class="funnel-track-inner"><span class="funnel-inline-label">Förhandling</span></div>
-              </div>
+              <div class="funnel-track"><div class="funnel-fill" style="width:25%"></div></div>
               <span class="funnel-count">2</span>
               <span class="funnel-amount">28 000 kr</span>
             </div>
-
             <div class="conv-row">
-              <span class="conv-arrow">↓</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-4)"><polyline points="6 9 12 15 18 9"/></svg>
               <span class="conv-rate">50% accepterade</span>
             </div>
 
             <div class="funnel-row">
               <span class="funnel-label">Accepterad</span>
-              <div class="funnel-track">
-                <div class="funnel-fill f-won" style="width:12.5%"></div>
-                <div class="funnel-track-inner"><span class="funnel-inline-label" style="color:var(--green-text)">Accepterad</span></div>
-              </div>
+              <div class="funnel-track"><div class="funnel-fill f-won" style="width:12.5%"></div></div>
               <span class="funnel-count">1</span>
               <span class="funnel-amount">52 000 kr</span>
             </div>
 
           </div>
 
-          <!-- pipeline summary stats -->
           <div class="pipeline-summary">
             <div class="pipe-stat">
               <div class="pipe-stat-lbl">Total pipeline</div>
@@ -987,22 +826,11 @@
             <div class="card-title">Projekt</div>
             <span class="card-link">Visa alla</span>
           </div>
-
           <div class="proj-stats">
-            <div class="proj-stat">
-              <div class="proj-stat-n">3</div>
-              <div class="proj-stat-l">Aktiva</div>
-            </div>
-            <div class="proj-stat">
-              <div class="proj-stat-n">5</div>
-              <div class="proj-stat-l">Denna mån</div>
-            </div>
-            <div class="proj-stat">
-              <div class="proj-stat-n">62%</div>
-              <div class="proj-stat-l">Klart</div>
-            </div>
+            <div class="proj-stat"><div class="proj-stat-n">3</div><div class="proj-stat-l">Aktiva</div></div>
+            <div class="proj-stat"><div class="proj-stat-n">5</div><div class="proj-stat-l">Denna mån</div></div>
+            <div class="proj-stat"><div class="proj-stat-n">62%</div><div class="proj-stat-l">Klart</div></div>
           </div>
-
           <div class="proj-list">
             <div class="proj-item">
               <div class="proj-item-info">
@@ -1037,12 +865,10 @@
           </div>
         </div>
 
-      </div><!-- /col-right -->
-
-    </div><!-- /content-grid -->
-
-  </div><!-- /page -->
-</div><!-- /main -->
+      </div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
