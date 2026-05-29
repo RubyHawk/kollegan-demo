@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { WeatherData, WeatherDay } from './types';
 
 // Örebro coordinates
 const LAT = 59.2741;
@@ -49,27 +50,6 @@ function wmoToMeta(code: number): { label: string; emoji: string; cat: 'clear' |
   if (code >= 85 && code <= 86) return { label: 'Snöbyar',        emoji: '🌨️', cat: 'snow' };
   if (code >= 95)               return { label: 'Åskväder',       emoji: '⛈️',  cat: 'thunder' };
   return { label: 'Okänt',                                          emoji: '🌡️', cat: 'cloud' };
-}
-
-export interface WeatherDay {
-  date: string;       // "mån" / "tis" etc.
-  emoji: string;
-  high: number;
-  low: number;
-}
-
-export interface WeatherData {
-  city: string;
-  temp: number;
-  feelsLike: number;
-  condition: string;
-  emoji: string;
-  cat: string;
-  humidity: number;
-  windSpeed: number;   // m/s
-  forecast: WeatherDay[];
-  source: 'smhi' | 'openmeteo';
-  updatedAt: string;
 }
 
 function param(series: { name: string; values: number[] }[], name: string): number {

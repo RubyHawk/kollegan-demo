@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { WeatherData } from '@/app/api/v1/weather/route';
+import type { WeatherData } from '@/app/api/v1/weather/types';
 
 // Gradient + glow per weather category
 const CAT_THEME: Record<string, { grad: string; glow: string; bg: string }> = {
