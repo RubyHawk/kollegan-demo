@@ -82,13 +82,21 @@
   color: rgb(29 38 52);
 }
 
-.auth-scope .auth-login-cinematic__dashboard-hero strong {
-  font-size: clamp(1rem, 1.7vw, 1.35rem);
+.auth-scope .auth-login-cinematic__dashboard-skel {
+  display: block;
+  border-radius: 999px;
+  background: rgb(210 222 232 / 0.72);
 }
 
-.auth-scope .auth-login-cinematic__dashboard-hero span {
-  color: rgb(94 106 122);
-  font-size: clamp(0.7rem, 1.1vw, 0.88rem);
+.auth-scope .auth-login-cinematic__dashboard-skel--title {
+  width: clamp(9rem, 22%, 14rem);
+  height: clamp(0.9rem, 1.6vw, 1.2rem);
+}
+
+.auth-scope .auth-login-cinematic__dashboard-skel--sub {
+  width: clamp(14rem, 38%, 22rem);
+  height: clamp(0.65rem, 1vw, 0.82rem);
+  opacity: 0.6;
 }
 
 .auth-scope .auth-login-cinematic__dashboard-grid {

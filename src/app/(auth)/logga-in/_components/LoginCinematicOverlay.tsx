@@ -12,8 +12,8 @@ function DashboardPreview() {
           <span>Sök saker och genvägar...</span>
         </div>
         <div className="auth-login-cinematic__dashboard-hero">
-          <strong>God natt, dennis.</strong>
-          <span>Ta det lugnt — det är mitt i natten.</span>
+          <span className="auth-login-cinematic__dashboard-skel auth-login-cinematic__dashboard-skel--title" />
+          <span className="auth-login-cinematic__dashboard-skel auth-login-cinematic__dashboard-skel--sub" />
         </div>
         <div className="auth-login-cinematic__dashboard-grid">
           <span />

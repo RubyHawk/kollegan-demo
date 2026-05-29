@@ -1,7 +1,6 @@
 'use client';
 
 import { AuthBrandMark } from './AuthBrandMark';
-import { InstallationTools } from './InstallationTools';
 
 export function LoginMotionScene() {
   return (
@@ -22,9 +21,6 @@ export function LoginMotionScene() {
         <span>SOLERIA</span>
       </div>
 
-      <div className="auth-install-tools" aria-hidden="true">
-        <InstallationTools />
-      </div>
     </section>
   );
 }

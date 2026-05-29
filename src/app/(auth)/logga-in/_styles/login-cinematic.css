@@ -302,101 +302,101 @@
   transform: translateY(-50%) rotate(7deg);
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic {
+.auth-scope[data-state='cinematic'] .auth-login-cinematic {
   opacity: 1;
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic::before,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__sun,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__sun svg,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__glass,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__glare,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__film-roll,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__film,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__mist,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__mist span,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__wetness,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__bubbles,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__squeegee,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__dashboard-reveal,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-sidebar,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-panel {
+.auth-scope[data-state='cinematic'] .auth-login-cinematic::before,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__sun,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__sun svg,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__glass,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__glare,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__film-roll,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__film,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__mist,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__mist span,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__wetness,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__bubbles,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__squeegee,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__dashboard-reveal,
+.auth-scope[data-state='cinematic'] .auth-sidebar,
+.auth-scope[data-state='cinematic'] .auth-login-panel {
   animation-duration: 5.35s;
   animation-fill-mode: forwards;
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic::before {
+.auth-scope[data-state='cinematic'] .auth-login-cinematic::before {
   animation-name: auth-cinematic-camera-approach;
   animation-timing-function: var(--ease-out-soft);
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__sun {
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__sun {
   animation-name: auth-cinematic-sun-bloom;
   animation-timing-function: var(--ease-out-soft);
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__sun svg {
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__sun svg {
   animation-name: auth-cinematic-sun-mark;
   animation-timing-function: var(--ease-out-soft);
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__glass {
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__glass {
   animation-name: auth-cinematic-glass-approach;
   animation-timing-function: var(--ease-out-soft);
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__glare {
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__glare {
   animation-name: auth-cinematic-glare;
   animation-timing-function: var(--ease-out-soft);
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__film-roll {
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__film-roll {
   animation-name: auth-cinematic-film-roll;
   animation-timing-function: cubic-bezier(0.2, 0.9, 0.25, 1);
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__film {
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__film {
   animation-name: auth-cinematic-film-cover;
   animation-timing-function: cubic-bezier(0.2, 0.9, 0.25, 1);
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__mist,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__wetness,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__bubbles {
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__mist,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__wetness,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__bubbles {
   animation-name: auth-cinematic-wet-surface;
   animation-timing-function: var(--ease-out-soft);
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__mist span {
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__mist span {
   animation-name: auth-cinematic-mist-drift;
   animation-timing-function: ease-out;
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__dashboard-reveal {
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__dashboard-reveal {
   animation-name: auth-cinematic-dashboard-reveal;
   animation-timing-function: cubic-bezier(0.62, 0, 0.16, 1);
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__squeegee {
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__squeegee {
   animation-name: auth-cinematic-squeegee-pass;
   animation-timing-function: cubic-bezier(0.62, 0, 0.16, 1);
 }
 
-.auth-scope .auth-shell[data-state='cinematic'] .auth-sidebar,
-.auth-scope .auth-shell[data-state='cinematic'] .auth-login-panel {
+.auth-scope[data-state='cinematic'] .auth-sidebar,
+.auth-scope[data-state='cinematic'] .auth-login-panel {
   animation-name: auth-cinematic-shell-recede;
   animation-timing-function: var(--ease-out-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic *,
-  .auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic::before,
-  .auth-scope .auth-shell[data-state='cinematic'] .auth-sidebar,
-  .auth-scope .auth-shell[data-state='cinematic'] .auth-login-panel {
+  .auth-scope[data-state='cinematic'] .auth-login-cinematic *,
+  .auth-scope[data-state='cinematic'] .auth-login-cinematic::before,
+  .auth-scope[data-state='cinematic'] .auth-sidebar,
+  .auth-scope[data-state='cinematic'] .auth-login-panel {
     animation: none !important;
   }
 
-  .auth-scope .auth-shell[data-state='cinematic'] .auth-login-cinematic__dashboard-reveal {
+  .auth-scope[data-state='cinematic'] .auth-login-cinematic__dashboard-reveal {
     clip-path: inset(0);
     opacity: 1;
   }

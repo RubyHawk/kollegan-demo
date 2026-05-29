@@ -15,16 +15,19 @@ export function LoginShell({ redirect }: LoginShellProps) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="auth-scope auth-page-shell">
+      <div
+        className="auth-scope auth-page-shell"
+        data-state={cinematicActive ? 'cinematic' : 'idle'}
+      >
         <div className="auth-page-shell__backdrop" aria-hidden="true" />
-        <div className="auth-shell" data-state={cinematicActive ? 'cinematic' : 'idle'}>
+        <div className="auth-shell">
           <AuthSidebar />
           <LoginForm
             redirect={redirect}
             onCinematicStart={() => setCinematicActive(true)}
           />
-          <LoginCinematicOverlay />
         </div>
+        <LoginCinematicOverlay />
       </div>
     </MotionConfig>
   );
