@@ -9,9 +9,9 @@ interface AuthBrandMarkProps {
 
 const drawTransition = { duration: 0.9, delay: 0.12, ease: EASE_OUT_SOFT };
 
-const ringStroke = 'oklch(1 0 0 / 0.65)';
-const accentStroke = 'oklch(0.75 0.16 258)';
-const innerFill = 'oklch(1 0 0 / 0.05)';
+const ringStroke = 'oklch(0.92 0.04 92 / 0.78)';
+const accentStroke = 'oklch(0.83 0.14 82)';
+const innerFill = 'oklch(1 0 0 / 0.04)';
 
 const ringTicks: Array<[number, number, number, number]> = [
   [64, 10, 64, 22],

@@ -1,58 +1,48 @@
 'use client';
 
 import { AuthBrandMark } from './AuthBrandMark';
-
-const WORKFLOW_STAGES = ['Förfrågan', 'Offert', 'Planering', 'Montering'] as const;
+import { SceneHeroCopy } from './SceneHeroCopy';
 
 export function LoginMotionScene() {
   return (
     <section className="auth-motion-stage" aria-label="Animerad solfilmsmontering">
       <div className="auth-stage-atmosphere" aria-hidden="true" />
-      <div className="auth-stage-haze" aria-hidden="true" />
-      <div className="auth-stage-skyline" aria-hidden="true" />
-      <div className="auth-stage-glare" aria-hidden="true" />
-      <div className="auth-stage-untreated" aria-hidden="true" />
-      <div className="auth-stage-treated" aria-hidden="true" />
-      <div className="auth-stage-grid" aria-hidden="true" />
-      <div className="auth-stage-frame" aria-hidden="true" />
+      <div className="auth-stage-caustics" aria-hidden="true" />
+      <div className="auth-stage-window-shell" aria-hidden="true" />
+      <div className="auth-stage-outside" aria-hidden="true" />
+      <div className="auth-stage-sun" aria-hidden="true" />
+      <div className="auth-stage-raw-heat" aria-hidden="true" />
+      <div className="auth-stage-cool-film" aria-hidden="true" />
+      <div className="auth-stage-window-bars" aria-hidden="true" />
+      <div className="auth-stage-glass-reflections" aria-hidden="true" />
+      <div className="auth-stage-measurement" aria-hidden="true" />
       <div className="auth-stage-film" aria-hidden="true" />
-      <div className="auth-stage-waterline" aria-hidden="true" />
-      <div className="auth-stage-particles" aria-hidden="true">
-        <i className="auth-stage-particle" />
-        <i className="auth-stage-particle" />
-        <i className="auth-stage-particle" />
-        <i className="auth-stage-particle" />
-        <i className="auth-stage-particle" />
-        <i className="auth-stage-particle" />
-        <i className="auth-stage-particle" />
+      <div className="auth-stage-peel-liner" aria-hidden="true" />
+      <div className="auth-stage-film-roll" aria-hidden="true" />
+      <div className="auth-stage-adhesive-waves" aria-hidden="true" />
+      <div className="auth-stage-wake" aria-hidden="true" />
+      <div className="auth-stage-bubbles" aria-hidden="true">
+        <i className="auth-stage-bubble" />
+        <i className="auth-stage-bubble" />
+        <i className="auth-stage-bubble" />
+        <i className="auth-stage-bubble" />
+        <i className="auth-stage-bubble" />
+        <i className="auth-stage-bubble" />
+        <i className="auth-stage-bubble" />
+        <i className="auth-stage-bubble" />
       </div>
-      <div className="auth-stage-squeegee" aria-hidden="true">
-        <div className="auth-stage-squeegee__blade" />
-        <div className="auth-stage-squeegee__handle" />
-      </div>
-      <div className="auth-stage-reflection" aria-hidden="true" />
+      <div className="auth-stage-squeegee" aria-hidden="true" />
+      <div className="auth-stage-scan-line" aria-hidden="true" />
+      <div className="auth-stage-edge-ripple" aria-hidden="true" />
+      <div className="auth-stage-ambient-sheen" aria-hidden="true" />
+      <div className="auth-stage-caption-shield" aria-hidden="true" />
 
       <div className="auth-scene-brand">
-        <AuthBrandMark size={42} />
+        <AuthBrandMark size={40} />
         <span>SOLERIA</span>
       </div>
 
-      <div className="auth-scene-copy">
-        <p className="auth-scene-copy__eyebrow">Soleria Workspace</p>
-        <h1>
-          Från förfrågan till <span>färdig montering.</span>
-        </h1>
-        <p>
-          Intern arbetsportal för offert, order, planering och installation av
-          solfilm.
-        </p>
-      </div>
-
-      <div className="auth-scene-stages" aria-hidden="true">
-        {WORKFLOW_STAGES.map((stage) => (
-          <span key={stage}>{stage}</span>
-        ))}
-      </div>
+      <SceneHeroCopy />
     </section>
   );
 }

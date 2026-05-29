@@ -2,6 +2,7 @@
 
 import { Check } from '@phosphor-icons/react';
 import { AnimatePresence, motion, useAnimationControls } from 'framer-motion';
+import type { CSSProperties } from 'react';
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { EASE_OUT_SOFT } from './motion';
 
@@ -68,7 +69,19 @@ export function SubmitButton({
   }, [state, controls]);
 
   const isInteractive = state === 'idle';
-  const background = state === 'success' ? 'var(--auth-success)' : 'var(--auth-accent)';
+  const style = {
+    '--auth-submit-start':
+      state === 'success' ? 'color-mix(in oklch, var(--auth-success) 78%, white)' : '#073f5c',
+    '--auth-submit-mid':
+      state === 'success'
+        ? 'color-mix(in oklch, var(--auth-success) 88%, var(--auth-accent))'
+        : '#0793aa',
+    '--auth-submit-end':
+      state === 'success' ? 'var(--auth-success)' : '#14cad5',
+    transitionTimingFunction: 'var(--ease-out-soft)',
+    opacity: state === 'loading' ? 0.9 : 1,
+    cursor: state === 'loading' ? 'wait' : undefined,
+  } as CSSProperties;
 
   return (
     <motion.button
@@ -78,12 +91,7 @@ export function SubmitButton({
       disabled={disabled || state === 'loading' || state === 'success'}
       animate={controls}
       className="auth-submit-button group"
-      style={{
-        background,
-        transitionTimingFunction: 'var(--ease-out-soft)',
-        opacity: state === 'loading' ? 0.9 : 1,
-        cursor: state === 'loading' ? 'wait' : undefined,
-      }}
+      style={style}
       whileHover={isInteractive ? { y: -1 } : undefined}
       whileTap={isInteractive ? { y: 0 } : undefined}
     >
