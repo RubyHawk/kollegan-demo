@@ -55,7 +55,7 @@ export function LoginForm({ redirect, onCinematicStart }: LoginFormProps) {
     onCinematicStart();
     window.setTimeout(() => {
       window.location.replace(redirect);
-    }, 4200);
+    }, 5600);
   }
 
   function handleExitComplete() {

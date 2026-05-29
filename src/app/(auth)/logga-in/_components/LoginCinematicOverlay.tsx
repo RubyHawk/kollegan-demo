@@ -4,11 +4,17 @@ import { AuthBrandMark } from './AuthBrandMark';
 
 function DashboardPreview() {
   return (
-    <div className="auth-login-cinematic__dashboard-card">
+    <div className="auth-login-cinematic__dashboard-shell">
       <div className="auth-login-cinematic__dashboard-sidebar" />
       <div className="auth-login-cinematic__dashboard-main">
-        <div className="auth-login-cinematic__dashboard-top" />
-        <div className="auth-login-cinematic__dashboard-hero" />
+        <div className="auth-login-cinematic__dashboard-top">
+          <span>Översikt</span>
+          <span>Sök saker och genvägar...</span>
+        </div>
+        <div className="auth-login-cinematic__dashboard-hero">
+          <strong>God natt, dennis.</strong>
+          <span>Ta det lugnt — det är mitt i natten.</span>
+        </div>
         <div className="auth-login-cinematic__dashboard-grid">
           <span />
           <span />
@@ -41,12 +47,13 @@ export function LoginCinematicOverlay() {
 
       <div className="auth-login-cinematic__glass" />
       <div className="auth-login-cinematic__glare" />
+      <div className="auth-login-cinematic__film-roll" />
+      <div className="auth-login-cinematic__film" />
       <div className="auth-login-cinematic__mist">
         <span />
         <span />
         <span />
       </div>
-      <div className="auth-login-cinematic__film" />
       <div className="auth-login-cinematic__wetness" />
       <div className="auth-login-cinematic__bubbles" />
       <div className="auth-login-cinematic__squeegee">
