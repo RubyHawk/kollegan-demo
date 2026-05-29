@@ -119,7 +119,7 @@ export function LoginForm({ redirect }: LoginFormProps) {
         <div className="auth-login-panel__grid" aria-hidden="true" />
         <div className="auth-login-cinematic" aria-hidden="true">
           <div className="auth-login-cinematic__sun">
-            <AuthBrandMark size={82} />
+            <AuthBrandMark size={34} />
           </div>
           <div className="auth-login-cinematic__glare" />
           <div className="auth-login-cinematic__film" />

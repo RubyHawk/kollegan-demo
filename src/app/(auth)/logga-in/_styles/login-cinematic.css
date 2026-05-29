@@ -16,17 +16,17 @@
 }
 
 .auth-scope .auth-login-cinematic__sun {
-  top: 2.1rem;
-  right: 2.1rem;
+  top: clamp(1.45rem, 2.8vw, 2rem);
+  left: clamp(1.45rem, 2.8vw, 2rem);
   z-index: 4;
   display: grid;
-  width: 5.25rem;
-  height: 5.25rem;
+  width: 2.125rem;
+  height: 2.125rem;
   place-items: center;
   border-radius: 999px;
   color: rgb(248 205 111 / 0.98);
   opacity: 0;
-  transform: scale(0.28);
+  transform: scale(1);
 }
 
 .auth-scope .auth-login-cinematic__sun::before {
@@ -109,16 +109,16 @@
 
 @keyframes auth-login-sun-bloom {
   0% {
-    opacity: 0;
-    transform: translate3d(0, 0, 0) scale(0.28);
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
   }
   28% {
     opacity: 1;
-    transform: translate3d(-12vw, 3vh, 0) scale(1.1);
+    transform: translate3d(22vw, 4vh, 0) scale(2);
   }
   100% {
     opacity: 1;
-    transform: translate3d(-46vw, 18vh, 0) scale(7.8);
+    transform: translate3d(-38vw, 17vh, 0) scale(15);
   }
 }
 

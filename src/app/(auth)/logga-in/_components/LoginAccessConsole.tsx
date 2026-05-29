@@ -31,7 +31,9 @@ export function LoginAccessConsole({
 
       <div className="auth-console__topbar">
         <div className="auth-console__brand">
-          <AuthBrandMark size={34} />
+          <span className="auth-console__brand-mark">
+            <AuthBrandMark size={34} />
+          </span>
           <span>
             <strong>Soleria</strong>
             <small>Intern arbetsyta</small>

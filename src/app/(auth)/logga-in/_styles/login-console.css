@@ -74,7 +74,21 @@
   color: rgb(251 246 226 / 0.96);
 }
 
-.auth-scope .auth-console__brand span {
+.auth-scope .auth-console__brand-mark {
+  position: relative;
+  z-index: 10;
+  display: inline-grid;
+  width: 2.125rem;
+  height: 2.125rem;
+  place-items: center;
+  transform-origin: center;
+}
+
+.auth-scope .auth-login-panel[data-state='cinematic'] .auth-console__brand-mark {
+  animation: auth-console-logo-hand-off 0.24s ease-out forwards;
+}
+
+.auth-scope .auth-console__brand > span:not(.auth-console__brand-mark) {
   display: grid;
   gap: 0.08rem;
 }
@@ -243,5 +257,16 @@
 
   .auth-scope .auth-console-header__title {
     font-size: clamp(2rem, 2.8vw, 2.65rem);
+  }
+}
+
+@keyframes auth-console-logo-hand-off {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
   }
 }
