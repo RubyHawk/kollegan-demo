@@ -15,6 +15,7 @@ import {
   fadeUp,
   stagger,
 } from './dashboard-view-parts';
+import WeatherWidget from './WeatherWidget';
 
 export interface DashboardViewProps {
   greetingText: string;
@@ -166,6 +167,7 @@ export default function DashboardView({
 
           {/* Right sidebar */}
           <div className="space-y-3">
+            <WeatherWidget />
             <ProjectStatsCard stats={projectStats}/>
             <StatusDistributionCard countMap={countMap} total={total}/>
             <TrendCard activityData={activityData}/>
