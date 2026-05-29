@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kollegan — Översikt v4</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --page-bg:   oklch(0.13 0.010 250);
+      --surface-0: oklch(0.20 0.009 250);
+      --surface-1: oklch(0.24 0.007 250);
+      --surface-2: oklch(0.27 0.006 250);
+      --surface-3: oklch(0.30 0.005 250);
+      --border:    oklch(0.36 0.007 250);
+      --border-lt: oklch(0.28 0.006 250);
+
+      --text-1: oklch(0.96 0 0);
+      --text-2: oklch(0.83 0 0);
+      --text-3: oklch(0.62 0 0);
+      --text-4: oklch(0.48 0 0);
+
+      --accent:        oklch(0.73 0.15 85);
+      --accent-sub:    oklch(0.73 0.15 85 / 0.08);
+      --accent-border: oklch(0.73 0.15 85 / 0.22);
+
+      --blue-text:   oklch(0.75 0.14 250);
+      --blue-bg:     oklch(0.22 0.05 250);
+      --blue-border: oklch(0.75 0.14 250 / 0.22);
+
+      --green-text:  oklch(0.75 0.15 145);
+      --green-bg:    oklch(0.22 0.06 145);
+
+      --red-text:    oklch(0.78 0.15 25);
+      --red-bg:      oklch(0.22 0.06 25);
+      --red-border:  oklch(0.78 0.15 25 / 0.22);
+
+      --r:    10px;
+      --r-sm: 6px;
+      --r-xs: 4px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--page-bg);
+      color: var(--text-1);
+      font-size: 14px;
+      line-height: 1.5;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ══════════ NAV (unchanged from v3) ══════════ */
+    .nav {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: 212px;
+      background: var(--surface-0);
+      border-right: 1px solid var(--border-lt);
+      display: flex;
+      flex-direction: column;
+      z-index: 20;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 9px;
+      padding: 18px 16px 16px;
+      border-bottom: 1px solid var(--border-lt);
+    }
+    .nav-mark {
+      width: 26px; height: 26px;
+      background: var(--accent); border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: oklch(0.13 0.010 250);
+      flex-shrink: 0;
+    }
+    .nav-brand { font-size: 14.5px; font-weight: 600; color: var(--text-1); letter-spacing: -0.01em; }
+    .nav-body { padding: 12px 8px 0; flex: 1; }
+    .nav-group-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.10em; color: var(--text-4);
+      padding: 0 8px; margin-bottom: 3px; margin-top: 8px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px; border-radius: var(--r-sm);
+      color: var(--text-3); font-size: 13px; font-weight: 440;
+      cursor: pointer; margin-bottom: 1px;
+      border-left: 2px solid transparent;
+    }
+    .nav-item:hover { background: oklch(0.96 0 0 / 0.04); color: var(--text-2); }
+    .nav-item.active {
+      background: var(--accent-sub); border-left-color: var(--accent);
+      color: var(--accent); font-weight: 500;
+    }
+    .nav-spacer { flex: 1; }
+    .nav-foot { border-top: 1px solid var(--border-lt); padding: 8px; }
+    .nav-user {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px; border-radius: var(--r-sm); cursor: pointer;
+    }
+    .nav-user:hover { background: oklch(0.96 0 0 / 0.04); }
+    .nav-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: linear-gradient(135deg, oklch(0.60 0.20 250), oklch(0.55 0.22 290));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600; color: white; flex-shrink: 0;
+    }
+    .nav-user-info { flex: 1; min-width: 0; }
+    .nav-user-name { font-size: 12.5px; font-weight: 500; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nav-user-sub  { font-size: 11px; color: var(--text-4); }
+
+    /* ══════════ MAIN ══════════ */
+    .main { margin-left: 212px; min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ══════════ TOP BAR ══════════ */
+    .topbar {
+      position: sticky; top: 0; z-index: 10;
+      height: 50px; background: var(--page-bg);
+      border-bottom: 1px solid var(--border-lt);
+      padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .breadcrumb { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--text-4); }
+    .breadcrumb .sep { opacity: 0.4; }
+    .breadcrumb .current { color: var(--text-2); font-weight: 500; }
+    .topbar-actions { display: flex; align-items: center; gap: 6px; }
+    .icon-btn {
+      width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--r-sm); border: 1px solid var(--border-lt);
+      background: transparent; color: var(--text-3); cursor: pointer;
+    }
+    .icon-btn:hover { background: var(--surface-1); color: var(--text-2); }
+    .btn-primary {
+      display: flex; align-items: center; gap: 5px;
+      padding: 0 12px; height: 30px;
+      background: var(--accent); color: oklch(0.13 0.010 250);
+      font-size: 12.5px; font-weight: 600; border-radius: var(--r-sm);
+      border: none; cursor: pointer; white-space: nowrap; letter-spacing: -0.01em;
+      font-family: inherit;
+    }
+    .btn-primary:hover { filter: brightness(1.06); }
+
+    /* ══════════ PAGE ══════════ */
+    .page { padding: 20px 24px 48px; }
+
+    /* ══════════════════════════════════════════
+       TOP ROW — hero (greeting + KPIs) | clock + weather
+       ══════════════════════════════════════════ */
+    .top-row {
+      display: grid;
+      grid-template-columns: 1fr 216px;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    /* HERO CARD — horizontal layout: greeting | KPI strip */
+    .hero-card {
+      background: var(--surface-0);
+      border: 1px solid var(--border-lt);
+      border-radius: var(--r);
+      display: flex;
+      align-items: stretch;
+      overflow: hidden;
+    }
+
+    .hero-greeting {
+      padding: 18px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex-shrink: 0;
+      min-width: 196px;
+      border-right: 1px solid var(--border-lt);
+    }
+
+    .greeting-date {
+      font-size: 11px; color: var(--text-4); font-weight: 400; margin-bottom: 4px;
+    }
+
+    .greeting-title {
+      font-size: 20px; font-weight: 650; color: var(--text-1);
+      letter-spacing: -0.025em; line-height: 1.2;
+    }
+
+    /* KPI strip — 4 cells with vertical dividers */
+    .kpi-strip { flex: 1; display: flex; }
+
+    .kpi-cell {
+      flex: 1;
+      padding: 14px 18px;
+      border-right: 1px solid var(--border-lt);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+    }
+    .kpi-cell:last-child { border-right: none; }
+
+    /* First cell (Accepterat) = hero — slightly larger number */
+    .kpi-cell.kpi-hero .kpi-val { font-size: 20px; }
+    .kpi-val { font-size: 17px; font-weight: 700; color: var(--text-1); letter-spacing: -0.02em; line-height: 1; }
+
+    .kpi-lbl {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.09em; color: var(--text-4);
+    }
+
+    .kpi-trend-row { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+    .kpi-delta { display: flex; align-items: center; gap: 2px; font-size: 10.5px; font-weight: 550; }
+    .kpi-delta.up   { color: var(--green-text); }
+    .kpi-delta.down { color: var(--red-text); }
+    .kpi-delta.flat { color: var(--text-4); }
+    .kpi-ctx { font-size: 10.5px; color: var(--text-4); }
+
+    /* ══════════════════════════════════
+       CLOCK + WEATHER CARD (top-right)
+       ══════════════════════════════════ */
+    .clock-weather {
+      background: var(--surface-0);
+      border: 1px solid var(--border-lt);
+      border-radius: var(--r);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .clock-section {
+      padding: 14px 16px 12px;
+      text-align: center;
+      border-bottom: 1px solid var(--border-lt);
+    }
+
+    .clock-location {
+      font-size: 9.5px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.12em; color: var(--text-4); margin-bottom: 4px;
+    }
+
+    .clock-time {
+      font-size: 30px; font-weight: 700; letter-spacing: -0.03em;
+      color: var(--text-1); line-height: 1; font-variant-numeric: tabular-nums;
+    }
+
+    .clock-day {
+      font-size: 11px; color: var(--text-4); margin-top: 3px;
+    }
+
+    .weather-section {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-lt);
+    }
+
+    .w-emoji { font-size: 20px; line-height: 1; flex-shrink: 0; }
+    .w-main  { flex: 1; min-width: 0; }
+    .w-temp  { font-size: 15px; font-weight: 650; color: var(--text-1); letter-spacing: -0.02em; line-height: 1.2; }
+    .w-cond  { font-size: 10.5px; color: var(--text-4); }
+    .w-stats { text-align: right; }
+    .w-stat  { font-size: 10.5px; color: var(--text-4); }
+
+    .w-forecast { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .w-day {
+      padding: 8px 4px; text-align: center;
+      border-right: 1px solid var(--border-lt);
+    }
+    .w-day:last-child { border-right: none; }
+    .w-day-name { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-4); }
+    .w-day-ico  { font-size: 14px; margin: 2px 0; line-height: 1; }
+    .w-day-hi   { font-size: 10.5px; font-weight: 500; color: var(--text-2); }
+    .w-day-lo   { font-size: 10.5px; color: var(--text-4); }
+
+    .smhi-badge {
+      font-size: 9px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-4);
+      text-align: right; padding: 4px 14px 6px;
+    }
+
+    /* ══════════════════════════════════════════
+       CONTENT GRID — left (narrower) | right (wider for charts)
+       ══════════════════════════════════════════ */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 9fr 11fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .col-left  { display: flex; flex-direction: column; gap: 12px; }
+    .col-right { display: flex; flex-direction: column; gap: 12px; }
+
+    /* ══════════ BASE CARD ══════════ */
+    .card {
+      background: var(--surface-0);
+      border: 1px solid var(--border-lt);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    .card-head {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border-lt);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .card-title {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12.5px; font-weight: 600; color: var(--text-1);
+    }
+
+    .card-link {
+      font-size: 11.5px; color: var(--text-4);
+      cursor: pointer; padding: 2px 6px; border-radius: var(--r-xs);
+    }
+    .card-link:hover { color: var(--text-3); background: var(--surface-1); }
+
+    .n-badge {
+      font-size: 10px; font-weight: 600; color: var(--text-4);
+      background: var(--surface-2); padding: 1px 6px;
+      border-radius: 20px; border: 1px solid var(--border-lt);
+    }
+
+    /* viz toggle */
+    .viz-toggle { display: flex; gap: 2px; }
+    .viz-btn {
+      font-size: 11px; font-weight: 500; padding: 3px 8px;
+      border-radius: var(--r-xs); border: 1px solid transparent;
+      cursor: pointer; color: var(--text-4); background: transparent;
+      font-family: inherit;
+    }
+    .viz-btn.active {
+      background: var(--accent-sub);
+      border-color: var(--accent-border);
+      color: var(--accent);
+    }
+    .viz-btn:not(.active):hover { background: var(--surface-1); color: var(--text-3); }
+
+    /* ══════════ ATTENTION QUEUE ══════════ */
+    .attn-card { border-left: 2px solid var(--accent); }
+    .attn-card .card-head { background: oklch(0.73 0.15 85 / 0.04); }
+    .attn-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+    .attn-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border-lt);
+    }
+    .attn-row:last-child { border-bottom: none; }
+    .attn-row:hover { background: oklch(0.96 0 0 / 0.015); }
+
+    .attn-ico {
+      width: 26px; height: 26px; flex-shrink: 0;
+      background: var(--surface-1); border: 1px solid var(--border-lt);
+      border-radius: var(--r-xs);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; line-height: 1;
+    }
+
+    .attn-body { flex: 1; min-width: 0; }
+    .attn-text { font-size: 12.5px; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .attn-text strong { font-weight: 600; }
+    .attn-sub { font-size: 11px; color: var(--text-4); margin-top: 1px; }
+
+    .attn-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+    .attn-time { font-size: 11px; color: var(--text-4); white-space: nowrap; min-width: 48px; text-align: right; }
+    .attn-time.urgent { color: var(--red-text); font-weight: 500; }
+
+    .btn-ghost {
+      padding: 3px 9px; border-radius: var(--r-xs);
+      border: 1px solid var(--border); background: transparent;
+      font-size: 11.5px; font-weight: 500; color: var(--text-3);
+      cursor: pointer; white-space: nowrap; font-family: inherit;
+    }
+    .btn-ghost:hover { background: var(--surface-1); color: var(--text-2); }
+
+    /* ══════════ OFFER LIST ══════════ */
+    .section-label {
+      padding: 7px 14px;
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.09em; color: var(--text-4);
+      border-bottom: 1px solid var(--border-lt);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .offer-row {
+      display: flex; align-items: stretch;
+      border-bottom: 1px solid var(--border-lt);
+    }
+    .offer-row:last-child { border-bottom: none; }
+    .offer-row:hover { background: oklch(0.96 0 0 / 0.015); }
+
+    .stripe { width: 2px; flex-shrink: 0; align-self: stretch; }
+    .s-urgent   { background: var(--accent); }
+    .s-critical { background: var(--red-text); }
+    .s-none     { background: transparent; }
+
+    .offer-body { flex: 1; padding: 10px 12px; min-width: 0; }
+    .offer-name { font-size: 13px; font-weight: 550; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .offer-co   { font-size: 11px; color: var(--text-4); margin-top: 1px; }
+
+    .offer-right {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px 10px 0; flex-shrink: 0;
+    }
+
+    .offer-amount { font-size: 12px; font-weight: 500; color: var(--text-3); min-width: 64px; text-align: right; }
+
+    .offer-status { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-4); min-width: 52px; }
+    .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .dot-sent     { background: var(--text-4); }
+    .dot-viewed   { background: var(--blue-text); }
+    .dot-accepted { background: var(--green-text); }
+    .dot-draft    { background: transparent; border: 1px solid var(--text-4); }
+
+    .tag-urgent {
+      font-size: 10px; font-weight: 500; padding: 2px 6px; border-radius: 20px;
+      background: var(--accent-sub); color: var(--accent); border: 1px solid var(--accent-border);
+    }
+    .tag-critical {
+      font-size: 10px; font-weight: 500; padding: 2px 6px; border-radius: 20px;
+      background: var(--red-bg); color: var(--red-text); border: 1px solid var(--red-border);
+    }
+
+    /* ══════════════════════════════════════
+       PIPELINE CHART — proper funnel viz
+       ══════════════════════════════════════ */
+    .pipeline-body { padding: 14px 18px 6px; }
+
+    .funnel-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 6px;
+    }
+    .funnel-row:last-child { margin-bottom: 0; }
+
+    .funnel-label {
+      font-size: 11.5px; color: var(--text-3);
+      min-width: 108px; text-align: right; flex-shrink: 0;
+    }
+
+    .funnel-track {
+      flex: 1; height: 22px;
+      background: var(--surface-2); border-radius: var(--r-xs);
+      overflow: hidden; position: relative;
+    }
+
+    .funnel-fill {
+      height: 100%; border-radius: var(--r-xs);
+      background: var(--surface-3);
+      transition: width 0.3s ease;
+    }
+    .funnel-fill.f-active { background: oklch(0.75 0.14 250 / 0.55); }
+    .funnel-fill.f-won    { background: oklch(0.75 0.15 145 / 0.55); }
+
+    /* inline label on the bar */
+    .funnel-track-inner {
+      position: absolute; inset: 0;
+      display: flex; align-items: center;
+      padding: 0 8px;
+    }
+    .funnel-inline-label {
+      font-size: 10.5px; font-weight: 500; color: var(--text-2);
+    }
+
+    .funnel-count {
+      font-size: 12.5px; font-weight: 600; color: var(--text-2);
+      min-width: 18px; text-align: right;
+    }
+
+    .funnel-amount {
+      font-size: 11px; color: var(--text-3);
+      min-width: 70px; text-align: right;
+    }
+
+    /* conversion rate between stages */
+    .conv-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 6px; padding-left: 118px; /* align to bar area */
+    }
+    .conv-arrow { font-size: 9.5px; color: var(--text-4); }
+    .conv-rate  { font-size: 9.5px; color: var(--text-4); }
+
+    .pipeline-foot {
+      padding: 10px 18px;
+      border-top: 1px solid var(--border-lt);
+      margin-top: 10px;
+      display: flex; align-items: baseline; justify-content: space-between;
+    }
+    .pipe-foot-label { font-size: 11.5px; color: var(--text-4); }
+    .pipe-foot-value { font-size: 17px; font-weight: 700; color: var(--text-1); letter-spacing: -0.02em; }
+
+    .pipeline-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--border-lt);
+    }
+    .pipe-stat {
+      padding: 10px 14px;
+      border-right: 1px solid var(--border-lt);
+    }
+    .pipe-stat:last-child { border-right: none; }
+    .pipe-stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-4); font-weight: 600; }
+    .pipe-stat-val { font-size: 15px; font-weight: 700; color: var(--text-1); letter-spacing: -0.02em; margin-top: 2px; }
+
+    /* ══════════ PROJECTS ══════════ */
+    .proj-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      padding: 12px 16px 10px; gap: 8px;
+    }
+    .proj-stat { text-align: center; }
+    .proj-stat-n { font-size: 20px; font-weight: 700; color: var(--text-1); letter-spacing: -0.03em; line-height: 1; }
+    .proj-stat-l { font-size: 10.5px; color: var(--text-4); margin-top: 3px; }
+
+    .proj-list { border-top: 1px solid var(--border-lt); }
+    .proj-item {
+      display: flex; align-items: center;
+      padding: 9px 16px; border-bottom: 1px solid var(--border-lt);
+      gap: 12px;
+    }
+    .proj-item:last-child { border-bottom: none; }
+    .proj-item-info { flex: 1; min-width: 0; }
+    .proj-item-name { font-size: 12.5px; font-weight: 500; color: var(--text-1); }
+    .proj-item-sub  { font-size: 11px; color: var(--text-4); margin-top: 1px; }
+
+    .proj-bar-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .proj-bar-track {
+      width: 80px; height: 4px;
+      background: var(--surface-2); border-radius: 2px; overflow: hidden;
+    }
+    .proj-bar-fill {
+      height: 100%; border-radius: 2px;
+      background: var(--blue-text); opacity: 0.6;
+    }
+    .proj-pct { font-size: 11.5px; font-weight: 500; color: var(--text-3); min-width: 28px; text-align: right; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════ NAV ══════════ -->
+<aside class="nav">
+  <div class="nav-logo">
+    <div class="nav-mark">K</div>
+    <span class="nav-brand">Kollegan</span>
+  </div>
+  <div class="nav-body">
+    <div class="nav-group-label">Offertsystem</div>
+    <div class="nav-item active">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Översikt
+    </div>
+    <div class="nav-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Offerter
+    </div>
+    <div class="nav-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Projekt
+    </div>
+    <div class="nav-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      CRM
+    </div>
+    <div class="nav-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Möten
+    </div>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="nav-foot">
+    <div class="nav-user">
+      <div class="nav-avatar">AP</div>
+      <div class="nav-user-info">
+        <div class="nav-user-name">Ali Poppin</div>
+        <div class="nav-user-sub">Säljare</div>
+      </div>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-4);flex-shrink:0;"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════ MAIN ══════════ -->
+<div class="main">
+
+  <header class="topbar">
+    <div class="breadcrumb">
+      <span>Kollegan</span>
+      <span class="sep"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></span>
+      <span class="current">Översikt</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" title="Sök">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button class="icon-btn" title="Notifikationer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+      <button class="btn-primary">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Ny offert
+      </button>
+    </div>
+  </header>
+
+  <div class="page">
+
+    <!-- ══════════ TOP ROW: hero card + clock/weather ══════════ -->
+    <div class="top-row">
+
+      <!-- HERO CARD: greeting (left) + KPI strip (right) in one horizontal card -->
+      <div class="hero-card">
+
+        <div class="hero-greeting">
+          <div class="greeting-date">Torsdag, 29 maj 2026</div>
+          <div class="greeting-title">God eftermiddag, Ali</div>
+        </div>
+
+        <!-- KPI strip — 4 cells, vertical dividers, first cell is hero -->
+        <div class="kpi-strip">
+
+          <div class="kpi-cell kpi-hero">
+            <div class="kpi-lbl">Accepterat</div>
+            <div class="kpi-val">120 000 kr</div>
+            <div class="kpi-trend-row">
+              <span class="kpi-delta up">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+                +18%
+              </span>
+              <span class="kpi-ctx">vs förra mån · 5 affärer</span>
+            </div>
+          </div>
+
+          <div class="kpi-cell">
+            <div class="kpi-lbl">Pipeline</div>
+            <div class="kpi-val">45 200 kr</div>
+            <div class="kpi-trend-row">
+              <span class="kpi-ctx">3 aktiva offerter</span>
+            </div>
+          </div>
+
+          <div class="kpi-cell">
+            <div class="kpi-lbl">Vinstgrad</div>
+            <div class="kpi-val">67%</div>
+            <div class="kpi-trend-row">
+              <span class="kpi-delta down">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                −4 pp
+              </span>
+              <span class="kpi-ctx">vs förra mån</span>
+            </div>
+          </div>
+
+          <div class="kpi-cell">
+            <div class="kpi-lbl">Snitt affär</div>
+            <div class="kpi-val">24 000 kr</div>
+            <div class="kpi-trend-row">
+              <span class="kpi-delta up">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+                +6%
+              </span>
+              <span class="kpi-ctx">per vunnen affär</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CLOCK + WEATHER (stacked, top-right) -->
+      <div class="clock-weather">
+        <div class="clock-section">
+          <div class="clock-location">Stockholm</div>
+          <div class="clock-time">14:32</div>
+          <div class="clock-day">Torsdag</div>
+        </div>
+
+        <div class="weather-section">
+          <div class="w-emoji">☀️</div>
+          <div class="w-main">
+            <div class="w-temp">22°C</div>
+            <div class="w-cond">Klart · Känns 20°</div>
+          </div>
+          <div class="w-stats">
+            <div class="w-stat">7,9 m/s</div>
+            <div class="w-stat">30% fukt</div>
+          </div>
+        </div>
+
+        <div class="w-forecast">
+          <div class="w-day">
+            <div class="w-day-name">Fre</div>
+            <div class="w-day-ico">⛅</div>
+            <div><span class="w-day-hi">22°</span> <span class="w-day-lo">14°</span></div>
+          </div>
+          <div class="w-day">
+            <div class="w-day-name">Lör</div>
+            <div class="w-day-ico">🌧️</div>
+            <div><span class="w-day-hi">19°</span> <span class="w-day-lo">13°</span></div>
+          </div>
+          <div class="w-day">
+            <div class="w-day-name">Sön</div>
+            <div class="w-day-ico">⛅</div>
+            <div><span class="w-day-hi">21°</span> <span class="w-day-lo">12°</span></div>
+          </div>
+        </div>
+
+        <div class="smhi-badge">SMHI</div>
+      </div>
+
+    </div><!-- /top-row -->
+
+
+    <!-- ══════════ CONTENT GRID ══════════ -->
+    <div class="content-grid">
+
+      <!-- LEFT: attention queue + offer list -->
+      <div class="col-left">
+
+        <!-- ATTENTION QUEUE -->
+        <div class="card attn-card">
+          <div class="card-head">
+            <div class="card-title">
+              <div class="attn-dot"></div>
+              Kräver handling
+              <span class="n-badge">4</span>
+            </div>
+            <span class="card-link">Visa alla</span>
+          </div>
+
+          <div class="attn-row">
+            <div class="attn-ico">👁️</div>
+            <div class="attn-body">
+              <div class="attn-text"><strong>Eriksson AB</strong> öppnade "Solpaneler" — har inte svarat</div>
+              <div class="attn-sub">23 500 kr · Visad för 3 dagar sedan</div>
+            </div>
+            <div class="attn-right">
+              <span class="attn-time">3 dagar</span>
+              <button class="btn-ghost">Ring nu</button>
+            </div>
+          </div>
+
+          <div class="attn-row">
+            <div class="attn-ico">⏰</div>
+            <div class="attn-body">
+              <div class="attn-text"><strong>Svensson Bygg</strong> — "Vindskydd" utgår om 2 dagar</div>
+              <div class="attn-sub">8 400 kr · Skickad</div>
+            </div>
+            <div class="attn-right">
+              <span class="attn-time urgent">2 dagar kvar</span>
+              <button class="btn-ghost">Förläng</button>
+            </div>
+          </div>
+
+          <div class="attn-row">
+            <div class="attn-ico">⚡</div>
+            <div class="attn-body">
+              <div class="attn-text"><strong>Bergström Bygg</strong> — lead kvalificerad, redo för offert</div>
+              <div class="attn-sub">Inkom idag</div>
+            </div>
+            <div class="attn-right">
+              <span class="attn-time">idag</span>
+              <button class="btn-ghost">Skapa offert</button>
+            </div>
+          </div>
+
+          <div class="attn-row">
+            <div class="attn-ico">📅</div>
+            <div class="attn-body">
+              <div class="attn-text">Möte kl <strong>15:00</strong> med Carlsson AB — offert #012 är utkast</div>
+              <div class="attn-sub">Om 28 minuter</div>
+            </div>
+            <div class="attn-right">
+              <span class="attn-time">28 min</span>
+              <button class="btn-ghost">Öppna</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- OFFER LIST -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Offerter</div>
+            <span class="card-link">Visa alla</span>
+          </div>
+
+          <div class="section-label">
+            <span>Kräver uppföljning</span>
+            <span class="n-badge">3</span>
+          </div>
+
+          <div class="offer-row">
+            <div class="stripe s-urgent"></div>
+            <div class="offer-body">
+              <div class="offer-name">Solpaneler — Eriksson AB</div>
+              <div class="offer-co">Lars Eriksson · Visad för 3 dagar sedan</div>
+            </div>
+            <div class="offer-right">
+              <div class="offer-amount">23 500 kr</div>
+              <div class="offer-status"><span class="dot dot-viewed"></span>Visad</div>
+              <button class="btn-ghost">Ring</button>
+            </div>
+          </div>
+
+          <div class="offer-row">
+            <div class="stripe s-critical"></div>
+            <div class="offer-body">
+              <div class="offer-name">Vindskydd — Svensson Bygg</div>
+              <div class="offer-co">Skickad · Utgår om 2 dagar</div>
+            </div>
+            <div class="offer-right">
+              <div class="offer-amount">8 400 kr</div>
+              <div class="offer-status"><span class="dot dot-sent"></span>Skickad</div>
+              <span class="tag-critical">2d kvar</span>
+            </div>
+          </div>
+
+          <div class="offer-row">
+            <div class="stripe s-urgent"></div>
+            <div class="offer-body">
+              <div class="offer-name">Transport Q2 — Mall Logistics</div>
+              <div class="offer-co">Visad igår · Utgår om 5 dagar</div>
+            </div>
+            <div class="offer-right">
+              <div class="offer-amount">34 000 kr</div>
+              <div class="offer-status"><span class="dot dot-viewed"></span>Visad</div>
+              <button class="btn-ghost">Ring</button>
+            </div>
+          </div>
+
+          <div class="section-label">
+            <span>Aktiva</span>
+            <span class="n-badge">2</span>
+          </div>
+
+          <div class="offer-row">
+            <div class="stripe s-none"></div>
+            <div class="offer-body">
+              <div class="offer-name">Filmdubbar Q2 — Carlsson AB</div>
+              <div class="offer-co">Emma Carlsson · Skickat för 1 dag sedan</div>
+            </div>
+            <div class="offer-right">
+              <div class="offer-amount">40 300 kr</div>
+              <div class="offer-status"><span class="dot dot-sent"></span>Skickad</div>
+            </div>
+          </div>
+
+          <div class="offer-row">
+            <div class="stripe s-none"></div>
+            <div class="offer-body">
+              <div class="offer-name">Fönsterbyte Q3 — Persson Bygg</div>
+              <div class="offer-co">Nils Persson · Utkast</div>
+            </div>
+            <div class="offer-right">
+              <div class="offer-amount">16 100 kr</div>
+              <div class="offer-status"><span class="dot dot-draft"></span>Utkast</div>
+              <button class="btn-ghost">Slutför</button>
+            </div>
+          </div>
+
+          <div class="section-label">
+            <span>Nyligen accepterade</span>
+            <span class="n-badge">1</span>
+          </div>
+
+          <div class="offer-row">
+            <div class="stripe s-none"></div>
+            <div class="offer-body">
+              <div class="offer-name">Isolering Fas 2 — Nils Bygg</div>
+              <div class="offer-co">Peter Nilsson · Accepterades igår</div>
+            </div>
+            <div class="offer-right">
+              <div class="offer-amount">52 000 kr</div>
+              <div class="offer-status"><span class="dot dot-accepted"></span>Accepterad</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- RIGHT: pipeline chart + projects -->
+      <div class="col-right">
+
+        <!-- PIPELINE CHART — full funnel viz with conversion rates -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Pipeline — Tratt</div>
+            <div class="viz-toggle">
+              <button class="viz-btn active">Antal</button>
+              <button class="viz-btn">Värde</button>
+            </div>
+          </div>
+
+          <div class="pipeline-body">
+
+            <div class="funnel-row">
+              <span class="funnel-label">Leads</span>
+              <div class="funnel-track">
+                <div class="funnel-fill" style="width:100%"></div>
+                <div class="funnel-track-inner"><span class="funnel-inline-label">Leads</span></div>
+              </div>
+              <span class="funnel-count">8</span>
+              <span class="funnel-amount">—</span>
+            </div>
+
+            <!-- conversion arrow -->
+            <div class="conv-row">
+              <span class="conv-arrow">↓</span>
+              <span class="conv-rate">75% gick vidare till Kontakt</span>
+            </div>
+
+            <div class="funnel-row">
+              <span class="funnel-label">Kontakt</span>
+              <div class="funnel-track">
+                <div class="funnel-fill" style="width:75%"></div>
+                <div class="funnel-track-inner"><span class="funnel-inline-label">Kontakt</span></div>
+              </div>
+              <span class="funnel-count">6</span>
+              <span class="funnel-amount">—</span>
+            </div>
+
+            <div class="conv-row">
+              <span class="conv-arrow">↓</span>
+              <span class="conv-rate">67% gick vidare till Offert</span>
+            </div>
+
+            <div class="funnel-row">
+              <span class="funnel-label">Offert skickad</span>
+              <div class="funnel-track">
+                <div class="funnel-fill f-active" style="width:50%"></div>
+                <div class="funnel-track-inner"><span class="funnel-inline-label" style="color:var(--blue-text)">Offert skickad</span></div>
+              </div>
+              <span class="funnel-count">4</span>
+              <span class="funnel-amount">45 200 kr</span>
+            </div>
+
+            <div class="conv-row">
+              <span class="conv-arrow">↓</span>
+              <span class="conv-rate">50% gick vidare till Förhandling</span>
+            </div>
+
+            <div class="funnel-row">
+              <span class="funnel-label">Förhandling</span>
+              <div class="funnel-track">
+                <div class="funnel-fill" style="width:25%"></div>
+                <div class="funnel-track-inner"><span class="funnel-inline-label">Förhandling</span></div>
+              </div>
+              <span class="funnel-count">2</span>
+              <span class="funnel-amount">28 000 kr</span>
+            </div>
+
+            <div class="conv-row">
+              <span class="conv-arrow">↓</span>
+              <span class="conv-rate">50% accepterade</span>
+            </div>
+
+            <div class="funnel-row">
+              <span class="funnel-label">Accepterad</span>
+              <div class="funnel-track">
+                <div class="funnel-fill f-won" style="width:12.5%"></div>
+                <div class="funnel-track-inner"><span class="funnel-inline-label" style="color:var(--green-text)">Accepterad</span></div>
+              </div>
+              <span class="funnel-count">1</span>
+              <span class="funnel-amount">52 000 kr</span>
+            </div>
+
+          </div>
+
+          <!-- pipeline summary stats -->
+          <div class="pipeline-summary">
+            <div class="pipe-stat">
+              <div class="pipe-stat-lbl">Total pipeline</div>
+              <div class="pipe-stat-val">125 200 kr</div>
+            </div>
+            <div class="pipe-stat">
+              <div class="pipe-stat-lbl">Vinstgrad</div>
+              <div class="pipe-stat-val">67%</div>
+            </div>
+            <div class="pipe-stat">
+              <div class="pipe-stat-lbl">Lead → Vunnen</div>
+              <div class="pipe-stat-val">12,5%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROJECTS -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Projekt</div>
+            <span class="card-link">Visa alla</span>
+          </div>
+
+          <div class="proj-stats">
+            <div class="proj-stat">
+              <div class="proj-stat-n">3</div>
+              <div class="proj-stat-l">Aktiva</div>
+            </div>
+            <div class="proj-stat">
+              <div class="proj-stat-n">5</div>
+              <div class="proj-stat-l">Denna mån</div>
+            </div>
+            <div class="proj-stat">
+              <div class="proj-stat-n">62%</div>
+              <div class="proj-stat-l">Klart</div>
+            </div>
+          </div>
+
+          <div class="proj-list">
+            <div class="proj-item">
+              <div class="proj-item-info">
+                <div class="proj-item-name">Solpaneler Eriksson</div>
+                <div class="proj-item-sub">Fas 1 av 3 · Påbörjad</div>
+              </div>
+              <div class="proj-bar-wrap">
+                <div class="proj-bar-track"><div class="proj-bar-fill" style="width:40%"></div></div>
+                <span class="proj-pct">40%</span>
+              </div>
+            </div>
+            <div class="proj-item">
+              <div class="proj-item-info">
+                <div class="proj-item-name">Isolering Nilsson</div>
+                <div class="proj-item-sub">Fas 2 av 2 · Nästan klar</div>
+              </div>
+              <div class="proj-bar-wrap">
+                <div class="proj-bar-track"><div class="proj-bar-fill" style="width:85%"></div></div>
+                <span class="proj-pct">85%</span>
+              </div>
+            </div>
+            <div class="proj-item">
+              <div class="proj-item-info">
+                <div class="proj-item-name">Fönster Persson</div>
+                <div class="proj-item-sub">Fas 1 av 2 · Inte startad</div>
+              </div>
+              <div class="proj-bar-wrap">
+                <div class="proj-bar-track"><div class="proj-bar-fill" style="width:5%"></div></div>
+                <span class="proj-pct">5%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /col-right -->
+
+    </div><!-- /content-grid -->
+
+  </div><!-- /page -->
+</div><!-- /main -->
+
+</body>
+</html>
