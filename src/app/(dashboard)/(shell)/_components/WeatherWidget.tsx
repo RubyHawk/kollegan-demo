@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { WeatherData } from '@/app/api/weather/route';
+import type { WeatherData } from '@/app/api/v1/weather/route';
 
 // Gradient + glow per weather category
 const CAT_THEME: Record<string, { grad: string; glow: string; bg: string }> = {
@@ -53,7 +53,7 @@ export default function WeatherWidget() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch('/api/weather')
+    fetch('/api/v1/weather')
       .then(r => r.json())
       .then(d => {
         if (d.error) { setError(true); return; }
