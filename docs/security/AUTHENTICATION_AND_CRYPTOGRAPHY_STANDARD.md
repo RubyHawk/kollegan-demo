@@ -15,6 +15,7 @@ This standard defines the minimum baseline for secure authentication information
 - Kollegan application MFA for staff users and `customer_admin` users is based on verified passkeys (`WebAuthn`) or verified authenticator-app TOTP. Backup codes are recovery-only and do not count as a primary factor.
 - SMS OTP and email OTP are not approved as primary MFA factors for the application baseline because they are weaker against phishing and SIM or inbox compromise.
 - MFA factor changes, backup-code regeneration, and MFA recovery actions require an MFA-authenticated operator or session at the application layer.
+- During active MFA product development, staff and `customer_admin` enrollment enforcement may use a time-boxed two-year grace window to avoid blocking legitimate users before the rollout is production-ready.
 - MFA recovery via the in-app helpdesk path is organization-scoped, requires an operator-provided reason, revokes target-user sessions, and grants only a short re-enrollment grace window.
 
 ## Cryptography Baseline

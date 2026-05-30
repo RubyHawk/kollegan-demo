@@ -360,7 +360,7 @@ function priorityScore(tone: DashboardActionItem['tone']): number {
 
 function isOverdue(offer: RecentOffer, todayStart: Date): boolean {
   if (!OPEN_OFFER_STATUSES.includes(offer.status as never) || !offer.validUntil) return false;
-  return new Date(offer.validUntil).getTime() < todayStart.getTime();
+  return stockholmDayOrdinal(new Date(offer.validUntil)) < stockholmDayOrdinal(todayStart);
 }
 
 function needsFollowUp(offer: RecentOffer, todayStart: Date): boolean {
@@ -379,9 +379,7 @@ function isDraftStale(offer: RecentOffer, todayStart: Date): boolean {
 
 function daysUntil(iso: string | null, todayStart: Date): number | null {
   if (!iso) return null;
-  const deadline = new Date(iso);
-  deadline.setHours(0, 0, 0, 0);
-  return Math.ceil((deadline.getTime() - todayStart.getTime()) / 86400000);
+  return stockholmDayOrdinal(new Date(iso)) - stockholmDayOrdinal(todayStart);
 }
 
 function deadlineLabel(daysLeft: number | null, status: string): string {
@@ -404,13 +402,27 @@ function deadlineTone(daysLeft: number | null, status: string): DashboardTone {
 const DASHBOARD_TZ = 'Europe/Stockholm';
 
 function getLocalDayBounds(now: Date): { start: Date; end: Date } {
-  const localDate = now.toLocaleDateString('sv-SE', { timeZone: DASHBOARD_TZ }); // "YYYY-MM-DD"
-  const [y, m, d] = localDate.split('-').map(Number);
-  // Sample the UTC offset at noon on that calendar date (avoids DST edge cases at midnight)
-  const offsetMs = stockholmUtcOffsetMs(new Date(Date.UTC(y, m - 1, d, 12, 0, 0)));
-  // Stockholm midnight = UTC midnight of that date minus the positive UTC offset
-  const startMs = Date.UTC(y, m - 1, d, 0, 0, 0) - offsetMs;
-  return { start: new Date(startMs), end: new Date(startMs + 86_400_000) };
+  const { year, month, day } = stockholmDateParts(now);
+  return {
+    start: stockholmDateStart(year, month, day),
+    end: stockholmDateStart(year, month, day + 1),
+  };
+}
+
+function stockholmDateParts(date: Date): { year: number; month: number; day: number } {
+  const localDate = date.toLocaleDateString('sv-SE', { timeZone: DASHBOARD_TZ }); // "YYYY-MM-DD"
+  const [year, month, day] = localDate.split('-').map(Number);
+  return { year, month, day };
+}
+
+function stockholmDateStart(year: number, month: number, day: number): Date {
+  const offsetMs = stockholmUtcOffsetMs(new Date(Date.UTC(year, month - 1, day, 12, 0, 0)));
+  return new Date(Date.UTC(year, month - 1, day, 0, 0, 0) - offsetMs);
+}
+
+function stockholmDayOrdinal(date: Date): number {
+  const { year, month, day } = stockholmDateParts(date);
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
 }
 
 function stockholmUtcOffsetMs(ref: Date): number {

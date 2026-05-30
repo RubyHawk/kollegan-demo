@@ -57,7 +57,8 @@ export async function createCompanyMemberAccount(
   }
 
   const passwordHash = await bcrypt.hash(input.password, 12);
-  const mfaGraceExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const mfaGraceExpiresAt = new Date();
+  mfaGraceExpiresAt.setFullYear(mfaGraceExpiresAt.getFullYear() + 2);
 
   const user = await companyMemberAccountsRepository.createUser({
     email: normalizedEmail,

@@ -63,7 +63,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  // `at` = access token JWT (15-min). `token`/`portal_token` = opaque refresh tokens (7-30 days).
+  // `at` = access token JWT (2 hours). `token`/`portal_token` = opaque refresh tokens (7-30 days).
   // The middleware verifies the JWT. If the JWT is expired but the refresh token exists,
   // we let the request through — the client will call /api/auth/refresh on next load.
   const at = request.cookies.get('at')?.value;

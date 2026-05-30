@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { checkRateLimit } from '@platform/cache/rate-limiter';
-import { signMfaChallengeToken, hashOpaqueToken } from '@platform/auth/jwt';
+import { ACCESS_TOKEN_MAX_AGE_SEC, signMfaChallengeToken, hashOpaqueToken } from '@platform/auth/jwt';
 import { login, logout, refreshTokens } from '../../application/auth.service';
 import type { LoginResult } from '../../application/auth.service';
 import { AUTH_AUDIT_ACTIONS, recordAuthAudit } from '../../application/auth-audit.service';
@@ -23,7 +23,7 @@ const REFRESH_TTL_SEC_STAFF = 60 * 60 * 24 * 7;
 const REFRESH_TTL_SEC_STAFF_REMEMBER = 60 * 60 * 24 * 30;
 const REFRESH_TTL_SEC_CUSTOMER = 60 * 60 * 24 * 30;
 const MFA_CHALLENGE_TTL_SEC = 60 * 5;
-const ACCESS_TTL_SEC = 60 * 15;
+const ACCESS_TTL_SEC = ACCESS_TOKEN_MAX_AGE_SEC;
 
 const sharedCookieOpts = {
   httpOnly: true,
@@ -53,10 +53,9 @@ const LoginSchema = z.object({
 
 export async function handleLogin(req: NextRequest): Promise<NextResponse> {
   const ip = extractIp(req);
-
-  const rl = await checkRateLimit(ip, 5, 60_000);
-  if (!rl.allowed) {
-    const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
+  const ipRl = await checkRateLimit(`login-ip:${ip}`, 120, 60_000);
+  if (!ipRl.allowed) {
+    const retryAfter = Math.ceil((ipRl.resetAt - Date.now()) / 1000);
     return problemJson('rate-limit', 'Too Many Requests', 429, undefined, {
       'Retry-After': String(retryAfter),
       'RateLimit-Remaining': '0',
@@ -77,6 +76,17 @@ export async function handleLogin(req: NextRequest): Promise<NextResponse> {
   }
 
   const { email, password, rememberMe } = parsed.data;
+  const normalizedEmail = email.toLowerCase().trim();
+  const accountRl = await checkRateLimit(`login:${normalizedEmail}:${ip}`, 10, 60_000);
+  if (!accountRl.allowed) {
+    const retryAfter = Math.ceil((accountRl.resetAt - Date.now()) / 1000);
+    return problemJson('rate-limit', 'Too Many Requests', 429, undefined, {
+      'Retry-After': String(retryAfter),
+      'RateLimit-Remaining': '0',
+      'RateLimit-Reset': String(retryAfter),
+    });
+  }
+
   const userAgent = req.headers.get('user-agent') ?? undefined;
   const ipAddress = ip !== 'unknown' ? ip : undefined;
 
@@ -195,14 +205,15 @@ export async function handleLogout(req: NextRequest): Promise<NextResponse> {
 
 export async function handleRefresh(req: NextRequest): Promise<NextResponse> {
   const ip = extractIp(req);
+  const rawRefreshToken = req.cookies.get('token')?.value ?? req.cookies.get('portal_token')?.value;
+  const rlKey = rawRefreshToken ? `refresh-token:${hashOpaqueToken(rawRefreshToken)}` : `refresh-ip:${ip}`;
 
-  const rl = await checkRateLimit(`refresh:${ip}`, 60, 60_000);
+  const rl = await checkRateLimit(rlKey, rawRefreshToken ? 300 : 60, 60_000);
   if (!rl.allowed) {
     const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
     return problemJson('rate-limit', 'Too Many Requests', 429, undefined, { 'Retry-After': String(retryAfter) });
   }
 
-  const rawRefreshToken = req.cookies.get('token')?.value ?? req.cookies.get('portal_token')?.value;
   if (!rawRefreshToken) {
     return problemJson('unauthorized', 'Unauthorized', 401, 'No refresh token present', {
       'WWW-Authenticate': `Bearer realm="${BRAND_API_REALM}", charset="UTF-8"`,

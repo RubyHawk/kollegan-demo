@@ -3,8 +3,8 @@
  *
  * Composes the middleware pipeline:
  *   1. Generate / extract request ID
- *   2. Rate limiting (configurable per-route)
- *   3. Authentication (vapi | jwt | internal | none)
+ *   2. Authentication (vapi | jwt | internal | none)
+ *   3. Rate limiting (configurable per-route)
  *   4. Content-Type validation for body routes (415)
  *   5. Request body / query-string parsing + Zod validation
  *   6. Business logic (the caller-supplied handler function)
@@ -42,6 +42,7 @@ import { verifyToken, isTokenBlacklisted, isUserBlacklisted, type JWTPayload } f
 import { checkRateLimit } from '@platform/cache/rate-limiter';
 import { logger } from '@platform/logging/logger';
 import { BRAND_API_REALM } from '@shared/branding';
+import { buildRateLimitKey, DEFAULT_RATE_LIMIT, resolveRateLimitBudget } from './rate-limit-policy';
 import { ApiError, Errors, zodToIssues, type Problem } from './errors';
 import {
   isHandlerResult,
@@ -289,35 +290,42 @@ export function createHandler<
 
     try {
       // ── 1. Rate limiting ────────────────────────────────────────────────────
-      if (config.rateLimit !== false) {
-        const rlConf = config.rateLimit ?? { max: 60, windowMs: 60_000 };
-        const rlKey  = req.headers.get('x-forwarded-for')
-          ?? req.headers.get('x-real-ip')
-          ?? 'unknown';
-        const rl = await checkRateLimit(rlKey, rlConf.max, rlConf.windowMs);
+      let jwtPayload: JWTPayload | null = null;
+
+      const enforceRateLimit = async (payload: JWTPayload | null): Promise<NextResponse | null> => {
+        if (config.rateLimit === false) return null;
+
+        const configured = config.rateLimit ?? DEFAULT_RATE_LIMIT;
+        const budget = resolveRateLimitBudget(configured, authStrategy, authStrategy === 'jwt' && Boolean(payload?.sub));
+        const rlKey = buildRateLimitKey(config.tag, authStrategy, req, payload);
+        const rl = await checkRateLimit(rlKey, budget.max, budget.windowMs);
 
         if (!rl.allowed) {
           const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
           const err = Errors.rateLimit(retryAfter);
           const headers: Record<string, string> = {
             // Standard unprefixed rate-limit headers (IETF draft-ietf-httpapi-ratelimit-headers)
-            'RateLimit-Limit':     String(rlConf.max),
+            'RateLimit-Limit':     String(budget.max),
             'RateLimit-Remaining': '0',
             'RateLimit-Reset':     String(retryAfter),
             'Retry-After':         String(retryAfter),
             // Legacy X-prefixed headers (backward compat)
-            'X-RateLimit-Limit':     String(rlConf.max),
+            'X-RateLimit-Limit':     String(budget.max),
             'X-RateLimit-Remaining': '0',
             'X-RateLimit-Reset':     String(rl.resetAt),
           };
           return problemResponse({ ...err.problem, requestId, instance }, headers);
         }
-      }
+
+        return null;
+      };
 
       // ── 2. Authentication ───────────────────────────────────────────────────
       if (authStrategy === 'vapi') {
         const authError = validateVapiAuth(req);
         if (authError) {
+          const rateLimited = await enforceRateLimit(null);
+          if (rateLimited) return rateLimited;
           const detail = authError.status === 500
             ? 'Server misconfiguration — VAPI_WEBHOOK_SECRET not set'
             : 'Invalid or missing x-vapi-secret header';
@@ -338,14 +346,20 @@ export function createHandler<
         if (!token) {
           token = req.cookies.get('at')?.value ?? '';
         }
-        if (!token) return problem(Errors.unauthorized('Authentication required'));
+        if (!token) {
+          const rateLimited = await enforceRateLimit(null);
+          if (rateLimited) return rateLimited;
+          return problem(Errors.unauthorized('Authentication required'));
+        }
 
-        let jwtPayload: JWTPayload;
         try {
           jwtPayload = await verifyToken(token);
         } catch {
+          const rateLimited = await enforceRateLimit(null);
+          if (rateLimited) return rateLimited;
           return problem(Errors.unauthorized('Invalid or expired token'));
         }
+        if (!jwtPayload) return problem(Errors.unauthorized('Invalid or expired token'));
 
         // Token-level blacklist: catches individually revoked tokens (logout).
         // Fail-open if Redis is unavailable (see isTokenBlacklisted for rationale).
@@ -371,9 +385,14 @@ export function createHandler<
       if (authStrategy === 'internal') {
         const internalKey = req.headers.get('x-internal-key') ?? '';
         if (!constantTimeEqual(internalKey, process.env.INTERNAL_API_KEY ?? '')) {
+          const rateLimited = await enforceRateLimit(null);
+          if (rateLimited) return rateLimited;
           return problem(Errors.unauthorized('Invalid internal API key'));
         }
       }
+
+      const rateLimited = await enforceRateLimit(jwtPayload);
+      if (rateLimited) return rateLimited;
 
       // ── 3. Content-Type validation (RFC 9110 §15.5.15) ─────────────────────
       // For requests with a body schema, require application/json.
