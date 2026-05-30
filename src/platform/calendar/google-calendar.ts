@@ -144,6 +144,7 @@ export interface CalendarEventSummary {
   summary: string;
   start: string;
   end: string;
+  allDay?: boolean;
 }
 
 /**
@@ -154,16 +155,25 @@ export async function listCalendarEvents(
   checkIn: string,
   checkOut: string
 ): Promise<CalendarEventSummary[]> {
+  return listCalendarEventsInRange(new Date(checkIn), new Date(checkOut));
+}
+
+export async function listCalendarEventsInRange(
+  start: Date,
+  end: Date,
+  maxResults = 10,
+): Promise<CalendarEventSummary[]> {
   const calendar = getCalendarClient();
   if (!calendar) return [];
 
   try {
     const res = await calendar.events.list({
       calendarId: getCalendarId(),
-      timeMin: new Date(checkIn).toISOString(),
-      timeMax: new Date(checkOut).toISOString(),
+      timeMin: start.toISOString(),
+      timeMax: end.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
+      maxResults,
     });
 
     return (res.data.items ?? []).map((e) => ({
@@ -171,6 +181,7 @@ export async function listCalendarEvents(
       summary: e.summary ?? '',
       start:   e.start?.date ?? e.start?.dateTime ?? '',
       end:     e.end?.date   ?? e.end?.dateTime   ?? '',
+      allDay:  !!e.start?.date,
     }));
   } catch (err) {
     console.error('[GoogleCalendar] Failed to list events:', err);

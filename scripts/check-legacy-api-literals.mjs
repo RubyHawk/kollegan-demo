@@ -17,6 +17,11 @@ const routeFilePattern = /^src\/app\/api(?:\/.*)?\/route\.[jt]sx?$/;
 
 const allowlist = [
   {
+    file: "src/platform/weather/smhi.ts",
+    reason: "SMHI open data API is an external third-party endpoint, not an internal app route.",
+    patterns: [/^\/api\/category\//],
+  },
+  {
     file: "src/app/offerter/publik/[token]/_api/public-offer.api.ts",
     reason: "Public offer signing and PDF routes stay intentionally non-versioned.",
     patterns: [/^\/api\/offers\/public\//],

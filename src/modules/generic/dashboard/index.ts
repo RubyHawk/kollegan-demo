@@ -6,8 +6,22 @@ export { default as CallIndicator } from './components/call-indicator';
 export { default as StatSummaryCards } from './components/stat-summary-cards';
 export { getDashboardOrganizationIdForUser, getDashboardReadModel } from './application/dashboard-read-model.service';
 export type {
+  DashboardActionItem,
+  DashboardActivityFeedItem,
+  DashboardCalendar,
+  DashboardCalendarEvent,
+  DashboardFocusMetrics,
+  DashboardOfferTableRow,
+  DashboardPipelineOverview,
+  DashboardPipelineStage,
+  DashboardProjectHandoff,
   DashboardReadModel,
+  DashboardToday,
+  DashboardTone,
+  DashboardWeather,
+  DashboardWeatherForecast,
   OfferActivityPoint,
+  OfferStatus,
   OfferProjectSummary,
   ProjectStage,
   ProjectStats,
