@@ -42,7 +42,7 @@
   display: grid;
   width: min(1100px, calc(100vw - 2.8rem));
   height: min(590px, calc(100vh - 2.8rem));
-  grid-template-columns: minmax(0, 1fr) minmax(24rem, 30rem);
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, 26rem);
   overflow: hidden;
   border: 1px solid rgb(255 255 255 / 0.07);
   border-radius: 1.6rem;
@@ -97,6 +97,6 @@
 
   .auth-scope .auth-shell {
     height: min(540px, calc(100vh - 2rem));
-    grid-template-columns: minmax(0, 1fr) minmax(23rem, 28rem);
+    grid-template-columns: minmax(0, 1fr) minmax(21rem, 24rem);
   }
 }
