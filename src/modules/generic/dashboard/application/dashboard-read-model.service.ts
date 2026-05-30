@@ -406,11 +406,24 @@ const DASHBOARD_TZ = 'Europe/Stockholm';
 function getLocalDayBounds(now: Date): { start: Date; end: Date } {
   const localDate = now.toLocaleDateString('sv-SE', { timeZone: DASHBOARD_TZ }); // "YYYY-MM-DD"
   const [y, m, d] = localDate.split('-').map(Number);
-  // Sample the UTC offset at noon on that calendar date (avoids DST edge cases at midnight)
-  const offsetMs = stockholmUtcOffsetMs(new Date(Date.UTC(y, m - 1, d, 12, 0, 0)));
-  // Stockholm midnight = UTC midnight of that date minus the positive UTC offset
-  const startMs = Date.UTC(y, m - 1, d, 0, 0, 0) - offsetMs;
-  return { start: new Date(startMs), end: new Date(startMs + 86_400_000) };
+  const start = stockholmMidnight(y, m - 1, d);
+  // Compute the next calendar day (handles month/year rollover via Date.UTC overflow)
+  const next = new Date(Date.UTC(y, m - 1, d + 1));
+  const end = stockholmMidnight(next.getUTCFullYear(), next.getUTCMonth(), next.getUTCDate());
+  return { start, end };
+}
+
+function stockholmMidnight(year: number, month: number, day: number): Date {
+  // Two-pass refinement to find the exact UTC instant of Stockholm midnight.
+  // Pass 1: estimate using the offset at noon on the same date — safely past any DST transition.
+  const noon = new Date(Date.UTC(year, month, day, 12));
+  const offset1 = stockholmUtcOffsetMs(noon);
+  const approx = new Date(Date.UTC(year, month, day, 0) - offset1);
+  // Pass 2: correct using the actual offset at the approximated midnight.
+  // On a DST transition day the noon offset differs from the midnight offset by 1 hour;
+  // sampling at the approximated midnight resolves the correct pre/post-DST offset.
+  const offset2 = stockholmUtcOffsetMs(approx);
+  return new Date(Date.UTC(year, month, day, 0) - offset2);
 }
 
 function stockholmUtcOffsetMs(ref: Date): number {
