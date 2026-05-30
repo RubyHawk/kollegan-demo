@@ -52,7 +52,7 @@
   z-index: 1;
   display: grid;
   width: min(1100px, calc(100vw - 2.8rem));
-  height: min(800px, calc(100vh - 2.8rem));
+  height: min(660px, calc(100vh - 2.8rem));
   grid-template-columns: minmax(0, 1fr) minmax(24rem, 30rem);
   overflow: hidden;
   border: 1px solid rgb(216 234 246 / 0.34);
@@ -112,7 +112,7 @@
   }
 
   .auth-scope .auth-shell {
-    height: min(720px, calc(100vh - 2rem));
+    height: min(600px, calc(100vh - 2rem));
     grid-template-columns: minmax(0, 1fr) minmax(23rem, 28rem);
   }
 }
