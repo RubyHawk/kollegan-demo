@@ -176,32 +176,34 @@
   opacity: 0;
 }
 
-.auth-scope .auth-login-cinematic__mist span,
-.auth-scope .auth-login-cinematic__wetness,
-.auth-scope .auth-login-cinematic__bubbles {
-  background:
-    radial-gradient(circle at 12% 22%, rgb(236 249 255 / 0.56) 0 2px, transparent 3px),
-    radial-gradient(circle at 33% 48%, rgb(236 249 255 / 0.44) 0 2px, transparent 3px),
-    radial-gradient(circle at 57% 34%, rgb(236 249 255 / 0.36) 0 1.8px, transparent 3px),
-    radial-gradient(circle at 79% 58%, rgb(236 249 255 / 0.4) 0 1.8px, transparent 3px);
-}
-
 .auth-scope .auth-login-cinematic__mist span {
   position: absolute;
-  inset: 0;
+  inset: -15%;
   display: block;
-  filter: blur(0.8px);
-  transform: translateX(-18%);
+  filter: blur(28px);
+}
+
+.auth-scope .auth-login-cinematic__mist span:nth-child(1) {
+  background:
+    radial-gradient(ellipse at 32% 44%, rgb(220 245 255 / 0.52), transparent 32%),
+    radial-gradient(ellipse at 70% 58%, rgb(210 240 255 / 0.38), transparent 28%),
+    radial-gradient(ellipse at 52% 26%, rgb(232 249 255 / 0.32), transparent 24%);
 }
 
 .auth-scope .auth-login-cinematic__mist span:nth-child(2) {
-  opacity: 0.68;
-  transform: translateX(8%) scaleY(1.08);
+  background:
+    radial-gradient(ellipse at 56% 36%, rgb(215 242 255 / 0.44), transparent 30%),
+    radial-gradient(ellipse at 20% 64%, rgb(205 238 255 / 0.34), transparent 26%),
+    radial-gradient(ellipse at 82% 28%, rgb(225 246 255 / 0.26), transparent 22%);
+  opacity: 0.78;
 }
 
 .auth-scope .auth-login-cinematic__mist span:nth-child(3) {
-  opacity: 0.46;
-  transform: translateX(24%) scaleY(0.94);
+  background:
+    radial-gradient(ellipse at 42% 66%, rgb(208 238 255 / 0.38), transparent 28%),
+    radial-gradient(ellipse at 76% 42%, rgb(220 244 255 / 0.28), transparent 24%),
+    radial-gradient(ellipse at 16% 36%, rgb(228 248 255 / 0.24), transparent 20%);
+  opacity: 0.56;
 }
 
 .auth-scope .auth-login-cinematic__wetness,
@@ -209,16 +211,13 @@
   inset: 0;
   z-index: 9;
   opacity: 0;
-  filter: blur(0.25px);
 }
 
 .auth-scope .auth-login-cinematic__wetness {
   background:
-    radial-gradient(circle at 18% 28%, rgb(255 255 255 / 0.72) 0 0.16rem, transparent 0.23rem),
-    radial-gradient(circle at 42% 46%, rgb(239 251 255 / 0.58) 0 0.13rem, transparent 0.2rem),
-    radial-gradient(circle at 68% 34%, rgb(239 251 255 / 0.48) 0 0.12rem, transparent 0.19rem),
-    linear-gradient(180deg, rgb(238 250 255 / 0.32), rgb(238 250 255 / 0.08)),
-    repeating-linear-gradient(90deg, transparent 0 4.4rem, rgb(255 255 255 / 0.16) 4.45rem 4.5rem, transparent 4.55rem 7.6rem);
+    linear-gradient(180deg, rgb(238 250 255 / 0.28), rgb(238 250 255 / 0.06)),
+    repeating-linear-gradient(90deg, transparent 0 4.4rem, rgb(255 255 255 / 0.1) 4.45rem 4.5rem, transparent 4.55rem 7.6rem);
+  filter: blur(1px);
 }
 
 .auth-scope .auth-login-cinematic__wetness::before,
@@ -227,27 +226,29 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, transparent 0 10%, rgb(255 255 255 / 0.38) 10.5% 11%, transparent 21%),
-    linear-gradient(180deg, transparent 0 25%, rgb(227 246 255 / 0.34) 25.5% 26%, transparent 40%),
-    linear-gradient(180deg, transparent 0 52%, rgb(255 255 255 / 0.28) 52.5% 53%, transparent 68%);
+    linear-gradient(180deg, transparent 0 10%, rgb(255 255 255 / 0.32) 10.5% 11%, transparent 21%),
+    linear-gradient(180deg, transparent 0 25%, rgb(227 246 255 / 0.28) 25.5% 26%, transparent 40%),
+    linear-gradient(180deg, transparent 0 52%, rgb(255 255 255 / 0.22) 52.5% 53%, transparent 68%);
   -webkit-mask-image:
     linear-gradient(90deg, transparent 0 12%, black 16% 18%, transparent 20% 36%, black 38% 40%, transparent 42% 60%, black 64% 66%, transparent 68% 100%);
   mask-image:
     linear-gradient(90deg, transparent 0 12%, black 16% 18%, transparent 20% 36%, black 38% 40%, transparent 42% 60%, black 64% 66%, transparent 68% 100%);
+  filter: blur(0.5px);
 }
 
 .auth-scope .auth-login-cinematic__wetness::after {
-  opacity: 0.62;
+  opacity: 0.54;
   transform: translateX(12%);
 }
 
 .auth-scope .auth-login-cinematic__bubbles {
   background:
-    radial-gradient(circle at 13% 25%, rgb(255 255 255 / 0.72) 0 0.28rem, transparent 0.34rem),
-    radial-gradient(circle at 31% 58%, rgb(238 250 255 / 0.56) 0 0.22rem, transparent 0.3rem),
-    radial-gradient(circle at 47% 38%, rgb(238 250 255 / 0.46) 0 0.18rem, transparent 0.25rem),
-    radial-gradient(circle at 69% 52%, rgb(238 250 255 / 0.42) 0 0.2rem, transparent 0.27rem),
-    radial-gradient(circle at 84% 29%, rgb(238 250 255 / 0.38) 0 0.16rem, transparent 0.22rem);
+    radial-gradient(circle at 13% 25%, rgb(255 255 255 / 0.58) 0 0.32rem, rgb(220 244 255 / 0.12) 0.32rem 0.52rem, transparent 0.54rem),
+    radial-gradient(circle at 31% 58%, rgb(238 250 255 / 0.5) 0 0.26rem, rgb(215 240 255 / 0.1) 0.26rem 0.44rem, transparent 0.46rem),
+    radial-gradient(circle at 47% 38%, rgb(238 250 255 / 0.44) 0 0.22rem, rgb(215 240 255 / 0.1) 0.22rem 0.38rem, transparent 0.4rem),
+    radial-gradient(circle at 69% 52%, rgb(238 250 255 / 0.4) 0 0.24rem, rgb(215 240 255 / 0.08) 0.24rem 0.4rem, transparent 0.42rem),
+    radial-gradient(circle at 84% 29%, rgb(238 250 255 / 0.36) 0 0.2rem, rgb(215 240 255 / 0.08) 0.2rem 0.34rem, transparent 0.36rem);
+  filter: blur(0.4px);
 }
 
 .auth-scope .auth-login-cinematic__squeegee {
@@ -367,9 +368,21 @@
   animation-timing-function: var(--ease-out-soft);
 }
 
-.auth-scope[data-state='cinematic'] .auth-login-cinematic__mist span {
-  animation-name: auth-cinematic-mist-drift;
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__mist span:nth-child(1) {
+  animation-name: auth-cinematic-mist-layer-1;
   animation-timing-function: ease-out;
+}
+
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__mist span:nth-child(2) {
+  animation-name: auth-cinematic-mist-layer-2;
+  animation-timing-function: ease-out;
+  animation-delay: 0.12s;
+}
+
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__mist span:nth-child(3) {
+  animation-name: auth-cinematic-mist-layer-3;
+  animation-timing-function: ease-out;
+  animation-delay: 0.22s;
 }
 
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__dashboard-reveal {
@@ -472,9 +485,25 @@
   95%, 100% { opacity: 0.08; }
 }
 
-@keyframes auth-cinematic-mist-drift {
-  0%, 50% { transform: translateX(-18%) scale(0.96); }
-  100% { transform: translateX(12%) scale(1.04); }
+@keyframes auth-cinematic-mist-layer-1 {
+  0%, 50% { opacity: 0; transform: translate(-4%, 2%) scale(0.96); }
+  58%  { opacity: 1; }
+  78%  { opacity: 0.72; transform: translate(3%, -1%) scale(1.06); }
+  95%, 100% { opacity: 0; transform: translate(8%, -3%) scale(1.1); }
+}
+
+@keyframes auth-cinematic-mist-layer-2 {
+  0%, 52% { opacity: 0; transform: translate(6%, -3%) scale(1.02); }
+  60%  { opacity: 0.78; }
+  80%  { opacity: 0.54; transform: translate(-2%, 2%) scale(1.08); }
+  95%, 100% { opacity: 0; transform: translate(-7%, 5%) scale(1.12); }
+}
+
+@keyframes auth-cinematic-mist-layer-3 {
+  0%, 54% { opacity: 0; transform: translate(2%, 4%) scale(0.94); }
+  62%  { opacity: 0.62; }
+  82%  { opacity: 0.4; transform: translate(6%, -2%) scale(1.04); }
+  95%, 100% { opacity: 0; transform: translate(10%, -4%) scale(1.08); }
 }
 
 @keyframes auth-cinematic-dashboard-reveal {
