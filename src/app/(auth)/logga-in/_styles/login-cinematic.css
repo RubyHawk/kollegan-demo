@@ -20,6 +20,7 @@
   transform: scale(0.74);
 }
 
+.auth-scope .auth-login-cinematic__window-zoom,
 .auth-scope .auth-login-cinematic__sun,
 .auth-scope .auth-login-cinematic__glass,
 .auth-scope .auth-login-cinematic__glare,
