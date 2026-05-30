@@ -33,7 +33,49 @@
 }
 
 .auth-scope .auth-page-shell__backdrop {
-  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.auth-scope .auth-page-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  animation: auth-page-wave-scroll linear infinite;
+}
+
+.auth-scope .auth-page-wave--a {
+  height: 34%;
+  fill: rgb(255 255 255 / 0.022);
+  animation-duration: 30s;
+}
+
+.auth-scope .auth-page-wave--b {
+  height: 25%;
+  fill: rgb(255 255 255 / 0.014);
+  animation-duration: 42s;
+  animation-direction: reverse;
+}
+
+.auth-scope .auth-page-wave--c {
+  height: 18%;
+  fill: rgb(100 160 220 / 0.026);
+  animation-duration: 36s;
+}
+
+@keyframes auth-page-wave-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-scope .auth-page-wave {
+    animation: none;
+  }
 }
 
 .auth-scope .auth-shell {
