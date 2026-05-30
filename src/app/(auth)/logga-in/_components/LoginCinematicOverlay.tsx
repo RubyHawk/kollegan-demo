@@ -5,6 +5,7 @@ import { AuthBrandMark } from './AuthBrandMark';
 export function LoginCinematicOverlay() {
   return (
     <div className="auth-login-cinematic" aria-hidden="true">
+      <div className="auth-login-cinematic__window-zoom" />
       <div className="auth-login-cinematic__sun">
         <AuthBrandMark size={34} />
       </div>

@@ -33,9 +33,29 @@
   pointer-events: none;
 }
 
+.auth-scope .auth-login-cinematic__window-zoom {
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(ellipse at 50% 70%, rgb(212 149 106 / 0.32) 0%, transparent 48%),
+    linear-gradient(
+      180deg,
+      #1a2d45 0%,
+      #2e4a6e 28%,
+      #5c7fa3 50%,
+      #906040 68%,
+      #2a3820 80%,
+      #111810 100%
+    );
+  transform-origin: var(--cinematic-win-ox, 35%) var(--cinematic-win-oy, 50%);
+  opacity: 0;
+  transform: scale(0.56);
+}
+
 .auth-scope .auth-login-cinematic__sun {
-  top: 11%;
-  right: 12%;
+  /* Positioned precisely over the measured brand-mark center */
+  left: calc(var(--cinematic-sun-x, 72%) - 1.0625rem);
+  top: calc(var(--cinematic-sun-y, 20%) - 1.0625rem);
   z-index: 3;
   display: grid;
   width: 2.125rem;
@@ -308,6 +328,7 @@
 }
 
 .auth-scope[data-state='cinematic'] .auth-login-cinematic::before,
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__window-zoom,
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__sun,
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__sun svg,
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__glass,
@@ -327,6 +348,11 @@
 
 .auth-scope[data-state='cinematic'] .auth-login-cinematic::before {
   animation-name: auth-cinematic-camera-approach;
+  animation-timing-function: var(--ease-out-soft);
+}
+
+.auth-scope[data-state='cinematic'] .auth-login-cinematic__window-zoom {
+  animation-name: auth-cinematic-window-zoom;
   animation-timing-function: var(--ease-out-soft);
 }
 
@@ -422,10 +448,16 @@
 }
 
 @keyframes auth-cinematic-sun-bloom {
-  0%   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
-  14%  { opacity: 1; transform: translate3d(-3%, -14%, 0) scale(4.2); }
-  38%  { opacity: 0.88; transform: translate3d(-6%, -22%, 0) scale(11); }
-  100% { opacity: 0.38; transform: translate3d(-7%, -26%, 0) scale(16); }
+  0%   { opacity: 1; transform: scale(1); }
+  14%  { opacity: 1; transform: scale(4.2); }
+  38%  { opacity: 0.88; transform: scale(11); }
+  100% { opacity: 0.38; transform: scale(16); }
+}
+
+@keyframes auth-cinematic-window-zoom {
+  0%, 3%    { opacity: 0; transform: scale(0.56); }
+  9%        { opacity: 1; transform: scale(0.60); }
+  30%, 100% { opacity: 1; transform: scale(1); }
 }
 
 @keyframes auth-cinematic-sun-mark {

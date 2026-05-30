@@ -1,4 +1,4 @@
-/* Dark room interior — the window lives inside this panel */
+/* Dark room interior — ambient light spills from the window */
 .auth-scope .auth-motion-stage {
   position: relative;
   flex: 1 1 auto;
@@ -7,10 +7,12 @@
   min-height: 100%;
   align-items: stretch;
   overflow: hidden;
-  background: #0a1820;
+  background:
+    radial-gradient(ellipse at 38% 50%, rgb(60 90 120 / 0.18) 0%, transparent 52%),
+    #0a1820;
 }
 
-/* Window frame */
+/* Window frame — dark wood, deep reveals */
 .auth-scope .auth-window {
   position: relative;
   flex: 1;
@@ -19,9 +21,40 @@
   border-radius: 0.22rem;
   overflow: hidden;
   box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.05),
-    0 0 0 1px rgb(0 0 0 / 0.45),
-    4px 6px 24px rgb(0 0 0 / 0.5);
+    inset 0 0 0 1px rgb(255 255 255 / 0.06),
+    inset 0 0 0 3px rgb(0 0 0 / 0.3),
+    0 0 0 1px rgb(0 0 0 / 0.55),
+    4px 8px 32px rgb(0 0 0 / 0.62),
+    -2px 0 16px rgb(0 0 0 / 0.4);
+}
+
+/* Horizontal transom bar — divides upper and lower panes */
+.auth-scope .auth-window::before {
+  content: '';
+  position: absolute;
+  top: 44%;
+  left: 0;
+  right: 0;
+  height: clamp(0.28rem, 0.6vw, 0.52rem);
+  background: linear-gradient(180deg, #2a1e12, #1c1510 45%, #2a1e12);
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.55), 0 -1px 3px rgb(0 0 0 / 0.3);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Vertical centre mullion */
+.auth-scope .auth-window::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: clamp(0.28rem, 0.6vw, 0.52rem);
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #2a1e12, #1c1510 45%, #2a1e12);
+  box-shadow: 1px 0 6px rgb(0 0 0 / 0.55), -1px 0 3px rgb(0 0 0 / 0.3);
+  z-index: 10;
+  pointer-events: none;
 }
 
 /* Diagonal light rays from the sun (upper-right) */

@@ -13,6 +13,25 @@ interface LoginShellProps {
 export function LoginShell({ redirect }: LoginShellProps) {
   const [cinematicActive, setCinematicActive] = useState(false);
 
+  function handleCinematicStart() {
+    const root = document.documentElement;
+    const markEl = document.querySelector<HTMLElement>('.auth-console__brand-mark');
+    if (markEl) {
+      const r = markEl.getBoundingClientRect();
+      root.style.setProperty('--cinematic-sun-x', `${(r.left + r.width / 2).toFixed(0)}px`);
+      root.style.setProperty('--cinematic-sun-y', `${(r.top + r.height / 2).toFixed(0)}px`);
+    }
+    const winEl = document.querySelector<HTMLElement>('.auth-window');
+    if (winEl) {
+      const r = winEl.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      root.style.setProperty('--cinematic-win-ox', `${((r.left + r.width / 2) / vw * 100).toFixed(1)}%`);
+      root.style.setProperty('--cinematic-win-oy', `${((r.top + r.height / 2) / vh * 100).toFixed(1)}%`);
+    }
+    setCinematicActive(true);
+  }
+
   return (
     <MotionConfig reducedMotion="user">
       <div
@@ -34,7 +53,7 @@ export function LoginShell({ redirect }: LoginShellProps) {
           <AuthSidebar />
           <LoginForm
             redirect={redirect}
-            onCinematicStart={() => setCinematicActive(true)}
+            onCinematicStart={handleCinematicStart}
           />
         </div>
         <LoginCinematicOverlay />
