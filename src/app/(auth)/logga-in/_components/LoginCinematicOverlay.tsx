@@ -12,19 +12,20 @@ function DashboardPreview() {
           <span>Sök saker och genvägar...</span>
         </div>
         <div className="auth-login-cinematic__dashboard-hero">
-          <span className="auth-login-cinematic__dashboard-skel auth-login-cinematic__dashboard-skel--title" />
-          <span className="auth-login-cinematic__dashboard-skel auth-login-cinematic__dashboard-skel--sub" />
+          <strong className="auth-login-cinematic__dashboard-hero-num">20</strong>
+          <span className="auth-login-cinematic__dashboard-hero-label">aktiva projekt</span>
+          <span className="auth-login-cinematic__dashboard-hero-sub">4 offerter väntar på svar</span>
         </div>
         <div className="auth-login-cinematic__dashboard-grid">
-          <span />
-          <span />
-          <span />
-          <span />
+          <span data-label="Offerter" data-value="24" />
+          <span data-label="Installation" data-value="8" />
+          <span data-label="Klara" data-value="156" />
+          <span data-label="Kunder" data-value="43" />
         </div>
         <div className="auth-login-cinematic__dashboard-lanes">
-          <span />
-          <span />
-          <span />
+          <span data-name="Eriksson villa, Sundbyberg" data-status="Montering" />
+          <span data-name="Kontorskomplex, Solna" data-status="Offert" />
+          <span data-name="Magnolia BRF, Stockholm" data-status="Klar" />
         </div>
       </div>
     </div>
