@@ -38,10 +38,10 @@ export function Panel({ title, eyebrow, action, children, className }: PanelProp
 
 export function EmptyPanelState({ title, body }: { title: string; body: string }) {
   return (
-    <div className="flex flex-1 items-center justify-center px-4 py-4 text-center">
-      <div>
+    <div className="flex flex-1 items-center px-4 py-3">
+      <div className="w-full rounded-md bg-[var(--surface-1)] px-3 py-3 text-left">
         <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-        <p className="mt-1 max-w-sm text-xs leading-5 text-[var(--text-secondary)]">{body}</p>
+        <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{body}</p>
       </div>
     </div>
   );
@@ -63,7 +63,7 @@ export function MetricTile({ label, value, detail, tone = 'neutral' }: {
 
   return (
     <div className={cn('min-h-[45px] min-w-0 rounded-md px-3 py-1.5', toneClass)}>
-      <p className="truncate whitespace-nowrap text-[9px] font-semibold uppercase leading-3 text-[var(--text-muted)]">{label}</p>
+      <p className="truncate whitespace-nowrap text-[10px] font-medium leading-3 text-[var(--text-muted)]">{label}</p>
       <p className="mt-0.5 text-[15px] font-semibold tabular-nums leading-none text-[var(--text-primary)]">{value}</p>
       <p className="mt-0.5 text-[9.5px] leading-3 text-[var(--text-secondary)]">{detail}</p>
     </div>
@@ -97,6 +97,32 @@ export function DashboardBadge({
       )}
     >
       {children}
+    </span>
+  );
+}
+
+export function DashboardDotLabel({
+  children,
+  tone = 'neutral',
+  className,
+}: {
+  children: ReactNode;
+  tone?: 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'info';
+  className?: string;
+}) {
+  const dotClass = {
+    neutral: 'bg-[var(--text-muted)]',
+    accent: 'bg-[var(--accent)]',
+    success: 'bg-[var(--status-accepted-text)]',
+    warning: 'bg-[var(--status-warning-text)]',
+    danger: 'bg-[var(--status-danger-text)]',
+    info: 'bg-[var(--status-viewed-text)]',
+  }[tone];
+
+  return (
+    <span className={cn('inline-flex items-center gap-2 text-[12px] font-medium leading-none text-[var(--text-secondary)]', className)}>
+      <span className={cn('h-1.5 w-1.5 rounded-full', dotClass)} />
+      <span className="truncate">{children}</span>
     </span>
   );
 }

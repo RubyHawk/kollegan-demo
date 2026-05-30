@@ -153,10 +153,10 @@ function buildActionItems(offers: RecentOffer[], todayStart: Date): DashboardAct
       items.push({
         id: `project-${offer.id}`,
         tone: 'neutral',
-        label: customerLabel(offer),
-        detail: `${offer.offerNumber ? `Offert #${offer.offerNumber}` : offer.title} behöver projekt`,
+        label: 'Skapa projekt',
+        detail: `${offerRef(offer)} accepterad · ${customerLabel(offer)} · ${formatSEKCompact(offer.totalIncVat)}`,
         href: `/offerter/${offer.id}`,
-        actionLabel: 'Skapa projekt',
+        actionLabel: 'Redo för projekt',
       });
       continue;
     }
@@ -164,11 +164,11 @@ function buildActionItems(offers: RecentOffer[], todayStart: Date): DashboardAct
     if (isOverdue(offer, todayStart) || isDraftStale(offer, todayStart)) {
       items.push({
         id: `${offer.status === 'draft' ? 'draft' : 'overdue'}-${offer.id}`,
-        tone: offer.status === 'draft' ? 'neutral' : 'danger',
-        label: customerLabel(offer),
+        tone: offer.status === 'draft' ? 'warning' : 'danger',
+        label: offer.status === 'draft' ? 'Skicka offert' : `Ring ${customerLabel(offer)}`,
         detail: offer.status === 'draft'
-          ? `${offer.title} väntar på att skickas`
-          : `${offer.offerNumber ? `Offert #${offer.offerNumber}` : offer.title} är över deadline`,
+          ? `Utkast klart · väntar på attest · ${formatSEKCompact(offer.totalIncVat)}`
+          : `${offerRef(offer)} · över deadline · ${formatSEKCompact(offer.totalIncVat)}`,
         href: `/offerter/${offer.id}`,
         actionLabel: offer.status === 'draft' ? 'Skicka offert' : 'Ring nu',
       });
@@ -180,8 +180,8 @@ function buildActionItems(offers: RecentOffer[], todayStart: Date): DashboardAct
       items.push({
         id: `soon-${offer.id}`,
         tone: 'warning',
-        label: customerLabel(offer),
-        detail: `${offer.offerNumber ? `Offert #${offer.offerNumber}` : offer.title} löper ut ${daysLeft <= 0 ? 'idag' : 'i morgon'}`,
+        label: `Förläng ${customerLabel(offer)}`,
+        detail: `${offerRef(offer)} · löper ut ${daysLeft <= 0 ? 'idag' : 'i morgon'} · ${formatSEKCompact(offer.totalIncVat)}`,
         href: `/offerter/${offer.id}`,
         actionLabel: 'Förläng',
       });
@@ -192,15 +192,17 @@ function buildActionItems(offers: RecentOffer[], todayStart: Date): DashboardAct
       items.push({
         id: `followup-${offer.id}`,
         tone: 'info',
-        label: customerLabel(offer),
-        detail: `${offer.status === 'viewed' ? 'Visad' : 'Skickad'} utan uppföljning`,
+        label: `Följ upp ${customerLabel(offer)}`,
+        detail: `${offerRef(offer)} · ${offer.status === 'viewed' ? 'visad' : 'skickad'} utan uppföljning`,
         href: `/offerter/${offer.id}`,
         actionLabel: 'Följ upp',
       });
     }
   }
 
-  return items.slice(0, 4);
+  return items
+    .sort((a, b) => priorityScore(b.tone) - priorityScore(a.tone))
+    .slice(0, 4);
 }
 
 function buildOfferTable(offers: RecentOffer[], todayStart: Date): DashboardOfferTableRow[] {
@@ -208,16 +210,25 @@ function buildOfferTable(offers: RecentOffer[], todayStart: Date): DashboardOffe
 
   return active.slice(0, 5).map((offer) => {
     const daysLeft = daysUntil(offer.validUntil, todayStart);
+    const offerNumber = offer.offerNumber ? `#${offer.offerNumber}` : 'Utkast';
+    const riskLabel = deadlineLabel(daysLeft, offer.status);
+    const nextStep = nextOfferStep(offer, daysLeft);
     return {
       id: offer.id,
       status: offer.status,
       statusLabel: STATUS_LABELS[offer.status] ?? offer.status,
       customer: customerLabel(offer),
-      offerNumber: offer.offerNumber ? `#${offer.offerNumber}` : 'Utkast',
+      offerNumber,
       amount: offer.totalIncVat,
-      deadlineLabel: deadlineLabel(daysLeft, offer.status),
+      deadlineLabel: riskLabel,
       deadlineTone: deadlineTone(daysLeft, offer.status),
-      nextStep: nextOfferStep(offer, daysLeft),
+      nextStep,
+      displayCustomerName: customerLabel(offer),
+      displayOfferTitle: offerRef(offer),
+      displaySubtitle: offerNumber === 'Utkast' ? 'Utkast · väntar på attest' : `${offerRef(offer)} · ${STATUS_LABELS[offer.status] ?? offer.status}`,
+      displayAmount: formatSEKCompact(offer.totalIncVat),
+      displayRiskLabel: riskLabel,
+      displayNextAction: nextStep,
       href: `/offerter/${offer.id}`,
     };
   });
@@ -267,7 +278,7 @@ function buildActivityFeed(snapshot: DashboardSnapshot): DashboardActivityFeedIt
         id: `accepted-${offer.id}`,
         tone: 'success',
         label: 'Offert accepterad',
-        detail: `${customer} · ${offer.offerNumber ? `#${offer.offerNumber}` : offer.title}`,
+        detail: `${customer} · ${offerRef(offer)}`,
         occurredAt: offer.acceptedAt,
         href: `/offerter/${offer.id}`,
       });
@@ -276,7 +287,7 @@ function buildActivityFeed(snapshot: DashboardSnapshot): DashboardActivityFeedIt
         id: `viewed-${offer.id}`,
         tone: 'info',
         label: 'Offert visad',
-        detail: `${customer} · ${offer.offerNumber ? `#${offer.offerNumber}` : offer.title}`,
+        detail: `${customer} · ${offerRef(offer)}`,
         occurredAt: offer.viewedAt,
         href: `/offerter/${offer.id}`,
       });
@@ -285,7 +296,7 @@ function buildActivityFeed(snapshot: DashboardSnapshot): DashboardActivityFeedIt
         id: `sent-${offer.id}`,
         tone: 'accent',
         label: 'Offert skickad',
-        detail: `${customer} · ${offer.offerNumber ? `#${offer.offerNumber}` : offer.title}`,
+        detail: `${customer} · ${offerRef(offer)}`,
         occurredAt: offer.sentAt,
         href: `/offerter/${offer.id}`,
       });
@@ -294,7 +305,7 @@ function buildActivityFeed(snapshot: DashboardSnapshot): DashboardActivityFeedIt
         id: `created-${offer.id}`,
         tone: 'neutral',
         label: 'Offert skapad',
-        detail: `${customer} · ${offer.title}`,
+        detail: `${customer} · ${offerRef(offer)}`,
         occurredAt: offer.createdAt,
         href: `/offerter/${offer.id}`,
       });
@@ -319,7 +330,7 @@ function toLocalCalendarEvent(meeting: DashboardSnapshot['meetingsToday'][number
 
 function nextOfferStep(offer: RecentOffer, daysLeft: number | null): string {
   if (offer.status === 'draft') return 'Skicka offert';
-  if (offer.status === 'accepted') return offer.project ? 'Överförd till projekt' : 'Skapa projekt';
+  if (offer.status === 'accepted') return offer.project ? 'Överförd till projekt' : 'Redo för projekt';
   if (daysLeft !== null && daysLeft < 0) return 'Följ upp idag';
   if (daysLeft !== null && daysLeft <= 1) return 'Förläng giltighet';
   if (offer.status === 'viewed') return 'Inväntar feedback';
@@ -328,6 +339,23 @@ function nextOfferStep(offer: RecentOffer, daysLeft: number | null): string {
 
 function customerLabel(offer: RecentOffer): string {
   return offer.recipientCompany || offer.recipientName || 'Ingen mottagare';
+}
+
+function offerRef(offer: RecentOffer): string {
+  return offer.offerNumber ? `Offert #${offer.offerNumber}` : 'Utkast';
+}
+
+function formatSEKCompact(value: number): string {
+  if (value >= 1_000_000) return `${Math.round(value / 100_000) / 10} mkr`;
+  if (value >= 10_000) return `${Math.round(value / 1000)} tkr`;
+  return `${new Intl.NumberFormat('sv-SE').format(value)} kr`;
+}
+
+function priorityScore(tone: DashboardActionItem['tone']): number {
+  if (tone === 'danger') return 4;
+  if (tone === 'warning') return 3;
+  if (tone === 'info') return 2;
+  return 1;
 }
 
 function isOverdue(offer: RecentOffer, todayStart: Date): boolean {

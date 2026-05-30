@@ -92,12 +92,19 @@ describe('dashboard read model derivations', () => {
     expect(model.actionItems[0]).toMatchObject({
       id: 'overdue-offer_overdue',
       tone: 'danger',
+      label: 'Ring Eriksson AB',
+      detail: 'Offert #2456 · över deadline · 50 tkr',
       actionLabel: 'Ring nu',
     });
     expect(model.offerTable[0]).toMatchObject({
       id: 'offer_overdue',
       deadlineLabel: 'Över deadline',
       nextStep: 'Följ upp idag',
+      displayCustomerName: 'Eriksson AB',
+      displaySubtitle: 'Offert #2456 · Skickad',
+      displayAmount: '50 tkr',
+      displayRiskLabel: 'Över deadline',
+      displayNextAction: 'Följ upp idag',
     });
   });
 

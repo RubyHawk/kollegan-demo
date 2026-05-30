@@ -102,6 +102,12 @@ export interface DashboardOfferTableRow {
   deadlineLabel: string;
   deadlineTone: DashboardTone;
   nextStep: string;
+  displayCustomerName: string;
+  displayOfferTitle: string;
+  displaySubtitle: string;
+  displayAmount: string;
+  displayRiskLabel: string;
+  displayNextAction: string;
   href: string;
 }
 

@@ -26,13 +26,27 @@ export function fmtTime(iso: string | null): string {
 }
 
 export function fmtRelativeDate(iso: string): string {
+  const value = new Date(iso);
+  const now = new Date();
+  const day = startOfLocalDay(value);
+  const today = startOfLocalDay(now);
+  const diffDays = Math.round((today.getTime() - day.getTime()) / 86400000);
+  const time = fmtTime(iso);
+
+  if (diffDays === 0) return `Idag ${time}`;
+  if (diffDays === 1) return `Igår ${time}`;
+  if (diffDays > 1 && diffDays < 7) return `${diffDays} dagar sedan`;
   return new Intl.DateTimeFormat('sv-SE', {
     day: 'numeric',
     month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
     timeZone: 'Europe/Stockholm',
-  }).format(new Date(iso));
+  }).format(value);
+}
+
+function startOfLocalDay(date: Date): Date {
+  const local = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Stockholm' }));
+  local.setHours(0, 0, 0, 0);
+  return local;
 }
 
 export function toneClasses(tone: DashboardTone): string {

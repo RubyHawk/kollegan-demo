@@ -20,35 +20,23 @@ import {
   DotsThreeVertical,
   Lightbulb,
 } from '@phosphor-icons/react';
-import { DashboardBadge, EmptyPanelState, Panel } from './dashboard-cockpit-primitives';
+import { DashboardBadge, DashboardDotLabel, EmptyPanelState, Panel } from './dashboard-cockpit-primitives';
 import { fmtCompactSEK, fmtRelativeDate, fmtSEK, toneClasses } from './dashboard-cockpit-utils';
 
 export function ActionQueue({ items }: { items: DashboardActionItem[] }) {
   return (
     <Panel
       title="Kräver handling"
-      eyebrow={`${items.length} prioriterade`}
+      eyebrow={`${items.length} prioriterade åtgärder`}
       action={<DotsThreeVertical size={18} weight="bold" className="text-[var(--text-muted)]" />}
       className="xl:col-span-5"
     >
       {items.length === 0 ? (
         <EmptyPanelState title="Inga akuta åtgärder" body="Öppna offerter och uppföljningar ser lugna ut just nu." />
       ) : (
-        <div className="flex-1 divide-y divide-[var(--cockpit-border-soft,var(--border))] overflow-hidden">
+        <div className="flex-1 divide-y divide-[var(--cockpit-divider,var(--cockpit-border-soft))] overflow-hidden">
           {items.map((item) => (
-            <Link key={item.id} href={item.href} className="grid min-h-[64px] grid-cols-[3px_minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[var(--surface-hover)]">
-              <span className={cn('h-9 rounded-full', priorityRailClass(item.tone))} />
-              <span className="min-w-0">
-                <span className="mb-1 flex min-w-0 items-center gap-2">
-                  <DashboardBadge tone={item.tone}>{priorityLabel(item.tone)}</DashboardBadge>
-                  <span className="block truncate text-[13px] font-semibold text-[var(--text-primary)]">{item.label}</span>
-                </span>
-                <span className="block truncate text-xs text-[var(--text-secondary)]">{item.detail}</span>
-              </span>
-              <span className="inline-flex h-8 items-center rounded-md border border-[var(--cockpit-border-soft,var(--border))] bg-[var(--surface-1)] px-3 text-xs font-semibold text-[var(--accent)]">
-                {item.actionLabel}
-              </span>
-            </Link>
+            <ActionQueueRow key={item.id} item={item} />
           ))}
         </div>
       )}
@@ -56,58 +44,68 @@ export function ActionQueue({ items }: { items: DashboardActionItem[] }) {
   );
 }
 
+function ActionQueueRow({ item }: { item: DashboardActionItem }) {
+  return (
+    <Link
+      href={item.href}
+      className="grid h-[64px] grid-cols-[3px_minmax(0,1fr)_auto] items-center gap-3 px-4 transition-colors hover:bg-[var(--surface-hover)]"
+    >
+      <span className={cn('h-9 rounded-full opacity-80', priorityRailClass(item.tone))} />
+      <span className="min-w-0">
+        <span className="mb-1 flex min-w-0 items-center gap-2">
+          <DashboardDotLabel tone={item.tone} className="w-[64px] shrink-0">{priorityLabel(item.tone)}</DashboardDotLabel>
+          <span className="block truncate text-[13px] font-semibold text-[var(--text-primary)]">{item.label}</span>
+        </span>
+        <span className="block truncate text-xs text-[var(--text-secondary)]">{item.detail}</span>
+      </span>
+      <span className="inline-flex h-8 items-center rounded-md bg-[var(--surface-1)] px-3 text-xs font-semibold text-[var(--accent)] ring-1 ring-[var(--cockpit-divider,var(--cockpit-border-soft))]">
+        {item.actionLabel}
+      </span>
+    </Link>
+  );
+}
+
 export function OfferTable({ rows }: { rows: DashboardOfferTableRow[] }) {
   return (
     <Panel
       title="Aktiva offerter"
-      eyebrow={`${rows.length} rader`}
+      eyebrow={`${rows.length} rader · Live`}
       action={<Link href="/offerter" className="text-xs font-semibold text-[var(--accent)] hover:underline">Visa alla</Link>}
       className="xl:col-span-7"
     >
       {rows.length === 0 ? (
         <EmptyPanelState title="Inga aktiva offerter" body="När du skapar eller skickar offerter visas de här." />
       ) : (
-        <div className="flex-1 overflow-hidden">
-          <table className="w-full table-fixed text-left">
-            <colgroup>
-              <col className="w-[112px]" />
-              <col />
-              <col className="w-[104px]" />
-              <col className="w-[126px]" />
-              <col className="w-[128px]" />
-            </colgroup>
-            <thead className="sticky top-0 border-b border-[var(--cockpit-border-soft,var(--border))] bg-[var(--surface-1)] text-[10px] uppercase text-[var(--text-muted)]">
-              <tr>
-                <th className="px-3 py-2 font-semibold">Status</th>
-                <th className="px-3 py-2 font-semibold">Kund</th>
-                <th className="px-3 py-2 font-semibold">Belopp</th>
-                <th className="px-3 py-2 font-semibold">Deadline</th>
-                <th className="px-3 py-2 font-semibold">Nästa steg</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--cockpit-border-soft,var(--border))]">
-              {rows.map((row) => (
-                <tr key={row.id} className="h-[52px] transition-colors hover:bg-[var(--surface-hover)]">
-                  <td className="px-3 py-1.5">
-                    <Link href={row.href}>
-                      <DashboardBadge tone={statusTone(row.status)}>{row.statusLabel}</DashboardBadge>
-                    </Link>
-                  </td>
-                  <td className="min-w-0 px-3 py-1.5">
-                    <Link href={row.href} className="block">
-                      <span className="block truncate text-[13px] font-semibold leading-4 text-[var(--text-primary)]">{row.customer}</span>
-                      <span className="block truncate text-[11px] leading-3 text-[var(--text-muted)]">Offert {row.offerNumber}</span>
-                    </Link>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-1.5 text-[13px] font-semibold tabular-nums text-[var(--text-primary)]">{fmtSEK(row.amount)}</td>
-                  <td className="px-3 py-1.5">
-                    <DashboardBadge tone={row.deadlineTone}>{row.deadlineLabel}</DashboardBadge>
-                  </td>
-                  <td className="truncate px-3 py-1.5 text-[13px] text-[var(--text-secondary)]">{row.nextStep}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="grid h-9 min-w-[650px] grid-cols-[112px_minmax(180px,1fr)_104px_126px_128px] items-center border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))] bg-[var(--surface-1)] px-3 text-[10px] font-semibold text-[var(--text-muted)]">
+            <span>Status</span>
+            <span>Kund</span>
+            <span>Belopp</span>
+            <span>Deadline</span>
+            <span>Nästa steg</span>
+          </div>
+          <div className="divide-y divide-[var(--cockpit-divider,var(--cockpit-border-soft))]">
+            {rows.map((row) => (
+              <Link
+                key={row.id}
+                href={row.href}
+                className="grid h-[52px] min-w-[650px] grid-cols-[112px_minmax(180px,1fr)_104px_126px_128px] items-center px-3 transition-colors hover:bg-[var(--surface-hover)]"
+              >
+                <span className="min-w-0 pr-3">
+                  <DashboardDotLabel tone={statusTone(row.status)}>{row.statusLabel}</DashboardDotLabel>
+                </span>
+                <span className="min-w-0 pr-3">
+                  <span className="block truncate text-[13px] font-semibold leading-4 text-[var(--text-primary)]">{row.displayCustomerName}</span>
+                  <span className="block truncate text-[11px] leading-4 text-[var(--text-muted)]">{row.displaySubtitle}</span>
+                </span>
+                <span className="whitespace-nowrap pr-3 text-[13px] font-semibold tabular-nums text-[var(--text-primary)]">{row.displayAmount}</span>
+                <span className="min-w-0 pr-3">
+                  <DashboardBadge tone={row.deadlineTone}>{row.displayRiskLabel}</DashboardBadge>
+                </span>
+                <span className="truncate text-[13px] text-[var(--text-secondary)]">{row.displayNextAction}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
     </Panel>
@@ -115,43 +113,47 @@ export function OfferTable({ rows }: { rows: DashboardOfferTableRow[] }) {
 }
 
 export function PipelinePanel({ overview }: { overview: DashboardPipelineOverview }) {
+  const weighted = Math.round(overview.totalValue * 0.35);
+
   return (
     <Panel title="Pipelineöversikt" eyebrow={`Värde i pipeline ${fmtSEK(overview.totalValue)}`} action={<DotsThreeVertical size={18} weight="bold" className="text-[var(--text-muted)]" />} className="xl:col-span-4">
-      <div className="flex-1 divide-y divide-[var(--cockpit-border-soft,var(--border))] px-4 py-2">
-        {overview.stages.map((stage) => (
-          <Link key={stage.id} href={`/offerter?status=${stage.id}`} className="grid h-[42px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 transition-colors hover:bg-[var(--surface-hover)]">
-            <div className="min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <p className="truncate text-xs font-semibold uppercase text-[var(--text-muted)]">{stage.label}</p>
-                <p className="text-xs font-semibold tabular-nums text-[var(--text-primary)]">{fmtCompactSEK(stage.value)}</p>
-              </div>
-              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
-                <motion.div
+      <div className="flex flex-1 flex-col px-4 py-2.5">
+        <div className="grid flex-1 grid-cols-2 gap-2">
+          {overview.stages.map((stage) => (
+            <Link key={stage.id} href={`/offerter?status=${stage.id}`} className="flex min-w-0 flex-col justify-between rounded-md bg-[var(--surface-1)] px-3 py-2 transition-colors hover:bg-[var(--surface-hover)]">
+              <span className="flex items-start justify-between gap-2">
+                <span className="min-w-0">
+                  <span className="block truncate text-[11px] font-medium text-[var(--text-muted)]">{stage.label}</span>
+                  <span className="mt-1 block text-lg font-semibold tabular-nums leading-none text-[var(--text-primary)]">{stage.count}</span>
+                </span>
+                <span className="whitespace-nowrap text-xs font-semibold tabular-nums text-[var(--text-secondary)]">{fmtCompactSEK(stage.value)}</span>
+              </span>
+                <span className="mt-2 h-1 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                <motion.span
                   initial={{ width: 0 }}
                   animate={{ width: `${stage.percent}%` }}
-                  className="h-full rounded-full bg-[var(--accent)]"
+                  className="block h-full rounded-full bg-[var(--accent)]"
                 />
-              </div>
-            </div>
-            <p className="w-8 text-right text-lg font-semibold tabular-nums text-[var(--text-primary)]">{stage.count}</p>
-          </Link>
-        ))}
-        <div className="grid h-[42px] grid-cols-3 items-center gap-3 pt-2">
-          <div>
-            <p className="text-[10px] uppercase text-[var(--text-muted)]">Vägd pipeline</p>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">{fmtSEK(Math.round(overview.totalValue * 0.35))}</p>
-          </div>
-          <div>
-            <p className="text-[10px] uppercase text-[var(--text-muted)]">Snittaffär</p>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">{overview.averageWonValue > 0 ? fmtSEK(overview.averageWonValue) : '--'}</p>
-          </div>
-          <div>
-            <p className="text-[10px] uppercase text-[var(--text-muted)]">Steg</p>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">{overview.stages.length}</p>
-          </div>
+              </span>
+            </Link>
+          ))}
+        </div>
+        <div className="mt-2 grid h-9 grid-cols-3 gap-3 border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] pt-2">
+          <PipelineStat label="Vägd pipeline" value={fmtSEK(weighted)} />
+          <PipelineStat label="Snittaffär" value={overview.averageWonValue > 0 ? fmtSEK(overview.averageWonValue) : '--'} />
+          <PipelineStat label="Steg" value={`${overview.stages.length}`} />
         </div>
       </div>
     </Panel>
+  );
+}
+
+function PipelineStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="truncate text-[10px] text-[var(--text-muted)]">{label}</p>
+      <p className="mt-0.5 truncate text-sm font-semibold tabular-nums text-[var(--text-primary)]">{value}</p>
+    </div>
   );
 }
 
@@ -167,37 +169,30 @@ export function ProjectHandoffPanel({
   return (
     <Panel
       title="Projektöverlämning"
-      eyebrow={`${projects.length} aktiva projekt`}
+      eyebrow={`${projects.length} redo för nästa steg`}
       action={<Link href="/projekt" className="text-xs font-semibold text-[var(--accent)] hover:underline">Alla projekt</Link>}
       className="xl:col-span-4"
     >
+      <div className="grid grid-cols-3 gap-2 px-4 py-3">
+        <ProjectSummaryMetric label="Accepterade" value={`${acceptedStage?.count ?? 0}`} />
+        <ProjectSummaryMetric label="Värde" value={fmtCompactSEK(acceptedStage?.value ?? 0)} />
+        <ProjectSummaryMetric label="Redo" value={`${projects.length}`} />
+      </div>
       {projects.length === 0 ? (
-        <div className="flex flex-1 flex-col justify-center px-4 py-4">
-          <div className="grid grid-cols-3 overflow-hidden rounded-md border border-[var(--cockpit-border-soft,var(--border))]">
-            <div className="border-r border-[var(--cockpit-border-soft,var(--border))] px-3 py-3">
-              <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">Accepterade</p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{acceptedStage?.count ?? 0}</p>
-            </div>
-            <div className="border-r border-[var(--cockpit-border-soft,var(--border))] px-3 py-3">
-              <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">Värde</p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{fmtCompactSEK(acceptedStage?.value ?? 0)}</p>
-            </div>
-            <div className="px-3 py-3">
-              <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">Redo</p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{projects.length}</p>
-            </div>
+        <div className="px-4 pb-4">
+          <div className="rounded-md bg-[var(--surface-1)] px-3 py-3">
+            <p className="text-xs font-semibold text-[var(--text-primary)]">Nästa steg</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+              Alla accepterade offerter är redan hanterade. Nya accepterade offerter utan projekt hamnar här.
+            </p>
           </div>
-          <p className="mt-4 text-center text-sm font-semibold text-[var(--text-primary)]">Inga projekt att lämna över</p>
-          <p className="mx-auto mt-1 max-w-xs text-center text-xs leading-5 text-[var(--text-secondary)]">
-            Accepterade offerter som saknar projekt hamnar här som nästa överlämning.
-          </p>
         </div>
       ) : (
-        <div className="flex-1 divide-y divide-[var(--cockpit-border-soft,var(--border))] overflow-auto">
+        <div className="min-h-0 flex-1 divide-y divide-[var(--cockpit-divider,var(--cockpit-border-soft))] overflow-auto">
           {projects.map((project) => (
-            <Link key={project.id} href={project.href} className="grid gap-2 px-4 py-3 transition-colors hover:bg-[var(--surface-hover)] sm:grid-cols-[minmax(0,1fr)_104px_88px] sm:items-center">
+            <Link key={project.id} href={project.href} className="grid h-[46px] gap-2 px-4 transition-colors hover:bg-[var(--surface-hover)] sm:grid-cols-[minmax(0,1fr)_104px_88px] sm:items-center">
               <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">{project.name}</span>
+                <span className="block truncate text-[13px] font-semibold text-[var(--text-primary)]">{project.name}</span>
                 <span className="mt-0.5 block truncate text-xs text-[var(--text-secondary)]">{project.customer}</span>
               </span>
               <DashboardBadge tone="accent" className="justify-center">{project.stageLabel}</DashboardBadge>
@@ -207,6 +202,15 @@ export function ProjectHandoffPanel({
         </div>
       )}
     </Panel>
+  );
+}
+
+function ProjectSummaryMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-md bg-[var(--surface-1)] px-3 py-2">
+      <p className="truncate text-[10px] text-[var(--text-muted)]">{label}</p>
+      <p className="mt-1 truncate text-lg font-semibold tabular-nums leading-none text-[var(--text-primary)]">{value}</p>
+    </div>
   );
 }
 
@@ -236,23 +240,23 @@ export function ActivityFeedPanel({
         </div>
       ) : (
         <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="min-h-0 flex-1 divide-y divide-[var(--cockpit-border-soft,var(--border))] overflow-hidden">
+          <div className="min-h-0 flex-1 divide-y divide-[var(--cockpit-divider,var(--cockpit-border-soft))] overflow-hidden">
             {items.slice(0, 2).map((item) => {
-            const content = (
+              const content = (
                 <span className="grid h-[48px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 transition-colors hover:bg-[var(--surface-hover)]">
-                <span className={cn('flex h-7 w-7 items-center justify-center rounded-full border', toneClasses(item.tone))}>
-                  {item.tone === 'success' ? <CheckCircleIcon size={14} /> : <ReceiptIcon size={14} />}
+                  <span className={cn('flex h-7 w-7 items-center justify-center rounded-full border', toneClasses(item.tone))}>
+                    {item.tone === 'success' ? <CheckCircleIcon size={14} /> : <ReceiptIcon size={14} />}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[13px] font-semibold text-[var(--text-primary)]">{item.label}</span>
+                    <span className="mt-0.5 block truncate text-xs text-[var(--text-secondary)]">{item.detail}</span>
+                  </span>
+                  <span className="text-[11px] text-[var(--text-muted)]">{fmtRelativeDate(item.occurredAt)}</span>
                 </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-[13px] font-semibold text-[var(--text-primary)]">{item.label}</span>
-                  <span className="mt-0.5 block truncate text-xs text-[var(--text-secondary)]">{item.detail}</span>
-                </span>
-                <span className="text-[11px] text-[var(--text-muted)]">{fmtRelativeDate(item.occurredAt)}</span>
-              </span>
-            );
+              );
 
-            return item.href ? <Link key={item.id} href={item.href}>{content}</Link> : <div key={item.id}>{content}</div>;
-          })}
+              return item.href ? <Link key={item.id} href={item.href}>{content}</Link> : <div key={item.id}>{content}</div>;
+            })}
           </div>
           <InsightBlock lines={insightLines} />
         </div>
@@ -263,13 +267,13 @@ export function ActivityFeedPanel({
 
 function InsightBlock({ lines }: { lines: string[] }) {
   return (
-    <div className="border-t border-[var(--cockpit-border-soft,var(--border))] bg-[var(--surface-1)] px-4 py-2.5">
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--accent-border)] bg-[var(--accent-subtle)] text-[var(--accent)]">
-          <Lightbulb size={15} weight="duotone" />
+    <div className="border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] px-4 py-2.5">
+      <div className="flex items-start gap-3 rounded-md bg-[var(--surface-1)] px-3 py-2.5">
+        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-[var(--accent)]">
+          <Lightbulb size={14} weight="duotone" />
         </span>
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-[var(--text-primary)]">Insikter</p>
+          <p className="text-xs font-semibold text-[var(--text-primary)]">Insikt</p>
           {lines.map((line) => (
             <p key={line} className="mt-0.5 truncate text-[11px] text-[var(--text-secondary)]">{line}</p>
           ))}
@@ -297,5 +301,5 @@ function priorityRailClass(tone: DashboardActionItem['tone']): string {
   if (tone === 'danger') return 'bg-[var(--status-danger-text)]';
   if (tone === 'warning') return 'bg-[var(--status-warning-text)]';
   if (tone === 'info') return 'bg-[var(--status-viewed-text)]';
-  return 'bg-[var(--accent)]';
+  return 'bg-[var(--text-muted)]';
 }

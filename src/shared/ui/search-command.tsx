@@ -80,18 +80,18 @@ export function SearchTrigger() {
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          'flex items-center gap-2 h-8 px-3 rounded-lg',
-          'border border-[var(--border)] bg-[var(--surface-0)]',
+          'flex h-8 min-w-[280px] items-center gap-2 rounded-lg px-3',
+          'border border-[var(--border-light)] bg-[var(--surface-0)] shadow-sm shadow-black/[0.02]',
           'text-sm text-[var(--text-muted)]',
-          'hover:border-[var(--text-muted)]/40 hover:bg-[var(--surface-hover)]',
+          'hover:border-[var(--text-muted)]/30 hover:bg-[var(--surface-hover)]',
           'transition-colors duration-150',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30',
         )}
         aria-label="Öppna snabbnavigering"
       >
         <SearchIcon size={14} />
-        <span className="hidden sm:inline text-[13px]">Sök sidor och genvägar...</span>
-        <kbd className="hidden sm:inline-flex items-center gap-0.5 ml-2 px-1.5 py-0.5 rounded bg-[var(--surface-alt)] border border-[var(--border-light)] text-[10px] font-medium text-[var(--text-muted)]">
+        <span className="hidden flex-1 text-left text-[13px] sm:inline">Sök kund, offert, projekt...</span>
+        <kbd className="ml-2 hidden items-center gap-0.5 rounded border border-[var(--border-light)] bg-[var(--surface-alt)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--text-muted)] sm:inline-flex">
           {isMac ? '⌘' : 'Ctrl'}K
         </kbd>
       </button>

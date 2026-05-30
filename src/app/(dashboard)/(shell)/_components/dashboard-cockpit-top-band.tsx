@@ -10,7 +10,7 @@ import type {
   DashboardToday,
   DashboardWeather,
 } from '@modules/generic/dashboard';
-import { DashboardBadge, MetricTile } from './dashboard-cockpit-primitives';
+import { DashboardDotLabel, MetricTile } from './dashboard-cockpit-primitives';
 import { fmtSEK, fmtTime } from './dashboard-cockpit-utils';
 
 const KPI_TREND = [
@@ -66,19 +66,20 @@ export function TopCockpitBand({
   averageWonValue: number;
 }) {
   const next = today.nextMeeting;
+  const weatherUpdated = weather.updatedAt ? fmtTime(weather.updatedAt) : '';
   const kpis = [
-    { label: 'Accepterat denna månad', value: fmtSEK(acceptedValue), detail: 'Vunna offerter', tone: 'accent' as const },
+    { label: 'Accepterat', value: fmtSEK(acceptedValue), detail: 'Vunna offerter', tone: 'accent' as const },
     { label: 'Aktiv pipeline', value: fmtSEK(pipelineValue), detail: 'Skickade och visade', tone: 'accent' as const },
     { label: 'Vinstgrad', value: acceptanceRate === null ? '--' : `${acceptanceRate}%`, detail: 'Av avslutade', tone: 'success' as const },
-    { label: 'Snittaffär', value: averageWonValue > 0 ? fmtSEK(averageWonValue) : '--', detail: 'Vunna', tone: 'info' as const },
+    { label: 'Snittaffär', value: averageWonValue > 0 ? fmtSEK(averageWonValue) : '--', detail: 'Vunna offerter', tone: 'info' as const },
   ];
 
   return (
     <motion.section
-      className="grid min-h-[172px] overflow-hidden rounded-lg border border-[var(--cockpit-border,var(--border))] bg-[var(--surface-0)] shadow-[var(--cockpit-shadow)] xl:h-[172px] xl:grid-cols-[1.25fr_1.85fr_3.45fr_1.15fr]"
+      className="grid min-h-[170px] overflow-hidden rounded-lg border border-[var(--cockpit-border,var(--border))] bg-[var(--surface-0)] shadow-[var(--cockpit-shadow)] xl:h-[170px] xl:grid-cols-[1.25fr_1.85fr_3.45fr_1.15fr]"
       variants={{ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } }}
     >
-      <div className="border-b border-[var(--cockpit-border-soft,var(--border))] px-4 py-3 xl:border-b-0 xl:border-r">
+      <div className="border-b border-[var(--cockpit-border-soft,var(--border))] px-4 py-3 xl:border-b-0 xl:border-r xl:border-[var(--cockpit-divider,var(--cockpit-border-soft))]">
         <div className="flex items-baseline justify-between gap-2">
           <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Idag</h2>
           <span className="text-[11px] font-medium text-[var(--text-muted)]">{today.dateLabel.replace(/^\S+\s/, '')}</span>
@@ -111,7 +112,7 @@ export function TopCockpitBand({
         </Link>
       </div>
 
-      <div className="border-b border-[var(--cockpit-border-soft,var(--border))] px-4 py-3 xl:border-b-0 xl:border-r">
+      <div className="border-b border-[var(--cockpit-border-soft,var(--border))] px-4 py-3 xl:border-b-0 xl:border-r xl:border-[var(--cockpit-divider,var(--cockpit-border-soft))]">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">Dagens fokus</h2>
           <DotsThreeVertical size={18} weight="bold" className="text-[var(--text-muted)]" />
@@ -124,10 +125,10 @@ export function TopCockpitBand({
         </div>
       </div>
 
-      <div className="grid border-b border-[var(--cockpit-border-soft,var(--border))] sm:grid-cols-2 xl:border-b-0 xl:border-r xl:grid-cols-4">
+      <div className="grid border-b border-[var(--cockpit-border-soft,var(--border))] sm:grid-cols-2 xl:border-b-0 xl:border-r xl:border-[var(--cockpit-divider,var(--cockpit-border-soft))] xl:grid-cols-4">
         {kpis.map((item) => (
-          <div key={item.label} className="min-w-0 border-b border-r border-[var(--cockpit-border-soft,var(--border))] px-3 py-4 last:border-r-0 sm:[&:nth-child(2n)]:border-r-0 xl:border-b-0 xl:[&:nth-child(2n)]:border-r xl:[&:nth-child(4n)]:border-r-0">
-            <p className="text-[10px] font-semibold uppercase leading-3 text-[var(--text-muted)]">{item.label}</p>
+          <div key={item.label} className="min-w-0 border-b border-r border-[var(--cockpit-divider,var(--cockpit-border-soft))] px-3 py-4 last:border-r-0 sm:[&:nth-child(2n)]:border-r-0 xl:border-b-0 xl:[&:nth-child(2n)]:border-r xl:[&:nth-child(4n)]:border-r-0">
+            <p className="text-[11px] font-medium leading-3 text-[var(--text-muted)]">{item.label}</p>
             <p className="mt-2 whitespace-nowrap text-[20px] font-semibold tabular-nums leading-none text-[var(--text-primary)]">{item.value}</p>
             <p className="mt-1 text-xs text-[var(--text-secondary)]">{item.detail}</p>
             <TinySparkline tone={item.tone} />
@@ -135,11 +136,11 @@ export function TopCockpitBand({
         ))}
       </div>
 
-      <div className="relative overflow-hidden bg-[linear-gradient(135deg,color-mix(in_srgb,var(--surface-0)_88%,white),color-mix(in_srgb,var(--accent-subtle)_42%,var(--surface-0)))] px-4 py-3">
+      <div className="relative overflow-hidden bg-[linear-gradient(135deg,color-mix(in_srgb,var(--surface-0)_88%,white),color-mix(in_srgb,var(--accent-subtle)_50%,var(--surface-0)))] px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">{weather.locationName}</h2>
-            <p className="text-[10px] text-[var(--text-secondary)]">SMHI</p>
+            <p className="text-[10px] text-[var(--text-secondary)]">SMHI{weatherUpdated ? ` · ${weatherUpdated}` : ''}</p>
           </div>
           <CloudSun size={22} weight="duotone" className="text-[var(--text-muted)]" />
         </div>
@@ -150,7 +151,7 @@ export function TopCockpitBand({
             </p>
             <p className="mt-1 text-xs leading-4 text-[var(--text-secondary)]">{weather.conditionLabel}</p>
           </div>
-          <DashboardBadge tone={weather.status === 'ok' ? 'info' : 'neutral'}>Nu</DashboardBadge>
+          <DashboardDotLabel tone={weather.status === 'ok' ? 'info' : 'neutral'}>{weather.status === 'ok' ? 'Live' : 'Ej ansluten'}</DashboardDotLabel>
         </div>
         <p className="mt-2 truncate text-[11px] text-[var(--text-secondary)]">
           Vind <strong className="font-semibold text-[var(--text-primary)]">{weather.windSpeed === null ? '--' : `${weather.windSpeed.toFixed(1)} m/s`}</strong>
@@ -158,7 +159,7 @@ export function TopCockpitBand({
           Fukt <strong className="font-semibold text-[var(--text-primary)]">{weather.humidity === null ? '--' : `${Math.round(weather.humidity)}%`}</strong>
         </p>
         {weather.forecast.length > 0 ? (
-          <div className="mt-2 flex items-center gap-3 border-t border-[var(--cockpit-border-soft,var(--border))] pt-2 text-[11px]">
+          <div className="mt-2 flex items-center gap-3 border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] pt-2 text-[11px]">
             {weather.forecast.slice(0, 2).map((point) => (
               <span key={point.time || point.label} className="min-w-0 truncate text-[var(--text-secondary)]">
                 {point.label} <strong className="font-semibold tabular-nums text-[var(--text-primary)]">{point.temperatureC === null ? '--' : `${Math.round(point.temperatureC)}°`}</strong>

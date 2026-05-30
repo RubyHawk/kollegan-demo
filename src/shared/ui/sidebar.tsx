@@ -423,7 +423,7 @@ export default function Sidebar({
             'w-7 h-7 rounded-full',
             'bg-[var(--surface)] border border-[var(--border)]',
             'text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)]/50 hover:shadow-md',
-            'transition-all duration-150',
+            'opacity-0 shadow-sm transition-all duration-150 group-hover/sidebar:opacity-100 focus-visible:opacity-100',
           )}
         >
           {collapsed ? <ChevronRightIcon size={14} /> : <ChevronLeftIcon size={14} />}
