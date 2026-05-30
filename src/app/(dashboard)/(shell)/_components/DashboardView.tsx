@@ -58,7 +58,7 @@ export default function DashboardView({
           </div>
 
           <div className="grid items-stretch gap-3 xl:min-h-0 xl:grid-cols-12">
-            <PipelinePanel overview={pipelineOverview} />
+            <PipelinePanel overview={pipelineOverview} acceptanceRate={acceptanceRate} />
             <ProjectHandoffPanel projects={projectHandoffs} overview={pipelineOverview} />
             <ActivityFeedPanel items={activityFeed} focusMetrics={focusMetrics} acceptanceRate={acceptanceRate} />
           </div>

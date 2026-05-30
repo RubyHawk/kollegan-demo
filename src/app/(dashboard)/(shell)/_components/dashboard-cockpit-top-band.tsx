@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Line, LineChart } from 'recharts';
 import { CalendarBlank, CloudSun, DotsThreeVertical } from '@phosphor-icons/react';
 import type {
   DashboardCalendar,
@@ -13,38 +12,6 @@ import type {
 import { DashboardDotLabel, MetricTile } from './dashboard-cockpit-primitives';
 import { fmtSEK, fmtTime } from './dashboard-cockpit-utils';
 
-const KPI_TREND = [
-  { x: 1, value: 22 },
-  { x: 2, value: 28 },
-  { x: 3, value: 25 },
-  { x: 4, value: 34 },
-  { x: 5, value: 31 },
-  { x: 6, value: 42 },
-  { x: 7, value: 39 },
-];
-
-function TinySparkline({ tone = 'accent' }: { tone?: 'accent' | 'success' | 'info' }) {
-  const color = tone === 'success'
-    ? 'var(--status-accepted-text)'
-    : tone === 'info'
-      ? 'var(--status-viewed-text)'
-      : 'var(--accent)';
-
-  return (
-    <div className="mt-2 overflow-hidden">
-      <LineChart width={92} height={24} data={KPI_TREND} margin={{ top: 3, right: 2, left: 2, bottom: 2 }}>
-        <Line
-          type="monotone"
-          dataKey="value"
-          stroke={color}
-          strokeWidth={1.8}
-          dot={false}
-          isAnimationActive={false}
-        />
-      </LineChart>
-    </div>
-  );
-}
 
 export function TopCockpitBand({
   today,
@@ -131,7 +98,6 @@ export function TopCockpitBand({
             <p className="text-[10.5px] font-medium leading-3 text-[var(--text-muted)]">{item.label}</p>
             <p className="mt-2 whitespace-nowrap text-[19px] font-semibold tabular-nums leading-none text-[var(--text-primary)]">{item.value}</p>
             <p className="mt-1 text-[11px] text-[var(--text-secondary)]">{item.detail}</p>
-            <TinySparkline tone={item.tone} />
           </div>
         ))}
       </div>

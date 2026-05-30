@@ -13,8 +13,12 @@ import type {
   DashboardTone,
 } from '@modules/generic/dashboard';
 import {
+  CalendarIcon,
   CheckCircleIcon,
+  FolderIcon,
+  PhoneIcon,
   ReceiptIcon,
+  SendIcon,
 } from '@shared/ui/icons';
 import { cn } from '@shared/lib/utils';
 import {
@@ -25,7 +29,17 @@ import {
 import { DashboardBadge, DashboardDotLabel, EmptyPanelState, Panel } from './dashboard-cockpit-primitives';
 import { fmtCompactSEK, fmtRelativeDate, fmtSEK, toneClasses } from './dashboard-cockpit-utils';
 
+// ── ActionQueue ───────────────────────────────────────────────────────────────
+
 export function ActionQueue({ items }: { items: DashboardActionItem[] }) {
+  const criticalCount = items.filter((i) => i.tone === 'danger').length;
+  const warningCount = items.filter((i) => i.tone === 'warning').length;
+  const insightText = criticalCount > 0
+    ? `${criticalCount} kritisk${criticalCount !== 1 ? 'a' : ''} åtgärd${criticalCount !== 1 ? 'er' : ''} kräver omedelbar hantering.`
+    : warningCount > 0
+      ? `${warningCount} erbjudande${warningCount !== 1 ? 'n' : ''} är på väg att löpa ut. Agera innan de förfaller.`
+      : 'Läget ser bra ut — alla offerter är under kontroll.';
+
   return (
     <Panel
       title="Kräver handling"
@@ -42,8 +56,17 @@ export function ActionQueue({ items }: { items: DashboardActionItem[] }) {
               <ActionQueueRow key={item.id} item={item} />
             ))}
           </div>
-          <Link href="/offerter" className="mt-auto inline-flex h-8 items-center px-3.5 text-[11px] font-semibold text-[var(--accent)] hover:underline">
-            Visa alla ({items.length})
+          <div className="mx-3.5 my-2 flex flex-1 items-start gap-2.5 overflow-hidden rounded-lg border border-dashed border-[var(--cockpit-border-soft,var(--border))] bg-[var(--surface-1)] px-3 py-2.5">
+            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-50 ring-1 ring-amber-200">
+              <Lightbulb size={13} weight="duotone" className="text-amber-500" />
+            </span>
+            <p className="text-[11.5px] leading-[1.55] text-[#475569]">{insightText}</p>
+          </div>
+          <Link
+            href="/offerter"
+            className="flex h-9 shrink-0 items-center justify-center border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] text-[11.5px] font-semibold text-[var(--accent)] hover:underline"
+          >
+            Visa alla åtgärder →
           </Link>
         </div>
       )}
@@ -51,34 +74,72 @@ export function ActionQueue({ items }: { items: DashboardActionItem[] }) {
   );
 }
 
+type ActionIconComponent = React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
+
+function ctaConfig(actionLabel: string): { Icon: ActionIconComponent; word: string } {
+  if (actionLabel === 'Ring nu') return { Icon: PhoneIcon, word: 'Ring' };
+  if (actionLabel === 'Följ upp') return { Icon: SendIcon, word: 'Följ up' };
+  if (actionLabel === 'Förläng') return { Icon: CalendarIcon, word: 'Förläng' };
+  if (actionLabel === 'Redo för projekt') return { Icon: FolderIcon, word: 'Projekt' };
+  if (actionLabel === 'Skicka offert') return { Icon: SendIcon, word: 'Skicka' };
+  return { Icon: CheckCircleIcon, word: 'Åtgärda' };
+}
+
+function ctaBtnClass(tone: DashboardActionItem['tone']): string {
+  if (tone === 'danger') return 'bg-red-50 text-red-700';
+  if (tone === 'warning') return 'bg-amber-50 text-amber-700';
+  if (tone === 'info') return 'bg-violet-50 text-violet-700';
+  return 'bg-slate-100 text-slate-600';
+}
+
 function ActionQueueRow({ item }: { item: DashboardActionItem }) {
+  const { Icon, word } = ctaConfig(item.actionLabel);
   return (
     <Link
       href={item.href}
-      className="grid h-[60px] grid-cols-[3px_minmax(0,1fr)_auto] items-center gap-3 px-3.5 transition-colors hover:bg-[var(--surface-hover)]"
+      className="grid min-h-[58px] grid-cols-[6px_minmax(0,1fr)_auto] items-stretch gap-3 pr-3.5 transition-colors hover:bg-[var(--surface-hover)]"
     >
-      <span className={cn('h-9 rounded-full opacity-80', priorityRailClass(item.tone))} />
-      <span className="min-w-0">
-        <span className="mb-1 flex min-w-0 items-center gap-2">
-          <DashboardDotLabel tone={item.tone} className="w-[60px] shrink-0">{priorityLabel(item.tone)}</DashboardDotLabel>
-          <span className="block truncate text-xs font-semibold text-[var(--text-primary)]">{item.label}</span>
-        </span>
-        <span className="block truncate text-[11px] text-[var(--text-secondary)]">{item.detail}</span>
+      <span className={cn('rounded-r-sm', priorityRailClass(item.tone))} />
+      <span className="flex min-w-0 flex-col justify-center py-2">
+        <span className="block truncate text-xs font-semibold text-[var(--text-primary)]">{item.label}</span>
+        <span className="mt-0.5 block truncate text-[11px] text-[#475569]">{item.detail}</span>
       </span>
-      <span className="inline-flex h-7 items-center rounded bg-[var(--surface-1)] px-2.5 text-[11px] font-semibold text-[var(--accent)] ring-1 ring-[var(--cockpit-divider,var(--cockpit-border-soft))]">
-        {item.actionLabel}
+      <span className="flex items-center">
+        <span className={cn('inline-flex h-8 w-[72px] items-center justify-center gap-1.5 rounded-md text-[11.5px] font-semibold', ctaBtnClass(item.tone))}>
+          <Icon size={12} strokeWidth={2.5} />
+          {word}
+        </span>
       </span>
     </Link>
   );
 }
 
+// ── OfferTable ────────────────────────────────────────────────────────────────
+
 export function OfferTable({ rows }: { rows: DashboardOfferTableRow[] }) {
   const [view, setView] = useState<'table' | 'diagram'>('table');
+  const [tab, setTab] = useState<'aktiva' | 'risk' | 'vunna'>('aktiva');
+
+  const riskRows = rows.filter((r) => r.deadlineTone === 'danger' || r.deadlineTone === 'warning');
+  const vunnaRows = rows.filter((r) => r.status === 'accepted');
+  const displayRows = tab === 'risk' ? riskRows : tab === 'vunna' ? vunnaRows : rows;
+
+  const eyebrow = tab === 'aktiva'
+    ? `${rows.length} aktiva`
+    : tab === 'risk'
+      ? `${riskRows.length} riskobjekt`
+      : `${vunnaRows.length} vunna`;
+
+  const footerLabel = tab === 'aktiva'
+    ? 'Visa alla offerter →'
+    : tab === 'risk'
+      ? 'Visa alla riskobjekt →'
+      : 'Visa alla vunna →';
 
   return (
     <Panel
       title="Aktiva offerter"
-      eyebrow={`${rows.length} rader · Live`}
+      eyebrow={eyebrow}
       action={<OfferTableToolbar view={view} onViewChange={setView} />}
       className="xl:col-span-7"
     >
@@ -87,22 +148,38 @@ export function OfferTable({ rows }: { rows: DashboardOfferTableRow[] }) {
       ) : view === 'diagram' ? (
         <OfferDiagram rows={rows} />
       ) : (
-        <div className="flex-1 overflow-x-auto overflow-y-hidden">
-          <div className="flex h-8 min-w-[650px] items-end gap-4 border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))] px-3.5 text-xs">
-            {['Aktiva', 'Risk', 'Vunna'].map((tab, index) => (
-              <span
-                key={tab}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Tab bar */}
+          <div className="flex min-w-[650px] items-end gap-1 border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))] px-3.5">
+            {([
+              { key: 'aktiva' as const, label: 'Aktiva', count: rows.length },
+              { key: 'risk' as const, label: 'Risk', count: riskRows.length },
+              { key: 'vunna' as const, label: 'Vunna', count: vunnaRows.length },
+            ] as const).map(({ key, label, count }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
                 className={cn(
-                  'flex h-full items-center border-b-2 font-medium',
-                  index === 0
-                    ? 'border-[var(--accent)] text-[var(--accent)]'
-                    : 'border-transparent text-[var(--text-secondary)]',
+                  'flex h-8 cursor-pointer items-center gap-1.5 border-b-2 px-1 text-xs font-medium transition-colors',
+                  tab === key
+                    ? 'border-[var(--accent)] font-semibold text-[var(--accent)]'
+                    : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
                 )}
               >
-                {tab}
-              </span>
+                {label}
+                <span className={cn(
+                  'flex h-4 min-w-4 items-center justify-center rounded px-1 text-[10px] font-semibold',
+                  tab === key
+                    ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
+                    : 'bg-[var(--surface-2)] text-[var(--text-muted)]',
+                )}>
+                  {count}
+                </span>
+              </button>
             ))}
           </div>
+          {/* Column headers */}
           <div className="grid h-8 min-w-[650px] grid-cols-[108px_minmax(180px,1fr)_100px_122px_124px] items-center border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))] bg-[var(--surface-1)] px-3.5 text-[9.5px] font-semibold uppercase text-[var(--text-muted)]">
             <span>Status</span>
             <span>Kund</span>
@@ -110,8 +187,9 @@ export function OfferTable({ rows }: { rows: DashboardOfferTableRow[] }) {
             <span>Deadline</span>
             <span>Nästa steg</span>
           </div>
-          <div className="divide-y divide-[var(--cockpit-divider,var(--cockpit-border-soft))]">
-            {rows.map((row) => (
+          {/* Rows */}
+          <div className="flex-1 divide-y divide-[var(--cockpit-divider,var(--cockpit-border-soft))] overflow-y-auto">
+            {displayRows.map((row) => (
               <Link
                 key={row.id}
                 href={row.href}
@@ -132,6 +210,13 @@ export function OfferTable({ rows }: { rows: DashboardOfferTableRow[] }) {
               </Link>
             ))}
           </div>
+          {/* Footer */}
+          <Link
+            href="/offerter"
+            className="flex h-9 shrink-0 items-center justify-center border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] text-[11.5px] font-semibold text-[var(--accent)] hover:underline"
+          >
+            {footerLabel}
+          </Link>
         </div>
       )}
     </Panel>
@@ -148,6 +233,7 @@ function OfferTableToolbar({
   return (
     <div className="flex items-center gap-1">
       <button
+        type="button"
         onClick={() => onViewChange('table')}
         className={cn(
           'rounded px-2 py-1 text-[11px] font-semibold transition-colors',
@@ -159,6 +245,7 @@ function OfferTableToolbar({
         Tabell
       </button>
       <button
+        type="button"
         onClick={() => onViewChange('diagram')}
         className={cn(
           'rounded px-2 py-1 text-[11px] font-semibold transition-colors',
@@ -174,24 +261,29 @@ function OfferTableToolbar({
   );
 }
 
+// ── OfferDiagram ──────────────────────────────────────────────────────────────
+
 const TONE_ORDER: DashboardTone[] = ['danger', 'warning', 'accent', 'info', 'success', 'neutral'];
+
 const TONE_LABELS: Record<DashboardTone, string> = {
   danger: 'Kritisk',
   warning: 'Snart',
   accent: 'Aktiv',
   info: 'Visad',
   success: 'Accepterad',
-  neutral: 'Standard',
+  neutral: 'Ingen deadline',
 };
 
-function toneFillVar(tone: DashboardTone): string {
-  if (tone === 'danger') return 'var(--status-danger-text)';
-  if (tone === 'warning') return 'var(--status-warning-text)';
-  if (tone === 'accent') return 'var(--accent)';
-  if (tone === 'info') return 'var(--status-viewed-text)';
-  if (tone === 'success') return 'var(--status-accepted-text)';
-  return 'var(--text-muted)';
-}
+const TONE_COLORS: Record<DashboardTone, string> = {
+  danger: '#dc2626',
+  warning: '#d97706',
+  accent: '#3b82f6',
+  info: '#8b5cf6',
+  success: '#16a34a',
+  neutral: '#94a3b8',
+};
+
+const SWEDISH_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
 
 function OfferDiagram({ rows }: { rows: DashboardOfferTableRow[] }) {
   const groups = TONE_ORDER.map((tone) => {
@@ -201,45 +293,56 @@ function OfferDiagram({ rows }: { rows: DashboardOfferTableRow[] }) {
 
   const maxTotal = Math.max(...groups.map((g) => g.total), 1);
   const grandTotal = rows.reduce((s, r) => s + r.amount, 0);
+  const now = new Date();
+  const monthLabel = `${SWEDISH_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
 
   return (
-    <div className="flex flex-1 flex-col overflow-y-auto px-3.5 py-3">
-      <div className="mb-3 flex items-center justify-between border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))] pb-2.5">
-        <span className="text-[11px] text-[var(--text-muted)]">Fördelning per deadline-urgency</span>
-        <span className="text-xs font-semibold tabular-nums text-[var(--text-primary)]">{fmtCompactSEK(grandTotal)} totalt</span>
+    <div className="flex flex-1 flex-col overflow-hidden px-3.5 py-3">
+      <p className="mb-3 text-[11px] font-medium text-[#475569]">Pipeline per deadline-risk</p>
+      <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
+        {groups.map((group) => {
+          const pct = grandTotal > 0 ? Math.round((group.total / grandTotal) * 100) : 0;
+          return (
+            <div key={group.tone} className="grid grid-cols-[88px_minmax(0,1fr)_116px] items-center gap-3">
+              <span className="truncate text-[11.5px] font-medium text-[#334155]">
+                {TONE_LABELS[group.tone]}
+              </span>
+              <div className="relative h-[36px] overflow-hidden rounded-md bg-[var(--surface-2)]">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(group.total / maxTotal) * 100}%` }}
+                  transition={{ duration: 0.45, ease: 'easeOut', delay: 0.04 }}
+                  className="absolute inset-y-0 left-0 rounded-md"
+                  style={{ backgroundColor: TONE_COLORS[group.tone] }}
+                />
+              </div>
+              <div className="text-right text-[11.5px] tabular-nums">
+                <span className="font-semibold text-[#334155]">{fmtCompactSEK(group.total)}</span>
+                {' '}
+                <span className="font-normal text-[#475569]">({pct}%)</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
-      <div className="flex flex-col gap-3">
-        {groups.map((group) => (
-          <div key={group.tone} className="grid grid-cols-[76px_minmax(0,1fr)_92px] items-center gap-3">
-            <span className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
-              {TONE_LABELS[group.tone]}
-            </span>
-            <div className="relative h-[18px] overflow-hidden rounded bg-[var(--surface-2)]">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(group.total / maxTotal) * 100}%` }}
-                transition={{ duration: 0.45, ease: 'easeOut', delay: 0.04 }}
-                className="absolute inset-y-0 left-0 rounded"
-                style={{ backgroundColor: toneFillVar(group.tone), opacity: 0.7 }}
-              />
-            </div>
-            <div className="flex flex-col items-end">
-              <span className="text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">
-                {fmtCompactSEK(group.total)}
-              </span>
-              <span className="text-[10px] text-[var(--text-muted)]">
-                {group.count} offert{group.count !== 1 ? 'er' : ''}
-              </span>
-            </div>
-          </div>
-        ))}
+      <div className="mt-3 shrink-0 border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] pt-2.5 text-[10.5px] text-[var(--text-muted)]">
+        Totalt {rows.length} offerter · {monthLabel}
       </div>
     </div>
   );
 }
 
-export function PipelinePanel({ overview }: { overview: DashboardPipelineOverview }) {
+// ── PipelinePanel ─────────────────────────────────────────────────────────────
+
+export function PipelinePanel({
+  overview,
+  acceptanceRate,
+}: {
+  overview: DashboardPipelineOverview;
+  acceptanceRate: number | null;
+}) {
   const weighted = Math.round(overview.totalValue * 0.35);
+  const conversionDisplay = acceptanceRate !== null ? `${acceptanceRate}%` : '–';
 
   return (
     <Panel title="Pipelineöversikt" eyebrow={`Värde i pipeline ${fmtSEK(overview.totalValue)}`} action={<DotsThreeVertical size={16} weight="bold" className="text-[var(--text-muted)]" />} className="xl:col-span-4">
@@ -265,7 +368,7 @@ export function PipelinePanel({ overview }: { overview: DashboardPipelineOvervie
         <div className="mt-auto grid h-11 grid-cols-3 gap-3 border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] pt-3">
           <PipelineStat label="Vägd pipeline" value={fmtSEK(weighted)} />
           <PipelineStat label="Snittaffär" value={overview.averageWonValue > 0 ? fmtSEK(overview.averageWonValue) : '--'} />
-          <PipelineStat label="Steg" value={`${overview.stages.length}`} />
+          <PipelineStat label="Konvertering" value={conversionDisplay} />
         </div>
       </div>
     </Panel>
@@ -280,6 +383,8 @@ function PipelineStat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+// ── ProjectHandoffPanel ───────────────────────────────────────────────────────
 
 export function ProjectHandoffPanel({
   projects,
@@ -337,6 +442,8 @@ function ProjectSummaryMetric({ label, value }: { label: string; value: string }
     </div>
   );
 }
+
+// ── ActivityFeedPanel ─────────────────────────────────────────────────────────
 
 export function ActivityFeedPanel({
   items,
@@ -407,18 +514,13 @@ function InsightBlock({ lines }: { lines: string[] }) {
   );
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function statusTone(status: string): DashboardOfferTableRow['deadlineTone'] {
   if (status === 'accepted') return 'success';
   if (status === 'viewed') return 'info';
   if (status === 'sent') return 'accent';
   return 'neutral';
-}
-
-function priorityLabel(tone: DashboardActionItem['tone']): string {
-  if (tone === 'danger') return 'Kritisk';
-  if (tone === 'warning') return 'Varning';
-  if (tone === 'info') return 'Info';
-  return 'Normal';
 }
 
 function priorityRailClass(tone: DashboardActionItem['tone']): string {
