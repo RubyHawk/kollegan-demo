@@ -1,29 +1,19 @@
 'use client';
 
 import { AuthBrandMark } from './AuthBrandMark';
-import { InstallationTools } from './InstallationTools';
 
 export function LoginMotionScene() {
   return (
-    <section className="auth-motion-stage" aria-label="Förberedd solfilmsmontering">
-      <div className="auth-install-sky" aria-hidden="true" />
-      <div className="auth-install-pane" aria-hidden="true">
-        <div className="auth-install-sun">
-          <AuthBrandMark size={42} />
+    <section className="auth-motion-stage">
+      <div className="auth-scene-inner">
+        <div className="auth-scene-brand">
+          <AuthBrandMark size={28} />
+          <span>Soleria</span>
         </div>
-        <div className="auth-install-city" />
-        <div className="auth-install-glare" />
-        <div className="auth-install-mullions" />
-        <div className="auth-install-haze" />
-      </div>
-
-      <div className="auth-install-brand">
-        <AuthBrandMark size={34} />
-        <span>SOLERIA</span>
-      </div>
-
-      <div className="auth-install-tools" aria-hidden="true">
-        <InstallationTools />
+        <div className="auth-scene-body">
+          <h2 className="auth-scene-headline">Solar project<br />management.</h2>
+          <p className="auth-scene-tagline">From quote to handover — one platform.</p>
+        </div>
       </div>
     </section>
   );
