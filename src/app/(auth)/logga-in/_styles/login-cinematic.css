@@ -343,7 +343,7 @@
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__squeegee,
 .auth-scope[data-state='cinematic'] .auth-sidebar,
 .auth-scope[data-state='cinematic'] .auth-login-panel {
-  animation-duration: 5.35s;
+  animation-duration: 8.8s;
   animation-fill-mode: forwards;
 }
 
@@ -413,7 +413,7 @@
 
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__squeegee {
   animation-name: auth-cinematic-squeegee-pass;
-  animation-timing-function: cubic-bezier(0.62, 0, 0.16, 1);
+  animation-timing-function: linear;
 }
 
 .auth-scope[data-state='cinematic'] .auth-sidebar,
@@ -436,63 +436,74 @@
   }
 }
 
+/* ─── Keyframes ─── */
+/* Total duration: 8.8s                                                    */
+/* 0–22%   Sun grows from logo (0–1.94s)                                   */
+/* 6–42%   Window zoom fills screen (0.53–3.70s)                           */
+/* 10–32%  Shell (sidebar + form) recedes (0.88–2.82s)                     */
+/* 40–72%  Film roll enters then exits (3.52–6.34s)                        */
+/* 44–66%  Film cover lays down slowly (3.87–5.81s)                        */
+/* 57–72%  Mist / wetness / bubbles bloom (5.02–6.34s)                     */
+/* Navigate at 70% = 6.16s                                                  */
+/* 72–96%  Squeegee sweeps linearly (6.34–8.45s)                           */
+
 @keyframes auth-cinematic-camera-approach {
-  0% { opacity: 0; transform: scale(0.74); }
-  10% { opacity: 1; }
-  30% { opacity: 1; transform: scale(1); }
-  100% { opacity: 0.78; transform: scale(1.04); }
+  0%         { opacity: 0; transform: scale(0.74); }
+  8%         { opacity: 1; }
+  32%        { opacity: 1; transform: scale(1); }
+  100%       { opacity: 0.72; transform: scale(1.04); }
 }
 
 @keyframes auth-cinematic-shell-recede {
-  0%, 12% { opacity: 1; transform: scale(1); }
-  28%, 100% { opacity: 0; transform: scale(1.08); }
+  0%, 10%    { opacity: 1; transform: scale(1); }
+  32%, 100%  { opacity: 0; transform: scale(1.1); }
 }
 
 @keyframes auth-cinematic-sun-bloom {
-  0%   { opacity: 1; transform: scale(1); }
-  14%  { opacity: 1; transform: scale(4.2); }
-  38%  { opacity: 0.88; transform: scale(11); }
-  100% { opacity: 0.38; transform: scale(16); }
+  0%         { opacity: 1; transform: scale(1); }
+  18%        { opacity: 1; transform: scale(4.8); }
+  40%        { opacity: 0.92; transform: scale(12); }
+  100%       { opacity: 0.32; transform: scale(18); }
 }
 
 @keyframes auth-cinematic-window-zoom {
-  0%, 3%    { opacity: 0; transform: scale(0.56); }
-  9%        { opacity: 1; transform: scale(0.60); }
-  30%, 100% { opacity: 1; transform: scale(1); }
+  0%, 6%     { opacity: 0; transform: scale(0.56); }
+  14%        { opacity: 1; transform: scale(0.62); }
+  42%, 100%  { opacity: 1; transform: scale(1); }
 }
 
 @keyframes auth-cinematic-sun-mark {
-  0%, 12% { opacity: 1; transform: scale(1); }
-  28% { opacity: 0.16; transform: scale(0.9); }
-  100% { opacity: 0; transform: scale(0.8); }
+  0%, 14%    { opacity: 1; transform: scale(1); }
+  30%        { opacity: 0.16; transform: scale(0.9); }
+  100%       { opacity: 0; transform: scale(0.8); }
 }
 
 @keyframes auth-cinematic-glass-approach {
-  0% { opacity: 0; transform: scale(0.74); inset: 8% 7%; }
-  12% { opacity: 1; }
-  32%, 100% { opacity: 0.9; transform: scale(1); inset: 0; }
+  0%         { opacity: 0; transform: scale(0.74); inset: 8% 7%; }
+  14%        { opacity: 1; }
+  38%, 100%  { opacity: 0.9; transform: scale(1); inset: 0; }
 }
 
 @keyframes auth-cinematic-glare {
-  0%, 6% { opacity: 0; transform: translate3d(5%, -4%, 0); }
-  18% { opacity: 0.9; }
-  48% { opacity: 0.5; transform: translate3d(-4%, 2%, 0); }
-  70%, 100% { opacity: 0.18; transform: translate3d(-8%, 4%, 0); }
+  0%, 8%     { opacity: 0; transform: translate3d(5%, -4%, 0); }
+  20%        { opacity: 0.9; }
+  52%        { opacity: 0.5; transform: translate3d(-4%, 2%, 0); }
+  72%, 100%  { opacity: 0.18; transform: translate3d(-8%, 4%, 0); }
 }
 
 @keyframes auth-cinematic-film-roll {
-  0%, 24% {
+  0%, 40% {
     opacity: 0;
     background-position: 0 0, 0 0, 0 0;
     transform: translateY(-3rem) scaleX(0.78);
   }
-  30% { opacity: 1; }
-  55% {
+  45%        { opacity: 1; }
+  62% {
     opacity: 1;
     background-position: 0 0, 0 0, 8rem 0;
     transform: translateY(calc(100vh - 1.3rem)) scaleX(1);
   }
-  67%, 100% {
+  72%, 100% {
     opacity: 0;
     background-position: 0 0, 0 0, 10rem 0;
     transform: translateY(calc(100vh + 1rem)) scaleX(1);
@@ -500,56 +511,56 @@
 }
 
 @keyframes auth-cinematic-film-cover {
-  0%, 25% { opacity: 0; transform: translateY(-102%); }
-  31% { opacity: 1; }
-  55%, 100% { opacity: 0.88; transform: translateY(0); }
+  0%, 42%    { opacity: 0; transform: translateY(-102%); }
+  47%        { opacity: 1; }
+  66%, 100%  { opacity: 0.88; transform: translateY(0); }
 }
 
 @keyframes auth-cinematic-wet-surface {
-  0%, 50% { opacity: 0; }
-  60% { opacity: 0.84; }
-  72% { opacity: 0.64; }
-  95%, 100% { opacity: 0.08; }
+  0%, 57%    { opacity: 0; }
+  65%        { opacity: 0.84; }
+  74%        { opacity: 0.64; }
+  96%, 100%  { opacity: 0.06; }
 }
 
 @keyframes auth-cinematic-mist-layer-1 {
-  0%, 50% { opacity: 0; transform: translate(-4%, 2%) scale(0.96); }
-  58%  { opacity: 1; }
-  78%  { opacity: 0.72; transform: translate(3%, -1%) scale(1.06); }
-  95%, 100% { opacity: 0; transform: translate(8%, -3%) scale(1.1); }
+  0%, 57%    { opacity: 0; transform: translate(-4%, 2%) scale(0.96); }
+  64%        { opacity: 1; }
+  80%        { opacity: 0.72; transform: translate(3%, -1%) scale(1.06); }
+  96%, 100%  { opacity: 0; transform: translate(8%, -3%) scale(1.1); }
 }
 
 @keyframes auth-cinematic-mist-layer-2 {
-  0%, 52% { opacity: 0; transform: translate(6%, -3%) scale(1.02); }
-  60%  { opacity: 0.78; }
-  80%  { opacity: 0.54; transform: translate(-2%, 2%) scale(1.08); }
-  95%, 100% { opacity: 0; transform: translate(-7%, 5%) scale(1.12); }
+  0%, 59%    { opacity: 0; transform: translate(6%, -3%) scale(1.02); }
+  66%        { opacity: 0.78; }
+  82%        { opacity: 0.54; transform: translate(-2%, 2%) scale(1.08); }
+  96%, 100%  { opacity: 0; transform: translate(-7%, 5%) scale(1.12); }
 }
 
 @keyframes auth-cinematic-mist-layer-3 {
-  0%, 54% { opacity: 0; transform: translate(2%, 4%) scale(0.94); }
-  62%  { opacity: 0.62; }
-  82%  { opacity: 0.4; transform: translate(6%, -2%) scale(1.04); }
-  95%, 100% { opacity: 0; transform: translate(10%, -4%) scale(1.08); }
+  0%, 61%    { opacity: 0; transform: translate(2%, 4%) scale(0.94); }
+  68%        { opacity: 0.62; }
+  84%        { opacity: 0.4; transform: translate(6%, -2%) scale(1.04); }
+  96%, 100%  { opacity: 0; transform: translate(10%, -4%) scale(1.08); }
 }
 
 @keyframes auth-cinematic-wipe-clear {
-  0%, 64%   { clip-path: inset(0 0 0 0%); }
-  69%       { clip-path: inset(0 0 0 0%); }
-  94%       { clip-path: inset(0 0 0 88%); }
-  100%      { clip-path: inset(0 0 0 100%); }
+  0%, 72%    { clip-path: inset(0 0 0 0%); }
+  74%        { clip-path: inset(0 0 0 0%); }
+  95%        { clip-path: inset(0 0 0 90%); }
+  100%       { clip-path: inset(0 0 0 100%); }
 }
 
 @keyframes auth-cinematic-squeegee-pass {
-  0%, 64% { opacity: 0; transform: translateX(-115%); }
-  69% { opacity: 1; transform: translateX(0); }
-  94% { opacity: 1; transform: translateX(88vw); }
-  100% { opacity: 0; transform: translateX(97vw); }
+  0%, 72%    { opacity: 0; transform: translateX(-115%); }
+  74%        { opacity: 1; transform: translateX(-2%); }
+  95%        { opacity: 1; transform: translateX(90vw); }
+  100%       { opacity: 0; transform: translateX(100vw); }
 }
 
 /* ─── Wipe-only overlay rendered on the dashboard ─── */
-/* All animations start at 64% mark via animation-delay: -3.42s          */
-/* The dashboard renders underneath; film clips away as squeegee sweeps.  */
+/* All animations start at 70% mark via animation-delay: -6.16s            */
+/* The dashboard renders underneath; film clips away as squeegee sweeps.   */
 
 .auth-scope.soleria-cinematic-wipe .auth-login-cinematic {
   opacity: 1;
@@ -565,8 +576,8 @@
 .auth-scope.soleria-cinematic-wipe .auth-login-cinematic__wetness,
 .auth-scope.soleria-cinematic-wipe .auth-login-cinematic__bubbles,
 .auth-scope.soleria-cinematic-wipe .auth-login-cinematic__squeegee {
-  animation-duration: 5.35s;
-  animation-delay: -3.42s;
+  animation-duration: 8.8s;
+  animation-delay: -6.16s;
   animation-fill-mode: forwards;
 }
 
@@ -605,22 +616,22 @@
 .auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist span:nth-child(1) {
   animation-name: auth-cinematic-mist-layer-1;
   animation-timing-function: ease-out;
-  animation-delay: -3.42s;
+  animation-delay: -6.16s;
 }
 
 .auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist span:nth-child(2) {
   animation-name: auth-cinematic-mist-layer-2;
   animation-timing-function: ease-out;
-  animation-delay: calc(-3.42s + 0.12s);
+  animation-delay: calc(-6.16s + 0.12s);
 }
 
 .auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist span:nth-child(3) {
   animation-name: auth-cinematic-mist-layer-3;
   animation-timing-function: ease-out;
-  animation-delay: calc(-3.42s + 0.22s);
+  animation-delay: calc(-6.16s + 0.22s);
 }
 
 .auth-scope.soleria-cinematic-wipe .auth-login-cinematic__squeegee {
   animation-name: auth-cinematic-squeegee-pass;
-  animation-timing-function: cubic-bezier(0.62, 0, 0.16, 1);
+  animation-timing-function: linear;
 }
