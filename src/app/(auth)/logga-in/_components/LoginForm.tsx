@@ -55,6 +55,10 @@ export function LoginForm({ redirect, onCinematicStart }: LoginFormProps) {
   const emailInputRef = useRef<HTMLInputElement | null>(null);
 
   function handleSuccessRedirect() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      router.push(redirect);
+      return;
+    }
     setExiting(true);
     onCinematicStart();
     router.prefetch(redirect);
