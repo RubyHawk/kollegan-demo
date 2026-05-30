@@ -327,7 +327,7 @@ function nextOfferStep(offer: RecentOffer, daysLeft: number | null): string {
 }
 
 function customerLabel(offer: RecentOffer): string {
-  return [offer.recipientName, offer.recipientCompany].filter(Boolean).join(' · ') || 'Ingen mottagare';
+  return offer.recipientCompany || offer.recipientName || 'Ingen mottagare';
 }
 
 function isOverdue(offer: RecentOffer, todayStart: Date): boolean {

@@ -410,7 +410,7 @@ export default function Sidebar({
         className={cn(
           'relative h-full group/sidebar shrink-0',
           'transition-[width] duration-200 ease-out',
-          collapsed ? 'w-16' : 'w-52',
+          collapsed ? 'w-16' : 'w-[216px]',
         )}
       >
         {/* Collapse toggle — centered on sidebar edge, always visible */}

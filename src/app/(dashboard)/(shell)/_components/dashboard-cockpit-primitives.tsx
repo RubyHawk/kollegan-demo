@@ -18,13 +18,13 @@ export function Panel({ title, eyebrow, action, children, className }: PanelProp
     <motion.section
       {...STAGGER_ITEM}
       className={cn(
-        'flex flex-col overflow-hidden rounded-md border border-[var(--cockpit-border,var(--border))] bg-[var(--surface-0)] shadow-[var(--cockpit-shadow)]',
+        'flex flex-col overflow-hidden rounded-lg border border-[var(--cockpit-border,var(--border))] bg-[var(--surface-0)] shadow-[var(--cockpit-shadow)]',
         className,
       )}
     >
-      <div className="flex min-h-10 items-center justify-between gap-3 border-b border-[var(--cockpit-border-soft,var(--border))] px-4 py-2">
+      <div className="flex h-11 items-center justify-between gap-3 border-b border-[var(--cockpit-border-soft,var(--border))] px-4">
         <div className="min-w-0">
-          <h2 className="truncate text-sm font-semibold tracking-tight text-[var(--text-primary)]">{title}</h2>
+          <h2 className="truncate text-[15px] font-semibold tracking-normal text-[var(--text-primary)]">{title}</h2>
           {eyebrow ? (
             <p className="mt-0.5 truncate text-[11px] text-[var(--text-secondary)]">{eyebrow}</p>
           ) : null}
@@ -38,7 +38,7 @@ export function Panel({ title, eyebrow, action, children, className }: PanelProp
 
 export function EmptyPanelState({ title, body }: { title: string; body: string }) {
   return (
-    <div className="flex flex-1 items-center justify-center px-4 py-6 text-center">
+    <div className="flex flex-1 items-center justify-center px-4 py-4 text-center">
       <div>
         <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
         <p className="mt-1 max-w-sm text-xs leading-5 text-[var(--text-secondary)]">{body}</p>
@@ -54,18 +54,49 @@ export function MetricTile({ label, value, detail, tone = 'neutral' }: {
   tone?: 'neutral' | 'accent' | 'success' | 'warning' | 'danger';
 }) {
   const toneClass = {
-    neutral: 'border-[var(--border)] bg-[var(--surface-1)]',
-    accent: 'border-[var(--accent-border)] bg-[var(--accent-subtle)]',
-    success: 'border-[color-mix(in_srgb,var(--status-accepted-text)_24%,var(--border))] bg-[var(--status-accepted-bg)]',
-    warning: 'border-[color-mix(in_srgb,var(--status-warning-text)_24%,var(--border))] bg-[var(--status-warning-bg)]',
-    danger: 'border-[color-mix(in_srgb,var(--status-danger-text)_24%,var(--border))] bg-[var(--status-danger-bg)]',
+    neutral: 'bg-[var(--surface-1)]',
+    accent: 'bg-[var(--accent-subtle)]',
+    success: 'bg-[var(--status-accepted-bg)]',
+    warning: 'bg-[var(--status-warning-bg)]',
+    danger: 'bg-[var(--status-danger-bg)]',
   }[tone];
 
   return (
-    <div className={cn('min-h-[52px] min-w-0 rounded-md border px-2.5 py-1.5', toneClass)}>
-      <p className="text-[8.5px] font-semibold uppercase leading-3 text-[var(--text-muted)]">{label}</p>
+    <div className={cn('min-h-[45px] min-w-0 rounded-md px-3 py-1.5', toneClass)}>
+      <p className="truncate whitespace-nowrap text-[9px] font-semibold uppercase leading-3 text-[var(--text-muted)]">{label}</p>
       <p className="mt-0.5 text-[15px] font-semibold tabular-nums leading-none text-[var(--text-primary)]">{value}</p>
       <p className="mt-0.5 text-[9.5px] leading-3 text-[var(--text-secondary)]">{detail}</p>
     </div>
+  );
+}
+
+export function DashboardBadge({
+  children,
+  tone = 'neutral',
+  className,
+}: {
+  children: ReactNode;
+  tone?: 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'info';
+  className?: string;
+}) {
+  const toneClass = {
+    neutral: 'bg-[var(--surface-2)] text-[var(--text-secondary)] border-[var(--cockpit-border-soft,var(--border))]',
+    accent: 'bg-[var(--accent-subtle)] text-[var(--accent)] border-[var(--accent-border)]',
+    success: 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted-text)] border-[color-mix(in_srgb,var(--status-accepted-text)_18%,var(--border))]',
+    warning: 'bg-[var(--status-warning-bg)] text-[var(--status-warning-text)] border-[color-mix(in_srgb,var(--status-warning-text)_18%,var(--border))]',
+    danger: 'bg-[var(--status-danger-bg)] text-[var(--status-danger-text)] border-[color-mix(in_srgb,var(--status-danger-text)_18%,var(--border))]',
+    info: 'bg-[var(--status-viewed-bg)] text-[var(--status-viewed-text)] border-[color-mix(in_srgb,var(--status-viewed-text)_18%,var(--border))]',
+  }[tone];
+
+  return (
+    <span
+      className={cn(
+        'inline-flex h-[22px] items-center rounded-full border px-2 text-[11px] font-medium leading-none whitespace-nowrap',
+        toneClass,
+        className,
+      )}
+    >
+      {children}
+    </span>
   );
 }
