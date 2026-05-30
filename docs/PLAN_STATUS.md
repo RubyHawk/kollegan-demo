@@ -12,7 +12,7 @@ It summarizes what the repository can currently prove about the ERP refactor and
 
 | Area | Status | Repo-backed completion | Evidence |
 | --- | --- | ---: | --- |
-| Engineering / refactor structure | Open | 0% | All 18 implementation-order items are structurally covered in the repo; inventory shows 0 legacy wrappers, 0 files above 1000 lines, 6 files above 500 lines, and 8 dead-candidate rows. |
+| Engineering / refactor structure | Open | 0% | All 18 implementation-order items are structurally covered in the repo; inventory shows 0 legacy wrappers, 0 files above 1000 lines, 6 files above 500 lines, and 9 dead-candidate rows. |
 | Governance / evidence structure | Complete | 100% | 93 Annex A controls are tracked, 93 have baseline evidence linked, 0 are missing applicability, 0 have structural open gaps, 0 are missing implementation status, and ISMS scope has no pending-decision language. |
 | Total repo-backed plan structure | Open | 0% | Some repo-side structural plan requirements are still missing or inconsistent. |
 
@@ -21,15 +21,15 @@ It summarizes what the repository can currently prove about the ERP refactor and
 | Metric | Value |
 |---|---:|
 | Implementation-order items in plan | 18 |
-| Tracked files scanned | 965 |
-| Source files scanned | 769 |
+| Tracked files scanned | 972 |
+| Source files scanned | 776 |
 | API route files | 113 |
 | API v1 route files | 77 |
 | Feature API clients | 21 |
 | Legacy API compatibility wrappers | 0 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 6 |
-| Dead-candidate review rows | 8 |
+| Dead-candidate review rows | 9 |
 | Literal legacy `/api/*` references outside route files | 40 |
 | Annex A controls tracked | 93 |
 | Controls with baseline evidence linked | 93 |
@@ -43,14 +43,14 @@ It summarizes what the repository can currently prove about the ERP refactor and
 | Read-first baseline docs | Complete | All listed read-first docs are present in `docs/`. |
 | Render and API contract baseline | Complete | Key contract and client verification files exist: `api-client.test.ts`, `feature-flags-api-contract.test.ts`, `public-offer-api-contract.test.ts`, and `theme-bootstrap.test.ts`. |
 | API v1 migration and wrappers | Complete | Inventory shows 77 `/api/v1` route files, 21 feature API clients, and 0 legacy compatibility wrappers. |
-| Cleanup and file-size enforcement | Open | Inventory shows 0 files above 1000 lines, 6 files above 500 lines, and 8 dead-candidate review rows. |
+| Cleanup and file-size enforcement | Open | Inventory shows 0 files above 1000 lines, 6 files above 500 lines, and 9 dead-candidate review rows. |
 | ISO readiness structure | Complete structurally | 93 Annex A controls are tracked, 0 are missing applicability, 0 have open-gap implementation status, and 0 are missing implementation status. |
 | Operational evidence execution | Operational work remaining | 10 operational registers are tracked, 10 are still empty, and the audit evidence index still has 10 open-gap rows. |
 | ISMS scope decisions | Complete structurally | ISMS scope status is "Structured baseline" and the current out-of-scope list has 3 explicit items. |
 
 ## Structural Readiness Notes
 
-- The cleanup inventory currently reports `0` legacy API compatibility wrappers and `8` dead-candidate review rows.
+- The cleanup inventory currently reports `0` legacy API compatibility wrappers and `9` dead-candidate review rows.
 - The inventory still reports `40` literal legacy `/api/*` references outside route files; the generated inventory distinguishes expected demo, public-document, OpenAPI, proxy, and integration rows from migration blockers.
 - The readiness dashboard currently reports `10` empty operational registers and `10` open evidence-index rows, which means the remaining plan work is mostly operating the ISMS and recording real events.
 - ISMS scope is currently marked as `Structured baseline` and no `Pending Decision` scope language is present in the tracked scope document.
