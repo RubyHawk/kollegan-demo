@@ -30,6 +30,7 @@ import {
   EditProjectDetailsPanel,
   RecordPurchaseOrderReceiptPanel,
 } from '../_components/project-panels';
+import { ProjectDetailLoadingState } from '../_components/project-detail-loading-state';
 import { STAGE_STYLE, fmtActor, fmtDate, fmtSEK } from '../_lib/project-display';
 import { useProjectDetailStore } from '../_store/project-detail.store';
 import {
@@ -114,11 +115,7 @@ export default function ProjectDetailPage() {
   }
 
   if (loading) {
-    return (
-      <div className="grid min-h-[620px] place-items-center px-8 py-10">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--accent)]" />
-      </div>
-    );
+    return <ProjectDetailLoadingState />;
   }
 
   if (!project) {

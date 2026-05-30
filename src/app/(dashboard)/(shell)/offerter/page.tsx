@@ -10,6 +10,7 @@ import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '@modules/supporting/offers/dom
 import { useOffersListStore, PAGE_SIZE } from './_store/offers-list.store';
 import { useOffersFormStore } from './_store/offers-form.store';
 import { OfferWizardShell } from './_components/offer-wizard-shell';
+import { OfferDraftRecoveryBanner } from './_components/offer-draft-recovery-banner';
 import { OffersLoadingState } from './_components/offers-loading-state';
 import { OffersMobileCards } from './_components/offers-mobile-cards';
 import { OffersDesktopTable } from './_components/offers-desktop-table';
@@ -18,6 +19,7 @@ import { useOfferListActions } from './_hooks/use-offer-list-actions';
 import { useOfferWizardLifecycle } from './_hooks/use-offer-wizard-lifecycle';
 import { useOfferWizardLookups } from './_hooks/use-offer-wizard-lookups';
 import { useOfferWizardSubmit } from './_hooks/use-offer-wizard-submit';
+import { useOfferDraftAutosave } from './_hooks/use-offer-draft-autosave';
 import {
   BulkActionBar,
   BulkSendResultBanner,
@@ -67,7 +69,7 @@ export default function OffersPage() {
     setCompanyResults, setCompanyLoading,
     setServices, setTemplates, setProductPickerRow, setProductSearch,
     setOpenLines, setOpenCards, setConfirmedSections,
-    updateLine, addLine, removeLine, reorderLines, resetForm,
+    updateLine, addLine, removeLine, restoreLine, reorderLines, resetForm,
   } = useOffersFormStore();
 
   const livePreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -79,6 +81,20 @@ export default function OffersPage() {
   }, [setError]);
 
   useEffect(() => { if (activeField) lastActiveFieldRef.current = activeField; }, [activeField]);
+
+  const {
+    draftStatus,
+    restoredAt,
+    discardRestoredDraft,
+    dismissRestoredDraft,
+  } = useOfferDraftAutosave({
+    editingOfferId,
+    form,
+    showForm,
+    wizardStep,
+    setForm,
+    setWizardStep,
+  });
 
   useEffect(() => {
     void load();
@@ -297,6 +313,12 @@ export default function OffersPage() {
       <OfferWizardShell
         open={showForm}
         wizardStep={wizardStep}
+        notice={restoredAt ? (
+          <OfferDraftRecoveryBanner
+            onContinue={dismissRestoredDraft}
+            onDiscard={discardRestoredDraft}
+          />
+        ) : null}
         livePreviewProps={{
           closeWizard,
           livePreviewHtml,
@@ -359,6 +381,7 @@ export default function OffersPage() {
           productPickerRow,
           productSearch,
           saveAndSendActive,
+          draftStatus,
           saving,
           services,
           totals: tots,
@@ -370,6 +393,7 @@ export default function OffersPage() {
           pickContact,
           pickProduct,
           removeLine,
+          restoreLine,
           reorderLines,
           searchCompanies,
           searchContacts,

@@ -14,6 +14,7 @@ import {
 } from '@shared/ui/dialog';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
+import { SaveStatusPill } from '@shared/ui/save-status-pill';
 import {
   Select,
   SelectContent,
@@ -23,6 +24,8 @@ import {
 } from '@shared/ui/select';
 import { useProjectDetailStore } from '../_store/project-detail.store';
 import type { PurchaseOrder } from '../_store/types';
+import { useProjectDetailsDraftAutosave } from '../_hooks/use-project-details-draft-autosave';
+import { ProjectDetailsDraftBanner } from './project-details-draft-banner';
 
 function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
@@ -86,12 +89,25 @@ export function EditProjectDetailsPanel({
   onOpenChange: (open: boolean) => void;
 }) {
   const draft = useProjectDetailStore((s) => s.detailsDraft);
+  const project = useProjectDetailStore((s) => s.project);
   const setDraft = useProjectDetailStore((s) => s.setDetailsDraft);
   const saveDetails = useProjectDetailStore((s) => s.saveDetails);
   const saving = useProjectDetailStore((s) => s.saving);
+  const {
+    clearDraft,
+    dismissRestoredDraft,
+    draftStatus,
+    restoredDraft,
+  } = useProjectDetailsDraftAutosave({
+    draft,
+    open,
+    projectId: project?.id ?? null,
+    setDraft,
+  });
 
   async function onSave() {
     await saveDetails();
+    clearDraft();
     onOpenChange(false);
   }
 
@@ -104,6 +120,8 @@ export function EditProjectDetailsPanel({
             {'Samla platsinfo, kontaktperson och interna noteringar p\u00E5 ett st\u00E4lle.'}
           </p>
         </DialogHeader>
+
+        {restoredDraft && <ProjectDetailsDraftBanner onContinue={dismissRestoredDraft} />}
 
         <div className="max-h-[72vh] overflow-y-auto bg-[var(--surface-alt)] px-5 py-5">
           <div className="grid gap-4">
@@ -205,6 +223,7 @@ export function EditProjectDetailsPanel({
         </div>
 
         <DialogFooter className="border-t border-[var(--border)] pt-4">
+          <SaveStatusPill status={saving ? 'saving' : draftStatus} className="mr-auto hidden sm:inline-flex" />
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Avbryt
           </Button>

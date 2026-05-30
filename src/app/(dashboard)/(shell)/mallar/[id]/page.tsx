@@ -18,6 +18,7 @@ import {
   type CreateTemplatePayload,
 } from '@shared/lib/api/templates.api';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
+import { Skeleton } from '@shared/ui/skeleton';
 import type { TemplateEditorHandle } from '../_components/TemplateEditor';
 import type { EmailEditorHandle } from '../_components/EmailEditor';
 import { normalizeTemplateImages } from '../_components/template-image-upload';
@@ -37,6 +38,21 @@ const EmailEditor = dynamic(() => import('../_components/EmailEditor'), {
 });
 
 type Tab = 'offer' | 'email';
+
+type TemplateDraftPayload = {
+  activeTab: Tab;
+  contentJson: unknown;
+  emailBody: string;
+  emailHeaderConfig: string;
+  emailSubject: string;
+  name: string;
+  selectedCompanyId: string;
+  updatedAt: string;
+};
+
+function isTemplateDraftPayload(value: unknown): value is TemplateDraftPayload {
+  return Boolean(value && typeof value === 'object' && 'contentJson' in value);
+}
 
 export default function TemplateEditorPage() {
   const router = useRouter();
@@ -60,6 +76,7 @@ export default function TemplateEditorPage() {
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [emailIsDirty, setEmailIsDirty] = useState(false);
+  const [draftRevision, setDraftRevision] = useState(0);
   const [draftBanner, setDraftBanner] = useState(false);
   const [migrationNotice, setMigrationNotice] = useState<string | null>(null);
 
@@ -122,17 +139,39 @@ export default function TemplateEditorPage() {
   }, [draftKey, loading]);
 
   useEffect(() => {
-    if (!isDirty) return;
-    const id = setInterval(() => {
+    if (!isDirty && !emailIsDirty) return;
+    const id = setTimeout(() => {
       try {
         const json = editorRef.current?.getJSON();
-        if (json) localStorage.setItem(draftKey, JSON.stringify(json));
+        if (!json) return;
+        const payload: TemplateDraftPayload = {
+          activeTab,
+          contentJson: json,
+          emailBody: emailEditorRef.current?.getBodyHtml() ?? initEmailBody,
+          emailHeaderConfig: emailEditorRef.current?.getHeaderConfig() ?? initEmailHdrCfg,
+          emailSubject: emailEditorRef.current?.getSubject() ?? initEmailSubject,
+          name,
+          selectedCompanyId,
+          updatedAt: new Date().toISOString(),
+        };
+        localStorage.setItem(draftKey, JSON.stringify(payload));
       } catch {
         // ignore local storage write failures
       }
-    }, 30_000);
-    return () => clearInterval(id);
-  }, [draftKey, isDirty]);
+    }, 1200);
+    return () => clearTimeout(id);
+  }, [
+    activeTab,
+    draftKey,
+    draftRevision,
+    emailIsDirty,
+    initEmailBody,
+    initEmailHdrCfg,
+    initEmailSubject,
+    isDirty,
+    name,
+    selectedCompanyId,
+  ]);
 
   const save = useCallback(async () => {
     if (!name.trim()) {
@@ -266,7 +305,24 @@ export default function TemplateEditorPage() {
               onClick={() => {
                 try {
                   const raw = localStorage.getItem(draftKey);
-                  if (raw) editorRef.current?.setContent(JSON.parse(raw) as object);
+                  if (raw) {
+                    const parsed = JSON.parse(raw) as unknown;
+                    if (isTemplateDraftPayload(parsed)) {
+                      setName(parsed.name);
+                      if (parsed.selectedCompanyId) setSelectedCompanyId(parsed.selectedCompanyId);
+                      setActiveTab(parsed.activeTab);
+                      if (parsed.activeTab === 'email') setEmailMounted(true);
+                      setInitEmailSubject(parsed.emailSubject);
+                      setInitEmailBody(parsed.emailBody);
+                      setInitEmailHdrCfg(parsed.emailHeaderConfig);
+                      editorRef.current?.setContent(parsed.contentJson as object);
+                      emailEditorRef.current?.setContent(parsed.emailSubject, parsed.emailBody, parsed.emailHeaderConfig);
+                    } else {
+                      editorRef.current?.setContent(parsed as object);
+                    }
+                    setIsDirty(true);
+                    setDraftRevision((current) => current + 1);
+                  }
                 } catch {
                   // ignore
                 }
@@ -308,11 +364,10 @@ export default function TemplateEditorPage() {
       )}
 
       {loading ? (
-        <div className="flex flex-1 items-center justify-center gap-3 text-[var(--text-muted)]">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-          </svg>
-          <span className="text-sm">Laddar mall...</span>
+        <div className="grid flex-1 gap-4 overflow-hidden bg-[var(--surface-alt)] p-4 lg:grid-cols-[220px_1fr_260px]">
+          <Skeleton className="hidden h-full min-h-[520px] rounded-2xl lg:block" />
+          <Skeleton className="h-full min-h-[520px] rounded-2xl" />
+          <Skeleton className="hidden h-full min-h-[520px] rounded-2xl lg:block" />
         </div>
       ) : (
         <>
@@ -320,7 +375,10 @@ export default function TemplateEditorPage() {
             <TemplateEditor
               initialContent={initialContentRef.current}
               editorRef={editorRef}
-              onUpdate={() => setIsDirty(true)}
+              onUpdate={() => {
+                setIsDirty(true);
+                setDraftRevision((current) => current + 1);
+              }}
               onMigrationNotice={setMigrationNotice}
             />
           </div>
@@ -332,7 +390,11 @@ export default function TemplateEditorPage() {
                 initialHtml={initEmailBody}
                 initialHeaderConfig={initEmailHdrCfg}
                 editorRef={emailEditorRef}
-                onUpdate={() => { setIsDirty(true); setEmailIsDirty(true); }}
+                onUpdate={() => {
+                  setIsDirty(true);
+                  setEmailIsDirty(true);
+                  setDraftRevision((current) => current + 1);
+                }}
               />
             </div>
           )}

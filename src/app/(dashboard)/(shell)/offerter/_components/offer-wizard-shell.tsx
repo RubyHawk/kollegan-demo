@@ -1,6 +1,6 @@
 'use client';
 
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { OfferWizardLivePreview } from './offer-wizard-live-preview';
 import { OfferWizardStepOne } from './offer-wizard-step-one';
@@ -12,6 +12,7 @@ type OfferWizardShellProps = {
   livePreviewProps: ComponentProps<typeof OfferWizardLivePreview>;
   stepOneProps: ComponentProps<typeof OfferWizardStepOne>;
   stepTwoProps: ComponentProps<typeof OfferWizardStepTwoPanel>;
+  notice?: ReactNode;
 };
 
 export function OfferWizardShell({
@@ -20,6 +21,7 @@ export function OfferWizardShell({
   livePreviewProps,
   stepOneProps,
   stepTwoProps,
+  notice,
 }: OfferWizardShellProps) {
   return (
     <AnimatePresence>
@@ -36,6 +38,7 @@ export function OfferWizardShell({
             <OfferWizardLivePreview {...livePreviewProps} />
 
             <div className="w-full lg:w-[460px] shrink-0 border-l border-[var(--border)] bg-[var(--surface)] flex flex-col overflow-hidden">
+              {notice}
               {wizardStep === 1 && <OfferWizardStepOne {...stepOneProps} />}
               {wizardStep === 2 && <OfferWizardStepTwoPanel {...stepTwoProps} />}
             </div>

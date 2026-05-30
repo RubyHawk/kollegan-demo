@@ -2,6 +2,7 @@
 
 import type { pricingSummary } from '../_lib/offers-dashboard-formatters';
 import { fmtSEK } from '../_lib/offers-dashboard-formatters';
+import { SaveStatusPill, type SaveStatus } from '@shared/ui/save-status-pill';
 
 type PricingSummary = ReturnType<typeof pricingSummary>;
 
@@ -10,6 +11,7 @@ type OfferWizardFooterProps = {
   saving: boolean;
   editingOfferId: string | null;
   saveAndSendActive: boolean;
+  draftStatus: SaveStatus;
   createOffer: () => Promise<void>;
   markSaveAndSend: () => void;
 };
@@ -19,9 +21,16 @@ export function OfferWizardFooter({
   saving,
   editingOfferId,
   saveAndSendActive,
+  draftStatus,
   createOffer,
   markSaveAndSend,
 }: OfferWizardFooterProps) {
+  const status: SaveStatus = saving
+    ? 'saving'
+    : editingOfferId
+      ? 'dirty'
+      : draftStatus;
+
   return (
     <div className="shrink-0 border-t border-[var(--border)] bg-[var(--surface)]">
       <div className="px-4 py-3 space-y-1">
@@ -50,6 +59,7 @@ export function OfferWizardFooter({
         </div>
       </div>
       <div className="px-4 pb-3 pt-1 flex items-center gap-2">
+        <SaveStatusPill status={status} className="hidden sm:inline-flex" />
         <button onClick={() => void createOffer()} disabled={saving} className="px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-active)] disabled:opacity-50 transition-all whitespace-nowrap">
           {saving && !saveAndSendActive ? 'Sparar...' : (editingOfferId ? 'Spara' : 'Utkast')}
         </button>

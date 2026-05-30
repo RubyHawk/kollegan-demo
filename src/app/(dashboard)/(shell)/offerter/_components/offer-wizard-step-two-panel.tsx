@@ -54,6 +54,7 @@ type OfferWizardStepTwoPanelProps = {
   productPickerRow: number | null;
   productSearch: string;
   saveAndSendActive: boolean;
+  draftStatus: 'idle' | 'dirty' | 'autosaving' | 'autosaved' | 'restored';
   saving: boolean;
   services: OfferProduct[];
   totals: PricingSummary;
@@ -65,6 +66,7 @@ type OfferWizardStepTwoPanelProps = {
   pickContact: (contact: ContactResult) => void;
   pickProduct: (idx: number, product: OfferProduct) => void;
   removeLine: (idx: number) => void;
+  restoreLine: (idx: number, line: LineItem) => void;
   reorderLines: (oldIdx: number, newIdx: number) => void;
   searchCompanies: (query: string) => void;
   searchContacts: (query: string) => void;
@@ -105,6 +107,7 @@ export function OfferWizardStepTwoPanel({
   productPickerRow,
   productSearch,
   saveAndSendActive,
+  draftStatus,
   saving,
   services,
   totals,
@@ -116,6 +119,7 @@ export function OfferWizardStepTwoPanel({
   pickContact,
   pickProduct,
   removeLine,
+  restoreLine,
   reorderLines,
   searchCompanies,
   searchContacts,
@@ -203,6 +207,7 @@ export function OfferWizardStepTwoPanel({
             updateLine={updateLine}
             addLine={addLine}
             removeLine={removeLine}
+            restoreLine={restoreLine}
             reorderLines={reorderLines}
             pickProduct={pickProduct}
           />
@@ -214,6 +219,7 @@ export function OfferWizardStepTwoPanel({
         saving={saving}
         editingOfferId={editingOfferId}
         saveAndSendActive={saveAndSendActive}
+        draftStatus={draftStatus}
         createOffer={createOffer}
         markSaveAndSend={markSaveAndSend}
       />

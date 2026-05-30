@@ -9,6 +9,7 @@ import {
 import type { Offer, OfferForm, OfferPriceDisplayMode } from '../_store/types';
 import { EMPTY_FORM } from '../_store/types';
 import type { BlockingAlert } from '../_components/offer-blocking-alerts';
+import { clearOfferDraftAutosave } from './use-offer-draft-autosave';
 
 type UseOfferWizardSubmitInput = {
   dismissNotices: () => void;
@@ -113,6 +114,7 @@ export function useOfferWizardSubmit({
       const savedOffer = editingOfferId
         ? await updateOffer(editingOfferId, body)
         : await createOfferRequest(body);
+      clearOfferDraftAutosave();
       setShowForm(false);
       setForm(EMPTY_FORM);
       setEditingOfferId(null);

@@ -5,6 +5,29 @@ class ApiError extends Error {
   }
 }
 
+const API_TRANSIENT_ERROR_EVENT = 'soleria:api-transient-error';
+const TRANSIENT_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+function isRetryableRequest(init?: RequestInit): boolean {
+  const method = init?.method?.toUpperCase() ?? 'GET';
+  return method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+}
+
+function isTransientStatus(status: number): boolean {
+  return TRANSIENT_STATUS_CODES.has(status);
+}
+
+function emitTransientApiEvent(status: number, message: string, willRetry: boolean) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(API_TRANSIENT_ERROR_EVENT, {
+    detail: { status, message, willRetry },
+  }));
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function readApiError(res: Response): Promise<string> {
   const fallback = 'Unknown error';
   const contentType = res.headers.get('content-type') ?? '';
@@ -56,14 +79,39 @@ async function tryRefresh(): Promise<boolean> {
 }
 
 // Wrap a fetch call so that a single 401 triggers a token refresh + one retry.
-// If the refresh also fails, the original 401 error is re-thrown.
+// Idempotent requests also get one gentle retry for temporary network/API failures.
 async function fetchWithRefresh(input: string, init?: RequestInit): Promise<Response> {
   const requestInit: RequestInit = {
     credentials: 'include',
     ...init,
   };
+  const retryable = isRetryableRequest(requestInit);
 
-  const res = await fetch(input, requestInit);
+  let res: Response;
+  try {
+    res = await fetch(input, requestInit);
+  } catch (error) {
+    if (retryable) {
+      emitTransientApiEvent(0, 'Tillfälligt nätverksproblem. Vi försöker igen automatiskt.', true);
+      await wait(650);
+      return fetch(input, requestInit);
+    }
+    throw error;
+  }
+
+  if (retryable && isTransientStatus(res.status)) {
+    emitTransientApiEvent(res.status, 'Tillfälligt nätverksproblem. Vi försöker igen automatiskt.', true);
+    await wait(res.status === 429 ? 1200 : 650);
+    const retry = await fetch(input, requestInit);
+    if (!retry.ok && isTransientStatus(retry.status)) {
+      emitTransientApiEvent(retry.status, 'Det gick inte att hämta data just nu. Försök igen om en stund.', false);
+    }
+    return retry;
+  }
+  if (!retryable && isTransientStatus(res.status)) {
+    emitTransientApiEvent(res.status, 'Tillfälligt serverproblem. Din ändring sparades inte, försök igen.', false);
+  }
+
   if (res.status !== 401) return res;
 
   const refreshed = await tryRefresh();

@@ -28,13 +28,15 @@ function ToastItem({
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setExiting(true), 3200);
-    const t2 = setTimeout(() => onDismiss(toast.id), 3550);
+    const exitDelay = toast.action ? 7800 : 3200;
+    const dismissDelay = toast.action ? 8200 : 3550;
+    const t1 = setTimeout(() => setExiting(true), exitDelay);
+    const t2 = setTimeout(() => onDismiss(toast.id), dismissDelay);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [toast.id, onDismiss]);
+  }, [toast.action, toast.id, onDismiss]);
 
   const borderColorMap: Record<Toast['color'], string> = {
     amber: 'border-l-amber-400',
@@ -60,14 +62,26 @@ function ToastItem({
         bgColorMap[toast.color],
         borderColorMap[toast.color],
         'backdrop-blur-xl shadow-elevated',
-        'min-w-55 max-w-75',
+        'min-w-55 max-w-85',
         exiting ? 'toast-out' : 'toast-in',
       ].join(' ')}
     >
       <span className="shrink-0 text-base">{toast.icon}</span>
-      <p className="text-sm font-medium text-(--text-primary) leading-snug">
+      <p className="text-sm font-medium text-[var(--text-primary)] leading-snug">
         {toast.message}
       </p>
+      {toast.action ? (
+        <button
+          type="button"
+          onClick={() => {
+            toast.action?.onClick();
+            onDismiss(toast.id);
+          }}
+          className="ml-1 shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-xs font-semibold text-[var(--accent)] transition-colors hover:bg-[var(--surface-active)]"
+        >
+          {toast.action.label}
+        </button>
+      ) : null}
     </div>
   );
 }
