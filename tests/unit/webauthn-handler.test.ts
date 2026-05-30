@@ -5,6 +5,7 @@ vi.mock('@platform/auth/vapi-auth', () => ({
 }));
 
 vi.mock('@platform/auth/jwt', () => ({
+  ACCESS_TOKEN_MAX_AGE_SEC: 60 * 60 * 2,
   verifyToken: vi.fn(),
   isTokenBlacklisted: vi.fn(),
   isUserBlacklisted: vi.fn(),
