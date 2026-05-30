@@ -62,13 +62,13 @@ export function LoginForm({ redirect, onCinematicStart }: LoginFormProps) {
     setExiting(true);
     onCinematicStart();
     router.prefetch(redirect);
-    // At 64% of the 5.35s cinematic (3.4s) the film is fully applied —
-    // perfect bridge point to soft-navigate. The dashboard mounts with the
-    // wipe overlay already in "film applied" state via negative animation-delay.
+    // At 70% of the 8.8s cinematic (6.16s) the film is fully applied and
+    // mist is blooming — perfect bridge point to soft-navigate. The dashboard
+    // mounts with the wipe overlay already at 70% via negative animation-delay.
     window.setTimeout(() => {
       arm();
       router.push(redirect);
-    }, 3400);
+    }, 6200);
   }
 
   function handleExitComplete() {

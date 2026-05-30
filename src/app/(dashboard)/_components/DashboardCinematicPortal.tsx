@@ -11,8 +11,8 @@ export function DashboardCinematicPortal() {
     if (pending) {
       clear();
       setActive(true);
-      // Wipe phase is (1 - 0.64) * 5.35s = 1.926s + buffer
-      const timer = window.setTimeout(() => setActive(false), 2100);
+      // Wipe phase is (1 - 0.70) * 8.8s = 2.64s + buffer
+      const timer = window.setTimeout(() => setActive(false), 2700);
       return () => window.clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
