@@ -401,12 +401,29 @@ function deadlineTone(daysLeft: number | null, status: string): DashboardTone {
   return 'neutral';
 }
 
+const DASHBOARD_TZ = 'Europe/Stockholm';
+
 function getLocalDayBounds(now: Date): { start: Date; end: Date } {
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-  return { start, end };
+  const localDate = now.toLocaleDateString('sv-SE', { timeZone: DASHBOARD_TZ }); // "YYYY-MM-DD"
+  const [y, m, d] = localDate.split('-').map(Number);
+  // Sample the UTC offset at noon on that calendar date (avoids DST edge cases at midnight)
+  const offsetMs = stockholmUtcOffsetMs(new Date(Date.UTC(y, m - 1, d, 12, 0, 0)));
+  // Stockholm midnight = UTC midnight of that date minus the positive UTC offset
+  const startMs = Date.UTC(y, m - 1, d, 0, 0, 0) - offsetMs;
+  return { start: new Date(startMs), end: new Date(startMs + 86_400_000) };
+}
+
+function stockholmUtcOffsetMs(ref: Date): number {
+  // Returns ms that DASHBOARD_TZ is ahead of UTC at the given UTC instant
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: DASHBOARD_TZ,
+    year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: 'numeric', minute: 'numeric', second: 'numeric',
+    hour12: false,
+  }).formatToParts(ref);
+  const v = (t: string) => Number(parts.find((p) => p.type === t)!.value);
+  return Date.UTC(v('year'), v('month') - 1, v('day'), v('hour') % 24, v('minute'), v('second'))
+    - ref.getTime();
 }
 
 function formatDateLong(date: Date): string {

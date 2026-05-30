@@ -100,7 +100,7 @@ export function weatherSymbolLabel(symbolCode: number | null): string {
     case 6:
       return 'Molnigt';
     case 7:
-      return 'Mulet';
+      return 'Dimma';
     case 8:
     case 18:
     case 19:
@@ -119,14 +119,13 @@ export function weatherSymbolLabel(symbolCode: number | null): string {
       return 'Snöblandat';
     case 14:
     case 15:
-    case 24:
-    case 25:
-      return 'Snö';
     case 16:
     case 17:
+    case 24:
+    case 25:
     case 26:
     case 27:
-      return 'Dimma';
+      return 'Snö';
     default:
       return 'Prognos saknas';
   }
