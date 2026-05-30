@@ -149,68 +149,71 @@ export function OfferTable({ rows }: { rows: DashboardOfferTableRow[] }) {
         <OfferDiagram rows={rows} />
       ) : (
         <div className="flex flex-1 flex-col overflow-hidden">
-          {/* Tab bar */}
-          <div className="flex min-w-[650px] items-end gap-1 border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))] px-3.5">
-            {([
-              { key: 'aktiva' as const, label: 'Aktiva', count: rows.length },
-              { key: 'risk' as const, label: 'Risk', count: riskRows.length },
-              { key: 'vunna' as const, label: 'Vunna', count: vunnaRows.length },
-            ] as const).map(({ key, label, count }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setTab(key)}
-                className={cn(
-                  'flex h-8 cursor-pointer items-center gap-1.5 border-b-2 px-1 text-xs font-medium transition-colors',
-                  tab === key
-                    ? 'border-[var(--accent)] font-semibold text-[var(--accent)]'
-                    : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
-                )}
-              >
-                {label}
-                <span className={cn(
-                  'flex h-4 min-w-4 items-center justify-center rounded px-1 text-[10px] font-semibold',
-                  tab === key
-                    ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
-                    : 'bg-[var(--surface-2)] text-[var(--text-muted)]',
-                )}>
-                  {count}
-                </span>
-              </button>
-            ))}
+          {/* Horizontal scroll area: tabs + headers + rows scroll together on narrow viewports */}
+          <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
+            {/* Tab bar */}
+            <div className="flex min-w-[650px] items-end gap-1 border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))] px-3.5">
+              {([
+                { key: 'aktiva' as const, label: 'Aktiva', count: rows.length },
+                { key: 'risk' as const, label: 'Risk', count: riskRows.length },
+                { key: 'vunna' as const, label: 'Vunna', count: vunnaRows.length },
+              ] as const).map(({ key, label, count }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setTab(key)}
+                  className={cn(
+                    'flex h-8 cursor-pointer items-center gap-1.5 border-b-2 px-1 text-xs font-medium transition-colors',
+                    tab === key
+                      ? 'border-[var(--accent)] font-semibold text-[var(--accent)]'
+                      : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
+                  )}
+                >
+                  {label}
+                  <span className={cn(
+                    'flex h-4 min-w-4 items-center justify-center rounded px-1 text-[10px] font-semibold',
+                    tab === key
+                      ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
+                      : 'bg-[var(--surface-2)] text-[var(--text-muted)]',
+                  )}>
+                    {count}
+                  </span>
+                </button>
+              ))}
+            </div>
+            {/* Column headers */}
+            <div className="grid h-8 min-w-[650px] grid-cols-[108px_minmax(180px,1fr)_100px_122px_124px] items-center border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))] bg-[var(--surface-1)] px-3.5 text-[9.5px] font-semibold uppercase text-[var(--text-muted)]">
+              <span>Status</span>
+              <span>Kund</span>
+              <span>Belopp</span>
+              <span>Deadline</span>
+              <span>Nästa steg</span>
+            </div>
+            {/* Rows */}
+            <div className="divide-y divide-[var(--cockpit-divider,var(--cockpit-border-soft))]">
+              {displayRows.map((row) => (
+                <Link
+                  key={row.id}
+                  href={row.href}
+                  className="grid h-[41px] min-w-[650px] grid-cols-[108px_minmax(180px,1fr)_100px_122px_124px] items-center px-3.5 transition-colors hover:bg-[var(--surface-hover)]"
+                >
+                  <span className="min-w-0 pr-3">
+                    <DashboardDotLabel tone={statusTone(row.status)}>{row.statusLabel}</DashboardDotLabel>
+                  </span>
+                  <span className="min-w-0 pr-3">
+                    <span className="block truncate text-xs font-semibold leading-4 text-[var(--text-primary)]">{row.displayCustomerName}</span>
+                    <span className="block truncate text-[10.5px] leading-3 text-[var(--text-muted)]">{row.displaySubtitle}</span>
+                  </span>
+                  <span className="whitespace-nowrap pr-3 text-xs font-semibold tabular-nums text-[var(--text-primary)]">{row.displayAmount}</span>
+                  <span className="min-w-0 pr-3">
+                    <DashboardBadge tone={row.deadlineTone}>{row.displayRiskLabel}</DashboardBadge>
+                  </span>
+                  <span className="truncate text-xs text-[var(--text-secondary)]">{row.displayNextAction}</span>
+                </Link>
+              ))}
+            </div>
           </div>
-          {/* Column headers */}
-          <div className="grid h-8 min-w-[650px] grid-cols-[108px_minmax(180px,1fr)_100px_122px_124px] items-center border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))] bg-[var(--surface-1)] px-3.5 text-[9.5px] font-semibold uppercase text-[var(--text-muted)]">
-            <span>Status</span>
-            <span>Kund</span>
-            <span>Belopp</span>
-            <span>Deadline</span>
-            <span>Nästa steg</span>
-          </div>
-          {/* Rows */}
-          <div className="flex-1 divide-y divide-[var(--cockpit-divider,var(--cockpit-border-soft))] overflow-y-auto">
-            {displayRows.map((row) => (
-              <Link
-                key={row.id}
-                href={row.href}
-                className="grid h-[41px] min-w-[650px] grid-cols-[108px_minmax(180px,1fr)_100px_122px_124px] items-center px-3.5 transition-colors hover:bg-[var(--surface-hover)]"
-              >
-                <span className="min-w-0 pr-3">
-                  <DashboardDotLabel tone={statusTone(row.status)}>{row.statusLabel}</DashboardDotLabel>
-                </span>
-                <span className="min-w-0 pr-3">
-                  <span className="block truncate text-xs font-semibold leading-4 text-[var(--text-primary)]">{row.displayCustomerName}</span>
-                  <span className="block truncate text-[10.5px] leading-3 text-[var(--text-muted)]">{row.displaySubtitle}</span>
-                </span>
-                <span className="whitespace-nowrap pr-3 text-xs font-semibold tabular-nums text-[var(--text-primary)]">{row.displayAmount}</span>
-                <span className="min-w-0 pr-3">
-                  <DashboardBadge tone={row.deadlineTone}>{row.displayRiskLabel}</DashboardBadge>
-                </span>
-                <span className="truncate text-xs text-[var(--text-secondary)]">{row.displayNextAction}</span>
-              </Link>
-            ))}
-          </div>
-          {/* Footer */}
+          {/* Footer — outside the scroll area so it stays pinned at panel bottom */}
           <Link
             href="/offerter"
             className="flex h-9 shrink-0 items-center justify-center border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] text-[11.5px] font-semibold text-[var(--accent)] hover:underline"
