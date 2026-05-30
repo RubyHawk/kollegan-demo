@@ -51,9 +51,9 @@
   position: relative;
   z-index: 1;
   display: grid;
-  width: min(1420px, calc(100vw - 2.8rem));
-  height: min(840px, calc(100vh - 2.8rem));
-  grid-template-columns: minmax(0, 1fr) minmax(26rem, 36rem);
+  width: min(1100px, calc(100vw - 2.8rem));
+  height: min(800px, calc(100vh - 2.8rem));
+  grid-template-columns: minmax(0, 1fr) minmax(24rem, 30rem);
   overflow: hidden;
   border: 1px solid rgb(216 234 246 / 0.34);
   border-radius: 2.1rem;
@@ -112,7 +112,7 @@
   }
 
   .auth-scope .auth-shell {
-    height: min(760px, calc(100vh - 2rem));
-    grid-template-columns: minmax(0, 1fr) minmax(25rem, 34rem);
+    height: min(720px, calc(100vh - 2rem));
+    grid-template-columns: minmax(0, 1fr) minmax(23rem, 28rem);
   }
 }
