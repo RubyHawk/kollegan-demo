@@ -50,18 +50,18 @@ function SidebarHeader({ collapsed, onMobileClose }: SidebarHeaderProps) {
   return (
     <div
       className={cn(
-        'flex items-center shrink-0 h-12',
+        'flex items-center shrink-0 h-14',
         'border-b border-[var(--border)]',
-        collapsed ? 'justify-center px-0' : 'px-3 gap-2.5',
+        collapsed ? 'justify-center px-0' : 'px-4 gap-2.5',
       )}
     >
       {/* Logo mark */}
       <motion.div
-        className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center shrink-0"
+        className="flex h-7 w-7 shrink-0 items-center justify-center"
         whileHover={{ scale: 1.04 }}
         transition={SPRING_SNAPPY}
       >
-        <BrandMark size={18} alt="" className="brightness-0 invert" />
+        <BrandMark size={26} alt="" />
       </motion.div>
 
       {/* Wordmark */}
@@ -69,7 +69,7 @@ function SidebarHeader({ collapsed, onMobileClose }: SidebarHeaderProps) {
         <AnimatePresence initial={false}>
           <motion.span
             key="wordmark"
-            className="font-heading text-[13.5px] font-semibold text-[var(--text-primary)] tracking-tight whitespace-nowrap min-w-0"
+            className="font-heading text-lg font-semibold tracking-tight text-[var(--text-primary)] whitespace-nowrap min-w-0"
             variants={{ hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0 } }}
             initial="hidden"
             animate="show"
@@ -410,7 +410,7 @@ export default function Sidebar({
         className={cn(
           'relative h-full group/sidebar shrink-0',
           'transition-[width] duration-200 ease-out',
-          collapsed ? 'w-16' : 'w-[216px]',
+          collapsed ? 'w-16' : 'w-[206px]',
         )}
       >
         {/* Collapse toggle — centered on sidebar edge, always visible */}

@@ -18,15 +18,15 @@ export function Panel({ title, eyebrow, action, children, className }: PanelProp
     <motion.section
       {...STAGGER_ITEM}
       className={cn(
-        'flex flex-col overflow-hidden rounded-lg border border-[var(--cockpit-border,var(--border))] bg-[var(--surface-0)] shadow-[var(--cockpit-shadow)]',
+        'flex flex-col overflow-hidden rounded-md border border-[var(--cockpit-border,var(--border))] bg-[var(--surface-0)] shadow-[var(--cockpit-shadow)]',
         className,
       )}
     >
-      <div className="flex h-11 items-center justify-between gap-3 border-b border-[var(--cockpit-border-soft,var(--border))] px-4">
+      <div className="flex h-10 items-center justify-between gap-3 border-b border-[var(--cockpit-divider,var(--border))] px-3.5">
         <div className="min-w-0">
-          <h2 className="truncate text-[15px] font-semibold tracking-normal text-[var(--text-primary)]">{title}</h2>
+          <h2 className="truncate text-sm font-semibold tracking-normal text-[var(--text-primary)]">{title}</h2>
           {eyebrow ? (
-            <p className="mt-0.5 truncate text-[11px] text-[var(--text-secondary)]">{eyebrow}</p>
+            <p className="mt-px truncate text-[10.5px] leading-3 text-[var(--text-secondary)]">{eyebrow}</p>
           ) : null}
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
@@ -38,10 +38,10 @@ export function Panel({ title, eyebrow, action, children, className }: PanelProp
 
 export function EmptyPanelState({ title, body }: { title: string; body: string }) {
   return (
-    <div className="flex flex-1 items-center px-4 py-3">
-      <div className="w-full rounded-md bg-[var(--surface-1)] px-3 py-3 text-left">
-        <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-        <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{body}</p>
+    <div className="flex flex-1 items-center px-3.5 py-2.5">
+      <div className="w-full rounded bg-[var(--surface-1)] px-3 py-2.5 text-left">
+        <p className="text-xs font-semibold text-[var(--text-primary)]">{title}</p>
+        <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">{body}</p>
       </div>
     </div>
   );
@@ -62,7 +62,7 @@ export function MetricTile({ label, value, detail, tone = 'neutral' }: {
   }[tone];
 
   return (
-    <div className={cn('min-h-[45px] min-w-0 rounded-md px-3 py-1.5', toneClass)}>
+    <div className={cn('min-h-[40px] min-w-0 rounded px-2.5 py-1.5', toneClass)}>
       <p className="truncate whitespace-nowrap text-[10px] font-medium leading-3 text-[var(--text-muted)]">{label}</p>
       <p className="mt-0.5 text-[15px] font-semibold tabular-nums leading-none text-[var(--text-primary)]">{value}</p>
       <p className="mt-0.5 text-[9.5px] leading-3 text-[var(--text-secondary)]">{detail}</p>
@@ -91,7 +91,7 @@ export function DashboardBadge({
   return (
     <span
       className={cn(
-        'inline-flex h-[22px] items-center rounded-full border px-2 text-[11px] font-medium leading-none whitespace-nowrap',
+        'inline-flex h-5 items-center rounded-full border px-2 text-[10.5px] font-medium leading-none whitespace-nowrap',
         toneClass,
         className,
       )}
@@ -120,7 +120,7 @@ export function DashboardDotLabel({
   }[tone];
 
   return (
-    <span className={cn('inline-flex items-center gap-2 text-[12px] font-medium leading-none text-[var(--text-secondary)]', className)}>
+    <span className={cn('inline-flex items-center gap-1.5 text-[11.5px] font-medium leading-none text-[var(--text-secondary)]', className)}>
       <span className={cn('h-1.5 w-1.5 rounded-full', dotClass)} />
       <span className="truncate">{children}</span>
     </span>
