@@ -1,11 +1,43 @@
 import { prisma } from '@platform/database/prisma';
 import type {
-  DashboardReadModel,
   OfferActivityPoint,
   ProjectStage,
   ProjectStats,
   RecentOffer,
 } from '../domain/dashboard-read-model.entity';
+
+export interface DashboardMeetingSnapshot {
+  id: string;
+  title: string;
+  scheduledAt: string;
+  endedAt: string | null;
+}
+
+export interface DashboardProjectSnapshot {
+  id: string;
+  name: string;
+  stage: ProjectStage;
+  totalIncVat: number;
+  wishedInstallDate: string | null;
+  createdAt: string;
+  customerName: string | null;
+  customerCompany: string | null;
+}
+
+export interface DashboardSnapshot {
+  countMap: Record<string, number>;
+  valueMap: Record<string, number>;
+  total: number;
+  recentOffers: RecentOffer[];
+  acceptedValue: number;
+  pipelineValue: number;
+  acceptanceRate: number | null;
+  expiringSoon: number;
+  activityData: OfferActivityPoint[];
+  projectStats: ProjectStats;
+  meetingsToday: DashboardMeetingSnapshot[];
+  projectHandoffs: DashboardProjectSnapshot[];
+}
 
 const DEFAULT_OFFER_STATUS_COUNTS: Record<string, number> = {
   draft: 0,
@@ -24,6 +56,10 @@ const DEFAULT_PROJECT_STAGE_COUNTS: Record<ProjectStage, number> = {
   completed: 0,
 };
 
+function toIso(value: Date | null | undefined): string | null {
+  return value ? value.toISOString() : null;
+}
+
 export const dashboardReadModelRepository = {
   async getOrganizationIdForUser(userId: string): Promise<string | null> {
     const user = await prisma.user.findUnique({
@@ -34,8 +70,23 @@ export const dashboardReadModelRepository = {
     return user?.organizationId ?? null;
   },
 
-  async getDashboardReadModel(organizationId: string): Promise<DashboardReadModel> {
-    const [counts, recentRaw, valueRows, activityRaw, projectRows] = await Promise.all([
+  async getDashboardSnapshot(
+    organizationId: string,
+    todayStart: Date,
+    tomorrowStart: Date,
+  ): Promise<DashboardSnapshot> {
+    const in7days = new Date(todayStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const [
+      counts,
+      recentRaw,
+      valueRows,
+      activityRaw,
+      projectRows,
+      expiringSoon,
+      meetingsRaw,
+      handoffRaw,
+    ] = await Promise.all([
       prisma.offer.groupBy({
         by: ['status'],
         where: { organizationId, deletedAt: null },
@@ -55,7 +106,13 @@ export const dashboardReadModelRepository = {
           recipientCompany: true,
           totalIncVat: true,
           createdAt: true,
+          updatedAt: true,
           validUntil: true,
+          sentAt: true,
+          viewedAt: true,
+          acceptedAt: true,
+          declinedAt: true,
+          reminderSentAt: true,
           projects: {
             where: { deletedAt: null },
             select: { id: true, stage: true, completedAt: true },
@@ -73,13 +130,77 @@ export const dashboardReadModelRepository = {
 
       prisma.offer.findMany({
         where: { organizationId, deletedAt: null },
-        select: { createdAt: true, status: true },
+        orderBy: { updatedAt: 'desc' },
+        take: 120,
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          recipientName: true,
+          recipientCompany: true,
+          createdAt: true,
+          updatedAt: true,
+          sentAt: true,
+          viewedAt: true,
+          acceptedAt: true,
+          declinedAt: true,
+        },
       }),
 
       prisma.project.groupBy({
         by: ['stage'],
         where: { organizationId, deletedAt: null },
         _count: { id: true },
+      }),
+
+      prisma.offer.count({
+        where: {
+          organizationId,
+          deletedAt: null,
+          status: { in: ['sent', 'viewed'] },
+          validUntil: { gte: todayStart, lte: in7days },
+        },
+      }),
+
+      prisma.meeting.findMany({
+        where: {
+          organizationId,
+          deletedAt: null,
+          status: { in: ['scheduled', 'in_progress'] },
+          scheduledAt: { gte: todayStart, lt: tomorrowStart },
+        },
+        orderBy: { scheduledAt: 'asc' },
+        take: 8,
+        select: {
+          id: true,
+          title: true,
+          scheduledAt: true,
+          endedAt: true,
+        },
+      }),
+
+      prisma.project.findMany({
+        where: {
+          organizationId,
+          deletedAt: null,
+          stage: { in: ['details', 'ordered', 'arrived', 'in_progress'] },
+        },
+        orderBy: [{ stage: 'asc' }, { createdAt: 'desc' }],
+        take: 6,
+        select: {
+          id: true,
+          name: true,
+          stage: true,
+          totalIncVat: true,
+          wishedInstallDate: true,
+          createdAt: true,
+          customer: {
+            select: {
+              name: true,
+              company: true,
+            },
+          },
+        },
       }),
     ]);
 
@@ -99,16 +220,6 @@ export const dashboardReadModelRepository = {
     const pipelineValue = (valueMap.sent ?? 0) + (valueMap.viewed ?? 0);
     const closedTotal = (countMap.accepted ?? 0) + (countMap.declined ?? 0);
     const acceptanceRate = closedTotal > 0 ? Math.round((countMap.accepted / closedTotal) * 100) : null;
-
-    const in7days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const expiringSoon = await prisma.offer.count({
-      where: {
-        organizationId,
-        deletedAt: null,
-        status: { in: ['sent', 'viewed'] },
-        validUntil: { lte: in7days },
-      },
-    });
 
     const projectStageCounts = { ...DEFAULT_PROJECT_STAGE_COUNTS };
     let projectTotal = 0;
@@ -138,12 +249,18 @@ export const dashboardReadModelRepository = {
       recipientCompany: offer.recipientCompany,
       totalIncVat: Number(offer.totalIncVat ?? 0),
       createdAt: offer.createdAt.toISOString(),
-      validUntil: offer.validUntil?.toISOString() ?? null,
+      updatedAt: offer.updatedAt.toISOString(),
+      validUntil: toIso(offer.validUntil),
+      sentAt: toIso(offer.sentAt),
+      viewedAt: toIso(offer.viewedAt),
+      acceptedAt: toIso(offer.acceptedAt),
+      declinedAt: toIso(offer.declinedAt),
+      reminderSentAt: toIso(offer.reminderSentAt),
       project: offer.projects[0]
         ? {
             id: offer.projects[0].id,
             stage: offer.projects[0].stage as ProjectStage,
-            completedAt: offer.projects[0].completedAt?.toISOString() ?? null,
+            completedAt: toIso(offer.projects[0].completedAt),
           }
         : null,
     }));
@@ -155,6 +272,7 @@ export const dashboardReadModelRepository = {
 
     return {
       countMap,
+      valueMap,
       total,
       recentOffers,
       acceptedValue,
@@ -163,6 +281,22 @@ export const dashboardReadModelRepository = {
       expiringSoon,
       activityData,
       projectStats,
+      meetingsToday: meetingsRaw.map((meeting) => ({
+        id: meeting.id,
+        title: meeting.title,
+        scheduledAt: meeting.scheduledAt.toISOString(),
+        endedAt: toIso(meeting.endedAt),
+      })),
+      projectHandoffs: handoffRaw.map((project) => ({
+        id: project.id,
+        name: project.name,
+        stage: project.stage as ProjectStage,
+        totalIncVat: Number(project.totalIncVat ?? 0),
+        wishedInstallDate: toIso(project.wishedInstallDate),
+        createdAt: project.createdAt.toISOString(),
+        customerName: project.customer?.name ?? null,
+        customerCompany: project.customer?.company ?? null,
+      })),
     };
   },
 };

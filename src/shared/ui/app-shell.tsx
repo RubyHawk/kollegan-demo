@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@shared/ui/sidebar';
-import { MenuIcon, ChevronRightIcon } from '@shared/ui/icons';
+import { MenuIcon, ChevronRightIcon, PlusIcon } from '@shared/ui/icons';
 import { SearchTrigger } from '@shared/ui/search-command';
 import { BrandLockup } from '@shared/ui/brand';
 import { logout } from '@shared/lib/api/auth-account.api';
@@ -91,7 +91,7 @@ export default function AppShell({ user, children }: Props) {
   const isImmersiveTemplateEditor = pathname.startsWith('/mallar/') && pathname !== '/mallar';
 
   const topbar = (
-    <div className="glass-header hidden h-12 shrink-0 items-center justify-between border-b border-[var(--border)] px-5 md:flex">
+    <div className="glass-header hidden h-14 shrink-0 items-center justify-between border-b border-[var(--border)] px-5 md:flex">
       <nav aria-label="Breadcrumb" className="flex items-center gap-1">
         {crumbs.map((crumb, i) => (
           <span key={i} className="flex items-center gap-1">
@@ -109,7 +109,16 @@ export default function AppShell({ user, children }: Props) {
           </span>
         ))}
       </nav>
-      <SearchTrigger />
+      <div className="flex items-center gap-2">
+        <SearchTrigger />
+        <Link
+          href="/offerter/ny"
+          className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--accent)] px-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+        >
+          <PlusIcon size={14} />
+          Ny offert
+        </Link>
+      </div>
     </div>
   );
 
