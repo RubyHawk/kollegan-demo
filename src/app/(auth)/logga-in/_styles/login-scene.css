@@ -12,9 +12,10 @@
   overflow: hidden;
   isolation: isolate;
   background:
-    radial-gradient(circle at 17% 14%, rgb(255 218 144 / 0.18), transparent 23%),
-    radial-gradient(circle at 76% 18%, rgb(169 216 255 / 0.16), transparent 26%),
-    linear-gradient(155deg, var(--install-night), var(--install-deep) 52%, #1c4259);
+    radial-gradient(circle at 14% 10%, rgb(255 210 120 / 0.22), transparent 28%),
+    radial-gradient(circle at 80% 22%, rgb(120 200 255 / 0.18), transparent 32%),
+    radial-gradient(circle at 50% 80%, rgb(15 60 90 / 0.6), transparent 55%),
+    linear-gradient(160deg, #0c1f30 0%, #163348 45%, #1a3f58 100%);
   box-shadow: inset -1px 0 0 rgb(255 255 255 / 0.08);
 }
 
@@ -38,15 +39,6 @@
   opacity: 0.76;
 }
 
-.auth-scope .auth-motion-stage::after {
-  content: "";
-  inset: auto 0 0;
-  z-index: 12;
-  height: 42%;
-  background:
-    linear-gradient(180deg, transparent, rgb(8 26 40 / 0.42) 48%, rgb(8 26 40 / 0.9)),
-    radial-gradient(circle at 24% 78%, rgb(8 26 40 / 0.9), transparent 48%);
-}
 
 .auth-scope .auth-install-sky {
   inset: -12%;
@@ -63,7 +55,7 @@
   left: clamp(1.35rem, 4.4vw, 3.4rem);
   right: clamp(1.35rem, 4.4vw, 3.4rem);
   top: clamp(5.3rem, 9vh, 6.8rem);
-  bottom: clamp(12.6rem, 23vh, 15.7rem);
+  bottom: clamp(1.4rem, 2.2vh, 2rem);
   z-index: 4;
   overflow: hidden;
   border: 1px solid var(--install-glass-edge);
@@ -269,7 +261,7 @@
 
   .auth-scope .auth-install-pane {
     top: 5rem;
-    bottom: 11rem;
+    bottom: 1.4rem;
   }
 }
 
@@ -288,7 +280,7 @@
     left: 1rem;
     right: 1rem;
     top: 4.7rem;
-    bottom: 9.2rem;
+    bottom: 1rem;
     border-radius: 1.35rem;
   }
 
@@ -312,7 +304,7 @@
 @media (max-height: 820px) and (min-width: 1101px) {
   .auth-scope .auth-install-pane {
     top: 5.2rem;
-    bottom: 11.4rem;
+    bottom: 1.4rem;
   }
 
   .auth-scope .auth-install-tools {
