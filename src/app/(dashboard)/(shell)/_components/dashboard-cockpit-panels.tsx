@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import type {
@@ -9,6 +10,7 @@ import type {
   DashboardOfferTableRow,
   DashboardPipelineOverview,
   DashboardProjectHandoff,
+  DashboardTone,
 } from '@modules/generic/dashboard';
 import {
   CheckCircleIcon,
@@ -71,15 +73,19 @@ function ActionQueueRow({ item }: { item: DashboardActionItem }) {
 }
 
 export function OfferTable({ rows }: { rows: DashboardOfferTableRow[] }) {
+  const [view, setView] = useState<'table' | 'diagram'>('table');
+
   return (
     <Panel
       title="Aktiva offerter"
       eyebrow={`${rows.length} rader · Live`}
-      action={<OfferTableToolbar />}
+      action={<OfferTableToolbar view={view} onViewChange={setView} />}
       className="xl:col-span-7"
     >
       {rows.length === 0 ? (
         <EmptyPanelState title="Inga aktiva offerter" body="När du skapar eller skickar offerter visas de här." />
+      ) : view === 'diagram' ? (
+        <OfferDiagram rows={rows} />
       ) : (
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
           <div className="flex h-8 min-w-[650px] items-end gap-4 border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))] px-3.5 text-xs">
@@ -132,14 +138,102 @@ export function OfferTable({ rows }: { rows: DashboardOfferTableRow[] }) {
   );
 }
 
-function OfferTableToolbar() {
+function OfferTableToolbar({
+  view,
+  onViewChange,
+}: {
+  view: 'table' | 'diagram';
+  onViewChange: (v: 'table' | 'diagram') => void;
+}) {
   return (
-    <div className="flex items-center gap-2">
-      <Link href="/offerter" className="rounded bg-[var(--accent-subtle)] px-2 py-1 text-[11px] font-semibold text-[var(--accent)]">
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => onViewChange('table')}
+        className={cn(
+          'rounded px-2 py-1 text-[11px] font-semibold transition-colors',
+          view === 'table'
+            ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
+            : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
+        )}
+      >
         Tabell
-      </Link>
-      <span className="text-[11px] font-medium text-[var(--text-muted)]">Diagram</span>
-      <DotsThreeVertical size={16} weight="bold" className="text-[var(--text-muted)]" />
+      </button>
+      <button
+        onClick={() => onViewChange('diagram')}
+        className={cn(
+          'rounded px-2 py-1 text-[11px] font-semibold transition-colors',
+          view === 'diagram'
+            ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
+            : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
+        )}
+      >
+        Diagram
+      </button>
+      <DotsThreeVertical size={16} weight="bold" className="ml-1 text-[var(--text-muted)]" />
+    </div>
+  );
+}
+
+const TONE_ORDER: DashboardTone[] = ['danger', 'warning', 'accent', 'info', 'success', 'neutral'];
+const TONE_LABELS: Record<DashboardTone, string> = {
+  danger: 'Kritisk',
+  warning: 'Snart',
+  accent: 'Aktiv',
+  info: 'Visad',
+  success: 'Accepterad',
+  neutral: 'Standard',
+};
+
+function toneFillVar(tone: DashboardTone): string {
+  if (tone === 'danger') return 'var(--status-danger-text)';
+  if (tone === 'warning') return 'var(--status-warning-text)';
+  if (tone === 'accent') return 'var(--accent)';
+  if (tone === 'info') return 'var(--status-viewed-text)';
+  if (tone === 'success') return 'var(--status-accepted-text)';
+  return 'var(--text-muted)';
+}
+
+function OfferDiagram({ rows }: { rows: DashboardOfferTableRow[] }) {
+  const groups = TONE_ORDER.map((tone) => {
+    const group = rows.filter((r) => r.deadlineTone === tone);
+    return { tone, count: group.length, total: group.reduce((s, r) => s + r.amount, 0) };
+  }).filter((g) => g.count > 0);
+
+  const maxTotal = Math.max(...groups.map((g) => g.total), 1);
+  const grandTotal = rows.reduce((s, r) => s + r.amount, 0);
+
+  return (
+    <div className="flex flex-1 flex-col overflow-y-auto px-3.5 py-3">
+      <div className="mb-3 flex items-center justify-between border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))] pb-2.5">
+        <span className="text-[11px] text-[var(--text-muted)]">Fördelning per deadline-urgency</span>
+        <span className="text-xs font-semibold tabular-nums text-[var(--text-primary)]">{fmtCompactSEK(grandTotal)} totalt</span>
+      </div>
+      <div className="flex flex-col gap-3">
+        {groups.map((group) => (
+          <div key={group.tone} className="grid grid-cols-[76px_minmax(0,1fr)_92px] items-center gap-3">
+            <span className="truncate text-[11px] font-medium text-[var(--text-secondary)]">
+              {TONE_LABELS[group.tone]}
+            </span>
+            <div className="relative h-[18px] overflow-hidden rounded bg-[var(--surface-2)]">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${(group.total / maxTotal) * 100}%` }}
+                transition={{ duration: 0.45, ease: 'easeOut', delay: 0.04 }}
+                className="absolute inset-y-0 left-0 rounded"
+                style={{ backgroundColor: toneFillVar(group.tone), opacity: 0.7 }}
+              />
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">
+                {fmtCompactSEK(group.total)}
+              </span>
+              <span className="text-[10px] text-[var(--text-muted)]">
+                {group.count} offert{group.count !== 1 ? 'er' : ''}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
