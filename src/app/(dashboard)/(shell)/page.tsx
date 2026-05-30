@@ -2,6 +2,9 @@ import { getDashboardOrganizationIdForUser, getDashboardReadModel } from '@modul
 import { getSessionUser } from '@modules/supporting/auth';
 import DashboardView from './_components/DashboardView';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 function makeGreeting(name: string | null): { greeting: string; sub: string } {
   const now = new Date();
   const hour = parseInt(

@@ -10,6 +10,7 @@ import {
   PipelinePanel,
   ProjectHandoffPanel,
 } from './dashboard-cockpit-panels';
+import { DashboardAutoRefresh } from './dashboard-auto-refresh';
 import { TopCockpitBand } from './dashboard-cockpit-top-band';
 
 export interface DashboardViewProps extends DashboardReadModel {
@@ -34,6 +35,7 @@ export default function DashboardView({
 }: DashboardViewProps) {
   return (
     <div className="min-h-full bg-[oklch(0.985_0.002_250)] [--cockpit-border:oklch(0.905_0.004_250)] [--cockpit-border-soft:oklch(0.955_0.003_250)] [--cockpit-divider:oklch(0.935_0.003_250)] [--cockpit-shadow:0_1px_2px_rgba(15,23,42,0.025)]">
+      <DashboardAutoRefresh />
       <div className="w-full px-4 py-3 lg:pb-3">
         <motion.div
           {...STAGGER_CONTAINER}

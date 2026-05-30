@@ -139,7 +139,8 @@ async function main() {
     }
 
     const passwordHash = resetPassword || !existing ? await bcrypt.hash(PASSWORD, 12) : null;
-    const mfaGraceExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+    const mfaGraceExpiresAt = new Date();
+    mfaGraceExpiresAt.setFullYear(mfaGraceExpiresAt.getFullYear() + 2);
 
     const user = existing
       ? await prisma.user.update({

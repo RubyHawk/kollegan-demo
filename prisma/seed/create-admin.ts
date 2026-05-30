@@ -46,7 +46,8 @@ async function main() {
 
   // 3. Create user
   const passwordHash      = await bcrypt.hash(PASSWORD, 12);
-  const mfaGraceExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 days
+  const mfaGraceExpiresAt = new Date();
+  mfaGraceExpiresAt.setFullYear(mfaGraceExpiresAt.getFullYear() + 2);
   const user = await prisma.user.create({
     data: {
       email: EMAIL,

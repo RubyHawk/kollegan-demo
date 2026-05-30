@@ -9,7 +9,7 @@
  * multi-process deployments. This is acceptable as a degraded-mode control — it prevents
  * unbounded abuse even when Redis is down.
  *
- * JWT TTL of 15 minutes limits the exposure window for token revocation fail-open.
+ * Short-lived access tokens limit the exposure window for token revocation fail-open.
  * All actions are audit-logged regardless of Redis state.
  */
 

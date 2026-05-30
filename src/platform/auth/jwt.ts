@@ -3,7 +3,8 @@ import { logger } from '@platform/logging/logger';
 
 const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET ?? 'dev-secret-change-me');
 const ALGORITHM = 'HS256';
-const ACCESS_TTL = '15m';
+export const ACCESS_TOKEN_MAX_AGE_SEC = 60 * 60 * 2;
+const ACCESS_TTL = '2h';
 const REFRESH_TTL = '7d';
 
 // ─── Payload ───────────────────────────────────────────────────────────────────

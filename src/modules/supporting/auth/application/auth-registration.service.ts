@@ -48,7 +48,8 @@ export async function registerStaffAccount(input: RegisterStaffAccountInput): Pr
 
   const org = await createPersonalOrganization(email, input.orgName);
   const passwordHash = await bcrypt.hash(input.password, 12);
-  const mfaGraceExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const mfaGraceExpiresAt = new Date();
+  mfaGraceExpiresAt.setFullYear(mfaGraceExpiresAt.getFullYear() + 2);
 
   const user = await userRepository.create({
     email,

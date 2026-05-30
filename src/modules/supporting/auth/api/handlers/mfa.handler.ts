@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHandler } from '@platform/api/handler';
 import { ok } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
-import { verifyMfaChallengeToken } from '@platform/auth/jwt';
+import { ACCESS_TOKEN_MAX_AGE_SEC, verifyMfaChallengeToken } from '@platform/auth/jwt';
 import { checkRateLimit } from '@platform/cache/rate-limiter';
 import {
   generateTotpSetup,
@@ -36,7 +36,7 @@ import {
 const REFRESH_TTL_SEC_STAFF = 60 * 60 * 24 * 7;
 const REFRESH_TTL_SEC_STAFF_REMEMBER = 60 * 60 * 24 * 30;
 const REFRESH_TTL_SEC_CUSTOMER = 60 * 60 * 24 * 30;
-const ACCESS_TTL_SEC = 60 * 15;
+const ACCESS_TTL_SEC = ACCESS_TOKEN_MAX_AGE_SEC;
 const RECOVERY_GRACE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 const clearCookieOptions = {
@@ -268,7 +268,7 @@ export async function handleMfaVerify(req: NextRequest): Promise<NextResponse> {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
     ?? req.headers.get('x-real-ip') ?? 'unknown';
 
-  const rl = await checkRateLimit(`mfa:${ip}`, 10, 5 * 60_000);
+  const rl = await checkRateLimit(`mfa:${ip}`, 60, 5 * 60_000);
   if (!rl.allowed) {
     const retryAfter = Math.ceil((rl.resetAt - Date.now()) / 1000);
     return NextResponse.json(
@@ -293,6 +293,15 @@ export async function handleMfaVerify(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json(
       { type: `${BRAND_PROBLEM_BASE}/unauthorized`, title: 'Unauthorized', status: 401, detail: 'MFA challenge expired' },
       { status: 401, headers: { 'Content-Type': 'application/problem+json' } },
+    );
+  }
+
+  const userRl = await checkRateLimit(`mfa-user:${userId}`, 30, 5 * 60_000);
+  if (!userRl.allowed) {
+    const retryAfter = Math.ceil((userRl.resetAt - Date.now()) / 1000);
+    return NextResponse.json(
+      { type: `${BRAND_PROBLEM_BASE}/rate-limit`, title: 'Too Many Requests', status: 429 },
+      { status: 429, headers: { 'Content-Type': 'application/problem+json', 'Retry-After': String(retryAfter) } },
     );
   }
 

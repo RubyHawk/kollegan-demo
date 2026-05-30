@@ -140,4 +140,37 @@ describe('dashboard read model derivations', () => {
     expect(model.focusMetrics.meetingsToday).toBe(2);
     expect(model.today.nextMeeting?.title).toBe('Google-synk');
   });
+
+  it('calculates offer deadlines by Stockholm calendar day across DST changes', () => {
+    const model = buildDashboardReadModel(
+      snapshot({
+        recentOffers: [{
+          id: 'offer_dst',
+          title: 'DST deadline',
+          status: 'sent',
+          offerNumber: 3001,
+          recipientName: null,
+          recipientCompany: 'Kalender AB',
+          totalIncVat: 42_000,
+          createdAt: '2026-10-20T08:00:00.000Z',
+          updatedAt: '2026-10-20T08:00:00.000Z',
+          validUntil: '2026-10-25T23:30:00.000Z',
+          sentAt: '2026-10-20T08:00:00.000Z',
+          viewedAt: null,
+          acceptedAt: null,
+          declinedAt: null,
+          reminderSentAt: null,
+          project: null,
+        }],
+      }),
+      { calendar, weather },
+      new Date('2026-10-25T10:00:00.000Z'),
+    );
+
+    expect(model.offerTable[0]).toMatchObject({
+      id: 'offer_dst',
+      deadlineLabel: '1 dag kvar',
+      nextStep: 'Förläng giltighet',
+    });
+  });
 });

@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHandler } from '@platform/api/handler';
 import { ok } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
-import { verifyMfaChallengeToken } from '@platform/auth/jwt';
+import { ACCESS_TOKEN_MAX_AGE_SEC, verifyMfaChallengeToken } from '@platform/auth/jwt';
 import { checkRateLimit } from '@platform/cache/rate-limiter';
 import {
   beginRegistration,
@@ -39,7 +39,7 @@ import {
 const REFRESH_TTL_SEC_STAFF          = 60 * 60 * 24 * 7;
 const REFRESH_TTL_SEC_STAFF_REMEMBER = 60 * 60 * 24 * 30;
 const REFRESH_TTL_SEC_CUSTOMER       = 60 * 60 * 24 * 30;
-const ACCESS_TTL_SEC                 = 60 * 15;
+const ACCESS_TTL_SEC                 = ACCESS_TOKEN_MAX_AGE_SEC;
 
 const cookieOpts = {
   httpOnly: true,
@@ -109,7 +109,7 @@ export async function handleAuthenticateOptions(req: NextRequest): Promise<NextR
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
     ?? req.headers.get('x-real-ip') ?? 'unknown';
 
-  const rl = await checkRateLimit(`webauthn:${ip}`, 20, 60_000);
+  const rl = await checkRateLimit(`webauthn:${ip}`, 120, 60_000);
   if (!rl.allowed) {
     return NextResponse.json(
       { type: `${BRAND_PROBLEM_BASE}/rate-limit`, title: 'Too Many Requests', status: 429 },
@@ -158,7 +158,7 @@ export async function handleAuthenticateVerify(req: NextRequest): Promise<NextRe
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
     ?? req.headers.get('x-real-ip') ?? 'unknown';
 
-  const rl = await checkRateLimit(`webauthn:${ip}`, 20, 60_000);
+  const rl = await checkRateLimit(`webauthn:${ip}`, 120, 60_000);
   if (!rl.allowed) {
     return NextResponse.json(
       { type: `${BRAND_PROBLEM_BASE}/rate-limit`, title: 'Too Many Requests', status: 429 },
