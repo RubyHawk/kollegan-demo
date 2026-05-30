@@ -2,12 +2,14 @@
 
 import { EnvelopeSimple, LockKey } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { useRef, useState, type FormEvent } from 'react';
 import {
   devLoginUrl,
   login,
   type MfaMethod,
 } from '@shared/lib/api/auth-session.api';
+import { useCinematic } from '@shared/stores/cinematic.store';
 import { TooltipProvider } from '@shared/ui/tooltip';
 import { FloatingInput } from './FloatingInput';
 import { InlineError } from './InlineError';
@@ -37,6 +39,8 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ redirect, onCinematicStart }: LoginFormProps) {
+  const router = useRouter();
+  const { arm } = useCinematic();
   const [step, setStep] = useState<Step>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -51,11 +55,20 @@ export function LoginForm({ redirect, onCinematicStart }: LoginFormProps) {
   const emailInputRef = useRef<HTMLInputElement | null>(null);
 
   function handleSuccessRedirect() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      router.push(redirect);
+      return;
+    }
     setExiting(true);
     onCinematicStart();
+    router.prefetch(redirect);
+    // At 64% of the 5.35s cinematic (3.4s) the film is fully applied —
+    // perfect bridge point to soft-navigate. The dashboard mounts with the
+    // wipe overlay already in "film applied" state via negative animation-delay.
     window.setTimeout(() => {
-      window.location.replace(redirect);
-    }, 5600);
+      arm();
+      router.push(redirect);
+    }, 3400);
   }
 
   function handleExitComplete() {

@@ -83,7 +83,7 @@
   transform-origin: center;
 }
 
-.auth-scope .auth-login-panel[data-state='cinematic'] .auth-console__brand-mark {
+.auth-scope[data-state='cinematic'] .auth-console__brand-mark {
   animation: auth-console-logo-hand-off 0.24s ease-out forwards;
 }
 

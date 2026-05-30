@@ -3,7 +3,6 @@ import './_styles/auth-tokens.css';
 import './_styles/login-console.css';
 import './_styles/login-controls.css';
 import './_styles/login-cinematic.css';
-import './_styles/login-cinematic-dashboard.css';
 import './_styles/login-scene.css';
 
 function sanitizeRedirect(target: string | string[] | undefined): string {
