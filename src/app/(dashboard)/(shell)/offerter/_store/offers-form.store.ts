@@ -109,6 +109,7 @@ interface OffersFormState {
   updateLine:  (idx: number, field: keyof LineItem, value: string | number) => void;
   addLine:     () => void;
   removeLine:  (idx: number) => void;
+  restoreLine: (idx: number, line: LineItem) => void;
   reorderLines:(oldIdx: number, newIdx: number) => void;
 
   resetForm: () => void;
@@ -252,6 +253,21 @@ export const useOffersFormStore = create<OffersFormState>()((set) => ({
     return {
       form: { ...s.form, lineItems: s.form.lineItems.filter((_, i) => i !== idx) },
       fieldErrors: next,
+      openLines,
+    };
+  }),
+
+  restoreLine: (idx, line) => set((s) => {
+    const insertAt = Math.max(0, Math.min(idx, s.form.lineItems.length));
+    const items = [...s.form.lineItems];
+    items.splice(insertAt, 0, line);
+    const openLines = new Set<number>();
+    for (const i of s.openLines) {
+      openLines.add(i >= insertAt ? i + 1 : i);
+    }
+    openLines.add(insertAt);
+    return {
+      form: { ...s.form, lineItems: items },
       openLines,
     };
   }),

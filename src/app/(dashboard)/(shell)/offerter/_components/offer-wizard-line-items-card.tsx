@@ -23,6 +23,7 @@ import {
   getDisplayUnitPrice,
 } from '@modules/supporting/offers/domain/pricing';
 import { cn } from '@shared/lib/utils';
+import { useToast } from '@shared/ui/toast/toast-context';
 import { AutoGrowTextarea } from './auto-grow-textarea';
 import { SortableRow } from './sortable-row';
 import type { LineItem, OfferForm, OfferPriceDisplayMode, OfferProduct } from '../_store/types';
@@ -48,6 +49,7 @@ type OfferWizardLineItemsCardProps = {
   updateLine: UpdateLine;
   addLine: () => void;
   removeLine: (idx: number) => void;
+  restoreLine: (idx: number, line: LineItem) => void;
   reorderLines: (oldIdx: number, newIdx: number) => void;
   pickProduct: (idx: number, product: OfferProduct) => void;
 };
@@ -68,9 +70,11 @@ export function OfferWizardLineItemsCard({
   updateLine,
   addLine,
   removeLine,
+  restoreLine,
   reorderLines,
   pickProduct,
 }: OfferWizardLineItemsCardProps) {
+  const { addToast } = useToast();
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -106,6 +110,21 @@ export function OfferWizardLineItemsCard({
     const newIdx = lineItemIds.indexOf(over.id as string);
     if (oldIdx === -1 || newIdx === -1) return;
     reorderLines(oldIdx, newIdx);
+  }
+
+  function removeLineWithUndo(idx: number) {
+    const removed = form.lineItems[idx];
+    if (!removed) return;
+    removeLine(idx);
+    addToast({
+      color: 'amber',
+      icon: '↶',
+      message: 'Raden togs bort.',
+      action: {
+        label: 'Ångra',
+        onClick: () => restoreLine(idx, removed),
+      },
+    });
   }
 
   return (
@@ -152,7 +171,7 @@ export function OfferWizardLineItemsCard({
                               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
                           </button>
-                          <button type="button" onClick={() => removeLine(idx)} className={cn('shrink-0 p-1.5 rounded text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover/row:opacity-100', form.lineItems.length > 1 ? '' : 'invisible')}>
+                          <button type="button" onClick={() => removeLineWithUndo(idx)} className={cn('shrink-0 p-1.5 rounded text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover/row:opacity-100', form.lineItems.length > 1 ? '' : 'invisible')}>
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
                             </svg>
@@ -195,7 +214,7 @@ export function OfferWizardLineItemsCard({
                                 <p className="text-[10px] text-red-500 mt-0.5">{fieldErrors[`line_${idx}_description`]}</p>
                               )}
                             </div>
-                            <button type="button" onClick={() => removeLine(idx)} className={cn('shrink-0 rounded-lg p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all', form.lineItems.length > 1 ? 'opacity-0 group-hover/row:opacity-100' : 'invisible')}>
+                            <button type="button" onClick={() => removeLineWithUndo(idx)} className={cn('shrink-0 rounded-lg p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all', form.lineItems.length > 1 ? 'opacity-0 group-hover/row:opacity-100' : 'invisible')}>
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
                               </svg>

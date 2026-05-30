@@ -5,4 +5,8 @@ export interface Toast {
   message: string;
   color: ToastColor;
   icon: React.ReactNode;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }

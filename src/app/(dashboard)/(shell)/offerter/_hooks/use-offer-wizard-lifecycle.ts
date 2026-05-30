@@ -10,6 +10,7 @@ import { deriveValidityDays } from '@modules/supporting/offers/domain/validity';
 import type { ContactResult, Offer, OfferForm } from '../_store/types';
 import { EMPTY_LINE } from '../_store/types';
 import { useOffersFormStore } from '../_store/offers-form.store';
+import { clearOfferDraftAutosave } from './use-offer-draft-autosave';
 
 type CompanyBranding = {
   name?: string | null;
@@ -191,6 +192,7 @@ export function useOfferWizardLifecycle({
       || state.form.lineItems.some((line) => line.description.trim() !== '');
     if (dirty && !window.confirm('Stäng utan att spara? Alla ändringar försvinner.')) return;
 
+    clearOfferDraftAutosave();
     setShowForm(false);
     resetForm();
     dismissNotices();
