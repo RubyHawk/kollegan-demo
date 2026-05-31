@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { CalendarBlank, CloudSun, DotsThreeVertical, TrendUp, TrendDown } from '@phosphor-icons/react';
@@ -11,10 +12,26 @@ import type {
   DashboardWeather,
 } from '@modules/generic/dashboard';
 import { DashboardDotLabel, MetricTile } from './dashboard-cockpit-primitives';
-import { fmtSEK, fmtTime } from './dashboard-cockpit-utils';
+import { fmtSEK, fmtCompactSEK, fmtTime } from './dashboard-cockpit-utils';
 
-function MiniSparkline({ points, color, gradId }: { points: number[]; color: string; gradId: string }) {
+function MiniSparkline({
+  points,
+  color,
+  gradId,
+  formatValue,
+  xLabels,
+}: {
+  points: number[];
+  color: string;
+  gradId: string;
+  formatValue: (v: number) => string;
+  xLabels?: string[];
+}) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [hovered, setHovered] = useState<number | null>(null);
+
   if (points.length < 2 || points.every((p) => p === 0)) return null;
+
   const max = Math.max(...points, 0.001);
   const min = Math.min(...points);
   const range = max - min || 1;
@@ -39,17 +56,75 @@ function MiniSparkline({ points, color, gradId }: { points: number[]; color: str
 
   const fillPath = `${d} L${xs[xs.length - 1].toFixed(1)},${H} L${xs[0].toFixed(1)},${H} Z`;
 
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const pct = (e.clientX - rect.left) / rect.width;
+    const idx = Math.round(pct * (points.length - 1));
+    setHovered(Math.max(0, Math.min(points.length - 1, idx)));
+  };
+
+  const labels = xLabels ?? points.map((_, i) => {
+    const weeksAgo = points.length - 1 - i;
+    return weeksAgo === 0 ? 'Nu' : `${weeksAgo}v`;
+  });
+
+  const tooltipLeftPct = hovered !== null ? (xs[hovered] / W) * 100 : 0;
+
   return (
-    <svg width="100%" height="44" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" fill="none" aria-hidden>
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.22" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-        </linearGradient>
-      </defs>
-      <path d={fillPath} fill={`url(#${gradId})`} />
-      <path d={d} stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
+    <div className="relative select-none">
+      {/* Tooltip */}
+      {hovered !== null && (
+        <div
+          className="pointer-events-none absolute -top-7 z-20 -translate-x-1/2"
+          style={{ left: `${tooltipLeftPct}%` }}
+        >
+          <div className="rounded bg-[var(--text-primary)] px-1.5 py-0.5 shadow-sm">
+            <span className="text-[10px] font-semibold text-white whitespace-nowrap">{formatValue(points[hovered])}</span>
+            <span className="ml-1 text-[9px] text-white/60 whitespace-nowrap">{labels[hovered]}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Chart */}
+      <svg
+        ref={svgRef}
+        width="100%"
+        height="40"
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        fill="none"
+        aria-hidden
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHovered(null)}
+        className="cursor-crosshair"
+      >
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={fillPath} fill={`url(#${gradId})`} />
+        <path d={d} stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        {hovered !== null && (
+          <>
+            <line
+              x1={xs[hovered]} y1={PAD_Y - 2} x2={xs[hovered]} y2={H}
+              stroke={color} strokeWidth="0.8" strokeDasharray="2.5 2" opacity="0.55"
+            />
+            <circle cx={xs[hovered]} cy={ys[hovered]} r="2.8" fill="white" />
+            <circle cx={xs[hovered]} cy={ys[hovered]} r="1.8" fill={color} />
+          </>
+        )}
+      </svg>
+
+      {/* X-axis labels */}
+      <div className="flex justify-between px-0.5 pb-1 text-[9px] leading-none text-[var(--text-muted)]">
+        <span>{labels[0]}</span>
+        <span>{labels[labels.length - 1]}</span>
+      </div>
+    </div>
   );
 }
 
@@ -142,6 +217,7 @@ export function TopCockpitBand({
           points={kpiTrends.acceptedPoints}
           sparkColor="var(--accent)"
           sparkId="spark-accepted"
+          formatValue={fmtCompactSEK}
         />
         {/* Aktiv pipeline */}
         <KpiCell
@@ -151,6 +227,7 @@ export function TopCockpitBand({
           points={kpiTrends.pipelinePoints}
           sparkColor="var(--accent)"
           sparkId="spark-pipeline"
+          formatValue={(v) => `${v} aktiva`}
         />
         {/* Vinstgrad */}
         <KpiCell
@@ -160,6 +237,7 @@ export function TopCockpitBand({
           points={kpiTrends.winRatePoints}
           sparkColor="var(--status-accepted-text)"
           sparkId="spark-winrate"
+          formatValue={(v) => `${v}%`}
         />
         {/* Snittaffär */}
         <KpiCell
@@ -170,6 +248,7 @@ export function TopCockpitBand({
           points={kpiTrends.avgDealPoints}
           sparkColor="var(--status-viewed-text)"
           sparkId="spark-avgdeal"
+          formatValue={fmtCompactSEK}
         />
       </div>
 
@@ -218,6 +297,7 @@ function KpiCell({
   points,
   sparkColor,
   sparkId,
+  formatValue,
 }: {
   label: string;
   value: string;
@@ -226,6 +306,7 @@ function KpiCell({
   points: number[];
   sparkColor: string;
   sparkId: string;
+  formatValue: (v: number) => string;
 }) {
   return (
     <div className="relative flex min-w-0 flex-col border-b border-r border-[var(--cockpit-divider,var(--cockpit-border-soft))] px-3 pt-3 pb-0 last:border-r-0 sm:[&:nth-child(2n)]:border-r-0 xl:border-b-0 xl:[&:nth-child(2n)]:border-r xl:[&:nth-child(4n)]:border-r-0">
@@ -245,8 +326,8 @@ function KpiCell({
       {trendPct === null && detail === null && (
         <p className="mt-1 text-[10.5px] text-[var(--text-muted)]">Ej tillräcklig data</p>
       )}
-      <div className="mt-auto overflow-hidden">
-        <MiniSparkline points={points} color={sparkColor} gradId={sparkId} />
+      <div className="mt-auto overflow-visible">
+        <MiniSparkline points={points} color={sparkColor} gradId={sparkId} formatValue={formatValue} />
       </div>
     </div>
   );
