@@ -62,10 +62,10 @@ export function MetricTile({ label, value, detail, tone = 'neutral' }: {
   }[tone];
 
   return (
-    <div className={cn('min-h-[40px] min-w-0 rounded px-2.5 py-1.5', toneClass)}>
-      <p className="truncate whitespace-nowrap text-[10px] font-medium leading-3 text-[var(--text-muted)]">{label}</p>
-      <p className="mt-0.5 text-[15px] font-semibold tabular-nums leading-none text-[var(--text-primary)]">{value}</p>
-      <p className="mt-0.5 text-[9.5px] leading-3 text-[var(--text-secondary)]">{detail}</p>
+    <div className={cn('min-w-0 rounded px-2 py-1.5', toneClass)}>
+      <p className="truncate whitespace-nowrap text-[9.5px] font-medium leading-3 text-[var(--text-muted)]">{label}</p>
+      <p className="mt-0.5 text-[14px] font-semibold tabular-nums leading-none text-[var(--text-primary)]">{value}</p>
+      <p className="mt-0.5 truncate text-[9px] leading-3 text-[var(--text-secondary)]">{detail}</p>
     </div>
   );
 }

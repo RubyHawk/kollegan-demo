@@ -135,11 +135,46 @@ const MOCK: DashboardReadModel = {
 
 export default function DashboardPreviewPage() {
   return (
-    <DashboardView
-      greetingText="God morgon, Malek."
-      greetingSub="Lördag — kolla läget på dina offerter."
-      dateLabel="Lördag 31 maj 2026"
-      {...MOCK}
-    />
+    <>
+      {/* Inject the Soleria light theme variables so the preview matches production */}
+      <style>{`
+        :root {
+          --page-bg: #f1f2fa;
+          --surface: #ffffff;
+          --surface-alt: #eaeaf4;
+          --surface-hover: #e0e0ef;
+          --surface-0: #ffffff;
+          --surface-1: #f3f3fb;
+          --surface-2: #eaeaf4;
+          --surface-3: #e1e1ef;
+          --surface-active: #d6d6ea;
+          --border: #c4c4de;
+          --border-light: #e1e1ef;
+          --text-primary: #281a39;
+          --text-secondary: #4a3860;
+          --text-muted: #8878a0;
+          --accent: #35aaf3;
+          --accent-light: #4dbeff;
+          --accent-subtle: oklch(0.68 0.16 224 / 0.08);
+          --accent-border: oklch(0.68 0.16 224 / 0.22);
+          --status-viewed-bg: oklch(0.960 0.04 300);
+          --status-viewed-text: oklch(0.38 0.16 300);
+          --status-accepted-bg: oklch(0.958 0.04 145);
+          --status-accepted-text: oklch(0.35 0.16 145);
+          --status-success-bg: oklch(0.958 0.04 145);
+          --status-success-text: oklch(0.35 0.16 145);
+          --status-warning-bg: oklch(0.960 0.04 70);
+          --status-warning-text: oklch(0.40 0.16 70);
+          --status-danger-bg: oklch(0.960 0.04 25);
+          --status-danger-text: oklch(0.38 0.16 25);
+        }
+      `}</style>
+      <DashboardView
+        greetingText="God morgon, Malek."
+        greetingSub="Lördag — kolla läget på dina offerter."
+        dateLabel="Lördag 31 maj 2026"
+        {...MOCK}
+      />
+    </>
   );
 }

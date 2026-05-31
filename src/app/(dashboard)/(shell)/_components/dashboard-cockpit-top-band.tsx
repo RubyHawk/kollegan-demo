@@ -96,11 +96,11 @@ export function TopCockpitBand({
 
       {/* Dagens fokus */}
       <div className="border-b border-[var(--cockpit-border-soft,var(--border))] px-3.5 py-3 xl:border-b-0 xl:border-r xl:border-[var(--cockpit-divider,var(--cockpit-border-soft))]">
-        <div className="mb-2.5 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">Dagens fokus</h2>
           <DotsThreeVertical size={16} weight="bold" className="text-[var(--text-muted)]" />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-1.5">
           <MetricTile label="Över deadline" value={focusMetrics.overdue} detail="Kräver åtgärd" tone={focusMetrics.overdue > 0 ? 'danger' : 'neutral'} />
           <MetricTile label="Nära deadline" value={focusMetrics.dueSoon} detail="Inom 7 dagar" tone={focusMetrics.dueSoon > 0 ? 'warning' : 'neutral'} />
           <MetricTile label="Uppföljning" value={focusMetrics.missingFollowUp} detail="Saknar" tone={focusMetrics.missingFollowUp > 0 ? 'accent' : 'neutral'} />

@@ -170,7 +170,7 @@ export function OfferTable({ rows }: { rows: DashboardOfferTableRow[] }) {
       ) : (
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Horizontal scroll area: tabs + headers + rows scroll together on narrow viewports */}
-          <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex min-h-0 flex-1 flex-col overflow-x-auto overflow-y-hidden">
             {/* Tab bar */}
             <div className="flex min-w-[650px] items-end gap-1 border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))] px-3.5">
               {([
@@ -209,13 +209,13 @@ export function OfferTable({ rows }: { rows: DashboardOfferTableRow[] }) {
               <span>Deadline</span>
               <span>Nästa steg</span>
             </div>
-            {/* Rows */}
-            <div className="divide-y divide-[var(--cockpit-divider,var(--cockpit-border-soft))]">
+            {/* Rows — flex-1 so rows fill the available panel height */}
+            <div className="flex flex-1 flex-col divide-y divide-[var(--cockpit-divider,var(--cockpit-border-soft))]">
               {displayRows.map((row) => (
                 <Link
                   key={row.id}
                   href={row.href}
-                  className="grid h-[41px] min-w-[650px] grid-cols-[108px_minmax(180px,1fr)_100px_122px_124px] items-center px-3.5 transition-colors hover:bg-[var(--surface-hover)]"
+                  className="grid flex-1 min-h-[41px] min-w-[650px] grid-cols-[108px_minmax(180px,1fr)_100px_122px_124px] items-center px-3.5 transition-colors hover:bg-[var(--surface-hover)]"
                 >
                   <span className="min-w-0 pr-3">
                     <DashboardDotLabel tone={statusTone(row.status)}>{row.statusLabel}</DashboardDotLabel>
