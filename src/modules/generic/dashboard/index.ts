@@ -7,6 +7,7 @@ export { default as StatSummaryCards } from './components/stat-summary-cards';
 export { getDashboardOrganizationIdForUser, getDashboardReadModel } from './application/dashboard-read-model.service';
 export type {
   DashboardActionItem,
+  DashboardKpiTrends,
   DashboardActivityFeedItem,
   DashboardCalendar,
   DashboardCalendarEvent,

@@ -11,6 +11,7 @@ import type {
   DashboardPipelineOverview,
   DashboardProjectHandoff,
   DashboardTone,
+  ProjectStats,
 } from '@modules/generic/dashboard';
 import {
   CalendarIcon,
@@ -92,6 +93,20 @@ function ctaBtnClass(tone: DashboardActionItem['tone']): string {
   return 'bg-slate-100 text-slate-600';
 }
 
+const TONE_CHIP_LABELS: Record<DashboardActionItem['tone'], string> = {
+  danger: 'Kritisk',
+  warning: 'Varning',
+  info: 'Info',
+  neutral: 'Normal',
+};
+
+const TONE_CHIP_CLASSES: Record<DashboardActionItem['tone'], string> = {
+  danger: 'bg-[var(--status-danger-bg)] text-[var(--status-danger-text)]',
+  warning: 'bg-[var(--status-warning-bg)] text-[var(--status-warning-text)]',
+  info: 'bg-[var(--status-viewed-bg)] text-[var(--status-viewed-text)]',
+  neutral: 'bg-[var(--surface-2)] text-[var(--text-muted)]',
+};
+
 function ActionQueueRow({ item }: { item: DashboardActionItem }) {
   const { Icon, word } = ctaConfig(item.actionLabel);
   return (
@@ -101,7 +116,12 @@ function ActionQueueRow({ item }: { item: DashboardActionItem }) {
     >
       <span className={cn('rounded-r-sm', priorityRailClass(item.tone))} />
       <span className="flex min-w-0 flex-col justify-center py-2">
-        <span className="block truncate text-xs font-semibold text-[var(--text-primary)]">{item.label}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className={cn('shrink-0 rounded px-1.5 py-px text-[9.5px] font-bold leading-4', TONE_CHIP_CLASSES[item.tone])}>
+            {TONE_CHIP_LABELS[item.tone]}
+          </span>
+          <span className="block truncate text-xs font-semibold text-[var(--text-primary)]">{item.label}</span>
+        </span>
         <span className="mt-0.5 block truncate text-[11px] text-[#475569]">{item.detail}</span>
       </span>
       <span className="flex items-center">
@@ -348,27 +368,32 @@ export function PipelinePanel({
   const conversionDisplay = acceptanceRate !== null ? `${acceptanceRate}%` : '–';
 
   return (
-    <Panel title="Pipelineöversikt" eyebrow={`Värde i pipeline ${fmtSEK(overview.totalValue)}`} action={<DotsThreeVertical size={16} weight="bold" className="text-[var(--text-muted)]" />} className="xl:col-span-4">
+    <Panel title="Pipelineöversikt" eyebrow={`Totalt ${fmtCompactSEK(overview.totalValue)} i pipeline`} action={<DotsThreeVertical size={16} weight="bold" className="text-[var(--text-muted)]" />} className="xl:col-span-4">
       <div className="flex flex-1 flex-col px-3.5 py-3">
-        <div className="grid h-[112px] grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-4 gap-1.5" style={{ height: 108 }}>
           {overview.stages.map((stage) => (
-            <Link key={stage.id} href={`/offerter?status=${stage.id}`} className="flex min-w-0 flex-col justify-between rounded border border-[var(--cockpit-border-soft,var(--border))] bg-[var(--surface-0)] px-2.5 py-2 transition-colors hover:bg-[var(--surface-hover)]">
+            <Link
+              key={stage.id}
+              href={`/offerter?status=${stage.id}`}
+              className="flex min-w-0 flex-col justify-between rounded-md border border-[var(--cockpit-border-soft,var(--border))] bg-[var(--surface-0)] px-2 py-2 transition-colors hover:bg-[var(--surface-hover)]"
+            >
               <span className="min-w-0">
-                <span className="block truncate text-[10px] font-medium text-[var(--text-muted)]">{stage.label}</span>
-                <span className="mt-2 block text-lg font-semibold tabular-nums leading-none text-[var(--text-primary)]">{stage.count}</span>
-                <span className="mt-1 block truncate text-[10.5px] font-semibold tabular-nums text-[var(--text-secondary)]">{fmtCompactSEK(stage.value)}</span>
+                <span className="block truncate text-[9.5px] font-semibold uppercase tracking-[.04em] text-[var(--text-muted)]">{stage.label}</span>
+                <span className="mt-2 block text-[17px] font-bold tabular-nums leading-none text-[var(--text-primary)]">{stage.count}</span>
+                <span className="mt-0.5 block truncate text-[10px] font-semibold tabular-nums text-[var(--text-secondary)]">{fmtCompactSEK(stage.value)}</span>
               </span>
               <span className="h-1 overflow-hidden rounded-full bg-[var(--surface-2)]">
                 <motion.span
                   initial={{ width: 0 }}
                   animate={{ width: `${stage.percent}%` }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
                   className="block h-full rounded-full bg-[var(--accent)]"
                 />
               </span>
             </Link>
           ))}
         </div>
-        <div className="mt-auto grid h-11 grid-cols-3 gap-3 border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] pt-3">
+        <div className="mt-auto grid grid-cols-3 gap-3 border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] pt-2.5">
           <PipelineStat label="Vägd pipeline" value={fmtSEK(weighted)} />
           <PipelineStat label="Snittaffär" value={overview.averageWonValue > 0 ? fmtSEK(overview.averageWonValue) : '--'} />
           <PipelineStat label="Konvertering" value={conversionDisplay} />
@@ -389,60 +414,99 @@ function PipelineStat({ label, value }: { label: string; value: string }) {
 
 // ── ProjectHandoffPanel ───────────────────────────────────────────────────────
 
+type ProjectGroup = { label: string; count: number; value: number };
+
+function projectGroups(projects: DashboardProjectHandoff[], projectStats: ProjectStats): ProjectGroup[] {
+  const klarProjects = projects.filter((p) => p.stage === 'details');
+  const pagarProjects = projects.filter((p) => p.stage === 'in_progress' || p.stage === 'arrived');
+  const planProjects = projects.filter((p) => p.stage === 'ordered');
+
+  const klarCount = projectStats.stages.details;
+  const pagarCount = (projectStats.stages.in_progress ?? 0) + (projectStats.stages.arrived ?? 0);
+  const planCount = projectStats.stages.ordered ?? 0;
+
+  return [
+    { label: 'Klar för överlämning', count: klarCount, value: klarProjects.reduce((s, p) => s + p.value, 0) },
+    { label: 'Pågår', count: pagarCount, value: pagarProjects.reduce((s, p) => s + p.value, 0) },
+    { label: 'Planerad', count: planCount, value: planProjects.reduce((s, p) => s + p.value, 0) },
+  ];
+}
+
+function projectStageBadgeTone(stage: DashboardProjectHandoff['stage']): 'success' | 'accent' | 'neutral' {
+  if (stage === 'details') return 'success';
+  if (stage === 'in_progress' || stage === 'arrived') return 'accent';
+  return 'neutral';
+}
+
+function projectStageBadgeLabel(stage: DashboardProjectHandoff['stage']): string {
+  if (stage === 'details') return 'Klar';
+  if (stage === 'in_progress' || stage === 'arrived') return 'Pågår';
+  return 'Planerad';
+}
+
 export function ProjectHandoffPanel({
   projects,
   overview,
+  projectStats,
 }: {
   projects: DashboardProjectHandoff[];
   overview: DashboardPipelineOverview;
+  projectStats: ProjectStats;
 }) {
-  const acceptedStage = overview.stages.find((stage) => stage.id === 'accepted');
+  const groups = projectGroups(projects, projectStats);
+  const totalActive = groups.reduce((s, g) => s + g.count, 0);
 
   return (
     <Panel
       title="Projektöverlämning"
-      eyebrow={`${projects.length} redo för nästa steg`}
+      eyebrow={`${totalActive} aktiva projekt`}
       action={<Link href="/projekt" className="text-[11px] font-semibold text-[var(--accent)] hover:underline">Alla projekt</Link>}
       className="xl:col-span-4"
     >
-      <div className="grid grid-cols-3 gap-2 px-3.5 py-3">
-        <ProjectSummaryMetric label="Accepterade" value={`${acceptedStage?.count ?? 0}`} />
-        <ProjectSummaryMetric label="Värde" value={fmtCompactSEK(acceptedStage?.value ?? 0)} />
-        <ProjectSummaryMetric label="Redo" value={`${projects.length}`} />
+      {/* 3-column summary header */}
+      <div className="grid grid-cols-3 divide-x divide-[var(--cockpit-divider,var(--cockpit-border-soft))] border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))]">
+        {groups.map((g) => (
+          <div key={g.label} className="flex flex-col px-3 py-2.5">
+            <span className="truncate text-[9px] font-semibold uppercase tracking-[.05em] text-[var(--text-muted)]">{g.label}</span>
+            <span className="mt-1 text-[19px] font-bold tabular-nums leading-none text-[var(--text-primary)]">{g.count}</span>
+            {g.value > 0 && (
+              <span className="mt-0.5 text-[10px] font-medium tabular-nums text-[var(--text-secondary)]">{fmtCompactSEK(g.value)}</span>
+            )}
+          </div>
+        ))}
       </div>
+
+      {/* Project rows */}
       {projects.length === 0 ? (
-        <div className="px-3.5 pb-3">
+        <div className="px-3.5 py-3">
           <div className="rounded bg-[var(--surface-1)] px-3 py-3">
             <p className="text-xs font-semibold text-[var(--text-primary)]">Nästa steg</p>
             <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-              Alla accepterade offerter är redan hanterade. Nya accepterade offerter utan projekt hamnar här.
+              Nya accepterade offerter utan projekt hamnar här.
             </p>
           </div>
         </div>
       ) : (
         <div className="min-h-0 flex-1 divide-y divide-[var(--cockpit-divider,var(--cockpit-border-soft))] overflow-auto">
           {projects.map((project) => (
-            <Link key={project.id} href={project.href} className="grid h-[42px] gap-2 px-3.5 transition-colors hover:bg-[var(--surface-hover)] sm:grid-cols-[minmax(0,1fr)_104px_88px] sm:items-center">
+            <Link
+              key={project.id}
+              href={project.href}
+              className="grid h-[42px] grid-cols-[minmax(0,1fr)_68px_80px] items-center gap-2 px-3.5 transition-colors hover:bg-[var(--surface-hover)]"
+            >
               <span className="min-w-0">
-                <span className="block truncate text-[13px] font-semibold text-[var(--text-primary)]">{project.name}</span>
-                <span className="mt-0.5 block truncate text-xs text-[var(--text-secondary)]">{project.customer}</span>
+                <span className="block truncate text-xs font-semibold text-[var(--text-primary)]">{project.name}</span>
+                <span className="mt-0.5 block truncate text-[10.5px] text-[var(--text-secondary)]">{project.customer}</span>
               </span>
-              <DashboardBadge tone="accent" className="justify-center">{project.stageLabel}</DashboardBadge>
-              <span className="text-xs text-[var(--text-secondary)] sm:text-right">{project.handoffLabel}</span>
+              <DashboardBadge tone={projectStageBadgeTone(project.stage)} className="justify-center">
+                {projectStageBadgeLabel(project.stage)}
+              </DashboardBadge>
+              <span className="truncate text-right text-[10.5px] text-[var(--text-muted)]">{project.handoffLabel}</span>
             </Link>
           ))}
         </div>
       )}
     </Panel>
-  );
-}
-
-function ProjectSummaryMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0 rounded bg-[var(--surface-1)] px-3 py-2">
-      <p className="truncate text-[10px] text-[var(--text-muted)]">{label}</p>
-      <p className="mt-1 truncate text-base font-semibold tabular-nums leading-none text-[var(--text-primary)]">{value}</p>
-    </div>
   );
 }
 
@@ -507,7 +571,7 @@ function InsightBlock({ lines }: { lines: string[] }) {
           <Lightbulb size={14} weight="duotone" />
         </span>
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-[var(--text-primary)]">Insikt</p>
+          <p className="text-xs font-semibold text-[var(--text-primary)]">Insikter</p>
           {lines.map((line) => (
             <p key={line} className="mt-0.5 truncate text-[11px] text-[var(--text-secondary)]">{line}</p>
           ))}

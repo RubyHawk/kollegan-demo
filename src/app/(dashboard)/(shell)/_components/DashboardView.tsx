@@ -32,6 +32,8 @@ export default function DashboardView({
   offerTable,
   projectHandoffs,
   activityFeed,
+  kpiTrends,
+  projectStats,
 }: DashboardViewProps) {
   return (
     <div className="min-h-full bg-[oklch(0.985_0.002_250)] [--cockpit-border:oklch(0.905_0.004_250)] [--cockpit-border-soft:oklch(0.955_0.003_250)] [--cockpit-divider:oklch(0.935_0.003_250)] [--cockpit-shadow:0_1px_2px_rgba(15,23,42,0.025)]">
@@ -50,6 +52,7 @@ export default function DashboardView({
             pipelineValue={pipelineValue}
             acceptanceRate={acceptanceRate}
             averageWonValue={pipelineOverview.averageWonValue}
+            kpiTrends={kpiTrends}
           />
 
           <div className="grid items-stretch gap-3 xl:min-h-0 xl:grid-cols-12">
@@ -59,7 +62,7 @@ export default function DashboardView({
 
           <div className="grid items-stretch gap-3 xl:min-h-0 xl:grid-cols-12">
             <PipelinePanel overview={pipelineOverview} acceptanceRate={acceptanceRate} />
-            <ProjectHandoffPanel projects={projectHandoffs} overview={pipelineOverview} />
+            <ProjectHandoffPanel projects={projectHandoffs} overview={pipelineOverview} projectStats={projectStats} />
             <ActivityFeedPanel items={activityFeed} focusMetrics={focusMetrics} acceptanceRate={acceptanceRate} />
           </div>
         </motion.div>
