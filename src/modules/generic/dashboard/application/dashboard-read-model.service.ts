@@ -4,7 +4,7 @@ import {
 } from '@platform/calendar/google-calendar';
 import { getDashboardWeather, unavailableWeather } from '@platform/weather/smhi';
 import { dashboardReadModelRepository } from '../infrastructure/dashboard-read-model.repository';
-import type { DashboardSnapshot } from '../infrastructure/dashboard-read-model.repository';
+import type { DashboardSnapshot, KpiWindowOffer } from '../infrastructure/dashboard-read-model.repository';
 import type {
   DashboardActionItem,
   DashboardActivityFeedItem,
@@ -120,7 +120,7 @@ export function buildDashboardReadModel(
     activityFeed: buildActivityFeed(snapshot),
     calendar,
     weather: integrations.weather ?? unavailableWeather('Örebro'),
-    kpiTrends: buildKpiTrends(snapshot.recentOffers, snapshot, acceptanceRate, now),
+    kpiTrends: buildKpiTrends(snapshot.kpiWindow, snapshot, acceptanceRate, now),
   };
 }
 
@@ -274,26 +274,74 @@ function buildProjectHandoffs(snapshot: DashboardSnapshot): DashboardProjectHand
 }
 
 function buildKpiTrends(
-  offers: RecentOffer[],
+  kpiWindow: KpiWindowOffer[],
   snapshot: DashboardSnapshot,
   acceptanceRate: number | null,
   now: Date,
 ): DashboardKpiTrends {
-  const DAYS = 7;
+  const WEEKS = 7;
   const todayOrd = stockholmDayOrdinal(now);
+  const todayWeek = Math.floor(todayOrd / 7);
 
-  const acceptedByDay = new Array<number>(DAYS).fill(0);
-  const pipelineByDay = new Array<number>(DAYS).fill(0);
+  const acceptedByWeek = new Array<number>(WEEKS).fill(0);
+  const pipelineByWeek = new Array<number>(WEEKS).fill(0);
+  const winByWeek = Array.from({ length: WEEKS }, () => ({ won: 0, closed: 0 }));
+  const avgByWeek = Array.from({ length: WEEKS }, () => ({ sum: 0, count: 0 }));
 
-  for (const offer of offers) {
+  for (const offer of kpiWindow) {
     if (offer.acceptedAt) {
-      const idx = todayOrd - stockholmDayOrdinal(new Date(offer.acceptedAt));
-      if (idx >= 0 && idx < DAYS) acceptedByDay[DAYS - 1 - idx] += offer.totalIncVat;
+      const wIdx = todayWeek - Math.floor(stockholmDayOrdinal(new Date(offer.acceptedAt)) / 7);
+      if (wIdx >= 0 && wIdx < WEEKS) {
+        const slot = WEEKS - 1 - wIdx;
+        acceptedByWeek[slot] += offer.totalIncVat;
+        winByWeek[slot].won++;
+        winByWeek[slot].closed++;
+        avgByWeek[slot].sum += offer.totalIncVat;
+        avgByWeek[slot].count++;
+      }
     }
-    if (offer.sentAt && (offer.status === 'sent' || offer.status === 'viewed')) {
-      const idx = todayOrd - stockholmDayOrdinal(new Date(offer.sentAt));
-      if (idx >= 0 && idx < DAYS) pipelineByDay[DAYS - 1 - idx]++;
+    if (offer.declinedAt) {
+      const wIdx = todayWeek - Math.floor(stockholmDayOrdinal(new Date(offer.declinedAt)) / 7);
+      if (wIdx >= 0 && wIdx < WEEKS) winByWeek[WEEKS - 1 - wIdx].closed++;
     }
+    if (offer.sentAt && ['sent', 'viewed', 'accepted'].includes(offer.status)) {
+      const wIdx = todayWeek - Math.floor(stockholmDayOrdinal(new Date(offer.sentAt)) / 7);
+      if (wIdx >= 0 && wIdx < WEEKS) pipelineByWeek[WEEKS - 1 - wIdx]++;
+    }
+  }
+
+  // Win rate per week; fall back to overall rate for weeks with no closed deals
+  const fallbackRate = acceptanceRate ?? 0;
+  const winRatePoints = winByWeek.map((w) =>
+    w.closed > 0 ? Math.round((w.won / w.closed) * 100) : fallbackRate,
+  );
+
+  // Avg deal per week; fall back to all-time avg for empty weeks
+  const overallAvg = (snapshot.countMap.accepted ?? 0) > 0
+    ? Math.round(snapshot.acceptedValue / snapshot.countMap.accepted)
+    : 0;
+  const avgDealPoints = avgByWeek.map((w) =>
+    w.count > 0 ? Math.round(w.sum / w.count) : overallAvg,
+  );
+
+  // 30-vs-60-day avg-deal trend from the time-windowed dataset (no createdAt cap)
+  const day30 = todayOrd - 30;
+  const day60 = todayOrd - 60;
+  const recentWon = kpiWindow.filter((o) => {
+    if (!o.acceptedAt) return false;
+    const d = stockholmDayOrdinal(new Date(o.acceptedAt));
+    return d >= day30 && d <= todayOrd;
+  });
+  const priorWon = kpiWindow.filter((o) => {
+    if (!o.acceptedAt) return false;
+    const d = stockholmDayOrdinal(new Date(o.acceptedAt));
+    return d >= day60 && d < day30;
+  });
+  let avgDealTrendPct: number | null = null;
+  if (recentWon.length > 0 && priorWon.length > 0) {
+    const recentAvg = recentWon.reduce((s, o) => s + o.totalIncVat, 0) / recentWon.length;
+    const priorAvg = priorWon.reduce((s, o) => s + o.totalIncVat, 0) / priorWon.length;
+    if (priorAvg > 0) avgDealTrendPct = Math.round(((recentAvg - priorAvg) / priorAvg) * 100);
   }
 
   const pipelineActiveCount = (snapshot.countMap.sent ?? 0) + (snapshot.countMap.viewed ?? 0);
@@ -302,34 +350,7 @@ function buildKpiTrends(
     ? `${snapshot.countMap.accepted ?? 0} av ${closedTotal} vunna`
     : '–';
 
-  const winRatePoints = acceptanceRate !== null
-    ? Array.from({ length: DAYS }, (_, i) => Math.max(0, acceptanceRate - (DAYS - 1 - i) * 1.5 + (i % 2 === 0 ? 2 : 0)))
-    : [];
-
-  const avgDeal = (snapshot.countMap.accepted ?? 0) > 0
-    ? Math.round(snapshot.acceptedValue / snapshot.countMap.accepted)
-    : 0;
-  const avgDealPoints = avgDeal > 0
-    ? Array.from({ length: DAYS }, (_, i) => Math.round(avgDeal * (0.75 + (i / (DAYS - 1)) * 0.25)))
-    : [];
-
-  const recentAccepted = offers.filter((o) => {
-    if (!o.acceptedAt) return false;
-    return todayOrd - stockholmDayOrdinal(new Date(o.acceptedAt)) < 30;
-  });
-  const priorAccepted = offers.filter((o) => {
-    if (!o.acceptedAt) return false;
-    const d = todayOrd - stockholmDayOrdinal(new Date(o.acceptedAt));
-    return d >= 30 && d < 60;
-  });
-  let avgDealTrendPct: number | null = null;
-  if (recentAccepted.length > 0 && priorAccepted.length > 0) {
-    const recentAvg = recentAccepted.reduce((s, o) => s + o.totalIncVat, 0) / recentAccepted.length;
-    const priorAvg = priorAccepted.reduce((s, o) => s + o.totalIncVat, 0) / priorAccepted.length;
-    if (priorAvg > 0) avgDealTrendPct = Math.round(((recentAvg - priorAvg) / priorAvg) * 100);
-  }
-
-  return { acceptedPoints: acceptedByDay, pipelinePoints: pipelineByDay, winRatePoints, avgDealPoints, pipelineActiveCount, winRateFraction, avgDealTrendPct };
+  return { acceptedPoints: acceptedByWeek, pipelinePoints: pipelineByWeek, winRatePoints, avgDealPoints, pipelineActiveCount, winRateFraction, avgDealTrendPct };
 }
 
 function buildActivityFeed(snapshot: DashboardSnapshot): DashboardActivityFeedItem[] {
