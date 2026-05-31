@@ -13,16 +13,16 @@ import type {
 import { DashboardDotLabel, MetricTile } from './dashboard-cockpit-primitives';
 import { fmtSEK, fmtTime } from './dashboard-cockpit-utils';
 
-function MiniSparkline({ points, color }: { points: number[]; color: string }) {
+function MiniSparkline({ points, color, gradId }: { points: number[]; color: string; gradId: string }) {
   if (points.length < 2 || points.every((p) => p === 0)) return null;
   const max = Math.max(...points, 0.001);
   const min = Math.min(...points);
   const range = max - min || 1;
-  const W = 58, H = 28, PAD = 2;
-  const xs = points.map((_, i) => PAD + (i / (points.length - 1)) * (W - PAD * 2));
-  const ys = points.map((v) => H - PAD - ((v - min) / range) * (H - PAD * 2));
+  const W = 100, H = 40, PAD_X = 1, PAD_Y = 5;
+  const xs = points.map((_, i) => PAD_X + (i / (points.length - 1)) * (W - PAD_X * 2));
+  const ys = points.map((v) => H - PAD_Y - ((v - min) / range) * (H - PAD_Y * 2));
 
-  // Catmull-Rom → cubic bezier so curves are smooth instead of angular
+  // Catmull-Rom → cubic bezier for smooth curves
   let d = `M${xs[0].toFixed(1)},${ys[0].toFixed(1)}`;
   for (let i = 0; i < xs.length - 1; i++) {
     const p0x = xs[i - 1] ?? xs[0],  p0y = ys[i - 1] ?? ys[0];
@@ -37,9 +37,18 @@ function MiniSparkline({ points, color }: { points: number[]; color: string }) {
     d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)}`;
   }
 
+  const fillPath = `${d} L${xs[xs.length - 1].toFixed(1)},${H} L${xs[0].toFixed(1)},${H} Z`;
+
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} fill="none" aria-hidden>
-      <path d={d} stroke={color} strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" opacity="0.75" />
+    <svg width="100%" height="44" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" fill="none" aria-hidden>
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      <path d={fillPath} fill={`url(#${gradId})`} />
+      <path d={d} stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }
@@ -132,6 +141,7 @@ export function TopCockpitBand({
           detail={acceptedCount > 0 ? `${acceptedCount} vunna offerter` : null}
           points={kpiTrends.acceptedPoints}
           sparkColor="var(--accent)"
+          sparkId="spark-accepted"
         />
         {/* Aktiv pipeline */}
         <KpiCell
@@ -140,6 +150,7 @@ export function TopCockpitBand({
           detail={`${kpiTrends.pipelineActiveCount} aktiva offerter`}
           points={kpiTrends.pipelinePoints}
           sparkColor="var(--accent)"
+          sparkId="spark-pipeline"
         />
         {/* Vinstgrad */}
         <KpiCell
@@ -148,6 +159,7 @@ export function TopCockpitBand({
           detail={kpiTrends.winRateFraction}
           points={kpiTrends.winRatePoints}
           sparkColor="var(--status-accepted-text)"
+          sparkId="spark-winrate"
         />
         {/* Snittaffär */}
         <KpiCell
@@ -157,6 +169,7 @@ export function TopCockpitBand({
           trendPct={kpiTrends.avgDealTrendPct}
           points={kpiTrends.avgDealPoints}
           sparkColor="var(--status-viewed-text)"
+          sparkId="spark-avgdeal"
         />
       </div>
 
@@ -204,6 +217,7 @@ function KpiCell({
   trendPct,
   points,
   sparkColor,
+  sparkId,
 }: {
   label: string;
   value: string;
@@ -211,9 +225,10 @@ function KpiCell({
   trendPct?: number | null;
   points: number[];
   sparkColor: string;
+  sparkId: string;
 }) {
   return (
-    <div className="relative min-w-0 border-b border-r border-[var(--cockpit-divider,var(--cockpit-border-soft))] px-3 py-3 last:border-r-0 sm:[&:nth-child(2n)]:border-r-0 xl:border-b-0 xl:[&:nth-child(2n)]:border-r xl:[&:nth-child(4n)]:border-r-0">
+    <div className="relative flex min-w-0 flex-col border-b border-r border-[var(--cockpit-divider,var(--cockpit-border-soft))] px-3 pt-3 pb-0 last:border-r-0 sm:[&:nth-child(2n)]:border-r-0 xl:border-b-0 xl:[&:nth-child(2n)]:border-r xl:[&:nth-child(4n)]:border-r-0">
       <p className="truncate text-[10px] font-semibold uppercase tracking-[.05em] text-[var(--text-muted)]">{label}</p>
       <p className="mt-1.5 whitespace-nowrap text-[18px] font-semibold tabular-nums leading-none text-[var(--text-primary)]">{value}</p>
       {detail !== null && (
@@ -230,8 +245,8 @@ function KpiCell({
       {trendPct === null && detail === null && (
         <p className="mt-1 text-[10.5px] text-[var(--text-muted)]">Ej tillräcklig data</p>
       )}
-      <div className="absolute bottom-2 right-2">
-        <MiniSparkline points={points} color={sparkColor} />
+      <div className="mt-auto overflow-hidden">
+        <MiniSparkline points={points} color={sparkColor} gradId={sparkId} />
       </div>
     </div>
   );
