@@ -51,6 +51,7 @@ export default function OffersPage() {
   const { toasts, addToast, dismissToast } = useToast();
   const [blockingAlert, setBlockingAlert] = useState<BlockingAlert | null>(null);
   const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [viewLinkCopied, setViewLinkCopied] = useState(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
   const {
     companies,
@@ -291,6 +292,21 @@ export default function OffersPage() {
     window.setTimeout(() => setCopiedText(null), 1800);
   }, [addToast]);
 
+  const copyCurrentViewLink = useCallback(async () => {
+    await navigator.clipboard.writeText(window.location.href).catch(() => {});
+    setViewLinkCopied(true);
+    addToast({
+      message: 'Vy-länk kopierad',
+      color: 'emerald',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+    });
+    window.setTimeout(() => setViewLinkCopied(false), 1800);
+  }, [addToast]);
+
   const draftOffers = allOffers.filter((o) => o.status === 'draft');
   const selectedDraftCount = Array.from(selected).filter((id) => allOffers.find((o) => o.id === id)?.status === 'draft').length;
   const allDraftsSelected  = draftOffers.length > 0 && draftOffers.every((o) => selected.has(o.id));
@@ -490,12 +506,14 @@ export default function OffersPage() {
         dateFrom={dateFrom}
         dateTo={dateTo}
         hasActiveFilters={hasActiveOfferFilters}
+        viewLinkCopied={viewLinkCopied}
         onTabChange={setTab}
         onSearchInputChange={setSearchInput}
         onSearchChange={setSearch}
         onDateFromChange={setDateFrom}
         onDateToChange={setDateTo}
         onResetFilters={resetFilters}
+        onCopyViewLink={copyCurrentViewLink}
       />
 
       <OfferAttentionStrip

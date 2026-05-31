@@ -169,12 +169,14 @@ type OffersDashboardToolbarProps = {
   dateFrom: string;
   dateTo: string;
   hasActiveFilters: boolean;
+  viewLinkCopied: boolean;
   onTabChange: (tab: OfferStatus | 'all') => void;
   onSearchInputChange: (value: string) => void;
   onSearchChange: (value: string) => void;
   onDateFromChange: (value: string) => void;
   onDateToChange: (value: string) => void;
   onResetFilters: () => void;
+  onCopyViewLink: () => void;
 };
 
 export function OffersDashboardToolbar({
@@ -184,12 +186,14 @@ export function OffersDashboardToolbar({
   dateFrom,
   dateTo,
   hasActiveFilters,
+  viewLinkCopied,
   onTabChange,
   onSearchInputChange,
   onSearchChange,
   onDateFromChange,
   onDateToChange,
   onResetFilters,
+  onCopyViewLink,
 }: OffersDashboardToolbarProps) {
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -282,6 +286,13 @@ export function OffersDashboardToolbar({
             Rensa filter
           </button>
         )}
+        <button
+          type="button"
+          onClick={onCopyViewLink}
+          className="rounded border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+        >
+          {viewLinkCopied ? 'Kopierad' : 'Kopiera vy'}
+        </button>
       </div>
     </div>
   );

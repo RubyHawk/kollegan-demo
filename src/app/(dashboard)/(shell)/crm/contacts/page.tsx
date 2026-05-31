@@ -160,6 +160,21 @@ export default function ContactsPage() {
     window.setTimeout(() => setCopiedContactValue(null), 1800);
   }, [addToast]);
 
+  const copyCurrentViewLink = useCallback(async () => {
+    await navigator.clipboard.writeText(window.location.href).catch(() => {});
+    setCopiedContactValue('view');
+    addToast({
+      message: 'Vy-länk kopierad',
+      color: 'emerald',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+    });
+    window.setTimeout(() => setCopiedContactValue(null), 1800);
+  }, [addToast]);
+
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const canGoBack = currentPage > 0;
   const canGoForward = currentPage < totalPages - 1;
@@ -199,11 +214,16 @@ export default function ContactsPage() {
       {error && (
         <div className="mb-6 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center justify-between gap-3">
           <span>{error}</span>
-          <button type="button" onClick={() => setError(null)} className="shrink-0 opacity-60 hover:opacity-100">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button type="button" onClick={() => void load()} className="rounded-lg border border-red-200/70 px-2 py-1 text-xs font-medium hover:bg-red-100/60 dark:border-red-800/40 dark:hover:bg-red-900/30">
+              Försök igen
+            </button>
+            <button type="button" onClick={() => setError(null)} className="opacity-60 hover:opacity-100">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 
@@ -304,6 +324,7 @@ export default function ContactsPage() {
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
           />
         </div>
+        <div className="flex flex-wrap items-center gap-2">
         {search && (
           <button
             type="button"
@@ -316,6 +337,15 @@ export default function ContactsPage() {
             Rensa
           </button>
         )}
+          <button
+            type="button"
+            onClick={() => void copyCurrentViewLink()}
+            className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+          >
+            {copiedContactValue === 'view' ? <Check size={13} weight="bold" /> : <Copy size={13} weight="bold" />}
+            Kopiera vy
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -351,22 +381,28 @@ export default function ContactsPage() {
                     <td className="px-4 py-3.5 text-[var(--text-secondary)]">{c.company ?? <span className="text-[var(--text-muted)]">—</span>}</td>
                     <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">
                       {c.email ? (
-                        <CopyableContactValue
-                          value={c.email}
-                          label="e-post"
-                          copied={copiedContactValue === `email:${c.id}`}
-                          onCopy={() => void copyContactValue(`email:${c.id}`, c.email ?? '', 'E-post')}
-                        />
+                        <div className="flex items-center gap-2">
+                          <CopyableContactValue
+                            value={c.email}
+                            label="e-post"
+                            copied={copiedContactValue === `email:${c.id}`}
+                            onCopy={() => void copyContactValue(`email:${c.id}`, c.email ?? '', 'E-post')}
+                          />
+                          <a href={`mailto:${c.email}`} className="text-[11px] font-medium text-[var(--accent)] hover:underline">Maila</a>
+                        </div>
                       ) : '—'}
                     </td>
                     <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">
                       {c.phone ? (
-                        <CopyableContactValue
-                          value={c.phone}
-                          label="telefon"
-                          copied={copiedContactValue === `phone:${c.id}`}
-                          onCopy={() => void copyContactValue(`phone:${c.id}`, c.phone ?? '', 'Telefon')}
-                        />
+                        <div className="flex items-center gap-2">
+                          <CopyableContactValue
+                            value={c.phone}
+                            label="telefon"
+                            copied={copiedContactValue === `phone:${c.id}`}
+                            onCopy={() => void copyContactValue(`phone:${c.id}`, c.phone ?? '', 'Telefon')}
+                          />
+                          <a href={`tel:${c.phone}`} className="text-[11px] font-medium text-[var(--accent)] hover:underline">Ring</a>
+                        </div>
                       ) : '—'}
                     </td>
                     <td className="px-4 py-3.5">

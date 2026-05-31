@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { replaceBrowserQuery } from '@shared/lib/browser-query';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import ToastContainer from '@shared/ui/toast/toast-container';
+import { useToast } from '@shared/ui/toast/toast-context';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import {
   ProductApiError,
@@ -56,6 +58,7 @@ function parseCategoryFilterParam(filter: string | null): CategoryFilterKey {
 
 export function ProductsPageClient() {
   const searchParams = useSearchParams();
+  const { toasts, addToast, dismissToast } = useToast();
   const {
     companies,
     selectedCompanyId,
@@ -81,6 +84,7 @@ export function ProductsPageClient() {
   const [categorySupportMessage, setCategorySupportMessage] = useState<string | null>(null);
   const [categorySaving, setCategorySaving] = useState(false);
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
+  const [viewLinkCopied, setViewLinkCopied] = useState(false);
 
   const loadProducts = useCallback(async () => {
     setProducts(await listProducts({ companyId: selectedCompanyId || undefined }));
@@ -270,6 +274,21 @@ export function ProductsPageClient() {
     setShowInactive(false);
   };
 
+  const copyCurrentViewLink = useCallback(async () => {
+    await navigator.clipboard.writeText(window.location.href).catch(() => {});
+    setViewLinkCopied(true);
+    addToast({
+      message: 'Vy-länk kopierad',
+      color: 'emerald',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+    });
+    window.setTimeout(() => setViewLinkCopied(false), 1800);
+  }, [addToast]);
+
   const handleCreateCategory = useCallback(async (payload: CategoryComposerPayload) => {
     setCategorySaving(true);
     setError(null);
@@ -419,9 +438,16 @@ export function ProductsPageClient() {
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              className="rounded-[24px] border border-[var(--status-danger-bg)] bg-[var(--status-danger-bg)] px-4 py-3 text-sm text-[var(--status-danger-text)]"
+              className="flex items-center justify-between gap-3 rounded-[24px] border border-[var(--status-danger-bg)] bg-[var(--status-danger-bg)] px-4 py-3 text-sm text-[var(--status-danger-text)]"
             >
-              {error}
+              <span>{error}</span>
+              <button
+                type="button"
+                onClick={() => void reloadAll()}
+                className="shrink-0 rounded-xl border border-[color-mix(in_srgb,var(--status-danger-text)_25%,transparent)] px-3 py-1.5 text-xs font-medium transition-colors hover:bg-[color-mix(in_srgb,var(--status-danger-text)_8%,transparent)]"
+              >
+                Försök igen
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -442,10 +468,12 @@ export function ProductsPageClient() {
             search={search}
             filtersOpen={filtersOpen}
             hasActiveFilters={hasActiveFilters}
+            viewLinkCopied={viewLinkCopied}
             filterPanel={renderFilterPanel()}
             onSearchChange={setSearch}
             onFiltersOpenChange={setFiltersOpen}
             onResetFilters={resetFilters}
+            onCopyViewLink={copyCurrentViewLink}
             onReload={() => void reloadAll()}
             onCreateProduct={openCreate}
             onManageCategories={openCategoryManager}
@@ -501,6 +529,7 @@ export function ProductsPageClient() {
           }
         }}
       />
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
