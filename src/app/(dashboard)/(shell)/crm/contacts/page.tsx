@@ -9,9 +9,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Check, Copy } from '@phosphor-icons/react';
 import { replaceBrowserQuery } from '@shared/lib/browser-query';
 import { cn } from '@shared/lib/utils';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import ToastContainer from '@shared/ui/toast/toast-container';
+import { useToast } from '@shared/ui/toast/toast-context';
 import {
   createCustomer,
   deleteCustomer,
@@ -48,6 +51,7 @@ function parsePageParam(page: string | null) {
 
 export default function ContactsPage() {
   const searchParams = useSearchParams();
+  const { toasts, addToast, dismissToast } = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [total,    setTotal]    = useState(0);
   const [loading,  setLoading]  = useState(true);
@@ -60,6 +64,7 @@ export default function ContactsPage() {
   const [editing,  setEditing]  = useState<Contact | null>(null);
   const [acting,   setActing]   = useState<string | null>(null);
   const [confirmDeleteContact, setConfirmDeleteContact] = useState<Contact | null>(null);
+  const [copiedContactValue, setCopiedContactValue] = useState<string | null>(null);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -137,6 +142,23 @@ export default function ContactsPage() {
       setConfirmDeleteContact(null);
     }
   }, [load]);
+
+  const copyContactValue = useCallback(async (key: string, value: string, label: string) => {
+    if (!value) return;
+
+    await navigator.clipboard.writeText(value).catch(() => {});
+    setCopiedContactValue(key);
+    addToast({
+      message: `${label} kopierad`,
+      color: 'emerald',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+    });
+    window.setTimeout(() => setCopiedContactValue(null), 1800);
+  }, [addToast]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const canGoBack = currentPage > 0;
@@ -327,8 +349,26 @@ export default function ContactsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3.5 text-[var(--text-secondary)]">{c.company ?? <span className="text-[var(--text-muted)]">—</span>}</td>
-                    <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">{c.email ?? '—'}</td>
-                    <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">{c.phone ?? '—'}</td>
+                    <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">
+                      {c.email ? (
+                        <CopyableContactValue
+                          value={c.email}
+                          label="e-post"
+                          copied={copiedContactValue === `email:${c.id}`}
+                          onCopy={() => void copyContactValue(`email:${c.id}`, c.email ?? '', 'E-post')}
+                        />
+                      ) : '—'}
+                    </td>
+                    <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">
+                      {c.phone ? (
+                        <CopyableContactValue
+                          value={c.phone}
+                          label="telefon"
+                          copied={copiedContactValue === `phone:${c.id}`}
+                          onCopy={() => void copyContactValue(`phone:${c.id}`, c.phone ?? '', 'Telefon')}
+                        />
+                      ) : '—'}
+                    </td>
                     <td className="px-4 py-3.5">
                       {c.callCount > 0 ? (
                         <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold">
@@ -423,6 +463,34 @@ export default function ContactsPage() {
           void deleteContact(confirmDeleteContact.id);
         }}
       />
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
+  );
+}
+
+function CopyableContactValue({
+  value,
+  label,
+  copied,
+  onCopy,
+}: {
+  value: string;
+  label: string;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  return (
+    <span className="group inline-flex max-w-[190px] items-center gap-1.5">
+      <span className="truncate">{value}</span>
+      <button
+        type="button"
+        onClick={onCopy}
+        title={`Kopiera ${label}`}
+        aria-label={`Kopiera ${label}`}
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] opacity-0 transition hover:bg-[var(--surface-alt)] hover:text-[var(--accent)] focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 group-hover:opacity-100"
+      >
+        {copied ? <Check size={13} weight="bold" /> : <Copy size={13} weight="bold" />}
+      </button>
+    </span>
   );
 }

@@ -9,7 +9,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Check, Copy } from '@phosphor-icons/react';
 import { replaceBrowserQuery } from '@shared/lib/browser-query';
+import ToastContainer from '@shared/ui/toast/toast-container';
+import { useToast } from '@shared/ui/toast/toast-context';
 import {
   createLead,
   listLeads,
@@ -83,6 +86,7 @@ function fmt(iso: string): string {
 
 export default function LeadsPage() {
   const searchParams = useSearchParams();
+  const { toasts, addToast, dismissToast } = useToast();
   const [leads, setLeads]       = useState<Lead[]>([]);
   const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(true);
@@ -93,6 +97,7 @@ export default function LeadsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState(EMPTY_FORM);
   const [saving, setSaving]     = useState(false);
+  const [copiedLeadValue, setCopiedLeadValue] = useState<string | null>(null);
 
   const load = useCallback(async (status?: LeadStatus, q?: string) => {
     setLoading(true);
@@ -150,6 +155,23 @@ export default function LeadsPage() {
       setSaving(false);
     }
   }, [form, load, tab, search]);
+
+  const copyLeadValue = useCallback(async (key: string, value: string, label: string) => {
+    if (!value) return;
+
+    await navigator.clipboard.writeText(value).catch(() => {});
+    setCopiedLeadValue(key);
+    addToast({
+      message: `${label} kopierad`,
+      color: 'emerald',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+    });
+    window.setTimeout(() => setCopiedLeadValue(null), 1800);
+  }, [addToast]);
 
   const initials = (name: string) =>
     name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
@@ -338,8 +360,22 @@ export default function LeadsPage() {
                     </td>
                     <td className="px-4 py-3.5 text-[var(--text-secondary)]">{l.company ?? <span className="text-[var(--text-muted)]">—</span>}</td>
                     <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">
-                      {l.email && <div>{l.email}</div>}
-                      {l.phone && <div>{l.phone}</div>}
+                      {l.email && (
+                        <CopyableLeadValue
+                          value={l.email}
+                          label="e-post"
+                          copied={copiedLeadValue === `email:${l.id}`}
+                          onCopy={() => void copyLeadValue(`email:${l.id}`, l.email ?? '', 'E-post')}
+                        />
+                      )}
+                      {l.phone && (
+                        <CopyableLeadValue
+                          value={l.phone}
+                          label="telefon"
+                          copied={copiedLeadValue === `phone:${l.id}`}
+                          onCopy={() => void copyLeadValue(`phone:${l.id}`, l.phone ?? '', 'Telefon')}
+                        />
+                      )}
                       {!l.email && !l.phone && '—'}
                     </td>
                     <td className="px-4 py-3.5 text-[var(--text-secondary)]">{SOURCE_LABEL[l.source]}</td>
@@ -412,6 +448,34 @@ export default function LeadsPage() {
           <p className="text-sm text-[var(--text-muted)]">Laddar leads…</p>
         </div>
       )}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+    </div>
+  );
+}
+
+function CopyableLeadValue({
+  value,
+  label,
+  copied,
+  onCopy,
+}: {
+  value: string;
+  label: string;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  return (
+    <div className="group flex max-w-[220px] items-center gap-1.5">
+      <span className="truncate">{value}</span>
+      <button
+        type="button"
+        onClick={onCopy}
+        title={`Kopiera ${label}`}
+        aria-label={`Kopiera ${label}`}
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] opacity-0 transition hover:bg-[var(--surface-alt)] hover:text-[var(--accent)] focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 group-hover:opacity-100"
+      >
+        {copied ? <Check size={13} weight="bold" /> : <Copy size={13} weight="bold" />}
+      </button>
     </div>
   );
 }
