@@ -3,6 +3,8 @@
 /* eslint react-hooks/exhaustive-deps: "off" */
 
 import { useEffect, useCallback, useRef, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { replaceBrowserQuery } from '@shared/lib/browser-query';
 import { previewTemplate } from '@shared/lib/api/templates.api';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import { useToast } from '@shared/ui/toast/toast-context';
@@ -30,13 +32,26 @@ import {
   OffersPageHeader,
 } from './_components/offers-dashboard-controls';
 import type { BlockingAlert } from './_components/offer-blocking-alerts';
+import { STATUS_TABS } from './_lib/offers-dashboard-constants';
 import { pricingSummary } from './_lib/offers-dashboard-formatters';
+import type { OfferStatus } from './_store/types';
+
+function parsePageParam(page: string | null) {
+  const parsed = Number(page);
+  return Number.isFinite(parsed) && parsed > 1 ? parsed - 1 : 0;
+}
+
+function parseOfferStatus(status: string | null): OfferStatus | 'all' {
+  return STATUS_TABS.some((tab) => tab.id === status) ? (status as OfferStatus | 'all') : 'all';
+}
 
 export default function OffersPage() {
+  const searchParams = useSearchParams();
   const enforcedPriceDisplayMode = DEFAULT_OFFER_PRICE_DISPLAY_MODE;
   const { toasts, addToast, dismissToast } = useToast();
   const [blockingAlert, setBlockingAlert] = useState<BlockingAlert | null>(null);
   const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
   const {
     companies,
     selectedCompany,
@@ -53,6 +68,7 @@ export default function OffersPage() {
     setError,
     setSelected, toggleSelected, clearSelected, setBulkSending, setBulkResult,
     setActing, setConfirmDeleteOffer, setCopied, setConfirmSend,
+    resetFilters,
     load, loadCounts,
   } = useOffersListStore();
 
@@ -99,11 +115,38 @@ export default function OffersPage() {
   });
 
   useEffect(() => {
+    const initialSearch = searchParams.get('search') ?? '';
+
+    setSearchInput(initialSearch);
+    setSearch(initialSearch);
+    setTab(parseOfferStatus(searchParams.get('status')));
+    setDateFrom(searchParams.get('from') ?? '');
+    setDateTo(searchParams.get('to') ?? '');
+    setSortAsc(searchParams.get('sort') === 'asc');
+    setCurrentPage(parsePageParam(searchParams.get('page')));
+    setFiltersHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!filtersHydrated) return;
     void load();
     void loadCounts();
     clearSelected();
     setBulkResult(null);
-  }, [tab, search, currentPage, dateFrom, dateTo]);
+  }, [filtersHydrated, tab, search, currentPage, dateFrom, dateTo]);
+
+  useEffect(() => {
+    if (!filtersHydrated) return;
+
+    replaceBrowserQuery({
+      status: tab === 'all' ? null : tab,
+      search: search.trim() || null,
+      from: dateFrom || null,
+      to: dateTo || null,
+      page: currentPage > 0 ? currentPage + 1 : null,
+      sort: sortAsc ? 'asc' : null,
+    });
+  }, [currentPage, dateFrom, dateTo, filtersHydrated, search, sortAsc, tab]);
 
   const filteredOffers = useMemo(() => {
     return allOffers.slice().sort((a, b) => {
@@ -115,6 +158,7 @@ export default function OffersPage() {
   const offers     = filteredOffers;
   const total      = tabCounts.all;
   const totalPages = Math.max(1, Math.ceil(serverTotal / PAGE_SIZE));
+  const hasActiveOfferFilters = tab !== 'all' || Boolean(searchInput || search || dateFrom || dateTo || sortAsc);
 
   const {
     createOffer,
@@ -445,11 +489,13 @@ export default function OffersPage() {
         searchInput={searchInput}
         dateFrom={dateFrom}
         dateTo={dateTo}
+        hasActiveFilters={hasActiveOfferFilters}
         onTabChange={setTab}
         onSearchInputChange={setSearchInput}
         onSearchChange={setSearch}
         onDateFromChange={setDateFrom}
         onDateToChange={setDateTo}
+        onResetFilters={resetFilters}
       />
 
       <OfferAttentionStrip

@@ -149,7 +149,7 @@ export const useOffersListStore = create<OffersListState>()((set, get) => ({
   setCopied:             (copied)             => set({ copied }),
   setConfirmSend:        (confirmSend)        => set({ confirmSend }),
 
-  resetFilters: () => set({ tab: 'all', dateFrom: '', dateTo: '', currentPage: 0, search: '', searchInput: '' }),
+  resetFilters: () => set({ tab: 'all', dateFrom: '', dateTo: '', currentPage: 0, search: '', searchInput: '', sortAsc: false }),
 
   // ── Async: load offers page for current tab/filter ────────────────────────────
   load: async (silent = false) => {
