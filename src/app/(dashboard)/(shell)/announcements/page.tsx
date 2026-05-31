@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@shared/lib/utils';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import {
   createAnnouncement,
   deleteAnnouncement as deleteAnnouncementRequest,
@@ -51,6 +52,7 @@ export default function AnnouncementsPage() {
   const [saving,        setSaving]        = useState(false);
   const [acting,        setActing]        = useState<string | null>(null);
   const [expanded,      setExpanded]      = useState<string | null>(null);
+  const [confirmDeleteAnnouncement, setConfirmDeleteAnnouncement] = useState<Announcement | null>(null);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -108,7 +110,6 @@ export default function AnnouncementsPage() {
   }, [load]);
 
   const deleteAnnouncement = useCallback(async (id: string) => {
-    if (!confirm('Ta bort meddelandet?')) return;
     setActing(id);
     try {
       await deleteAnnouncementRequest(id);
@@ -117,6 +118,7 @@ export default function AnnouncementsPage() {
       setError((e as Error).message);
     } finally {
       setActing(null);
+      setConfirmDeleteAnnouncement(null);
     }
   }, [load]);
 
@@ -256,7 +258,7 @@ export default function AnnouncementsPage() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button type="button" onClick={() => openEdit(a)} className="text-xs text-[var(--accent)] hover:underline">Redigera</button>
-                    <button type="button" onClick={() => void deleteAnnouncement(a.id)} disabled={acting === a.id}
+                    <button type="button" onClick={() => setConfirmDeleteAnnouncement(a)} disabled={acting === a.id}
                       className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40">Ta bort</button>
                   </div>
                 </div>
@@ -290,6 +292,22 @@ export default function AnnouncementsPage() {
       {total > announcements.length && (
         <p className="text-xs text-center text-[var(--text-muted)] mt-4">Visar {announcements.length} av {total}</p>
       )}
+      <ConfirmDestructiveDialog
+        open={Boolean(confirmDeleteAnnouncement)}
+        onOpenChange={(open) => { if (!open) setConfirmDeleteAnnouncement(null); }}
+        title="Ta bort meddelande?"
+        description={
+          confirmDeleteAnnouncement
+            ? `"${confirmDeleteAnnouncement.title}" tas bort för organisationen. Det här går inte att ångra.`
+            : 'Meddelandet tas bort för organisationen. Det här går inte att ångra.'
+        }
+        confirmLabel="Ta bort meddelande"
+        loading={Boolean(confirmDeleteAnnouncement && acting === confirmDeleteAnnouncement.id)}
+        onConfirm={() => {
+          if (!confirmDeleteAnnouncement) return;
+          void deleteAnnouncement(confirmDeleteAnnouncement.id);
+        }}
+      />
     </div>
   );
 }

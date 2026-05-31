@@ -19,9 +19,11 @@ type OffersMobileCardsProps = {
   offers: Offer[];
   acting: string | null;
   copied: string | null;
+  copiedText: string | null;
   priceDisplayMode: OfferPriceDisplayMode;
   onAcceptAction: (id: string, action: OfferAction) => void | Promise<void>;
   onCopyLink: (offer: Offer) => void | Promise<void>;
+  onCopyText: (key: string, value: string, label: string) => void | Promise<void>;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void | Promise<void>;
   onEdit: (offer: Offer) => void;
@@ -32,9 +34,11 @@ export function OffersMobileCards({
   offers,
   acting,
   copied,
+  copiedText,
   priceDisplayMode,
   onAcceptAction,
   onCopyLink,
+  onCopyText,
   onDelete,
   onDuplicate,
   onEdit,
@@ -61,7 +65,22 @@ export function OffersMobileCards({
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="min-w-0">
                 <p className="font-semibold text-sm text-[var(--text-primary)] truncate">{offer.title}</p>
-                <p className="text-[11px] text-[var(--text-muted)] font-mono">{fmtOfferNumber(offer)}</p>
+                <div className="flex items-center gap-1">
+                  <p className="font-mono text-[11px] text-[var(--text-muted)]">{fmtOfferNumber(offer)}</p>
+                  <button
+                    type="button"
+                    onClick={() => void onCopyText(`number:${offer.id}`, fmtOfferNumber(offer), 'Offertnummer')}
+                    title="Kopiera offertnummer"
+                    aria-label="Kopiera offertnummer"
+                    className="rounded p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]"
+                  >
+                    {copiedText === `number:${offer.id}` ? (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    ) : (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1.5">
                 <span className={cn('text-[10px] px-2.5 py-1 rounded-full font-semibold', STATUS_STYLES[offer.status])}>
@@ -73,7 +92,22 @@ export function OffersMobileCards({
             <div className="flex items-end justify-between gap-3">
               <div>
                 <p className="text-sm text-[var(--text-secondary)]">{offer.recipientName}</p>
-                <p className="text-xs text-[var(--text-muted)]">{offer.recipientCompany ?? offer.recipientEmail}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-xs text-[var(--text-muted)]">{offer.recipientCompany ?? offer.recipientEmail}</p>
+                  <button
+                    type="button"
+                    onClick={() => void onCopyText(`email:${offer.id}`, offer.recipientEmail, 'E-postadress')}
+                    title="Kopiera e-post"
+                    aria-label="Kopiera e-post"
+                    className="rounded p-1 text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]"
+                  >
+                    {copiedText === `email:${offer.id}` ? (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    ) : (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="text-right shrink-0">
                 <p className="text-sm font-bold text-[var(--text-primary)]">{fmtSEK(summary.totalAmount)}</p>

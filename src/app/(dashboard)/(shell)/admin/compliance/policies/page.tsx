@@ -7,6 +7,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import {
   createPolicy,
   deletePolicy as deletePolicyRequest,
@@ -64,6 +65,8 @@ export default function PoliciesPage() {
   const [form, setForm]         = useState(EMPTY_FORM);
   const [saving, setSaving]     = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [deletingPolicyId, setDeletingPolicyId] = useState<string | null>(null);
+  const [confirmDeletePolicy, setConfirmDeletePolicy] = useState<Policy | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -104,12 +107,15 @@ export default function PoliciesPage() {
   }, [form, load]);
 
   const deletePolicy = useCallback(async (id: string) => {
-    if (!confirm('Ta bort denna policy?')) return;
+    setDeletingPolicyId(id);
     try {
       await deletePolicyRequest(id);
       await load();
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setDeletingPolicyId(null);
+      setConfirmDeletePolicy(null);
     }
   }, [load]);
 
@@ -252,8 +258,8 @@ export default function PoliciesPage() {
                       <td className={`px-4 py-3.5 ${reviewDueClass(p.nextReviewDate)}`}>{fmt(p.nextReviewDate)}</td>
                       <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmt(p.approvedAt)}</td>
                       <td className="px-4 py-3.5">
-                        <button onClick={e => { e.stopPropagation(); void deletePolicy(p.id); }}
-                          className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors">
+                        <button onClick={e => { e.stopPropagation(); setConfirmDeletePolicy(p); }} disabled={deletingPolicyId === p.id}
+                          className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40">
                           Ta bort
                         </button>
                       </td>
@@ -291,6 +297,22 @@ export default function PoliciesPage() {
           <p className="text-sm text-[var(--text-muted)]">Laddar policyer…</p>
         </div>
       )}
+      <ConfirmDestructiveDialog
+        open={Boolean(confirmDeletePolicy)}
+        onOpenChange={(open) => { if (!open) setConfirmDeletePolicy(null); }}
+        title="Ta bort policy?"
+        description={
+          confirmDeletePolicy
+            ? `"${confirmDeletePolicy.name}" tas bort från policyvalvet. Det här går inte att ångra.`
+            : 'Policyn tas bort från policyvalvet. Det här går inte att ångra.'
+        }
+        confirmLabel="Ta bort policy"
+        loading={Boolean(confirmDeletePolicy && deletingPolicyId === confirmDeletePolicy.id)}
+        onConfirm={() => {
+          if (!confirmDeletePolicy) return;
+          void deletePolicy(confirmDeletePolicy.id);
+        }}
+      />
     </div>
   );
 }

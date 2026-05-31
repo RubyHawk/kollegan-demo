@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@shared/lib/utils';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import {
   createMeeting,
   deleteMeeting as deleteMeetingRequest,
@@ -64,6 +65,7 @@ export default function MeetingsPage() {
   const [saving,    setSaving]    = useState(false);
   const [acting,    setActing]    = useState<string | null>(null);
   const [expanded,  setExpanded]  = useState<string | null>(null);
+  const [confirmDeleteMeeting, setConfirmDeleteMeeting] = useState<Meeting | null>(null);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -115,7 +117,6 @@ export default function MeetingsPage() {
   }, [load]);
 
   const deleteMeeting = useCallback(async (id: string) => {
-    if (!confirm('Ta bort mötet?')) return;
     setActing(id);
     try {
       await deleteMeetingRequest(id);
@@ -124,6 +125,7 @@ export default function MeetingsPage() {
       setError((e as Error).message);
     } finally {
       setActing(null);
+      setConfirmDeleteMeeting(null);
     }
   }, [load]);
 
@@ -275,7 +277,7 @@ export default function MeetingsPage() {
                       <button type="button" onClick={() => void updateStatus(m.id, 'cancelled')} disabled={acting === m.id}
                         className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40">Ställ in</button>
                     )}
-                    <button type="button" onClick={() => void deleteMeeting(m.id)} disabled={acting === m.id}
+                    <button type="button" onClick={() => setConfirmDeleteMeeting(m)} disabled={acting === m.id}
                       className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40">Ta bort</button>
                     {(m.agenda || m.summary || m.meetingUrl) && (
                       <button type="button" onClick={() => setExpanded(v => v === m.id ? null : m.id)}
@@ -335,6 +337,22 @@ export default function MeetingsPage() {
       {total > meetings.length && (
         <p className="text-xs text-center text-[var(--text-muted)]">Visar {meetings.length} av {total} möten</p>
       )}
+      <ConfirmDestructiveDialog
+        open={Boolean(confirmDeleteMeeting)}
+        onOpenChange={(open) => { if (!open) setConfirmDeleteMeeting(null); }}
+        title="Ta bort möte?"
+        description={
+          confirmDeleteMeeting
+            ? `"${confirmDeleteMeeting.title}" tas bort permanent. Det här går inte att ångra.`
+            : 'Mötet tas bort permanent. Det här går inte att ångra.'
+        }
+        confirmLabel="Ta bort möte"
+        loading={Boolean(confirmDeleteMeeting && acting === confirmDeleteMeeting.id)}
+        onConfirm={() => {
+          if (!confirmDeleteMeeting) return;
+          void deleteMeeting(confirmDeleteMeeting.id);
+        }}
+      />
     </div>
   );
 }

@@ -8,7 +8,13 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Check, Copy } from '@phosphor-icons/react';
+import { replaceBrowserQuery } from '@shared/lib/browser-query';
 import { cn } from '@shared/lib/utils';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import ToastContainer from '@shared/ui/toast/toast-container';
+import { useToast } from '@shared/ui/toast/toast-context';
 import {
   createCustomer,
   deleteCustomer,
@@ -34,26 +40,41 @@ function fmtDate(iso: string) {
 }
 
 const EMPTY_FORM = { name: '', phone: '', email: '', company: '', notes: '' };
+const PAGE_SIZE = 50;
+
+function parsePageParam(page: string | null) {
+  const parsed = Number(page);
+  return Number.isFinite(parsed) && parsed > 1 ? parsed - 1 : 0;
+}
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function ContactsPage() {
+  const searchParams = useSearchParams();
+  const { toasts, addToast, dismissToast } = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [total,    setTotal]    = useState(0);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState<string | null>(null);
-  const [search,   setSearch]   = useState('');
+  const [search,   setSearch]   = useState(searchParams.get('search') ?? '');
+  const [currentPage, setCurrentPage] = useState(() => parsePageParam(searchParams.get('page')));
   const [showForm, setShowForm] = useState(false);
   const [form,     setForm]     = useState(EMPTY_FORM);
   const [saving,   setSaving]   = useState(false);
   const [editing,  setEditing]  = useState<Contact | null>(null);
   const [acting,   setActing]   = useState<string | null>(null);
+  const [confirmDeleteContact, setConfirmDeleteContact] = useState<Contact | null>(null);
+  const [copiedContactValue, setCopiedContactValue] = useState<string | null>(null);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const result = await listCustomers({ limit: 50, offset: 0, search: search.trim() || undefined });
+      const result = await listCustomers({
+        limit: PAGE_SIZE,
+        offset: currentPage * PAGE_SIZE,
+        search: search.trim() || undefined,
+      });
       setContacts(result.contacts);
       setTotal(result.total);
     } catch (e) {
@@ -61,9 +82,16 @@ export default function ContactsPage() {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [currentPage, search]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    replaceBrowserQuery({
+      search: search.trim() || null,
+      page: currentPage > 0 ? currentPage + 1 : null,
+    });
+  }, [currentPage, search]);
 
   const openCreate = () => { setEditing(null); setForm(EMPTY_FORM); setShowForm(true); setError(null); };
 
@@ -103,7 +131,6 @@ export default function ContactsPage() {
   }, [form, editing, load]);
 
   const deleteContact = useCallback(async (id: string) => {
-    if (!confirm('Ta bort kontakten permanent?')) return;
     setActing(id);
     try {
       await deleteCustomer(id);
@@ -112,8 +139,45 @@ export default function ContactsPage() {
       setError((e as Error).message);
     } finally {
       setActing(null);
+      setConfirmDeleteContact(null);
     }
   }, [load]);
+
+  const copyContactValue = useCallback(async (key: string, value: string, label: string) => {
+    if (!value) return;
+
+    await navigator.clipboard.writeText(value).catch(() => {});
+    setCopiedContactValue(key);
+    addToast({
+      message: `${label} kopierad`,
+      color: 'emerald',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+    });
+    window.setTimeout(() => setCopiedContactValue(null), 1800);
+  }, [addToast]);
+
+  const copyCurrentViewLink = useCallback(async () => {
+    await navigator.clipboard.writeText(window.location.href).catch(() => {});
+    setCopiedContactValue('view');
+    addToast({
+      message: 'Vy-länk kopierad',
+      color: 'emerald',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+    });
+    window.setTimeout(() => setCopiedContactValue(null), 1800);
+  }, [addToast]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const canGoBack = currentPage > 0;
+  const canGoForward = currentPage < totalPages - 1;
 
   return (
     <div className="px-8 py-10 max-w-6xl mx-auto">
@@ -150,11 +214,16 @@ export default function ContactsPage() {
       {error && (
         <div className="mb-6 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center justify-between gap-3">
           <span>{error}</span>
-          <button type="button" onClick={() => setError(null)} className="shrink-0 opacity-60 hover:opacity-100">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button type="button" onClick={() => void load()} className="rounded-lg border border-red-200/70 px-2 py-1 text-xs font-medium hover:bg-red-100/60 dark:border-red-800/40 dark:hover:bg-red-900/30">
+              Försök igen
+            </button>
+            <button type="button" onClick={() => setError(null)} className="opacity-60 hover:opacity-100">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 
@@ -239,7 +308,7 @@ export default function ContactsPage() {
       )}
 
       {/* Search */}
-      <div className="mb-5">
+      <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-sm">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
             <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -248,9 +317,34 @@ export default function ContactsPage() {
             type="search"
             placeholder="Sök kontakt…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(0);
+            }}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
           />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+        {search && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearch('');
+              setCurrentPage(0);
+            }}
+            className="w-fit rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+          >
+            Rensa
+          </button>
+        )}
+          <button
+            type="button"
+            onClick={() => void copyCurrentViewLink()}
+            className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+          >
+            {copiedContactValue === 'view' ? <Check size={13} weight="bold" /> : <Copy size={13} weight="bold" />}
+            Kopiera vy
+          </button>
         </div>
       </div>
 
@@ -285,8 +379,32 @@ export default function ContactsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3.5 text-[var(--text-secondary)]">{c.company ?? <span className="text-[var(--text-muted)]">—</span>}</td>
-                    <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">{c.email ?? '—'}</td>
-                    <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">{c.phone ?? '—'}</td>
+                    <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">
+                      {c.email ? (
+                        <div className="flex items-center gap-2">
+                          <CopyableContactValue
+                            value={c.email}
+                            label="e-post"
+                            copied={copiedContactValue === `email:${c.id}`}
+                            onCopy={() => void copyContactValue(`email:${c.id}`, c.email ?? '', 'E-post')}
+                          />
+                          <a href={`mailto:${c.email}`} className="text-[11px] font-medium text-[var(--accent)] hover:underline">Maila</a>
+                        </div>
+                      ) : '—'}
+                    </td>
+                    <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">
+                      {c.phone ? (
+                        <div className="flex items-center gap-2">
+                          <CopyableContactValue
+                            value={c.phone}
+                            label="telefon"
+                            copied={copiedContactValue === `phone:${c.id}`}
+                            onCopy={() => void copyContactValue(`phone:${c.id}`, c.phone ?? '', 'Telefon')}
+                          />
+                          <a href={`tel:${c.phone}`} className="text-[11px] font-medium text-[var(--accent)] hover:underline">Ring</a>
+                        </div>
+                      ) : '—'}
+                    </td>
                     <td className="px-4 py-3.5">
                       {c.callCount > 0 ? (
                         <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold">
@@ -307,7 +425,7 @@ export default function ContactsPage() {
                         <span className="text-[var(--border)]">·</span>
                         <button
                           type="button"
-                          onClick={() => void deleteContact(c.id)}
+                          onClick={() => setConfirmDeleteContact(c)}
                           disabled={acting === c.id}
                           className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40"
                         >
@@ -335,13 +453,80 @@ export default function ContactsPage() {
               </tbody>
             </table>
           </div>
-          {total > contacts.length && (
-            <div className="px-4 py-3 border-t border-[var(--border)] bg-[var(--surface-alt)] text-xs text-[var(--text-muted)] text-center">
-              Visar {contacts.length} av {total} kontakter
+          {total > 0 && (
+            <div className="flex flex-col gap-3 border-t border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-xs text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-center sm:text-left">
+                Visar {currentPage * PAGE_SIZE + 1}-{currentPage * PAGE_SIZE + contacts.length} av {total} kontakter
+              </span>
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.max(0, page - 1))}
+                  disabled={!canGoBack}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Föregående
+                </button>
+                <span className="tabular-nums">
+                  {currentPage + 1}/{totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => page + 1)}
+                  disabled={!canGoForward}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Nästa
+                </button>
+              </div>
             </div>
           )}
         </div>
       )}
+      <ConfirmDestructiveDialog
+        open={Boolean(confirmDeleteContact)}
+        onOpenChange={(open) => { if (!open) setConfirmDeleteContact(null); }}
+        title="Ta bort kontakt?"
+        description={
+          confirmDeleteContact
+            ? `${confirmDeleteContact.name ?? 'Kontakten'} tas bort permanent. Det här går inte att ångra.`
+            : 'Kontakten tas bort permanent. Det här går inte att ångra.'
+        }
+        confirmLabel="Ta bort kontakt"
+        loading={Boolean(confirmDeleteContact && acting === confirmDeleteContact.id)}
+        onConfirm={() => {
+          if (!confirmDeleteContact) return;
+          void deleteContact(confirmDeleteContact.id);
+        }}
+      />
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
+  );
+}
+
+function CopyableContactValue({
+  value,
+  label,
+  copied,
+  onCopy,
+}: {
+  value: string;
+  label: string;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  return (
+    <span className="group inline-flex max-w-[190px] items-center gap-1.5">
+      <span className="truncate">{value}</span>
+      <button
+        type="button"
+        onClick={onCopy}
+        title={`Kopiera ${label}`}
+        aria-label={`Kopiera ${label}`}
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] opacity-0 transition hover:bg-[var(--surface-alt)] hover:text-[var(--accent)] focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 group-hover:opacity-100"
+      >
+        {copied ? <Check size={13} weight="bold" /> : <Copy size={13} weight="bold" />}
+      </button>
+    </span>
   );
 }

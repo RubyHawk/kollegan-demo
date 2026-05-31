@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ReactNode } from 'react';
-import { ArrowsClockwise, FolderOpen, Folders, MagnifyingGlass, Plus, Sparkle } from '@phosphor-icons/react';
+import { ArrowsClockwise, Check, Copy, FolderOpen, Folders, MagnifyingGlass, Plus, Sparkle } from '@phosphor-icons/react';
 import { Button } from '@shared/ui/button';
 import type { OfferProduct } from '@shared/lib/api/products.api';
 import { ProductRow } from './product-row';
@@ -16,10 +16,12 @@ interface ProductLibraryPanelProps {
   search: string;
   filtersOpen: boolean;
   hasActiveFilters: boolean;
+  viewLinkCopied: boolean;
   filterPanel: ReactNode;
   onSearchChange: (search: string) => void;
   onFiltersOpenChange: (open: boolean) => void;
   onResetFilters: () => void;
+  onCopyViewLink: () => void;
   onReload: () => void;
   onCreateProduct: () => void;
   onManageCategories: () => void;
@@ -36,10 +38,12 @@ export function ProductLibraryPanel({
   search,
   filtersOpen,
   hasActiveFilters,
+  viewLinkCopied,
   filterPanel,
   onSearchChange,
   onFiltersOpenChange,
   onResetFilters,
+  onCopyViewLink,
   onReload,
   onCreateProduct,
   onManageCategories,
@@ -59,6 +63,10 @@ export function ProductLibraryPanel({
                 Rensa
               </Button>
             )}
+            <Button type="button" variant="outline" onClick={onCopyViewLink} className="h-10 rounded-xl px-3.5">
+              {viewLinkCopied ? <Check size={16} weight="bold" /> : <Copy size={16} weight="bold" />}
+              Kopiera vy
+            </Button>
             <Button type="button" variant="outline" onClick={onReload} className="h-10 rounded-xl px-3.5">
               <ArrowsClockwise size={16} weight="bold" />
               Ladda om

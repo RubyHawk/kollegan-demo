@@ -8,6 +8,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import {
   createRisk,
   deleteRisk as deleteRiskRequest,
@@ -72,6 +73,8 @@ export default function RisksPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState(EMPTY_FORM);
   const [saving, setSaving]     = useState(false);
+  const [deletingRiskId, setDeletingRiskId] = useState<string | null>(null);
+  const [confirmDeleteRisk, setConfirmDeleteRisk] = useState<Risk | null>(null);
 
   const load = useCallback(async (status?: RiskStatus) => {
     setLoading(true);
@@ -116,12 +119,15 @@ export default function RisksPage() {
   }, [form, load, tab]);
 
   const deleteRisk = useCallback(async (id: string) => {
-    if (!confirm('Ta bort denna risk?')) return;
+    setDeletingRiskId(id);
     try {
       await deleteRiskRequest(id);
       await load(tab === 'all' ? undefined : tab);
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setDeletingRiskId(null);
+      setConfirmDeleteRisk(null);
     }
   }, [load, tab]);
 
@@ -300,8 +306,8 @@ export default function RisksPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <button onClick={() => void deleteRisk(r.id)}
-                          className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors">
+                        <button onClick={() => setConfirmDeleteRisk(r)} disabled={deletingRiskId === r.id}
+                          className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40">
                           Ta bort
                         </button>
                       </td>
@@ -329,6 +335,22 @@ export default function RisksPage() {
           <p className="text-sm text-[var(--text-muted)]">Laddar risker…</p>
         </div>
       )}
+      <ConfirmDestructiveDialog
+        open={Boolean(confirmDeleteRisk)}
+        onOpenChange={(open) => { if (!open) setConfirmDeleteRisk(null); }}
+        title="Ta bort risk?"
+        description={
+          confirmDeleteRisk
+            ? `Risken för "${confirmDeleteRisk.asset}" tas bort från registret. Det här går inte att ångra.`
+            : 'Risken tas bort från registret. Det här går inte att ångra.'
+        }
+        confirmLabel="Ta bort risk"
+        loading={Boolean(confirmDeleteRisk && deletingRiskId === confirmDeleteRisk.id)}
+        onConfirm={() => {
+          if (!confirmDeleteRisk) return;
+          void deleteRisk(confirmDeleteRisk.id);
+        }}
+      />
     </div>
   );
 }
