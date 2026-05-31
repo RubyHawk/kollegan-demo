@@ -39,7 +39,7 @@ export default function DashboardView({
       <div className="w-full px-4 py-3 lg:pb-3">
         <motion.div
           {...STAGGER_CONTAINER}
-          className="space-y-3 xl:grid xl:grid-rows-[164px_330px_220px] xl:gap-3 xl:space-y-0"
+          className="space-y-3 xl:grid xl:grid-rows-[164px_420px_264px] xl:gap-3 xl:space-y-0"
         >
           <TopCockpitBand
             today={today}
@@ -58,7 +58,7 @@ export default function DashboardView({
           </div>
 
           <div className="grid items-stretch gap-3 xl:min-h-0 xl:grid-cols-12">
-            <PipelinePanel overview={pipelineOverview} />
+            <PipelinePanel overview={pipelineOverview} acceptanceRate={acceptanceRate} />
             <ProjectHandoffPanel projects={projectHandoffs} overview={pipelineOverview} />
             <ActivityFeedPanel items={activityFeed} focusMetrics={focusMetrics} acceptanceRate={acceptanceRate} />
           </div>
