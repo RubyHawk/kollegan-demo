@@ -56,10 +56,10 @@ const MOCK: DashboardReadModel = {
     ],
   },
   actionItems: [
-    { id: '1', tone: 'danger',  label: 'Begäran om rabatt – Norrtälje Bygg', detail: 'Kunden väntar på svar sedan 3 dagar', actionLabel: 'Svara nu',  href: '/offerter/1' },
-    { id: '2', tone: 'warning', label: 'Offert löper ut imorgon – Jansson & Co', detail: 'Giltigheten slutar 1 jun 2026',         actionLabel: 'Förnya',    href: '/offerter/2' },
-    { id: '3', tone: 'neutral', label: 'Uppföljning saknas – TechHus AB',       detail: 'Visad för 5 dagar sedan',               actionLabel: 'Boka möte', href: '/offerter/3' },
-    { id: '4', tone: 'neutral', label: 'Ny kommentar – SolAB',                  detail: 'Kommentar på offert #A-0122',           actionLabel: 'Läs',       href: '/offerter/4' },
+    { id: '1', tone: 'danger',  label: 'Offert accepted – TechHus AB',         detail: 'Redo att starta projekt',          actionLabel: 'Redo för projekt', href: '/offerter/1' },
+    { id: '2', tone: 'warning', label: 'Offert löper ut – Jansson & Co',        detail: 'Giltigheten slutar imorgon',       actionLabel: 'Förläng',          href: '/offerter/2' },
+    { id: '3', tone: 'neutral', label: 'Uppföljning saknas – TechHus AB',       detail: 'Visad för 5 dagar, ingen kontakt', actionLabel: 'Följ upp',         href: '/offerter/3' },
+    { id: '4', tone: 'neutral', label: 'Offert ej skickad – SolAB',             detail: 'Fortfarande i utkastläge',         actionLabel: 'Skicka offert',    href: '/offerter/4' },
   ],
   offerTable: [
     {

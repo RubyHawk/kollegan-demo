@@ -79,7 +79,7 @@ type ActionIconComponent = React.ComponentType<{ size?: number; strokeWidth?: nu
 
 function ctaConfig(actionLabel: string): { Icon: ActionIconComponent; word: string } {
   if (actionLabel === 'Ring nu') return { Icon: PhoneIcon, word: 'Ring' };
-  if (actionLabel === 'Följ upp') return { Icon: SendIcon, word: 'Följ up' };
+  if (actionLabel === 'Följ upp') return { Icon: SendIcon, word: 'Följ upp' };
   if (actionLabel === 'Förläng') return { Icon: CalendarIcon, word: 'Förläng' };
   if (actionLabel === 'Redo för projekt') return { Icon: FolderIcon, word: 'Projekt' };
   if (actionLabel === 'Skicka offert') return { Icon: SendIcon, word: 'Skicka' };
@@ -421,14 +421,12 @@ function projectGroups(projects: DashboardProjectHandoff[], projectStats: Projec
   const pagarProjects = projects.filter((p) => p.stage === 'in_progress' || p.stage === 'arrived');
   const planProjects = projects.filter((p) => p.stage === 'ordered');
 
-  const klarCount = projectStats.stages.details;
-  const pagarCount = (projectStats.stages.in_progress ?? 0) + (projectStats.stages.arrived ?? 0);
-  const planCount = projectStats.stages.ordered ?? 0;
-
+  // Scope both count and value to the displayed slice so they are consistent.
+  // The panel eyebrow shows the total from projectStats; these group headers show what's visible.
   return [
-    { label: 'Klar för överlämning', count: klarCount, value: klarProjects.reduce((s, p) => s + p.value, 0) },
-    { label: 'Pågår', count: pagarCount, value: pagarProjects.reduce((s, p) => s + p.value, 0) },
-    { label: 'Planerad', count: planCount, value: planProjects.reduce((s, p) => s + p.value, 0) },
+    { label: 'Klar för överlämning', count: klarProjects.length, value: klarProjects.reduce((s, p) => s + p.value, 0) },
+    { label: 'Pågår', count: pagarProjects.length, value: pagarProjects.reduce((s, p) => s + p.value, 0) },
+    { label: 'Planerad', count: planProjects.length, value: planProjects.reduce((s, p) => s + p.value, 0) },
   ];
 }
 

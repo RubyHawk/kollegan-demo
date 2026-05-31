@@ -38,6 +38,7 @@ export function TopCockpitBand({
   pipelineValue,
   acceptanceRate,
   averageWonValue,
+  acceptedCount,
   kpiTrends,
 }: {
   today: DashboardToday;
@@ -48,6 +49,7 @@ export function TopCockpitBand({
   pipelineValue: number;
   acceptanceRate: number | null;
   averageWonValue: number;
+  acceptedCount: number;
   kpiTrends: DashboardKpiTrends;
 }) {
   const next = today.nextMeeting;
@@ -112,7 +114,7 @@ export function TopCockpitBand({
         <KpiCell
           label="Accepterat"
           value={fmtSEK(acceptedValue)}
-          detail={kpiTrends.winRateFraction}
+          detail={acceptedCount > 0 ? `${acceptedCount} vunna offerter` : null}
           points={kpiTrends.acceptedPoints}
           sparkColor="var(--accent)"
         />

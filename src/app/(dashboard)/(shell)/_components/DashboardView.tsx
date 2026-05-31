@@ -52,6 +52,7 @@ export default function DashboardView({
             pipelineValue={pipelineValue}
             acceptanceRate={acceptanceRate}
             averageWonValue={pipelineOverview.averageWonValue}
+            acceptedCount={pipelineOverview.stages.find((s) => s.id === 'accepted')?.count ?? 0}
             kpiTrends={kpiTrends}
           />
 
