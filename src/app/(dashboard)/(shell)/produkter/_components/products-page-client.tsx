@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
+import { replaceBrowserQuery } from '@shared/lib/browser-query';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import {
@@ -38,6 +39,21 @@ import {
   normalizeSearch,
 } from './product-library.utils';
 
+function parseCategoryFilterParam(filter: string | null): CategoryFilterKey {
+  if (!filter) return '';
+
+  if (
+    filter === 'uncategorized'
+    || filter.startsWith('main:')
+    || filter.startsWith('sub:')
+    || filter.startsWith('legacy:')
+  ) {
+    return filter as CategoryFilterKey;
+  }
+
+  return '';
+}
+
 export function ProductsPageClient() {
   const searchParams = useSearchParams();
   const {
@@ -52,8 +68,8 @@ export function ProductsPageClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState(searchParams.get('search') ?? '');
-  const [showInactive, setShowInactive] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilterKey>('');
+  const [showInactive, setShowInactive] = useState(searchParams.get('inactive') === 'true');
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilterKey>(() => parseCategoryFilterParam(searchParams.get('category')));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<OfferProduct | null>(null);
@@ -102,6 +118,14 @@ export function ProductsPageClient() {
   useEffect(() => {
     void reloadAll();
   }, [reloadAll]);
+
+  useEffect(() => {
+    replaceBrowserQuery({
+      search: search.trim() || null,
+      category: categoryFilter || null,
+      inactive: showInactive ? 'true' : null,
+    });
+  }, [categoryFilter, search, showInactive]);
 
   const categoryTree = useMemo(() => buildCategoryTree(rawCategories), [rawCategories]);
 

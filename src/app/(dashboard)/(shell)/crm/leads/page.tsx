@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { replaceBrowserQuery } from '@shared/lib/browser-query';
 import {
   createLead,
   listLeads,
@@ -65,6 +66,15 @@ const EMPTY_FORM = {
 };
 const PAGE_SIZE = 50;
 
+function parsePageParam(page: string | null) {
+  const parsed = Number(page);
+  return Number.isFinite(parsed) && parsed > 1 ? parsed - 1 : 0;
+}
+
+function parseLeadStatus(status: string | null): LeadStatus | 'all' {
+  return STATUS_TABS.some((tab) => tab.key === status) ? (status as LeadStatus | 'all') : 'all';
+}
+
 function fmt(iso: string): string {
   return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
 }
@@ -77,9 +87,9 @@ export default function LeadsPage() {
   const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
-  const [tab, setTab]           = useState<LeadStatus | 'all'>('all');
+  const [tab, setTab]           = useState<LeadStatus | 'all'>(() => parseLeadStatus(searchParams.get('status')));
   const [search, setSearch]     = useState(searchParams.get('search') ?? '');
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(() => parsePageParam(searchParams.get('page')));
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState(EMPTY_FORM);
   const [saving, setSaving]     = useState(false);
@@ -106,6 +116,14 @@ export default function LeadsPage() {
   useEffect(() => {
     void load(tab === 'all' ? undefined : tab, search || undefined);
   }, [load, tab, search]);
+
+  useEffect(() => {
+    replaceBrowserQuery({
+      status: tab === 'all' ? null : tab,
+      search: search.trim() || null,
+      page: currentPage > 0 ? currentPage + 1 : null,
+    });
+  }, [currentPage, search, tab]);
 
   const saveLead = useCallback(async () => {
     setSaving(true);
@@ -141,6 +159,7 @@ export default function LeadsPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const canGoBack = currentPage > 0;
   const canGoForward = currentPage < totalPages - 1;
+  const hasActiveFilters = tab !== 'all' || Boolean(search);
 
   return (
     <div className="px-8 py-10 max-w-7xl mx-auto">
@@ -219,6 +238,19 @@ export default function LeadsPage() {
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
           />
         </div>
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={() => {
+              setTab('all');
+              setSearch('');
+              setCurrentPage(0);
+            }}
+            className="w-fit rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+          >
+            Rensa filter
+          </button>
+        )}
       </div>
 
       {/* New lead form */}

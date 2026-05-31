@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { replaceBrowserQuery } from '@shared/lib/browser-query';
 import { cn } from '@shared/lib/utils';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import {
@@ -38,6 +39,11 @@ function fmtDate(iso: string) {
 const EMPTY_FORM = { name: '', phone: '', email: '', company: '', notes: '' };
 const PAGE_SIZE = 50;
 
+function parsePageParam(page: string | null) {
+  const parsed = Number(page);
+  return Number.isFinite(parsed) && parsed > 1 ? parsed - 1 : 0;
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function ContactsPage() {
@@ -47,7 +53,7 @@ export default function ContactsPage() {
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState<string | null>(null);
   const [search,   setSearch]   = useState(searchParams.get('search') ?? '');
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(() => parsePageParam(searchParams.get('page')));
   const [showForm, setShowForm] = useState(false);
   const [form,     setForm]     = useState(EMPTY_FORM);
   const [saving,   setSaving]   = useState(false);
@@ -74,6 +80,13 @@ export default function ContactsPage() {
   }, [currentPage, search]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    replaceBrowserQuery({
+      search: search.trim() || null,
+      page: currentPage > 0 ? currentPage + 1 : null,
+    });
+  }, [currentPage, search]);
 
   const openCreate = () => { setEditing(null); setForm(EMPTY_FORM); setShowForm(true); setError(null); };
 
@@ -253,7 +266,7 @@ export default function ContactsPage() {
       )}
 
       {/* Search */}
-      <div className="mb-5">
+      <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-sm">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
             <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -269,6 +282,18 @@ export default function ContactsPage() {
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
           />
         </div>
+        {search && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearch('');
+              setCurrentPage(0);
+            }}
+            className="w-fit rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+          >
+            Rensa
+          </button>
+        )}
       </div>
 
       {/* Table */}
