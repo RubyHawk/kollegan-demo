@@ -4,6 +4,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { SearchIcon } from '@shared/ui/icons';
 import { cn } from '@shared/lib/utils';
+import { listCustomers } from '@shared/lib/api/customers.api';
+import { listLeads } from '@shared/lib/api/leads.api';
+import { listOffers } from '@shared/lib/api/offers.api';
+import { listProducts } from '@shared/lib/api/products.api';
+import { listProjects } from '@shared/lib/api/projects.api';
+import { listTemplates } from '@shared/lib/api/templates.api';
 import {
   Dialog,
   DialogContent,
@@ -17,24 +23,74 @@ interface CommandItem {
   label: string;
   description: string;
   keywords: string[];
+  category: string;
 }
 
 const COMMAND_ITEMS: CommandItem[] = [
-  { href: '/', label: 'Översikt', description: 'Se läget i dashboarden', keywords: ['dashboard', 'start', 'oversikt'] },
-  { href: '/offerter', label: 'Offerter', description: 'Bläddra bland alla offerter', keywords: ['offerter', 'lista', 'quotes'] },
-  { href: '/offerter/ny', label: 'Ny offert', description: 'Skapa en ny offert direkt', keywords: ['ny', 'offert', 'create'] },
-  { href: '/mallar', label: 'Mallar', description: 'Hantera offermallar och innehåll', keywords: ['mallar', 'templates'] },
-  { href: '/produkter', label: 'Produkter', description: 'Uppdatera produkter och tjänster', keywords: ['produkter', 'services', 'produktbibliotek'] },
-  { href: '/installningar/foretag', label: 'Företag', description: 'Se bolagsuppgifter, medlemmar och branding per företag', keywords: ['foretag', 'bolag', 'companies', 'branding'] },
-  { href: '/installningar', label: 'Inställningar', description: 'Anpassa system och utseende', keywords: ['installningar', 'settings'] },
-  { href: '/installningar/profil', label: 'Profil', description: 'Uppdatera konto och kontaktuppgifter', keywords: ['profil', 'konto', 'account'] },
+  { href: '/', label: 'Översikt', description: 'Se läget i dashboarden', keywords: ['dashboard', 'start', 'oversikt'], category: 'Sida' },
+  { href: '/offerter', label: 'Offerter', description: 'Bläddra bland alla offerter', keywords: ['offerter', 'lista', 'quotes'], category: 'Sida' },
+  { href: '/offerter/ny', label: 'Ny offert', description: 'Skapa en ny offert direkt', keywords: ['ny', 'offert', 'create'], category: 'Sida' },
+  { href: '/projekt', label: 'Projekt', description: 'Följ projekt från accepterad offert till klart jobb', keywords: ['projekt', 'installation', 'project'], category: 'Sida' },
+  { href: '/crm', label: 'CRM', description: 'Kunder, kontakter och leads', keywords: ['crm', 'kund', 'kontakt', 'lead'], category: 'Sida' },
+  { href: '/crm/contacts', label: 'Kontakter', description: 'Sök och uppdatera kundkontakter', keywords: ['kontakt', 'kund', 'customer'], category: 'Sida' },
+  { href: '/crm/leads', label: 'Leads', description: 'Hantera inkommande leads', keywords: ['lead', 'pipeline'], category: 'Sida' },
+  { href: '/mallar', label: 'Mallar', description: 'Hantera offermallar och innehåll', keywords: ['mallar', 'templates'], category: 'Sida' },
+  { href: '/produkter', label: 'Produkter', description: 'Uppdatera produkter och tjänster', keywords: ['produkter', 'services', 'produktbibliotek'], category: 'Sida' },
+  { href: '/reports', label: 'Rapporter', description: 'Exportera rapporter och CSV-underlag', keywords: ['rapporter', 'export', 'csv'], category: 'Sida' },
+  { href: '/installningar/foretag', label: 'Företag', description: 'Se bolagsuppgifter, medlemmar och branding per företag', keywords: ['foretag', 'bolag', 'companies', 'branding'], category: 'Sida' },
+  { href: '/installningar', label: 'Inställningar', description: 'Anpassa system och utseende', keywords: ['installningar', 'settings'], category: 'Sida' },
+  { href: '/installningar/profil', label: 'Profil', description: 'Uppdatera konto och kontaktuppgifter', keywords: ['profil', 'konto', 'account'], category: 'Sida' },
 ];
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: 'Utkast',
+  sent: 'Skickad',
+  viewed: 'Visad',
+  accepted: 'Accepterad',
+  declined: 'Avvisad',
+  expired: 'Utgången',
+  new: 'Ny',
+  contacted: 'Kontaktad',
+  qualified: 'Kvalificerad',
+  proposal: 'Offert',
+  won: 'Vunnen',
+  lost: 'Förlorad',
+  details: 'Uppgifter',
+  ordered: 'Beställt',
+  arrived: 'Ankommet',
+  in_progress: 'Pågår',
+  completed: 'Klart',
+};
+
+function compactSEK(value: number | null | undefined) {
+  if (value == null) return null;
+  return new Intl.NumberFormat('sv-SE', {
+    style: 'currency',
+    currency: 'SEK',
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function includesQuery(item: CommandItem, normalized: string) {
+  const haystack = [
+    item.label,
+    item.description,
+    item.href,
+    item.category,
+    ...item.keywords,
+  ].join(' ').toLowerCase();
+
+  return haystack.includes(normalized);
+}
 
 export function SearchTrigger() {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [entityResults, setEntityResults] = useState<CommandItem[]>([]);
+  const [entityLoading, setEntityLoading] = useState(false);
+  const [entityError, setEntityError] = useState<string | null>(null);
   const isMac =
     typeof navigator !== 'undefined' &&
     (navigator.platform?.toLowerCase().includes('mac') ||
@@ -52,21 +108,151 @@ export function SearchTrigger() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  useEffect(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!open || normalized.length < 2) {
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setEntityLoading(true);
+      setEntityError(null);
+
+      const [
+        offersResult,
+        contactsResult,
+        leadsResult,
+        projectsResult,
+        productsResult,
+        templatesResult,
+      ] = await Promise.allSettled([
+        listOffers({ search: normalized, limit: 5, offset: 0 }),
+        listCustomers({ search: normalized, limit: 5, offset: 0 }),
+        listLeads({ search: normalized, limit: 5, offset: 0 }),
+        listProjects({ search: normalized, limit: 5, offset: 0 }),
+        listProducts({ search: normalized, isActive: true }),
+        listTemplates(),
+      ]);
+
+      if (cancelled) return;
+
+      const next: CommandItem[] = [];
+      const failed = [
+        offersResult,
+        contactsResult,
+        leadsResult,
+        projectsResult,
+        productsResult,
+        templatesResult,
+      ].some((result) => result.status === 'rejected');
+
+      if (offersResult.status === 'fulfilled') {
+        for (const offer of offersResult.value.offers.slice(0, 5)) {
+          const number = offer.offerNumber ? `#${offer.offerNumber}` : offer.id.slice(0, 8).toUpperCase();
+          const amount = compactSEK(offer.totalIncVat);
+          next.push({
+            href: `/offerter/${offer.id}`,
+            label: `${offer.title || 'Offert'} ${number}`,
+            description: [STATUS_LABEL[offer.status] ?? offer.status, offer.recipientName, amount].filter(Boolean).join(' · '),
+            keywords: ['offert', offer.recipientEmail, offer.recipientCompany ?? '', number],
+            category: 'Offert',
+          });
+        }
+      }
+
+      if (contactsResult.status === 'fulfilled') {
+        for (const contact of contactsResult.value.contacts.slice(0, 5)) {
+          const title = contact.name ?? contact.email ?? 'Kontakt';
+          next.push({
+            href: `/crm/contacts?search=${encodeURIComponent(title)}`,
+            label: title,
+            description: [contact.company, contact.email, contact.phone].filter(Boolean).join(' · ') || 'Kundkontakt',
+            keywords: ['kontakt', 'kund', contact.company ?? '', contact.email ?? '', contact.phone ?? ''],
+            category: 'Kontakt',
+          });
+        }
+      }
+
+      if (leadsResult.status === 'fulfilled') {
+        for (const lead of leadsResult.value.leads.slice(0, 5)) {
+          const amount = compactSEK(lead.estimatedValue);
+          next.push({
+            href: `/crm/leads?search=${encodeURIComponent(lead.name)}`,
+            label: lead.name,
+            description: [STATUS_LABEL[lead.status] ?? lead.status, lead.company, amount].filter(Boolean).join(' · ') || 'Lead',
+            keywords: ['lead', lead.email ?? '', lead.phone ?? '', lead.company ?? ''],
+            category: 'Lead',
+          });
+        }
+      }
+
+      if (projectsResult.status === 'fulfilled') {
+        for (const project of projectsResult.value.projects.slice(0, 5)) {
+          const amount = compactSEK(project.totalIncVat);
+          next.push({
+            href: `/projekt/${project.id}`,
+            label: project.name,
+            description: [STATUS_LABEL[project.stage] ?? project.stage, project.customer?.company ?? project.customer?.name, amount].filter(Boolean).join(' · '),
+            keywords: ['projekt', project.customer?.email ?? '', project.customer?.phone ?? '', project.offerNumber ? String(project.offerNumber) : ''],
+            category: 'Projekt',
+          });
+        }
+      }
+
+      if (productsResult.status === 'fulfilled') {
+        for (const product of productsResult.value.slice(0, 5)) {
+          const amount = compactSEK(product.unitPrice);
+          next.push({
+            href: `/produkter?search=${encodeURIComponent(product.name)}`,
+            label: product.name,
+            description: [product.category, amount, product.unit].filter(Boolean).join(' · ') || 'Produkt',
+            keywords: ['produkt', product.sku ?? '', product.description ?? '', product.category ?? ''],
+            category: 'Produkt',
+          });
+        }
+      }
+
+      if (templatesResult.status === 'fulfilled') {
+        const templates = templatesResult.value.filter((template) => {
+          const haystack = [template.name, template.emailSubject, template.emailBody]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+          return haystack.includes(normalized);
+        });
+
+        for (const template of templates.slice(0, 5)) {
+          next.push({
+            href: `/mallar/${template.id}`,
+            label: template.name,
+            description: template.emailSubject || 'Offertmall',
+            keywords: ['mall', 'template', template.emailSubject ?? ''],
+            category: 'Mall',
+          });
+        }
+      }
+
+      setEntityResults(next.slice(0, 12));
+      setEntityError(failed ? 'Några sökkällor svarade inte.' : null);
+      setEntityLoading(false);
+    }, 180);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [open, query]);
+
   const matches = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return COMMAND_ITEMS;
 
-    return COMMAND_ITEMS.filter((item) => {
-      const haystack = [
-        item.label,
-        item.description,
-        item.href,
-        ...item.keywords,
-      ].join(' ').toLowerCase();
-
-      return haystack.includes(normalized);
-    });
-  }, [query]);
+    const pageMatches = COMMAND_ITEMS.filter((item) => includesQuery(item, normalized));
+    return normalized.length >= 2
+      ? [...entityResults, ...pageMatches].slice(0, 18)
+      : pageMatches;
+  }, [entityResults, query]);
 
   function openRoute(href: string) {
     setOpen(false);
@@ -107,7 +293,7 @@ export function SearchTrigger() {
           <DialogHeader className="border-b border-[var(--border)] px-5 pb-3 pt-5">
             <DialogTitle className="text-base text-[var(--text-primary)]">Snabbsök</DialogTitle>
             <DialogDescription>
-              Hitta rätt sida snabbare utan att leta i menyn.
+              Hitta sidor, offerter, kunder, leads, projekt, produkter och mallar.
             </DialogDescription>
           </DialogHeader>
 
@@ -125,20 +311,20 @@ export function SearchTrigger() {
                     openRoute(matches[0].href);
                   }
                 }}
-                placeholder="Sök på offert, produkt, mall eller inställning..."
+                placeholder="Sök på offert, kund, projekt, produkt eller mall..."
                 className="h-11 w-full border-0 bg-transparent p-0 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
               />
             </div>
           </div>
 
-          <div className="max-h-[320px] overflow-y-auto p-2">
+          <div className="max-h-[360px] overflow-y-auto p-2">
             {matches.length > 0 ? (
               matches.map((item) => {
                 const active = pathname === item.href;
 
                 return (
                   <button
-                    key={item.href}
+                    key={`${item.category}:${item.href}:${item.label}`}
                     type="button"
                     onClick={() => openRoute(item.href)}
                     className={cn(
@@ -149,10 +335,13 @@ export function SearchTrigger() {
                     )}
                   >
                     <span className="min-w-0">
-                      <span className="block text-sm font-medium text-[var(--text-primary)]">
+                      <span className="mb-1 inline-flex rounded-full bg-[var(--surface-alt)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                        {item.category}
+                      </span>
+                      <span className="block truncate text-sm font-medium text-[var(--text-primary)]">
                         {item.label}
                       </span>
-                      <span className="mt-0.5 block text-xs text-[var(--text-secondary)]">
+                      <span className="mt-0.5 block truncate text-xs text-[var(--text-secondary)]">
                         {item.description}
                       </span>
                     </span>
@@ -162,13 +351,26 @@ export function SearchTrigger() {
                   </button>
                 );
               })
+            ) : entityLoading ? (
+              <div className="px-3 py-8 text-center">
+                <p className="text-sm font-medium text-[var(--text-primary)]">Söker...</p>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  Letar bland offerter, kunder, projekt, produkter och mallar.
+                </p>
+              </div>
             ) : (
               <div className="px-3 py-8 text-center">
                 <p className="text-sm font-medium text-[var(--text-primary)]">Inga träffar ännu</p>
                 <p className="mt-1 text-xs text-[var(--text-muted)]">
-                  Prova att söka på offert, mall, produkt eller inställning.
+                  Prova att söka på offert, kund, projekt, produkt eller mall.
                 </p>
+                {entityError && (
+                  <p className="mt-2 text-xs text-red-500">{entityError}</p>
+                )}
               </div>
+            )}
+            {entityLoading && query.trim().length >= 2 && matches.length > 0 && (
+              <div className="px-3 py-2 text-center text-xs text-[var(--text-muted)]">Uppdaterar sökresultat...</div>
             )}
           </div>
         </DialogContent>

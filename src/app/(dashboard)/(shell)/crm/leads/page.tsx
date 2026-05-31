@@ -8,6 +8,11 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Check, Copy } from '@phosphor-icons/react';
+import { replaceBrowserQuery } from '@shared/lib/browser-query';
+import ToastContainer from '@shared/ui/toast/toast-container';
+import { useToast } from '@shared/ui/toast/toast-context';
 import {
   createLead,
   listLeads,
@@ -62,6 +67,16 @@ const EMPTY_FORM = {
   estimatedValue: '',
   notes: '',
 };
+const PAGE_SIZE = 50;
+
+function parsePageParam(page: string | null) {
+  const parsed = Number(page);
+  return Number.isFinite(parsed) && parsed > 1 ? parsed - 1 : 0;
+}
+
+function parseLeadStatus(status: string | null): LeadStatus | 'all' {
+  return STATUS_TABS.some((tab) => tab.key === status) ? (status as LeadStatus | 'all') : 'all';
+}
 
 function fmt(iso: string): string {
   return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -70,21 +85,30 @@ function fmt(iso: string): string {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function LeadsPage() {
+  const searchParams = useSearchParams();
+  const { toasts, addToast, dismissToast } = useToast();
   const [leads, setLeads]       = useState<Lead[]>([]);
   const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
-  const [tab, setTab]           = useState<LeadStatus | 'all'>('all');
-  const [search, setSearch]     = useState('');
+  const [tab, setTab]           = useState<LeadStatus | 'all'>(() => parseLeadStatus(searchParams.get('status')));
+  const [search, setSearch]     = useState(searchParams.get('search') ?? '');
+  const [currentPage, setCurrentPage] = useState(() => parsePageParam(searchParams.get('page')));
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState(EMPTY_FORM);
   const [saving, setSaving]     = useState(false);
+  const [copiedLeadValue, setCopiedLeadValue] = useState<string | null>(null);
 
   const load = useCallback(async (status?: LeadStatus, q?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await listLeads({ status, search: q, limit: 50, offset: 0 });
+      const result = await listLeads({
+        status,
+        search: q,
+        limit: PAGE_SIZE,
+        offset: currentPage * PAGE_SIZE,
+      });
       setLeads(result.leads);
       setTotal(result.total);
     } catch (e) {
@@ -92,11 +116,19 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => {
     void load(tab === 'all' ? undefined : tab, search || undefined);
   }, [load, tab, search]);
+
+  useEffect(() => {
+    replaceBrowserQuery({
+      status: tab === 'all' ? null : tab,
+      search: search.trim() || null,
+      page: currentPage > 0 ? currentPage + 1 : null,
+    });
+  }, [currentPage, search, tab]);
 
   const saveLead = useCallback(async () => {
     setSaving(true);
@@ -124,11 +156,47 @@ export default function LeadsPage() {
     }
   }, [form, load, tab, search]);
 
+  const copyLeadValue = useCallback(async (key: string, value: string, label: string) => {
+    if (!value) return;
+
+    await navigator.clipboard.writeText(value).catch(() => {});
+    setCopiedLeadValue(key);
+    addToast({
+      message: `${label} kopierad`,
+      color: 'emerald',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+    });
+    window.setTimeout(() => setCopiedLeadValue(null), 1800);
+  }, [addToast]);
+
+  const copyCurrentViewLink = useCallback(async () => {
+    await navigator.clipboard.writeText(window.location.href).catch(() => {});
+    setCopiedLeadValue('view');
+    addToast({
+      message: 'Vy-länk kopierad',
+      color: 'emerald',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+    });
+    window.setTimeout(() => setCopiedLeadValue(null), 1800);
+  }, [addToast]);
+
   const initials = (name: string) =>
     name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
   const AVATAR_COLORS = ['bg-violet-500','bg-blue-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-sky-500'];
   const avatarColor = (id: string) => AVATAR_COLORS[id.charCodeAt(0) % AVATAR_COLORS.length];
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const canGoBack = currentPage > 0;
+  const canGoForward = currentPage < totalPages - 1;
+  const hasActiveFilters = tab !== 'all' || Boolean(search);
 
   return (
     <div className="px-8 py-10 max-w-7xl mx-auto">
@@ -163,11 +231,16 @@ export default function LeadsPage() {
       </div>
 
       {error && (
-        <div className="mb-6 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
-          </svg>
-          {error}
+        <div className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400">
+          <span className="flex min-w-0 items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+            </svg>
+            <span>{error}</span>
+          </span>
+          <button type="button" onClick={() => void load(tab === 'all' ? undefined : tab, search || undefined)} className="shrink-0 rounded-lg border border-red-200/70 px-2 py-1 text-xs font-medium hover:bg-red-100/60 dark:border-red-800/40 dark:hover:bg-red-900/30">
+            Försök igen
+          </button>
         </div>
       )}
 
@@ -177,7 +250,10 @@ export default function LeadsPage() {
           {STATUS_TABS.map(t => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => {
+                setTab(t.key);
+                setCurrentPage(0);
+              }}
               className={[
                 'px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
                 tab === t.key
@@ -197,9 +273,35 @@ export default function LeadsPage() {
             type="search"
             placeholder="Sök lead…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(0);
+            }}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
           />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={() => {
+              setTab('all');
+              setSearch('');
+              setCurrentPage(0);
+            }}
+            className="w-fit rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+          >
+            Rensa filter
+          </button>
+        )}
+          <button
+            type="button"
+            onClick={() => void copyCurrentViewLink()}
+            className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
+          >
+            {copiedLeadValue === 'view' ? <Check size={13} weight="bold" /> : <Copy size={13} weight="bold" />}
+            Kopiera vy
+          </button>
         </div>
       </div>
 
@@ -288,8 +390,28 @@ export default function LeadsPage() {
                     </td>
                     <td className="px-4 py-3.5 text-[var(--text-secondary)]">{l.company ?? <span className="text-[var(--text-muted)]">—</span>}</td>
                     <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">
-                      {l.email && <div>{l.email}</div>}
-                      {l.phone && <div>{l.phone}</div>}
+                      {l.email && (
+                        <div className="flex items-center gap-2">
+                          <CopyableLeadValue
+                            value={l.email}
+                            label="e-post"
+                            copied={copiedLeadValue === `email:${l.id}`}
+                            onCopy={() => void copyLeadValue(`email:${l.id}`, l.email ?? '', 'E-post')}
+                          />
+                          <a href={`mailto:${l.email}`} className="text-[11px] font-medium text-[var(--accent)] hover:underline">Maila</a>
+                        </div>
+                      )}
+                      {l.phone && (
+                        <div className="flex items-center gap-2">
+                          <CopyableLeadValue
+                            value={l.phone}
+                            label="telefon"
+                            copied={copiedLeadValue === `phone:${l.id}`}
+                            onCopy={() => void copyLeadValue(`phone:${l.id}`, l.phone ?? '', 'Telefon')}
+                          />
+                          <a href={`tel:${l.phone}`} className="text-[11px] font-medium text-[var(--accent)] hover:underline">Ring</a>
+                        </div>
+                      )}
                       {!l.email && !l.phone && '—'}
                     </td>
                     <td className="px-4 py-3.5 text-[var(--text-secondary)]">{SOURCE_LABEL[l.source]}</td>
@@ -323,6 +445,34 @@ export default function LeadsPage() {
               </tbody>
             </table>
           </div>
+          {total > 0 && (
+            <div className="flex flex-col gap-3 border-t border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-xs text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-center sm:text-left">
+                Visar {currentPage * PAGE_SIZE + 1}-{currentPage * PAGE_SIZE + leads.length} av {total} leads
+              </span>
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.max(0, page - 1))}
+                  disabled={!canGoBack}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Föregående
+                </button>
+                <span className="tabular-nums">
+                  {currentPage + 1}/{totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => page + 1)}
+                  disabled={!canGoForward}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Nästa
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -334,6 +484,34 @@ export default function LeadsPage() {
           <p className="text-sm text-[var(--text-muted)]">Laddar leads…</p>
         </div>
       )}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+    </div>
+  );
+}
+
+function CopyableLeadValue({
+  value,
+  label,
+  copied,
+  onCopy,
+}: {
+  value: string;
+  label: string;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  return (
+    <div className="group flex max-w-[220px] items-center gap-1.5">
+      <span className="truncate">{value}</span>
+      <button
+        type="button"
+        onClick={onCopy}
+        title={`Kopiera ${label}`}
+        aria-label={`Kopiera ${label}`}
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] opacity-0 transition hover:bg-[var(--surface-alt)] hover:text-[var(--accent)] focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 group-hover:opacity-100"
+      >
+        {copied ? <Check size={13} weight="bold" /> : <Copy size={13} weight="bold" />}
+      </button>
     </div>
   );
 }

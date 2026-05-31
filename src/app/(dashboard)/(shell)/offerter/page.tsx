@@ -3,6 +3,8 @@
 /* eslint react-hooks/exhaustive-deps: "off" */
 
 import { useEffect, useCallback, useRef, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { replaceBrowserQuery } from '@shared/lib/browser-query';
 import { previewTemplate } from '@shared/lib/api/templates.api';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import { useToast } from '@shared/ui/toast/toast-context';
@@ -14,6 +16,7 @@ import { OfferDraftRecoveryBanner } from './_components/offer-draft-recovery-ban
 import { OffersLoadingState } from './_components/offers-loading-state';
 import { OffersMobileCards } from './_components/offers-mobile-cards';
 import { OffersDesktopTable } from './_components/offers-desktop-table';
+import { OfferAttentionStrip } from './_components/offer-attention-strip';
 import { OffersPageDialogs } from './_components/offers-page-dialogs';
 import { useOfferListActions } from './_hooks/use-offer-list-actions';
 import { useOfferWizardLifecycle } from './_hooks/use-offer-wizard-lifecycle';
@@ -29,12 +32,27 @@ import {
   OffersPageHeader,
 } from './_components/offers-dashboard-controls';
 import type { BlockingAlert } from './_components/offer-blocking-alerts';
+import { STATUS_TABS } from './_lib/offers-dashboard-constants';
 import { pricingSummary } from './_lib/offers-dashboard-formatters';
+import type { OfferStatus } from './_store/types';
+
+function parsePageParam(page: string | null) {
+  const parsed = Number(page);
+  return Number.isFinite(parsed) && parsed > 1 ? parsed - 1 : 0;
+}
+
+function parseOfferStatus(status: string | null): OfferStatus | 'all' {
+  return STATUS_TABS.some((tab) => tab.id === status) ? (status as OfferStatus | 'all') : 'all';
+}
 
 export default function OffersPage() {
+  const searchParams = useSearchParams();
   const enforcedPriceDisplayMode = DEFAULT_OFFER_PRICE_DISPLAY_MODE;
   const { toasts, addToast, dismissToast } = useToast();
   const [blockingAlert, setBlockingAlert] = useState<BlockingAlert | null>(null);
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [viewLinkCopied, setViewLinkCopied] = useState(false);
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
   const {
     companies,
     selectedCompany,
@@ -51,6 +69,7 @@ export default function OffersPage() {
     setError,
     setSelected, toggleSelected, clearSelected, setBulkSending, setBulkResult,
     setActing, setConfirmDeleteOffer, setCopied, setConfirmSend,
+    resetFilters,
     load, loadCounts,
   } = useOffersListStore();
 
@@ -97,11 +116,38 @@ export default function OffersPage() {
   });
 
   useEffect(() => {
+    const initialSearch = searchParams.get('search') ?? '';
+
+    setSearchInput(initialSearch);
+    setSearch(initialSearch);
+    setTab(parseOfferStatus(searchParams.get('status')));
+    setDateFrom(searchParams.get('from') ?? '');
+    setDateTo(searchParams.get('to') ?? '');
+    setSortAsc(searchParams.get('sort') === 'asc');
+    setCurrentPage(parsePageParam(searchParams.get('page')));
+    setFiltersHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!filtersHydrated) return;
     void load();
     void loadCounts();
     clearSelected();
     setBulkResult(null);
-  }, [tab, search, currentPage, dateFrom, dateTo]);
+  }, [filtersHydrated, tab, search, currentPage, dateFrom, dateTo]);
+
+  useEffect(() => {
+    if (!filtersHydrated) return;
+
+    replaceBrowserQuery({
+      status: tab === 'all' ? null : tab,
+      search: search.trim() || null,
+      from: dateFrom || null,
+      to: dateTo || null,
+      page: currentPage > 0 ? currentPage + 1 : null,
+      sort: sortAsc ? 'asc' : null,
+    });
+  }, [currentPage, dateFrom, dateTo, filtersHydrated, search, sortAsc, tab]);
 
   const filteredOffers = useMemo(() => {
     return allOffers.slice().sort((a, b) => {
@@ -113,6 +159,7 @@ export default function OffersPage() {
   const offers     = filteredOffers;
   const total      = tabCounts.all;
   const totalPages = Math.max(1, Math.ceil(serverTotal / PAGE_SIZE));
+  const hasActiveOfferFilters = tab !== 'all' || Boolean(searchInput || search || dateFrom || dateTo || sortAsc);
 
   const {
     createOffer,
@@ -228,6 +275,37 @@ export default function OffersPage() {
     setFetchingDocId,
     setPreviewDoc,
   });
+
+  const copyText = useCallback(async (key: string, value: string, label: string) => {
+    if (!value) return;
+    await navigator.clipboard.writeText(value).catch(() => {});
+    setCopiedText(key);
+    addToast({
+      message: `${label} kopierad`,
+      color: 'emerald',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+    });
+    window.setTimeout(() => setCopiedText(null), 1800);
+  }, [addToast]);
+
+  const copyCurrentViewLink = useCallback(async () => {
+    await navigator.clipboard.writeText(window.location.href).catch(() => {});
+    setViewLinkCopied(true);
+    addToast({
+      message: 'Vy-länk kopierad',
+      color: 'emerald',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+    });
+    window.setTimeout(() => setViewLinkCopied(false), 1800);
+  }, [addToast]);
 
   const draftOffers = allOffers.filter((o) => o.status === 'draft');
   const selectedDraftCount = Array.from(selected).filter((id) => allOffers.find((o) => o.id === id)?.status === 'draft').length;
@@ -427,11 +505,21 @@ export default function OffersPage() {
         searchInput={searchInput}
         dateFrom={dateFrom}
         dateTo={dateTo}
+        hasActiveFilters={hasActiveOfferFilters}
+        viewLinkCopied={viewLinkCopied}
         onTabChange={setTab}
         onSearchInputChange={setSearchInput}
         onSearchChange={setSearch}
         onDateFromChange={setDateFrom}
         onDateToChange={setDateTo}
+        onResetFilters={resetFilters}
+        onCopyViewLink={copyCurrentViewLink}
+      />
+
+      <OfferAttentionStrip
+        offers={allOffers}
+        tabCounts={tabCounts}
+        onTabChange={setTab}
       />
 
       {/* Offers table */}
@@ -443,9 +531,11 @@ export default function OffersPage() {
           offers={offers}
           acting={acting}
           copied={copied}
+          copiedText={copiedText}
           priceDisplayMode={enforcedPriceDisplayMode}
           onAcceptAction={doAction}
           onCopyLink={copyLink}
+          onCopyText={copyText}
           onDelete={setConfirmDeleteOffer}
           onDuplicate={(id) => void doAction(id, 'duplicate')}
           onEdit={openEdit}
@@ -460,6 +550,7 @@ export default function OffersPage() {
           sortAsc={sortAsc}
           acting={acting}
           copied={copied}
+          copiedText={copiedText}
           fetchingDocId={fetchingDocId}
           priceDisplayMode={enforcedPriceDisplayMode}
           currentPage={currentPage}
@@ -469,6 +560,7 @@ export default function OffersPage() {
           totalPages={totalPages}
           onAcceptAction={doAction}
           onCopyLink={copyLink}
+          onCopyText={copyText}
           onCreateOffer={openCreateOffer}
           onDelete={setConfirmDeleteOffer}
           onDuplicate={(id) => void doAction(id, 'duplicate')}
