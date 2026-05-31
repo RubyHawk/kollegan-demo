@@ -14,6 +14,7 @@ import { OfferDraftRecoveryBanner } from './_components/offer-draft-recovery-ban
 import { OffersLoadingState } from './_components/offers-loading-state';
 import { OffersMobileCards } from './_components/offers-mobile-cards';
 import { OffersDesktopTable } from './_components/offers-desktop-table';
+import { OfferAttentionStrip } from './_components/offer-attention-strip';
 import { OffersPageDialogs } from './_components/offers-page-dialogs';
 import { useOfferListActions } from './_hooks/use-offer-list-actions';
 import { useOfferWizardLifecycle } from './_hooks/use-offer-wizard-lifecycle';
@@ -35,6 +36,7 @@ export default function OffersPage() {
   const enforcedPriceDisplayMode = DEFAULT_OFFER_PRICE_DISPLAY_MODE;
   const { toasts, addToast, dismissToast } = useToast();
   const [blockingAlert, setBlockingAlert] = useState<BlockingAlert | null>(null);
+  const [copiedText, setCopiedText] = useState<string | null>(null);
   const {
     companies,
     selectedCompany,
@@ -228,6 +230,22 @@ export default function OffersPage() {
     setFetchingDocId,
     setPreviewDoc,
   });
+
+  const copyText = useCallback(async (key: string, value: string, label: string) => {
+    if (!value) return;
+    await navigator.clipboard.writeText(value).catch(() => {});
+    setCopiedText(key);
+    addToast({
+      message: `${label} kopierad`,
+      color: 'emerald',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ),
+    });
+    window.setTimeout(() => setCopiedText(null), 1800);
+  }, [addToast]);
 
   const draftOffers = allOffers.filter((o) => o.status === 'draft');
   const selectedDraftCount = Array.from(selected).filter((id) => allOffers.find((o) => o.id === id)?.status === 'draft').length;
@@ -434,6 +452,12 @@ export default function OffersPage() {
         onDateToChange={setDateTo}
       />
 
+      <OfferAttentionStrip
+        offers={allOffers}
+        tabCounts={tabCounts}
+        onTabChange={setTab}
+      />
+
       {/* Offers table */}
       {loading ? (
         <OffersLoadingState />
@@ -443,9 +467,11 @@ export default function OffersPage() {
           offers={offers}
           acting={acting}
           copied={copied}
+          copiedText={copiedText}
           priceDisplayMode={enforcedPriceDisplayMode}
           onAcceptAction={doAction}
           onCopyLink={copyLink}
+          onCopyText={copyText}
           onDelete={setConfirmDeleteOffer}
           onDuplicate={(id) => void doAction(id, 'duplicate')}
           onEdit={openEdit}
@@ -460,6 +486,7 @@ export default function OffersPage() {
           sortAsc={sortAsc}
           acting={acting}
           copied={copied}
+          copiedText={copiedText}
           fetchingDocId={fetchingDocId}
           priceDisplayMode={enforcedPriceDisplayMode}
           currentPage={currentPage}
@@ -469,6 +496,7 @@ export default function OffersPage() {
           totalPages={totalPages}
           onAcceptAction={doAction}
           onCopyLink={copyLink}
+          onCopyText={copyText}
           onCreateOffer={openCreateOffer}
           onDelete={setConfirmDeleteOffer}
           onDuplicate={(id) => void doAction(id, 'duplicate')}

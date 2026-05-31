@@ -21,6 +21,7 @@ type OffersDesktopTableProps = {
   acting: string | null;
   allDraftsSelected: boolean;
   copied: string | null;
+  copiedText: string | null;
   currentPage: number;
   draftOffers: Offer[];
   fetchingDocId: string | null;
@@ -34,6 +35,7 @@ type OffersDesktopTableProps = {
   totalPages: number;
   onAcceptAction: (id: string, action: OfferAction) => void | Promise<void>;
   onCopyLink: (offer: Offer) => void | Promise<void>;
+  onCopyText: (key: string, value: string, label: string) => void | Promise<void>;
   onCreateOffer: () => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void | Promise<void>;
@@ -50,6 +52,7 @@ export function OffersDesktopTable({
   acting,
   allDraftsSelected,
   copied,
+  copiedText,
   currentPage,
   draftOffers,
   fetchingDocId,
@@ -63,6 +66,7 @@ export function OffersDesktopTable({
   totalPages,
   onAcceptAction,
   onCopyLink,
+  onCopyText,
   onCreateOffer,
   onDelete,
   onDuplicate,
@@ -136,11 +140,41 @@ export function OffersDesktopTable({
                   </td>
                   <td className="px-3 py-3 max-w-[220px]">
                     <p className="text-xs font-semibold text-[var(--text-primary)] truncate leading-tight">{offer.title}</p>
-                    <p className="text-[10px] text-[var(--text-muted)] font-mono leading-tight mt-0.5">{fmtOfferNumber(offer)}</p>
+                    <div className="mt-0.5 flex items-center gap-1">
+                      <p className="truncate font-mono text-[10px] leading-tight text-[var(--text-muted)]">{fmtOfferNumber(offer)}</p>
+                      <button
+                        type="button"
+                        onClick={() => void onCopyText(`number:${offer.id}`, fmtOfferNumber(offer), 'Offertnummer')}
+                        title="Kopiera offertnummer"
+                        aria-label="Kopiera offertnummer"
+                        className="rounded p-0.5 text-[var(--text-muted)] opacity-0 transition-opacity hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] group-hover:opacity-100 focus:opacity-100"
+                      >
+                        {copiedText === `number:${offer.id}` ? (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        ) : (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                        )}
+                      </button>
+                    </div>
                   </td>
                   <td className="px-3 py-3 max-w-[180px]">
                     <p className="text-xs font-medium text-[var(--text-primary)] truncate leading-tight">{offer.recipientName}</p>
-                    <p className="text-[10px] text-[var(--text-muted)] truncate leading-tight">{offer.recipientCompany ?? offer.recipientEmail}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="truncate text-[10px] leading-tight text-[var(--text-muted)]">{offer.recipientCompany ?? offer.recipientEmail}</p>
+                      <button
+                        type="button"
+                        onClick={() => void onCopyText(`email:${offer.id}`, offer.recipientEmail, 'E-postadress')}
+                        title="Kopiera e-post"
+                        aria-label="Kopiera e-post"
+                        className="rounded p-0.5 text-[var(--text-muted)] opacity-0 transition-opacity hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] group-hover:opacity-100 focus:opacity-100"
+                      >
+                        {copiedText === `email:${offer.id}` ? (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        ) : (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                        )}
+                      </button>
+                    </div>
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex flex-col gap-1.5">
