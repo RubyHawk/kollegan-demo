@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import {
   createStaffUser,
   deleteStaffUser,
@@ -54,6 +55,8 @@ export default function UsersPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState(EMPTY_FORM);
   const [saving, setSaving]     = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState<StaffUser | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -85,12 +88,15 @@ export default function UsersPage() {
   }, [form, load]);
 
   const deleteUser = useCallback(async (id: string) => {
-    if (!confirm('Ta bort denna användare? Åtgärden kan inte ångras.')) return;
+    setDeletingId(id);
     try {
       await deleteStaffUser(id);
       await load();
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteUser(null);
     }
   }, [load]);
 
@@ -192,8 +198,8 @@ export default function UsersPage() {
                   <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmt(u.createdAt)}</td>
                   <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmt(u.lastLogin)}</td>
                   <td className="px-4 py-3.5">
-                    <button onClick={() => void deleteUser(u.id)}
-                      className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors">
+                    <button onClick={() => setConfirmDeleteUser(u)} disabled={deletingId === u.id}
+                      className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40">
                       Ta bort
                     </button>
                   </td>
@@ -219,6 +225,22 @@ export default function UsersPage() {
           <p className="text-sm text-[var(--text-muted)]">Laddar användare…</p>
         </div>
       )}
+      <ConfirmDestructiveDialog
+        open={Boolean(confirmDeleteUser)}
+        onOpenChange={(open) => { if (!open) setConfirmDeleteUser(null); }}
+        title="Ta bort användare?"
+        description={
+          confirmDeleteUser
+            ? `${confirmDeleteUser.email} tas bort från organisationen. Det här går inte att ångra.`
+            : 'Användaren tas bort från organisationen. Det här går inte att ångra.'
+        }
+        confirmLabel="Ta bort användare"
+        loading={Boolean(confirmDeleteUser && deletingId === confirmDeleteUser.id)}
+        onConfirm={() => {
+          if (!confirmDeleteUser) return;
+          void deleteUser(confirmDeleteUser.id);
+        }}
+      />
     </div>
   );
 }

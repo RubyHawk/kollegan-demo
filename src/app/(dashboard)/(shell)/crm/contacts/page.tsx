@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@shared/lib/utils';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import {
   createCustomer,
   deleteCustomer,
@@ -52,6 +53,7 @@ export default function ContactsPage() {
   const [saving,   setSaving]   = useState(false);
   const [editing,  setEditing]  = useState<Contact | null>(null);
   const [acting,   setActing]   = useState<string | null>(null);
+  const [confirmDeleteContact, setConfirmDeleteContact] = useState<Contact | null>(null);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -111,7 +113,6 @@ export default function ContactsPage() {
   }, [form, editing, load]);
 
   const deleteContact = useCallback(async (id: string) => {
-    if (!confirm('Ta bort kontakten permanent?')) return;
     setActing(id);
     try {
       await deleteCustomer(id);
@@ -120,6 +121,7 @@ export default function ContactsPage() {
       setError((e as Error).message);
     } finally {
       setActing(null);
+      setConfirmDeleteContact(null);
     }
   }, [load]);
 
@@ -322,7 +324,7 @@ export default function ContactsPage() {
                         <span className="text-[var(--border)]">·</span>
                         <button
                           type="button"
-                          onClick={() => void deleteContact(c.id)}
+                          onClick={() => setConfirmDeleteContact(c)}
                           disabled={acting === c.id}
                           className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40"
                         >
@@ -380,6 +382,22 @@ export default function ContactsPage() {
           )}
         </div>
       )}
+      <ConfirmDestructiveDialog
+        open={Boolean(confirmDeleteContact)}
+        onOpenChange={(open) => { if (!open) setConfirmDeleteContact(null); }}
+        title="Ta bort kontakt?"
+        description={
+          confirmDeleteContact
+            ? `${confirmDeleteContact.name ?? 'Kontakten'} tas bort permanent. Det här går inte att ångra.`
+            : 'Kontakten tas bort permanent. Det här går inte att ångra.'
+        }
+        confirmLabel="Ta bort kontakt"
+        loading={Boolean(confirmDeleteContact && acting === confirmDeleteContact.id)}
+        onConfirm={() => {
+          if (!confirmDeleteContact) return;
+          void deleteContact(confirmDeleteContact.id);
+        }}
+      />
     </div>
   );
 }
