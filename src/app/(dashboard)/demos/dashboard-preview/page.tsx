@@ -123,8 +123,9 @@ const MOCK: DashboardReadModel = {
     { id: '5', tone: 'neutral', label: 'Ny offert skapad',  detail: 'A-0134 Norrtälje Bygg AB',      occurredAt: '2026-05-27T09:00:00+02:00', href: '/offerter/1' },
   ],
   kpiTrends: {
-    acceptedPoints: [120_000, 0, 285_000, 0, 390_000, 165_000, 0],
-    pipelinePoints: [2, 1, 3, 0, 2, 4, 1],
+    // No zeros — zeros create spikes to the floor on the sparkline
+    acceptedPoints: [85_000, 165_000, 120_000, 310_000, 250_000, 390_000, 420_000],
+    pipelinePoints: [3, 5, 4, 6, 4, 7, 5],
     winRatePoints: [30, 32, 34, 35, 37, 38, 38],
     avgDealPoints: [140_000, 145_000, 150_000, 155_000, 157_000, 158_000, 157_778],
     pipelineActiveCount: 18,

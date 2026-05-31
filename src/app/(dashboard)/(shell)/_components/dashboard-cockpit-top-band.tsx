@@ -18,13 +18,28 @@ function MiniSparkline({ points, color }: { points: number[]; color: string }) {
   const max = Math.max(...points, 0.001);
   const min = Math.min(...points);
   const range = max - min || 1;
-  const W = 54, H = 24, PAD = 2;
+  const W = 58, H = 28, PAD = 2;
   const xs = points.map((_, i) => PAD + (i / (points.length - 1)) * (W - PAD * 2));
   const ys = points.map((v) => H - PAD - ((v - min) / range) * (H - PAD * 2));
-  const d = xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(' ');
+
+  // Catmull-Rom → cubic bezier so curves are smooth instead of angular
+  let d = `M${xs[0].toFixed(1)},${ys[0].toFixed(1)}`;
+  for (let i = 0; i < xs.length - 1; i++) {
+    const p0x = xs[i - 1] ?? xs[0],  p0y = ys[i - 1] ?? ys[0];
+    const p1x = xs[i],               p1y = ys[i];
+    const p2x = xs[i + 1],           p2y = ys[i + 1];
+    const p3x = xs[i + 2] ?? xs[xs.length - 1], p3y = ys[i + 2] ?? ys[ys.length - 1];
+    const t = 0.35;
+    const cp1x = p1x + (p2x - p0x) * t;
+    const cp1y = p1y + (p2y - p0y) * t;
+    const cp2x = p2x - (p3x - p1x) * t;
+    const cp2y = p2y - (p3y - p1y) * t;
+    d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)}`;
+  }
+
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} fill="none" aria-hidden>
-      <path d={d} stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" opacity="0.7" />
+      <path d={d} stroke={color} strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" opacity="0.75" />
     </svg>
   );
 }
