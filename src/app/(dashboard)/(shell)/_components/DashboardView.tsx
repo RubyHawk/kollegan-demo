@@ -41,11 +41,10 @@ export default function DashboardView({
       <div className="w-full px-4 py-3 lg:pb-3">
         <motion.div
           {...STAGGER_CONTAINER}
-          className="space-y-3 xl:grid xl:grid-rows-[164px_420px_264px] xl:gap-3 xl:space-y-0"
+          className="space-y-3 xl:grid xl:grid-rows-[172px_420px_264px] xl:gap-3 xl:space-y-0"
         >
           <TopCockpitBand
             today={today}
-            focusMetrics={focusMetrics}
             calendar={calendar}
             weather={weather}
             acceptedValue={acceptedValue}

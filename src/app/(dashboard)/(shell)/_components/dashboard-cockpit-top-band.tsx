@@ -3,15 +3,14 @@
 import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { CalendarBlank, CloudSun, DotsThreeVertical, TrendUp, TrendDown } from '@phosphor-icons/react';
+import { CalendarBlank, CloudSun, TrendUp, TrendDown } from '@phosphor-icons/react';
 import type {
   DashboardCalendar,
-  DashboardFocusMetrics,
   DashboardKpiTrends,
   DashboardToday,
   DashboardWeather,
 } from '@modules/generic/dashboard';
-import { DashboardDotLabel, MetricTile } from './dashboard-cockpit-primitives';
+import { DashboardDotLabel } from './dashboard-cockpit-primitives';
 import { fmtSEK, fmtCompactSEK, fmtTime } from './dashboard-cockpit-utils';
 
 function MiniSparkline({
@@ -130,7 +129,6 @@ function MiniSparkline({
 
 export function TopCockpitBand({
   today,
-  focusMetrics,
   calendar,
   weather,
   acceptedValue,
@@ -141,7 +139,6 @@ export function TopCockpitBand({
   kpiTrends,
 }: {
   today: DashboardToday;
-  focusMetrics: DashboardFocusMetrics;
   calendar: DashboardCalendar;
   weather: DashboardWeather;
   acceptedValue: number;
@@ -156,7 +153,7 @@ export function TopCockpitBand({
 
   return (
     <motion.section
-      className="grid min-h-[164px] overflow-hidden rounded-md border border-[var(--cockpit-border,var(--border))] bg-[var(--surface-0)] shadow-[var(--cockpit-shadow)] xl:h-[164px] xl:grid-cols-[1.1fr_1.7fr_3.25fr_1.05fr]"
+      className="grid min-h-[172px] overflow-hidden rounded-md border border-[var(--cockpit-border,var(--border))] bg-[var(--surface-0)] shadow-[var(--cockpit-shadow)] xl:h-[172px] xl:grid-cols-[1.1fr_5fr_1.05fr]"
       variants={{ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } }}
     >
       {/* Idag */}
@@ -191,20 +188,6 @@ export function TopCockpitBand({
         >
           Visa dagsplan →
         </Link>
-      </div>
-
-      {/* Dagens fokus */}
-      <div className="border-b border-[var(--cockpit-border-soft,var(--border))] px-3.5 py-3 xl:border-b-0 xl:border-r xl:border-[var(--cockpit-divider,var(--cockpit-border-soft))]">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Dagens fokus</h2>
-          <DotsThreeVertical size={16} weight="bold" className="text-[var(--text-muted)]" />
-        </div>
-        <div className="grid grid-cols-2 gap-1.5">
-          <MetricTile label="Över deadline" value={focusMetrics.overdue} detail="Kräver åtgärd" tone={focusMetrics.overdue > 0 ? 'danger' : 'neutral'} />
-          <MetricTile label="Nära deadline" value={focusMetrics.dueSoon} detail="Inom 7 dagar" tone={focusMetrics.dueSoon > 0 ? 'warning' : 'neutral'} />
-          <MetricTile label="Uppföljning" value={focusMetrics.missingFollowUp} detail="Saknar" tone={focusMetrics.missingFollowUp > 0 ? 'accent' : 'neutral'} />
-          <MetricTile label="Möten idag" value={focusMetrics.meetingsToday} detail="Planerade" />
-        </div>
       </div>
 
       {/* KPI strip */}
