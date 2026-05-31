@@ -24,6 +24,14 @@ export interface DashboardProjectSnapshot {
   customerCompany: string | null;
 }
 
+export interface KpiWindowOffer {
+  totalIncVat: number;
+  status: string;
+  sentAt: string | null;
+  acceptedAt: string | null;
+  declinedAt: string | null;
+}
+
 export interface DashboardSnapshot {
   countMap: Record<string, number>;
   valueMap: Record<string, number>;
@@ -37,6 +45,7 @@ export interface DashboardSnapshot {
   projectStats: ProjectStats;
   meetingsToday: DashboardMeetingSnapshot[];
   projectHandoffs: DashboardProjectSnapshot[];
+  kpiWindow: KpiWindowOffer[];
 }
 
 const DEFAULT_OFFER_STATUS_COUNTS: Record<string, number> = {
@@ -76,6 +85,8 @@ export const dashboardReadModelRepository = {
     tomorrowStart: Date,
   ): Promise<DashboardSnapshot> {
     const in7days = new Date(todayStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+    // 63 days = 9 weeks: covers 7 weekly sparkline buckets + 60-day avg-deal trend comparison
+    const kpiWindowStart = new Date(todayStart.getTime() - 63 * 24 * 60 * 60 * 1000);
 
     const [
       counts,
@@ -86,6 +97,7 @@ export const dashboardReadModelRepository = {
       expiringSoon,
       meetingsRaw,
       handoffRaw,
+      kpiWindowRaw,
     ] = await Promise.all([
       prisma.offer.groupBy({
         by: ['status'],
@@ -202,6 +214,28 @@ export const dashboardReadModelRepository = {
           },
         },
       }),
+
+      // Dedicated time-window fetch for KPI trend computation.
+      // Keyed by sentAt/acceptedAt/declinedAt — not bounded by createdAt order —
+      // so trends are accurate regardless of how many total offers exist.
+      prisma.offer.findMany({
+        where: {
+          organizationId,
+          deletedAt: null,
+          OR: [
+            { acceptedAt: { gte: kpiWindowStart } },
+            { sentAt: { gte: kpiWindowStart } },
+            { declinedAt: { gte: kpiWindowStart } },
+          ],
+        },
+        select: {
+          totalIncVat: true,
+          status: true,
+          sentAt: true,
+          acceptedAt: true,
+          declinedAt: true,
+        },
+      }),
     ]);
 
     const countMap = { ...DEFAULT_OFFER_STATUS_COUNTS };
@@ -296,6 +330,13 @@ export const dashboardReadModelRepository = {
         createdAt: project.createdAt.toISOString(),
         customerName: project.customer?.name ?? null,
         customerCompany: project.customer?.company ?? null,
+      })),
+      kpiWindow: kpiWindowRaw.map((o) => ({
+        totalIncVat: Number(o.totalIncVat ?? 0),
+        status: o.status,
+        sentAt: toIso(o.sentAt),
+        acceptedAt: toIso(o.acceptedAt),
+        declinedAt: toIso(o.declinedAt),
       })),
     };
   },

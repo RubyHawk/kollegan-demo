@@ -152,6 +152,16 @@ export interface DashboardToday {
   focusLabel: string;
 }
 
+export interface DashboardKpiTrends {
+  acceptedPoints: number[];
+  pipelinePoints: number[];
+  winRatePoints: number[];
+  avgDealPoints: number[];
+  pipelineActiveCount: number;
+  winRateFraction: string;
+  avgDealTrendPct: number | null;
+}
+
 export interface DashboardReadModel {
   countMap: Record<string, number>;
   total: number;
@@ -171,4 +181,5 @@ export interface DashboardReadModel {
   activityFeed: DashboardActivityFeedItem[];
   calendar: DashboardCalendar;
   weather: DashboardWeather;
+  kpiTrends: DashboardKpiTrends;
 }

@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard Mockup — Before vs After</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; padding: 24px; }
+
+  h1 { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+  .subtitle { font-size: 13px; color: #64748b; margin-bottom: 28px; }
+
+  .columns { display: flex; gap: 24px; align-items: flex-start; }
+  .col { flex: 1; min-width: 0; }
+  .col-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; margin-bottom: 10px; }
+
+  /* ── shell ── */
+  .shell { display: flex; height: 620px; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.13); border: 1px solid #e2e8f0; }
+
+  /* sidebar */
+  .sidebar { width: 168px; background: #fff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; flex-shrink: 0; }
+  .sidebar-header { height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid #e2e8f0; }
+  .brand-mark { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg,#3b82f6,#1d4ed8); display: flex; align-items: center; justify-content: center; }
+  .brand-mark svg { color: white; }
+  .brand-name { font-size: 14px; font-weight: 700; color: #1e293b; letter-spacing: -.01em; }
+  .sidebar-nav { flex: 1; padding: 8px 8px 0; overflow: hidden; }
+  .nav-section-label { font-size: 9px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: #94a3b8; padding: 8px 8px 4px; }
+  .nav-item { display: flex; align-items: center; gap: 7px; padding: 6px 8px; border-radius: 6px; font-size: 12px; color: #475569; margin-bottom: 1px; }
+  .nav-item.active { background: #eff6ff; color: #2563eb; font-weight: 600; }
+  .nav-item .dot { width: 14px; height: 14px; border-radius: 3px; background: #e2e8f0; flex-shrink: 0; }
+  .nav-item.active .dot { background: #bfdbfe; }
+  .nav-highlight { background: #fef3c7; border-radius: 4px; padding: 1px 5px; font-size: 9px; font-weight: 700; color: #d97706; margin-left: auto; }
+  .sidebar-footer { padding: 10px; border-top: 1px solid #e2e8f0; }
+  .user-row { display: flex; align-items: center; gap: 8px; }
+  .avatar { width: 28px; height: 28px; border-radius: 8px; background: #dbeafe; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #2563eb; flex-shrink: 0; }
+  .user-info p { font-size: 11px; font-weight: 600; color: #1e293b; }
+  .user-info span { font-size: 9px; color: #94a3b8; }
+
+  /* main area */
+  .main { flex: 1; display: flex; flex-direction: column; background: #f8fafc; min-width: 0; }
+  .topbar { height: 48px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; flex-shrink: 0; }
+  .breadcrumb { font-size: 11px; color: #94a3b8; }
+  .breadcrumb span { color: #1e293b; font-weight: 600; }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .search-pill { height: 28px; padding: 0 10px; border-radius: 6px; background: #f1f5f9; border: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 5px; }
+  .kbd { background: #e2e8f0; border-radius: 3px; padding: 1px 4px; font-size: 9px; font-weight: 600; color: #64748b; }
+  .bell { width: 28px; height: 28px; border-radius: 6px; background: #f1f5f9; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; position: relative; }
+  .bell-badge { position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; border: 1.5px solid #fff; }
+  .btn-primary { height: 28px; padding: 0 10px; border-radius: 6px; background: #2563eb; color: white; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+
+  .dashboard-content { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+
+  /* Row 1 */
+  .row1 { display: grid; grid-template-columns: 1fr 1.4fr 2.8fr 0.9fr; gap: 7px; height: 130px; flex-shrink: 0; }
+  .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 7px; overflow: hidden; }
+  .panel-header { height: 32px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #f1f5f9; }
+  .panel-title { font-size: 11px; font-weight: 700; color: #1e293b; }
+  .panel-sub { font-size: 9px; color: #94a3b8; }
+  .panel-body { padding: 8px 10px; }
+
+  /* today cell */
+  .today-cell { display: flex; flex-direction: column; }
+  .today-meeting { font-size: 10px; color: #475569; margin-top: 4px; line-height: 1.4; }
+  .today-btn { margin-top: 6px; height: 22px; border-radius: 5px; background: #2563eb; color: white; font-size: 9px; font-weight: 600; display: inline-flex; align-items: center; padding: 0 8px; width: fit-content; }
+
+  /* focus tiles */
+  .focus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 6px 8px; }
+  .focus-tile { border-radius: 5px; padding: 4px 6px; }
+  .focus-tile.danger { background: #fef2f2; }
+  .focus-tile.warning { background: #fffbeb; }
+  .focus-tile.accent { background: #eff6ff; }
+  .focus-tile.neutral { background: #f8fafc; }
+  .focus-tile .val { font-size: 14px; font-weight: 700; color: #1e293b; line-height: 1; }
+  .focus-tile .lbl { font-size: 8.5px; color: #64748b; }
+
+  /* kpi strip */
+  .kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); height: 100%; }
+  .kpi-cell { padding: 8px 10px; border-right: 1px solid #f1f5f9; position: relative; overflow: hidden; }
+  .kpi-cell:last-child { border-right: none; }
+  .kpi-label { font-size: 9px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi-val { font-size: 15px; font-weight: 700; color: #1e293b; margin-top: 3px; }
+  .kpi-detail { font-size: 9px; color: #64748b; margin-top: 2px; }
+  .kpi-spark { position: absolute; bottom: 6px; right: 6px; opacity: .5; }
+  .kpi-progress { margin-top: 4px; height: 3px; border-radius: 2px; background: #e2e8f0; overflow: hidden; }
+  .kpi-progress-fill { height: 100%; border-radius: 2px; background: #2563eb; }
+  .kpi-trend-up { color: #16a34a; font-size: 9px; font-weight: 600; }
+
+  /* weather */
+  .weather-body { padding: 7px 10px; }
+  .weather-temp { font-size: 22px; font-weight: 700; color: #1e293b; }
+  .weather-cond { font-size: 9px; color: #64748b; margin-top: 1px; }
+  .weather-forecast { display: flex; gap: 10px; margin-top: 6px; font-size: 9px; color: #64748b; border-top: 1px solid #f1f5f9; padding-top: 5px; }
+
+  /* Row 2 */
+  .row2 { display: grid; grid-template-columns: 5fr 7fr; gap: 7px; flex: 1; min-height: 0; }
+
+  /* action queue */
+  .aq-item { display: grid; grid-template-columns: 5px 1fr auto; align-items: center; gap: 6px; padding: 5px 8px 5px 0; border-bottom: 1px solid #f8fafc; }
+  .aq-rail { height: 36px; border-radius: 0 3px 3px 0; }
+  .aq-rail.danger { background: #ef4444; }
+  .aq-rail.warning { background: #f59e0b; }
+  .aq-rail.neutral { background: #cbd5e1; }
+  .aq-title { font-size: 10px; font-weight: 600; color: #1e293b; }
+  .aq-sub { font-size: 9px; color: #64748b; }
+  .aq-cta { padding: 3px 7px; border-radius: 4px; font-size: 9px; font-weight: 600; }
+  .aq-cta.danger { background: #fef2f2; color: #dc2626; }
+  .aq-cta.warning { background: #fffbeb; color: #d97706; }
+  .aq-cta.neutral { background: #f1f5f9; color: #475569; }
+  .aq-label-chip { display: inline-flex; align-items: center; padding: 1px 5px; border-radius: 3px; font-size: 8px; font-weight: 700; margin-right: 4px; }
+  .aq-label-chip.danger { background: #fef2f2; color: #dc2626; }
+  .aq-label-chip.warning { background: #fffbeb; color: #d97706; }
+  .aq-label-chip.neutral { background: #f1f5f9; color: #94a3b8; }
+
+  /* offer table */
+  .offer-tabs { display: flex; gap: 0; padding: 0 10px; border-bottom: 1px solid #f1f5f9; }
+  .offer-tab { padding: 6px 8px; font-size: 10px; font-weight: 600; color: #94a3b8; border-bottom: 2px solid transparent; }
+  .offer-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+  .offer-thead { display: grid; grid-template-columns: 80px 1fr 70px 90px 90px; padding: 4px 10px; background: #f8fafc; font-size: 8.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
+  .offer-row { display: grid; grid-template-columns: 80px 1fr 70px 90px 90px; padding: 6px 10px; border-bottom: 1px solid #f8fafc; font-size: 10px; align-items: center; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .dot-sent { background: #3b82f6; }
+  .dot-viewed { background: #8b5cf6; }
+  .dot-draft { background: #94a3b8; }
+  .dot-accepted { background: #16a34a; }
+  .deadline-danger { color: #dc2626; font-weight: 600; font-size: 9px; }
+  .deadline-warning { color: #d97706; font-weight: 600; font-size: 9px; }
+  .deadline-ok { color: #64748b; font-size: 9px; }
+
+  /* Row 3 */
+  .row3 { display: grid; grid-template-columns: 4fr 4fr 4fr; gap: 7px; height: 148px; flex-shrink: 0; }
+
+  /* pipeline */
+  .pipe-stages-old { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 6px 8px; }
+  .pipe-stages-new { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; padding: 6px 8px; }
+  .pipe-stage { border: 1px solid #e2e8f0; border-radius: 5px; padding: 5px 6px; }
+  .pipe-stage-label { font-size: 8px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pipe-stage-count { font-size: 15px; font-weight: 700; color: #1e293b; margin-top: 2px; }
+  .pipe-stage-val { font-size: 9px; font-weight: 600; color: #475569; }
+  .pipe-bar { height: 3px; border-radius: 2px; background: #e2e8f0; margin-top: 4px; overflow: hidden; }
+  .pipe-bar-fill { height: 100%; border-radius: 2px; background: #3b82f6; }
+  .pipe-footer { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; padding: 5px 8px; border-top: 1px solid #f1f5f9; }
+  .pipe-stat p { font-size: 8px; color: #94a3b8; }
+  .pipe-stat span { font-size: 11px; font-weight: 700; color: #1e293b; }
+
+  /* project handoff */
+  .ph-metrics-old { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; padding: 6px 8px; }
+  .ph-metric-old { background: #f8fafc; border-radius: 5px; padding: 5px 7px; }
+  .ph-metric-old p { font-size: 8px; color: #94a3b8; }
+  .ph-metric-old span { font-size: 13px; font-weight: 700; color: #1e293b; }
+
+  .ph-cols-new { display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid #f1f5f9; }
+  .ph-col-new { padding: 6px 10px; border-right: 1px solid #f1f5f9; }
+  .ph-col-new:last-child { border-right: none; }
+  .ph-col-label { font-size: 8.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
+  .ph-col-count { font-size: 18px; font-weight: 700; color: #1e293b; margin-top: 1px; line-height: 1; }
+  .ph-col-val { font-size: 9px; color: #64748b; margin-top: 1px; }
+  .ph-proj-row { display: grid; grid-template-columns: 1fr 70px 50px 55px; font-size: 9px; padding: 4px 10px; border-bottom: 1px solid #f8fafc; align-items: center; }
+  .ph-proj-name { font-weight: 600; color: #1e293b; font-size: 10px; }
+  .ph-proj-cust { color: #64748b; font-size: 9px; }
+  .status-badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 20px; font-size: 8px; font-weight: 600; }
+  .status-badge.klar { background: #dcfce7; color: #16a34a; }
+  .status-badge.pagar { background: #dbeafe; color: #2563eb; }
+  .status-badge.planerad { background: #f1f5f9; color: #64748b; }
+
+  /* activity */
+  .act-item { display: grid; grid-template-columns: auto 1fr auto; gap: 6px; align-items: center; padding: 5px 10px; border-bottom: 1px solid #f8fafc; }
+  .act-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+  .act-icon.success { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+  .act-icon.sent { background: #dbeafe; color: #2563eb; border: 1px solid #bfdbfe; }
+  .act-icon.viewed { background: #ede9fe; color: #7c3aed; border: 1px solid #ddd6fe; }
+  .act-title { font-size: 10px; font-weight: 600; color: #1e293b; }
+  .act-sub { font-size: 9px; color: #64748b; }
+  .act-time { font-size: 9px; color: #94a3b8; }
+
+  /* annotations */
+  .annotation { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px; font-size: 9.5px; font-weight: 600; margin-bottom: 4px; }
+  .annotation.add { background: #dcfce7; color: #15803d; }
+  .annotation.change { background: #fef3c7; color: #b45309; }
+  .annotation.same { background: #f1f5f9; color: #64748b; }
+
+  .change-overlay { position: absolute; inset: 0; border: 2px dashed #f59e0b; border-radius: 6px; pointer-events: none; z-index: 2; }
+  .add-overlay { position: absolute; inset: 0; border: 2px dashed #16a34a; border-radius: 6px; pointer-events: none; z-index: 2; }
+  .rel { position: relative; }
+
+  .legend { display: flex; gap: 14px; margin-top: 14px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #64748b; }
+  .legend-swatch { width: 16px; height: 3px; border-radius: 2px; }
+  .legend-swatch.same { background: #cbd5e1; }
+  .legend-swatch.change { background: #f59e0b; border: none; }
+  .legend-swatch.add { background: #16a34a; }
+
+  .divider-label { text-align: center; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #cbd5e1; padding: 0 12px; position: relative; }
+  .divider-label::before, .divider-label::after { content: ''; position: absolute; top: 50%; width: 35%; height: 1px; background: #e2e8f0; }
+  .divider-label::before { left: 0; }
+  .divider-label::after { right: 0; }
+
+  .note { margin-top: 8px; font-size: 10.5px; color: #64748b; line-height: 1.5; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; }
+  .note strong { color: #1e293b; }
+</style>
+</head>
+<body>
+
+<h1>Dashboard Mockup — Before vs After</h1>
+<p class="subtitle">Crude layout wireframe. Green dashed = added. Orange dashed = changed. No border = unchanged.</p>
+
+<div class="columns">
+
+  <!-- ═══════════════ BEFORE ═══════════════ -->
+  <div class="col">
+    <div class="col-label">Current (Before)</div>
+
+    <div class="shell">
+      <!-- Sidebar BEFORE -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <div class="brand-mark">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </div>
+          <span class="brand-name">Soleria</span>
+        </div>
+        <div class="sidebar-nav">
+          <div class="nav-section-label">Offertsystem</div>
+          <div class="nav-item active"><div class="dot"></div> Översikt</div>
+          <div class="nav-item"><div class="dot"></div> Offerter</div>
+          <div class="nav-item"><div class="dot"></div> Projekt</div>
+          <div class="nav-item"><div class="dot"></div> Mallar</div>
+          <div class="nav-item"><div class="dot"></div> Produktbibliotek</div>
+          <div class="nav-item"><div class="dot"></div> Företag</div>
+          <div style="margin-top:8px"></div>
+          <div class="nav-section-label">Admin</div>
+          <div class="nav-item"><div class="dot"></div> Användare</div>
+          <div class="nav-item"><div class="dot"></div> Inställningar</div>
+        </div>
+        <div class="sidebar-footer">
+          <div class="user-row">
+            <div class="avatar">MZ</div>
+            <div class="user-info">
+              <p>Malek Zeytoun</p>
+              <span>malek@soleria.se</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main BEFORE -->
+      <div class="main">
+        <!-- Topbar BEFORE -->
+        <div class="topbar">
+          <div class="breadcrumb">Översikt / <span>Dashboard</span></div>
+          <div class="topbar-right">
+            <div class="search-pill">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Sök... <span class="kbd">⌘K</span>
+            </div>
+            <div class="btn-primary">+ Ny offert</div>
+          </div>
+        </div>
+
+        <div class="dashboard-content">
+          <!-- ROW 1 BEFORE -->
+          <div class="row1">
+            <!-- Idag -->
+            <div class="panel">
+              <div class="panel-header"><span class="panel-title">Idag</span><span class="panel-sub">Fre 2 maj</span></div>
+              <div class="panel-body today-cell">
+                <div class="today-meeting">📅 Möte kl. 15:00<br>Andersson Fastigheter</div>
+                <div class="today-btn">Visa dagsplan →</div>
+              </div>
+            </div>
+            <!-- Dagens fokus -->
+            <div class="panel">
+              <div class="panel-header"><span class="panel-title">Dagens fokus</span><span class="panel-sub">···</span></div>
+              <div class="focus-grid">
+                <div class="focus-tile danger"><div class="val">1</div><div class="lbl">Över deadline</div></div>
+                <div class="focus-tile warning"><div class="val">3</div><div class="lbl">Nära deadline</div></div>
+                <div class="focus-tile accent"><div class="val">5</div><div class="lbl">Uppföljning</div></div>
+                <div class="focus-tile neutral"><div class="val">2</div><div class="lbl">Möten idag</div></div>
+              </div>
+            </div>
+            <!-- KPI strip BEFORE — NO sparklines, NO extra detail -->
+            <div class="panel">
+              <div class="kpi-strip">
+                <div class="kpi-cell">
+                  <div class="kpi-label">Accepterat</div>
+                  <div class="kpi-val">120 000 kr</div>
+                  <div class="kpi-detail">Vunna offerter</div>
+                  <!-- no spark, no progress bar -->
+                </div>
+                <div class="kpi-cell">
+                  <div class="kpi-label">Aktiv pipeline</div>
+                  <div class="kpi-val">420 000 kr</div>
+                  <div class="kpi-detail">Skickade och visade</div>
+                </div>
+                <div class="kpi-cell">
+                  <div class="kpi-label">Vinstgrad</div>
+                  <div class="kpi-val">38%</div>
+                  <div class="kpi-detail">Av avslutade</div>
+                </div>
+                <div class="kpi-cell">
+                  <div class="kpi-label">Snittaffär</div>
+                  <div class="kpi-val">24 500 kr</div>
+                  <div class="kpi-detail">Vunna offerter</div>
+                </div>
+              </div>
+            </div>
+            <!-- Weather -->
+            <div class="panel">
+              <div class="panel-header"><span class="panel-title">Örebro</span><span class="panel-sub">09:24</span></div>
+              <div class="weather-body">
+                <div class="weather-temp">15°</div>
+                <div class="weather-cond">Molnigt</div>
+                <div class="weather-forecast">
+                  <span>Imorgon <strong>17°</strong></span>
+                  <span>Sön <strong>16°</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ROW 2 BEFORE -->
+          <div class="row2">
+            <!-- ActionQueue BEFORE — no label chips -->
+            <div class="panel" style="display:flex;flex-direction:column">
+              <div class="panel-header"><span class="panel-title">Kräver handling</span><span class="panel-sub">4 prioriterade</span></div>
+              <div class="aq-item">
+                <div class="aq-rail danger"></div>
+                <div><div class="aq-title">Ring Eriksson AB</div><div class="aq-sub">Offert #2456 · 50 000 kr · Över deadline</div></div>
+                <div class="aq-cta danger">Ring nu</div>
+              </div>
+              <div class="aq-item">
+                <div class="aq-rail warning"></div>
+                <div><div class="aq-title">Förläng Svensson Bygg AB</div><div class="aq-sub">Offert #2452 · 35 000 kr · Imorgon</div></div>
+                <div class="aq-cta warning">Förläng</div>
+              </div>
+              <div class="aq-item">
+                <div class="aq-rail neutral"></div>
+                <div><div class="aq-title">Skapa offert Norrlands El AB</div><div class="aq-sub">Lead kvalificerad · 28 000 kr</div></div>
+                <div class="aq-cta neutral">Skapa</div>
+              </div>
+              <div class="aq-item">
+                <div class="aq-rail neutral"></div>
+                <div><div class="aq-title">Förbered möte Andersson Fastigheter</div><div class="aq-sub">Idag kl. 15:00</div></div>
+                <div class="aq-cta neutral">Förbered</div>
+              </div>
+              <div style="margin-top:auto;padding:6px 10px;border-top:1px solid #f1f5f9;font-size:10px;color:#3b82f6;text-align:center">Visa alla (4) →</div>
+            </div>
+            <!-- OfferTable BEFORE -->
+            <div class="panel" style="display:flex;flex-direction:column">
+              <div class="panel-header">
+                <span class="panel-title">Aktiva offerter</span>
+                <div style="display:flex;gap:4px">
+                  <span style="font-size:10px;font-weight:600;color:#2563eb;background:#eff6ff;padding:2px 6px;border-radius:4px">Tabell</span>
+                  <span style="font-size:10px;font-weight:600;color:#94a3b8;padding:2px 6px">Diagram</span>
+                </div>
+              </div>
+              <div class="offer-tabs">
+                <div class="offer-tab active">Aktiva</div>
+                <div class="offer-tab">Risk</div>
+                <div class="offer-tab">Vunna</div>
+              </div>
+              <div class="offer-thead"><span>Status</span><span>Kund</span><span>Belopp</span><span>Deadline</span><span>Nästa steg</span></div>
+              <div class="offer-row"><span><span class="status-dot dot-sent"></span>Skickad</span><span>Eriksson AB</span><span>50 000 kr</span><span class="deadline-danger">Över deadline</span><span>Följ upp</span></div>
+              <div class="offer-row"><span><span class="status-dot dot-sent"></span>Skickad</span><span>Svensson Bygg AB</span><span>35 000 kr</span><span class="deadline-warning">1 dag kvar</span><span>Förläng</span></div>
+              <div class="offer-row"><span><span class="status-dot dot-viewed"></span>Visad</span><span>Norrlands El AB</span><span>28 000 kr</span><span class="deadline-ok">5 dagar kvar</span><span>Invänta</span></div>
+              <div class="offer-row"><span><span class="status-dot dot-draft"></span>Utkast</span><span>Andersson Fastigheter</span><span>75 000 kr</span><span class="deadline-ok">8 dagar</span><span>Skicka offert</span></div>
+              <div style="margin-top:auto;padding:6px 10px;border-top:1px solid #f1f5f9;font-size:10px;color:#3b82f6;text-align:center">Visa alla offerter →</div>
+            </div>
+          </div>
+
+          <!-- ROW 3 BEFORE -->
+          <div class="row3">
+            <!-- Pipeline BEFORE — 2×2 grid, 4 stages -->
+            <div class="panel">
+              <div class="panel-header"><span class="panel-title">Pipelineöversikt</span></div>
+              <div class="pipe-stages-old">
+                <div class="pipe-stage"><div class="pipe-stage-label">Leads</div><div class="pipe-stage-count">12</div><div class="pipe-stage-val">105 000 kr</div><div class="pipe-bar"><div class="pipe-bar-fill" style="width:60%"></div></div></div>
+                <div class="pipe-stage"><div class="pipe-stage-label">Offert skickad</div><div class="pipe-stage-count">6</div><div class="pipe-stage-val">98 000 kr</div><div class="pipe-bar"><div class="pipe-bar-fill" style="width:40%"></div></div></div>
+                <div class="pipe-stage"><div class="pipe-stage-label">Förhandling</div><div class="pipe-stage-count">4</div><div class="pipe-stage-val">56 000 kr</div><div class="pipe-bar"><div class="pipe-bar-fill" style="width:25%"></div></div></div>
+                <div class="pipe-stage"><div class="pipe-stage-label">Accepterad</div><div class="pipe-stage-count">3</div><div class="pipe-stage-val">77 000 kr</div><div class="pipe-bar"><div class="pipe-bar-fill" style="width:20%"></div></div></div>
+              </div>
+              <div class="pipe-footer">
+                <div class="pipe-stat"><p>Vägd pipeline</p><span>105 000</span></div>
+                <div class="pipe-stat"><p>Snittaffär</p><span>21 000</span></div>
+                <div class="pipe-stat"><p>Konvertering</p><span>38%</span></div>
+              </div>
+            </div>
+            <!-- ProjectHandoff BEFORE — 3 generic boxes -->
+            <div class="panel">
+              <div class="panel-header"><span class="panel-title">Projektöverlämning</span></div>
+              <div class="ph-metrics-old">
+                <div class="ph-metric-old"><p>Accepterade</p><span>3</span></div>
+                <div class="ph-metric-old"><p>Värde</p><span>77k</span></div>
+                <div class="ph-metric-old"><p>Redo</p><span>2</span></div>
+              </div>
+              <div class="ph-proj-row"><div><div class="ph-proj-name">Installation solpaneler</div><div class="ph-proj-cust">Teknikbolaget Sverige AB</div></div><span>Klar</span><span>Idag</span></div>
+              <div class="ph-proj-row"><div><div class="ph-proj-name">Elinstallation</div><div class="ph-proj-cust">Norrlands El AB</div></div><span>Pågår</span><span>15 maj</span></div>
+            </div>
+            <!-- Activity BEFORE -->
+            <div class="panel">
+              <div class="panel-header"><span class="panel-title">Senaste aktivitet</span><span class="panel-sub">Live</span></div>
+              <div class="act-item"><div class="act-icon success">✓</div><div><div class="act-title">Offert accepterad</div><div class="act-sub">Teknikbolaget Sverige · #2439</div></div><div class="act-time">08:47</div></div>
+              <div class="act-item"><div class="act-icon sent">→</div><div><div class="act-title">Offert skickad</div><div class="act-sub">Svensson Bygg AB · #2452</div></div><div class="act-time">Igår</div></div>
+              <div class="act-item"><div class="act-icon viewed">👁</div><div><div class="act-title">Offert visad</div><div class="act-sub">Norrlands El AB · #2448</div></div><div class="act-time">Igår</div></div>
+              <div style="margin:4px 10px;padding:6px 8px;background:#f8fafc;border-radius:5px;border:1px solid #e2e8f0;font-size:9px;color:#475569">
+                💡 <strong style="color:#1e293b">Insikt</strong><br>Vinstgrad 38% på avslutade offerter.
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /dashboard-content -->
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </div><!-- /col before -->
+
+  <!-- ═══════════════ AFTER ═══════════════ -->
+  <div class="col">
+    <div class="col-label">Proposed (After) — <span style="color:#16a34a">green</span> = added · <span style="color:#d97706">orange</span> = changed</div>
+
+    <div class="shell">
+      <!-- Sidebar AFTER -->
+      <div class="sidebar rel">
+        <div class="change-overlay" style="top:48px;left:0;right:0;bottom:56px;border-radius:0"></div>
+        <div class="sidebar-header">
+          <div class="brand-mark">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </div>
+          <span class="brand-name">Soleria</span>
+        </div>
+        <div class="sidebar-nav">
+          <!-- Section renamed -->
+          <div class="nav-section-label" style="color:#d97706">Huvudmeny ← renamed</div>
+          <div class="nav-item active"><div class="dot"></div> Översikt</div>
+          <div class="nav-item"><div class="dot"></div> Offerter</div>
+          <div class="nav-item"><div class="dot"></div> Projekt</div>
+          <!-- NEW items -->
+          <div class="nav-item rel"><div class="dot" style="background:#bbf7d0"></div> Kunder <span class="nav-highlight">NY</span></div>
+          <div class="nav-item rel"><div class="dot" style="background:#bbf7d0"></div> Aktivitet <span class="nav-highlight">NY</span></div>
+          <!-- New section: Verktyg -->
+          <div class="nav-section-label" style="margin-top:4px;color:#16a34a">Verktyg ← new section</div>
+          <div class="nav-item"><div class="dot"></div> Mallar</div>
+          <div class="nav-item rel"><div class="dot" style="background:#bbf7d0"></div> Prissättning <span class="nav-highlight">NY</span></div>
+          <div class="nav-item"><div class="dot"></div> Produktbibliotek</div>
+          <!-- Renamed section -->
+          <div class="nav-section-label" style="margin-top:4px;color:#d97706">Administration ← renamed</div>
+          <div class="nav-item" style="opacity:.7;font-size:11px"><div class="dot"></div> Företag ← moved here</div>
+          <div class="nav-item"><div class="dot"></div> Användare</div>
+          <div class="nav-item"><div class="dot"></div> Inställningar</div>
+        </div>
+        <div class="sidebar-footer">
+          <div class="user-row">
+            <div class="avatar">MZ</div>
+            <div class="user-info">
+              <p>Malek Zeytoun</p>
+              <span>malek@soleria.se</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main AFTER -->
+      <div class="main">
+        <!-- Topbar AFTER — bell added -->
+        <div class="topbar">
+          <div class="breadcrumb">Översikt / <span>Dashboard</span></div>
+          <div class="topbar-right rel">
+            <div class="search-pill">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Sök kund, offert, projekt... <span class="kbd">⌘K</span>
+            </div>
+            <!-- NEW: bell with badge -->
+            <div class="bell rel" style="border-color:#bbf7d0;background:#f0fdf4">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <div class="bell-badge"></div>
+            </div>
+            <div class="btn-primary">+ Ny offert</div>
+          </div>
+        </div>
+
+        <div class="dashboard-content">
+          <!-- ROW 1 AFTER -->
+          <div class="row1">
+            <!-- Idag — unchanged -->
+            <div class="panel">
+              <div class="panel-header"><span class="panel-title">Idag</span><span class="panel-sub">Fre 2 maj</span></div>
+              <div class="panel-body today-cell">
+                <div class="today-meeting">📅 Möte kl. 15:00<br>Andersson Fastigheter</div>
+                <div class="today-btn">Visa dagsplan →</div>
+              </div>
+            </div>
+            <!-- Dagens fokus — unchanged -->
+            <div class="panel">
+              <div class="panel-header"><span class="panel-title">Dagens fokus</span><span class="panel-sub">···</span></div>
+              <div class="focus-grid">
+                <div class="focus-tile danger"><div class="val">1</div><div class="lbl">Över deadline</div></div>
+                <div class="focus-tile warning"><div class="val">3</div><div class="lbl">Nära deadline</div></div>
+                <div class="focus-tile accent"><div class="val">5</div><div class="lbl">Uppföljning</div></div>
+                <div class="focus-tile neutral"><div class="val">2</div><div class="lbl">Möten idag</div></div>
+              </div>
+            </div>
+            <!-- KPI strip AFTER — sparklines + extra detail + progress -->
+            <div class="panel rel">
+              <div class="add-overlay"></div>
+              <div class="kpi-strip">
+                <div class="kpi-cell">
+                  <div class="kpi-label">Accepterat</div>
+                  <div class="kpi-val">120 000 kr</div>
+                  <div class="kpi-detail">60% av målet (200 000 kr)</div>
+                  <div class="kpi-progress"><div class="kpi-progress-fill" style="width:60%"></div></div>
+                  <!-- sparkline -->
+                  <svg class="kpi-spark" width="44" height="18" viewBox="0 0 44 18">
+                    <polyline points="0,14 8,10 16,12 24,7 32,9 44,3" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="kpi-cell">
+                  <div class="kpi-label">Aktiv pipeline</div>
+                  <div class="kpi-val">420 000 kr</div>
+                  <div class="kpi-detail">18 aktiva offerter</div>
+                  <svg class="kpi-spark" width="44" height="18" viewBox="0 0 44 18">
+                    <polyline points="0,12 8,10 16,13 24,8 32,6 44,4" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="kpi-cell">
+                  <div class="kpi-label">Vinstgrad</div>
+                  <div class="kpi-val">38%</div>
+                  <div class="kpi-detail">16 av 42 vunna</div>
+                  <svg class="kpi-spark" width="44" height="18" viewBox="0 0 44 18">
+                    <polyline points="0,15 8,12 16,10 24,11 32,8 44,6" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="kpi-cell">
+                  <div class="kpi-label">Snittaffär</div>
+                  <div class="kpi-val">24 500 kr</div>
+                  <div class="kpi-trend-up">▲ +8% från förra mån.</div>
+                  <svg class="kpi-spark" width="44" height="18" viewBox="0 0 44 18">
+                    <polyline points="0,16 8,13 16,11 24,9 32,8 44,4" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <!-- Weather — unchanged -->
+            <div class="panel">
+              <div class="panel-header"><span class="panel-title">Örebro</span><span class="panel-sub">09:24</span></div>
+              <div class="weather-body">
+                <div class="weather-temp">15°</div>
+                <div class="weather-cond">Molnigt</div>
+                <div class="weather-forecast">
+                  <span>Imorgon <strong>17°</strong></span>
+                  <span>Sön <strong>16°</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ROW 2 AFTER -->
+          <div class="row2">
+            <!-- ActionQueue AFTER — label chips added -->
+            <div class="panel rel" style="display:flex;flex-direction:column">
+              <div class="add-overlay"></div>
+              <div class="panel-header"><span class="panel-title">Kräver handling</span><span class="panel-sub">4 prioriterade</span></div>
+              <div class="aq-item">
+                <div class="aq-rail danger"></div>
+                <div>
+                  <div class="aq-title"><span class="aq-label-chip danger">Kritisk</span>Ring Eriksson AB</div>
+                  <div class="aq-sub">Offert #2456 · 50 000 kr · Över deadline</div>
+                </div>
+                <div class="aq-cta danger">Ring nu</div>
+              </div>
+              <div class="aq-item">
+                <div class="aq-rail warning"></div>
+                <div>
+                  <div class="aq-title"><span class="aq-label-chip warning">Varning</span>Förläng Svensson Bygg AB</div>
+                  <div class="aq-sub">Offert #2452 · 35 000 kr · Imorgon</div>
+                </div>
+                <div class="aq-cta warning">Förläng</div>
+              </div>
+              <div class="aq-item">
+                <div class="aq-rail neutral"></div>
+                <div>
+                  <div class="aq-title"><span class="aq-label-chip neutral">Normal</span>Skapa offert Norrlands El AB</div>
+                  <div class="aq-sub">Lead kvalificerad · 28 000 kr</div>
+                </div>
+                <div class="aq-cta neutral">Skapa</div>
+              </div>
+              <div class="aq-item">
+                <div class="aq-rail neutral"></div>
+                <div>
+                  <div class="aq-title"><span class="aq-label-chip neutral">Normal</span>Förbered möte Andersson Fastigheter</div>
+                  <div class="aq-sub">Idag kl. 15:00</div>
+                </div>
+                <div class="aq-cta neutral">Förbered</div>
+              </div>
+              <div style="margin-top:auto;padding:6px 10px;border-top:1px solid #f1f5f9;font-size:10px;color:#3b82f6;text-align:center">Visa alla (4) →</div>
+            </div>
+            <!-- OfferTable — unchanged -->
+            <div class="panel" style="display:flex;flex-direction:column">
+              <div class="panel-header">
+                <span class="panel-title">Aktiva offerter</span>
+                <div style="display:flex;gap:4px">
+                  <span style="font-size:10px;font-weight:600;color:#2563eb;background:#eff6ff;padding:2px 6px;border-radius:4px">Tabell</span>
+                  <span style="font-size:10px;font-weight:600;color:#94a3b8;padding:2px 6px">Diagram</span>
+                </div>
+              </div>
+              <div class="offer-tabs">
+                <div class="offer-tab active">Aktiva</div>
+                <div class="offer-tab">Risk</div>
+                <div class="offer-tab">Vunna</div>
+              </div>
+              <div class="offer-thead"><span>Status</span><span>Kund</span><span>Belopp</span><span>Deadline</span><span>Nästa steg</span></div>
+              <div class="offer-row"><span><span class="status-dot dot-sent"></span>Skickad</span><span>Eriksson AB</span><span>50 000 kr</span><span class="deadline-danger">Över deadline</span><span>Följ upp</span></div>
+              <div class="offer-row"><span><span class="status-dot dot-sent"></span>Skickad</span><span>Svensson Bygg AB</span><span>35 000 kr</span><span class="deadline-warning">1 dag kvar</span><span>Förläng</span></div>
+              <div class="offer-row"><span><span class="status-dot dot-viewed"></span>Visad</span><span>Norrlands El AB</span><span>28 000 kr</span><span class="deadline-ok">5 dagar kvar</span><span>Invänta</span></div>
+              <div class="offer-row"><span><span class="status-dot dot-draft"></span>Utkast</span><span>Andersson Fastigheter</span><span>75 000 kr</span><span class="deadline-ok">8 dagar</span><span>Skicka offert</span></div>
+              <div style="margin-top:auto;padding:6px 10px;border-top:1px solid #f1f5f9;font-size:10px;color:#3b82f6;text-align:center">Visa alla offerter →</div>
+            </div>
+          </div>
+
+          <!-- ROW 3 AFTER -->
+          <div class="row3">
+            <!-- Pipeline AFTER — 5 stages horizontal -->
+            <div class="panel rel">
+              <div class="change-overlay" style="top:32px;bottom:0;border-radius:0 0 6px 6px"></div>
+              <div class="panel-header"><span class="panel-title">Pipelineöversikt</span></div>
+              <div class="pipe-stages-new">
+                <div class="pipe-stage"><div class="pipe-stage-label">Leads</div><div class="pipe-stage-count" style="font-size:13px">12</div><div class="pipe-stage-val">105k</div><div class="pipe-bar"><div class="pipe-bar-fill" style="width:60%"></div></div></div>
+                <div class="pipe-stage"><div class="pipe-stage-label">Kontakt</div><div class="pipe-stage-count" style="font-size:13px">8</div><div class="pipe-stage-val">84k</div><div class="pipe-bar"><div class="pipe-bar-fill" style="width:48%"></div></div></div>
+                <div class="pipe-stage"><div class="pipe-stage-label">Offert</div><div class="pipe-stage-count" style="font-size:13px">6</div><div class="pipe-stage-val">98k</div><div class="pipe-bar"><div class="pipe-bar-fill" style="width:40%"></div></div></div>
+                <div class="pipe-stage"><div class="pipe-stage-label">Förhandl.</div><div class="pipe-stage-count" style="font-size:13px">4</div><div class="pipe-stage-val">56k</div><div class="pipe-bar"><div class="pipe-bar-fill" style="width:25%"></div></div></div>
+                <div class="pipe-stage"><div class="pipe-stage-label">Accept.</div><div class="pipe-stage-count" style="font-size:13px">3</div><div class="pipe-stage-val">77k</div><div class="pipe-bar"><div class="pipe-bar-fill" style="width:20%"></div></div></div>
+              </div>
+              <div class="pipe-footer">
+                <div class="pipe-stat"><p>Vägd pipeline</p><span>105 000</span></div>
+                <div class="pipe-stat"><p>Snittaffär</p><span>21 000</span></div>
+                <div class="pipe-stat"><p>Konvertering</p><span>38%</span></div>
+              </div>
+            </div>
+            <!-- ProjectHandoff AFTER — column layout + status badge -->
+            <div class="panel rel">
+              <div class="change-overlay" style="top:32px;bottom:0;border-radius:0 0 6px 6px"></div>
+              <div class="panel-header"><span class="panel-title">Projektöverlämning</span></div>
+              <!-- 3 column headers with count + value -->
+              <div class="ph-cols-new">
+                <div class="ph-col-new">
+                  <div class="ph-col-label">Klar för överlämning</div>
+                  <div class="ph-col-count">2</div>
+                  <div class="ph-col-val">120 000 kr</div>
+                </div>
+                <div class="ph-col-new">
+                  <div class="ph-col-label">Pågår</div>
+                  <div class="ph-col-count">2</div>
+                  <div class="ph-col-val">145 000 kr</div>
+                </div>
+                <div class="ph-col-new">
+                  <div class="ph-col-label">Planerad</div>
+                  <div class="ph-col-count">1</div>
+                  <div class="ph-col-val">28 000 kr</div>
+                </div>
+              </div>
+              <!-- project rows with Status badge column -->
+              <div class="ph-proj-row">
+                <div><div class="ph-proj-name">Installation solpaneler</div><div class="ph-proj-cust">Teknikbolaget Sverige AB</div></div>
+                <span class="status-badge klar">Klar</span>
+                <span style="font-size:9px;color:#64748b">Idag</span>
+              </div>
+              <div class="ph-proj-row">
+                <div><div class="ph-proj-name">Elinstallation</div><div class="ph-proj-cust">Norrlands El AB</div></div>
+                <span class="status-badge pagar">Pågår</span>
+                <span style="font-size:9px;color:#64748b">15 maj</span>
+              </div>
+            </div>
+            <!-- Activity — minor text change -->
+            <div class="panel rel">
+              <div class="panel-header"><span class="panel-title">Senaste aktivitet</span><span class="panel-sub">Live</span></div>
+              <div class="act-item"><div class="act-icon success">✓</div><div><div class="act-title">Offert accepterad</div><div class="act-sub">Teknikbolaget Sverige · #2439</div></div><div class="act-time">08:47</div></div>
+              <div class="act-item"><div class="act-icon sent">→</div><div><div class="act-title">Offert skickad</div><div class="act-sub">Svensson Bygg AB · #2452</div></div><div class="act-time">Igår</div></div>
+              <div class="act-item"><div class="act-icon viewed">👁</div><div><div class="act-title">Offert visad</div><div class="act-sub">Norrlands El AB · #2448</div></div><div class="act-time">Igår</div></div>
+              <div style="margin:4px 10px;padding:6px 8px;background:#f8fafc;border-radius:5px;border:1px solid #e2e8f0;font-size:9px;color:#475569">
+                💡 <strong style="color:#1e293b">Insikter</strong><br>Vinstgrad 38% — 6% högre än förra månaden.
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /dashboard-content -->
+      </div><!-- /main -->
+    </div><!-- /shell -->
+  </div><!-- /col after -->
+
+</div><!-- /columns -->
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch same"></div> Unchanged</div>
+  <div class="legend-item"><div style="width:16px;height:16px;border:2px dashed #f59e0b;border-radius:3px;flex-shrink:0"></div> Changed</div>
+  <div class="legend-item"><div style="width:16px;height:16px;border:2px dashed #16a34a;border-radius:3px;flex-shrink:0"></div> Added</div>
+</div>
+
+<div class="note" style="margin-top:16px;max-width:900px">
+  <strong>Summary of what's actually changing:</strong><br>
+  1. <strong>Sidebar</strong> — section names + 2 new items (Kunder, Aktivitet) + new "Verktyg" section + Prissättning link + Företag moved to Administration.<br>
+  2. <strong>Topbar</strong> — notification bell with badge added between search and CTA.<br>
+  3. <strong>KPI tiles (row 1)</strong> — sparkline charts + richer secondary text (goal %, count, trend %) added inside existing tiles. Tiles stay same size.<br>
+  4. <strong>ActionQueue (row 2 left)</strong> — "Kritisk / Varning / Normal" text chips added inline with item title. Structure otherwise identical.<br>
+  5. <strong>Pipeline (row 3 left)</strong> — 4-stage 2×2 grid → 5-stage horizontal row. "Kontakt" stage added.<br>
+  6. <strong>ProjectHandoff (row 3 center)</strong> — 3 generic boxes → 3 column headers (Klar/Pågår/Planerad) with count + value. Project table gets a Status badge column.<br>
+  7. <strong>Activity insight</strong> — title "Insikt" → "Insikter" + richer sentence. Cosmetic only.
+</div>
+
+</body>
+</html>

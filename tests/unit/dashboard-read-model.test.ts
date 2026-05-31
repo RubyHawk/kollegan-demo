@@ -23,6 +23,7 @@ function snapshot(overrides: Partial<DashboardSnapshot> = {}): DashboardSnapshot
     activityData: [],
     meetingsToday: [],
     projectHandoffs: [],
+    kpiWindow: [],
     recentOffers: [
       {
         id: 'offer_overdue',

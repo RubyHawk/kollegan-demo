@@ -32,6 +32,8 @@ export default function DashboardView({
   offerTable,
   projectHandoffs,
   activityFeed,
+  kpiTrends,
+  projectStats,
 }: DashboardViewProps) {
   return (
     <div className="min-h-full bg-[oklch(0.985_0.002_250)] [--cockpit-border:oklch(0.905_0.004_250)] [--cockpit-border-soft:oklch(0.955_0.003_250)] [--cockpit-divider:oklch(0.935_0.003_250)] [--cockpit-shadow:0_1px_2px_rgba(15,23,42,0.025)]">
@@ -39,17 +41,18 @@ export default function DashboardView({
       <div className="w-full px-4 py-3 lg:pb-3">
         <motion.div
           {...STAGGER_CONTAINER}
-          className="space-y-3 xl:grid xl:grid-rows-[164px_420px_264px] xl:gap-3 xl:space-y-0"
+          className="space-y-3 xl:grid xl:grid-rows-[172px_420px_264px] xl:gap-3 xl:space-y-0"
         >
           <TopCockpitBand
             today={today}
-            focusMetrics={focusMetrics}
             calendar={calendar}
             weather={weather}
             acceptedValue={acceptedValue}
             pipelineValue={pipelineValue}
             acceptanceRate={acceptanceRate}
             averageWonValue={pipelineOverview.averageWonValue}
+            acceptedCount={pipelineOverview.stages.find((s) => s.id === 'accepted')?.count ?? 0}
+            kpiTrends={kpiTrends}
           />
 
           <div className="grid items-stretch gap-3 xl:min-h-0 xl:grid-cols-12">
@@ -59,7 +62,7 @@ export default function DashboardView({
 
           <div className="grid items-stretch gap-3 xl:min-h-0 xl:grid-cols-12">
             <PipelinePanel overview={pipelineOverview} acceptanceRate={acceptanceRate} />
-            <ProjectHandoffPanel projects={projectHandoffs} overview={pipelineOverview} />
+            <ProjectHandoffPanel projects={projectHandoffs} overview={pipelineOverview} projectStats={projectStats} />
             <ActivityFeedPanel items={activityFeed} focusMetrics={focusMetrics} acceptanceRate={acceptanceRate} />
           </div>
         </motion.div>

@@ -10,6 +10,8 @@ import {
   PackageIcon,
   CompanyIcon,
   HomeIcon,
+  UsersIcon,
+  BarChart2Icon,
 } from '@shared/ui/icons';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -63,17 +65,17 @@ export interface SidebarProps {
 
 export const NAV_CONFIG: NavSection[] = [
   {
-    section: 'Offertsystem',
+    section: 'Huvudmeny',
     items: [
-      { type: 'link', href: '/',          label: 'Översikt',         icon: HomeIcon, exact: true },
+      { type: 'link', href: '/',        label: 'Översikt', icon: HomeIcon, exact: true },
       {
         type: 'dropdown',
         key: 'offerter',
         label: 'Offerter',
         icon: ReceiptIcon,
         items: [
-          { href: '/offerter',     label: 'Alla offerter' },
-          { href: '/offerter/ny',  label: 'Ny offert' },
+          { href: '/offerter',    label: 'Alla offerter' },
+          { href: '/offerter/ny', label: 'Ny offert' },
         ],
       },
       {
@@ -82,21 +84,28 @@ export const NAV_CONFIG: NavSection[] = [
         label: 'Projekt',
         icon: BriefcaseIcon,
         items: [
-          { href: '/projekt', label: 'Alla projekt' },
-          { href: '/projekt?stage=uppgifter', label: 'Nya' },
-          { href: '/projekt?stage=bestallt', label: 'Beställda' },
+          { href: '/projekt',                    label: 'Alla projekt' },
+          { href: '/projekt?stage=uppgifter',    label: 'Nya' },
+          { href: '/projekt?stage=bestallt',     label: 'Beställda' },
         ],
       },
-      { type: 'link', href: '/mallar',    label: 'Mallar',           icon: FileTextIcon },
-      { type: 'link', href: '/produkter', label: 'Produktbibliotek', icon: PackageIcon },
-      { type: 'link', href: '/installningar/foretag', label: 'Företag',          icon: CompanyIcon },
+      { type: 'link', href: '/crm',      label: 'Kunder',   icon: UsersIcon },
+      { type: 'link', href: '/analytics', label: 'Aktivitet', icon: BarChart2Icon },
     ],
   },
   {
-    section: 'Admin',
+    section: 'Verktyg',
+    items: [
+      { type: 'link', href: '/mallar',    label: 'Mallar',           icon: FileTextIcon },
+      { type: 'link', href: '/produkter', label: 'Produktbibliotek', icon: PackageIcon },
+    ],
+  },
+  {
+    section: 'Administration',
     adminOnly: true,
     items: [
-      { type: 'link', href: '/installningar/anvandare', label: 'Användare', icon: UserIcon },
+      { type: 'link', href: '/installningar/foretag',   label: 'Företag',      icon: CompanyIcon },
+      { type: 'link', href: '/installningar/anvandare', label: 'Användare',    icon: UserIcon },
       {
         type: 'dropdown',
         key: 'installningar',
