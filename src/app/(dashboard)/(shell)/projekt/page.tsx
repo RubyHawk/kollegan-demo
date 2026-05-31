@@ -102,6 +102,7 @@ export default function ProjectsBoardPage() {
   const total = useProjectsListStore((s) => s.total);
   const counts = useProjectsListStore((s) => s.counts);
   const loading = useProjectsListStore((s) => s.loading);
+  const loadingMore = useProjectsListStore((s) => s.loadingMore);
   const error = useProjectsListStore((s) => s.error);
   const searchInput = useProjectsListStore((s) => s.searchInput);
   const search = useProjectsListStore((s) => s.search);
@@ -111,6 +112,7 @@ export default function ProjectsBoardPage() {
   const setStageFilter = useProjectsListStore((s) => s.setStageFilter);
   const setError = useProjectsListStore((s) => s.setError);
   const load = useProjectsListStore((s) => s.load);
+  const loadMore = useProjectsListStore((s) => s.loadMore);
   const loadCounts = useProjectsListStore((s) => s.loadCounts);
 
   useEffect(() => {
@@ -184,8 +186,18 @@ export default function ProjectsBoardPage() {
       )}
 
       {hasMore && !loading && (
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-muted)]">
-          Visar {projects.length} av {total} projekt. Använd scenefilter för att begränsa vyn.
+        <div className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
+          <span>Visar {projects.length} av {total} projekt.</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void loadMore()}
+            disabled={loadingMore}
+            className="self-start sm:self-auto"
+          >
+            {loadingMore ? 'Laddar...' : 'Visa fler'}
+          </Button>
         </div>
       )}
 

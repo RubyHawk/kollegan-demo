@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { cn } from '@shared/lib/utils';
 import {
   createCustomer,
@@ -34,15 +35,18 @@ function fmtDate(iso: string) {
 }
 
 const EMPTY_FORM = { name: '', phone: '', email: '', company: '', notes: '' };
+const PAGE_SIZE = 50;
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function ContactsPage() {
+  const searchParams = useSearchParams();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [total,    setTotal]    = useState(0);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState<string | null>(null);
-  const [search,   setSearch]   = useState('');
+  const [search,   setSearch]   = useState(searchParams.get('search') ?? '');
+  const [currentPage, setCurrentPage] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [form,     setForm]     = useState(EMPTY_FORM);
   const [saving,   setSaving]   = useState(false);
@@ -53,7 +57,11 @@ export default function ContactsPage() {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const result = await listCustomers({ limit: 50, offset: 0, search: search.trim() || undefined });
+      const result = await listCustomers({
+        limit: PAGE_SIZE,
+        offset: currentPage * PAGE_SIZE,
+        search: search.trim() || undefined,
+      });
       setContacts(result.contacts);
       setTotal(result.total);
     } catch (e) {
@@ -61,7 +69,7 @@ export default function ContactsPage() {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [currentPage, search]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -114,6 +122,10 @@ export default function ContactsPage() {
       setActing(null);
     }
   }, [load]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const canGoBack = currentPage > 0;
+  const canGoForward = currentPage < totalPages - 1;
 
   return (
     <div className="px-8 py-10 max-w-6xl mx-auto">
@@ -248,7 +260,10 @@ export default function ContactsPage() {
             type="search"
             placeholder="Sök kontakt…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(0);
+            }}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
           />
         </div>
@@ -335,9 +350,32 @@ export default function ContactsPage() {
               </tbody>
             </table>
           </div>
-          {total > contacts.length && (
-            <div className="px-4 py-3 border-t border-[var(--border)] bg-[var(--surface-alt)] text-xs text-[var(--text-muted)] text-center">
-              Visar {contacts.length} av {total} kontakter
+          {total > 0 && (
+            <div className="flex flex-col gap-3 border-t border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-xs text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-center sm:text-left">
+                Visar {currentPage * PAGE_SIZE + 1}-{currentPage * PAGE_SIZE + contacts.length} av {total} kontakter
+              </span>
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.max(0, page - 1))}
+                  disabled={!canGoBack}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Föregående
+                </button>
+                <span className="tabular-nums">
+                  {currentPage + 1}/{totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => page + 1)}
+                  disabled={!canGoForward}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Nästa
+                </button>
+              </div>
             </div>
           )}
         </div>
