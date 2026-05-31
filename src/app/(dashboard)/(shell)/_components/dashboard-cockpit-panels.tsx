@@ -57,12 +57,6 @@ export function ActionQueue({ items }: { items: DashboardActionItem[] }) {
               <ActionQueueRow key={item.id} item={item} />
             ))}
           </div>
-          <div className="mx-3.5 my-2 flex flex-1 items-start gap-2.5 overflow-hidden rounded-lg border border-dashed border-[var(--cockpit-border-soft,var(--border))] bg-[var(--surface-1)] px-3 py-2.5">
-            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-50 ring-1 ring-amber-200">
-              <Lightbulb size={13} weight="duotone" className="text-amber-500" />
-            </span>
-            <p className="text-[11.5px] leading-[1.55] text-[#475569]">{insightText}</p>
-          </div>
           <Link
             href="/offerter"
             className="flex h-9 shrink-0 items-center justify-center border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] text-[11.5px] font-semibold text-[var(--accent)] hover:underline"
@@ -226,7 +220,9 @@ export function OfferTable({ rows }: { rows: DashboardOfferTableRow[] }) {
                   </span>
                   <span className="whitespace-nowrap pr-3 text-xs font-semibold tabular-nums text-[var(--text-primary)]">{row.displayAmount}</span>
                   <span className="min-w-0 pr-3">
-                    <DashboardBadge tone={row.deadlineTone}>{row.displayRiskLabel}</DashboardBadge>
+                    {row.displayRiskLabel ? (
+                      <DashboardBadge tone={row.deadlineTone}>{row.displayRiskLabel}</DashboardBadge>
+                    ) : null}
                   </span>
                   <span className="truncate text-xs text-[var(--text-secondary)]">{row.displayNextAction}</span>
                 </Link>
@@ -355,9 +351,81 @@ function OfferDiagram({ rows }: { rows: DashboardOfferTableRow[] }) {
   );
 }
 
+const PIPELINE_SHORT_LABELS: Record<string, string> = {
+  draft: 'Utkast',
+  sent: 'Skickad',
+  viewed: 'Förhandling',
+  accepted: 'Accepterad',
+};
+
+const PIPELINE_FUNNEL_COLORS: Record<string, string> = {
+  draft: '#94a3b8',
+  sent: '#3b82f6',
+  viewed: '#8b5cf6',
+  accepted: '#16a34a',
+};
+
 // ── PipelinePanel ─────────────────────────────────────────────────────────────
 
 export function PipelinePanel({
+  overview,
+  acceptanceRate,
+}: {
+  overview: DashboardPipelineOverview;
+  acceptanceRate: number | null;
+}) {
+  const [view, setView] = useState<'cards' | 'funnel'>('cards');
+
+  return (
+    <Panel
+      title="Pipelineöversikt"
+      eyebrow={`Totalt ${fmtCompactSEK(overview.totalValue)} i pipeline`}
+      action={
+        <div className="flex items-center gap-1">
+          <PipelineViewToggle view={view} onViewChange={setView} />
+          <DotsThreeVertical size={16} weight="bold" className="ml-1 text-[var(--text-muted)]" />
+        </div>
+      }
+      className="xl:col-span-4"
+    >
+      {view === 'funnel' ? (
+        <PipelineFunnelView overview={overview} acceptanceRate={acceptanceRate} />
+      ) : (
+        <PipelineCardsView overview={overview} acceptanceRate={acceptanceRate} />
+      )}
+    </Panel>
+  );
+}
+
+function PipelineViewToggle({
+  view,
+  onViewChange,
+}: {
+  view: 'cards' | 'funnel';
+  onViewChange: (v: 'cards' | 'funnel') => void;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      {(['cards', 'funnel'] as const).map((v) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onViewChange(v)}
+          className={cn(
+            'rounded px-2 py-1 text-[11px] font-semibold transition-colors',
+            view === v
+              ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
+          )}
+        >
+          {v === 'cards' ? 'Kort' : 'Tratt'}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PipelineCardsView({
   overview,
   acceptanceRate,
 }: {
@@ -368,38 +436,108 @@ export function PipelinePanel({
   const conversionDisplay = acceptanceRate !== null ? `${acceptanceRate}%` : '–';
 
   return (
-    <Panel title="Pipelineöversikt" eyebrow={`Totalt ${fmtCompactSEK(overview.totalValue)} i pipeline`} action={<DotsThreeVertical size={16} weight="bold" className="text-[var(--text-muted)]" />} className="xl:col-span-4">
-      <div className="flex flex-1 flex-col px-3.5 py-3">
-        <div className="grid grid-cols-4 gap-1.5" style={{ height: 108 }}>
-          {overview.stages.map((stage) => (
-            <Link
-              key={stage.id}
-              href={`/offerter?status=${stage.id}`}
-              className="flex min-w-0 flex-col justify-between rounded-md border border-[var(--cockpit-border-soft,var(--border))] bg-[var(--surface-0)] px-2 py-2 transition-colors hover:bg-[var(--surface-hover)]"
-            >
-              <span className="min-w-0">
-                <span className="block truncate text-[9.5px] font-semibold uppercase tracking-[.04em] text-[var(--text-muted)]">{stage.label}</span>
-                <span className="mt-2 block text-[17px] font-bold tabular-nums leading-none text-[var(--text-primary)]">{stage.count}</span>
-                <span className="mt-0.5 block truncate text-[10px] font-semibold tabular-nums text-[var(--text-secondary)]">{fmtCompactSEK(stage.value)}</span>
-              </span>
-              <span className="h-1 overflow-hidden rounded-full bg-[var(--surface-2)]">
-                <motion.span
-                  initial={{ width: 0 }}
-                  animate={{ width: `${stage.percent}%` }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                  className="block h-full rounded-full bg-[var(--accent)]"
-                />
-              </span>
-            </Link>
-          ))}
-        </div>
-        <div className="mt-auto grid grid-cols-3 gap-3 border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] pt-2.5">
-          <PipelineStat label="Vägd pipeline" value={fmtSEK(weighted)} />
-          <PipelineStat label="Snittaffär" value={overview.averageWonValue > 0 ? fmtSEK(overview.averageWonValue) : '--'} />
-          <PipelineStat label="Konvertering" value={conversionDisplay} />
-        </div>
+    <div className="flex flex-1 flex-col px-3.5 py-3">
+      <div className="grid grid-cols-4 gap-1.5" style={{ height: 108 }}>
+        {overview.stages.map((stage) => (
+          <Link
+            key={stage.id}
+            href={`/offerter?status=${stage.id}`}
+            className="flex min-w-0 flex-col justify-between rounded-md border border-[var(--cockpit-border-soft,var(--border))] bg-[var(--surface-0)] px-2 py-2 transition-colors hover:bg-[var(--surface-hover)]"
+          >
+            <span className="min-w-0">
+              <span className="block truncate text-[9.5px] font-semibold uppercase tracking-[.04em] text-[var(--text-muted)]">{PIPELINE_SHORT_LABELS[stage.id] ?? stage.label}</span>
+              <span className="mt-2 block text-[17px] font-bold tabular-nums leading-none text-[var(--text-primary)]">{stage.count}</span>
+              <span className="mt-0.5 block truncate text-[10px] font-semibold tabular-nums text-[var(--text-secondary)]">{fmtCompactSEK(stage.value)}</span>
+            </span>
+            <span className="h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
+              <motion.span
+                initial={{ width: 0 }}
+                animate={{ width: `${stage.percent}%` }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                className="block h-full rounded-full bg-[var(--accent)]"
+              />
+            </span>
+          </Link>
+        ))}
       </div>
-    </Panel>
+      <div className="mt-auto grid grid-cols-3 gap-3 border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] pt-2.5">
+        <PipelineStat label="Vägd pipeline" value={fmtSEK(weighted)} />
+        <PipelineStat label="Snittaffär" value={overview.averageWonValue > 0 ? fmtSEK(overview.averageWonValue) : '--'} />
+        <PipelineStat label="Konvertering" value={conversionDisplay} />
+      </div>
+    </div>
+  );
+}
+
+function PipelineFunnelView({
+  overview,
+  acceptanceRate,
+}: {
+  overview: DashboardPipelineOverview;
+  acceptanceRate: number | null;
+}) {
+  const stages = overview.stages;
+  const maxValue = Math.max(...stages.map((s) => s.value), 1);
+  const weighted = Math.round(overview.totalValue * 0.35);
+  const conversionDisplay = acceptanceRate !== null ? `${acceptanceRate}%` : '–';
+
+  return (
+    <div className="flex flex-1 flex-col px-3.5 py-3">
+      <div className="flex flex-1 flex-col justify-center gap-0.5 overflow-y-auto">
+        {stages.map((stage, i) => {
+          const prevStage = i > 0 ? stages[i - 1] : null;
+          const convPct =
+            prevStage && prevStage.count > 0
+              ? Math.round((stage.count / prevStage.count) * 100)
+              : null;
+          const barPct = maxValue > 0 ? (stage.value / maxValue) * 100 : 0;
+          const color = PIPELINE_FUNNEL_COLORS[stage.id] ?? '#64748b';
+
+          return (
+            <div key={stage.id}>
+              {convPct !== null && (
+                <div className="flex items-center gap-1.5 py-0.5 pl-[88px] text-[9.5px] text-[var(--text-muted)]">
+                  <span className="inline-block h-3 w-px bg-[var(--cockpit-divider,var(--cockpit-border-soft))]" />
+                  <span>{convPct}% konverterat</span>
+                </div>
+              )}
+              <Link
+                href={`/offerter?status=${stage.id}`}
+                className="grid grid-cols-[84px_minmax(0,1fr)_76px] items-center gap-2 rounded-md py-0.5 transition-colors hover:bg-[var(--surface-hover)]"
+              >
+                <span className="truncate pl-0.5 text-[11px] font-medium text-[var(--text-secondary)]">
+                  {PIPELINE_SHORT_LABELS[stage.id] ?? stage.label}
+                </span>
+                <div className="relative h-[32px] overflow-hidden rounded-md bg-[var(--surface-2)]">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${barPct}%` }}
+                    transition={{ duration: 0.45, ease: 'easeOut', delay: i * 0.06 }}
+                    className="absolute inset-y-0 left-0 rounded-md"
+                    style={{ backgroundColor: color, opacity: 0.88 }}
+                  />
+                  {stage.count > 0 && (
+                    <span className="absolute inset-0 flex items-center px-2.5">
+                      <span className="relative z-10 text-[11px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]">
+                        {stage.count} st
+                      </span>
+                    </span>
+                  )}
+                </div>
+                <span className="text-right text-[10.5px] font-semibold tabular-nums text-[var(--text-secondary)]">
+                  {fmtCompactSEK(stage.value)}
+                </span>
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-auto grid grid-cols-3 gap-3 border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] pt-2.5">
+        <PipelineStat label="Vägd pipeline" value={fmtSEK(weighted)} />
+        <PipelineStat label="Snittaffär" value={overview.averageWonValue > 0 ? fmtSEK(overview.averageWonValue) : '--'} />
+        <PipelineStat label="Konvertering" value={conversionDisplay} />
+      </div>
+    </div>
   );
 }
 
@@ -519,6 +657,8 @@ export function ActivityFeedPanel({
   focusMetrics: DashboardFocusMetrics;
   acceptanceRate: number | null;
 }) {
+  const [view, setView] = useState<'feed' | 'fokus'>('feed');
+
   const insightLines = [
     acceptanceRate === null
       ? 'Vinstgrad visas när avslutade offerter finns.'
@@ -527,9 +667,36 @@ export function ActivityFeedPanel({
       ? `${focusMetrics.missingFollowUp} offerter saknar uppföljning.`
       : 'Uppföljningsläget är lugnt just nu.',
   ];
+
   return (
-    <Panel title="Senaste aktivitet" eyebrow="Live från erbjudanden" action={<Bell size={16} weight="duotone" className="text-[var(--text-muted)]" />} className="xl:col-span-4">
-      {items.length === 0 ? (
+    <Panel
+      title="Senaste aktivitet"
+      eyebrow="Live från erbjudanden"
+      action={
+        <div className="flex items-center gap-1">
+          {(['feed', 'fokus'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              className={cn(
+                'rounded px-2 py-1 text-[11px] font-semibold transition-colors',
+                view === v
+                  ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
+              )}
+            >
+              {v === 'feed' ? 'Feed' : 'Fokus'}
+            </button>
+          ))}
+          <Bell size={16} weight="duotone" className="ml-1 text-[var(--text-muted)]" />
+        </div>
+      }
+      className="xl:col-span-4"
+    >
+      {view === 'fokus' ? (
+        <ActivityFokusDiagram focusMetrics={focusMetrics} acceptanceRate={acceptanceRate} />
+      ) : items.length === 0 ? (
         <div className="flex flex-1 flex-col">
           <EmptyPanelState title="Ingen aktivitet ännu" body="Skapade, skickade, visade och accepterade offerter visas här." />
           <InsightBlock lines={insightLines} />
@@ -558,6 +725,62 @@ export function ActivityFeedPanel({
         </div>
       )}
     </Panel>
+  );
+}
+
+function ActivityFokusDiagram({
+  focusMetrics,
+  acceptanceRate,
+}: {
+  focusMetrics: DashboardFocusMetrics;
+  acceptanceRate: number | null;
+}) {
+  const metrics = [
+    { label: 'Förfallna', value: focusMetrics.overdue, color: '#dc2626', href: '/offerter?deadline=overdue' },
+    { label: 'Förfaller snart', value: focusMetrics.dueSoon, color: '#d97706', href: '/offerter?deadline=soon' },
+    { label: 'Saknar uppföljning', value: focusMetrics.missingFollowUp, color: '#3b82f6', href: '/offerter?filter=no-followup' },
+    { label: 'Möten idag', value: focusMetrics.meetingsToday, color: '#8b5cf6', href: '/meetings' },
+  ];
+  const maxVal = Math.max(...metrics.map((m) => m.value), 1);
+
+  return (
+    <div className="flex flex-1 flex-col px-3.5 py-3">
+      <div className="flex flex-1 flex-col justify-center gap-2.5 overflow-y-auto">
+        {metrics.map((m, i) => (
+          <Link
+            key={m.label}
+            href={m.href}
+            className="grid grid-cols-[120px_minmax(0,1fr)_28px] items-center gap-2.5 rounded-md transition-colors hover:bg-[var(--surface-hover)]"
+          >
+            <span className="truncate pl-0.5 text-[11px] font-medium text-[var(--text-secondary)]">{m.label}</span>
+            <div className="relative h-[28px] overflow-hidden rounded-md bg-[var(--surface-2)]">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${(m.value / maxVal) * 100}%` }}
+                transition={{ duration: 0.45, ease: 'easeOut', delay: i * 0.06 }}
+                className="absolute inset-y-0 left-0 rounded-md"
+                style={{ backgroundColor: m.color, opacity: m.value === 0 ? 0 : 0.82 }}
+              />
+            </div>
+            <span className={cn(
+              'text-right text-sm font-bold tabular-nums',
+              m.value === 0 ? 'text-[var(--text-muted)]' : 'text-[var(--text-primary)]',
+            )}>
+              {m.value}
+            </span>
+          </Link>
+        ))}
+      </div>
+      <div className="mt-auto border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] pt-2.5">
+        <p className="text-[10.5px] text-[var(--text-muted)]">
+          Vinstgrad{' '}
+          <strong className="font-semibold text-[var(--text-primary)]">
+            {acceptanceRate !== null ? `${acceptanceRate}%` : '–'}
+          </strong>
+          {' '}på avslutade offerter
+        </p>
+      </div>
+    </div>
   );
 }
 
