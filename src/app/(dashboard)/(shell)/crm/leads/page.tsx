@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   createLead,
   listLeads,
@@ -62,6 +63,7 @@ const EMPTY_FORM = {
   estimatedValue: '',
   notes: '',
 };
+const PAGE_SIZE = 50;
 
 function fmt(iso: string): string {
   return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -70,12 +72,14 @@ function fmt(iso: string): string {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function LeadsPage() {
+  const searchParams = useSearchParams();
   const [leads, setLeads]       = useState<Lead[]>([]);
   const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
   const [tab, setTab]           = useState<LeadStatus | 'all'>('all');
-  const [search, setSearch]     = useState('');
+  const [search, setSearch]     = useState(searchParams.get('search') ?? '');
+  const [currentPage, setCurrentPage] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState(EMPTY_FORM);
   const [saving, setSaving]     = useState(false);
@@ -84,7 +88,12 @@ export default function LeadsPage() {
     setLoading(true);
     setError(null);
     try {
-      const result = await listLeads({ status, search: q, limit: 50, offset: 0 });
+      const result = await listLeads({
+        status,
+        search: q,
+        limit: PAGE_SIZE,
+        offset: currentPage * PAGE_SIZE,
+      });
       setLeads(result.leads);
       setTotal(result.total);
     } catch (e) {
@@ -92,7 +101,7 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => {
     void load(tab === 'all' ? undefined : tab, search || undefined);
@@ -129,6 +138,9 @@ export default function LeadsPage() {
 
   const AVATAR_COLORS = ['bg-violet-500','bg-blue-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-sky-500'];
   const avatarColor = (id: string) => AVATAR_COLORS[id.charCodeAt(0) % AVATAR_COLORS.length];
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const canGoBack = currentPage > 0;
+  const canGoForward = currentPage < totalPages - 1;
 
   return (
     <div className="px-8 py-10 max-w-7xl mx-auto">
@@ -177,7 +189,10 @@ export default function LeadsPage() {
           {STATUS_TABS.map(t => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => {
+                setTab(t.key);
+                setCurrentPage(0);
+              }}
               className={[
                 'px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
                 tab === t.key
@@ -197,7 +212,10 @@ export default function LeadsPage() {
             type="search"
             placeholder="Sök lead…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(0);
+            }}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
           />
         </div>
@@ -323,6 +341,34 @@ export default function LeadsPage() {
               </tbody>
             </table>
           </div>
+          {total > 0 && (
+            <div className="flex flex-col gap-3 border-t border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-xs text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-center sm:text-left">
+                Visar {currentPage * PAGE_SIZE + 1}-{currentPage * PAGE_SIZE + leads.length} av {total} leads
+              </span>
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.max(0, page - 1))}
+                  disabled={!canGoBack}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Föregående
+                </button>
+                <span className="tabular-nums">
+                  {currentPage + 1}/{totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => page + 1)}
+                  disabled={!canGoForward}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Nästa
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

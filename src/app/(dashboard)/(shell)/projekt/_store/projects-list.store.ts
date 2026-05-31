@@ -9,12 +9,14 @@ const EMPTY_COUNTS: Record<ProjectStage, number> = {
   in_progress: 0,
   completed: 0,
 };
+const PAGE_SIZE = 50;
 
 interface ProjectsListState {
   projects: Project[];
   total: number;
   counts: Record<ProjectStage, number>;
   loading: boolean;
+  loadingMore: boolean;
   error: string | null;
   searchInput: string;
   search: string;
@@ -27,6 +29,7 @@ interface ProjectsListState {
   moveProjectLocally: (projectId: string, stage: ProjectStage) => void;
 
   load: (silent?: boolean) => Promise<void>;
+  loadMore: () => Promise<void>;
   loadCounts: () => Promise<void>;
 }
 
@@ -35,6 +38,7 @@ export const useProjectsListStore = create<ProjectsListState>()((set, get) => ({
   total: 0,
   counts: { ...EMPTY_COUNTS },
   loading: true,
+  loadingMore: false,
   error: null,
   searchInput: '',
   search: '',
@@ -54,7 +58,7 @@ export const useProjectsListStore = create<ProjectsListState>()((set, get) => ({
     set({ error: null });
     try {
       const result = await listProjects({
-        limit: 200,
+        limit: PAGE_SIZE,
         offset: 0,
         stage: state.stageFilter !== 'all' ? state.stageFilter : undefined,
         search: state.search.trim() || undefined,
@@ -64,6 +68,32 @@ export const useProjectsListStore = create<ProjectsListState>()((set, get) => ({
       set({ error: (error as Error).message });
     } finally {
       set({ loading: false });
+    }
+  },
+
+  loadMore: async () => {
+    const state = get();
+    if (state.loadingMore || state.projects.length >= state.total) return;
+    set({ loadingMore: true, error: null });
+    try {
+      const result = await listProjects({
+        limit: PAGE_SIZE,
+        offset: state.projects.length,
+        stage: state.stageFilter !== 'all' ? state.stageFilter : undefined,
+        search: state.search.trim() || undefined,
+      });
+      set((current) => {
+        const seen = new Set(current.projects.map((project) => project.id));
+        const nextProjects = result.projects.filter((project) => !seen.has(project.id));
+        return {
+          projects: [...current.projects, ...nextProjects],
+          total: result.total,
+        };
+      });
+    } catch (error) {
+      set({ error: (error as Error).message });
+    } finally {
+      set({ loadingMore: false });
     }
   },
 

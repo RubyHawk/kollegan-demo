@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
@@ -38,6 +39,7 @@ import {
 } from './product-library.utils';
 
 export function ProductsPageClient() {
+  const searchParams = useSearchParams();
   const {
     companies,
     selectedCompanyId,
@@ -49,7 +51,7 @@ export function ProductsPageClient() {
   const [rawCategories, setRawCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('search') ?? '');
   const [showInactive, setShowInactive] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterKey>('');
   const [filtersOpen, setFiltersOpen] = useState(false);
