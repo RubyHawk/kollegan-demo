@@ -111,8 +111,8 @@ export default function LeadsPage() {
       });
       setLeads(result.leads);
       setTotal(result.total);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ladda leads. Kontrollera anslutningen och försök igen.');
     } finally {
       setLoading(false);
     }
@@ -149,8 +149,8 @@ export default function LeadsPage() {
       setShowForm(false);
       setForm(EMPTY_FORM);
       await load(tab === 'all' ? undefined : tab, search || undefined);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte spara lead. Kontrollera anslutningen och försök igen.');
     } finally {
       setSaving(false);
     }
