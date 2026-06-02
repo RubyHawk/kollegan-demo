@@ -25,7 +25,6 @@ import { cn } from '@shared/lib/utils';
 import {
   Bell,
   DotsThreeVertical,
-  Lightbulb,
 } from '@phosphor-icons/react';
 import { DashboardBadge, DashboardDotLabel, EmptyPanelState, Panel } from './dashboard-cockpit-primitives';
 import { fmtCompactSEK, fmtRelativeDate, fmtSEK, toneClasses } from './dashboard-cockpit-utils';
@@ -33,13 +32,6 @@ import { fmtCompactSEK, fmtRelativeDate, fmtSEK, toneClasses } from './dashboard
 // ── ActionQueue ───────────────────────────────────────────────────────────────
 
 export function ActionQueue({ items }: { items: DashboardActionItem[] }) {
-  const criticalCount = items.filter((i) => i.tone === 'danger').length;
-  const warningCount = items.filter((i) => i.tone === 'warning').length;
-  const insightText = criticalCount > 0
-    ? `${criticalCount} kritisk${criticalCount !== 1 ? 'a' : ''} åtgärd${criticalCount !== 1 ? 'er' : ''} kräver omedelbar hantering.`
-    : warningCount > 0
-      ? `${warningCount} erbjudande${warningCount !== 1 ? 'n' : ''} är på väg att löpa ut. Agera innan de förfaller.`
-      : 'Läget ser bra ut — alla offerter är under kontroll.';
 
   return (
     <Panel
@@ -486,8 +478,11 @@ function PipelineFunnelView({
       <div className="flex flex-1 flex-col justify-center gap-0.5 overflow-y-auto">
         {stages.map((stage, i) => {
           const prevStage = i > 0 ? stages[i - 1] : null;
+          // Only show drop-off when count actually decreases (valid funnel step).
+          // > 100% would mean more deals entered at this stage than left the previous
+          // one — a data artefact, not a meaningful conversion rate.
           const convPct =
-            prevStage && prevStage.count > 0
+            prevStage && prevStage.count > 0 && stage.count <= prevStage.count
               ? Math.round((stage.count / prevStage.count) * 100)
               : null;
           const barPct = maxValue > 0 ? (stage.value / maxValue) * 100 : 0;
@@ -580,6 +575,13 @@ function projectStageBadgeLabel(stage: DashboardProjectHandoff['stage']): string
   return 'Planerad';
 }
 
+const PROJECT_STAGE_CONFIG = [
+  { id: 'details',     label: 'Överlämning', color: '#16a34a', tone: 'success' as const },
+  { id: 'in_progress', label: 'Pågår',        color: '#3b82f6', tone: 'accent'  as const },
+  { id: 'arrived',     label: 'Anlänt',       color: '#8b5cf6', tone: 'accent'  as const },
+  { id: 'ordered',     label: 'Planerad',     color: '#94a3b8', tone: 'neutral' as const },
+] as const;
+
 export function ProjectHandoffPanel({
   projects,
   overview,
@@ -589,6 +591,7 @@ export function ProjectHandoffPanel({
   overview: DashboardPipelineOverview;
   projectStats: ProjectStats;
 }) {
+  const [view, setView] = useState<'lista' | 'steg'>('lista');
   const groups = projectGroups(projects, projectStats);
   const totalActive = groups.reduce((s, g) => s + g.count, 0);
 
@@ -596,10 +599,29 @@ export function ProjectHandoffPanel({
     <Panel
       title="Projektöverlämning"
       eyebrow={`${totalActive} aktiva projekt`}
-      action={<Link href="/projekt" className="text-[11px] font-semibold text-[var(--accent)] hover:underline">Alla projekt</Link>}
+      action={
+        <div className="flex items-center gap-1">
+          {(['lista', 'steg'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              className={cn(
+                'rounded px-2 py-1 text-[11px] font-semibold transition-colors',
+                view === v
+                  ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
+              )}
+            >
+              {v === 'lista' ? 'Lista' : 'Steg'}
+            </button>
+          ))}
+          <Link href="/projekt" className="ml-1 text-[11px] font-semibold text-[var(--accent)] hover:underline">Alla →</Link>
+        </div>
+      }
       className="xl:col-span-4"
     >
-      {/* 3-column summary header */}
+      {/* 3-column summary header — always visible */}
       <div className="grid grid-cols-3 divide-x divide-[var(--cockpit-divider,var(--cockpit-border-soft))] border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))]">
         {groups.map((g) => (
           <div key={g.label} className="flex flex-col px-3 py-2.5">
@@ -612,8 +634,9 @@ export function ProjectHandoffPanel({
         ))}
       </div>
 
-      {/* Project rows */}
-      {projects.length === 0 ? (
+      {view === 'steg' ? (
+        <ProjectStageChart projects={projects} />
+      ) : projects.length === 0 ? (
         <div className="px-3.5 py-3">
           <div className="rounded bg-[var(--surface-1)] px-3 py-3">
             <p className="text-xs font-semibold text-[var(--text-primary)]">Nästa steg</p>
@@ -646,6 +669,60 @@ export function ProjectHandoffPanel({
   );
 }
 
+function ProjectStageChart({ projects }: { projects: DashboardProjectHandoff[] }) {
+  if (projects.length === 0) {
+    return <EmptyPanelState title="Inga projekt" body="Accepterade offerter utan projekt hamnar här." />;
+  }
+
+  const rows = PROJECT_STAGE_CONFIG.map((cfg) => {
+    const inStage = projects.filter((p) => p.stage === cfg.id);
+    const totalValue = inStage.reduce((s, p) => s + p.value, 0);
+    return { ...cfg, count: inStage.length, value: totalValue, projects: inStage };
+  }).filter((r) => r.count > 0);
+
+  const maxValue = Math.max(...rows.map((r) => r.value), 1);
+  const totalValue = rows.reduce((s, r) => s + r.value, 0);
+
+  return (
+    <div className="flex flex-1 flex-col px-3.5 py-3">
+      <div className="flex flex-1 flex-col justify-center gap-2.5 overflow-y-auto">
+        {rows.map((row, i) => (
+          <Link
+            key={row.id}
+            href={`/projekt?stage=${row.id}`}
+            className="grid grid-cols-[80px_minmax(0,1fr)_56px] items-center gap-2.5 rounded-md transition-colors hover:bg-[var(--surface-hover)]"
+          >
+            <span className="truncate pl-0.5 text-[11px] font-medium text-[var(--text-secondary)]">{row.label}</span>
+            <div className="relative h-[30px] overflow-hidden rounded-md bg-[var(--surface-2)]">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${(row.value / maxValue) * 100}%` }}
+                transition={{ duration: 0.45, ease: 'easeOut', delay: i * 0.06 }}
+                className="absolute inset-y-0 left-0 rounded-md"
+                style={{ backgroundColor: row.color, opacity: 0.85 }}
+              />
+              <span className="absolute inset-0 flex items-center px-2.5">
+                <span className="relative z-10 text-[11px] font-semibold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]">
+                  {row.count} projekt
+                </span>
+              </span>
+            </div>
+            <span className="text-right text-[10.5px] font-semibold tabular-nums text-[var(--text-secondary)]">
+              {fmtCompactSEK(row.value)}
+            </span>
+          </Link>
+        ))}
+      </div>
+      <div className="mt-auto border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] pt-2.5">
+        <p className="text-[10.5px] text-[var(--text-muted)]">
+          Totalt projektvärde{' '}
+          <strong className="font-semibold text-[var(--text-primary)]">{fmtCompactSEK(totalValue)}</strong>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── ActivityFeedPanel ─────────────────────────────────────────────────────────
 
 export function ActivityFeedPanel({
@@ -658,15 +735,6 @@ export function ActivityFeedPanel({
   acceptanceRate: number | null;
 }) {
   const [view, setView] = useState<'feed' | 'fokus'>('feed');
-
-  const insightLines = [
-    acceptanceRate === null
-      ? 'Vinstgrad visas när avslutade offerter finns.'
-      : `Vinstgrad ${acceptanceRate}% på avslutade offerter.`,
-    focusMetrics.missingFollowUp > 0
-      ? `${focusMetrics.missingFollowUp} offerter saknar uppföljning.`
-      : 'Uppföljningsläget är lugnt just nu.',
-  ];
 
   return (
     <Panel
@@ -697,31 +765,24 @@ export function ActivityFeedPanel({
       {view === 'fokus' ? (
         <ActivityFokusDiagram focusMetrics={focusMetrics} acceptanceRate={acceptanceRate} />
       ) : items.length === 0 ? (
-        <div className="flex flex-1 flex-col">
-          <EmptyPanelState title="Ingen aktivitet ännu" body="Skapade, skickade, visade och accepterade offerter visas här." />
-          <InsightBlock lines={insightLines} />
-        </div>
+        <EmptyPanelState title="Ingen aktivitet ännu" body="Skapade, skickade, visade och accepterade offerter visas här." />
       ) : (
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="min-h-0 flex-1 divide-y divide-[var(--cockpit-divider,var(--cockpit-border-soft))] overflow-hidden">
-            {items.slice(0, 4).map((item) => {
-              const content = (
-                <span className="grid h-[42px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 px-3.5 transition-colors hover:bg-[var(--surface-hover)]">
-                  <span className={cn('flex h-6 w-6 items-center justify-center rounded-full border', toneClasses(item.tone))}>
-                    {item.tone === 'success' ? <CheckCircleIcon size={13} /> : <ReceiptIcon size={13} />}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-xs font-semibold text-[var(--text-primary)]">{item.label}</span>
-                    <span className="mt-0.5 block truncate text-[10.5px] text-[var(--text-secondary)]">{item.detail}</span>
-                  </span>
-                  <span className="text-[10.5px] text-[var(--text-muted)]">{fmtRelativeDate(item.occurredAt)}</span>
+        <div className="min-h-0 flex-1 divide-y divide-[var(--cockpit-divider,var(--cockpit-border-soft))] overflow-hidden">
+          {items.slice(0, 5).map((item) => {
+            const content = (
+              <span className="grid h-[42px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 px-3.5 transition-colors hover:bg-[var(--surface-hover)]">
+                <span className={cn('flex h-6 w-6 items-center justify-center rounded-full border', toneClasses(item.tone))}>
+                  {item.tone === 'success' ? <CheckCircleIcon size={13} /> : <ReceiptIcon size={13} />}
                 </span>
-              );
-
-              return item.href ? <Link key={item.id} href={item.href}>{content}</Link> : <div key={item.id}>{content}</div>;
-            })}
-          </div>
-          <InsightBlock lines={insightLines} />
+                <span className="min-w-0">
+                  <span className="block truncate text-xs font-semibold text-[var(--text-primary)]">{item.label}</span>
+                  <span className="mt-0.5 block truncate text-[10.5px] text-[var(--text-secondary)]">{item.detail}</span>
+                </span>
+                <span className="text-[10.5px] text-[var(--text-muted)]">{fmtRelativeDate(item.occurredAt)}</span>
+              </span>
+            );
+            return item.href ? <Link key={item.id} href={item.href}>{content}</Link> : <div key={item.id}>{content}</div>;
+          })}
         </div>
       )}
     </Panel>
@@ -779,24 +840,6 @@ function ActivityFokusDiagram({
           </strong>
           {' '}på avslutade offerter
         </p>
-      </div>
-    </div>
-  );
-}
-
-function InsightBlock({ lines }: { lines: string[] }) {
-  return (
-    <div className="border-t border-[var(--cockpit-divider,var(--cockpit-border-soft))] px-3.5 py-2.5">
-      <div className="flex items-start gap-2.5 rounded bg-[var(--surface-1)] px-3 py-2.5">
-        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-[var(--accent)]">
-          <Lightbulb size={14} weight="duotone" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-xs font-semibold text-[var(--text-primary)]">Insikter</p>
-          {lines.map((line) => (
-            <p key={line} className="mt-0.5 truncate text-[11px] text-[var(--text-secondary)]">{line}</p>
-          ))}
-        </div>
       </div>
     </div>
   );
