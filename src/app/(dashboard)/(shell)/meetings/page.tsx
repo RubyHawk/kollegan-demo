@@ -74,8 +74,8 @@ export default function MeetingsPage() {
       const result = await listMeetings({ limit: 50, offset: 0, status: tab === 'all' ? undefined : tab });
       setMeetings(result.meetings);
       setTotal(result.total);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Något gick fel. Kontrollera anslutningen och försök igen.');
     } finally {
       setLoading(false);
     }
@@ -97,8 +97,8 @@ export default function MeetingsPage() {
       });
       setShowForm(false); setForm(EMPTY_FORM);
       await load(true);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Något gick fel. Kontrollera anslutningen och försök igen.');
     } finally {
       setSaving(false);
     }
@@ -109,8 +109,8 @@ export default function MeetingsPage() {
     try {
       await updateMeeting(id, { status });
       await load(true);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Något gick fel. Kontrollera anslutningen och försök igen.');
     } finally {
       setActing(null);
     }
@@ -121,8 +121,8 @@ export default function MeetingsPage() {
     try {
       await deleteMeetingRequest(id);
       await load(true);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Något gick fel. Kontrollera anslutningen och försök igen.');
     } finally {
       setActing(null);
       setConfirmDeleteMeeting(null);

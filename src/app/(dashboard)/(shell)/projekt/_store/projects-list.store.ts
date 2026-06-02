@@ -64,8 +64,8 @@ export const useProjectsListStore = create<ProjectsListState>()((set, get) => ({
         search: state.search.trim() || undefined,
       });
       set({ projects: result.projects, total: result.total });
-    } catch (error) {
-      set({ error: (error as Error).message });
+    } catch {
+      set({ error: 'Kunde inte ladda projekt. Kontrollera anslutningen och försök igen.' });
     } finally {
       set({ loading: false });
     }
@@ -90,8 +90,8 @@ export const useProjectsListStore = create<ProjectsListState>()((set, get) => ({
           total: result.total,
         };
       });
-    } catch (error) {
-      set({ error: (error as Error).message });
+    } catch {
+      set({ error: 'Kunde inte ladda fler projekt. Försök igen.' });
     } finally {
       set({ loadingMore: false });
     }
