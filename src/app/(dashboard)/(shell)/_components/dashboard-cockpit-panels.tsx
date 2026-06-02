@@ -615,18 +615,20 @@ export function ProjectHandoffPanel({
       }
       className="xl:col-span-4"
     >
-      {/* 3-column summary header — always visible */}
-      <div className="grid grid-cols-3 divide-x divide-[var(--cockpit-divider,var(--cockpit-border-soft))] border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))]">
-        {groups.map((g) => (
-          <div key={g.label} className="flex flex-col px-3 py-2.5">
-            <span className="truncate text-[9px] font-semibold uppercase tracking-[.05em] text-[var(--text-muted)]">{g.label}</span>
-            <span className="mt-1 text-[19px] font-bold tabular-nums leading-none text-[var(--text-primary)]">{g.count}</span>
-            {g.value > 0 && (
-              <span className="mt-0.5 text-[10px] font-medium tabular-nums text-[var(--text-secondary)]">{fmtCompactSEK(g.value)}</span>
-            )}
-          </div>
-        ))}
-      </div>
+      {/* 3-column summary header — only in Lista view; Steg shows the breakdown directly */}
+      {view !== 'steg' && (
+        <div className="grid grid-cols-3 divide-x divide-[var(--cockpit-divider,var(--cockpit-border-soft))] border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))]">
+          {groups.map((g) => (
+            <div key={g.label} className="flex flex-col px-3 py-2.5">
+              <span className="truncate text-[9px] font-semibold uppercase tracking-[.05em] text-[var(--text-muted)]">{g.label}</span>
+              <span className="mt-1 text-[19px] font-bold tabular-nums leading-none text-[var(--text-primary)]">{g.count}</span>
+              {g.value > 0 && (
+                <span className="mt-0.5 text-[10px] font-medium tabular-nums text-[var(--text-secondary)]">{fmtCompactSEK(g.value)}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {view === 'steg' ? (
         <ProjectStageChart projects={projects} />
@@ -679,7 +681,7 @@ function ProjectStageChart({ projects }: { projects: DashboardProjectHandoff[] }
 
   return (
     <div className="flex flex-1 flex-col px-3.5 py-3">
-      <div className="flex flex-1 flex-col justify-center gap-2.5 overflow-y-auto">
+      <div className="flex flex-1 flex-col justify-center gap-2 overflow-y-auto">
         {rows.map((row, i) => (
           <Link
             key={row.id}
@@ -687,7 +689,7 @@ function ProjectStageChart({ projects }: { projects: DashboardProjectHandoff[] }
             className="grid grid-cols-[80px_minmax(0,1fr)_56px] items-center gap-2.5 rounded-md transition-colors hover:bg-[var(--surface-hover)]"
           >
             <span className="truncate pl-0.5 text-[11px] font-medium text-[var(--text-secondary)]">{row.label}</span>
-            <div className="relative h-[30px] overflow-hidden rounded-md bg-[var(--surface-2)]">
+            <div className="relative h-[28px] overflow-hidden rounded-md bg-[var(--surface-2)]">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${(row.value / maxValue) * 100}%` }}
