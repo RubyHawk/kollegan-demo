@@ -182,9 +182,14 @@ export function TopCockpitBand({
             )}
           </div>
         </div>
+        {today.focusLabel ? (
+          <p className="mt-2.5 text-[11px] leading-4 text-[var(--status-warning-text)]">
+            {today.focusLabel}
+          </p>
+        ) : null}
         <Link
           href="/meetings"
-          className="mt-4 inline-flex h-8 items-center rounded bg-[var(--accent)] px-3 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+          className="mt-3 inline-flex h-8 items-center rounded bg-[var(--accent)] px-3 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
         >
           Visa dagsplan →
         </Link>

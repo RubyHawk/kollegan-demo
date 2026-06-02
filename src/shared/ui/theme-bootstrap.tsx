@@ -155,7 +155,8 @@ function applyPersistedThemePreferences() {
 }
 
 export function shouldLoadThemeProfile(pathname: string | null | undefined): boolean {
-  return !(pathname ?? '').startsWith('/offerter/publik/');
+  const p = pathname ?? '';
+  return !p.startsWith('/offerter/publik/') && !p.startsWith('/demos/');
 }
 
 export function ThemeBootstrap({ enableProfileSync = true }: { enableProfileSync?: boolean }) {
