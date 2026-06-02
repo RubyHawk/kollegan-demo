@@ -274,32 +274,19 @@ function OfferTableToolbar({
 
 // ── OfferDiagram ──────────────────────────────────────────────────────────────
 
-const TONE_ORDER: DashboardTone[] = ['danger', 'warning', 'accent', 'info', 'success', 'neutral'];
-
-const TONE_LABELS: Record<DashboardTone, string> = {
-  danger: 'Kritisk',
-  warning: 'Snart',
-  accent: 'Aktiv',
-  info: 'Visad',
-  success: 'Accepterad',
-  neutral: 'Ingen deadline',
-};
-
-const TONE_COLORS: Record<DashboardTone, string> = {
-  danger: '#dc2626',
-  warning: '#d97706',
-  accent: '#3b82f6',
-  info: '#8b5cf6',
-  success: '#16a34a',
-  neutral: '#94a3b8',
-};
-
 const SWEDISH_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
 
+const OFFER_STATUS_CONFIG = [
+  { status: 'accepted', label: 'Accepterad',   color: '#16a34a' },
+  { status: 'viewed',   label: 'Förhandling',  color: '#8b5cf6' },
+  { status: 'sent',     label: 'Skickad',      color: '#3b82f6' },
+  { status: 'draft',    label: 'Utkast',       color: '#94a3b8' },
+] as const;
+
 function OfferDiagram({ rows }: { rows: DashboardOfferTableRow[] }) {
-  const groups = TONE_ORDER.map((tone) => {
-    const group = rows.filter((r) => r.deadlineTone === tone);
-    return { tone, count: group.length, total: group.reduce((s, r) => s + r.amount, 0) };
+  const groups = OFFER_STATUS_CONFIG.map((cfg) => {
+    const inStatus = rows.filter((r) => r.status === cfg.status);
+    return { ...cfg, count: inStatus.length, total: inStatus.reduce((s, r) => s + r.amount, 0) };
   }).filter((g) => g.count > 0);
 
   const maxTotal = Math.max(...groups.map((g) => g.total), 1);
@@ -309,23 +296,30 @@ function OfferDiagram({ rows }: { rows: DashboardOfferTableRow[] }) {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden px-3.5 py-3">
-      <p className="mb-3 text-[11px] font-medium text-[#475569]">Pipeline per deadline-risk</p>
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
-        {groups.map((group) => {
+      <p className="mb-3 text-[11px] font-medium text-[#475569]">Pipeline per status</p>
+      <div className="flex flex-1 flex-col justify-center gap-3 overflow-y-auto">
+        {groups.map((group, i) => {
           const pct = grandTotal > 0 ? Math.round((group.total / grandTotal) * 100) : 0;
           return (
-            <div key={group.tone} className="grid grid-cols-[88px_minmax(0,1fr)_116px] items-center gap-3">
+            <div key={group.status} className="grid grid-cols-[88px_minmax(0,1fr)_116px] items-center gap-3">
               <span className="truncate text-[11.5px] font-medium text-[#334155]">
-                {TONE_LABELS[group.tone]}
+                {group.label}
               </span>
-              <div className="relative h-[36px] overflow-hidden rounded-md bg-[var(--surface-2)]">
+              <div className="relative h-[32px] overflow-hidden rounded-md bg-[var(--surface-2)]">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${(group.total / maxTotal) * 100}%` }}
-                  transition={{ duration: 0.45, ease: 'easeOut', delay: 0.04 }}
+                  transition={{ duration: 0.45, ease: 'easeOut', delay: i * 0.06 }}
                   className="absolute inset-y-0 left-0 rounded-md"
-                  style={{ backgroundColor: TONE_COLORS[group.tone] }}
+                  style={{ backgroundColor: group.color, opacity: 0.88 }}
                 />
+                {group.count > 0 && (
+                  <span className="absolute inset-0 flex items-center px-2.5">
+                    <span className="relative z-10 text-[11px] font-semibold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]">
+                      {group.count} st
+                    </span>
+                  </span>
+                )}
               </div>
               <div className="text-right text-[11.5px] tabular-nums">
                 <span className="font-semibold text-[#334155]">{fmtCompactSEK(group.total)}</span>

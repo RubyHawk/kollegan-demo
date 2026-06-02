@@ -56,7 +56,7 @@ const MOCK: DashboardReadModel = {
     ],
   },
   actionItems: [
-    { id: '1', tone: 'danger',  label: 'Offert accepted – TechHus AB',         detail: 'Redo att starta projekt',          actionLabel: 'Redo för projekt', href: '/offerter/1' },
+    { id: '1', tone: 'danger',  label: 'Offert accepterad – TechHus AB',       detail: 'Redo att starta projekt',          actionLabel: 'Redo för projekt', href: '/offerter/1' },
     { id: '2', tone: 'warning', label: 'Offert löper ut – Jansson & Co',        detail: 'Giltigheten slutar imorgon',       actionLabel: 'Förläng',          href: '/offerter/2' },
     { id: '3', tone: 'neutral', label: 'Uppföljning saknas – TechHus AB',       detail: 'Visad för 5 dagar, ingen kontakt', actionLabel: 'Följ upp',         href: '/offerter/3' },
     { id: '4', tone: 'neutral', label: 'Offert ej skickad – SolAB',             detail: 'Fortfarande i utkastläge',         actionLabel: 'Skicka offert',    href: '/offerter/4' },
