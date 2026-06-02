@@ -83,8 +83,8 @@ export default function RisksPage() {
       const result = await listRisks({ status, limit: 50, offset: 0 });
       setRisks(result.risks);
       setTotal(result.total);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ladda risker. Kontrollera anslutningen och försök igen.');
     } finally {
       setLoading(false);
     }
@@ -111,8 +111,8 @@ export default function RisksPage() {
       setShowForm(false);
       setForm(EMPTY_FORM);
       await load(tab === 'all' ? undefined : tab);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte spara. Kontrollera anslutningen och försök igen.');
     } finally {
       setSaving(false);
     }
@@ -123,8 +123,8 @@ export default function RisksPage() {
     try {
       await deleteRiskRequest(id);
       await load(tab === 'all' ? undefined : tab);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ta bort. Försök igen.');
     } finally {
       setDeletingRiskId(null);
       setConfirmDeleteRisk(null);

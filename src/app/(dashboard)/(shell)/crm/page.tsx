@@ -61,8 +61,8 @@ export default function CrmPage() {
           leadsNew: leadsResult.leads.filter(l => l.status === 'new').length,
           leadsWon: leadsResult.leads.filter(l => l.status === 'won').length,
         });
-      } catch (e) {
-        setError((e as Error).message);
+      } catch {
+        setError('Kunde inte ladda statistik. Kontrollera anslutningen och försök igen.');
       } finally {
         setLoading(false);
       }
@@ -115,7 +115,9 @@ export default function CrmPage() {
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-xs text-[var(--text-muted)] mt-1 group-hover:text-[var(--text-secondary)] transition-colors">{s.label}</p>
           </Link>
-        )) : null}
+        )) : !error ? (
+          [0,1,2,3].map(i => <div key={i} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 animate-pulse h-20" />)
+        ) : null}
       </div>
 
       {/* Search */}

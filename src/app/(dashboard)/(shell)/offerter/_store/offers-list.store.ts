@@ -166,8 +166,8 @@ export const useOffersListStore = create<OffersListState>()((set, get) => ({
         dateTo: s.dateTo || undefined,
       });
       set({ allOffers: result.offers, serverTotal: result.total });
-    } catch (e) {
-      set({ error: (e as Error).message });
+    } catch {
+      set({ error: 'Kunde inte ladda offerter. Kontrollera anslutningen och försök igen.' });
     } finally {
       set({ loading: false });
     }

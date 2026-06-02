@@ -88,7 +88,7 @@ export function useOfferListActions({
       }
 
       setBlockingAlert(null);
-      setError((e as Error).message);
+      setError('Åtgärden misslyckades. Kontrollera anslutningen och försök igen.');
     } finally {
       setActing(null);
     }
@@ -99,8 +99,8 @@ export function useOfferListActions({
     try {
       await deleteOfferById(id);
       await Promise.all([load(true), loadCounts()]);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ta bort offert. Kontrollera anslutningen och försök igen.');
     }
   }, [load, loadCounts, setConfirmDeleteOffer, setError]);
 
@@ -138,9 +138,9 @@ export function useOfferListActions({
       setBulkResult(result);
       clearSelected();
       await Promise.all([load(true), loadCounts()]);
-    } catch (e) {
+    } catch {
       setBlockingAlert(null);
-      setError((e as Error).message);
+      setError('Kunde inte skicka offerterna. Kontrollera anslutningen och försök igen.');
     } finally {
       setBulkSending(false);
     }

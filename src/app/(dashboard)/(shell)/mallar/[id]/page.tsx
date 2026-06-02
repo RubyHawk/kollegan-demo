@@ -120,8 +120,8 @@ export default function TemplateEditorPage() {
         setInitEmailHdrCfg(template.emailHeaderConfig ?? '');
         initialContentRef.current = template.content;
         editorRef.current?.setContent(template.content ?? '');
-      } catch (e) {
-        setError((e as Error).message);
+      } catch {
+        setError('Kunde inte ladda mallen. Kontrollera anslutningen och försök igen.');
       } finally {
         setLoading(false);
       }
@@ -233,8 +233,8 @@ export default function TemplateEditorPage() {
         setSaved(true);
         setTimeout(() => setSaved(false), 2500);
       }
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte spara mallen. Kontrollera anslutningen och försök igen.');
     } finally {
       setSaving(false);
     }
@@ -251,8 +251,8 @@ export default function TemplateEditorPage() {
         content: json ? JSON.stringify(json) : undefined,
         branding: selectedCompanyBranding,
       }));
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte förhandsgranska mallen. Försök igen.');
       setPreviewing(false);
     }
   }, [selectedCompanyBranding]);

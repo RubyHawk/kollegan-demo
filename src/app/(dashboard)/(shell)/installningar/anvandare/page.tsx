@@ -63,8 +63,8 @@ export default function UsersPage() {
     setError(null);
     try {
       setUsers(await listStaffUsers());
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ladda användare. Kontrollera anslutningen och försök igen.');
     } finally {
       setLoading(false);
     }
@@ -80,8 +80,8 @@ export default function UsersPage() {
       setShowForm(false);
       setForm(EMPTY_FORM);
       await load();
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte bjuda in användaren. Kontrollera anslutningen och försök igen.');
     } finally {
       setSaving(false);
     }
@@ -92,8 +92,8 @@ export default function UsersPage() {
     try {
       await deleteStaffUser(id);
       await load();
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ta bort användaren. Försök igen.');
     } finally {
       setDeletingId(null);
       setConfirmDeleteUser(null);

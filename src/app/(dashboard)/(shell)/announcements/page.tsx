@@ -61,8 +61,8 @@ export default function AnnouncementsPage() {
       const result = await listAnnouncements({ limit: 50, offset: 0 });
       setAnnouncements(result.announcements);
       setTotal(result.total);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ladda aviseringar. Kontrollera anslutningen och försök igen.');
     } finally {
       setLoading(false);
     }
@@ -95,8 +95,8 @@ export default function AnnouncementsPage() {
       }
       setShowForm(false); setEditing(null); setForm(EMPTY_FORM);
       await load(true);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte spara. Kontrollera anslutningen och försök igen.');
     } finally {
       setSaving(false);
     }
@@ -114,8 +114,8 @@ export default function AnnouncementsPage() {
     try {
       await deleteAnnouncementRequest(id);
       await load(true);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ta bort. Försök igen.');
     } finally {
       setActing(null);
       setConfirmDeleteAnnouncement(null);

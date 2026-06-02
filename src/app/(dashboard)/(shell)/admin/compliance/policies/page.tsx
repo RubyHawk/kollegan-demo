@@ -74,8 +74,8 @@ export default function PoliciesPage() {
     try {
       const result = await listPolicies({ limit: 50, offset: 0 });
       setPolicies(result.policies);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ladda policyer. Kontrollera anslutningen och försök igen.');
     } finally {
       setLoading(false);
     }
@@ -99,8 +99,8 @@ export default function PoliciesPage() {
       setShowForm(false);
       setForm(EMPTY_FORM);
       await load();
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte spara. Kontrollera anslutningen och försök igen.');
     } finally {
       setSaving(false);
     }
@@ -111,8 +111,8 @@ export default function PoliciesPage() {
     try {
       await deletePolicyRequest(id);
       await load();
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ta bort. Försök igen.');
     } finally {
       setDeletingPolicyId(null);
       setConfirmDeletePolicy(null);

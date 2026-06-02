@@ -76,8 +76,8 @@ export default function TemplatesPage() {
     setError(null);
     try {
       setTemplates(await listTemplates({ companyId: selectedCompanyId || undefined }));
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ladda mallar. Kontrollera anslutningen och försök igen.');
     } finally {
       setLoading(false);
     }
@@ -108,8 +108,8 @@ export default function TemplatesPage() {
           content: templateContent,
           branding: selectedCompanyBranding,
         }));
-      } catch (e) {
-        setError((e as Error).message);
+      } catch {
+        setError('Kunde inte förhandsgranska mallen. Försök igen.');
         setPreviewing(null);
       }
     },
@@ -127,8 +127,8 @@ export default function TemplatesPage() {
           content: templateContent?.trim() ? templateContent : '{}',
         });
         await load();
-      } catch (e) {
-        setError((e as Error).message);
+      } catch {
+        setError('Kunde inte duplicera mallen. Försök igen.');
       } finally {
         setDuplicating(null);
       }
@@ -143,8 +143,8 @@ export default function TemplatesPage() {
       try {
         await deleteTemplate(id);
         await load();
-      } catch (e) {
-        setError((e as Error).message);
+      } catch {
+        setError('Kunde inte ta bort mallen. Försök igen.');
       } finally {
         setDeleting(null);
       }

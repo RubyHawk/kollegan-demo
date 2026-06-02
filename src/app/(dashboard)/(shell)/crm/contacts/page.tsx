@@ -77,8 +77,8 @@ export default function ContactsPage() {
       });
       setContacts(result.contacts);
       setTotal(result.total);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ladda kontakter. Kontrollera anslutningen och försök igen.');
     } finally {
       setLoading(false);
     }
@@ -123,8 +123,8 @@ export default function ContactsPage() {
       setEditing(null);
       setForm(EMPTY_FORM);
       await load(true);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte spara kontakt. Kontrollera anslutningen och försök igen.');
     } finally {
       setSaving(false);
     }
@@ -135,8 +135,8 @@ export default function ContactsPage() {
     try {
       await deleteCustomer(id);
       await load(true);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ta bort kontakt. Kontrollera anslutningen och försök igen.');
     } finally {
       setActing(null);
       setConfirmDeleteContact(null);

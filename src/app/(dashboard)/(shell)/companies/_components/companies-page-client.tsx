@@ -59,8 +59,8 @@ export function CompaniesPageClient() {
     setError(null);
     try {
       setCompanies(await listCompanies({ search: search || undefined }));
-    } catch (err) {
-      setError((err as Error).message);
+    } catch {
+      setError('Kunde inte ladda företag. Kontrollera anslutningen och försök igen.');
     } finally {
       setLoading(false);
     }
@@ -93,8 +93,8 @@ export function CompaniesPageClient() {
       const payload = await listCompanyMembers(company.id);
       setMembers(payload.members);
       setAvailableUsers(payload.availableUsers);
-    } catch (err) {
-      setError((err as Error).message);
+    } catch {
+      setError('Kunde inte ladda medlemmar. Försök igen.');
     } finally {
       setMembersLoading(false);
     }
@@ -127,8 +127,8 @@ export function CompaniesPageClient() {
         if (!selectedCompanyId || !editCompany) {
           setSelectedCompanyId(savedCompany.id);
         }
-      } catch (err) {
-        setError((err as Error).message);
+      } catch {
+        setError('Kunde inte spara företaget. Kontrollera anslutningen och försök igen.');
       } finally {
         setSaving(false);
       }
@@ -143,8 +143,8 @@ export function CompaniesPageClient() {
       try {
         await upsertCompanyMember(membersCompany.id, { userId, role });
         await loadMembers(membersCompany);
-      } catch (err) {
-        setError((err as Error).message);
+      } catch {
+        setError('Kunde inte lägga till medlem. Försök igen.');
       } finally {
         setMemberSaving(false);
       }
@@ -166,8 +166,8 @@ export function CompaniesPageClient() {
           role: form.role,
         });
         await loadMembers(membersCompany);
-      } catch (err) {
-        setError((err as Error).message);
+      } catch {
+        setError('Kunde inte skapa kontoanvändare. Försök igen.');
       } finally {
         setMemberSaving(false);
       }
@@ -182,8 +182,8 @@ export function CompaniesPageClient() {
       try {
         await removeCompanyMember(membersCompany.id, userId);
         await loadMembers(membersCompany);
-      } catch (err) {
-        setError((err as Error).message);
+      } catch {
+        setError('Kunde inte ta bort medlem. Försök igen.');
       } finally {
         setMemberSaving(false);
       }
@@ -195,8 +195,8 @@ export function CompaniesPageClient() {
     async (company: Company) => {
       try {
         await deleteCompanyRecord(company.id);
-      } catch (err) {
-        setError((err as Error).message);
+      } catch {
+        setError('Kunde inte ta bort företaget. Försök igen.');
         return;
       }
 
