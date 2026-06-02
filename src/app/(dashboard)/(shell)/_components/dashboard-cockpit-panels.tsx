@@ -809,7 +809,7 @@ function ActivityFokusDiagram({
   const metrics = [
     { label: 'Förfallna',          value: focusMetrics.overdue,         color: '#dc2626', href: '/offerter' },
     { label: 'Förfaller snart',    value: focusMetrics.dueSoon,         color: '#d97706', href: '/offerter' },
-    { label: 'Saknar uppföljning', value: focusMetrics.missingFollowUp, color: '#3b82f6', href: '/offerter?status=viewed' },
+    { label: 'Saknar uppföljning', value: focusMetrics.missingFollowUp, color: '#3b82f6', href: '/offerter' },
     { label: 'Möten idag',         value: focusMetrics.meetingsToday,   color: '#8b5cf6', href: '/meetings' },
   ];
   const maxVal = Math.max(...metrics.map((m) => m.value), 1);
