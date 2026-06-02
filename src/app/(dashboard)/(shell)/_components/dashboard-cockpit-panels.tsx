@@ -577,6 +577,15 @@ const PROJECT_STAGE_CONFIG = [
   { id: 'ordered',     label: 'Planerad',     color: '#94a3b8', tone: 'neutral' as const },
 ] as const;
 
+// Reverse of QUERY_TO_STAGE from projekt/_store/types.ts
+const PROJECT_STAGE_QUERY: Record<string, string> = {
+  details:     'uppgifter',
+  ordered:     'bestallt',
+  arrived:     'ankommet',
+  in_progress: 'pagar',
+  completed:   'klart',
+};
+
 export function ProjectHandoffPanel({
   projects,
   overview,
@@ -686,7 +695,7 @@ function ProjectStageChart({ projects }: { projects: DashboardProjectHandoff[] }
         {rows.map((row, i) => (
           <Link
             key={row.id}
-            href={`/projekt?stage=${row.id}`}
+            href={`/projekt?stage=${PROJECT_STAGE_QUERY[row.id] ?? row.id}`}
             className="grid grid-cols-[80px_minmax(0,1fr)_56px] items-center gap-2.5 rounded-md transition-colors hover:bg-[var(--surface-hover)]"
           >
             <span className="truncate pl-0.5 text-[11px] font-medium text-[var(--text-secondary)]">{row.label}</span>
@@ -798,10 +807,10 @@ function ActivityFokusDiagram({
   acceptanceRate: number | null;
 }) {
   const metrics = [
-    { label: 'Förfallna', value: focusMetrics.overdue, color: '#dc2626', href: '/offerter?deadline=overdue' },
-    { label: 'Förfaller snart', value: focusMetrics.dueSoon, color: '#d97706', href: '/offerter?deadline=soon' },
-    { label: 'Saknar uppföljning', value: focusMetrics.missingFollowUp, color: '#3b82f6', href: '/offerter?filter=no-followup' },
-    { label: 'Möten idag', value: focusMetrics.meetingsToday, color: '#8b5cf6', href: '/meetings' },
+    { label: 'Förfallna',          value: focusMetrics.overdue,         color: '#dc2626', href: '/offerter' },
+    { label: 'Förfaller snart',    value: focusMetrics.dueSoon,         color: '#d97706', href: '/offerter' },
+    { label: 'Saknar uppföljning', value: focusMetrics.missingFollowUp, color: '#3b82f6', href: '/offerter?status=viewed' },
+    { label: 'Möten idag',         value: focusMetrics.meetingsToday,   color: '#8b5cf6', href: '/meetings' },
   ];
   const maxVal = Math.max(...metrics.map((m) => m.value), 1);
 
