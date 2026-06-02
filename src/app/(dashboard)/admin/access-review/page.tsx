@@ -100,7 +100,7 @@ export default function AccessReviewPage() {
       setData(await getAccessReview());
     } catch (e) {
       const status = typeof e === 'object' && e && 'status' in e ? (e as { status?: number }).status : undefined;
-      setError(status === 403 ? 'Åtkomst nekad — admin- eller helpdesk-roll krävs' : (e as Error).message);
+      setError(status === 403 ? 'Åtkomst nekad — admin- eller helpdesk-roll krävs' : 'Kunde inte ladda åtkomstgranskning. Kontrollera anslutningen och försök igen.');
     } finally {
       setLoading(false);
     }

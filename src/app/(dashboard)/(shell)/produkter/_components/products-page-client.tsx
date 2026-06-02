@@ -112,8 +112,8 @@ export function ProductsPageClient() {
     setError(null);
     try {
       await Promise.all([loadProducts(), loadCategories()]);
-    } catch (err) {
-      setError((err as Error).message);
+    } catch {
+      setError('Kunde inte ladda produkter. Kontrollera anslutningen och försök igen.');
     } finally {
       setLoading(false);
     }
@@ -298,8 +298,8 @@ export function ProductsPageClient() {
         companyId: selectedCompanyId || undefined,
       });
       await loadCategories();
-    } catch (err) {
-      setError((err as Error).message);
+    } catch {
+      setError('Kunde inte spara kategorin. Försök igen.');
     } finally {
       setCategorySaving(false);
     }
@@ -311,8 +311,8 @@ export function ProductsPageClient() {
     try {
       await deleteProductCategory(categoryId);
       await Promise.all([loadProducts(), loadCategories()]);
-    } catch (err) {
-      setError((err as Error).message);
+    } catch {
+      setError('Kunde inte ta bort kategorin. Försök igen.');
     } finally {
       setDeletingCategoryId(null);
     }
@@ -356,8 +356,8 @@ export function ProductsPageClient() {
 
       closeModal();
       await loadProducts();
-    } catch (err) {
-      setError((err as Error).message);
+    } catch {
+      setError('Kunde inte spara produkten. Kontrollera anslutningen och försök igen.');
     } finally {
       setSaving(false);
     }
@@ -374,8 +374,8 @@ export function ProductsPageClient() {
       setProducts((current) =>
         current.map((item) => (item.id === product.id ? { ...item, isActive: !item.isActive } : item)),
       );
-    } catch (err) {
-      setError((err as Error).message);
+    } catch {
+      setError('Kunde inte uppdatera produkten. Försök igen.');
     }
   }, [selectedCompanyId]);
 
@@ -389,8 +389,8 @@ export function ProductsPageClient() {
       if (editingProduct?.id === product.id) {
         closeModal();
       }
-    } catch (err) {
-      setError((err as Error).message);
+    } catch {
+      setError('Kunde inte ta bort produkten. Försök igen.');
     } finally {
       setDeletingId(null);
     }

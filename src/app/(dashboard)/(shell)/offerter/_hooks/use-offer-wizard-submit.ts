@@ -127,9 +127,9 @@ export function useOfferWizardSubmit({
         setDraftSaved(true);
         setTimeout(() => setDraftSaved(false), 3000);
       }
-    } catch (e) {
+    } catch {
       setBlockingAlert(null);
-      setError((e as Error).message);
+      setError('Kunde inte skapa offerten. Kontrollera anslutningen och försök igen.');
     } finally {
       setSaving(false);
     }

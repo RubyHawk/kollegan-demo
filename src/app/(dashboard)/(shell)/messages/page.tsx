@@ -59,8 +59,8 @@ export default function MessagesPage() {
     try {
       const result = await listConversations({ limit: 50, offset: 0 });
       setConversations(result.conversations);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ladda meddelanden. Kontrollera anslutningen och försök igen.');
     } finally {
       setLoading(false);
     }
@@ -94,8 +94,8 @@ export default function MessagesPage() {
       setNewMsg('');
       await loadMessages(selected.id);
       await loadConversations(true);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte spara. Kontrollera anslutningen och försök igen.');
     } finally {
       setSending(false);
     }
@@ -115,8 +115,8 @@ export default function MessagesPage() {
       setNewTitle('');
       setNewInitMsg('');
       await loadConversations(true);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte spara. Kontrollera anslutningen och försök igen.');
     } finally {
       setCreating(false);
     }

@@ -51,8 +51,8 @@ export default function ProfilClient({ user }: { user: UserProps }) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2800);
       router.refresh();
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte spara profilinformation. Kontrollera anslutningen och försök igen.');
     } finally {
       setPending(false);
     }

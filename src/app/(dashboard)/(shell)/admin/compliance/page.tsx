@@ -67,9 +67,9 @@ export default function CompliancePage() {
     setError(null);
     try {
       setData(await listComplianceControls());
-    } catch (e) {
+    } catch (e: unknown) {
       const status = typeof e === 'object' && e && 'status' in e ? (e as { status?: number }).status : undefined;
-      setError(status === 403 ? 'Åtkomst nekad — admin-roll krävs' : (e as Error).message);
+      setError(status === 403 ? 'Åtkomst nekad — admin-roll krävs' : 'Kunde inte ladda compliance-data. Kontrollera anslutningen och försök igen.');
     } finally {
       setLoading(false);
     }
@@ -82,8 +82,8 @@ export default function CompliancePage() {
     try {
       await collectComplianceEvidence();
       await load();
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ladda compliance-data. Kontrollera anslutningen och försök igen.');
     } finally {
       setCollecting(false);
     }
@@ -94,8 +94,8 @@ export default function CompliancePage() {
     try {
       const report = await getComplianceReport();
       downloadJson(report, `iso27001-evidence-${new Date().toISOString().split('T')[0]}.json`);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ladda rapport. Kontrollera anslutningen och försök igen.');
     } finally {
       setExporting(false);
     }

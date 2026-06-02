@@ -115,8 +115,8 @@ export default function ReportsPage() {
       const csv = toCsv(rows);
       downloadCsv(csv, `${report.id}-${new Date().toISOString().slice(0, 10)}.csv`);
       setSuccess(`"${report.name}" laddades ned — ${rows.length} rader.`);
-    } catch (e) {
-      setError((e as Error).message);
+    } catch {
+      setError('Kunde inte ladda rapport. Kontrollera anslutningen och försök igen.');
     } finally {
       setGenerating(null);
     }
