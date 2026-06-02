@@ -10,7 +10,6 @@ import type {
   DashboardOfferTableRow,
   DashboardPipelineOverview,
   DashboardProjectHandoff,
-  DashboardTone,
   ProjectStats,
 } from '@modules/generic/dashboard';
 import {
@@ -25,6 +24,7 @@ import { cn } from '@shared/lib/utils';
 import {
   Bell,
   DotsThreeVertical,
+  Eye,
 } from '@phosphor-icons/react';
 import { DashboardBadge, DashboardDotLabel, EmptyPanelState, Panel } from './dashboard-cockpit-primitives';
 import { fmtCompactSEK, fmtRelativeDate, fmtSEK, toneClasses } from './dashboard-cockpit-utils';
@@ -440,7 +440,8 @@ function PipelineCardsView({
                 initial={{ width: 0 }}
                 animate={{ width: `${stage.percent}%` }}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
-                className="block h-full rounded-full bg-[var(--accent)]"
+                className="block h-full rounded-full"
+                style={{ backgroundColor: PIPELINE_FUNNEL_COLORS[stage.id] ?? 'var(--accent)' }}
               />
             </span>
           </Link>
@@ -768,7 +769,11 @@ export function ActivityFeedPanel({
             const content = (
               <span className="grid h-[42px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 px-3.5 transition-colors hover:bg-[var(--surface-hover)]">
                 <span className={cn('flex h-6 w-6 items-center justify-center rounded-full border', toneClasses(item.tone))}>
-                  {item.tone === 'success' ? <CheckCircleIcon size={13} /> : <ReceiptIcon size={13} />}
+                  {item.tone === 'success' ? <CheckCircleIcon size={13} />
+                  : item.tone === 'accent'  ? <SendIcon size={13} strokeWidth={2.5} />
+                  : item.tone === 'info'    ? <Eye size={13} weight="duotone" />
+                  : item.label.toLowerCase().includes('projekt') ? <FolderIcon size={13} />
+                  : <ReceiptIcon size={13} />}
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-semibold text-[var(--text-primary)]">{item.label}</span>
