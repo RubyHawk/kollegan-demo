@@ -45,7 +45,6 @@ async function main() {
       // List all companies in the org so the user can verify/pick the right one
       const allCompanies = await prisma.company.findMany({
         where: { organizationId: org.id, deletedAt: null },
-        select: { id: true, name: true },
       });
       if (allCompanies.length === 0) {
         console.log(`No companies found in org "${ORG_SLUG}". Creating "${COMPANY_NAME}"...`);
@@ -72,7 +71,7 @@ async function main() {
           return;
         }
       } else if (allCompanies.length === 1) {
-        company = allCompanies[0] as unknown as NonNullable<typeof company>;
+        company = allCompanies[0];
         console.log(`Using only company found: ${company!.name} (${company!.id})`);
       } else {
         console.log('Multiple companies found in org:');
