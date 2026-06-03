@@ -1,0 +1,75 @@
+/* Dashboard-only continuation of the login cinematic. */
+
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic {
+  opacity: 1;
+}
+
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic::before,
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__sun,
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__glass,
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__glare,
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__film,
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist,
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist span,
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__wetness,
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__bubbles,
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__squeegee {
+  animation-duration: var(--auth-cinematic-duration);
+  animation-delay: var(--auth-cinematic-handoff-delay);
+  animation-fill-mode: forwards;
+}
+
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic::before {
+  animation-name: auth-cinematic-camera-approach, auth-cinematic-wipe-clear;
+  animation-timing-function: var(--ease-out-soft), linear;
+}
+
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__sun {
+  animation-name: auth-cinematic-sun-bloom;
+  animation-timing-function: var(--ease-out-soft);
+}
+
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__glass {
+  animation-name: auth-cinematic-glass-approach, auth-cinematic-wipe-clear;
+  animation-timing-function: var(--ease-out-soft), linear;
+}
+
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__glare {
+  animation-name: auth-cinematic-glare, auth-cinematic-wipe-clear;
+  animation-timing-function: var(--ease-out-soft), linear;
+}
+
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__film {
+  animation-name: auth-cinematic-film-cover, auth-cinematic-wipe-clear;
+  animation-timing-function: cubic-bezier(0.2, 0.9, 0.25, 1), linear;
+}
+
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist,
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__wetness,
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__bubbles {
+  animation-name: auth-cinematic-wet-surface, auth-cinematic-wipe-clear;
+  animation-timing-function: var(--ease-out-soft), linear;
+}
+
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist span:nth-child(1) {
+  animation-name: auth-cinematic-mist-layer-1;
+  animation-timing-function: ease-out;
+  animation-delay: var(--auth-cinematic-handoff-delay);
+}
+
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist span:nth-child(2) {
+  animation-name: auth-cinematic-mist-layer-2;
+  animation-timing-function: ease-out;
+  animation-delay: calc(var(--auth-cinematic-handoff-delay) + 0.12s);
+}
+
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist span:nth-child(3) {
+  animation-name: auth-cinematic-mist-layer-3;
+  animation-timing-function: ease-out;
+  animation-delay: calc(var(--auth-cinematic-handoff-delay) + 0.22s);
+}
+
+.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__squeegee {
+  animation-name: auth-cinematic-squeegee-pass;
+  animation-timing-function: linear;
+}

@@ -5,6 +5,17 @@ export function LoginMotionScene() {
     <section className="auth-motion-stage">
       <div className="auth-window" aria-hidden="true">
         <div className="auth-window__rays" />
+        <div className="auth-window-logo">
+          <span className="auth-window-logo__letter">S</span>
+          <span className="auth-window-logo__sun">
+            <span className="auth-window-logo__sun-core" />
+          </span>
+          <span className="auth-window-logo__letter">L</span>
+          <span className="auth-window-logo__letter">E</span>
+          <span className="auth-window-logo__letter">R</span>
+          <span className="auth-window-logo__letter">I</span>
+          <span className="auth-window-logo__letter">A</span>
+        </div>
         <svg
           className="auth-window__city"
           viewBox="0 0 560 380"

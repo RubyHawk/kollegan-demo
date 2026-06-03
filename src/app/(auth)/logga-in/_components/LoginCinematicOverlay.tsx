@@ -1,13 +1,24 @@
 'use client';
 
-import { AuthBrandMark } from './AuthBrandMark';
+import { LOGIN_CINEMATIC_DROPLET_COUNT } from '@shared/lib/login-cinematic-timing';
 
-export function LoginCinematicOverlay() {
+interface LoginCinematicOverlayProps {
+  windowMarkup: string;
+}
+
+const DROPLETS = Array.from({ length: LOGIN_CINEMATIC_DROPLET_COUNT }, (_, index) => index);
+
+export function LoginCinematicOverlay({ windowMarkup }: LoginCinematicOverlayProps) {
   return (
     <div className="auth-login-cinematic" aria-hidden="true">
-      <div className="auth-login-cinematic__window-zoom" />
-      <div className="auth-login-cinematic__sun">
-        <AuthBrandMark size={34} />
+      <div className="auth-login-cinematic__window-zoom">
+        {windowMarkup ? (
+          <div
+            className="auth-login-cinematic__window-copy"
+            dangerouslySetInnerHTML={{ __html: windowMarkup }}
+          />
+        ) : null}
+        <div className="auth-login-cinematic__sun" />
       </div>
 
       <div className="auth-login-cinematic__glass" />
@@ -20,7 +31,9 @@ export function LoginCinematicOverlay() {
         <span />
       </div>
       <div className="auth-login-cinematic__wetness" />
-      <div className="auth-login-cinematic__bubbles" />
+      <div className="auth-login-cinematic__bubbles">
+        {DROPLETS.map((drop) => <span key={drop} />)}
+      </div>
       <div className="auth-login-cinematic__squeegee">
         <span className="auth-login-cinematic__squeegee-blade" />
         <span className="auth-login-cinematic__squeegee-handle" />

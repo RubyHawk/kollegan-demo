@@ -1,7 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import {
+  LOGIN_CINEMATIC_DASHBOARD_WIPE_MS,
+  LOGIN_CINEMATIC_DROPLET_COUNT,
+} from '@shared/lib/login-cinematic-timing';
 import { useCinematic } from '@shared/stores/cinematic.store';
+
+const DROPLETS = Array.from({ length: LOGIN_CINEMATIC_DROPLET_COUNT }, (_, index) => index);
 
 export function DashboardCinematicPortal() {
   const { pending, clear } = useCinematic();
@@ -11,8 +17,7 @@ export function DashboardCinematicPortal() {
     if (pending) {
       clear();
       setActive(true);
-      // Wipe phase is (1 - 0.70) * 8.8s = 2.64s + buffer
-      const timer = window.setTimeout(() => setActive(false), 2700);
+      const timer = window.setTimeout(() => setActive(false), LOGIN_CINEMATIC_DASHBOARD_WIPE_MS);
       return () => window.clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -39,7 +44,9 @@ export function DashboardCinematicPortal() {
           <span />
         </div>
         <div className="auth-login-cinematic__wetness" />
-        <div className="auth-login-cinematic__bubbles" />
+        <div className="auth-login-cinematic__bubbles">
+          {DROPLETS.map((drop) => <span key={drop} />)}
+        </div>
         <div className="auth-login-cinematic__squeegee">
           <span className="auth-login-cinematic__squeegee-blade" />
           <span className="auth-login-cinematic__squeegee-handle" />

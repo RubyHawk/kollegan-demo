@@ -9,6 +9,7 @@ import {
   login,
   type MfaMethod,
 } from '@shared/lib/api/auth-session.api';
+import { LOGIN_CINEMATIC_NAVIGATION_DELAY_MS } from '@shared/lib/login-cinematic-timing';
 import { useCinematic } from '@shared/stores/cinematic.store';
 import { TooltipProvider } from '@shared/ui/tooltip';
 import { FloatingInput } from './FloatingInput';
@@ -62,13 +63,14 @@ export function LoginForm({ redirect, onCinematicStart }: LoginFormProps) {
     setExiting(true);
     onCinematicStart();
     router.prefetch(redirect);
-    // At 70% of the 8.8s cinematic (6.16s) the film is fully applied and
+    window.setTimeout(() => router.prefetch(redirect), 900);
+    // At 70% of the 7.2s cinematic (5.04s) the film is fully applied and
     // mist is blooming — perfect bridge point to soft-navigate. The dashboard
     // mounts with the wipe overlay already at 70% via negative animation-delay.
     window.setTimeout(() => {
       arm();
       router.push(redirect);
-    }, 6200);
+    }, LOGIN_CINEMATIC_NAVIGATION_DELAY_MS);
   }
 
   function handleExitComplete() {
