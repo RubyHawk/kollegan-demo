@@ -1,6 +1,9 @@
-.auth-scope .auth-login-cinematic {
+.auth-scope {
   --auth-cinematic-duration: 7.2s;
   --auth-cinematic-handoff-delay: -5.04s;
+}
+
+.auth-scope .auth-login-cinematic {
   position: fixed;
   inset: 0;
   z-index: 40;
