@@ -250,6 +250,10 @@ export function ProductsPageClient() {
   const hasActiveFilters = Boolean(search || categoryFilter || showInactive);
 
   const openCreate = () => {
+    if (!selectedCompanyId) {
+      setError('Välj ett företag i toppen av sidan innan du skapar en produkt.');
+      return;
+    }
     setEditingProduct(null);
     setModalOpen(true);
   };
@@ -290,12 +294,16 @@ export function ProductsPageClient() {
   }, [addToast]);
 
   const handleCreateCategory = useCallback(async (payload: CategoryComposerPayload) => {
+    if (!selectedCompanyId) {
+      setError('Välj ett företag innan du skapar en kategori.');
+      return;
+    }
     setCategorySaving(true);
     setError(null);
     try {
       await createProductCategory({
         ...payload,
-        companyId: selectedCompanyId || undefined,
+        companyId: selectedCompanyId,
       });
       await loadCategories();
     } catch {
@@ -319,6 +327,10 @@ export function ProductsPageClient() {
   }, [loadCategories, loadProducts]);
 
   const handleSave = useCallback(async (form: ProductForm) => {
+    if (!selectedCompanyId) {
+      setError('Välj ett företag innan du sparar en produkt.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -330,7 +342,7 @@ export function ProductsPageClient() {
 
       const payload = {
         name: form.name.trim(),
-        companyId: selectedCompanyId || undefined,
+        companyId: selectedCompanyId,
         description: form.description.trim() || undefined,
         unitPrice: parseFloat(form.unitPrice) || 0,
         vatRate: parseFloat(form.vatRate) || 0.25,
@@ -368,7 +380,6 @@ export function ProductsPageClient() {
     try {
       await updateProduct(product.id, {
         isActive: !product.isActive,
-        companyId: selectedCompanyId || undefined,
       });
 
       setProducts((current) =>
@@ -494,6 +505,7 @@ export function ProductsPageClient() {
           categorySupport={categorySupport}
           categorySupportMessage={categorySupportMessage}
           saving={saving}
+          selectedCompanyName={selectedCompany?.name}
           onClose={closeModal}
           onSave={handleSave}
           onOpenCategoryManager={openCategoryManager}
@@ -512,6 +524,7 @@ export function ProductsPageClient() {
         onDeleteCategory={handleDeleteCategory}
         saving={categorySaving}
         deletingId={deletingCategoryId}
+        selectedCompanyName={selectedCompany?.name}
       />
 
       <ConfirmDestructiveDialog
