@@ -12,22 +12,37 @@ interface LoginShellProps {
 
 export function LoginShell({ redirect }: LoginShellProps) {
   const [cinematicActive, setCinematicActive] = useState(false);
+  const [cinematicWindowMarkup, setCinematicWindowMarkup] = useState('');
 
   function handleCinematicStart() {
     const root = document.documentElement;
-    const markEl = document.querySelector<HTMLElement>('.auth-console__brand-mark');
+    const markEl =
+      document.querySelector<HTMLElement>('.auth-window-logo__sun') ??
+      document.querySelector<HTMLElement>('.auth-console__brand-mark');
+    const winEl = document.querySelector<HTMLElement>('.auth-window');
     if (markEl) {
       const r = markEl.getBoundingClientRect();
       root.style.setProperty('--cinematic-sun-x', `${(r.left + r.width / 2).toFixed(0)}px`);
       root.style.setProperty('--cinematic-sun-y', `${(r.top + r.height / 2).toFixed(0)}px`);
+      root.style.setProperty('--cinematic-sun-ox', `${((r.left + r.width / 2) / window.innerWidth * 100).toFixed(1)}%`);
+      root.style.setProperty('--cinematic-sun-oy', `${((r.top + r.height / 2) / window.innerHeight * 100).toFixed(1)}%`);
     }
-    const winEl = document.querySelector<HTMLElement>('.auth-window');
     if (winEl) {
       const r = winEl.getBoundingClientRect();
       const vw = window.innerWidth;
       const vh = window.innerHeight;
+      root.style.setProperty('--cinematic-win-x', `${r.left.toFixed(0)}px`);
+      root.style.setProperty('--cinematic-win-y', `${r.top.toFixed(0)}px`);
+      root.style.setProperty('--cinematic-win-w', `${r.width.toFixed(0)}px`);
+      root.style.setProperty('--cinematic-win-h', `${r.height.toFixed(0)}px`);
       root.style.setProperty('--cinematic-win-ox', `${((r.left + r.width / 2) / vw * 100).toFixed(1)}%`);
       root.style.setProperty('--cinematic-win-oy', `${((r.top + r.height / 2) / vh * 100).toFixed(1)}%`);
+      if (markEl) {
+        const mark = markEl.getBoundingClientRect();
+        root.style.setProperty('--cinematic-sun-local-x', `${(mark.left + mark.width / 2 - r.left).toFixed(0)}px`);
+        root.style.setProperty('--cinematic-sun-local-y', `${(mark.top + mark.height / 2 - r.top).toFixed(0)}px`);
+      }
+      setCinematicWindowMarkup(winEl.outerHTML);
     }
     setCinematicActive(true);
   }
@@ -56,7 +71,7 @@ export function LoginShell({ redirect }: LoginShellProps) {
             onCinematicStart={handleCinematicStart}
           />
         </div>
-        <LoginCinematicOverlay />
+        <LoginCinematicOverlay windowMarkup={cinematicWindowMarkup} />
       </div>
     </MotionConfig>
   );

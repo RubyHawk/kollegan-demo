@@ -1,5 +1,7 @@
 .auth-scope .auth-login-cinematic {
-  position: absolute;
+  --auth-cinematic-duration: 7.2s;
+  --auth-cinematic-handoff-delay: -5.04s;
+  position: fixed;
   inset: 0;
   z-index: 40;
   overflow: hidden;
@@ -11,11 +13,11 @@
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 0;
   background:
-    radial-gradient(circle at 78% 14%, rgb(255 224 146 / 0.5), transparent 20%),
-    radial-gradient(circle at 20% 18%, rgb(190 227 255 / 0.18), transparent 28%),
-    linear-gradient(180deg, rgb(229 244 255 / 0.2), rgb(24 55 77 / 0.32));
+    radial-gradient(circle at var(--cinematic-sun-ox, 24%) var(--cinematic-sun-oy, 22%), rgb(255 230 151 / 0.5), transparent 16%),
+    radial-gradient(circle at var(--cinematic-sun-ox, 24%) var(--cinematic-sun-oy, 22%), rgb(255 246 207 / 0.18), transparent 32%),
+    rgb(8 20 28 / 0.54);
   opacity: 0;
   transform: scale(0.74);
 }
@@ -35,29 +37,42 @@
 }
 
 .auth-scope .auth-login-cinematic__window-zoom {
-  inset: 0;
+  left: var(--cinematic-win-x, 0);
+  top: var(--cinematic-win-y, 0);
   z-index: 1;
-  background:
-    radial-gradient(ellipse at 50% 70%, rgb(212 149 106 / 0.32) 0%, transparent 48%),
-    linear-gradient(
-      180deg,
-      #1a2d45 0%,
-      #2e4a6e 28%,
-      #5c7fa3 50%,
-      #906040 68%,
-      #2a3820 80%,
-      #111810 100%
-    );
+  width: var(--cinematic-win-w, 100vw);
+  height: var(--cinematic-win-h, 100vh);
+  overflow: hidden;
+  border: 0;
+  border-radius: 0.22rem;
+  background: transparent;
   transform-origin: var(--cinematic-win-ox, 35%) var(--cinematic-win-oy, 50%);
   opacity: 0;
-  transform: scale(0.56);
+  transform: none;
+}
+
+.auth-scope .auth-login-cinematic__window-zoom::before {
+  content: none;
+}
+
+.auth-scope .auth-login-cinematic__window-copy,
+.auth-scope .auth-login-cinematic__window-copy > .auth-window {
+  position: absolute;
+  inset: 0;
+}
+
+.auth-scope .auth-login-cinematic__window-copy > .auth-window {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  flex: none;
 }
 
 .auth-scope .auth-login-cinematic__sun {
-  /* Positioned precisely over the measured brand-mark center */
-  left: calc(var(--cinematic-sun-x, 72%) - 1.0625rem);
-  top: calc(var(--cinematic-sun-y, 20%) - 1.0625rem);
-  z-index: 3;
+  left: calc(var(--cinematic-sun-local-x, 24%) - 1.0625rem);
+  top: calc(var(--cinematic-sun-local-y, 22%) - 1.0625rem);
+  z-index: 14;
   display: grid;
   width: 2.125rem;
   height: 2.125rem;
@@ -88,9 +103,7 @@
 }
 
 .auth-scope .auth-login-cinematic__sun svg {
-  position: relative;
-  z-index: 1;
-  filter: drop-shadow(0 10px 24px rgb(77 45 8 / 0.2));
+  display: none;
 }
 
 .auth-scope .auth-login-cinematic__glass {
@@ -99,11 +112,11 @@
   border: 1px solid rgb(238 249 255 / 0.42);
   border-radius: 1.9rem;
   background:
-    linear-gradient(180deg, rgb(242 250 255 / 0.2), rgb(202 226 243 / 0.1)),
-    radial-gradient(circle at 74% 15%, rgb(255 235 178 / 0.13), transparent 26%);
+    linear-gradient(180deg, rgb(242 250 255 / 0.08), rgb(202 226 243 / 0.04)),
+    radial-gradient(circle at var(--cinematic-win-ox, 24%) var(--cinematic-win-oy, 22%), rgb(255 235 178 / 0.12), transparent 27%);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.24),
-    inset 0 -90px 120px rgb(6 21 23 / 0.28);
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    inset 0 -70px 100px rgb(6 21 23 / 0.18);
   opacity: 0;
   transform: scale(0.74);
 }
@@ -112,8 +125,8 @@
   inset: -10%;
   z-index: 7;
   background:
-    radial-gradient(circle at 78% 13%, rgb(255 235 166 / 0.62), transparent 21%),
-    radial-gradient(ellipse at 62% 24%, rgb(255 255 255 / 0.18), transparent 42%);
+    radial-gradient(circle at var(--cinematic-win-ox, 24%) var(--cinematic-win-oy, 22%), rgb(255 235 166 / 0.7), transparent 16%),
+    radial-gradient(ellipse at 32% 27%, rgb(255 255 255 / 0.1), transparent 34%);
   mix-blend-mode: screen;
   opacity: 0;
   transform: translate3d(5%, -4%, 0);
@@ -127,14 +140,12 @@
   height: 2.65rem;
   border-radius: 999px;
   background:
-    radial-gradient(ellipse at 50% 18%, rgb(255 255 255 / 0.95), transparent 34%),
-    linear-gradient(180deg, rgb(245 252 255), rgb(167 205 226) 45%, rgb(75 107 125)),
-    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.42) 0 0.35rem, rgb(139 180 202 / 0.4) 0.36rem 0.7rem);
+    radial-gradient(ellipse at 50% 20%, rgb(232 247 253 / 0.28), transparent 42%),
+    linear-gradient(180deg, rgb(151 197 219 / 0.5), rgb(70 112 134 / 0.58) 52%, rgb(36 67 84 / 0.62));
   background-position: 0 0, 0 0, 0 0;
   box-shadow:
-    0 1.2rem 2.6rem rgb(18 41 55 / 0.28),
-    inset 0 1px 0 rgb(255 255 255 / 0.72),
-    inset 0 -0.45rem 0.8rem rgb(35 70 91 / 0.28);
+    0 1rem 2.2rem rgb(18 41 55 / 0.2),
+    inset 0 -0.35rem 0.7rem rgb(20 54 72 / 0.24);
   opacity: 0;
   transform: translateY(-3rem) scaleX(0.78);
 }
@@ -150,8 +161,9 @@
   border-radius: 999px;
   background:
     radial-gradient(circle, rgb(84 125 148 / 0.38) 0 0.42rem, transparent 0.46rem),
-    radial-gradient(circle, rgb(255 255 255 / 0.86), rgb(154 195 218));
+    radial-gradient(circle, rgb(214 238 248 / 0.44), rgb(96 148 174 / 0.56));
   box-shadow: inset 0 0.35rem 0.7rem rgb(38 75 96 / 0.25);
+  opacity: 0.62;
   transform: translateY(-50%);
 }
 
@@ -167,27 +179,32 @@
   inset: 0;
   z-index: 6;
   background:
-    linear-gradient(180deg, rgb(246 252 255 / 0.32), rgb(190 222 239 / 0.36) 17%, rgb(78 116 137 / 0.58)),
-    linear-gradient(90deg, rgb(255 255 255 / 0.08), transparent 18%, rgb(255 255 255 / 0.05) 54%, transparent);
+    radial-gradient(ellipse at 24% 18%, rgb(238 250 255 / 0.14), transparent 42%),
+    radial-gradient(ellipse at 72% 56%, rgb(30 78 106 / 0.32), transparent 56%),
+    linear-gradient(180deg, rgb(232 248 255 / 0.16), rgb(54 111 138 / 0.22) 42%, rgb(12 31 36 / 0.2)),
+    linear-gradient(102deg, rgb(255 255 255 / 0.14), transparent 22%, rgb(255 255 255 / 0.05) 58%, transparent),
+    radial-gradient(ellipse at 18% 12%, rgb(255 255 255 / 0.12), transparent 26%),
+    radial-gradient(ellipse at 82% 18%, rgb(255 255 255 / 0.06), transparent 30%);
   box-shadow:
     inset 0 0 0 1px rgb(232 248 255 / 0.2),
-    inset 0 18px 28px rgb(255 255 255 / 0.12);
+    inset 0 0 10rem rgb(5 18 22 / 0.12);
   opacity: 0;
   transform: translateY(-102%);
+  backdrop-filter: saturate(0.72) contrast(1.2) brightness(0.82);
 }
 
 .auth-scope .auth-login-cinematic__film::before {
   content: "";
   position: absolute;
-  top: 1.15rem;
-  right: 3%;
-  left: 3%;
-  height: 0.42rem;
+  right: 0;
+  bottom: -0.35rem;
+  left: 0;
+  height: 0.7rem;
   border-radius: 999px;
   background:
-    linear-gradient(90deg, transparent, rgb(248 253 255 / 0.86), transparent),
-    rgb(176 216 238 / 0.42);
-  box-shadow: 0 18px 32px rgb(219 240 255 / 0.22);
+    linear-gradient(90deg, transparent, rgb(245 253 255 / 0.56), transparent),
+    rgb(128 183 209 / 0.3);
+  box-shadow: 0 -0.55rem 1.3rem rgb(226 245 255 / 0.12);
 }
 
 .auth-scope .auth-login-cinematic__mist {
@@ -201,30 +218,30 @@
   position: absolute;
   inset: -15%;
   display: block;
-  filter: blur(28px);
+  filter: blur(30px);
 }
 
 .auth-scope .auth-login-cinematic__mist span:nth-child(1) {
   background:
-    radial-gradient(ellipse at 32% 44%, rgb(220 245 255 / 0.52), transparent 32%),
-    radial-gradient(ellipse at 70% 58%, rgb(210 240 255 / 0.38), transparent 28%),
-    radial-gradient(ellipse at 52% 26%, rgb(232 249 255 / 0.32), transparent 24%);
+    radial-gradient(ellipse at 24% 30%, rgb(230 250 255 / 0.42), transparent 30%),
+    radial-gradient(ellipse at 72% 58%, rgb(210 240 255 / 0.28), transparent 28%),
+    radial-gradient(ellipse at 50% 24%, rgb(232 249 255 / 0.26), transparent 24%);
 }
 
 .auth-scope .auth-login-cinematic__mist span:nth-child(2) {
   background:
-    radial-gradient(ellipse at 56% 36%, rgb(215 242 255 / 0.44), transparent 30%),
-    radial-gradient(ellipse at 20% 64%, rgb(205 238 255 / 0.34), transparent 26%),
-    radial-gradient(ellipse at 82% 28%, rgb(225 246 255 / 0.26), transparent 22%);
-  opacity: 0.78;
+    radial-gradient(ellipse at 56% 36%, rgb(215 242 255 / 0.36), transparent 30%),
+    radial-gradient(ellipse at 20% 64%, rgb(205 238 255 / 0.3), transparent 26%),
+    radial-gradient(ellipse at 82% 28%, rgb(225 246 255 / 0.22), transparent 22%);
+  opacity: 0.86;
 }
 
 .auth-scope .auth-login-cinematic__mist span:nth-child(3) {
   background:
-    radial-gradient(ellipse at 42% 66%, rgb(208 238 255 / 0.38), transparent 28%),
-    radial-gradient(ellipse at 76% 42%, rgb(220 244 255 / 0.28), transparent 24%),
+    radial-gradient(ellipse at 42% 66%, rgb(208 238 255 / 0.34), transparent 28%),
+    radial-gradient(ellipse at 76% 42%, rgb(220 244 255 / 0.26), transparent 24%),
     radial-gradient(ellipse at 16% 36%, rgb(228 248 255 / 0.24), transparent 20%);
-  opacity: 0.56;
+  opacity: 0.68;
 }
 
 .auth-scope .auth-login-cinematic__wetness,
@@ -236,9 +253,14 @@
 
 .auth-scope .auth-login-cinematic__wetness {
   background:
-    linear-gradient(180deg, rgb(238 250 255 / 0.28), rgb(238 250 255 / 0.06)),
-    repeating-linear-gradient(90deg, transparent 0 4.4rem, rgb(255 255 255 / 0.1) 4.45rem 4.5rem, transparent 4.55rem 7.6rem);
-  filter: blur(1px);
+    radial-gradient(ellipse at 16% 20%, rgb(250 254 255 / 0.4), transparent 34%),
+    radial-gradient(ellipse at 43% 38%, rgb(232 248 255 / 0.3), transparent 36%),
+    radial-gradient(ellipse at 77% 28%, rgb(248 253 255 / 0.32), transparent 34%),
+    radial-gradient(ellipse at 28% 72%, rgb(226 245 255 / 0.24), transparent 40%),
+    radial-gradient(ellipse at 82% 76%, rgb(214 240 255 / 0.22), transparent 42%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.1), rgb(210 238 250 / 0.06) 48%, transparent);
+  filter: blur(0.95px);
+  backdrop-filter: blur(0.75px) saturate(1.06);
 }
 
 .auth-scope .auth-login-cinematic__wetness::before,
@@ -246,30 +268,372 @@
   content: "";
   position: absolute;
   inset: 0;
+  pointer-events: none;
+}
+
+.auth-scope .auth-login-cinematic__wetness::before {
   background:
-    linear-gradient(180deg, transparent 0 10%, rgb(255 255 255 / 0.32) 10.5% 11%, transparent 21%),
-    linear-gradient(180deg, transparent 0 25%, rgb(227 246 255 / 0.28) 25.5% 26%, transparent 40%),
-    linear-gradient(180deg, transparent 0 52%, rgb(255 255 255 / 0.22) 52.5% 53%, transparent 68%);
-  -webkit-mask-image:
-    linear-gradient(90deg, transparent 0 12%, black 16% 18%, transparent 20% 36%, black 38% 40%, transparent 42% 60%, black 64% 66%, transparent 68% 100%);
-  mask-image:
-    linear-gradient(90deg, transparent 0 12%, black 16% 18%, transparent 20% 36%, black 38% 40%, transparent 42% 60%, black 64% 66%, transparent 68% 100%);
-  filter: blur(0.5px);
+    radial-gradient(circle at 6% 18%, rgb(255 255 255 / 0.7) 0 0.07rem, transparent 0.18rem),
+    radial-gradient(circle at 9% 44%, rgb(232 248 255 / 0.55) 0 0.06rem, transparent 0.16rem),
+    radial-gradient(circle at 14% 30%, rgb(255 255 255 / 0.62) 0 0.08rem, transparent 0.2rem),
+    radial-gradient(circle at 18% 62%, rgb(230 248 255 / 0.54) 0 0.07rem, transparent 0.18rem),
+    radial-gradient(circle at 23% 17%, rgb(255 255 255 / 0.58) 0 0.06rem, transparent 0.17rem),
+    radial-gradient(circle at 28% 48%, rgb(232 248 255 / 0.56) 0 0.07rem, transparent 0.19rem),
+    radial-gradient(circle at 34% 27%, rgb(255 255 255 / 0.66) 0 0.08rem, transparent 0.2rem),
+    radial-gradient(circle at 39% 73%, rgb(230 248 255 / 0.52) 0 0.06rem, transparent 0.17rem),
+    radial-gradient(circle at 44% 41%, rgb(255 255 255 / 0.6) 0 0.07rem, transparent 0.18rem),
+    radial-gradient(circle at 50% 20%, rgb(232 248 255 / 0.52) 0 0.06rem, transparent 0.16rem),
+    radial-gradient(circle at 56% 58%, rgb(255 255 255 / 0.62) 0 0.08rem, transparent 0.2rem),
+    radial-gradient(circle at 62% 34%, rgb(230 248 255 / 0.54) 0 0.06rem, transparent 0.18rem),
+    radial-gradient(circle at 68% 76%, rgb(255 255 255 / 0.54) 0 0.07rem, transparent 0.19rem),
+    radial-gradient(circle at 73% 22%, rgb(232 248 255 / 0.58) 0 0.08rem, transparent 0.2rem),
+    radial-gradient(circle at 78% 49%, rgb(255 255 255 / 0.62) 0 0.07rem, transparent 0.18rem),
+    radial-gradient(circle at 84% 64%, rgb(230 248 255 / 0.5) 0 0.06rem, transparent 0.17rem),
+    radial-gradient(circle at 90% 31%, rgb(255 255 255 / 0.58) 0 0.07rem, transparent 0.18rem),
+    radial-gradient(circle at 95% 52%, rgb(232 248 255 / 0.48) 0 0.06rem, transparent 0.16rem),
+    radial-gradient(ellipse at 18% 27%, rgb(255 255 255 / 0.28), transparent 15%),
+    radial-gradient(ellipse at 67% 46%, rgb(235 249 255 / 0.22), transparent 18%);
+  filter: blur(0.22px);
 }
 
 .auth-scope .auth-login-cinematic__wetness::after {
-  opacity: 0.54;
-  transform: translateX(12%);
+  background:
+    radial-gradient(ellipse at 13.8% 19%, rgb(255 255 255 / 0.46) 0 0.2rem, transparent 0.48rem),
+    linear-gradient(178deg, transparent 0 5%, rgb(248 253 255 / 0.44) 8%, rgb(188 224 244 / 0.22) 31%, transparent 66%) 14% 17% / 0.34rem 12.5rem no-repeat,
+    radial-gradient(ellipse at 31.8% 9%, rgb(255 255 255 / 0.42) 0 0.18rem, transparent 0.44rem),
+    linear-gradient(183deg, transparent 0 7%, rgb(255 255 255 / 0.4) 10%, rgb(188 222 242 / 0.2) 36%, transparent 71%) 32% 6% / 0.28rem 14.5rem no-repeat,
+    radial-gradient(ellipse at 55.6% 31%, rgb(255 255 255 / 0.42) 0 0.21rem, transparent 0.5rem),
+    linear-gradient(174deg, transparent 0 6%, rgb(248 253 255 / 0.42) 9%, rgb(196 230 247 / 0.22) 33%, transparent 68%) 56% 30% / 0.38rem 13.5rem no-repeat,
+    radial-gradient(ellipse at 82.8% 15%, rgb(255 255 255 / 0.38) 0 0.16rem, transparent 0.42rem),
+    linear-gradient(186deg, transparent 0 5%, rgb(255 255 255 / 0.36) 8%, rgb(188 224 244 / 0.18) 28%, transparent 58%) 83% 14% / 0.24rem 10.5rem no-repeat,
+    radial-gradient(ellipse at 24% 72%, rgb(245 253 255 / 0.3), transparent 18%),
+    radial-gradient(ellipse at 72% 64%, rgb(235 249 255 / 0.28), transparent 22%);
+  filter: blur(0.75px);
+  opacity: 0.82;
 }
 
 .auth-scope .auth-login-cinematic__bubbles {
+  filter: blur(0.2px);
+}
+
+.auth-scope .auth-login-cinematic__bubbles::before,
+.auth-scope .auth-login-cinematic__bubbles::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.auth-scope .auth-login-cinematic__bubbles::before {
   background:
-    radial-gradient(circle at 13% 25%, rgb(255 255 255 / 0.58) 0 0.32rem, rgb(220 244 255 / 0.12) 0.32rem 0.52rem, transparent 0.54rem),
-    radial-gradient(circle at 31% 58%, rgb(238 250 255 / 0.5) 0 0.26rem, rgb(215 240 255 / 0.1) 0.26rem 0.44rem, transparent 0.46rem),
-    radial-gradient(circle at 47% 38%, rgb(238 250 255 / 0.44) 0 0.22rem, rgb(215 240 255 / 0.1) 0.22rem 0.38rem, transparent 0.4rem),
-    radial-gradient(circle at 69% 52%, rgb(238 250 255 / 0.4) 0 0.24rem, rgb(215 240 255 / 0.08) 0.24rem 0.4rem, transparent 0.42rem),
-    radial-gradient(circle at 84% 29%, rgb(238 250 255 / 0.36) 0 0.2rem, rgb(215 240 255 / 0.08) 0.2rem 0.34rem, transparent 0.36rem);
-  filter: blur(0.4px);
+    radial-gradient(circle at 7% 31%, rgb(255 255 255 / 0.66) 0 0.08rem, transparent 0.2rem),
+    radial-gradient(circle at 11% 49%, rgb(226 246 255 / 0.54) 0 0.06rem, transparent 0.17rem),
+    radial-gradient(circle at 16% 58%, rgb(255 255 255 / 0.58) 0 0.06rem, transparent 0.17rem),
+    radial-gradient(circle at 20% 23%, rgb(226 246 255 / 0.52) 0 0.07rem, transparent 0.18rem),
+    radial-gradient(circle at 26% 79%, rgb(255 255 255 / 0.48) 0 0.06rem, transparent 0.17rem),
+    radial-gradient(circle at 33% 47%, rgb(226 246 255 / 0.54) 0 0.06rem, transparent 0.17rem),
+    radial-gradient(circle at 39% 34%, rgb(255 255 255 / 0.6) 0 0.07rem, transparent 0.18rem),
+    radial-gradient(circle at 45% 18%, rgb(226 246 255 / 0.5) 0 0.06rem, transparent 0.16rem),
+    radial-gradient(circle at 51% 76%, rgb(255 255 255 / 0.54) 0 0.07rem, transparent 0.18rem),
+    radial-gradient(circle at 58% 55%, rgb(226 246 255 / 0.54) 0 0.06rem, transparent 0.18rem),
+    radial-gradient(circle at 64% 29%, rgb(255 255 255 / 0.58) 0 0.07rem, transparent 0.19rem),
+    radial-gradient(circle at 70% 72%, rgb(226 246 255 / 0.46) 0 0.06rem, transparent 0.16rem),
+    radial-gradient(circle at 75% 18%, rgb(235 250 255 / 0.62) 0 0.08rem, transparent 0.2rem),
+    radial-gradient(circle at 82% 44%, rgb(226 246 255 / 0.52) 0 0.07rem, transparent 0.18rem),
+    radial-gradient(circle at 88% 61%, rgb(255 255 255 / 0.54) 0 0.07rem, transparent 0.18rem),
+    radial-gradient(circle at 94% 29%, rgb(235 250 255 / 0.52) 0 0.06rem, transparent 0.17rem);
+  filter: blur(0.12px);
+}
+
+.auth-scope .auth-login-cinematic__bubbles::after {
+  background:
+    radial-gradient(ellipse at 19% 33%, rgb(255 255 255 / 0.34), transparent 13%),
+    radial-gradient(ellipse at 38% 66%, rgb(219 244 255 / 0.26), transparent 16%),
+    radial-gradient(ellipse at 71% 44%, rgb(248 253 255 / 0.28), transparent 15%),
+    radial-gradient(ellipse at 88% 28%, rgb(219 242 255 / 0.22), transparent 12%);
+  filter: blur(7px);
+  opacity: 0.78;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span {
+  position: absolute;
+  display: block;
+  width: var(--drop-w, 0.54rem);
+  height: var(--drop-h, 1.8rem);
+  border-radius: 999px;
+  background:
+    radial-gradient(ellipse at 50% 10%, rgb(255 255 255 / 0.58) 0 0.1rem, transparent 0.26rem),
+    linear-gradient(180deg, rgb(238 250 255 / 0.4), rgb(168 212 238 / 0.2) 48%, transparent 100%) 50% 0.22rem / var(--trail-w, 0.16rem) calc(100% - 0.15rem) no-repeat;
+  box-shadow:
+    0 0.12rem 0.34rem rgb(255 255 255 / 0.14),
+    0 0.75rem 1.3rem rgb(20 52 70 / 0.12);
+  transform: translateY(var(--drop-y, 0)) rotate(var(--drop-r, 0deg));
+}
+
+.auth-scope .auth-login-cinematic__bubbles span::before,
+.auth-scope .auth-login-cinematic__bubbles span::after {
+  content: "";
+  position: absolute;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span::before {
+  top: -0.02rem;
+  left: 50%;
+  width: var(--bead-w, 0.5rem);
+  height: var(--bead-h, 0.56rem);
+  background:
+    radial-gradient(circle at 36% 22%, rgb(255 255 255 / 0.82) 0 0.07rem, transparent 0.13rem),
+    radial-gradient(ellipse at 52% 55%, rgb(235 249 255 / 0.5), rgb(178 218 239 / 0.24) 62%, transparent 72%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.36),
+    0 0.16rem 0.42rem rgb(245 253 255 / 0.18);
+  filter: blur(0.035rem);
+  transform: translateX(-50%);
+}
+
+.auth-scope .auth-login-cinematic__bubbles span::after {
+  top: 0.48rem;
+  left: 50%;
+  width: var(--tail-w, 0.08rem);
+  height: calc(100% - 0.3rem);
+  background: linear-gradient(180deg, rgb(246 253 255 / 0.36), rgb(170 216 241 / 0.17) 46%, transparent);
+  filter: blur(0.08rem);
+  transform: translateX(-50%);
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(1) {
+  --drop-w: 0.62rem;
+  --drop-h: 2.7rem;
+  --drop-r: 2deg;
+  top: 22%;
+  left: 13%;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(2) {
+  --drop-w: 0.5rem;
+  --drop-h: 2.1rem;
+  --drop-r: -4deg;
+  top: 54%;
+  left: 31%;
+  opacity: 0.82;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(3) {
+  --drop-w: 0.62rem;
+  --drop-h: 0.72rem;
+  --drop-r: 3deg;
+  top: 37%;
+  left: 48%;
+  opacity: 0.82;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(4) {
+  --drop-w: 0.58rem;
+  --drop-h: 2.35rem;
+  --drop-r: -2deg;
+  top: 52%;
+  left: 69%;
+  opacity: 0.74;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(5) {
+  --drop-w: 0.48rem;
+  --drop-h: 1.85rem;
+  --drop-r: 5deg;
+  top: 28%;
+  left: 84%;
+  opacity: 0.72;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(6) {
+  --drop-w: 0.42rem;
+  --drop-h: 2.55rem;
+  --drop-r: -3deg;
+  top: 19%;
+  left: 57%;
+  opacity: 0.66;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(7) {
+  --drop-w: 0.7rem;
+  --drop-h: 3.2rem;
+  --drop-r: 4deg;
+  top: 63%;
+  left: 21%;
+  opacity: 0.7;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(8) {
+  --drop-w: 0.54rem;
+  --drop-h: 0.62rem;
+  --drop-r: -6deg;
+  top: 15%;
+  left: 7%;
+  opacity: 0.78;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(9) {
+  --drop-w: 0.9rem;
+  --drop-h: 3.8rem;
+  --drop-r: 1deg;
+  top: 33%;
+  left: 18%;
+  opacity: 0.62;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(10) {
+  --drop-w: 0.44rem;
+  --drop-h: 1.7rem;
+  --drop-r: 7deg;
+  top: 73%;
+  left: 41%;
+  opacity: 0.58;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(11) {
+  --drop-w: 0.52rem;
+  --drop-h: 2.8rem;
+  --drop-r: -2deg;
+  top: 11%;
+  left: 67%;
+  opacity: 0.68;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(12) {
+  --drop-w: 0.5rem;
+  --drop-h: 0.56rem;
+  --drop-r: 3deg;
+  top: 57%;
+  left: 87%;
+  opacity: 0.72;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(13) {
+  --drop-w: 0.66rem;
+  --drop-h: 3.1rem;
+  --drop-r: 5deg;
+  top: 40%;
+  left: 73%;
+  opacity: 0.56;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(14) {
+  --drop-w: 0.42rem;
+  --drop-h: 1.55rem;
+  --drop-r: -5deg;
+  top: 26%;
+  left: 39%;
+  opacity: 0.66;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(15) {
+  --drop-w: 0.82rem;
+  --drop-h: 4.25rem;
+  --drop-r: -1deg;
+  top: 45%;
+  left: 55%;
+  opacity: 0.54;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(16) {
+  --drop-w: 0.34rem;
+  --drop-h: 1.35rem;
+  --drop-r: 4deg;
+  top: 70%;
+  left: 78%;
+  opacity: 0.62;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(17) {
+  --drop-w: 0.48rem;
+  --drop-h: 2.15rem;
+  --drop-r: -7deg;
+  top: 63%;
+  left: 8%;
+  opacity: 0.6;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(18) {
+  --drop-w: 0.56rem;
+  --drop-h: 2.4rem;
+  --drop-r: 2deg;
+  top: 24%;
+  left: 92%;
+  opacity: 0.6;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(19) {
+  --drop-w: 0.44rem;
+  --drop-h: 1.85rem;
+  --drop-r: -3deg;
+  top: 18%;
+  left: 27%;
+  opacity: 0.68;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(20) {
+  --drop-w: 0.46rem;
+  --drop-h: 0.5rem;
+  --drop-r: 8deg;
+  top: 46%;
+  left: 24%;
+  opacity: 0.74;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(21) {
+  --drop-w: 0.54rem;
+  --drop-h: 2.6rem;
+  --drop-r: 2deg;
+  top: 31%;
+  left: 44%;
+  opacity: 0.66;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(22) {
+  --drop-w: 0.38rem;
+  --drop-h: 1.35rem;
+  --drop-r: -6deg;
+  top: 58%;
+  left: 49%;
+  opacity: 0.62;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(23) {
+  --drop-w: 0.64rem;
+  --drop-h: 3.45rem;
+  --drop-r: -2deg;
+  top: 27%;
+  left: 63%;
+  opacity: 0.6;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(24) {
+  --drop-w: 0.32rem;
+  --drop-h: 1.15rem;
+  --drop-r: 5deg;
+  top: 76%;
+  left: 66%;
+  opacity: 0.62;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(25) {
+  --drop-w: 0.48rem;
+  --drop-h: 2.05rem;
+  --drop-r: 4deg;
+  top: 50%;
+  left: 92%;
+  opacity: 0.6;
+}
+
+.auth-scope .auth-login-cinematic__bubbles span:nth-child(26) {
+  --drop-w: 0.28rem;
+  --drop-h: 0.95rem;
+  --drop-r: -4deg;
+  top: 35%;
+  left: 6%;
+  opacity: 0.66;
 }
 
 .auth-scope .auth-login-cinematic__squeegee {
@@ -341,9 +705,10 @@
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__wetness,
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__bubbles,
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__squeegee,
+.auth-scope[data-state='cinematic'] .auth-shell,
 .auth-scope[data-state='cinematic'] .auth-sidebar,
 .auth-scope[data-state='cinematic'] .auth-login-panel {
-  animation-duration: 8.8s;
+  animation-duration: var(--auth-cinematic-duration);
   animation-fill-mode: forwards;
 }
 
@@ -354,7 +719,7 @@
 
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__window-zoom {
   animation-name: auth-cinematic-window-zoom;
-  animation-timing-function: var(--ease-out-soft);
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__sun {
@@ -379,12 +744,12 @@
 
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__film-roll {
   animation-name: auth-cinematic-film-roll;
-  animation-timing-function: cubic-bezier(0.2, 0.9, 0.25, 1);
+  animation-timing-function: linear;
 }
 
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__film {
   animation-name: auth-cinematic-film-cover, auth-cinematic-wipe-clear;
-  animation-timing-function: cubic-bezier(0.2, 0.9, 0.25, 1), linear;
+  animation-timing-function: linear, linear;
 }
 
 .auth-scope[data-state='cinematic'] .auth-login-cinematic__mist,
@@ -416,6 +781,7 @@
   animation-timing-function: linear;
 }
 
+.auth-scope[data-state='cinematic'] .auth-shell,
 .auth-scope[data-state='cinematic'] .auth-sidebar,
 .auth-scope[data-state='cinematic'] .auth-login-panel {
   animation-name: auth-cinematic-shell-recede;
@@ -425,6 +791,7 @@
 @media (prefers-reduced-motion: reduce) {
   .auth-scope[data-state='cinematic'] .auth-login-cinematic *,
   .auth-scope[data-state='cinematic'] .auth-login-cinematic::before,
+  .auth-scope[data-state='cinematic'] .auth-shell,
   .auth-scope[data-state='cinematic'] .auth-sidebar,
   .auth-scope[data-state='cinematic'] .auth-login-panel,
   .auth-scope.soleria-cinematic-wipe .auth-login-cinematic * {
@@ -437,39 +804,52 @@
 }
 
 /* ─── Keyframes ─── */
-/* Total duration: 8.8s                                                    */
-/* 0–22%   Sun grows from logo (0–1.94s)                                   */
-/* 6–42%   Window zoom fills screen (0.53–3.70s)                           */
-/* 10–32%  Shell (sidebar + form) recedes (0.88–2.82s)                     */
-/* 40–72%  Film roll enters then exits (3.52–6.34s)                        */
-/* 44–66%  Film cover lays down slowly (3.87–5.81s)                        */
-/* 57–72%  Mist / wetness / bubbles bloom (5.02–6.34s)                     */
-/* Navigate at 70% = 6.16s                                                  */
-/* 72–96%  Squeegee sweeps linearly (6.34–8.45s)                           */
+/* Total duration: 7.2s                                                    */
+/* 0–18%   Sun grows from logo (0–1.30s)                                   */
+/* 0–13%   Window zoom fills screen (0–0.94s)                              */
+/* 7–15%   Shell (sidebar + form) recedes (0.50–1.08s)                     */
+/* 20–58%  Film roll enters then exits (1.44–4.18s)                        */
+/* 22–54%  Film cover lays down (1.58–3.89s)                               */
+/* 30–68%  Mist / wetness / bubbles bloom during application (2.16–4.90s)  */
+/* Navigate at 70% = 5.04s                                                  */
+/* 70–96%  Squeegee sweeps linearly (5.04–6.91s)                           */
 
 @keyframes auth-cinematic-camera-approach {
-  0%         { opacity: 0; transform: scale(0.74); }
-  8%         { opacity: 1; }
-  32%        { opacity: 1; transform: scale(1); }
-  100%       { opacity: 0.72; transform: scale(1.04); }
+  0%, 10%    { opacity: 0; transform: scale(0.94); }
+  16%        { opacity: 0.42; transform: scale(1); }
+  100%       { opacity: 0.22; transform: scale(1.03); }
 }
 
 @keyframes auth-cinematic-shell-recede {
-  0%, 10%    { opacity: 1; transform: scale(1); }
-  32%, 100%  { opacity: 0; transform: scale(1.1); }
+  0%, 7%     { opacity: 1; transform: scale(1); }
+  15%, 100%  { opacity: 0; transform: scale(1.025); }
 }
 
 @keyframes auth-cinematic-sun-bloom {
   0%         { opacity: 1; transform: scale(1); }
-  18%        { opacity: 1; transform: scale(4.8); }
-  40%        { opacity: 0.92; transform: scale(12); }
-  100%       { opacity: 0.32; transform: scale(18); }
+  8%         { opacity: 1; transform: scale(4.6); }
+  18%        { opacity: 0.9; transform: scale(10); }
+  58%        { opacity: 0.28; transform: scale(14); }
+  100%       { opacity: 0.18; transform: scale(16); }
 }
 
 @keyframes auth-cinematic-window-zoom {
-  0%, 6%     { opacity: 0; transform: scale(0.56); }
-  14%        { opacity: 1; transform: scale(0.62); }
-  42%, 100%  { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 1;
+    left: var(--cinematic-win-x, 0);
+    top: var(--cinematic-win-y, 0);
+    width: var(--cinematic-win-w, 100vw);
+    height: var(--cinematic-win-h, 100vh);
+    border-radius: 0.22rem;
+  }
+  13%, 100% {
+    opacity: 1;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
 }
 
 @keyframes auth-cinematic-sun-mark {
@@ -479,31 +859,34 @@
 }
 
 @keyframes auth-cinematic-glass-approach {
-  0%         { opacity: 0; transform: scale(0.74); inset: 8% 7%; }
-  14%        { opacity: 1; }
-  38%, 100%  { opacity: 0.9; transform: scale(1); inset: 0; }
+  0%, 58%    { opacity: 0; transform: scale(1); inset: 0; }
+  68%, 100%  { opacity: 0.28; transform: scale(1); inset: 0; }
 }
 
 @keyframes auth-cinematic-glare {
-  0%, 8%     { opacity: 0; transform: translate3d(5%, -4%, 0); }
-  20%        { opacity: 0.9; }
-  52%        { opacity: 0.5; transform: translate3d(-4%, 2%, 0); }
-  72%, 100%  { opacity: 0.18; transform: translate3d(-8%, 4%, 0); }
+  0%, 18%    { opacity: 0; transform: translate3d(5%, -4%, 0); }
+  24%        { opacity: 0.42; }
+  38%        { opacity: 0.28; transform: translate3d(-2%, 1%, 0); }
+  62%        { opacity: 0.2; transform: translate3d(-4%, 2%, 0); }
+  72%, 100%  { opacity: 0.12; transform: translate3d(-8%, 4%, 0); }
 }
 
 @keyframes auth-cinematic-film-roll {
-  0%, 40% {
+  0%, 20% {
     opacity: 0;
     background-position: 0 0, 0 0, 0 0;
     transform: translateY(-3rem) scaleX(0.78);
   }
-  45%        { opacity: 1; }
-  62% {
-    opacity: 1;
+  24% {
+    opacity: 0.96;
+    transform: translateY(0) scaleX(1);
+  }
+  54% {
+    opacity: 0.92;
     background-position: 0 0, 0 0, 8rem 0;
     transform: translateY(calc(100vh - 1.3rem)) scaleX(1);
   }
-  72%, 100% {
+  58%, 100% {
     opacity: 0;
     background-position: 0 0, 0 0, 10rem 0;
     transform: translateY(calc(100vh + 1rem)) scaleX(1);
@@ -511,36 +894,36 @@
 }
 
 @keyframes auth-cinematic-film-cover {
-  0%, 42%    { opacity: 0; transform: translateY(-102%); }
-  47%        { opacity: 1; }
-  66%, 100%  { opacity: 0.88; transform: translateY(0); }
+  0%, 22%    { opacity: 0; transform: translateY(-102%); }
+  26%        { opacity: 0.72; transform: translateY(-88%); }
+  54%, 100%  { opacity: 0.72; transform: translateY(0); }
 }
 
 @keyframes auth-cinematic-wet-surface {
-  0%, 57%    { opacity: 0; }
-  65%        { opacity: 0.84; }
-  74%        { opacity: 0.64; }
+  0%, 28%    { opacity: 0; }
+  36%        { opacity: 0.82; }
+  62%        { opacity: 0.64; }
   96%, 100%  { opacity: 0.06; }
 }
 
 @keyframes auth-cinematic-mist-layer-1 {
-  0%, 57%    { opacity: 0; transform: translate(-4%, 2%) scale(0.96); }
-  64%        { opacity: 1; }
-  80%        { opacity: 0.72; transform: translate(3%, -1%) scale(1.06); }
+  0%, 30%    { opacity: 0; transform: translate(-4%, 2%) scale(0.96); }
+  40%        { opacity: 0.62; }
+  70%        { opacity: 0.38; transform: translate(3%, -1%) scale(1.06); }
   96%, 100%  { opacity: 0; transform: translate(8%, -3%) scale(1.1); }
 }
 
 @keyframes auth-cinematic-mist-layer-2 {
-  0%, 59%    { opacity: 0; transform: translate(6%, -3%) scale(1.02); }
-  66%        { opacity: 0.78; }
-  82%        { opacity: 0.54; transform: translate(-2%, 2%) scale(1.08); }
+  0%, 34%    { opacity: 0; transform: translate(6%, -3%) scale(1.02); }
+  44%        { opacity: 0.48; }
+  74%        { opacity: 0.3; transform: translate(-2%, 2%) scale(1.08); }
   96%, 100%  { opacity: 0; transform: translate(-7%, 5%) scale(1.12); }
 }
 
 @keyframes auth-cinematic-mist-layer-3 {
-  0%, 61%    { opacity: 0; transform: translate(2%, 4%) scale(0.94); }
-  68%        { opacity: 0.62; }
-  84%        { opacity: 0.4; transform: translate(6%, -2%) scale(1.04); }
+  0%, 38%    { opacity: 0; transform: translate(2%, 4%) scale(0.94); }
+  48%        { opacity: 0.38; }
+  78%        { opacity: 0.24; transform: translate(6%, -2%) scale(1.04); }
   96%, 100%  { opacity: 0; transform: translate(10%, -4%) scale(1.08); }
 }
 
@@ -556,82 +939,4 @@
   74%        { opacity: 1; transform: translateX(-2%); }
   95%        { opacity: 1; transform: translateX(90vw); }
   100%       { opacity: 0; transform: translateX(100vw); }
-}
-
-/* ─── Wipe-only overlay rendered on the dashboard ─── */
-/* All animations start at 70% mark via animation-delay: -6.16s            */
-/* The dashboard renders underneath; film clips away as squeegee sweeps.   */
-
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic {
-  opacity: 1;
-}
-
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic::before,
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__sun,
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__glass,
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__glare,
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__film,
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist,
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist span,
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__wetness,
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__bubbles,
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__squeegee {
-  animation-duration: 8.8s;
-  animation-delay: -6.16s;
-  animation-fill-mode: forwards;
-}
-
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic::before {
-  animation-name: auth-cinematic-camera-approach, auth-cinematic-wipe-clear;
-  animation-timing-function: var(--ease-out-soft), linear;
-}
-
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__sun {
-  animation-name: auth-cinematic-sun-bloom;
-  animation-timing-function: var(--ease-out-soft);
-}
-
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__glass {
-  animation-name: auth-cinematic-glass-approach, auth-cinematic-wipe-clear;
-  animation-timing-function: var(--ease-out-soft), linear;
-}
-
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__glare {
-  animation-name: auth-cinematic-glare, auth-cinematic-wipe-clear;
-  animation-timing-function: var(--ease-out-soft), linear;
-}
-
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__film {
-  animation-name: auth-cinematic-film-cover, auth-cinematic-wipe-clear;
-  animation-timing-function: cubic-bezier(0.2, 0.9, 0.25, 1), linear;
-}
-
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist,
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__wetness,
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__bubbles {
-  animation-name: auth-cinematic-wet-surface, auth-cinematic-wipe-clear;
-  animation-timing-function: var(--ease-out-soft), linear;
-}
-
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist span:nth-child(1) {
-  animation-name: auth-cinematic-mist-layer-1;
-  animation-timing-function: ease-out;
-  animation-delay: -6.16s;
-}
-
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist span:nth-child(2) {
-  animation-name: auth-cinematic-mist-layer-2;
-  animation-timing-function: ease-out;
-  animation-delay: calc(-6.16s + 0.12s);
-}
-
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__mist span:nth-child(3) {
-  animation-name: auth-cinematic-mist-layer-3;
-  animation-timing-function: ease-out;
-  animation-delay: calc(-6.16s + 0.22s);
-}
-
-.auth-scope.soleria-cinematic-wipe .auth-login-cinematic__squeegee {
-  animation-name: auth-cinematic-squeegee-pass;
-  animation-timing-function: linear;
 }
