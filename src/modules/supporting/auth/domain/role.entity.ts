@@ -45,6 +45,12 @@ export const SYSTEM_ROLES: Array<{ name: RoleName; displayName: string; permissi
       'org.read', 'org.write', 'org.admin',
       'demo.read', 'demo.write',
       'analytics.read',
+      // ERP resources
+      'offers.read', 'offers.write', 'offers.delete', 'offers.admin',
+      'products.read', 'products.write', 'products.delete',
+      'companies.read', 'companies.write', 'companies.delete', 'companies.admin',
+      'projects.read', 'projects.write', 'projects.delete', 'projects.admin',
+      'procurement.read', 'procurement.write', 'procurement.delete', 'procurement.admin',
     ],
   },
   {
@@ -61,6 +67,12 @@ export const SYSTEM_ROLES: Array<{ name: RoleName; displayName: string; permissi
     permissions: [
       'workflow.read', 'leads.read', 'leads.write', 'leads.delete',
       'crm.read', 'crm.write', 'demo.read', 'demo.write', 'analytics.read',
+      // ERP resources
+      'offers.read', 'offers.write',
+      'products.read',
+      'companies.read',
+      'projects.read', 'projects.write',
+      'procurement.read',
     ],
   },
   {
@@ -68,6 +80,8 @@ export const SYSTEM_ROLES: Array<{ name: RoleName; displayName: string; permissi
     displayName: 'Viewer',
     permissions: [
       'workflow.read', 'leads.read', 'crm.read', 'demo.read', 'analytics.read',
+      // ERP resources
+      'offers.read', 'products.read', 'companies.read', 'projects.read', 'procurement.read',
     ],
   },
   {

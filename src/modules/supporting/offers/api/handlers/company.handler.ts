@@ -7,25 +7,20 @@ import { NextRequest } from 'next/server';
 import { createHandler } from '@platform/api/handler';
 import { ok, created } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
-import { verifyToken } from '@platform/auth/jwt';
+import type { JWTPayload } from '@platform/auth/jwt';
 import { companiesRepository } from '../../infrastructure/companies.repository';
 import { upsertCompanyMember } from '../../application/company-members.service';
 import { companyLocation } from './resource-location';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function extractToken(req: NextRequest): string {
-  return req.headers.get('authorization')?.slice(7) ?? req.cookies.get('at')?.value ?? '';
-}
-
 function extractId(req: NextRequest): string {
   return req.nextUrl.pathname.split('/').at(-1) ?? '';
 }
 
-async function requireStaff(req: NextRequest) {
-  const payload = await verifyToken(extractToken(req));
-  if (!payload.orgId) throw Errors.forbidden('No organization context');
-  return payload;
+function requireOrgContext(auth: JWTPayload | null): JWTPayload & { orgId: string } {
+  if (!auth?.orgId) throw Errors.forbidden('No organization context');
+  return auth as JWTPayload & { orgId: string };
 }
 
 function isOrgAdmin(payload: { roles: string[] }) {
@@ -74,7 +69,7 @@ const NullableWebsiteSchema = z.preprocess(
   WebsiteSchema.nullable().optional(),
 );
 
-async function requireCompanyAdmin(companyId: string, payload: Awaited<ReturnType<typeof requireStaff>>) {
+async function requireCompanyAdmin(companyId: string, payload: JWTPayload & { orgId: string }) {
   if (isOrgAdmin(payload)) return;
   const membership = await companiesRepository.getMember(companyId, payload.sub);
   if (!membership || membership.role !== 'admin') {
@@ -89,11 +84,16 @@ const ListQuerySchema = z.object({
 });
 
 export const handleListCompanies = createHandler(
-  { auth: 'jwt', tag: 'Companies:List', query: ListQuerySchema, rateLimit: { max: 120, windowMs: 60_000 } },
-  async (ctx) => {
-    const { query, req } = ctx as { query: z.infer<typeof ListQuerySchema>; req: NextRequest };
-    const payload = await requireStaff(req);
-    const companies = await companiesRepository.list(payload.orgId!, query.search);
+  {
+    auth: 'jwt',
+    permission: 'companies.read',
+    tag: 'Companies:List',
+    query: ListQuerySchema,
+    rateLimit: { max: 120, windowMs: 60_000 },
+  },
+  async ({ auth, query }) => {
+    const payload = requireOrgContext(auth);
+    const companies = await companiesRepository.list(payload.orgId, (query as z.infer<typeof ListQuerySchema>).search);
     return ok({ companies });
   },
 );
@@ -101,12 +101,16 @@ export const handleListCompanies = createHandler(
 // ── Get Company ───────────────────────────────────────────────────────────────
 
 export const handleGetCompany = createHandler(
-  { auth: 'jwt', tag: 'Companies:Get', rateLimit: { max: 120, windowMs: 60_000 } },
-  async (ctx) => {
-    const { req } = ctx as { req: NextRequest };
+  {
+    auth: 'jwt',
+    permission: 'companies.read',
+    tag: 'Companies:Get',
+    rateLimit: { max: 120, windowMs: 60_000 },
+  },
+  async ({ auth, req }) => {
+    const payload = requireOrgContext(auth);
     const id = extractId(req);
-    const payload = await requireStaff(req);
-    const company = await companiesRepository.getById(id, payload.orgId!);
+    const company = await companiesRepository.getById(id, payload.orgId);
     if (!company) throw Errors.notFound('Company not found');
     return ok(company);
   },
@@ -133,30 +137,36 @@ const CreateBodySchema = z.object({
 });
 
 export const handleCreateCompany = createHandler(
-  { auth: 'jwt', tag: 'Companies:Create', body: CreateBodySchema, rateLimit: { max: 60, windowMs: 60_000 } },
-  async (ctx) => {
-    const { body, req } = ctx as { body: z.infer<typeof CreateBodySchema>; req: NextRequest };
-    const payload = await requireStaff(req);
+  {
+    auth: 'jwt',
+    permission: 'companies.write',
+    tag: 'Companies:Create',
+    body: CreateBodySchema,
+    rateLimit: { max: 60, windowMs: 60_000 },
+  },
+  async ({ auth, body }) => {
+    const payload = requireOrgContext(auth);
+    const b = body as z.infer<typeof CreateBodySchema>;
     const company = await companiesRepository.create({
-      organizationId: payload.orgId!,
-      name:      body.name,
-      orgNumber: body.orgNumber,
-      addressLine1: body.addressLine1,
-      addressLine2: body.addressLine2,
-      postalCode: body.postalCode,
-      city: body.city,
-      region: body.region,
-      country: body.country,
-      website:   body.website,
-      logoUrl:   body.logoUrl,
-      senderEmail: body.senderEmail,
-      senderName: body.senderName,
-      emailHeaderConfig: body.emailHeaderConfig,
-      industry:  body.industry,
-      notes:     body.notes,
+      organizationId: payload.orgId,
+      name:      b.name,
+      orgNumber: b.orgNumber,
+      addressLine1: b.addressLine1,
+      addressLine2: b.addressLine2,
+      postalCode: b.postalCode,
+      city: b.city,
+      region: b.region,
+      country: b.country,
+      website:   b.website,
+      logoUrl:   b.logoUrl,
+      senderEmail: b.senderEmail,
+      senderName: b.senderName,
+      emailHeaderConfig: b.emailHeaderConfig,
+      industry:  b.industry,
+      notes:     b.notes,
       createdBy: payload.sub,
     });
-    await upsertCompanyMember(company.id, payload.orgId!, payload.sub, 'admin', payload.sub);
+    await upsertCompanyMember(company.id, payload.orgId, payload.sub, 'admin', payload.sub);
     return created(company, companyLocation(company.id));
   },
 );
@@ -182,25 +192,31 @@ const UpdateBodySchema = z.object({
 });
 
 export const handleUpdateCompany = createHandler(
-  { auth: 'jwt', tag: 'Companies:Update', body: UpdateBodySchema, rateLimit: { max: 60, windowMs: 60_000 } },
-  async (ctx) => {
-    const { body, req } = ctx as { body: z.infer<typeof UpdateBodySchema>; req: NextRequest };
+  {
+    auth: 'jwt',
+    permission: 'companies.write',
+    tag: 'Companies:Update',
+    body: UpdateBodySchema,
+    rateLimit: { max: 60, windowMs: 60_000 },
+  },
+  async ({ auth, body, req }) => {
+    const payload = requireOrgContext(auth);
     const id = extractId(req);
-    const payload = await requireStaff(req);
     await requireCompanyAdmin(id, payload);
-    const updated = await companiesRepository.update(id, payload.orgId!, {
-      ...body,
-      addressLine1: body.addressLine1 ?? undefined,
-      addressLine2: body.addressLine2 ?? undefined,
-      postalCode: body.postalCode ?? undefined,
-      city: body.city ?? undefined,
-      region: body.region ?? undefined,
-      country: body.country ?? undefined,
-      website: body.website ?? undefined,
-      logoUrl: body.logoUrl ?? undefined,
-      senderEmail: body.senderEmail ?? undefined,
-      senderName: body.senderName ?? undefined,
-      emailHeaderConfig: body.emailHeaderConfig ?? undefined,
+    const b = body as z.infer<typeof UpdateBodySchema>;
+    const updated = await companiesRepository.update(id, payload.orgId, {
+      ...b,
+      addressLine1: b.addressLine1 ?? undefined,
+      addressLine2: b.addressLine2 ?? undefined,
+      postalCode: b.postalCode ?? undefined,
+      city: b.city ?? undefined,
+      region: b.region ?? undefined,
+      country: b.country ?? undefined,
+      website: b.website ?? undefined,
+      logoUrl: b.logoUrl ?? undefined,
+      senderEmail: b.senderEmail ?? undefined,
+      senderName: b.senderName ?? undefined,
+      emailHeaderConfig: b.emailHeaderConfig ?? undefined,
     });
     if (!updated) throw Errors.notFound('Company not found');
     return ok(updated);
@@ -210,13 +226,17 @@ export const handleUpdateCompany = createHandler(
 // ── Delete Company ─────────────────────────────────────────────────────────────
 
 export const handleDeleteCompany = createHandler(
-  { auth: 'jwt', tag: 'Companies:Delete', rateLimit: { max: 30, windowMs: 60_000 } },
-  async (ctx) => {
-    const { req } = ctx as { req: NextRequest };
+  {
+    auth: 'jwt',
+    permission: 'companies.delete',
+    tag: 'Companies:Delete',
+    rateLimit: { max: 30, windowMs: 60_000 },
+  },
+  async ({ auth, req }) => {
+    const payload = requireOrgContext(auth);
     const id = extractId(req);
-    const payload = await requireStaff(req);
     await requireCompanyAdmin(id, payload);
-    const deleted = await companiesRepository.delete(id, payload.orgId!);
+    const deleted = await companiesRepository.delete(id, payload.orgId);
     if (!deleted) throw Errors.notFound('Company not found');
     return ok(null);
   },
