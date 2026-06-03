@@ -1,0 +1,73 @@
+// ─── Invoicing ────────────────────────────────────────────────────────────────
+// Native invoice generation. Invoices are created from accepted offers or
+// project time entries. Fortnox sync fields are included for Phase 2 integration.
+// Table prefix: inv_*
+
+model Invoice {
+  id               String    @id @default(uuid())
+  organizationId   String
+  companyId        String    // off_companies.id — the selling brand
+  customerId       String?   // crm_customers.id
+  offerId          String?   // off_offers.id — source offer if created from one
+  projectId        String?   // prj_projects.id — source project if created from one
+  invoiceNumber    Int       // sequential per org — see inv_numbering
+  status           String    @default("draft") // draft|sent|viewed|paid|overdue|cancelled|credited
+  issueDate        DateTime  @db.Date
+  dueDate          DateTime  @db.Date
+  paidAt           DateTime?
+  totalExVat       Float     @default(0)
+  totalVat         Float     @default(0)
+  totalIncVat      Float     @default(0)
+  currency         String    @default("SEK")
+  recipientName    String
+  recipientEmail   String?
+  recipientCompany String?
+  notes            String?
+  generatedPdf     Bytes?
+  sentAt           DateTime?
+  reminderSentAt   DateTime?
+  // Fortnox Phase 2 — populated when synced externally
+  fortnoxId        String?
+  fortnoxSyncedAt  DateTime?
+  createdBy        String    // User.id
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  company      Company           @relation(fields: [companyId], references: [id])
+  customer     Customer?         @relation(fields: [customerId], references: [id])
+  lineItems    InvoiceLineItem[]
+  timeEntries  TimeEntry[]       // time entries billed on this invoice
+
+  @@unique([organizationId, invoiceNumber])
+  @@index([organizationId, status])
+  @@index([organizationId, companyId])
+  @@index([organizationId, customerId])
+  @@index([organizationId, offerId])
+  @@index([organizationId, createdAt])
+  @@index([deletedAt])
+  @@map("inv_invoices")
+}
+
+model InvoiceLineItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  description String
+  quantity    Float
+  unit        String?
+  unitPrice   Float
+  vatRate     Float    @default(0.25)
+  discount    Float    @default(0)
+  productId   String?  // off_products.id — optional product reference
+  timeEntryId String?  // prj_time_entries.id — when this line covers billed time
+  sortOrder   Int      @default(0)
+
+  invoice   Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product   OfferProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  timeEntry TimeEntry?    @relation("TimeEntryLineItem", fields: [timeEntryId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([invoiceId, sortOrder])
+  @@map("inv_line_items")
+}

@@ -35,6 +35,7 @@ model Project {
   onsiteContactPhone    String?
   onsiteContactEmail    String?
   internalNotes         String?
+  customFields          Json?         // org-defined extra fields — keyed by CustomFieldDefinition.key
   createdBy             String?
   completedAt           DateTime?
   createdAt             DateTime     @default(now())
@@ -47,6 +48,7 @@ model Project {
   lineItems      ProjectLineItem[]
   purchaseOrders PurchaseOrder[]
   stageEvents    ProjectStageEvent[]
+  timeEntries    TimeEntry[]
 
   @@unique([organizationId, offerId])
   @@index([organizationId, stage])
@@ -100,4 +102,35 @@ model ProjectStageEvent {
   @@index([organizationId, projectId, createdAt])
   @@index([organizationId, toStage])
   @@map("prj_stage_events")
+}
+
+// ─── Time Entry ───────────────────────────────────────────────────────────────
+// Staff log hours against a project. Billable entries can be exported to an
+// invoice line item. invoiceId is set when the entry has been billed.
+
+model TimeEntry {
+  id             String    @id @default(uuid())
+  organizationId String
+  projectId      String?   // prj_projects.id — optional (non-project time)
+  userId         String    // usr_users.id
+  date           DateTime  @db.Date
+  hours          Float
+  description    String?
+  billable       Boolean   @default(true)
+  invoiceId      String?   // inv_invoices.id — set when billed
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  project          Project?          @relation(fields: [projectId], references: [id])
+  user             User              @relation(fields: [userId], references: [id])
+  invoice          Invoice?          @relation(fields: [invoiceId], references: [id])
+  invoiceLineItems InvoiceLineItem[] @relation("TimeEntryLineItem")
+
+  @@index([organizationId, projectId])
+  @@index([organizationId, userId, date])
+  @@index([organizationId, billable, invoiceId])
+  @@index([deletedAt])
+  @@map("prj_time_entries")
 }

@@ -13,6 +13,7 @@ model Customer {
   city                String?
   country             String?   @default("SE")
   notes               String?
+  customFields        Json?     // org-defined extra fields
   convertedFromLeadId String?   @unique
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
@@ -23,6 +24,7 @@ model Customer {
   leads             Lead[]       @relation("LeadCustomer")
   offers            Offer[]
   projects          Project[]
+  invoices          Invoice[]
 
   @@unique([organizationId, email])
   @@index([organizationId, name])
