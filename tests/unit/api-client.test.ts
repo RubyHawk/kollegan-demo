@@ -203,6 +203,7 @@ describe('feature API clients', () => {
     await expect(listCustomers({ search: 'anna', limit: 8, offset: 0 })).resolves.toMatchObject({ total: 0 });
     await expect(createOffer({
       title: 'Test',
+      companyId: 'company_1',
       priceDisplayMode: 'inclusive',
       recipientName: 'Anna',
       recipientEmail: 'anna@example.com',
@@ -211,6 +212,7 @@ describe('feature API clients', () => {
     })).resolves.toMatchObject({ id: 'offer_1' });
     await expect(updateOffer('offer_1', {
       title: 'Updated',
+      companyId: 'company_1',
       priceDisplayMode: 'inclusive',
       recipientName: 'Anna',
       recipientEmail: 'anna@example.com',

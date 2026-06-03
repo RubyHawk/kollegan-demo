@@ -61,6 +61,7 @@ export function ProductsPageClient() {
   const { toasts, addToast, dismissToast } = useToast();
   const {
     companies,
+    selectedCompany,
     selectedCompanyId,
     setSelectedCompanyId,
     loading: companyLoading,

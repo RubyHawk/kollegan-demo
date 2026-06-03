@@ -72,7 +72,7 @@ async function main() {
           return;
         }
       } else if (allCompanies.length === 1) {
-        company = allCompanies[0] as typeof company;
+        company = allCompanies[0] as unknown as NonNullable<typeof company>;
         console.log(`Using only company found: ${company!.name} (${company!.id})`);
       } else {
         console.log('Multiple companies found in org:');
