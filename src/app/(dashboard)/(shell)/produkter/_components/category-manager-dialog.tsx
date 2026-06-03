@@ -30,6 +30,7 @@ interface CategoryManagerDialogProps {
   onDeleteCategory: (categoryId: string) => Promise<void>;
   saving: boolean;
   deletingId: string | null;
+  selectedCompanyName?: string;
 }
 
 interface PendingDelete {
@@ -53,6 +54,7 @@ export function CategoryManagerDialog({
   onDeleteCategory,
   saving,
   deletingId,
+  selectedCompanyName,
 }: CategoryManagerDialogProps) {
   const [selectedMainId, setSelectedMainId] = useState<string | null>(null);
   const [mainName, setMainName] = useState('');
@@ -73,7 +75,15 @@ export function CategoryManagerDialog({
           <DialogContent mobileVariant="fullscreen" size="xl" showMobileClose>
             <div className="flex min-h-0 flex-1 flex-col">
               <DialogHeader className="border-b border-[var(--border)] pr-16">
-                <DialogTitle className="text-xl">Produktkategorier</DialogTitle>
+                <div className="flex items-center gap-3">
+                  <DialogTitle className="text-xl">Produktkategorier</DialogTitle>
+                  {selectedCompanyName && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                      {selectedCompanyName}
+                    </span>
+                  )}
+                </div>
                 <DialogDescription className="max-w-3xl">
                   Hantera huvudkategorier och underkategorier i samma vy. Välj en huvudkategori till vänster för att
                   arbeta vidare med dess undernivåer.

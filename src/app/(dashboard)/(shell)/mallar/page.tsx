@@ -123,7 +123,7 @@ export default function TemplatesPage() {
         const templateContent = await resolveTemplateContent(template);
         await createTemplate({
           name: `Kopia av ${template.name}`,
-          companyId: (template.companyId ?? selectedCompanyId) || undefined,
+          companyId: template.companyId || selectedCompanyId,
           content: templateContent?.trim() ? templateContent : '{}',
         });
         await load();

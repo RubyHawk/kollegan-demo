@@ -30,6 +30,7 @@ import {
 } from '../../application/offers.service';
 import { resolveOfferBrandingForOffer } from '../../application/offer-branding-profile';
 import { sanitizeGeneratedOfferDocument } from '../../application/document-generator';
+import { validateCompanyInOrg } from '../../application/company-validation';
 import { offerLocation } from './resource-location';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -118,7 +119,7 @@ const CreateBodySchema = z.object({
   }),
   leadId: z.string().optional(),
   customerId: z.string().optional(),
-  companyId: z.string().optional(),
+  companyId: z.string().uuid('companyId must be a valid UUID'),
   templateId: z.string().optional(),
   emailSubject: z.string().max(500).regex(/^[^\r\n]*$/, 'Subject must not contain newlines').optional(),
   emailBody: z.string().max(50_000).optional(),
@@ -131,6 +132,7 @@ export const handleCreateOffer = createHandler(
   async (ctx) => {
     const { body, req } = ctx as { body: z.infer<typeof CreateBodySchema>; req: NextRequest };
     const payload = await requireStaff(req);
+    await validateCompanyInOrg(body.companyId, payload.orgId!);
     // Placeholder validUntil for the draft; recalculated from sentAt at send time
     const placeholderValidUntil = computeOfferValidUntil(new Date(), body.validityDays);
     const offer = await createOffer({

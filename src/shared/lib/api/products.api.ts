@@ -47,7 +47,7 @@ export interface ListProductsParams {
 
 export interface CreateProductPayload {
   name: string;
-  companyId?: string | null;
+  companyId: string;
   description?: string;
   unitPrice: number;
   vatRate?: number;
@@ -63,6 +63,18 @@ export interface CreateProductPayload {
 
 export type UpdateProductPayload = Partial<CreateProductPayload>;
 
+export interface CreateProductCategoryPayload {
+  companyId: string;
+  name: string;
+  parentId?: string | null;
+}
+
+export interface UpdateProductCategoryPayload {
+  name?: string;
+  parentId?: string | null;
+}
+
+/** @deprecated Use CreateProductCategoryPayload or UpdateProductCategoryPayload instead */
 export interface ProductCategoryPayload {
   companyId?: string | null;
   name?: string;

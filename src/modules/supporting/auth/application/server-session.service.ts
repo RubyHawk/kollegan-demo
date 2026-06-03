@@ -38,7 +38,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
         return {
           id: payload.sub,
-          email: payload.sub,
+          email: '',  // sub is User.id (UUID), not email; profile fetch fills this
           firstName: null,
           lastName: null,
           avatarUrl: null,

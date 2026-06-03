@@ -2,6 +2,7 @@
 // All User / Role / Permission DB queries. No business logic here.
 
 import { prisma } from '@platform/database/prisma';
+import { invalidatePermissionCache } from '../application/rbac.service';
 import type { User, CreateUserInput } from '../domain/user.entity';
 import type { AccountProfile, UpdateAccountProfileData } from '../domain/account.entity';
 
@@ -200,6 +201,8 @@ export const userRepository = {
       create: { userId, roleId, organizationId, grantedBy: grantedBy ?? null },
       update: { grantedBy: grantedBy ?? null },
     });
+    const role = await prisma.role.findUnique({ where: { id: roleId }, select: { name: true } });
+    if (role) await invalidatePermissionCache([role.name]);
   },
 
   async findRoleByName(name: string): Promise<{ id: string; name: string } | null> {

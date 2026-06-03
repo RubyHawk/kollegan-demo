@@ -33,6 +33,7 @@ interface ProductModalProps {
   categorySupport: CategorySupportState;
   categorySupportMessage: string | null;
   saving: boolean;
+  selectedCompanyName?: string;
   onClose: () => void;
   onSave: (form: ProductForm) => void;
   onOpenCategoryManager: () => void;
@@ -46,6 +47,7 @@ export function ProductModal({
   categorySupport,
   categorySupportMessage,
   saving,
+  selectedCompanyName,
   onClose,
   onSave,
   onOpenCategoryManager,
@@ -99,9 +101,17 @@ export function ProductModal({
       <DialogContent mobileVariant="fullscreen" size="xl" showMobileClose>
         <div className="flex min-h-0 flex-1 flex-col">
           <DialogHeader className="border-b border-[var(--border)] pr-16">
-            <DialogTitle className="text-xl">
-              {product ? 'Redigera produkt eller tjänst' : 'Skapa produkt eller tjänst'}
-            </DialogTitle>
+            <div className="flex items-center gap-3">
+              <DialogTitle className="text-xl">
+                {product ? 'Redigera produkt eller tjänst' : 'Skapa produkt eller tjänst'}
+              </DialogTitle>
+              {selectedCompanyName && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  {selectedCompanyName}
+                </span>
+              )}
+            </div>
             <DialogDescription className="max-w-3xl">
               Samla produktinformation, pris och kategorisering i en lugnare layout. Förhandsvisningen ligger bredvid
               som stöd i stället för att konkurrera med formuläret.
