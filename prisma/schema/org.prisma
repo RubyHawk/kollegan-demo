@@ -52,6 +52,9 @@ model Organization {
   meetings      Meeting[]
   featureFlags  FeatureFlag[]
   featureFlagAuditEvents FeatureFlagAuditEvent[]
+  customFieldDefinitions CustomFieldDefinition[]
+  invoices       Invoice[]
+  timeEntries    TimeEntry[]
 
   @@index([slug])
   @@index([orgType])

@@ -83,6 +83,8 @@ model Offer {
   leadId     String?   // lead_leads.id
   customerId String?   // crm_customers.id
 
+  customFields Json?   // org-defined extra fields — keyed by CustomFieldDefinition.key
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -169,17 +171,20 @@ model OfferProduct {
   categoryId     String?                   // FK → off_product_categories
   imageUrl       String?                   // CDN URL for product thumbnail
   isActive       Boolean   @default(true)  // soft toggle — hides from pickers without deletion
+  sharedAcrossOrg Boolean  @default(false) // true = visible to all companies in the org
   minQuantity    Float?                    // optional floor for qty in offer picker
   maxQuantity    Float?                    // optional ceiling for qty in offer picker
+  customFields   Json?                     // org-defined extra fields
   createdBy      String                    // User.id
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
 
-  organization     Organization     @relation(fields: [organizationId], references: [id])
-  productCategory  ProductCategory? @relation(fields: [categoryId], references: [id])
-  company          Company?         @relation(fields: [companyId], references: [id])
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  productCategory  ProductCategory?  @relation(fields: [categoryId], references: [id])
+  company          Company?          @relation(fields: [companyId], references: [id])
   lineItems        OfferLineItem[]
+  invoiceLineItems InvoiceLineItem[]
 
   @@index([organizationId, companyId, categoryId])
   @@index([organizationId, companyId, category])
@@ -212,6 +217,7 @@ model Company {
   emailHeaderConfig String?
   industry       String?
   notes          String?
+  customFields   Json?     // org-defined extra fields
   createdBy      String    // User.id
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -223,6 +229,7 @@ model Company {
   products       OfferProduct[]
   productCategories ProductCategory[]
   members        CompanyMember[]
+  invoices       Invoice[]
 
   @@index([organizationId, name])
   @@index([deletedAt])
