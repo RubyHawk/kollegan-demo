@@ -14,6 +14,7 @@ import {
   updateProduct,
   deleteProduct,
 } from '../../application/products.service';
+import { validateCompanyInOrg } from '../../application/company-validation';
 import { productLocation } from './resource-location';
 
 function extractToken(req: NextRequest): string {
@@ -50,7 +51,7 @@ export const handleListProducts = createHandler(
 
 const CreateBodySchema = z.object({
   name: z.string().min(1).max(300),
-  companyId: z.string().uuid().optional().nullable(),
+  companyId: z.string().uuid('companyId must be a valid UUID'),
   description: z.string().max(1000).optional(),
   unitPrice: z.number().min(0),
   vatRate: z.number().min(0).max(1).default(0.25),
@@ -69,9 +70,10 @@ export const handleCreateProduct = createHandler(
   async (ctx) => {
     const { body, req } = ctx as { body: z.infer<typeof CreateBodySchema>; req: NextRequest };
     const payload = await requireStaff(req);
+    await validateCompanyInOrg(body.companyId, payload.orgId!);
     const product = await createProduct({
       organizationId: payload.orgId!,
-      companyId: body.companyId ?? undefined,
+      companyId: body.companyId,
       name: body.name,
       description: body.description,
       unitPrice: body.unitPrice,

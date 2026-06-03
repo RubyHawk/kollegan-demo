@@ -17,6 +17,7 @@ import {
   updateTemplate,
   deleteTemplate,
 } from '../../application/templates.service';
+import { validateCompanyInOrg } from '../../application/company-validation';
 import { templateLocation } from './resource-location';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -62,7 +63,7 @@ export const handleListTemplates = createHandler(
 
 const CreateTemplateSchema = z.object({
   name:              z.string().min(1).max(200),
-  companyId:         z.string().uuid().optional().nullable(),
+  companyId:         z.string().uuid('companyId must be a valid UUID'),
   content:           z.string().min(2), // TipTap JSON string — at least '{}'
   emailSubject:      z.string().max(500).regex(/^[^\r\n]*$/, 'Subject must not contain newlines').optional(),
   emailBody:         z.string().max(50_000).optional(),
@@ -74,10 +75,11 @@ export const handleCreateTemplate = createHandler(
   async (ctx) => {
     const { body, req } = ctx as { body: z.infer<typeof CreateTemplateSchema>; req: NextRequest };
     const payload = await requireStaff(req);
+    await validateCompanyInOrg(body.companyId, payload.orgId!);
     const template = await createTemplate(
       {
         organizationId: payload.orgId!,
-        companyId: body.companyId ?? undefined,
+        companyId: body.companyId,
         name: body.name,
         content: body.content,
         emailSubject: body.emailSubject,
