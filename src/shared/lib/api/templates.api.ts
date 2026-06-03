@@ -47,7 +47,7 @@ export interface TemplatePreviewOffer {
 
 export interface CreateTemplatePayload {
   name: string;
-  companyId?: string | null;
+  companyId: string;
   content: string;
   emailSubject?: string;
   emailBody?: string;

@@ -64,7 +64,7 @@ export interface Offer {
 export interface SaveOfferPayload {
   templateId?: string;
   customerId?: string;
-  companyId?: string;
+  companyId: string;
   title: string;
   priceDisplayMode: OfferPriceDisplayMode;
   recipientName: string;

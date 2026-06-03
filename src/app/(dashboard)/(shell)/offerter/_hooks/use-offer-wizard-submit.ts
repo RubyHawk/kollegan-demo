@@ -33,6 +33,8 @@ function validateOfferForm(form: OfferForm): Record<string, string> {
   const errs: Record<string, string> = {};
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+  if (!form.companyId) errs.companyId = 'Välj ett säljande företag för offerten';
+
   if (!form.title.trim()) errs.title = 'Obligatoriskt';
   else if (form.title.trim().length < 2) errs.title = 'Minst 2 tecken';
 
@@ -58,6 +60,7 @@ function validateOfferForm(form: OfferForm): Record<string, string> {
 function buildOfferPayload(form: OfferForm, priceDisplayMode: OfferPriceDisplayMode): SaveOfferPayload {
   const body: SaveOfferPayload = {
     title: form.title,
+    companyId: form.companyId,
     priceDisplayMode,
     recipientName: form.recipientName,
     recipientEmail: form.recipientEmail,
@@ -74,7 +77,6 @@ function buildOfferPayload(form: OfferForm, priceDisplayMode: OfferPriceDisplayM
 
   if (form.templateId) body.templateId = form.templateId;
   if (form.contactId) body.customerId = form.contactId;
-  if (form.companyId) body.companyId = form.companyId;
 
   return body;
 }

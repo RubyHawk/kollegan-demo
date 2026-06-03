@@ -131,6 +131,8 @@ export interface HandlerContext<
   query: InferSchema<TQuery>;
   meta:  RequestMeta;
   req:   NextRequest;
+  /** Verified JWT payload — available when auth='jwt', null otherwise. */
+  auth:  JWTPayload | null;
 }
 
 type HandlerFn<
@@ -380,6 +382,21 @@ export function createHandler<
             return problem(Errors.forbidden('This action requires multi-factor authentication'));
           }
         }
+
+        // Rate-limit authenticated JWT requests before RBAC so a low-privilege
+        // user cannot hammer a protected endpoint without consuming their budget.
+        const jwtRateLimited = await enforceRateLimit(jwtPayload);
+        if (jwtRateLimited) return jwtRateLimited;
+
+        // RBAC permission check: enforce when a route declares a required permission.
+        // Skipped when permission is omitted (backward-compatible — existing routes unaffected).
+        if (config.permission) {
+          const { hasPermission } = await import('@modules/supporting/auth/application/rbac.service');
+          const allowed = await hasPermission(jwtPayload.roles, config.permission);
+          if (!allowed) {
+            return problem(Errors.forbidden('Insufficient permissions'));
+          }
+        }
       }
 
       if (authStrategy === 'internal') {
@@ -391,8 +408,12 @@ export function createHandler<
         }
       }
 
-      const rateLimited = await enforceRateLimit(jwtPayload);
-      if (rateLimited) return rateLimited;
+      // JWT requests were already rate-limited above (before RBAC); only apply
+      // the per-request budget here for other auth strategies (internal, vapi).
+      if (authStrategy !== 'jwt') {
+        const rateLimited = await enforceRateLimit(jwtPayload);
+        if (rateLimited) return rateLimited;
+      }
 
       // ── 3. Content-Type validation (RFC 9110 §15.5.15) ─────────────────────
       // For requests with a body schema, require application/json.
@@ -449,6 +470,7 @@ export function createHandler<
         query: parsedQuery,
         meta:  buildMeta(),
         req,
+        auth:  jwtPayload,
       };
 
       logger.info(config.tag, `${req.method} ${instance}`, { requestId });

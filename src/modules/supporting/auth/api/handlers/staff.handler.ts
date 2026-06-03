@@ -8,10 +8,13 @@ import {
   listLegacyStaffUsers,
 } from '../../application/staff-users.service';
 
+// super_admin is a VPS-level role — never assignable through the app.
+const APP_ASSIGNABLE_ROLES = ['receptionist', 'manager', 'admin'] as const;
+
 const CreateStaffSchema = z.object({
   email: z.string().email(),
   password: z.string().min(12, 'Password must be at least 12 characters'),
-  role: z.enum(['receptionist', 'manager', 'admin']),
+  role: z.enum(APP_ASSIGNABLE_ROLES),
 });
 
 const DeleteQuerySchema = z.object({
@@ -22,6 +25,7 @@ export const handleListStaff = createHandler(
   {
     tag: 'Staff:List',
     auth: 'jwt',
+    permission: 'users.read',
     rateLimit: { max: 60, windowMs: 60_000 },
   },
   async () => {
@@ -35,6 +39,7 @@ function createStaffHandler(locationBase: string) {
     {
       tag: 'Staff:Create',
       auth: 'jwt',
+      permission: 'users.write',
       rateLimit: { max: 20, windowMs: 60_000 },
       body: CreateStaffSchema,
     },
@@ -61,6 +66,7 @@ export const handleDeleteStaff = createHandler(
   {
     tag: 'Staff:Delete',
     auth: 'jwt',
+    permission: 'users.delete',
     rateLimit: { max: 20, windowMs: 60_000 },
     query: DeleteQuerySchema,
   },
