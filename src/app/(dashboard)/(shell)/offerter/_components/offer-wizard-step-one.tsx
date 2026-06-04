@@ -149,19 +149,19 @@ export function OfferWizardStepOne({
                             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                           </svg>
                           <input
-                            value={form.contactId ? (contactResults.find((c) => c.id === form.contactId)?.name ?? (contactSearch || 'Kontakt vald')) : contactSearch}
-                            onChange={(e) => { if (form.contactId) setForm((f) => ({ ...f, contactId: '' })); searchContacts(e.target.value); }}
-                            placeholder="Sök kontakt för autofyll…"
+                            value={form.contactId || form.leadId ? (contactResults.find((c) => c.id === form.contactId || c.leadId === form.leadId)?.name ?? (contactSearch || 'Kontakt vald')) : contactSearch}
+                            onChange={(e) => { if (form.contactId || form.leadId) setForm((f) => ({ ...f, contactId: '', leadId: '' })); searchContacts(e.target.value); }}
+                            placeholder="Sök kontakt eller lead för autofyll…"
                             className="w-full pl-8 pr-8 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
                           />
-                          {(contactSearch || form.contactId) && (
-                            <button type="button" onClick={() => { setForm((f) => ({ ...f, contactId: '' })); setContactSearch(''); setContactResults([]); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors z-10">
+                          {(contactSearch || form.contactId || form.leadId) && (
+                            <button type="button" onClick={() => { setForm((f) => ({ ...f, contactId: '', leadId: '' })); setContactSearch(''); setContactResults([]); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors z-10">
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                               </svg>
                             </button>
                           )}
-                          {contactSearch && !form.contactId && (
+                          {contactSearch && !form.contactId && !form.leadId && (
                             <div className="absolute bottom-full left-0 right-0 mb-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto">
                               {contactLoading ? (
                                 <div className="flex items-center gap-2 px-4 py-3 text-xs text-[var(--text-muted)]">
@@ -180,7 +180,9 @@ export function OfferWizardStepOne({
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <p className="text-xs font-medium text-[var(--text-primary)] truncate">{c.name ?? '—'}</p>
-                                      <p className="text-[10px] text-[var(--text-muted)] truncate">{[c.email, c.company].filter(Boolean).join(' · ')}</p>
+                                      <p className="text-[10px] text-[var(--text-muted)] truncate">
+                                        {[c.kind === 'lead' ? 'Lead' : 'Kund', c.email, c.requestedService ?? c.company, c.hasOffer ? 'Har offert' : null].filter(Boolean).join(' · ')}
+                                      </p>
                                     </div>
                                   </button>
                                 ))

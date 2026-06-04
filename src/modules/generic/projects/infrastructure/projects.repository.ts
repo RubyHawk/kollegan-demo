@@ -87,9 +87,11 @@ function mapCustomer(row: Record<string, unknown>) {
   return {
     id: row.id as string,
     organizationId: row.organizationId as string,
+    companyId: (row.companyId as string | null) ?? null,
     name: row.name as string,
     email: (row.email as string | null) ?? null,
     phone: (row.phone as string | null) ?? null,
+    normalizedPhone: (row.normalizedPhone as string | null) ?? null,
     company: (row.company as string | null) ?? null,
     address: (row.address as string | null) ?? null,
     postalCode: (row.postalCode as string | null) ?? null,

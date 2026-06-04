@@ -49,6 +49,7 @@ export interface Offer {
   declinedAt?: string;
   reminderSentAt?: string;
   reminderCount: number;
+  customerId?: string;
   leadId?: string;
   companyId?: string;
   templateId?: string;
@@ -64,6 +65,7 @@ export interface Offer {
 export interface SaveOfferPayload {
   templateId?: string;
   customerId?: string;
+  leadId?: string;
   companyId: string;
   title: string;
   priceDisplayMode: OfferPriceDisplayMode;

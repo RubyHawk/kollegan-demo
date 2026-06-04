@@ -18,6 +18,20 @@ export interface CustomerOfferSnapshot {
   leadId?: string;
 }
 
+export interface LeadIntakeCustomerInput {
+  organizationId: string;
+  companyId?: string | null;
+  leadId: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  normalizedPhone?: string | null;
+  company?: string | null;
+  address?: string | null;
+  postalCode?: string | null;
+  notes?: string | null;
+}
+
 export async function listCustomers(
   orgId: string,
   filter: ListCustomersFilter,
@@ -32,9 +46,11 @@ export async function getCustomer(id: string, orgId: string): Promise<Customer |
 export async function createCustomer(
   input: {
     organizationId: string;
+    companyId?: string | null;
     name: string;
     email?: string | null;
     phone?: string | null;
+    normalizedPhone?: string | null;
     company?: string | null;
     address?: string | null;
     postalCode?: string | null;
@@ -89,6 +105,7 @@ export async function upsertCustomerFromLead(
   if (!customer) {
     customer = await customersRepository.create({
       organizationId: orgId,
+      companyId: lead?.companyId ?? null,
       name: lead?.name ?? offer.recipientName,
       email,
       phone: lead?.phone ?? null,
@@ -120,4 +137,58 @@ export async function upsertCustomerFromLead(
   });
 
   return customer;
+}
+
+export async function findOrCreateCustomerForLeadIntake(
+  input: LeadIntakeCustomerInput,
+): Promise<{ customer: Customer | null; created: boolean }> {
+  const existingByEmail = await customersRepository.findByEmailForCompany(
+    input.organizationId,
+    input.companyId,
+    input.email,
+  );
+  const existing = existingByEmail ?? await customersRepository.findByPhoneForCompany(
+    input.organizationId,
+    input.companyId,
+    input.normalizedPhone,
+  );
+
+  if (existing) {
+    await customersRepository.attachLeadToCustomer(input.leadId, input.organizationId, existing.id);
+    return { customer: existing, created: false };
+  }
+
+  if (!input.email && !input.normalizedPhone) {
+    return { customer: null, created: false };
+  }
+
+  const customer = await customersRepository.create({
+    organizationId: input.organizationId,
+    companyId: input.companyId ?? null,
+    name: input.name,
+    email: input.email ?? null,
+    phone: input.phone ?? null,
+    normalizedPhone: input.normalizedPhone ?? null,
+    company: input.company ?? null,
+    address: input.address ?? null,
+    postalCode: input.postalCode ?? null,
+    notes: input.notes ?? null,
+  });
+
+  await customersRepository.attachLeadToCustomer(input.leadId, input.organizationId, customer.id);
+
+  eventBus.publish({
+    type: CUSTOMER_CREATED,
+    orgId: input.organizationId,
+    occurredAt: new Date().toISOString(),
+    payload: { customerId: customer.id, name: customer.name, email: customer.email },
+  });
+
+  logger.info(TAG, 'Customer linked for lead intake', {
+    customerId: customer.id,
+    leadId: input.leadId,
+    created: true,
+  });
+
+  return { customer, created: true };
 }

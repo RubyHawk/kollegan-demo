@@ -12,12 +12,21 @@ export type LeadSource = 'voice_call' | 'web_form' | 'manual' | 'referral' | 'n8
 export interface Lead {
   id: string;
   organizationId: string;
+  companyId?: string | null;
   name: string;
   email: string | null;
+  normalizedEmail?: string | null;
   phone: string | null;
+  normalizedPhone?: string | null;
   company: string | null;
   status: LeadStatus;
   source: LeadSource;
+  sourceLabel?: string | null;
+  address?: string | null;
+  postalCode?: string | null;
+  requestedService?: string | null;
+  referralSource?: string | null;
+  customFields?: Record<string, unknown> | null;
   score: number | null;
   assignedTo: string | null;
   notes: string | null;
@@ -41,18 +50,26 @@ export interface ListLeadsParams {
   status?: LeadStatus;
   assignedTo?: string;
   source?: LeadSource;
+  companyId?: string;
   search?: string;
   limit?: number;
   offset?: number;
 }
 
 export interface CreateLeadPayload {
+  companyId?: string;
   name: string;
   email?: string;
   phone?: string;
   company?: string;
   status?: LeadStatus;
   source?: LeadSource;
+  sourceLabel?: string;
+  address?: string;
+  postalCode?: string;
+  requestedService?: string;
+  referralSource?: string;
+  customFields?: Record<string, unknown>;
   score?: number;
   assignedTo?: string;
   notes?: string;

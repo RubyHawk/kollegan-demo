@@ -5,9 +5,10 @@ export {
   deleteCustomer,
   listCustomers,
   updateCustomer,
+  findOrCreateCustomerForLeadIntake,
   upsertCustomerFromLead,
 } from './application/customers.service';
-export type { CustomerOfferSnapshot, ListCustomersFilter } from './application/customers.service';
+export type { CustomerOfferSnapshot, LeadIntakeCustomerInput, ListCustomersFilter } from './application/customers.service';
 export { CUSTOMER_CREATED, CUSTOMER_UPDATED } from './events/customer.events';
 export type { CustomerEvent, CustomerCreatedEvent, CustomerUpdatedEvent } from './events/customer.events';
 export {

@@ -1,9 +1,11 @@
 export interface Customer {
   id: string;
   organizationId: string;
+  companyId: string | null;
   name: string;
   email: string | null;
   phone: string | null;
+  normalizedPhone: string | null;
   company: string | null;
   address: string | null;
   postalCode: string | null;
@@ -17,9 +19,11 @@ export interface Customer {
 
 export interface CustomerInput {
   organizationId: string;
+  companyId?: string | null;
   name: string;
   email?: string | null;
   phone?: string | null;
+  normalizedPhone?: string | null;
   company?: string | null;
   address?: string | null;
   postalCode?: string | null;
@@ -30,9 +34,11 @@ export interface CustomerInput {
 }
 
 export interface UpdateCustomerInput {
+  companyId?: string | null;
   name?: string;
   email?: string | null;
   phone?: string | null;
+  normalizedPhone?: string | null;
   company?: string | null;
   address?: string | null;
   postalCode?: string | null;

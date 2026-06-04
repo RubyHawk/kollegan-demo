@@ -9,9 +9,11 @@ interface ApiEnvelope<T> {
 export interface Customer {
   id: string;
   organizationId: string;
+  companyId?: string | null;
   name: string;
   email: string | null;
   phone: string | null;
+  normalizedPhone?: string | null;
   company: string | null;
   address: string | null;
   postalCode: string | null;
@@ -38,6 +40,7 @@ export interface ListCustomersParams {
 
 export interface CreateCustomerPayload {
   name: string;
+  companyId?: string | null;
   email?: string | null;
   phone?: string | null;
   company?: string | null;

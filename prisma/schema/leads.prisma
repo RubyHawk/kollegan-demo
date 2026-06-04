@@ -4,17 +4,25 @@
 model Lead {
   id             String    @id @default(uuid())
   organizationId String
+  companyId      String?
   name           String
   email          String?
+  normalizedEmail String?
   phone          String?
+  normalizedPhone String?
   company        String?
   status         String    @default("new") // new | contacted | qualified | proposal | won | lost
   source         String    @default("manual") // voice_call | web_form | manual | referral | n8n_webhook
+  sourceLabel    String?
+  address        String?
+  postalCode     String?
+  requestedService String?
+  referralSource String?
+  customFields   Json?   // org-defined extra fields
   score          Int?
   assignedTo     String?   // User.id
   notes          String?
   estimatedValue Float?
-  customFields   Json?   // org-defined extra fields
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   convertedAt    DateTime?
@@ -22,14 +30,19 @@ model Lead {
   customerId     String?   // Customer.id — set on conversion
 
   organization      Organization @relation(fields: [organizationId], references: [id])
+  companyRelation   Company?     @relation(fields: [companyId], references: [id])
   customer          Customer?    @relation("LeadCustomer", fields: [customerId], references: [id])
   convertedCustomer Customer?    @relation("CustomerConvertedFromLead")
+  intakeMessages    LeadIntakeMessage[]
   activities        LeadActivity[]
 
   @@index([organizationId, status])
   @@index([organizationId, createdAt])
+  @@index([organizationId, companyId, createdAt])
   @@index([organizationId, assignedTo])
   @@index([organizationId, customerId])
+  @@index([organizationId, normalizedEmail])
+  @@index([organizationId, normalizedPhone])
   @@index([deletedAt])
   @@map("lead_leads")
 }
@@ -52,4 +65,84 @@ model LeadActivity {
   @@index([leadId, type])
   @@index([organizationId])
   @@map("lead_activities")
+}
+
+model LeadIntakeForwarder {
+  id                      String   @id @default(uuid())
+  organizationId          String
+  companyId               String
+  name                    String
+  sourceLabel             String
+  provider                String   @default("resend")
+  intakeAddress           String
+  normalizedIntakeAddress String
+  senderEmail             String?
+  senderName              String?
+  fieldConfig             Json
+  isActive                Boolean  @default(true)
+  createdBy               String
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  deletedAt               DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  company      Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  recipients   LeadIntakeForwarderRecipient[]
+  messages     LeadIntakeMessage[]
+
+  @@unique([provider, normalizedIntakeAddress])
+  @@index([organizationId, companyId, isActive])
+  @@index([organizationId, createdAt])
+  @@index([deletedAt])
+  @@map("lead_intake_forwarders")
+}
+
+model LeadIntakeForwarderRecipient {
+  id          String   @id @default(uuid())
+  forwarderId String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  forwarder LeadIntakeForwarder @relation(fields: [forwarderId], references: [id], onDelete: Cascade)
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([forwarderId, userId])
+  @@index([userId])
+  @@map("lead_intake_forwarder_recipients")
+}
+
+model LeadIntakeMessage {
+  id              String   @id @default(uuid())
+  organizationId  String?
+  companyId       String?
+  forwarderId     String?
+  leadId          String?
+  customerId      String?
+  provider        String   @default("resend")
+  providerEventId String?
+  providerEmailId String?
+  messageId       String?
+  fromAddress     String?
+  toAddresses     String[] @default([])
+  subject         String?
+  contentHash     String?
+  parsedFields    Json?
+  status          String   @default("received") // received | ignored | parsed | failed
+  forwardStatus   String   @default("pending")  // pending | sent | partial | failed | skipped
+  error           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization?          @relation(fields: [organizationId], references: [id])
+  company      Company?               @relation(fields: [companyId], references: [id])
+  forwarder    LeadIntakeForwarder?   @relation(fields: [forwarderId], references: [id])
+  lead         Lead?                  @relation(fields: [leadId], references: [id])
+  customer     Customer?              @relation(fields: [customerId], references: [id])
+
+  @@unique([provider, providerEventId])
+  @@unique([provider, providerEmailId])
+  @@index([organizationId, companyId, createdAt])
+  @@index([forwarderId, createdAt])
+  @@index([leadId])
+  @@map("lead_intake_messages")
 }

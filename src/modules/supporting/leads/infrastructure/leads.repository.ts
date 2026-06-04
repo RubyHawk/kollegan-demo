@@ -1,19 +1,28 @@
 // ─── Leads repository ─────────────────────────────────────────────────────────
 // All Prisma access for the leads module goes through this file.
 
-import { prisma } from '@platform/database/prisma';
+import { Prisma, prisma } from '@platform/database/prisma';
 import type { Lead, LeadActivity, LeadStatus, LeadSource } from '../domain/lead.entity';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface CreateLeadInput {
   organizationId: string;
+  companyId?: string;
   name: string;
   email?: string;
+  normalizedEmail?: string;
   phone?: string;
+  normalizedPhone?: string;
   company?: string;
   status?: LeadStatus;
   source: LeadSource;
+  sourceLabel?: string;
+  address?: string;
+  postalCode?: string;
+  requestedService?: string;
+  referralSource?: string;
+  customFields?: Record<string, unknown> | null;
   score?: number;
   assignedTo?: string;
   notes?: string;
@@ -21,11 +30,20 @@ export interface CreateLeadInput {
 }
 
 export interface UpdateLeadInput {
+  companyId?: string;
   name?: string;
   email?: string;
+  normalizedEmail?: string;
   phone?: string;
+  normalizedPhone?: string;
   company?: string;
   status?: LeadStatus;
+  sourceLabel?: string;
+  address?: string;
+  postalCode?: string;
+  requestedService?: string;
+  referralSource?: string;
+  customFields?: Record<string, unknown> | null;
   score?: number;
   assignedTo?: string;
   notes?: string;
@@ -36,6 +54,7 @@ export interface ListLeadsFilter {
   status?: LeadStatus;
   assignedTo?: string;
   source?: LeadSource;
+  companyId?: string;
   search?: string;         // name / email / company prefix match
   limit?: number;
   offset?: number;
@@ -55,12 +74,21 @@ function mapLead(row: Record<string, unknown>): Lead {
   return {
     id:             row.id as string,
     organizationId: row.organizationId as string,
+    companyId:      (row.companyId as string | null) ?? undefined,
     name:           row.name as string,
     email:          (row.email as string | null) ?? undefined,
+    normalizedEmail: (row.normalizedEmail as string | null) ?? undefined,
     phone:          (row.phone as string | null) ?? undefined,
+    normalizedPhone: (row.normalizedPhone as string | null) ?? undefined,
     company:        (row.company as string | null) ?? undefined,
     status:         row.status as LeadStatus,
     source:         row.source as LeadSource,
+    sourceLabel:    (row.sourceLabel as string | null) ?? undefined,
+    address:        (row.address as string | null) ?? undefined,
+    postalCode:     (row.postalCode as string | null) ?? undefined,
+    requestedService: (row.requestedService as string | null) ?? undefined,
+    referralSource: (row.referralSource as string | null) ?? undefined,
+    customFields:   (row.customFields as Record<string, unknown> | null) ?? null,
     score:          (row.score as number | null) ?? undefined,
     assignedTo:     (row.assignedTo as string | null) ?? undefined,
     notes:          (row.notes as string | null) ?? undefined,
@@ -83,6 +111,10 @@ function mapActivity(row: Record<string, unknown>): LeadActivity {
   };
 }
 
+function toJson(value: Record<string, unknown>): Prisma.InputJsonValue {
+  return value as Prisma.InputJsonValue;
+}
+
 // ─── Repository ───────────────────────────────────────────────────────────────
 
 export const leadsRepository = {
@@ -90,12 +122,21 @@ export const leadsRepository = {
     const row = await prisma.lead.create({
       data: {
         organizationId: input.organizationId,
+        companyId:      input.companyId ?? null,
         name:           input.name,
         email:          input.email ?? null,
+        normalizedEmail: input.normalizedEmail ?? null,
         phone:          input.phone ?? null,
+        normalizedPhone: input.normalizedPhone ?? null,
         company:        input.company ?? null,
         status:         input.status ?? 'new',
         source:         input.source,
+        sourceLabel:    input.sourceLabel ?? null,
+        address:        input.address ?? null,
+        postalCode:     input.postalCode ?? null,
+        requestedService: input.requestedService ?? null,
+        referralSource: input.referralSource ?? null,
+        customFields:   input.customFields === null ? Prisma.JsonNull : input.customFields ? toJson(input.customFields) : undefined,
         score:          input.score ?? null,
         assignedTo:     input.assignedTo ?? null,
         notes:          input.notes ?? null,
@@ -120,6 +161,7 @@ export const leadsRepository = {
     if (filter.status)     where.status = filter.status;
     if (filter.assignedTo) where.assignedTo = filter.assignedTo;
     if (filter.source)     where.source = filter.source;
+    if (filter.companyId)  where.companyId = filter.companyId;
     if (filter.search) {
       where.OR = [
         { name:    { contains: filter.search, mode: 'insensitive' } },
@@ -145,10 +187,19 @@ export const leadsRepository = {
       where: { id },
       data: {
         name:           input.name           ?? undefined,
+        companyId:      input.companyId      !== undefined ? input.companyId      : undefined,
         email:          input.email          !== undefined ? input.email          : undefined,
+        normalizedEmail: input.normalizedEmail !== undefined ? input.normalizedEmail : undefined,
         phone:          input.phone          !== undefined ? input.phone          : undefined,
+        normalizedPhone: input.normalizedPhone !== undefined ? input.normalizedPhone : undefined,
         company:        input.company        !== undefined ? input.company        : undefined,
         status:         input.status         ?? undefined,
+        sourceLabel:    input.sourceLabel    !== undefined ? input.sourceLabel    : undefined,
+        address:        input.address        !== undefined ? input.address        : undefined,
+        postalCode:     input.postalCode     !== undefined ? input.postalCode     : undefined,
+        requestedService: input.requestedService !== undefined ? input.requestedService : undefined,
+        referralSource: input.referralSource !== undefined ? input.referralSource : undefined,
+        customFields:   input.customFields   !== undefined ? (input.customFields === null ? Prisma.JsonNull : toJson(input.customFields)) : undefined,
         score:          input.score          !== undefined ? input.score          : undefined,
         assignedTo:     input.assignedTo     !== undefined ? input.assignedTo     : undefined,
         notes:          input.notes          !== undefined ? input.notes          : undefined,
@@ -179,6 +230,8 @@ export const leadsRepository = {
     const where: NonNullable<Parameters<typeof prisma.lead.count>[0]>['where'] = { organizationId: orgId, deletedAt: null };
     if (filter.status)     where.status = filter.status;
     if (filter.assignedTo) where.assignedTo = filter.assignedTo;
+    if (filter.source)     where.source = filter.source;
+    if (filter.companyId)  where.companyId = filter.companyId;
     return prisma.lead.count({ where });
   },
 
