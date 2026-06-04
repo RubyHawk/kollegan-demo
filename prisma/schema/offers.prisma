@@ -218,6 +218,10 @@ model Company {
   industry       String?
   notes          String?
   customFields   Json?     // org-defined extra fields
+  // Localisation & tax — set per brand/company
+  currency       String    @default("SEK") // "SEK"|"NOK"|"DKK"|"EUR"
+  vatNumber      String?                   // e.g. SE556677-8899 / NO123456789MVA
+  defaultVatRate Float     @default(0.25)  // company default, used as line-item pre-fill
   createdBy      String    // User.id
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
