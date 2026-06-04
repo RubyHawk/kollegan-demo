@@ -21,7 +21,6 @@ permissions:
   pull-requests: read
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   DEPLOY_APP_DIR: /var/www/offert
   NEXT_PUBLIC_APP_ENV: ${{ vars.NEXT_PUBLIC_APP_ENV || secrets.NEXT_PUBLIC_APP_ENV }}
   NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || secrets.NEXT_PUBLIC_APP_URL }}
@@ -320,7 +319,7 @@ jobs:
 
       - name: Package Next build artifact
         if: steps.promote.outputs.promoted != 'true'
-        run: tar -czf kollegan-next-build.tar.gz .next
+        run: tar --exclude='./.next/cache' -czf kollegan-next-build.tar.gz .next
 
       - name: Write release metadata
         if: steps.promote.outputs.promoted != 'true'
@@ -378,7 +377,7 @@ jobs:
             mkdir -p "${{ env.DEPLOY_APP_DIR }}/.deploy-state/incoming"
 
       - name: Copy deploy bundle to VPS
-        uses: appleboy/scp-action@v1
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}

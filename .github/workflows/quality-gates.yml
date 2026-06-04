@@ -9,9 +9,6 @@ permissions:
   actions: write
   contents: read
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 concurrency:
   group: quality-gates-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -292,13 +289,13 @@ jobs:
         with:
           node-version: 24
 
-      - name: Restore npm cache
+      - name: Restore node_modules
         if: needs.classify.outputs.runtime_affecting == 'true'
-        id: npm-cache
+        id: node-modules
         uses: actions/cache/restore@v4
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+          path: node_modules
+          key: ${{ runner.os }}-node24-modules-${{ hashFiles('package-lock.json', 'package.json') }}
 
       - name: Restore lint cache
         if: needs.classify.outputs.runtime_affecting == 'true'
@@ -311,8 +308,15 @@ jobs:
             ${{ runner.os }}-lint-${{ hashFiles('package-lock.json', 'eslint.config.*', '.eslintrc*', 'tsconfig*.json') }}-
 
       - name: Install dependencies
-        if: needs.classify.outputs.runtime_affecting == 'true'
+        if: needs.classify.outputs.runtime_affecting == 'true' && steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci --ignore-scripts
+
+      - name: Save node_modules
+        if: needs.classify.outputs.runtime_affecting == 'true' && steps.node-modules.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: node_modules
+          key: ${{ steps.node-modules.outputs.cache-primary-key }}
 
       - name: Prisma client generate
         if: needs.classify.outputs.runtime_affecting == 'true'
@@ -357,13 +361,13 @@ jobs:
         with:
           node-version: 24
 
-      - name: Restore npm cache
+      - name: Restore node_modules
         if: needs.classify.outputs.runtime_affecting == 'true'
-        id: npm-cache
+        id: node-modules
         uses: actions/cache/restore@v4
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+          path: node_modules
+          key: ${{ runner.os }}-node24-modules-${{ hashFiles('package-lock.json', 'package.json') }}
 
       - name: Restore build caches
         if: needs.classify.outputs.runtime_affecting == 'true'
@@ -373,13 +377,20 @@ jobs:
           path: |
             .next/cache
             tsconfig.tsbuildinfo
-          key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json', 'next.config.ts', 'tsconfig*.json', 'prisma/schema/**/*.prisma') }}-${{ github.sha }}
+          key: ${{ runner.os }}-nextbuild-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-build-${{ hashFiles('package-lock.json', 'next.config.ts', 'tsconfig*.json', 'prisma/schema/**/*.prisma') }}-
+            ${{ runner.os }}-nextbuild-
 
       - name: Install dependencies
-        if: needs.classify.outputs.runtime_affecting == 'true'
+        if: needs.classify.outputs.runtime_affecting == 'true' && steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci --ignore-scripts
+
+      - name: Save node_modules
+        if: needs.classify.outputs.runtime_affecting == 'true' && steps.node-modules.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: node_modules
+          key: ${{ steps.node-modules.outputs.cache-primary-key }}
 
       - name: Prisma client generate
         if: needs.classify.outputs.runtime_affecting == 'true'
@@ -395,7 +406,7 @@ jobs:
 
       - name: Package Next build artifact
         if: needs.classify.outputs.runtime_affecting == 'true'
-        run: tar -czf kollegan-next-build.tar.gz .next
+        run: tar --exclude='./.next/cache' -czf kollegan-next-build.tar.gz .next
 
       - name: Write release metadata
         if: needs.classify.outputs.runtime_affecting == 'true'
@@ -478,7 +489,7 @@ jobs:
           name: pr-release-bundle
           path: pr-release-bundle-${{ github.run_id }}.tar.gz
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
 
       - name: Note skipped PR bundle promotion
         if: needs.classify.outputs.runtime_affecting == 'true' && steps.upload_pr_release_bundle.outcome == 'failure'
