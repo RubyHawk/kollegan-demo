@@ -25,6 +25,7 @@ import {
 import { CompanyModal, type CompanyForm } from './company-modal';
 import { CompanyOverviewDialog } from './company-overview-dialog';
 import { CompanyRow } from './company-row';
+import { LeadIntakeDialog } from './lead-intake-dialog';
 
 export function CompaniesPageClient() {
   const router = useRouter();
@@ -45,6 +46,7 @@ export function CompaniesPageClient() {
   const [editCompany, setEditCompany] = useState<Company | null>(null);
   const [deleteCompany, setDeleteCompany] = useState<Company | null>(null);
   const [membersCompany, setMembersCompany] = useState<Company | null>(null);
+  const [leadIntakeCompany, setLeadIntakeCompany] = useState<Company | null>(null);
   const [overviewCompany, setOverviewCompany] = useState<Company | null>(null);
   const [members, setMembers] = useState<CompanyMemberRecord[]>([]);
   const [availableUsers, setAvailableUsers] = useState<AssignableUserRecord[]>([]);
@@ -390,6 +392,7 @@ export function CompaniesPageClient() {
                   onMembers={(nextCompany) => {
                     void loadMembers(nextCompany);
                   }}
+                  onLeadIntake={setLeadIntakeCompany}
                 />
               ))}
             </div>
@@ -445,6 +448,14 @@ export function CompaniesPageClient() {
           onRemoveMember={handleRemoveMember}
         />
       )}
+
+      <LeadIntakeDialog
+        open={Boolean(leadIntakeCompany)}
+        company={leadIntakeCompany}
+        onOpenChange={(open) => {
+          if (!open) setLeadIntakeCompany(null);
+        }}
+      />
 
       <ConfirmDestructiveDialog
         open={Boolean(deleteCompany)}

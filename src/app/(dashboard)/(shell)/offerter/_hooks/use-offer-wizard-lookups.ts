@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { listCompanies } from '@shared/lib/api/companies.api';
-import { listCustomers } from '@shared/lib/api/customers.api';
+import { listRecipientSuggestions } from '@shared/lib/api/recipient-suggestions.api';
 import { listProducts } from '@shared/lib/api/products.api';
 import {
   getTemplate,
@@ -160,15 +160,31 @@ export function useOfferWizardLookups({
     contactSearchRef.current = setTimeout(async () => {
       setContactLoading(true);
       try {
-        const result = await listCustomers({ search: query, limit: 8, offset: 0 });
-        setContactResults(result.contacts as ContactResult[]);
+        const result = await listRecipientSuggestions({
+          search: query,
+          companyId: selectedCompanyId,
+          limit: 8,
+        });
+        setContactResults(result.map((suggestion) => ({
+          id: suggestion.customerId ?? suggestion.leadId ?? suggestion.id,
+          kind: suggestion.kind,
+          name: suggestion.name,
+          email: suggestion.email,
+          phone: suggestion.phone,
+          company: suggestion.company,
+          leadId: suggestion.leadId,
+          customerId: suggestion.customerId,
+          requestedService: suggestion.requestedService,
+          sourceLabel: suggestion.sourceLabel,
+          hasOffer: suggestion.hasOffer,
+        })) as ContactResult[]);
       } catch {
         /* ignore */
       } finally {
         setContactLoading(false);
       }
     }, 280);
-  }, [setContactLoading, setContactResults, setContactSearch]);
+  }, [selectedCompanyId, setContactLoading, setContactResults, setContactSearch]);
 
   const searchCompanies = useCallback((query: string) => {
     if (companySearchRef.current) clearTimeout(companySearchRef.current);
@@ -192,10 +208,12 @@ export function useOfferWizardLookups({
   const pickContact = useCallback((contact: ContactResult) => {
     setForm((current) => ({
       ...current,
-      contactId: contact.id,
+      contactId: contact.customerId ?? (contact.kind === 'customer' ? contact.id : ''),
+      leadId: contact.leadId ?? '',
       recipientName: contact.name ?? current.recipientName,
       recipientEmail: contact.email ?? current.recipientEmail,
       recipientCompany: contact.company ?? current.recipientCompany,
+      title: current.title || contact.requestedService || current.title,
     }));
     setContactSearch('');
     setContactResults([]);

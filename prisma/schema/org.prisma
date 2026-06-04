@@ -34,6 +34,8 @@ model Organization {
   crmRecords  CrmRecord[]
   workflows   Workflow[]
   leads       Lead[]
+  leadIntakeForwarders LeadIntakeForwarder[]
+  leadIntakeMessages   LeadIntakeMessage[]
   users       User[]
   portal        Portal?
   offers         Offer[]

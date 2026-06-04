@@ -4,9 +4,11 @@
 model Customer {
   id                  String    @id @default(uuid())
   organizationId      String
+  companyId           String?
   name                String
   email               String?
   phone               String?
+  normalizedPhone     String?
   company             String?
   address             String?
   postalCode          String?
@@ -20,15 +22,19 @@ model Customer {
   deletedAt           DateTime?
 
   organization      Organization @relation(fields: [organizationId], references: [id])
+  companyRelation   Company?     @relation(fields: [companyId], references: [id])
   convertedFromLead Lead?        @relation("CustomerConvertedFromLead", fields: [convertedFromLeadId], references: [id])
   leads             Lead[]       @relation("LeadCustomer")
+  intakeMessages    LeadIntakeMessage[]
   offers            Offer[]
   projects          Project[]
   invoices          Invoice[]
 
   @@unique([organizationId, email])
+  @@index([organizationId, companyId, email])
   @@index([organizationId, name])
   @@index([organizationId, company])
+  @@index([organizationId, normalizedPhone])
   @@index([organizationId, createdAt])
   @@index([deletedAt])
   @@map("crm_customers")

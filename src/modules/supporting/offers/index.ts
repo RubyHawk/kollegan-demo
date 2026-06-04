@@ -56,6 +56,12 @@ export type { BulkSendResult, StaffOfferAcceptResult, StaffOfferDetail } from '.
 export type { CreateOfferInput, UpdateOfferInput, ListOffersFilter } from './application/offers.service';
 
 export {
+  getCompany,
+  getCompanyMember,
+  listCompaniesForUser,
+} from './application/companies.service';
+
+export {
   listProducts,
   createProduct,
   updateProduct,
@@ -80,6 +86,7 @@ export {
 } from './application/templates.service';
 
 export { generateDocument } from './application/document-generator';
+export { fromAddress, sendEmail } from './application/offer-email-transport';
 
 export {
   OFFER_CREATED,
@@ -134,6 +141,12 @@ export {
   handleUpdateProductCategory,
   handleDeleteProductCategory,
 } from './api/handlers/product-categories.handler';
+
+export {
+  listCompanyMembers,
+  upsertCompanyMember,
+  removeCompanyMember,
+} from './application/company-members.service';
 
 export {
   handleListCompanies,

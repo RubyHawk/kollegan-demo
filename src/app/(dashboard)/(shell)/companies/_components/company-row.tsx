@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowSquareOut, PencilSimple, Trash, UsersThree } from '@phosphor-icons/react';
+import { ArrowSquareOut, EnvelopeSimple, PencilSimple, Trash, UsersThree } from '@phosphor-icons/react';
 import type { Company } from '@shared/lib/api/companies.api';
 
 function initials(name: string) {
@@ -28,6 +28,7 @@ interface CompanyRowProps {
   onEdit: (company: Company) => void;
   onDelete: (company: Company) => void;
   onMembers: (company: Company) => void;
+  onLeadIntake: (company: Company) => void;
 }
 
 export function CompanyRow({
@@ -38,6 +39,7 @@ export function CompanyRow({
   onEdit,
   onDelete,
   onMembers,
+  onLeadIntake,
 }: CompanyRowProps) {
   return (
     <div className="border-b border-[var(--border)] last:border-b-0">
@@ -100,6 +102,14 @@ export function CompanyRow({
             title="Hantera medlemmar"
           >
             <UsersThree size={18} weight="duotone" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onLeadIntake(company)}
+            className="rounded-xl p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
+            title="Intresseanmälan"
+          >
+            <EnvelopeSimple size={18} weight="duotone" />
           </button>
           <button
             type="button"
