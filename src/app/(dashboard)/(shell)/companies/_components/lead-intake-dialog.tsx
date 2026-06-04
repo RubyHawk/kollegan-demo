@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { EnvelopeSimple, Plus, Trash } from '@phosphor-icons/react';
+import { EnvelopeSimple } from '@phosphor-icons/react';
 import { listCompanyMembers, type Company } from '@shared/lib/api/companies.api';
 import {
   createLeadIntakeForwarder,
@@ -10,9 +10,9 @@ import {
   updateLeadIntakeForwarder,
   type LeadIntakeFieldConfig,
   type LeadIntakeFieldMapping,
-  type LeadIntakeFieldTarget,
   type LeadIntakeForwarder,
 } from '@shared/lib/api/lead-intake-forwarders.api';
+import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import {
   Dialog,
@@ -22,18 +22,28 @@ import {
   DialogTitle,
   ModalActionFooter,
   ModalBody,
-  ModalSection,
 } from '@shared/ui/dialog';
-
-type Member = {
-  userId: string;
-  user: {
-    id: string;
-    email: string;
-    firstName?: string | null;
-    lastName?: string | null;
-  };
-};
+import { TooltipProvider } from '@shared/ui/tooltip';
+import {
+  buildDraftName,
+  buildSenderName,
+  emptyField,
+  formatDate,
+  PANELS,
+  recipientDisplayName,
+  sortFields,
+  toRecipientIds,
+  type LeadIntakeFormState,
+  type Member,
+  type Panel,
+} from './lead-intake-dialog-model';
+import { ForwarderStatus, PanelButton, StatTile } from './lead-intake-dialog-parts';
+import {
+  FieldsPanel,
+  ForwarderSidebar,
+  RecipientsPanel,
+  SetupPanel,
+} from './lead-intake-dialog-sections';
 
 interface LeadIntakeDialogProps {
   open: boolean;
@@ -41,40 +51,27 @@ interface LeadIntakeDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const TARGETS: Array<{ value: LeadIntakeFieldTarget; label: string }> = [
-  { value: 'name', label: 'Namn' },
-  { value: 'email', label: 'E-post' },
-  { value: 'phone', label: 'Telefon' },
-  { value: 'address', label: 'Adress' },
-  { value: 'postalCode', label: 'Postnummer' },
-  { value: 'requestedService', label: 'Tjänst' },
-  { value: 'message', label: 'Meddelande' },
-  { value: 'referralSource', label: 'Källa/referral' },
-  { value: 'custom', label: 'Extra fält' },
-];
-
-const inputCls = 'w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none';
-const labelCls = 'mb-1.5 block text-xs font-medium text-[var(--text-secondary)]';
-
-function displayName(user: Member['user']) {
-  return `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || user.email;
-}
-
-function emptyField(order: number): LeadIntakeFieldMapping {
-  return { key: `custom_${order}`, label: '', target: 'custom', order };
-}
-
-function toRecipientIds(forwarder: LeadIntakeForwarder | null) {
-  return forwarder?.recipients.map((recipient) => recipient.userId) ?? [];
-}
+const EMPTY_FORM: LeadIntakeFormState = {
+  name: '',
+  sourceLabel: '',
+  intakeAddress: '',
+  senderEmail: '',
+  senderName: '',
+  isActive: true,
+  recipientUserIds: [],
+  fields: [],
+};
 
 export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDialogProps) {
   const [forwarders, setForwarders] = useState<LeadIntakeForwarder[]>([]);
   const [defaultFieldConfig, setDefaultFieldConfig] = useState<LeadIntakeFieldConfig | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedId, setSelectedId] = useState('');
+  const [activePanel, setActivePanel] = useState<Panel>('setup');
+  const [form, setForm] = useState<LeadIntakeFormState>(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle');
   const [error, setError] = useState<string | null>(null);
 
   const selected = useMemo(
@@ -82,29 +79,19 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
     [forwarders, selectedId],
   );
 
-  const [form, setForm] = useState({
-    name: 'Framer website',
-    sourceLabel: 'Framer website',
-    intakeAddress: '',
-    senderEmail: '',
-    senderName: '',
-    isActive: true,
-    recipientUserIds: [] as string[],
-    fields: [] as LeadIntakeFieldMapping[],
-  });
-
-  const resetForm = useCallback((forwarder: LeadIntakeForwarder | null, fallback?: LeadIntakeFieldConfig | null) => {
+  const resetForm = useCallback((forwarder: LeadIntakeForwarder | null, fallback?: LeadIntakeFieldConfig | null, nextCompany?: Company | null) => {
+    const draftCompany = nextCompany ?? company;
     setForm({
-      name: forwarder?.name ?? 'Framer website',
+      name: forwarder?.name ?? (draftCompany ? buildDraftName(draftCompany) : 'Website'),
       sourceLabel: forwarder?.sourceLabel ?? 'Framer website',
       intakeAddress: forwarder?.intakeAddress ?? '',
       senderEmail: forwarder?.senderEmail ?? '',
-      senderName: forwarder?.senderName ?? '',
+      senderName: forwarder?.senderName ?? (draftCompany ? buildSenderName(draftCompany) : ''),
       isActive: forwarder?.isActive ?? true,
       recipientUserIds: toRecipientIds(forwarder),
-      fields: [...(forwarder?.fieldConfig.fields ?? fallback?.fields ?? [])].sort((a, b) => a.order - b.order),
+      fields: sortFields(forwarder?.fieldConfig.fields ?? fallback?.fields ?? []),
     });
-  }, []);
+  }, [company]);
 
   const load = useCallback(async () => {
     if (!company) return;
@@ -115,14 +102,14 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
         listLeadIntakeForwarders(company.id),
         listCompanyMembers(company.id),
       ]);
+      const nextSelected = forwarderPayload.forwarders[0] ?? null;
       setForwarders(forwarderPayload.forwarders);
       setDefaultFieldConfig(forwarderPayload.defaultFieldConfig);
       setMembers(memberPayload.members as Member[]);
-      const nextSelected = forwarderPayload.forwarders[0] ?? null;
       setSelectedId(nextSelected?.id ?? '');
-      resetForm(nextSelected, forwarderPayload.defaultFieldConfig);
+      resetForm(nextSelected, forwarderPayload.defaultFieldConfig, company);
     } catch {
-      setError('Kunde inte ladda intresseanmälan-inställningar.');
+      setError('Kunde inte ladda intresseanmalan-installningar.');
     } finally {
       setLoading(false);
     }
@@ -130,6 +117,7 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
 
   useEffect(() => {
     if (!open) return;
+    setActivePanel('setup');
     void load();
   }, [load, open]);
 
@@ -138,11 +126,31 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
     resetForm(selected, defaultFieldConfig);
   }, [defaultFieldConfig, open, resetForm, selected]);
 
+  const selectedMembers = useMemo(() => {
+    const ids = new Set(form.recipientUserIds);
+    return members.filter((member) => ids.has(member.userId));
+  }, [form.recipientUserIds, members]);
+
+  const requiredCount = useMemo(() => form.fields.filter((field) => field.required).length, [form.fields]);
+  const customCount = useMemo(() => form.fields.filter((field) => field.target === 'custom').length, [form.fields]);
+  const canSave = Boolean(form.name.trim() && form.sourceLabel.trim() && form.intakeAddress.trim() && form.fields.some((field) => field.key.trim() && field.label.trim()));
+
+  const patchForm = (patch: Partial<LeadIntakeFormState>) => {
+    setForm((current) => ({ ...current, ...patch }));
+  };
+
   const updateField = (index: number, patch: Partial<LeadIntakeFieldMapping>) => {
     setForm((current) => ({
       ...current,
       fields: current.fields.map((field, idx) => idx === index ? { ...field, ...patch } : field),
     }));
+  };
+
+  const copyAddress = async () => {
+    if (!form.intakeAddress.trim()) return;
+    await navigator.clipboard.writeText(form.intakeAddress.trim());
+    setCopyState('copied');
+    window.setTimeout(() => setCopyState('idle'), 1400);
   };
 
   const save = async () => {
@@ -162,18 +170,21 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
           version: 1 as const,
           fields: form.fields
             .filter((field) => field.key.trim() && field.label.trim())
-            .map((field, index) => ({ ...field, order: index * 10 + 10 })),
+            .map((field, index) => ({
+              ...field,
+              key: field.key.trim(),
+              label: field.label.trim(),
+              order: index * 10 + 10,
+            })),
         },
       };
-
       const saved = selected
         ? await updateLeadIntakeForwarder(company.id, selected.id, payload)
         : await createLeadIntakeForwarder(company.id, payload);
-
       await load();
       setSelectedId(saved.id);
     } catch {
-      setError('Kunde inte spara forwardern. Kontrollera adress, fält och mottagare.');
+      setError('Kunde inte spara forwardern. Kontrollera adress, falt och mottagare.');
     } finally {
       setSaving(false);
     }
@@ -197,190 +208,127 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent mobileVariant="right-panel" size="right-panel" showMobileClose>
-        <div className="flex h-full flex-col overflow-hidden">
-          <DialogHeader className="border-b border-[var(--border)] pr-12">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                <EnvelopeSimple size={19} weight="duotone" />
-              </div>
-              <div>
-                <DialogTitle>Intresseanmälan</DialogTitle>
-                <DialogDescription className="mt-1">
-                  Styr inkommande formulär, fält och mottagare för {company.name}.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <ModalBody className="space-y-4">
-            {error ? (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300">
-                {error}
-              </div>
-            ) : null}
-
-            <ModalSection tone="subtle" className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Forwarders</p>
-                  <p className="text-xs text-[var(--text-muted)]">En unik intake-adress per källa/företag.</p>
+      <DialogContent mobileVariant="fullscreen" size="xl" showMobileClose className="sm:h-[min(92dvh,900px)]">
+        <TooltipProvider>
+          <div className="flex h-full flex-col overflow-hidden">
+            <DialogHeader className="border-b border-[var(--border)] pr-12">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
+                    <EnvelopeSimple size={19} weight="duotone" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <DialogTitle>Intresseanmalan</DialogTitle>
+                      <ForwarderStatus forwarder={selected} />
+                    </div>
+                    <DialogDescription className="mt-1">
+                      {company.name} · Resend Inbound · {forwarders.length} konfigurationer
+                    </DialogDescription>
+                  </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedId('');
-                    resetForm(null, defaultFieldConfig);
+                <div className="grid grid-cols-3 gap-2 lg:min-w-[360px]">
+                  <StatTile label="Aktiva" value={forwarders.filter((forwarder) => forwarder.isActive).length} />
+                  <StatTile label="Mottagare" value={selectedMembers.length} />
+                  <StatTile label="Falt" value={form.fields.length} />
+                </div>
+              </div>
+            </DialogHeader>
+
+            <ModalBody className="space-y-4 bg-[var(--surface-alt)]/45">
+              {error ? (
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300">
+                  {error}
+                </div>
+              ) : null}
+
+              <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+                <ForwarderSidebar
+                  loading={loading}
+                  forwarders={forwarders}
+                  selectedId={selectedId}
+                  onSelect={(id) => {
+                    setSelectedId(id);
+                    setActivePanel('setup');
                   }}
-                >
-                  <Plus size={14} weight="bold" />
-                  Ny
-                </Button>
-              </div>
-              {loading ? (
-                <div className="h-16 animate-pulse rounded-xl bg-[var(--surface)]" />
-              ) : forwarders.length === 0 ? (
-                <p className="text-sm text-[var(--text-muted)]">Ingen forwarder konfigurerad ännu.</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {forwarders.map((forwarder) => (
-                    <button
-                      key={forwarder.id}
-                      type="button"
-                      onClick={() => setSelectedId(forwarder.id)}
-                      className={`rounded-xl border px-3 py-2 text-left text-xs transition-colors ${
-                        selectedId === forwarder.id
-                          ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
-                          : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]'
-                      }`}
-                    >
-                      <span className="block font-semibold">{forwarder.name}</span>
-                      <span className="block truncate">{forwarder.intakeAddress}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </ModalSection>
-
-            <ModalSection className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className={labelCls}>Namn</label>
-                  <input className={inputCls} value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-                </div>
-                <div>
-                  <label className={labelCls}>Källa</label>
-                  <input className={inputCls} value={form.sourceLabel} onChange={(event) => setForm((current) => ({ ...current, sourceLabel: event.target.value }))} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className={labelCls}>Intake-adress</label>
-                  <input className={inputCls} type="email" value={form.intakeAddress} placeholder="framer-soleria@leads.example.se" onChange={(event) => setForm((current) => ({ ...current, intakeAddress: event.target.value }))} />
-                </div>
-                <div>
-                  <label className={labelCls}>Avsändarnamn</label>
-                  <input className={inputCls} value={form.senderName} placeholder={`${company.name} Intresseanmälan`} onChange={(event) => setForm((current) => ({ ...current, senderName: event.target.value }))} />
-                </div>
-                <div>
-                  <label className={labelCls}>Avsändaradress</label>
-                  <input className={inputCls} type="email" value={form.senderEmail} placeholder="leads@dindoman.se" onChange={(event) => setForm((current) => ({ ...current, senderEmail: event.target.value }))} />
-                </div>
-              </div>
-
-              <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                <input
-                  type="checkbox"
-                  checked={form.isActive}
-                  onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
+                  onNew={() => {
+                    setSelectedId('');
+                    resetForm(null, defaultFieldConfig, company);
+                    setActivePanel('setup');
+                  }}
                 />
-                Aktiv forwarder
-              </label>
-            </ModalSection>
 
-            <ModalSection tone="subtle" className="space-y-3">
-              <p className="text-sm font-semibold text-[var(--text-primary)]">Mottagare</p>
-              <div className="space-y-2">
-                {members.map((member) => (
-                  <label key={member.userId} className="flex items-center justify-between gap-3 rounded-xl bg-[var(--surface)] px-3 py-2 text-sm">
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium text-[var(--text-primary)]">{displayName(member.user)}</span>
-                      <span className="block truncate text-xs text-[var(--text-muted)]">{member.user.email}</span>
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={form.recipientUserIds.includes(member.userId)}
-                      onChange={(event) => {
-                        setForm((current) => ({
-                          ...current,
-                          recipientUserIds: event.target.checked
-                            ? [...current.recipientUserIds, member.userId]
-                            : current.recipientUserIds.filter((id) => id !== member.userId),
-                        }));
-                      }}
-                    />
-                  </label>
-                ))}
-                {members.length === 0 ? <p className="text-sm text-[var(--text-muted)]">Lägg till företagsanvändare först.</p> : null}
-              </div>
-            </ModalSection>
-
-            <ModalSection className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Fältmappning</p>
-                  <p className="text-xs text-[var(--text-muted)]">Etiketterna matchas mot raderna i Framer-mejlet.</p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setForm((current) => ({ ...current, fields: [...current.fields, emptyField(current.fields.length * 10 + 10)] }))}
-                >
-                  <Plus size={14} weight="bold" />
-                  Fält
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                {form.fields.map((field, index) => (
-                  <div key={`${field.key}:${index}`} className="grid gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 sm:grid-cols-[1fr_1fr_auto_auto]">
-                    <input className={inputCls} value={field.key} placeholder="key" onChange={(event) => updateField(index, { key: event.target.value })} />
-                    <input className={inputCls} value={field.label} placeholder="Label i mejlet" onChange={(event) => updateField(index, { label: event.target.value })} />
-                    <select className={inputCls} value={field.target} onChange={(event) => updateField(index, { target: event.target.value as LeadIntakeFieldTarget })}>
-                      {TARGETS.map((target) => <option key={target.value} value={target.value}>{target.label}</option>)}
-                    </select>
-                    <div className="flex items-center justify-between gap-2">
-                      <label className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
-                        <input type="checkbox" checked={Boolean(field.required)} onChange={(event) => updateField(index, { required: event.target.checked })} />
-                        Krävs
-                      </label>
-                      <button
-                        type="button"
-                        className="rounded-lg p-2 text-[var(--text-muted)] hover:bg-red-50 hover:text-red-600"
-                        onClick={() => setForm((current) => ({ ...current, fields: current.fields.filter((_, idx) => idx !== index) }))}
-                        title="Ta bort fält"
-                      >
-                        <Trash size={15} />
-                      </button>
+                <section className="min-w-0 space-y-4">
+                  <div className="flex flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="inline-flex rounded-xl bg-[var(--surface-alt)] p-1">
+                      {PANELS.map((panel) => (
+                        <PanelButton
+                          key={panel.value}
+                          active={activePanel === panel.value}
+                          label={panel.label}
+                          onClick={() => setActivePanel(panel.value)}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary" className="rounded-full">{requiredCount} krav</Badge>
+                      <Badge variant="secondary" className="rounded-full">{customCount} extra</Badge>
+                      {selected?.updatedAt ? (
+                        <Badge variant="outline" className="rounded-full text-[var(--text-muted)]">
+                          Uppdaterad {formatDate(selected.updatedAt)}
+                        </Badge>
+                      ) : null}
                     </div>
                   </div>
-                ))}
-              </div>
-            </ModalSection>
-          </ModalBody>
 
-          <ModalActionFooter>
-            {selected ? (
-              <Button type="button" variant="outline" onClick={() => void deactivate()} disabled={saving}>
-                Inaktivera
+                  {activePanel === 'setup' ? (
+                    <SetupPanel company={company} form={form} copyState={copyState} onCopyAddress={() => void copyAddress()} onFormChange={patchForm} />
+                  ) : null}
+                  {activePanel === 'recipients' ? (
+                    <RecipientsPanel
+                      members={members}
+                      selectedMembers={selectedMembers}
+                      recipientUserIds={form.recipientUserIds}
+                      onRecipientIdsChange={(recipientUserIds) => patchForm({ recipientUserIds })}
+                    />
+                  ) : null}
+                  {activePanel === 'fields' ? (
+                    <FieldsPanel
+                      fields={form.fields}
+                      defaultFieldConfig={defaultFieldConfig}
+                      onFieldsChange={(fields) => patchForm({ fields })}
+                      onUpdateField={updateField}
+                      onAddField={() => patchForm({ fields: [...form.fields, emptyField(form.fields.length * 10 + 10)] })}
+                    />
+                  ) : null}
+                </section>
+              </div>
+            </ModalBody>
+
+            <ModalActionFooter>
+              <div className="mr-auto hidden min-w-0 items-center gap-2 text-xs text-[var(--text-muted)] sm:flex">
+                {selected ? (
+                  <>
+                    <span className="truncate">
+                      {selected.recipients[0] ? recipientDisplayName(selected.recipients[0]) : 'Ingen mottagare'}
+                    </span>
+                    {selected.recipients.length > 1 ? <span>+{selected.recipients.length - 1}</span> : null}
+                  </>
+                ) : (
+                  <span>Ny forwarder</span>
+                )}
+              </div>
+              {selected ? (
+                <Button type="button" variant="outline" onClick={() => void deactivate()} disabled={saving}>
+                  Inaktivera
+                </Button>
+              ) : null}
+              <Button type="button" onClick={() => void save()} disabled={saving || !canSave}>
+                {saving ? 'Sparar...' : selected ? 'Spara andringar' : 'Skapa forwarder'}
               </Button>
-            ) : <span />}
-            <Button type="button" onClick={() => void save()} disabled={saving || !form.name || !form.sourceLabel || !form.intakeAddress}>
-              {saving ? 'Sparar...' : 'Spara forwarder'}
-            </Button>
-          </ModalActionFooter>
-        </div>
+            </ModalActionFooter>
+          </div>
+        </TooltipProvider>
       </DialogContent>
     </Dialog>
   );
