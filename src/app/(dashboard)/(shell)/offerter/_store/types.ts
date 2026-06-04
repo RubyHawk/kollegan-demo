@@ -36,9 +36,16 @@ export interface OfferProduct {
 
 export interface ContactResult {
   id:      string;
+  kind?:   'customer' | 'lead';
   name:    string | null;
   email:   string | null;
+  phone?:  string | null;
   company: string | null;
+  leadId?: string | null;
+  customerId?: string | null;
+  requestedService?: string | null;
+  sourceLabel?: string | null;
+  hasOffer?: boolean;
 }
 
 export interface CompanyResult {
@@ -53,6 +60,7 @@ export interface OfferForm {
   templateId:       string;
   priceDisplayMode: OfferPriceDisplayMode;
   contactId:        string;
+  leadId:           string;
   companyId:        string;
   title:            string;
   recipientName:    string;
@@ -75,6 +83,7 @@ export const EMPTY_LINE: LineItem = { description: '', quantity: 1, unitPrice: 0
 
 export const EMPTY_FORM: OfferForm = {
   templateId: '', priceDisplayMode: 'inclusive', contactId: '', companyId: '', title: '', recipientName: '',
+  leadId: '',
   recipientEmail: '', recipientCompany: '', notes: '',
   validityDays: 30, lineItems: [{ ...EMPTY_LINE }],
 };

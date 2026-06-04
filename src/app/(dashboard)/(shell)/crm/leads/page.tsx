@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Check, Copy } from '@phosphor-icons/react';
 import { replaceBrowserQuery } from '@shared/lib/browser-query';
+import { useActiveCompany } from '@shared/hooks/use-active-company';
 import ToastContainer from '@shared/ui/toast/toast-container';
 import { useToast } from '@shared/ui/toast/toast-context';
 import {
@@ -87,6 +88,7 @@ function fmt(iso: string): string {
 export default function LeadsPage() {
   const searchParams = useSearchParams();
   const { toasts, addToast, dismissToast } = useToast();
+  const { selectedCompanyId, selectedCompany } = useActiveCompany();
   const [leads, setLeads]       = useState<Lead[]>([]);
   const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(true);
@@ -106,6 +108,7 @@ export default function LeadsPage() {
       const result = await listLeads({
         status,
         search: q,
+        companyId: selectedCompanyId || undefined,
         limit: PAGE_SIZE,
         offset: currentPage * PAGE_SIZE,
       });
@@ -116,7 +119,7 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage]);
+  }, [currentPage, selectedCompanyId]);
 
   useEffect(() => {
     void load(tab === 'all' ? undefined : tab, search || undefined);
@@ -217,6 +220,11 @@ export default function LeadsPage() {
             <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[var(--surface-alt)] border border-[var(--border)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
               {total} leads totalt
             </span>
+            {selectedCompany && (
+              <span className="ml-2 inline-flex items-center gap-1 rounded-full border border-[var(--accent)]/20 bg-[var(--accent)]/10 px-2 py-0.5 text-xs font-medium text-[var(--accent)]">
+                {selectedCompany.name}
+              </span>
+            )}
           </p>
         </div>
         <button
@@ -372,7 +380,7 @@ export default function LeadsPage() {
             <table className="min-w-full divide-y divide-[var(--border)] text-sm">
               <thead className="bg-[var(--surface-alt)]">
                 <tr>
-                  {['Namn', 'Företag', 'Kontakt', 'Källa', 'Poäng', 'Värde', 'Status', 'Skapad'].map(h => (
+                  {['Namn', 'Ärende', 'Kontakt', 'Källa', 'Kund', 'Värde', 'Status', 'Skapad'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
                   ))}
                 </tr>
@@ -388,7 +396,18 @@ export default function LeadsPage() {
                         <span className="font-medium text-[var(--text-primary)] truncate max-w-[160px]">{l.name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 text-[var(--text-secondary)]">{l.company ?? <span className="text-[var(--text-muted)]">—</span>}</td>
+                    <td className="px-4 py-3.5 text-[var(--text-secondary)]">
+                      <div className="max-w-[220px]">
+                        <p className="truncate font-medium text-[var(--text-primary)]">
+                          {l.requestedService ?? l.company ?? <span className="text-[var(--text-muted)]">—</span>}
+                        </p>
+                        {(l.address || l.postalCode) && (
+                          <p className="truncate text-xs text-[var(--text-muted)]">
+                            {[l.address, l.postalCode].filter(Boolean).join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">
                       {l.email && (
                         <div className="flex items-center gap-2">
@@ -414,9 +433,16 @@ export default function LeadsPage() {
                       )}
                       {!l.email && !l.phone && '—'}
                     </td>
-                    <td className="px-4 py-3.5 text-[var(--text-secondary)]">{SOURCE_LABEL[l.source]}</td>
+                    <td className="px-4 py-3.5 text-[var(--text-secondary)]">
+                      <p>{l.sourceLabel ?? SOURCE_LABEL[l.source]}</p>
+                      {l.referralSource && <p className="max-w-[180px] truncate text-xs text-[var(--text-muted)]">{l.referralSource}</p>}
+                    </td>
                     <td className="px-4 py-3.5">
-                      {l.score != null ? (
+                      {l.customerId ? (
+                        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/25 dark:text-emerald-300">
+                          Länkad
+                        </span>
+                      ) : l.score != null ? (
                         <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold">
                           {l.score}
                         </span>

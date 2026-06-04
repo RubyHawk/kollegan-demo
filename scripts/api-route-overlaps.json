@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "legacyPath": "/api/webhooks/resend/inbound",
+    "canonicalPath": "/api/v1/webhooks/resend/inbound",
+    "featureFlagKey": "lead-intake-resend-inbound-v1-webhook",
+    "owner": "Engineering lead",
+    "reason": "Resend inbound webhooks may be configured against the non-versioned endpoint while the canonical v1 route is introduced.",
+    "expiresOn": "2026-09-04"
+  }
+]

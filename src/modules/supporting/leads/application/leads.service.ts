@@ -19,6 +19,7 @@ import {
   LEAD_CONVERTED,
   LEAD_ASSIGNED,
 } from '../events/lead.events';
+import { normalizeEmail, normalizePhone } from './lead-intake-parser';
 
 export type { Lead, LeadActivity, LeadStatus };
 export type { CreateLeadInput, UpdateLeadInput, ListLeadsFilter };
@@ -28,7 +29,11 @@ const TAG = 'LeadsService';
 // ─── Create ───────────────────────────────────────────────────────────────────
 
 export async function createLead(input: CreateLeadInput, actorId = 'system'): Promise<Lead> {
-  const lead = await leadsRepository.create(input);
+  const lead = await leadsRepository.create({
+    ...input,
+    normalizedEmail: input.normalizedEmail ?? normalizeEmail(input.email) ?? undefined,
+    normalizedPhone: input.normalizedPhone ?? normalizePhone(input.phone) ?? undefined,
+  });
 
   // Log creation as first activity
   await leadsRepository.addActivity({
@@ -78,7 +83,11 @@ export async function updateLead(
   const existing = await leadsRepository.findById(id, orgId);
   if (!existing) return null;
 
-  const updated = await leadsRepository.update(id, orgId, input);
+  const updated = await leadsRepository.update(id, orgId, {
+    ...input,
+    ...(input.email !== undefined ? { normalizedEmail: normalizeEmail(input.email) ?? undefined } : {}),
+    ...(input.phone !== undefined ? { normalizedPhone: normalizePhone(input.phone) ?? undefined } : {}),
+  });
   if (!updated) return null;
 
   // Log status transitions as dedicated activities

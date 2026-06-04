@@ -62,6 +62,7 @@ export const handleListCustomers = createHandler(
 );
 
 const CreateBodySchema = z.object({
+  companyId: z.string().uuid().optional().nullable(),
   name: z.string().min(1).max(200),
   email: z.string().email().optional().nullable(),
   phone: z.string().max(50).optional().nullable(),
@@ -95,6 +96,7 @@ export const handleGetCustomer = createHandler(
 );
 
 const UpdateBodySchema = z.object({
+  companyId: z.string().uuid().optional().nullable(),
   name: z.string().min(1).max(200).optional(),
   email: z.string().email().optional().nullable(),
   phone: z.string().max(50).optional().nullable(),

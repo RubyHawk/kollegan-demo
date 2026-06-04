@@ -20,12 +20,21 @@ export type LeadSource = 'voice_call' | 'web_form' | 'manual' | 'referral' | 'n8
 export interface Lead {
   id: string;
   organizationId: string;
+  companyId?: string;
   name: string;
   email?: string;
+  normalizedEmail?: string;
   phone?: string;
+  normalizedPhone?: string;
   company?: string;
   status: LeadStatus;
   source: LeadSource;
+  sourceLabel?: string;
+  address?: string;
+  postalCode?: string;
+  requestedService?: string;
+  referralSource?: string;
+  customFields?: Record<string, unknown> | null;
   score?: number;           // 0–100 lead score
   assignedTo?: string;      // StaffUser.id
   notes?: string;

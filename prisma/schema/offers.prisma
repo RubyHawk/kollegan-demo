@@ -229,11 +229,15 @@ model Company {
 
   organization   Organization @relation(fields: [organizationId], references: [id])
   offers         Offer[]
+  leads          Lead[]
+  customers      Customer[]
   templates      OfferTemplate[]
   products       OfferProduct[]
   productCategories ProductCategory[]
   members        CompanyMember[]
   invoices       Invoice[]
+  leadIntakeForwarders LeadIntakeForwarder[]
+  leadIntakeMessages   LeadIntakeMessage[]
 
   @@index([organizationId, name])
   @@index([deletedAt])

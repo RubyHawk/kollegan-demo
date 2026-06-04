@@ -77,6 +77,7 @@ function buildOfferPayload(form: OfferForm, priceDisplayMode: OfferPriceDisplayM
 
   if (form.templateId) body.templateId = form.templateId;
   if (form.contactId) body.customerId = form.contactId;
+  if (form.leadId) body.leadId = form.leadId;
 
   return body;
 }

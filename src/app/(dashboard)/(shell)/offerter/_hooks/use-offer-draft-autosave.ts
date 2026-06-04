@@ -27,6 +27,7 @@ function hasMeaningfulOfferDraft(form: OfferForm): boolean {
   return Boolean(
     form.templateId
       || form.contactId
+      || form.leadId
       || form.companyId
       || form.title.trim()
       || form.recipientName.trim()

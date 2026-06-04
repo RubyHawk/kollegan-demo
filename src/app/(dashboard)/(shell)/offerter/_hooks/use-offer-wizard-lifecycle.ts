@@ -119,7 +119,8 @@ export function useOfferWizardLifecycle({
     setForm({
       templateId: offer.templateId ?? '',
       priceDisplayMode,
-      contactId: '',
+      contactId: offer.customerId ?? '',
+      leadId: offer.leadId ?? '',
       companyId: offer.companyId ?? '',
       title: offer.title,
       recipientName: offer.recipientName,
