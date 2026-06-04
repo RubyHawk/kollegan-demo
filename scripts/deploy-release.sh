@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Quiet npm's update-notifier and funding notices in deploy logs
+export NPM_CONFIG_UPDATE_NOTIFIER=false
+export NPM_CONFIG_FUND=false
+
 APP_DIR="${APP_DIR:-/var/www/offert}"
 ARTIFACT_PATH="${1:-}"
 DEPLOY_SHA="${2:-}"
