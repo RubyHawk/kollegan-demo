@@ -62,12 +62,8 @@ export const customersRepository = {
         organizationId: orgId,
         email: normalized,
         deletedAt: null,
-        OR: [
-          { companyId: companyId ?? null },
-          { companyId: null },
-        ],
       },
-      orderBy: [{ companyId: 'desc' }, { updatedAt: 'desc' }],
+      orderBy: { updatedAt: 'desc' },
     });
     return row ? mapCustomer(row as unknown as Record<string, unknown>) : null;
   },

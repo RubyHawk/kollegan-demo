@@ -31,26 +31,30 @@ export async function listRecipientSuggestions(input: {
   const query = input.search.trim();
   if (!query) return [];
 
-  const companyWhere = input.companyIds
+  const companyScope = input.companyIds
     ? {
         OR: [
           { companyId: { in: input.companyIds } },
           ...(input.includeLegacyCompanyless ? [{ companyId: null }] : []),
         ],
       }
-    : {};
+    : undefined;
 
   const [customers, leads] = await Promise.all([
     prisma.customer.findMany({
       where: {
         organizationId: input.organizationId,
         deletedAt: null,
-        ...companyWhere,
-        OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } },
-          { phone: { contains: query, mode: 'insensitive' } },
-          { company: { contains: query, mode: 'insensitive' } },
+        AND: [
+          ...(companyScope ? [companyScope] : []),
+          {
+            OR: [
+              { name: { contains: query, mode: 'insensitive' } },
+              { email: { contains: query, mode: 'insensitive' } },
+              { phone: { contains: query, mode: 'insensitive' } },
+              { company: { contains: query, mode: 'insensitive' } },
+            ],
+          },
         ],
       },
       take: input.limit,
@@ -73,14 +77,18 @@ export async function listRecipientSuggestions(input: {
         organizationId: input.organizationId,
         deletedAt: null,
         status: { notIn: ['won', 'lost'] },
-        ...companyWhere,
-        OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } },
-          { phone: { contains: query, mode: 'insensitive' } },
-          { company: { contains: query, mode: 'insensitive' } },
-          { address: { contains: query, mode: 'insensitive' } },
-          { requestedService: { contains: query, mode: 'insensitive' } },
+        AND: [
+          ...(companyScope ? [companyScope] : []),
+          {
+            OR: [
+              { name: { contains: query, mode: 'insensitive' } },
+              { email: { contains: query, mode: 'insensitive' } },
+              { phone: { contains: query, mode: 'insensitive' } },
+              { company: { contains: query, mode: 'insensitive' } },
+              { address: { contains: query, mode: 'insensitive' } },
+              { requestedService: { contains: query, mode: 'insensitive' } },
+            ],
+          },
         ],
       },
       take: input.limit,

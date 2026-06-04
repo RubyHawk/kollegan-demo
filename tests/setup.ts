@@ -3,7 +3,9 @@ import { vi } from 'vitest';
 // ── Mock Prisma ───────────────────────────────────────────────────────────────
 vi.mock('@platform/database/prisma', () => ({
   prisma: {
-    customer:      { findFirst: vi.fn(), create: vi.fn(), upsert: vi.fn() },
+    customer:      { findFirst: vi.fn(), findMany: vi.fn(), create: vi.fn(), upsert: vi.fn() },
+    lead:          { findMany: vi.fn() },
+    offer:         { findMany: vi.fn() },
     booking:       { updateMany: vi.fn() },
     callTranscript:{ upsert: vi.fn(), updateMany: vi.fn() },
     crmRecord:     { create: vi.fn() },

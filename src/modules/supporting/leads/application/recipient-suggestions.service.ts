@@ -13,11 +13,19 @@ export async function getRecipientSuggestions(input: {
   limit?: number;
 }): Promise<RecipientSuggestion[]> {
   const isOrgAdmin = input.roles.includes('admin') || input.roles.includes('super_admin');
+  const accessibleCompanyIds = isOrgAdmin
+    ? undefined
+    : (await listCompaniesForUser(input.organizationId, input.userId, true)).map((company) => company.id);
+
+  if (input.companyId && accessibleCompanyIds && !accessibleCompanyIds.includes(input.companyId)) {
+    return [];
+  }
+
   const companyIds = input.companyId
     ? [input.companyId]
     : isOrgAdmin
       ? undefined
-      : (await listCompaniesForUser(input.organizationId, input.userId, true)).map((company) => company.id);
+      : accessibleCompanyIds;
 
   if (companyIds && companyIds.length === 0) return [];
 
@@ -25,7 +33,7 @@ export async function getRecipientSuggestions(input: {
     organizationId: input.organizationId,
     search: input.search,
     companyIds,
-    includeLegacyCompanyless: isOrgAdmin || Boolean(input.companyId),
+    includeLegacyCompanyless: isOrgAdmin,
     limit: input.limit ?? 10,
   });
 }
