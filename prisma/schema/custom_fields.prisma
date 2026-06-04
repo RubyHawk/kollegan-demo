@@ -1,0 +1,27 @@
+// ─── Custom Field Definitions ─────────────────────────────────────────────────
+// Org-defined extra fields stored as JSONB on the parent entity record.
+// Definitions live here; values live in a `customFields Json?` column on each
+// entity (Offer, OfferProduct, Company, Lead, Customer, Project).
+// Table prefix: org_* (organisation supporting domain)
+
+model CustomFieldDefinition {
+  id             String    @id @default(uuid())
+  organizationId String
+  entityType     String    // "offer"|"product"|"company"|"lead"|"customer"|"project"
+  key            String    // machine key, e.g. "plot_number" — used as JSON key
+  label          String    // display label, e.g. "Fastighetsbeteckning"
+  fieldType      String    // "text"|"number"|"date"|"select"|"boolean"
+  options        Json?     // [{label: string, value: string}] — select type only
+  required       Boolean   @default(false)
+  sortOrder      Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, entityType, key])
+  @@index([organizationId, entityType])
+  @@index([deletedAt])
+  @@map("org_custom_field_definitions")
+}

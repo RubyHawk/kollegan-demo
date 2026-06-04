@@ -14,6 +14,7 @@ model Lead {
   assignedTo     String?   // User.id
   notes          String?
   estimatedValue Float?
+  customFields   Json?   // org-defined extra fields
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   convertedAt    DateTime?
