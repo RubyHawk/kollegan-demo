@@ -30,7 +30,8 @@ const TAG = 'LeadsService';
 // ─── Create ───────────────────────────────────────────────────────────────────
 
 export async function createLead(input: CreateLeadInput, actorId = 'system'): Promise<Lead> {
-  await assertValidCustomFields(input.organizationId, 'lead', input.customFields ?? undefined);
+  // Create validates against {} so a required field can't be bypassed by omitting it.
+  await assertValidCustomFields(input.organizationId, 'lead', input.customFields ?? {});
 
   const lead = await leadsRepository.create({
     ...input,

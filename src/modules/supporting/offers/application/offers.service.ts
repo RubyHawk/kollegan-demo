@@ -57,7 +57,9 @@ export async function createOffer(
   input: CreateOfferInput,
   actorId: string,
 ): Promise<Offer> {
-  await validateOfferCustomFields(input.organizationId, input.customFields);
+  // Create validates against {} (not undefined) so a required custom field can't
+  // be bypassed by omitting the bag; updates keep undefined as a partial no-op.
+  await validateOfferCustomFields(input.organizationId, input.customFields ?? {});
 
   const offer = await offersRepository.create({ ...input, createdBy: actorId });
 

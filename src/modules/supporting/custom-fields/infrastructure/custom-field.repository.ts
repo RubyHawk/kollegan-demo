@@ -123,17 +123,49 @@ export const customFieldRepository = {
   },
 
   async create(input: CreateCustomFieldInput): Promise<CustomFieldDefinition> {
+    // The unique (organizationId, entityType, key) spans soft-deleted rows, so a
+    // previously-deleted definition still owns its key. Revive that row instead of
+    // failing, letting an admin recreate a field they deleted. An *active* row with
+    // the same key is a genuine duplicate (409).
+    const existing = await prisma.customFieldDefinition.findUnique({
+      where: {
+        organizationId_entityType_key: {
+          organizationId: input.organizationId,
+          entityType: input.entityType,
+          key: input.key,
+        },
+      },
+      select: { id: true, deletedAt: true },
+    });
+
+    if (existing && existing.deletedAt === null) {
+      throw new Error(CUSTOM_FIELD_DUPLICATE);
+    }
+
+    const data = {
+      label: input.label,
+      fieldType: input.fieldType,
+      options: optionsToJson(input.options),
+      required: input.required ?? false,
+      sortOrder: input.sortOrder ?? 0,
+    };
+
     try {
+      if (existing) {
+        const row = await prisma.customFieldDefinition.update({
+          where: { id: existing.id },
+          data: { ...data, deletedAt: null },
+          select: CUSTOM_FIELD_SELECT,
+        });
+        return mapDefinition(row as CustomFieldRow);
+      }
+
       const row = await prisma.customFieldDefinition.create({
         data: {
           organizationId: input.organizationId,
           entityType: input.entityType,
           key: input.key,
-          label: input.label,
-          fieldType: input.fieldType,
-          options: optionsToJson(input.options),
-          required: input.required ?? false,
-          sortOrder: input.sortOrder ?? 0,
+          ...data,
         },
         select: CUSTOM_FIELD_SELECT,
       });

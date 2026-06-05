@@ -149,7 +149,8 @@ export const handleCreateCompany = createHandler(
   async ({ auth, body }) => {
     const payload = requireOrgContext(auth);
     const b = body as z.infer<typeof CreateBodySchema>;
-    await assertValidCustomFields(payload.orgId, 'company', b.customFields);
+    // Create validates against {} so a required field can't be bypassed by omitting it.
+    await assertValidCustomFields(payload.orgId, 'company', b.customFields ?? {});
     const company = await companiesRepository.create({
       organizationId: payload.orgId,
       name:      b.name,

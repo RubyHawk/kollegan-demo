@@ -29,7 +29,8 @@ export async function createProduct(
   input: Omit<CreateProductInput, 'createdBy'>,
   actorId: string,
 ): Promise<OfferProduct> {
-  await assertValidCustomFields(input.organizationId, 'product', input.customFields);
+  // Create validates against {} so a required field can't be bypassed by omitting it.
+  await assertValidCustomFields(input.organizationId, 'product', input.customFields ?? {});
 
   const product = await productsRepository.create({ ...input, createdBy: actorId });
   logger.info(TAG, `Product created: ${product.name}`, { productId: product.id });
