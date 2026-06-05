@@ -32,6 +32,9 @@ export const offersRepository = {
         emailSubject:      input.emailSubject ?? null,
         emailBody:         input.emailBody ?? null,
         emailHeaderConfig: input.emailHeaderConfig ?? null,
+        ...(input.customFields !== undefined
+          ? { customFields: input.customFields as Prisma.InputJsonValue }
+          : {}),
         totalExVat,
         totalIncVat,
         lineItems: {
@@ -168,6 +171,7 @@ export const offersRepository = {
         ...(input.signatureImage       !== undefined ? { signatureImage: input.signatureImage }             : {}),
         ...(input.signerName           !== undefined ? { signerName: input.signerName }                     : {}),
         ...(input.publicTokenExpiresAt !== undefined ? { publicTokenExpiresAt: input.publicTokenExpiresAt } : {}),
+        ...(input.customFields         !== undefined ? { customFields: input.customFields as Prisma.InputJsonValue } : {}),
         ...(totals ? { totalExVat: totals.totalExVat, totalIncVat: totals.totalIncVat } : {}),
         ...(input.lineItems ? {
           lineItems: {

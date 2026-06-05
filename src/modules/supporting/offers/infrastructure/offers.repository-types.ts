@@ -19,6 +19,7 @@ export interface CreateOfferInput {
   emailSubject?:      string;
   emailBody?:         string;
   emailHeaderConfig?: string;
+  customFields?:      Record<string, unknown>;
   lineItems: Array<{
     description: string;
     quantity:    number;
@@ -58,6 +59,7 @@ export interface UpdateOfferInput {
   signatureImage?:       string;
   signerName?:           string;
   publicTokenExpiresAt?: Date;
+  customFields?:         Record<string, unknown>;
   lineItems?: Array<{
     id?:         string; // present = update; absent = insert
     description: string;

@@ -130,6 +130,7 @@ export function useOfferWizardLifecycle({
       validityDays: offer.validityDays
         ?? (offer.validUntil ? deriveValidityDays(offer.createdAt, offer.validUntil) : 30),
       lineItems: offer.lineItems.length > 0 ? offer.lineItems : [{ ...EMPTY_LINE }],
+      customFields: offer.customFields ?? {},
     });
     setWizardStep(2);
     setLivePreviewHtml(null);

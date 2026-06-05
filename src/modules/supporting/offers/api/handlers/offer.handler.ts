@@ -124,6 +124,7 @@ const CreateBodySchema = z.object({
   emailSubject: z.string().max(500).regex(/^[^\r\n]*$/, 'Subject must not contain newlines').optional(),
   emailBody: z.string().max(50_000).optional(),
   emailHeaderConfig: z.string().max(5_000).optional(),
+  customFields: z.record(z.string(), z.unknown()).optional(),
   lineItems: z.array(LineItemSchema).min(1).max(100),
 });
 
@@ -145,6 +146,7 @@ export const handleCreateOffer = createHandler(
       leadId: body.leadId, customerId: body.customerId, companyId: body.companyId,
       templateId: body.templateId,
       emailSubject: body.emailSubject, emailBody: body.emailBody, emailHeaderConfig: body.emailHeaderConfig,
+      customFields: body.customFields,
       lineItems: body.lineItems.map((item) => ({
         ...item,
         productId: item.productId ?? undefined,
@@ -190,6 +192,7 @@ const PatchBodySchema = z.object({
   emailSubject: z.string().max(500).regex(/^[^\r\n]*$/, 'Subject must not contain newlines').optional(),
   emailBody: z.string().max(50_000).optional(),
   emailHeaderConfig: z.string().max(5_000).optional(),
+  customFields: z.record(z.string(), z.unknown()).optional(),
   lineItems: z.array(LineItemSchema).min(1).max(100).optional(),
 });
 
@@ -230,6 +233,7 @@ export const handleUpdateOffer = createHandler(
         notes: body.notes, validUntil: newValidUntil, validityDays: body.validityDays,
         companyId: body.companyId,
         emailSubject: body.emailSubject, emailBody: body.emailBody, emailHeaderConfig: body.emailHeaderConfig,
+        customFields: body.customFields,
         lineItems: body.lineItems?.map((item) => ({
           ...item,
           productId: item.productId ?? undefined,

@@ -75,6 +75,8 @@ export interface Offer {
   signatureMethod: string;
   publicToken: string;
   publicTokenExpiresAt?: string;
+  /** Org-defined extra field values (Phase 3). Keyed by definition `key`. */
+  customFields?: Record<string, unknown>;
   project?: OfferProjectSummary | null;
 }
 

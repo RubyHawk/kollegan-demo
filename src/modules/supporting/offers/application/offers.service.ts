@@ -24,6 +24,7 @@ import { summarizeOfferPricing, type OfferPricingSummary } from '../domain/prici
 import { assertOfferReadyForSend } from './publish-validation';
 import { markLinkedLeadWon } from './offer-side-effects';
 import { resolveGeneratedDocumentForSend, resolveOfferSendWindow } from './offer-send-window';
+import { validateOfferCustomFields } from './custom-fields-validation';
 import {
   getActorOrganizationId,
   getOfferResponsibleUser,
@@ -56,6 +57,8 @@ export async function createOffer(
   input: CreateOfferInput,
   actorId: string,
 ): Promise<Offer> {
+  await validateOfferCustomFields(input.organizationId, input.customFields);
+
   const offer = await offersRepository.create({ ...input, createdBy: actorId });
 
   eventBus.publish({
@@ -113,6 +116,8 @@ export async function updateOffer(
   orgId: string,
   input: UpdateOfferInput,
 ): Promise<Offer | null> {
+  await validateOfferCustomFields(orgId, input.customFields);
+
   const updated = await offersRepository.update(id, orgId, input);
   if (!updated) return null;
 

@@ -57,6 +57,7 @@ export function mapOffer(r: Record<string, unknown>): Offer {
     signatureMethod:      (r.signatureMethod as string) ?? 'canvas',
     publicToken:          r.publicToken as string,
     publicTokenExpiresAt: r.publicTokenExpiresAt ? (r.publicTokenExpiresAt as Date).toISOString() : undefined,
+    customFields:         (r.customFields as Record<string, unknown> | null) ?? undefined,
     lineItems:            items.map(mapLineItem),
     project: project ? {
       id: project.id as string,
@@ -102,6 +103,7 @@ export const OFFER_SELECT = {
   leadId: true, customerId: true, companyId: true,
   templateId: true, generatedDocument: true, generatedPdf: true, generatedPdfFingerprint: true, emailSubject: true, emailBody: true, emailHeaderConfig: true, signatureImage: true, signerName: true, signatureMethod: true,
   publicToken: true, publicTokenExpiresAt: true,
+  customFields: true,
   createdAt: true, updatedAt: true,
   lineItems: { select: LINE_ITEM_SELECT, orderBy: { sortOrder: 'asc' as const } },
   projects: OFFER_PROJECT_SELECT,

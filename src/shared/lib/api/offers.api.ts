@@ -59,6 +59,7 @@ export interface Offer {
   validUntil?: string;
   validityDays?: number;
   generatedDocument?: string | null;
+  customFields?: Record<string, unknown>;
   project?: OfferProjectSummary | null;
 }
 
@@ -75,6 +76,7 @@ export interface SaveOfferPayload {
   notes?: string;
   validityDays: number;
   lineItems: OfferLineItem[];
+  customFields?: Record<string, unknown>;
 }
 
 export interface BlockingErrorPayload {

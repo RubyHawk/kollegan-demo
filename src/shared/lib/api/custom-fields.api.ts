@@ -4,7 +4,7 @@ import type {
   CustomFieldDefinition,
   CustomFieldEntityType,
   UpdateCustomFieldPatch,
-} from '@/app/(dashboard)/(shell)/installningar/anpassade-falt/_types';
+} from '@shared/lib/custom-fields/types';
 
 const BASE_URL = '/api/v1/custom-fields';
 

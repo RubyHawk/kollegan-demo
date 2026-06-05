@@ -69,6 +69,7 @@ export interface OfferForm {
   notes:            string;
   validityDays:     number;
   lineItems:        LineItem[];
+  customFields:     Record<string, unknown>;
 }
 
 export interface ServiceForm {
@@ -86,6 +87,7 @@ export const EMPTY_FORM: OfferForm = {
   leadId: '',
   recipientEmail: '', recipientCompany: '', notes: '',
   validityDays: 30, lineItems: [{ ...EMPTY_LINE }],
+  customFields: {},
 };
 
 export const EMPTY_SERVICE_FORM: ServiceForm = {

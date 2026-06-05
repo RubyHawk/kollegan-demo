@@ -1,62 +1,27 @@
 /**
  * Client-side types for the custom-fields settings UI.
  *
- * These mirror the backend contract but are redefined here (not imported from
- * `@modules/supporting/custom-fields`) to avoid bundling server code — same
- * convention as `customers.api.ts` / `offers.api.ts`, which redefine their
- * domain types in the client api layer.
+ * The core client shapes now live in the shared, browser-safe module
+ * `@shared/lib/custom-fields/types` so cross-feature UI (e.g. the shared
+ * `CustomFieldsSection`) can reuse a single source of truth without bundling
+ * server code. They are re-exported here so existing feature imports keep
+ * working unchanged. The UI-only helpers below remain local to this feature.
  */
 
-export const CUSTOM_FIELD_ENTITY_TYPES = [
-  'offer',
-  'product',
-  'company',
-  'lead',
-  'customer',
-  'project',
-] as const;
+export {
+  CUSTOM_FIELD_ENTITY_TYPES,
+  CUSTOM_FIELD_TYPES,
+} from '@shared/lib/custom-fields/types';
+export type {
+  CustomFieldEntityType,
+  CustomFieldType,
+  CustomFieldOption,
+  CustomFieldDefinition,
+  CreateCustomFieldPayload,
+  UpdateCustomFieldPatch,
+} from '@shared/lib/custom-fields/types';
 
-export type CustomFieldEntityType = (typeof CUSTOM_FIELD_ENTITY_TYPES)[number];
-
-export const CUSTOM_FIELD_TYPES = ['text', 'number', 'date', 'select', 'boolean'] as const;
-
-export type CustomFieldType = (typeof CUSTOM_FIELD_TYPES)[number];
-
-export interface CustomFieldOption {
-  label: string;
-  value: string;
-}
-
-export interface CustomFieldDefinition {
-  id: string;
-  organizationId: string;
-  entityType: CustomFieldEntityType;
-  key: string;
-  label: string;
-  fieldType: CustomFieldType;
-  options: CustomFieldOption[] | null;
-  required: boolean;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateCustomFieldPayload {
-  entityType: CustomFieldEntityType;
-  label: string;
-  key?: string;
-  fieldType: CustomFieldType;
-  options?: CustomFieldOption[];
-  required?: boolean;
-  sortOrder?: number;
-}
-
-export interface UpdateCustomFieldPatch {
-  label?: string;
-  options?: CustomFieldOption[] | null;
-  required?: boolean;
-  sortOrder?: number;
-}
+import type { CustomFieldEntityType, CustomFieldType } from '@shared/lib/custom-fields/types';
 
 // ── UI helpers ─────────────────────────────────────────────────────────────────
 
