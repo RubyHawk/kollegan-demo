@@ -87,6 +87,11 @@ const NAV_SECTIONS: NavSection[] = [
         label: 'Fakturering',
         icon: <Icon path={<><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></>} />,
       },
+      {
+        href: '/installningar/anpassade-falt',
+        label: 'Anpassade fält',
+        icon: <Icon path={<><line x1="4" y1="9" x2="20" y2="9" /><line x1="4" y1="15" x2="20" y2="15" /><line x1="10" y1="3" x2="8" y2="21" /><line x1="16" y1="3" x2="14" y2="21" /></>} />,
+      },
     ],
   },
   {

@@ -75,6 +75,8 @@ export interface Offer {
   signatureMethod: string;
   publicToken: string;
   publicTokenExpiresAt?: string;
+  /** Org-defined extra field values (Phase 3). Keyed by definition `key`. */
+  customFields?: Record<string, unknown>;
   project?: OfferProjectSummary | null;
 }
 
@@ -105,6 +107,8 @@ export interface OfferProduct {
   isActive: boolean;
   minQuantity?: number;
   maxQuantity?: number;
+  /** Org-defined extra field values (Phase 3). Keyed by definition `key`. */
+  customFields?: Record<string, unknown>;
   createdBy: string;
   createdAt: string;
 }
@@ -127,6 +131,8 @@ export interface Company {
   emailHeaderConfig?: string;
   industry?: string;
   notes?: string;
+  /** Org-defined extra field values (Phase 3). Keyed by definition `key`. */
+  customFields?: Record<string, unknown>;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

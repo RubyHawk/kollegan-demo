@@ -17,6 +17,8 @@ import {
   ModalMetaCard,
   ModalSection,
 } from '@shared/ui/dialog';
+import { CustomFieldsSection } from '@shared/ui/custom-fields-section';
+import { useCustomFieldDefinitions } from '@shared/lib/custom-fields/use-custom-field-definitions';
 import type { CategoryNode, CategorySupportState, ProductForm } from './product-library.types';
 import {
   buildProductForm,
@@ -53,6 +55,7 @@ export function ProductModal({
   onOpenCategoryManager,
 }: ProductModalProps) {
   const [form, setForm] = useState<ProductForm>(() => buildProductForm(product, categoryById));
+  const { definitions: customFieldDefs } = useCustomFieldDefinitions('product');
   const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -338,6 +341,23 @@ export function ProductModal({
                     Aktiv i offertbyggaren
                   </label>
                 </ModalSection>
+
+                {customFieldDefs.length > 0 && (
+                  <ModalSection tone="card">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">Anpassade fält</p>
+                      <p className="text-sm text-[var(--text-muted)]">
+                        Extra fält som din organisation har lagt till för produkter.
+                      </p>
+                    </div>
+
+                    <CustomFieldsSection
+                      definitions={customFieldDefs}
+                      values={form.customFields}
+                      onChange={(customFields) => setForm((current) => ({ ...current, customFields }))}
+                    />
+                  </ModalSection>
+                )}
               </div>
 
               <div className="space-y-4 xl:sticky xl:top-0">

@@ -63,6 +63,7 @@ const CreateBodySchema = z.object({
   isActive: z.boolean().default(true),
   minQuantity: z.number().min(0).optional(),
   maxQuantity: z.number().min(0).optional(),
+  customFields: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const handleCreateProduct = createHandler(
@@ -86,6 +87,7 @@ export const handleCreateProduct = createHandler(
       isActive: body.isActive,
       minQuantity: body.minQuantity,
       maxQuantity: body.maxQuantity,
+      customFields: body.customFields,
     }, payload.sub);
     return created(product, productLocation(product.id));
   },

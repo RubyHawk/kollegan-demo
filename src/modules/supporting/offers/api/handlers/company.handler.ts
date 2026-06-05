@@ -8,6 +8,7 @@ import { createHandler } from '@platform/api/handler';
 import { ok, created } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
 import type { JWTPayload } from '@platform/auth/jwt';
+import { assertValidCustomFields } from '@modules/supporting/custom-fields';
 import { companiesRepository } from '../../infrastructure/companies.repository';
 import { upsertCompanyMember } from '../../application/company-members.service';
 import { companyLocation } from './resource-location';
@@ -134,6 +135,7 @@ const CreateBodySchema = z.object({
   emailHeaderConfig: z.string().max(10_000).optional(),
   industry:  z.string().max(100).optional(),
   notes:     z.string().max(2000).optional(),
+  customFields: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const handleCreateCompany = createHandler(
@@ -147,6 +149,8 @@ export const handleCreateCompany = createHandler(
   async ({ auth, body }) => {
     const payload = requireOrgContext(auth);
     const b = body as z.infer<typeof CreateBodySchema>;
+    // Create validates against {} so a required field can't be bypassed by omitting it.
+    await assertValidCustomFields(payload.orgId, 'company', b.customFields ?? {});
     const company = await companiesRepository.create({
       organizationId: payload.orgId,
       name:      b.name,
@@ -164,6 +168,7 @@ export const handleCreateCompany = createHandler(
       emailHeaderConfig: b.emailHeaderConfig,
       industry:  b.industry,
       notes:     b.notes,
+      customFields: b.customFields,
       createdBy: payload.sub,
     });
     await upsertCompanyMember(company.id, payload.orgId, payload.sub, 'admin', payload.sub);
@@ -189,6 +194,7 @@ const UpdateBodySchema = z.object({
   emailHeaderConfig: z.string().max(10_000).optional().nullable(),
   industry:  z.string().max(100).optional(),
   notes:     z.string().max(2000).optional(),
+  customFields: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const handleUpdateCompany = createHandler(
@@ -204,6 +210,7 @@ export const handleUpdateCompany = createHandler(
     const id = extractId(req);
     await requireCompanyAdmin(id, payload);
     const b = body as z.infer<typeof UpdateBodySchema>;
+    await assertValidCustomFields(payload.orgId, 'company', b.customFields);
     const updated = await companiesRepository.update(id, payload.orgId, {
       ...b,
       addressLine1: b.addressLine1 ?? undefined,

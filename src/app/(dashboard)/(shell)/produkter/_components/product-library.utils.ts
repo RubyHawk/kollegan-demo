@@ -90,5 +90,6 @@ export function buildProductForm(
     customCategory: meta.isStructured ? '' : (product.category ?? ''),
     mainCategoryId: meta.mainCategoryId ?? '',
     subCategoryId: meta.subCategoryId ?? '',
+    customFields: product.customFields ?? {},
   };
 }

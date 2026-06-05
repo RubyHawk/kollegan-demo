@@ -19,6 +19,7 @@ export interface ProductForm {
   customCategory: string;
   mainCategoryId: string;
   subCategoryId: string;
+  customFields: Record<string, unknown>;
 }
 
 export interface CategoryNode {
@@ -62,4 +63,5 @@ export const EMPTY_PRODUCT_FORM: ProductForm = {
   customCategory: '',
   mainCategoryId: '',
   subCategoryId: '',
+  customFields: {},
 };

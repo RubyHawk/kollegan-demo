@@ -117,6 +117,9 @@ export function CompaniesPageClient() {
           country: form.country.trim() || undefined,
           website: form.website.trim() || undefined,
           logoUrl: form.logoUrl.trim() || undefined,
+          ...(Object.keys(form.customFields).length > 0
+            ? { customFields: form.customFields }
+            : {}),
         };
 
         const savedCompany = editCompany

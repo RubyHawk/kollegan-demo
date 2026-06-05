@@ -4,6 +4,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@shared/lib/utils';
 import type { OfferForm } from '../_store/types';
 import { VALIDITY_OPTIONS } from '../_lib/offers-dashboard-constants';
+import { CustomFieldsSection } from '@shared/ui/custom-fields-section';
+import { useCustomFieldDefinitions } from '@shared/lib/custom-fields/use-custom-field-definitions';
 
 type OfferFormSetter = (form: OfferForm | ((prev: OfferForm) => OfferForm)) => void;
 type FieldErrorsSetter = (errors: Record<string, string> | ((prev: Record<string, string>) => Record<string, string>)) => void;
@@ -40,6 +42,7 @@ export function OfferWizardDetailsCard({
   setConfirmedSections,
   setActiveField,
 }: OfferWizardDetailsCardProps) {
+  const { definitions: customFieldDefs } = useCustomFieldDefinitions('offer');
   return (
                         <div className={cn('rounded-xl border bg-[var(--surface)] transition-all duration-200', openCards.detaljer ? 'border-[var(--border)] shadow-sm' : 'border-[var(--border)]/60')}>
                           <div onClick={() => setOpenCards((o) => ({ ...o, detaljer: !o.detaljer }))} className="flex items-center gap-3 px-4 pt-3.5 pb-3 cursor-pointer select-none">
@@ -105,6 +108,11 @@ export function OfferWizardDetailsCard({
                                       <textarea value={form.notes} rows={3} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder="T.ex. särskild leveransinfo, projektkommentar eller kompletterande notering…" className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all resize-none"/>
                                     </div>
                                   </details>
+                                  <CustomFieldsSection
+                                    definitions={customFieldDefs}
+                                    values={form.customFields}
+                                    onChange={(customFields) => setForm((f) => ({ ...f, customFields }))}
+                                  />
                                   <div className="flex items-center justify-end pt-2 mt-1 border-t border-[var(--border)]/30">
                                     <button type="button" disabled={!detajerComplete} onClick={() => { if (detajerComplete) { setConfirmedSections((s) => { const n = new Set(s); n.add('detaljer'); return n; }); setOpenCards((o) => ({ ...o, detaljer: false })); } }} className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150', detajerComplete ? 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:border-emerald-400/60 hover:text-emerald-600 hover:bg-emerald-50/50 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400 dark:hover:bg-emerald-950/30 cursor-pointer' : 'border-[var(--border)]/40 text-[var(--text-muted)] opacity-35 cursor-not-allowed bg-transparent')}>
                                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>

@@ -34,6 +34,7 @@ export interface OfferProduct {
   isActive: boolean;
   minQuantity?: number;
   maxQuantity?: number;
+  customFields?: Record<string, unknown>;
   createdBy: string;
   createdAt: string;
 }
@@ -59,6 +60,7 @@ export interface CreateProductPayload {
   isActive?: boolean;
   minQuantity?: number | null;
   maxQuantity?: number | null;
+  customFields?: Record<string, unknown>;
 }
 
 export type UpdateProductPayload = Partial<CreateProductPayload>;

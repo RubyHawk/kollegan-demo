@@ -16,6 +16,8 @@ import {
   ModalMetaCard,
   ModalSection,
 } from '@shared/ui/dialog';
+import { CustomFieldsSection } from '@shared/ui/custom-fields-section';
+import { useCustomFieldDefinitions } from '@shared/lib/custom-fields/use-custom-field-definitions';
 import { CompanyLogoUpload } from './company-logo-upload';
 
 export interface CompanyForm {
@@ -29,6 +31,7 @@ export interface CompanyForm {
   country: string;
   website: string;
   logoUrl: string;
+  customFields: Record<string, unknown>;
 }
 
 export const EMPTY_COMPANY_FORM: CompanyForm = {
@@ -42,6 +45,7 @@ export const EMPTY_COMPANY_FORM: CompanyForm = {
   country: 'Sverige',
   website: '',
   logoUrl: '',
+  customFields: {},
 };
 
 export function formFromCompany(company: Company | null): CompanyForm {
@@ -58,6 +62,7 @@ export function formFromCompany(company: Company | null): CompanyForm {
     country: company.country ?? 'Sverige',
     website: company.website ?? '',
     logoUrl: company.logoUrl ?? '',
+    customFields: company.customFields ?? {},
   };
 }
 
@@ -79,6 +84,7 @@ export function CompanyModal({
   saving,
 }: CompanyModalProps) {
   const [form, setForm] = useState<CompanyForm>(() => formFromCompany(company));
+  const { definitions: customFieldDefs } = useCustomFieldDefinitions('company');
 
   const setField =
     (key: keyof CompanyForm) =>
@@ -238,6 +244,28 @@ export function CompanyModal({
                     </div>
                   </div>
                 </ModalSection>
+
+                {customFieldDefs.length > 0 && (
+                  <ModalSection tone="card" className="sm:space-y-3.5 sm:p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
+                        <IdentificationCard size={18} weight="duotone" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">Anpassade fält</p>
+                        <p className="text-sm leading-5 text-[var(--text-muted)]">
+                          Extra fält som din organisation har lagt till för företag.
+                        </p>
+                      </div>
+                    </div>
+
+                    <CustomFieldsSection
+                      definitions={customFieldDefs}
+                      values={form.customFields}
+                      onChange={(customFields) => setForm((current) => ({ ...current, customFields }))}
+                    />
+                  </ModalSection>
+                )}
               </div>
 
               <div className="space-y-4 xl:sticky xl:top-0">

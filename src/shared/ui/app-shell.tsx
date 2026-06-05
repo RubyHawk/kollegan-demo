@@ -32,6 +32,7 @@ const SEG_LABELS: Record<string, string> = {
   anvandare: 'Användare',
   profil: 'Profil',
   fakturering: 'Fakturering',
+  'anpassade-falt': 'Anpassade fält',
   integrationer: 'Integrationer',
   'logga-in': 'Logga in',
   crm: 'CRM',
