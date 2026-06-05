@@ -19,6 +19,7 @@ export function mapCompany(r: Record<string, unknown>): Company {
     emailHeaderConfig: (r.emailHeaderConfig as string | null) ?? undefined,
     industry:       (r.industry as string | null) ?? undefined,
     notes:          (r.notes as string | null) ?? undefined,
+    customFields:   (r.customFields as Record<string, unknown> | null) ?? undefined,
     createdBy:      r.createdBy as string,
     createdAt:      (r.createdAt as Date).toISOString(),
     updatedAt:      (r.updatedAt as Date).toISOString(),
@@ -29,6 +30,7 @@ export const COMPANY_SELECT = {
   id: true, organizationId: true, name: true, orgNumber: true,
   addressLine1: true, addressLine2: true, postalCode: true, city: true, region: true, country: true,
   website: true, logoUrl: true, senderEmail: true, senderName: true, emailHeaderConfig: true, industry: true, notes: true,
+  customFields: true,
   createdBy: true, createdAt: true, updatedAt: true,
 };
 

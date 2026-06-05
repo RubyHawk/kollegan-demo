@@ -35,6 +35,8 @@ export type {
   UpdateDefinitionPatch,
 } from './application/custom-field.service';
 
+export { assertValidCustomFields } from './application/assert-valid-custom-fields';
+
 export {
   handleListCustomFields,
   handleCreateCustomField,

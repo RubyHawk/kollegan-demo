@@ -359,6 +359,9 @@ export function ProductsPageClient() {
             : null,
         imageUrl: form.imageUrl.trim() || undefined,
         isActive: form.isActive,
+        ...(Object.keys(form.customFields).length > 0
+          ? { customFields: form.customFields }
+          : {}),
       };
 
       if (editingProduct) {

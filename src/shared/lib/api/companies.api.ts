@@ -24,6 +24,7 @@ export interface Company {
   emailHeaderConfig?: string;
   industry?: string;
   notes?: string;
+  customFields?: Record<string, unknown>;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -70,6 +71,7 @@ export interface CreateCompanyPayload {
   emailHeaderConfig?: string;
   industry?: string;
   notes?: string;
+  customFields?: Record<string, unknown>;
 }
 
 export type UpdateCompanyPayload = Partial<CreateCompanyPayload>;

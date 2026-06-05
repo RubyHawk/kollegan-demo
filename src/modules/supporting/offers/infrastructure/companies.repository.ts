@@ -125,6 +125,7 @@ export const companiesRepository = {
       emailHeaderConfig: input.emailHeaderConfig ?? null,
       industry:       input.industry ?? null,
       notes:          input.notes ?? null,
+      ...(input.customFields !== undefined ? { customFields: input.customFields } : {}),
       createdBy:      input.createdBy,
     } as Parameters<typeof prisma.company.create>[0]['data'];
 
@@ -174,6 +175,7 @@ export const companiesRepository = {
       ...(input.emailHeaderConfig !== undefined ? { emailHeaderConfig: input.emailHeaderConfig } : {}),
       ...(input.industry  !== undefined ? { industry: input.industry }   : {}),
       ...(input.notes     !== undefined ? { notes: input.notes }         : {}),
+      ...(input.customFields !== undefined ? { customFields: input.customFields } : {}),
     } as Parameters<typeof prisma.company.update>[0]['data'];
 
     const legacyData = {

@@ -22,6 +22,8 @@ import {
   type LeadSource,
   type LeadStatus,
 } from '@shared/lib/api/leads.api';
+import { CustomFieldsSection } from '@shared/ui/custom-fields-section';
+import { useCustomFieldDefinitions } from '@shared/lib/custom-fields/use-custom-field-definitions';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -67,6 +69,7 @@ const EMPTY_FORM = {
   source: 'manual' as LeadSource,
   estimatedValue: '',
   notes: '',
+  customFields: {} as Record<string, unknown>,
 };
 const PAGE_SIZE = 50;
 
@@ -98,6 +101,7 @@ export default function LeadsPage() {
   const [currentPage, setCurrentPage] = useState(() => parsePageParam(searchParams.get('page')));
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState(EMPTY_FORM);
+  const { definitions: customFieldDefs } = useCustomFieldDefinitions('lead');
   const [saving, setSaving]     = useState(false);
   const [copiedLeadValue, setCopiedLeadValue] = useState<string | null>(null);
 
@@ -147,6 +151,7 @@ export default function LeadsPage() {
       if (form.company)        body.company        = form.company;
       if (form.notes)          body.notes          = form.notes;
       if (form.estimatedValue) body.estimatedValue = parseFloat(form.estimatedValue);
+      if (Object.keys(form.customFields).length > 0) body.customFields = form.customFields;
 
       await createLead(body);
       setShowForm(false);
@@ -359,6 +364,15 @@ export default function LeadsPage() {
               <textarea value={form.notes} rows={2} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none" />
             </div>
+            {customFieldDefs.length > 0 && (
+              <div className="sm:col-span-2">
+                <CustomFieldsSection
+                  definitions={customFieldDefs}
+                  values={form.customFields}
+                  onChange={(customFields) => setForm(f => ({ ...f, customFields }))}
+                />
+              </div>
+            )}
           </div>
           <div className="mt-4 flex gap-2">
             <button onClick={() => void saveLead()} disabled={saving || !form.name}

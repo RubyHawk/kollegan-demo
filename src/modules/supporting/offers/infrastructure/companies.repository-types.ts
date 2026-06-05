@@ -15,6 +15,7 @@ export interface CreateCompanyInput {
   emailHeaderConfig?: string;
   industry?:      string;
   notes?:         string;
+  customFields?:  Record<string, unknown>;
   createdBy:      string;
 }
 
@@ -34,6 +35,7 @@ export interface UpdateCompanyInput {
   emailHeaderConfig?: string;
   industry?:  string;
   notes?:     string;
+  customFields?: Record<string, unknown>;
 }
 
 export interface UpsertCompanyMemberInput {

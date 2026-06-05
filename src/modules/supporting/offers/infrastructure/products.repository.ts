@@ -21,6 +21,7 @@ export interface CreateProductInput {
   isActive?: boolean;
   minQuantity?: number;
   maxQuantity?: number;
+  customFields?: Record<string, unknown>;
   createdBy: string;
 }
 
@@ -38,6 +39,7 @@ export interface UpdateProductInput {
   isActive?: boolean;
   minQuantity?: number;
   maxQuantity?: number;
+  customFields?: Record<string, unknown>;
 }
 
 type ProductCategoryRelation = {
@@ -73,6 +75,7 @@ function mapProduct(record: ProductRecord): OfferProduct {
     isActive: (record.isActive as boolean) ?? true,
     minQuantity: (record.minQuantity as number | null) ?? undefined,
     maxQuantity: (record.maxQuantity as number | null) ?? undefined,
+    customFields: (record.customFields as Record<string, unknown> | null) ?? undefined,
     createdBy: record.createdBy as string,
     createdAt: (record.createdAt as Date).toISOString(),
   };
@@ -94,6 +97,7 @@ const PRODUCT_SELECT = {
   isActive: true,
   minQuantity: true,
   maxQuantity: true,
+  customFields: true,
   createdBy: true,
   createdAt: true,
   productCategory: {
@@ -125,6 +129,7 @@ const LEGACY_PRODUCT_SELECT = {
   isActive: true,
   minQuantity: true,
   maxQuantity: true,
+  customFields: true,
   createdBy: true,
   createdAt: true,
 } satisfies Prisma.OfferProductSelect;
@@ -199,6 +204,9 @@ export const productsRepository = {
       isActive: input.isActive ?? true,
       minQuantity: input.minQuantity ?? null,
       maxQuantity: input.maxQuantity ?? null,
+      ...(input.customFields !== undefined
+        ? { customFields: input.customFields as Prisma.InputJsonValue }
+        : {}),
       createdBy: input.createdBy,
     } satisfies Omit<Prisma.OfferProductUncheckedCreateInput, 'categoryId'>;
 
@@ -245,6 +253,7 @@ export const productsRepository = {
       ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
       ...(input.minQuantity !== undefined ? { minQuantity: input.minQuantity } : {}),
       ...(input.maxQuantity !== undefined ? { maxQuantity: input.maxQuantity } : {}),
+      ...(input.customFields !== undefined ? { customFields: input.customFields as Prisma.InputJsonValue } : {}),
       ...(categorySelection ? { category: categorySelection.category } : {}),
     } satisfies Omit<Prisma.OfferProductUncheckedUpdateInput, 'categoryId'>;
 

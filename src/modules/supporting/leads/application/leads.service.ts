@@ -10,6 +10,7 @@
 
 import { eventBus } from '@platform/events';
 import { logger } from '@platform/logging/logger';
+import { assertValidCustomFields } from '@modules/supporting/custom-fields';
 import { leadsRepository } from '../infrastructure/leads.repository';
 import type { CreateLeadInput, UpdateLeadInput, ListLeadsFilter } from '../infrastructure/leads.repository';
 import type { Lead, LeadActivity, LeadStatus } from '../domain/lead.entity';
@@ -29,6 +30,8 @@ const TAG = 'LeadsService';
 // ─── Create ───────────────────────────────────────────────────────────────────
 
 export async function createLead(input: CreateLeadInput, actorId = 'system'): Promise<Lead> {
+  await assertValidCustomFields(input.organizationId, 'lead', input.customFields ?? undefined);
+
   const lead = await leadsRepository.create({
     ...input,
     normalizedEmail: input.normalizedEmail ?? normalizeEmail(input.email) ?? undefined,
@@ -80,6 +83,8 @@ export async function updateLead(
   input: UpdateLeadInput,
   actorId: string,
 ): Promise<Lead | null> {
+  await assertValidCustomFields(orgId, 'lead', input.customFields ?? undefined);
+
   const existing = await leadsRepository.findById(id, orgId);
   if (!existing) return null;
 
