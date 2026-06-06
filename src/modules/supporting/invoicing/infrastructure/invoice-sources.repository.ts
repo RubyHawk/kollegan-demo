@@ -43,6 +43,22 @@ export interface TimeEntrySource {
   invoiceId: string | null;
 }
 
+/** Selling company snapshot for the invoice PDF (seller block) + email sender. */
+export interface InvoiceCompany {
+  name: string;
+  orgNumber: string | null;
+  vatNumber: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  postalCode: string | null;
+  city: string | null;
+  country: string | null;
+  logoUrl: string | null;
+  senderEmail: string | null;
+  senderName: string | null;
+  currency: string;
+}
+
 export const invoiceSourcesRepository = {
 
   /** Company currency + default VAT rate, used to seed blank drafts. */
@@ -56,6 +72,25 @@ export const invoiceSourcesRepository = {
       currency: row.currency ?? 'SEK',
       defaultVatRate: row.defaultVatRate ?? 0.25,
     };
+  },
+
+  /**
+   * Loads the selling company (org-scoped) with the fields the invoice PDF and
+   * the send email need: the seller block (name / org & VAT numbers / address /
+   * logo) plus the sender mailbox and currency.
+   */
+  async getInvoiceCompany(companyId: string, orgId: string): Promise<InvoiceCompany | null> {
+    const row = await prisma.company.findFirst({
+      where: { id: companyId, organizationId: orgId, deletedAt: null },
+      select: {
+        name: true, orgNumber: true, vatNumber: true,
+        addressLine1: true, addressLine2: true, postalCode: true,
+        city: true, country: true, logoUrl: true,
+        senderEmail: true, senderName: true, currency: true,
+      },
+    });
+    if (!row) return null;
+    return { ...row, currency: row.currency ?? 'SEK' };
   },
 
   /** Loads an offer (org-scoped) with the fields needed to seed an invoice. */

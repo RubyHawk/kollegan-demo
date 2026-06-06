@@ -57,3 +57,5 @@ export {
   handleSendInvoice,
   handleMarkInvoicePaid,
 } from './api/handlers/invoice.handler';
+
+export { handleGetInvoicePdf } from './api/handlers/invoice-pdf.handler';

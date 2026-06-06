@@ -10,7 +10,7 @@ import { logger } from '@platform/logging/logger';
 import { Errors } from '@platform/api/errors';
 import { eventBus } from '@platform/events';
 import { invoiceRepository } from '../infrastructure/invoice.repository';
-import { invoiceSourcesRepository } from '../infrastructure/invoice-sources.repository';
+import { invoiceSourcesRepository, type InvoiceCompany } from '../infrastructure/invoice-sources.repository';
 import type {
   CreateInvoiceInput,
   Invoice,
@@ -24,10 +24,81 @@ import {
   buildInvoiceFromOffer,
   buildInvoiceFromTime,
 } from './invoice-create.service';
+import { generateInvoicePdfBytes } from './invoice-pdf';
+import { sendInvoiceEmail } from './invoice-email';
 
 const TAG = 'InvoiceService';
 
 export type { CreateInvoiceInput, UpdateInvoiceInput, ListInvoicesFilter };
+
+/** Resolves the public app origin for absolute links (PDF route) in emails. */
+function resolveAppOrigin(): string {
+  const candidates = [
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.APP_URL,
+    process.env.PUBLIC_OFFER_BASE_URL,
+    'http://localhost:3000',
+  ];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      return new URL(candidate).origin;
+    } catch {
+      continue;
+    }
+  }
+  return 'http://localhost:3000';
+}
+
+/**
+ * Renders the archival PDF once and stores it on the invoice, then emails the
+ * recipient a link to the PDF route. Both steps are best-effort: any PDF or
+ * email failure is logged and swallowed so a transient outage never blocks
+ * issuing or rolls back the already-committed number/status transition.
+ *
+ * Freeze-once: the PDF is the frozen archival snapshot — if the invoice already
+ * carries stored bytes it is never re-rendered.
+ */
+async function deliverIssuedInvoice(invoice: Invoice, orgId: string): Promise<void> {
+  let company: InvoiceCompany | null = null;
+  try {
+    company = await invoiceSourcesRepository.getInvoiceCompany(invoice.companyId, orgId);
+    if (!company) {
+      logger.warn(TAG, `Company not found for invoice ${invoice.id}; skipping PDF + email`, { orgId });
+      return;
+    }
+
+    const existing = await invoiceRepository.getGeneratedPdf(invoice.id, orgId);
+    if (!existing) {
+      const bytes = await generateInvoicePdfBytes(invoice, company);
+      await invoiceRepository.storeGeneratedPdf(invoice.id, orgId, bytes);
+      logger.info(TAG, `Invoice PDF frozen: ${invoice.id}`, { invoiceNumber: invoice.invoiceNumber });
+    }
+  } catch (err) {
+    logger.error(TAG, `Invoice PDF generation failed for ${invoice.id} (non-fatal)`, { err, orgId });
+  }
+
+  if (!invoice.recipientEmail) return;
+
+  try {
+    const origin = resolveAppOrigin();
+    await sendInvoiceEmail({
+      to: invoice.recipientEmail,
+      invoiceNumber: invoice.invoiceNumber ?? null,
+      recipientName: invoice.recipientName,
+      sellerName: company?.name ?? invoice.recipientCompany ?? '',
+      senderEmail: company?.senderEmail,
+      senderName: company?.senderName,
+      totalIncVat: invoice.totalIncVat,
+      currency: invoice.currency,
+      dueDate: invoice.dueDate,
+      pdfUrl: `${origin}/api/v1/invoices/${invoice.id}/pdf`,
+      documentType: invoice.documentType,
+    });
+  } catch (err) {
+    logger.error(TAG, `Invoice email failed for ${invoice.id} (non-fatal)`, { err, orgId });
+  }
+}
 
 /**
  * Creates a draft invoice from one of three sources: blank, an accepted offer,
@@ -106,7 +177,10 @@ export async function deleteInvoice(id: string, orgId: string): Promise<boolean>
 /**
  * Issues/sends a draft invoice: assigns the gapless invoice number (if not set),
  * sets status='sent' and the issuedAt/sentAt timestamps, and freezes the row.
- * PDF generation and email are out of scope for this phase. Emits invoice.sent.
+ * Then renders + stores the archival PDF (once) and emails the recipient a link
+ * to it. PDF/email delivery is best-effort and non-fatal — see
+ * `deliverIssuedInvoice` — so it never blocks issuing or rolls back the
+ * committed number/status. Emits invoice.sent.
  */
 export async function sendInvoice(id: string, orgId: string): Promise<Invoice | null> {
   const existing = await invoiceRepository.findById(id, orgId);
@@ -137,12 +211,27 @@ export async function sendInvoice(id: string, orgId: string): Promise<Invoice | 
   });
 
   logger.info(TAG, `Invoice sent: ${id}`, { invoiceNumber });
+
+  // Best-effort, non-fatal: the number/status are already committed above, so a
+  // PDF or email failure here must never throw or roll the invoice back.
+  await deliverIssuedInvoice(updated, orgId);
+
   return updated;
 }
 
 /** Alias for sendInvoice — issuing assigns the number and moves the invoice to sent. */
 export async function issueInvoice(id: string, orgId: string): Promise<Invoice | null> {
   return sendInvoice(id, orgId);
+}
+
+/**
+ * Returns the frozen archival PDF bytes for an issued invoice, or null when the
+ * invoice does not exist, is still a draft, or has no stored PDF yet. Org-scoped.
+ */
+export async function getInvoicePdfBytes(id: string, orgId: string): Promise<Uint8Array | null> {
+  const invoice = await invoiceRepository.findById(id, orgId);
+  if (!invoice || invoice.status === 'draft') return null;
+  return invoiceRepository.getGeneratedPdf(id, orgId);
 }
 
 /**

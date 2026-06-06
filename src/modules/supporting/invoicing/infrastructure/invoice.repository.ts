@@ -217,6 +217,40 @@ export const invoiceRepository = {
   },
 
   /**
+   * Stores the frozen archival PDF bytes on an issued invoice. Org-scoped; the
+   * `generatedPdf` column is the immutable document snapshot rendered once at
+   * send time. No-op (returns false) if the invoice is not found in the org.
+   */
+  async storeGeneratedPdf(id: string, orgId: string, bytes: Uint8Array): Promise<boolean> {
+    const existing = await prisma.invoice.findFirst({
+      where: { id, organizationId: orgId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) return false;
+    await prisma.invoice.update({
+      where: { id },
+      data: { generatedPdf: Buffer.from(bytes) },
+    });
+    return true;
+  },
+
+  /**
+   * Fetches the stored archival PDF bytes for an invoice. Org-scoped; returns
+   * null when the invoice is missing or has no generated PDF yet. `generatedPdf`
+   * is deliberately omitted from the shared selects, so this is the only path
+   * that reads the (potentially large) bytes.
+   */
+  async getGeneratedPdf(id: string, orgId: string): Promise<Uint8Array | null> {
+    const row = await prisma.invoice.findFirst({
+      where: { id, organizationId: orgId, deletedAt: null },
+      select: { generatedPdf: true },
+    });
+    const bytes = row?.generatedPdf as Uint8Array | Buffer | null | undefined;
+    if (!bytes) return null;
+    return bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  },
+
+  /**
    * Atomically assigns the next invoice number to an as-yet-unnumbered invoice.
    * The read-then-write runs in a Serializable transaction; on a unique-constraint
    * collision (P2002 — two concurrent issues grabbed the same number) it retries
