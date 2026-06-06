@@ -34,11 +34,33 @@ model Invoice {
   updatedAt        DateTime  @updatedAt
   deletedAt        DateTime?
 
+  // ── Document type & immutability ─────────────────────────────────────────────
+  // Credit notes (kreditfaktura) share the gapless invoice number series. A sent
+  // invoice is financially immutable — corrections are issued as a credit note,
+  // never by editing the original.
+  documentType      String    @default("invoice") // invoice | credit_note
+  creditedInvoiceId String?   // credit_note → the invoice it credits
+  issuedAt          DateTime? // set when the invoice leaves draft (locks the row)
+  paymentReference  String?   // bankgiro / OCR reference shown on the PDF
+
+  // ── ROT/RUT tax deduction (Swedish households) ───────────────────────────────
+  // Labour-based deduction claimed from Skatteverket; the buyer pays
+  // (total - rotRutDeductionAmount) and the company reclaims the rest.
+  rotRutType              String? // null | ROT | RUT
+  buyerPersonalNumber     String? // personnummer of the deduction claimant
+  propertyDesignation     String? // fastighetsbeteckning (ROT, owned property)
+  housingSocietyOrgNumber String? // BRF org.nr (ROT in a co-op apartment)
+  rotRutLaborAmount       Float   @default(0) // eligible labour total
+  rotRutDeductionAmount   Float   @default(0) // deduction applied to this invoice
+  rotRutClaimStatus       String? // null | pending | submitted | paid
+
   organization Organization      @relation(fields: [organizationId], references: [id])
   company      Company           @relation(fields: [companyId], references: [id])
   customer     Customer?         @relation(fields: [customerId], references: [id])
   lineItems    InvoiceLineItem[]
   timeEntries  TimeEntry[]       // time entries billed on this invoice
+  creditedInvoice Invoice?       @relation("InvoiceCredits", fields: [creditedInvoiceId], references: [id])
+  creditNotes     Invoice[]      @relation("InvoiceCredits")
 
   @@unique([organizationId, invoiceNumber])
   @@index([organizationId, status])
@@ -46,6 +68,8 @@ model Invoice {
   @@index([organizationId, customerId])
   @@index([organizationId, offerId])
   @@index([organizationId, createdAt])
+  @@index([organizationId, documentType])
+  @@index([organizationId, creditedInvoiceId])
   @@index([deletedAt])
   @@map("inv_invoices")
 }
@@ -62,6 +86,8 @@ model InvoiceLineItem {
   productId   String?  // off_products.id — optional product reference
   timeEntryId String?  // prj_time_entries.id — when this line covers billed time
   sortOrder   Int      @default(0)
+  lineType       String  @default("standard") // standard | labour | material
+  rotRutEligible Boolean @default(false)      // labour eligible for ROT/RUT deduction
 
   invoice   Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   product   OfferProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
