@@ -31,6 +31,7 @@ import {
   RecordPurchaseOrderReceiptPanel,
 } from '../_components/project-panels';
 import { ProjectDetailLoadingState } from '../_components/project-detail-loading-state';
+import { ProjectTimeCard } from '../_components/project-time-card';
 import { STAGE_STYLE, fmtActor, fmtDate, fmtSEK } from '../_lib/project-display';
 import { useProjectDetailStore } from '../_store/project-detail.store';
 import {
@@ -433,6 +434,8 @@ export default function ProjectDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          <ProjectTimeCard projectId={project.id} />
         </div>
 
         <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">

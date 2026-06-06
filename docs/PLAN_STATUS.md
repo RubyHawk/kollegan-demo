@@ -21,11 +21,11 @@ It summarizes what the repository can currently prove about the ERP refactor and
 | Metric | Value |
 |---|---:|
 | Implementation-order items in plan | 18 |
-| Tracked files scanned | 1044 |
-| Source files scanned | 838 |
-| API route files | 120 |
-| API v1 route files | 83 |
-| Feature API clients | 24 |
+| Tracked files scanned | 1055 |
+| Source files scanned | 848 |
+| API route files | 122 |
+| API v1 route files | 85 |
+| Feature API clients | 25 |
 | Legacy API compatibility wrappers | 1 |
 | Files above 1000 lines | 0 |
 | Files above 500 lines | 14 |
@@ -42,7 +42,7 @@ It summarizes what the repository can currently prove about the ERP refactor and
 | --- | --- | --- |
 | Read-first baseline docs | Complete | All listed read-first docs are present in `docs/`. |
 | Render and API contract baseline | Complete | Key contract and client verification files exist: `api-client.test.ts`, `feature-flags-api-contract.test.ts`, `public-offer-api-contract.test.ts`, and `theme-bootstrap.test.ts`. |
-| API v1 migration and wrappers | Open | Inventory shows 83 `/api/v1` route files, 24 feature API clients, and 1 legacy compatibility wrappers. |
+| API v1 migration and wrappers | Open | Inventory shows 85 `/api/v1` route files, 25 feature API clients, and 1 legacy compatibility wrappers. |
 | Cleanup and file-size enforcement | Open | Inventory shows 0 files above 1000 lines, 14 files above 500 lines, and 9 dead-candidate review rows. |
 | ISO readiness structure | Complete structurally | 93 Annex A controls are tracked, 0 are missing applicability, 0 have open-gap implementation status, and 0 are missing implementation status. |
 | Operational evidence execution | Operational work remaining | 10 operational registers are tracked, 10 are still empty, and the audit evidence index still has 10 open-gap rows. |
