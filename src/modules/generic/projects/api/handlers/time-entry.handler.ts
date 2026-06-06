@@ -55,7 +55,14 @@ function timeEntryLocation(id: string): string {
 
 // ── Shared schema pieces ──────────────────────────────────────────────────────
 
-const DateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be a YYYY-MM-DD calendar date');
+const DateSchema = z.string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be a YYYY-MM-DD calendar date')
+  // The regex alone accepts impossible dates (e.g. 2026-02-31, which would
+  // normalize to 2026-03-03). Require the value to round-trip to a real date.
+  .refine((s) => {
+    const d = new Date(`${s}T00:00:00.000Z`);
+    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+  }, 'date must be a real calendar date');
 const HoursSchema = z.number().positive().max(24);
 const DescriptionSchema = z.string().trim().max(2000);
 

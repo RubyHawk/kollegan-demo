@@ -21,6 +21,7 @@ import type {
   TimeEntry,
 } from '../domain/time-entry.entity';
 import { timeEntryRepository } from '../infrastructure/time-entry.repository';
+import { projectsRepository } from '../infrastructure/projects.repository';
 
 /** Recoverable domain error. `kind` lets the handler pick 400 (validation) vs 403 (forbidden). */
 export class TimeEntryDomainError extends Error {
@@ -55,6 +56,19 @@ function assertCanMutate(entry: TimeEntry, actorId: string, isAdmin: boolean): v
   }
 }
 
+/**
+ * Reject a `projectId` that does not belong to `orgId`. The DB FK only references
+ * prj_projects(id), not the organisation, so without this check a caller could
+ * attach a time entry to another tenant's project (cross-tenant corruption).
+ */
+async function assertProjectInOrg(orgId: string, projectId: string | null | undefined): Promise<void> {
+  if (!projectId) return;
+  const project = await projectsRepository.findById(projectId, orgId);
+  if (!project) {
+    throw new TimeEntryDomainError('validation', 'Project not found in this organisation');
+  }
+}
+
 export async function listTimeEntries(
   orgId: string,
   filter: ListTimeEntriesFilter,
@@ -69,6 +83,7 @@ export async function logTimeEntry(
 ): Promise<TimeEntry> {
   assertDate(input.date);
   assertHours(input.hours);
+  await assertProjectInOrg(orgId, input.projectId);
 
   const created = await timeEntryRepository.create({
     organizationId: orgId,
@@ -96,6 +111,8 @@ export async function editTimeEntry(
 
   if (patch.date !== undefined) assertDate(patch.date);
   if (patch.hours !== undefined) assertHours(patch.hours);
+  // Re-validate when the entry is being moved to a (non-null) project.
+  if (patch.projectId) await assertProjectInOrg(orgId, patch.projectId);
 
   const updated = await timeEntryRepository.update(id, orgId, {
     ...(patch.projectId !== undefined ? { projectId: patch.projectId } : {}),
