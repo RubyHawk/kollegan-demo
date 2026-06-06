@@ -10,7 +10,7 @@ model Invoice {
   customerId       String?   // crm_customers.id
   offerId          String?   // off_offers.id — source offer if created from one
   projectId        String?   // prj_projects.id — source project if created from one
-  invoiceNumber    Int       // sequential per org — see inv_numbering
+  invoiceNumber    Int?      // sequential per org, assigned at issue (NULL while draft)
   status           String    @default("draft") // draft|sent|viewed|paid|overdue|cancelled|credited
   issueDate        DateTime  @db.Date
   dueDate          DateTime  @db.Date
