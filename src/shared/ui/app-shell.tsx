@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { Bell } from 'lucide-react';
 import Sidebar from '@shared/ui/sidebar';
 import { MenuIcon, ChevronRightIcon, PlusIcon } from '@shared/ui/icons';
 import { SearchTrigger } from '@shared/ui/search-command';
@@ -94,20 +95,20 @@ export default function AppShell({ user, children }: Props) {
   const isImmersiveTemplateEditor = pathname.startsWith('/mallar/') && pathname !== '/mallar';
 
   const topbar = (
-    <div className="glass-header hidden h-14 shrink-0 items-center justify-between border-b border-[var(--border)] px-5 md:flex">
+    <div className="glass-header hidden h-14 shrink-0 items-center justify-between border-b border-[var(--ui-border)] px-5 md:flex">
       <nav aria-label="Breadcrumb" className="flex items-center gap-1">
         {crumbs.map((crumb, i) => (
           <span key={i} className="flex items-center gap-1">
-            {i > 0 && <ChevronRightIcon size={12} className="mx-0.5 shrink-0 text-[var(--text-muted)]" />}
+            {i > 0 && <ChevronRightIcon size={12} className="mx-0.5 shrink-0 text-[var(--ui-text-muted)]" />}
             {crumb.href ? (
               <Link
                 href={crumb.href}
-                className="text-sm text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+                className="text-sm text-[var(--ui-text-muted)] transition-colors hover:text-[var(--ui-text)]"
               >
                 {crumb.label}
               </Link>
             ) : (
-              <span className="text-sm font-medium text-[var(--text-primary)]">{crumb.label}</span>
+              <span className="text-sm font-medium text-[var(--ui-text)]">{crumb.label}</span>
             )}
           </span>
         ))}
@@ -116,18 +117,15 @@ export default function AppShell({ user, children }: Props) {
         <SearchTrigger />
         <Link
           href="/installningar/notifieringar"
-          className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-1)] hover:text-[var(--text-primary)]"
+          className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
           aria-label="Notifieringar"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--accent)] text-[9px] font-bold text-white">2</span>
+          <Bell size={18} strokeWidth={1.75} />
+          <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--ui-accent)] text-[9px] font-bold text-[var(--ui-text-inverse)]">2</span>
         </Link>
         <Link
           href="/offerter/ny"
-          className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--accent)] px-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+          className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--ui-accent)] px-3 text-sm font-semibold text-[var(--ui-text-inverse)] transition-colors hover:bg-[var(--ui-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
         >
           <PlusIcon size={14} />
           Ny offert
@@ -137,7 +135,7 @@ export default function AppShell({ user, children }: Props) {
   );
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-[var(--page-bg)]">
+    <div className="flex h-dvh overflow-hidden bg-[var(--ui-bg)]">
       <div className="hidden h-full md:flex">
         <Sidebar
           user={user}
@@ -149,7 +147,7 @@ export default function AppShell({ user, children }: Props) {
 
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-40 bg-[var(--ui-overlay)] backdrop-blur-sm md:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -166,15 +164,15 @@ export default function AppShell({ user, children }: Props) {
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {!isImmersiveTemplateEditor && (
-          <div className="glass-header flex items-center gap-3 border-b border-[var(--border)] px-4 py-3 md:hidden">
+          <div className="glass-header flex items-center gap-3 border-b border-[var(--ui-border)] px-4 py-3 md:hidden">
             <button
               onClick={() => setMobileOpen(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-1)]"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
               aria-label="Öppna meny"
             >
               <MenuIcon size={18} />
             </button>
-            <BrandLockup size={22} className="gap-2" textClassName="font-heading text-sm text-[var(--text-primary)]" />
+            <BrandLockup size={22} className="gap-2" textClassName="font-heading text-sm text-[var(--ui-text)]" />
           </div>
         )}
 

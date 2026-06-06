@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { CaretDown, PencilSimpleLine } from '@phosphor-icons/react';
+import { ChevronDown, Pencil } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
 
 export function InspectorDisclosure({
@@ -22,34 +22,34 @@ export function InspectorDisclosure({
   return (
     <section
       className={cn(
-        'relative border-b border-[var(--border)] bg-[var(--surface)] last:border-b-0',
-        open && 'before:absolute before:left-0 before:top-3 before:h-8 before:w-0.5 before:rounded-r before:bg-[var(--accent)]'
+        'relative border-b border-[var(--ui-border)] bg-[var(--ui-surface)] last:border-b-0',
+        open && 'before:absolute before:left-0 before:top-3 before:h-8 before:w-0.5 before:rounded-r before:bg-[var(--ui-accent)]',
       )}
     >
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-start justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[var(--surface-0)]"
+        className="flex w-full items-start justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
         aria-expanded={open}
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--text-primary)]">{title}</p>
+            <p className="text-[12px] font-semibold uppercase text-[var(--ui-text)]">{title}</p>
             {badge ? (
-              <span className="rounded-full bg-[var(--surface-active)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)]">
+              <span className="rounded-full bg-[var(--ui-surface-hover)] px-2 py-0.5 text-[9px] font-semibold uppercase text-[var(--ui-text-secondary)]">
                 {badge}
               </span>
             ) : null}
           </div>
-          {subtitle ? <p className="mt-1 text-[12px] leading-5 text-[var(--text-secondary)]">{subtitle}</p> : null}
+          {subtitle ? <p className="mt-1 text-[12px] leading-5 text-[var(--ui-text-secondary)]">{subtitle}</p> : null}
         </div>
-        <CaretDown
+        <ChevronDown
           size={16}
-          weight="bold"
-          className={cn('mt-0.5 shrink-0 text-[var(--text-muted)] transition-transform', open && 'rotate-180')}
+          strokeWidth={1.75}
+          className={cn('mt-0.5 shrink-0 text-[var(--ui-text-muted)] transition-transform', open && 'rotate-180')}
         />
       </button>
-      {open ? <div className="border-t border-[var(--border)] px-4 py-2.5">{children}</div> : null}
+      {open ? <div className="border-t border-[var(--ui-border)] px-4 py-2.5">{children}</div> : null}
     </section>
   );
 }
@@ -71,16 +71,16 @@ export function EditableSummaryCard({
     <div className="py-1">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{label}</p>
-          <p className="mt-1 break-words text-[13px] font-semibold text-[var(--text-primary)]">{value}</p>
-          <p className="mt-1 text-[12px] leading-5 text-[var(--text-secondary)]">{description}</p>
+          <p className="text-[10px] font-semibold uppercase text-[var(--ui-text-muted)]">{label}</p>
+          <p className="mt-1 break-words text-[13px] font-semibold text-[var(--ui-text)]">{value}</p>
+          <p className="mt-1 text-[12px] leading-5 text-[var(--ui-text-secondary)]">{description}</p>
         </div>
         <button
           type="button"
           onClick={onClick}
-          className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--accent)] transition-colors hover:bg-[var(--accent-subtle)]"
+          className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase text-[var(--ui-accent)] transition-colors hover:bg-[var(--ui-surface-selected)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
         >
-          <PencilSimpleLine size={12} />
+          <Pencil size={12} strokeWidth={1.75} />
           {actionLabel}
         </button>
       </div>
@@ -103,12 +103,12 @@ export function InspectorCard({
   children: ReactNode;
 }) {
   return (
-    <section className="relative border-b border-[var(--border)] bg-[var(--surface)] before:absolute before:left-0 before:top-3 before:h-8 before:w-0.5 before:rounded-r before:bg-[var(--accent)] last:border-b-0">
+    <section className="relative border-b border-[var(--ui-border)] bg-[var(--ui-surface)] before:absolute before:left-0 before:top-3 before:h-8 before:w-0.5 before:rounded-r before:bg-[var(--ui-accent)] last:border-b-0">
       <div className="px-4 py-2.5">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--text-primary)]">{title}</p>
-        {subtitle && <p className="mt-1 text-[12px] leading-5 text-[var(--text-secondary)]">{subtitle}</p>}
+        <p className="text-[12px] font-semibold uppercase text-[var(--ui-text)]">{title}</p>
+        {subtitle && <p className="mt-1 text-[12px] leading-5 text-[var(--ui-text-secondary)]">{subtitle}</p>}
       </div>
-      <div className="border-t border-[var(--border)] px-4 py-2.5">{children}</div>
+      <div className="border-t border-[var(--ui-border)] px-4 py-2.5">{children}</div>
     </section>
   );
 }
@@ -122,7 +122,7 @@ export function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+      <label className="mb-1 block text-[10px] font-semibold uppercase text-[var(--ui-text-muted)]">
         {label}
       </label>
       {children}
@@ -147,16 +147,16 @@ export function ModernSelect({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         title={title}
-        className="h-8 w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 pr-8 text-[12px] font-medium text-[var(--text-primary)] shadow-sm shadow-black/[0.02] transition focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)]"
+        className="h-8 w-full appearance-none rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] px-2.5 pr-8 text-[12px] font-medium text-[var(--ui-text)] transition focus:border-[var(--ui-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)]"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>{option.label}</option>
         ))}
       </select>
-      <CaretDown
+      <ChevronDown
         size={14}
-        weight="bold"
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+        strokeWidth={1.75}
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)]"
       />
     </div>
   );
@@ -176,10 +176,10 @@ export function ChoiceButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'min-h-7 rounded-md border border-transparent px-2.5 py-1 text-[11px] font-medium transition-all',
+        'min-h-7 rounded-md border border-transparent px-2.5 py-1 text-[11px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
         active
-          ? 'bg-[var(--surface)] text-[var(--accent)] shadow-sm ring-1 ring-inset ring-[var(--accent-border)]'
-          : 'text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]'
+          ? 'border-[var(--ui-accent-border)] bg-[var(--ui-surface)] text-[var(--ui-accent)]'
+          : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface)] hover:text-[var(--ui-text)]',
       )}
     >
       {children}
@@ -197,8 +197,8 @@ export function SegmentedControl({
   return (
     <div
       className={cn(
-        'grid gap-0.5 rounded-lg bg-[var(--surface-active)] p-0.5',
-        columns === 3 ? 'grid-cols-3' : 'grid-cols-2'
+        'grid gap-0.5 rounded-lg bg-[var(--ui-surface-hover)] p-0.5',
+        columns === 3 ? 'grid-cols-3' : 'grid-cols-2',
       )}
     >
       {children}
@@ -221,8 +221,8 @@ export function ToggleCard({
     <div className="py-1">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-semibold text-[var(--text-primary)]">{title}</p>
-          <p className="mt-0.5 text-[11px] leading-4 text-[var(--text-secondary)]">{description}</p>
+          <p className="text-[12px] font-semibold text-[var(--ui-text)]">{title}</p>
+          <p className="mt-0.5 text-[11px] leading-4 text-[var(--ui-text-secondary)]">{description}</p>
         </div>
         <ToggleSwitch checked={checked} onChange={onChange} />
       </div>
@@ -243,10 +243,10 @@ export function StaticCard({
     <div className="py-1">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-semibold text-[var(--text-primary)]">{title}</p>
-          <p className="mt-0.5 text-[11px] leading-4 text-[var(--text-secondary)]">{description}</p>
+          <p className="text-[12px] font-semibold text-[var(--ui-text)]">{title}</p>
+          <p className="mt-0.5 text-[11px] leading-4 text-[var(--ui-text-secondary)]">{description}</p>
         </div>
-        <span className="shrink-0 rounded bg-[var(--surface-active)] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
+        <span className="shrink-0 rounded bg-[var(--ui-surface-hover)] px-1.5 py-0.5 text-[9px] font-semibold uppercase text-[var(--ui-text-secondary)]">
           {badge}
         </span>
       </div>
@@ -266,7 +266,7 @@ export function ToggleRow({
   return (
     <div className="py-1">
       <div className="flex items-center justify-between gap-2">
-        <span className="min-w-0 flex-1 text-[12px] leading-4 text-[var(--text-primary)]">{label}</span>
+        <span className="min-w-0 flex-1 text-[12px] leading-4 text-[var(--ui-text)]">{label}</span>
         <ToggleSwitch checked={checked} onChange={onChange} />
       </div>
     </div>
@@ -285,21 +285,21 @@ export function ToggleSwitch({
       type="button"
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]',
-        checked ? 'bg-[var(--accent)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]' : 'bg-[var(--surface-active)] ring-1 ring-inset ring-[var(--border)]'
+        'relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ui-surface)]',
+        checked ? 'bg-[var(--ui-accent)]' : 'bg-[var(--ui-surface-hover)] ring-1 ring-inset ring-[var(--ui-border)]',
       )}
       aria-pressed={checked}
     >
       <span
         className={cn(
-          'pointer-events-none absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
-          checked ? 'translate-x-5' : 'translate-x-0'
+          'pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-[var(--ui-surface-raised)] ring-1 ring-[var(--ui-border)] transition-transform',
+          checked ? 'translate-x-5' : 'translate-x-0',
         )}
       />
     </button>
   );
 }
 
-export const inputClass = 'w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-[12px] text-[var(--text-primary)] shadow-sm shadow-black/[0.02] transition focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)]';
+export const inputClass = 'w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] px-2.5 py-1.5 text-[12px] text-[var(--ui-text)] transition focus:border-[var(--ui-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)]';
 export const textareaClass = `${inputClass} min-h-[72px] resize-y`;
-export const secondaryButtonClass = 'flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--text-secondary)] shadow-sm shadow-black/[0.02] transition-colors hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]';
+export const secondaryButtonClass = 'flex-1 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--ui-text-secondary)] transition-colors hover:border-[var(--ui-accent-border)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]';

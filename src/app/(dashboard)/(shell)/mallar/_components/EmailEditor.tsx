@@ -38,8 +38,6 @@ import {
   inputStyle,
 } from './email-editor-controls';
 
-// ── Design config (mirrors EmailDesignConfig in offer-email.jobs.ts) ──────────
-
 interface DesignConfig {
   meta: {
     preheader?: string;
@@ -82,16 +80,12 @@ const DEFAULT_BODY =
   '<p>Totalbelopp: <strong><span data-variable="totalIncVat" data-label="Summa inkl. moms" class="variable-chip">{{totalIncVat}}</span></strong> &nbsp;|&nbsp; ' +
   'Giltig till: <span data-variable="validUntil" data-label="Giltig till" class="variable-chip">{{validUntil}}</span></p>';
 
-// ── Public handle ─────────────────────────────────────────────────────────────
-
 export interface EmailEditorHandle {
   getSubject():      string;
   getBodyHtml():     string;   // TipTap HTML — variables as {{key}} text
   getHeaderConfig(): string;   // JSON string matching EmailDesignConfig shape
   setContent(subject: string, bodyHtml: string, headerConfig: string): void;
 }
-
-// ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
   initialSubject?:      string;
@@ -100,8 +94,6 @@ interface Props {
   editorRef?: React.MutableRefObject<EmailEditorHandle | null>;
   onUpdate?: () => void;
 }
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function EmailEditor({ initialSubject, initialHtml, initialHeaderConfig, editorRef, onUpdate }: Props) {
   const [subject,    setSubject]    = useState(initialSubject ?? '');
@@ -125,8 +117,6 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
     onUpdate,
   });
 
-  // ── Expose handle ──────────────────────────────────────────────────────────
-
   useEffect(() => {
     if (!editorRef || !editor) return;
     editorRef.current = {
@@ -141,8 +131,6 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, subject, design]);
-
-  // ── Design helpers ─────────────────────────────────────────────────────────
 
   const ph = (patch: Partial<DesignConfig['header']>) =>
     setDesign((d) => ({ ...d, header: { ...d.header, ...patch } }));
@@ -174,28 +162,27 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
   }, [design, onUpdate, subject]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--surface-1)' }}>
-      <div className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--ui-surface-subtle)' }}>
+      <div className="flex shrink-0 items-center justify-between gap-4 border-b border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-[var(--text-primary)]">E-postmall</p>
-            <span className="rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--accent)]">
+            <p className="text-sm font-semibold text-[var(--ui-text)]">E-postmall</p>
+            <span className="rounded-full bg-[var(--ui-surface-selected)] px-2 py-0.5 text-[10px] font-semibold uppercase text-[var(--ui-accent)]">
               {emailStatus}
             </span>
           </div>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
+          <p className="mt-1 text-xs leading-5 text-[var(--ui-text-muted)]">
             Skriv meddelandet kunden får innan de öppnar offerten. Variabler fylls med riktig offertdata vid utskick.
           </p>
         </div>
-        <div className="hidden shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2 text-right md:block">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Exempel</p>
-          <p className="mt-0.5 text-xs font-semibold text-[var(--text-primary)]">Kundnamn · 128 000 kr</p>
+        <div className="hidden shrink-0 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-2 text-right md:block">
+          <p className="text-[10px] font-semibold uppercase text-[var(--ui-text-muted)]">Exempel</p>
+          <p className="mt-0.5 text-xs font-semibold text-[var(--ui-text)]">Kundnamn · 128 000 kr</p>
         </div>
       </div>
 
-      {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
       <div style={{
-        background: 'var(--surface-2)', borderBottom: '1px solid var(--border)',
+        background: 'var(--ui-surface-hover)', borderBottom: '1px solid var(--ui-border)',
         padding: '4px 10px', display: 'flex', alignItems: 'center',
         gap: 3, flexWrap: 'wrap', flexShrink: 0, userSelect: 'none',
       }}>
@@ -234,7 +221,7 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
         <Sep />
 
         {/* Variable chips */}
-        <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'system-ui,sans-serif', marginLeft: 2 }}>Variabler:</span>
+        <span style={{ fontSize: 10, color: 'var(--ui-text-muted)', fontFamily: 'system-ui,sans-serif', marginLeft: 2 }}>Variabler:</span>
         {EMAIL_VARS.map((p) => {
           const key = p.key.replace(/[{}]/g, '');
           return (
@@ -245,8 +232,8 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
               title={`Infoga ${p.label}`}
               style={{
                 fontSize: 10, padding: '2px 7px',
-                border: '1px solid #c4b5fd', borderRadius: 4,
-                background: '#ede9fe', color: '#5b21b6',
+                border: '1px solid var(--ui-accent-border)', borderRadius: 4,
+                background: 'var(--ui-surface-selected)', color: 'var(--ui-accent)',
                 cursor: 'pointer', fontFamily: 'system-ui,sans-serif',
                 fontWeight: 500, whiteSpace: 'nowrap',
               }}
@@ -262,9 +249,9 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
           onMouseDown={(e) => { e.preventDefault(); setShowDesign((v) => !v); }}
           style={{
             marginLeft: 'auto', fontSize: 11, padding: '3px 10px',
-            border: `1px solid ${showDesign ? 'var(--accent-border)' : 'var(--border)'}`,
-            borderRadius: 4, background: showDesign ? 'var(--accent-subtle)' : 'var(--surface)',
-            color: showDesign ? 'var(--accent)' : 'var(--text-primary)',
+            border: `1px solid ${showDesign ? 'var(--ui-accent-border)' : 'var(--ui-border)'}`,
+            borderRadius: 4, background: showDesign ? 'var(--ui-surface-selected)' : 'var(--ui-surface)',
+            color: showDesign ? 'var(--ui-accent)' : 'var(--ui-text)',
             cursor: 'pointer', fontFamily: 'system-ui,sans-serif',
             display: 'flex', alignItems: 'center', gap: 5,
           }}
@@ -274,40 +261,37 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
         </button>
       </div>
 
-      {/* ── Subject line ─────────────────────────────────────────────────────── */}
       <div style={{
-        borderBottom: '1px solid var(--border)', background: 'var(--surface)',
+        borderBottom: '1px solid var(--ui-border)', background: 'var(--ui-surface)',
         padding: '10px 20px', display: 'grid',
         gridTemplateColumns: '72px minmax(0,1fr)', gap: '8px 10px', flexShrink: 0,
       }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', fontFamily: 'system-ui,sans-serif', minWidth: 56, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Ämne</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ui-text-muted)', fontFamily: 'system-ui,sans-serif', minWidth: 56, textTransform: 'uppercase', letterSpacing: 0 }}>Ämne</span>
         <input
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="t.ex. Offert: {{offerTitle}}"
           style={{
             flex: 1, fontSize: 13, border: 'none', outline: 'none',
-            color: 'var(--text-primary)', fontFamily: 'system-ui,sans-serif',
+            color: 'var(--ui-text)', fontFamily: 'system-ui,sans-serif',
             background: 'transparent',
           }}
         />
-        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', fontFamily: 'system-ui,sans-serif', minWidth: 56, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Preview</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ui-text-muted)', fontFamily: 'system-ui,sans-serif', minWidth: 56, textTransform: 'uppercase', letterSpacing: 0 }}>Preview</span>
         <input
           value={preheader}
           onChange={(e) => pm({ preheader: e.target.value })}
           placeholder="Kort förhandsrad i kundens inkorg"
           style={{
             flex: 1, fontSize: 13, border: 'none', outline: 'none',
-            color: 'var(--text-primary)', fontFamily: 'system-ui,sans-serif',
+            color: 'var(--ui-text)', fontFamily: 'system-ui,sans-serif',
             background: 'transparent',
           }}
         />
       </div>
 
-      {/* ── Main area ─────────────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
 
-        {/* ── Email canvas ─────────────────────────────────────────────────── */}
         <div style={{ flex: 1, overflow: 'auto', background: '#dde1e7', padding: '32px 16px' }}>
           <div style={{ maxWidth: 600, margin: '0 auto', borderRadius: 8, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.13)' }}>
 
@@ -384,10 +368,9 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
           </div>
         </div>
 
-        {/* ── Design settings panel ─────────────────────────────────────────── */}
         {showDesign && (
           <div style={{
-            width: 280, borderLeft: '1px solid var(--border)', background: 'var(--surface-1)',
+            width: 280, borderLeft: '1px solid var(--ui-border)', background: 'var(--ui-surface-subtle)',
             overflow: 'auto', flexShrink: 0, padding: '16px',
           }}>
 
@@ -456,7 +439,6 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
         )}
       </div>
 
-      {/* ── Editor styles ────────────────────────────────────────────────────── */}
       <style>{`
         .email-prose { outline: none; }
         .email-prose p         { margin: 0 0 14px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.65; color: #1e293b; }
@@ -472,8 +454,8 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
         .email-prose li > p    { margin: 0; }
         .email-prose .variable-chip {
           display: inline-flex; align-items: center; gap: 3px;
-          background: #ede9fe; color: #5b21b6;
-          border: 1px solid #c4b5fd; border-radius: 4px;
+          background: var(--ui-surface-selected); color: var(--ui-accent);
+          border: 1px solid var(--ui-accent-border); border-radius: 4px;
           padding: 1px 6px; font-size: 12px; font-family: system-ui, sans-serif;
           font-weight: 500; white-space: nowrap; user-select: none; cursor: default;
         }
@@ -481,8 +463,6 @@ export default function EmailEditor({ initialSubject, initialHtml, initialHeader
     </div>
   );
 }
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function parseDesign(configJson?: string): DesignConfig {
   if (!configJson) return DEFAULT_DESIGN;
@@ -503,4 +483,3 @@ function parseDesign(configJson?: string): DesignConfig {
   }
 }
 
-// ── Small UI components ────────────────────────────────────────────────────────

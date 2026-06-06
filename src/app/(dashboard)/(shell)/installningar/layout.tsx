@@ -11,10 +11,10 @@ export default async function SettingsLayout({ children }: { children: ReactNode
     <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)] leading-tight">
+        <h1 className="font-heading text-2xl font-semibold text-[var(--ui-text)] leading-tight">
           Inställningar
         </h1>
-        <p className="text-sm text-[var(--text-muted)] mt-0.5">
+        <p className="text-sm text-[var(--ui-text-muted)] mt-0.5">
           Hantera din profil, utseende och säkerhet.
         </p>
       </div>

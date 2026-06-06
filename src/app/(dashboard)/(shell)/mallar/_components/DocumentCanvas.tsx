@@ -6,7 +6,7 @@ import { useTemplateEditor } from './editor-context';
 import { useHeaderFooter } from './header-footer-context';
 import { PRESENTATION_PAGE_HEIGHT, PRESENTATION_PAGE_WIDTH } from './presentation-page-height';
 import { cn } from '@shared/lib/utils';
-import { ArrowClockwise, ArrowCounterClockwise, NotePencil, Plus, TextHOne } from '@phosphor-icons/react';
+import { FileText, Heading1, Plus, Redo2, Undo2 } from 'lucide-react';
 import { PresentationPageLoadingState, StructuredOfferCanvas } from './document-canvas-structured';
 import { CanvasZoomControls } from './CanvasZoomControls';
 import { InlineFormattingMenu } from './InlineFormattingMenu';
@@ -116,7 +116,7 @@ export default function DocumentCanvas() {
   }
 
   return (
-    <div className="relative flex-1 overflow-hidden bg-[#d8dde4]">
+    <div className="relative flex-1 overflow-hidden bg-[var(--ui-surface-subtle)]">
       <InlineFormattingMenu />
       <UndoRedoControls className="absolute left-3 top-3 z-20" />
       <CanvasZoomControls className="absolute right-3 top-3 z-20" />
@@ -143,7 +143,7 @@ export default function DocumentCanvas() {
             data-a4-page={!isDocumentPage ? 'presentation' : undefined}
             onDragOver={handleCanvasDragOver}
             onDrop={handleCanvasDrop}
-            className="relative border border-slate-300 bg-white shadow-[0_18px_44px_rgba(15,23,42,0.18)]"
+            className="relative border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] shadow-[var(--ui-shadow-dialog)]"
             style={{ minHeight: basePageMinHeight }}
           >
             {!isDocumentPage && headerEditor && (
@@ -213,7 +213,7 @@ export default function DocumentCanvas() {
           outline: none !important;
           border: none !important;
           min-height: 460px;
-          color: #0f172a;
+          color: var(--ui-text);
           font-size: 14px;
           line-height: 1.75;
           overflow-wrap: anywhere;
@@ -225,46 +225,46 @@ export default function DocumentCanvas() {
           line-height: 1.1;
           letter-spacing: 0;
           font-weight: 700;
-          color: #0f172a;
+          color: var(--ui-text);
         }
         .doc-editor .ProseMirror h2 {
           margin: 18px 0 10px 0;
           font-size: 20px;
           line-height: 1.2;
           font-weight: 700;
-          color: #1e3a8a;
+          color: var(--ui-accent);
         }
         .doc-editor .ProseMirror h3 {
           margin: 16px 0 8px 0;
           font-size: 16px;
           line-height: 1.3;
           font-weight: 700;
-          color: #334155;
+          color: var(--ui-text-secondary);
         }
         .doc-editor .ProseMirror ul { list-style: disc; padding-left: 24px; margin: 0 0 12px 0; }
         .doc-editor .ProseMirror ol { list-style: decimal; padding-left: 24px; margin: 0 0 12px 0; }
         .doc-editor .ProseMirror li { margin-bottom: 6px; }
         .doc-editor .ProseMirror table { width: 100%; border-collapse: collapse; margin: 0 0 16px 0; }
         .doc-editor .ProseMirror td,
-        .doc-editor .ProseMirror th { border: 1px solid #dbe4ee; padding: 10px 12px; vertical-align: top; }
-        .doc-editor .ProseMirror th { background: #f8fafc; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; }
-        .doc-editor .ProseMirror hr { border: none; border-top: 1px solid #dbe4ee; margin: 18px 0; }
-        .doc-editor .ProseMirror a { color: #2563eb; text-decoration: underline; }
+        .doc-editor .ProseMirror th { border: 1px solid var(--ui-border); padding: 10px 12px; vertical-align: top; }
+        .doc-editor .ProseMirror th { background: var(--ui-surface-subtle); font-size: 12px; text-transform: uppercase; letter-spacing: 0; color: var(--ui-text-muted); }
+        .doc-editor .ProseMirror hr { border: none; border-top: 1px solid var(--ui-border); margin: 18px 0; }
+        .doc-editor .ProseMirror a { color: var(--ui-accent); text-decoration: underline; }
         .doc-editor .ProseMirror .variable-chip {
           display: inline-flex;
           align-items: center;
           gap: 4px;
           border-radius: 999px;
-          background: #eef2ff;
-          color: #4338ca;
+          background: var(--ui-surface-selected);
+          color: var(--ui-accent);
           padding: 2px 8px;
           font-size: 12px;
           font-family: system-ui, sans-serif;
           font-weight: 600;
           white-space: nowrap;
         }
-        .doc-editor .ProseMirror .selectedCell { background: #dbeafe; }
-        .doc-editor .ProseMirror .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: #2563eb; pointer-events: none; }
+        .doc-editor .ProseMirror .selectedCell { background: var(--ui-surface-selected); }
+        .doc-editor .ProseMirror .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: var(--ui-accent); pointer-events: none; }
         .doc-editor--structured .ProseMirror {
           min-height: 220px;
           font-size: 14px;
@@ -272,7 +272,7 @@ export default function DocumentCanvas() {
         }
         .doc-editor--presentation .ProseMirror p.is-editor-empty:first-child::before {
           content: attr(data-placeholder);
-          color: #94a3b8;
+          color: var(--ui-text-muted);
           float: left;
           height: 0;
           pointer-events: none;
@@ -293,23 +293,23 @@ export default function DocumentCanvas() {
           height: 26px;
           border: none;
           background: transparent;
-          color: #475569;
+          color: var(--ui-text-secondary);
           border-radius: 6px;
           cursor: pointer;
           transition: background 0.12s ease, color 0.12s ease;
           padding: 0;
         }
         .img-tb-btn:hover:not(:disabled) {
-          background: #f1f5f9;
-          color: #0f172a;
+          background: var(--ui-surface-hover);
+          color: var(--ui-text);
         }
         .img-tb-btn[data-active='true'] {
-          background: #e0edff;
-          color: #1d4ed8;
+          background: var(--ui-surface-selected);
+          color: var(--ui-accent);
         }
         .img-tb-btn[data-danger='true']:hover:not(:disabled) {
-          background: #fef2f2;
-          color: #dc2626;
+          background: var(--ui-danger-bg);
+          color: var(--ui-danger-text);
         }
         .img-tb-btn:disabled {
           opacity: 0.35;
@@ -321,8 +321,8 @@ export default function DocumentCanvas() {
           bottom: calc(100% + 6px);
           left: 50%;
           transform: translateX(-50%);
-          background: #0f172a;
-          color: white;
+          background: var(--ui-text);
+          color: var(--ui-text-inverse);
           font-size: 11px;
           font-family: system-ui, -apple-system, sans-serif;
           font-weight: 500;
@@ -361,24 +361,24 @@ function UndoRedoControls({ className }: { className?: string }) {
   if (!editor) return null;
 
   return (
-    <div className={cn('flex items-center rounded-lg bg-[var(--surface)] p-0.5 shadow-sm ring-1 ring-inset ring-[var(--border)]', className)}>
+    <div className={cn('flex items-center rounded-lg bg-[var(--ui-surface)] p-0.5 ring-1 ring-inset ring-[var(--ui-border)]', className)}>
       <button
         type="button"
         title={IS_MAC ? 'Ångra (⌘Z)' : 'Ångra (Ctrl+Z)'}
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!canUndo}
-        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)] disabled:opacity-30"
+        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] disabled:cursor-not-allowed disabled:text-[var(--ui-text-disabled)] disabled:opacity-80"
       >
-        <ArrowCounterClockwise size={14} />
+        <Undo2 size={14} strokeWidth={1.75} />
       </button>
       <button
         type="button"
         title={IS_MAC ? 'Gör om (⌘⇧Z)' : 'Gör om (Ctrl+Y)'}
         onClick={() => editor.chain().focus().redo().run()}
         disabled={!canRedo}
-        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)] disabled:opacity-30"
+        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] disabled:cursor-not-allowed disabled:text-[var(--ui-text-disabled)] disabled:opacity-80"
       >
-        <ArrowClockwise size={14} />
+        <Redo2 size={14} strokeWidth={1.75} />
       </button>
     </div>
   );
@@ -390,20 +390,20 @@ function BlankPageEmptyState({ onInsertHeading, onAddCover, onAddOfferPage }: {
   onAddOfferPage: () => void;
 }) {
   return (
-    <div className="mb-6 rounded-lg border border-dashed border-[var(--accent-border)] bg-[var(--accent-subtle)] px-4 py-4">
-      <p className="text-sm font-semibold text-[var(--text-primary)]">Börja från en tom sida</p>
-      <p className="mt-1 max-w-[58ch] text-xs leading-5 text-[var(--text-secondary)]">
+    <div className="mb-6 rounded-lg border border-dashed border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)] px-4 py-4">
+      <p className="text-sm font-semibold text-[var(--ui-text)]">Börja från en tom sida</p>
+      <p className="mt-1 max-w-[58ch] text-xs leading-5 text-[var(--ui-text-secondary)]">
         Klicka in en byggsten från vänster, dra ett block hit eller starta med en vanlig rubrik. Omslag och offertsida kan läggas till när flödet växer.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={onInsertHeading} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white">
-          <TextHOne size={13} /> Lägg till rubrik
+        <button type="button" onClick={onInsertHeading} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--ui-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--ui-text-inverse)] transition-colors hover:bg-[var(--ui-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]">
+          <Heading1 size={14} strokeWidth={1.75} /> Lägg till rubrik
         </button>
-        <button type="button" onClick={onAddCover} className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-active)]">
-          <Plus size={13} /> Omslag
+        <button type="button" onClick={onAddCover} className="inline-flex items-center gap-1.5 rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--ui-text)] transition-colors hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]">
+          <Plus size={14} strokeWidth={1.75} /> Omslag
         </button>
-        <button type="button" onClick={onAddOfferPage} className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-active)]">
-          <NotePencil size={13} /> Offertsida
+        <button type="button" onClick={onAddOfferPage} className="inline-flex items-center gap-1.5 rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--ui-text)] transition-colors hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]">
+          <FileText size={14} strokeWidth={1.75} /> Offertsida
         </button>
       </div>
     </div>
@@ -420,9 +420,9 @@ function HFZone({
   hPad: number;
 }) {
   return (
-    <section className="border-b border-[var(--border)] bg-[var(--surface)]/60 px-0 py-4">
+    <section className="border-b border-[var(--ui-border)] bg-[var(--ui-surface)]/60 px-0 py-4">
       <div className="px-6">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">{label}</p>
+        <p className="mb-2 text-[11px] font-semibold uppercase text-[var(--ui-text-muted)]">{label}</p>
       </div>
       <div className="hf-editor" style={{ padding: `0 ${hPad}px` }}>
         <EditorContent editor={editor} />

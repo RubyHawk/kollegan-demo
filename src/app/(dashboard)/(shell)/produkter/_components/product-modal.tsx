@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FolderOpen, Sparkle, StackSimple } from '@phosphor-icons/react';
+import { Building, FolderOpen, Layers, Sparkles } from 'lucide-react';
 import type { OfferProduct, ProductCategory } from '@shared/lib/api/products.api';
 import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
@@ -78,14 +78,14 @@ export function ProductModal({
   }, [categoryById, form.categoryMode, form.customCategory, form.mainCategoryId, form.subCategoryId]);
 
   const inputClass =
-    'w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--accent)] focus:outline-none';
-  const labelClass = 'mb-1.5 block text-xs font-medium text-[var(--text-secondary)]';
+    'w-full rounded-[var(--ui-radius-control)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3.5 py-2.5 text-sm text-[var(--ui-text)] placeholder:text-[var(--ui-text-muted)] transition-colors focus:border-[var(--ui-accent)] focus:outline-none';
+  const labelClass = 'mb-1.5 block text-xs font-medium text-[var(--ui-text-secondary)]';
   const tabClass = (active: boolean) =>
     cn(
       'relative inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-colors',
       active
-        ? 'bg-[var(--surface)] text-[var(--text-primary)] shadow-sm ring-1 ring-inset ring-[var(--border)]'
-        : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
+        ? 'bg-[var(--ui-surface)] text-[var(--ui-text)] shadow-sm ring-1 ring-inset ring-[var(--ui-border)]'
+        : 'text-[var(--ui-text-muted)] hover:text-[var(--ui-text-secondary)]',
     );
 
   const setField =
@@ -100,14 +100,14 @@ export function ProductModal({
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
       <DialogContent mobileVariant="fullscreen" size="xl" showMobileClose>
         <div className="flex min-h-0 flex-1 flex-col">
-          <DialogHeader className="border-b border-[var(--border)] pr-16">
+          <DialogHeader className="border-b border-[var(--ui-border)] pr-16">
             <div className="flex items-center gap-3">
               <DialogTitle className="text-xl">
                 {product ? 'Redigera produkt eller tjänst' : 'Skapa produkt eller tjänst'}
               </DialogTitle>
               {selectedCompanyName && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--ui-text-secondary)]">
+                  <Building aria-hidden="true" size={12} strokeWidth={2} />
                   {selectedCompanyName}
                 </span>
               )}
@@ -123,8 +123,8 @@ export function ProductModal({
               <div className="space-y-5">
                 <ModalSection tone="card">
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">Grundinformation</p>
-                    <p className="text-sm text-[var(--text-muted)]">
+                    <p className="text-sm font-semibold text-[var(--ui-text)]">Grundinformation</p>
+                    <p className="text-sm text-[var(--ui-text-muted)]">
                       Namn, beskrivning och eventuell bild som hjälper säljaren känna igen posten i offertflödet.
                     </p>
                   </div>
@@ -166,7 +166,7 @@ export function ProductModal({
                         <img
                           src={form.imageUrl}
                           alt=""
-                          className="h-[44px] w-[44px] shrink-0 rounded-xl border border-[var(--border)] object-cover"
+                          className="h-[44px] w-[44px] shrink-0 rounded-[var(--ui-radius-control)] border border-[var(--ui-border)] object-cover"
                         />
                       ) : null}
                     </div>
@@ -175,8 +175,8 @@ export function ProductModal({
 
                 <ModalSection tone="card">
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">Pris och artikeldata</p>
-                    <p className="text-sm text-[var(--text-muted)]">
+                    <p className="text-sm font-semibold text-[var(--ui-text)]">Pris och artikeldata</p>
+                    <p className="text-sm text-[var(--ui-text-muted)]">
                       Gruppér de kommersiella uppgifterna så de går snabbare att skanna och uppdatera.
                     </p>
                   </div>
@@ -225,13 +225,13 @@ export function ProductModal({
 
                 <ModalSection tone="card">
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">Kategori och synlighet</p>
-                    <p className="text-sm text-[var(--text-muted)]">
+                    <p className="text-sm font-semibold text-[var(--ui-text)]">Kategori och synlighet</p>
+                    <p className="text-sm text-[var(--ui-text-muted)]">
                       Välj om produkten ska följa kategorihierarkin eller bära en egen etikett i biblioteket.
                     </p>
                   </div>
 
-                  <div className="inline-flex w-full rounded-full border border-[var(--border)] bg-[var(--surface-alt)] p-1">
+                  <div className="inline-flex w-full rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-1">
                     <button
                       type="button"
                       role="tab"
@@ -245,7 +245,7 @@ export function ProductModal({
                       }
                       className={tabClass(form.categoryMode === 'hierarchy')}
                     >
-                      <StackSimple size={14} weight="bold" />
+                      <Layers aria-hidden="true" size={14} strokeWidth={2} />
                       Hierarki
                     </button>
                     <button
@@ -262,7 +262,7 @@ export function ProductModal({
                       }
                       className={tabClass(form.categoryMode === 'custom')}
                     >
-                      <Sparkle size={14} weight="bold" />
+                      <Sparkles aria-hidden="true" size={14} strokeWidth={2} />
                       Fri etikett
                     </button>
                   </div>
@@ -313,7 +313,7 @@ export function ProductModal({
                       </ModalFormGrid>
 
                       {categorySupportMessage ? (
-                        <p className="text-sm text-[var(--text-muted)]">{categorySupportMessage}</p>
+                        <p className="text-sm text-[var(--ui-text-muted)]">{categorySupportMessage}</p>
                       ) : null}
                     </>
                   ) : (
@@ -328,12 +328,12 @@ export function ProductModal({
                     </div>
                   )}
 
-                  <label className="flex items-center gap-2.5 rounded-xl border border-[var(--border-light)] bg-[var(--surface-alt)] px-3.5 py-3 text-sm text-[var(--text-secondary)]">
+                  <label className="flex items-center gap-2.5 rounded-[var(--ui-radius-control)] border border-[var(--ui-border-subtle)] bg-[var(--ui-surface-subtle)] px-3.5 py-3 text-sm text-[var(--ui-text-secondary)]">
                     <input
                       type="checkbox"
                       checked={form.isActive}
                       onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
-                      className="rounded border-[var(--border)]"
+                      className="rounded border-[var(--ui-border)]"
                     />
                     Aktiv i offertbyggaren
                   </label>
@@ -342,33 +342,33 @@ export function ProductModal({
 
               <div className="space-y-4 xl:sticky xl:top-0">
                 <ModalMetaCard>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ui-text-muted)]">
                     Förhandsgranskning
                   </p>
-                  <div className="mt-3 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm">
-                    <div className="flex items-start gap-3 border-b border-[var(--border)] px-4 py-4">
+                  <div className="mt-3 overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] shadow-sm">
+                    <div className="flex items-start gap-3 border-b border-[var(--ui-border)] px-4 py-4">
                       {form.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={form.imageUrl}
                           alt={form.name}
-                          className="h-10 w-10 shrink-0 rounded-xl border border-[var(--border)] object-cover"
+                          className="h-10 w-10 shrink-0 rounded-[var(--ui-radius-control)] border border-[var(--ui-border)] object-cover"
                         />
                       ) : (
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-3)] text-[10px] font-semibold tracking-[0.12em] text-[var(--text-muted)]">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--ui-radius-control)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[10px] font-semibold tracking-[0.12em] text-[var(--ui-text-muted)]">
                           {initials}
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                        <p className="truncate text-sm font-semibold text-[var(--ui-text)]">
                           {form.name.trim() || 'Ny produkt'}
                         </p>
                         {form.description.trim() ? (
-                          <p className="mt-1 line-clamp-3 text-sm leading-5 text-[var(--text-muted)]">
+                          <p className="mt-1 line-clamp-3 text-sm leading-5 text-[var(--ui-text-muted)]">
                             {form.description.trim()}
                           </p>
                         ) : (
-                          <p className="mt-1 text-sm text-[var(--text-muted)]">
+                          <p className="mt-1 text-sm text-[var(--ui-text-muted)]">
                             Beskrivningen visas här när du börjar skriva.
                           </p>
                         )}
@@ -378,40 +378,40 @@ export function ProductModal({
                     <div className="space-y-3 px-4 py-4 text-sm">
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ui-text-muted)]">
                             Pris
                           </p>
-                          <p className="text-lg font-semibold text-[var(--text-primary)]">
+                          <p className="text-lg font-semibold text-[var(--ui-text)]">
                             {form.unitPrice ? formatSek(Number(form.unitPrice)) : '—'}
-                            {form.unit ? <span className="ml-1 text-sm text-[var(--text-muted)]">/ {form.unit}</span> : null}
+                            {form.unit ? <span className="ml-1 text-sm text-[var(--ui-text-muted)]">/ {form.unit}</span> : null}
                           </p>
                         </div>
                         {!form.isActive ? (
-                          <span className="rounded-full bg-amber-500/12 px-2.5 py-1 text-xs font-medium text-amber-600">
+                          <span className="rounded-full bg-[var(--ui-warning-bg)] px-2.5 py-1 text-xs font-medium text-[var(--ui-warning-text)]">
                             Inaktiv
                           </span>
                         ) : null}
                       </div>
 
                       {previewLabel ? (
-                        <div className="rounded-xl border border-[var(--border-light)] bg-[var(--surface-alt)] px-3 py-2">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                        <div className="rounded-[var(--ui-radius-control)] border border-[var(--ui-border-subtle)] bg-[var(--ui-surface-subtle)] px-3 py-2">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ui-text-muted)]">
                             Etikett
                           </p>
-                          <p className="mt-1 text-sm text-[var(--text-primary)]">{previewLabel}</p>
+                          <p className="mt-1 text-sm text-[var(--ui-text)]">{previewLabel}</p>
                         </div>
                       ) : null}
                     </div>
                   </div>
                 </ModalMetaCard>
 
-                <div className="rounded-[20px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] p-4">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Behöver du ändra kategorierna?</p>
-                  <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
+                <div className="rounded-[var(--ui-radius-panel)] border border-dashed border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-4">
+                  <p className="text-sm font-semibold text-[var(--ui-text)]">Behöver du ändra kategorierna?</p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--ui-text-muted)]">
                     Öppna kategorihanteraren för att lägga till eller ta bort nivåer utan att lämna produktflödet.
                   </p>
                   <Button type="button" variant="outline" className="mt-3 w-full" onClick={onOpenCategoryManager}>
-                    <FolderOpen size={15} weight="bold" />
+                    <FolderOpen aria-hidden="true" size={15} strokeWidth={2} />
                     Hantera kategorier
                   </Button>
                 </div>

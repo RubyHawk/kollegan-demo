@@ -1,12 +1,11 @@
 'use client';
 
 import type React from 'react';
-import { CheckCircleIcon, PlusIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { CheckCircle, CircleAlert, Plus } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
-import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
-import { Card, CardContent } from '@shared/ui/card';
-import { STAGE_STYLE } from '../_lib/project-display';
+import { Panel } from '@shared/ui/panel';
+import { StatusBadge, type StatusTone } from '@shared/ui/status-badge';
 import { PROJECT_STAGE_LABELS, PROJECT_STAGES, type Project, type ProjectStage } from '../_store/types';
 
 const STEP_STATE_COPY = {
@@ -14,6 +13,14 @@ const STEP_STATE_COPY = {
   current: 'Nuvarande steg',
   upcoming: 'Kommande',
 } as const;
+
+const STAGE_TONE: Record<ProjectStage, StatusTone> = {
+  details: 'neutral',
+  ordered: 'info',
+  arrived: 'accent',
+  in_progress: 'success',
+  completed: 'neutral',
+};
 
 export type StageGate = {
   target: ProjectStage | null;
@@ -25,13 +32,13 @@ export function StageStepper({ project }: { project: Project }) {
   const currentIndex = PROJECT_STAGES.indexOf(project.stage);
 
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+    <Panel>
       <div className="sm:hidden">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-[var(--text-primary)]">
+          <span className="text-xs font-semibold text-[var(--ui-text)]">
             {PROJECT_STAGE_LABELS[project.stage]}
           </span>
-          <span className="text-xs text-[var(--text-muted)]">
+          <span className="text-xs text-[var(--ui-text-muted)]">
             Steg {currentIndex + 1} av {PROJECT_STAGES.length}
           </span>
         </div>
@@ -41,7 +48,7 @@ export function StageStepper({ project }: { project: Project }) {
               key={index}
               className={cn(
                 'h-1.5 flex-1 rounded-full',
-                index <= currentIndex ? 'bg-[var(--accent)]' : 'bg-[var(--surface-alt)]',
+                index <= currentIndex ? 'bg-[var(--ui-accent)]' : 'bg-[var(--ui-surface-subtle)]',
               )}
             />
           ))}
@@ -51,10 +58,10 @@ export function StageStepper({ project }: { project: Project }) {
       <div className="hidden sm:block">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">Projektstatus</p>
-            <p className="text-xs text-[var(--text-muted)]">Steg {currentIndex + 1} av {PROJECT_STAGES.length}</p>
+            <p className="text-sm font-semibold text-[var(--ui-text)]">Projektstatus</p>
+            <p className="text-xs text-[var(--ui-text-muted)]">Steg {currentIndex + 1} av {PROJECT_STAGES.length}</p>
           </div>
-          <Badge className={cn('border', STAGE_STYLE[project.stage])}>{PROJECT_STAGE_LABELS[project.stage]}</Badge>
+          <StatusBadge tone={STAGE_TONE[project.stage]}>{PROJECT_STAGE_LABELS[project.stage]}</StatusBadge>
         </div>
 
         <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-5">
@@ -67,57 +74,52 @@ export function StageStepper({ project }: { project: Project }) {
               <div
                 key={stage}
                 className={cn(
-                  'min-w-0 rounded-xl border px-3 py-3',
-                  complete && 'border-[var(--accent-border)] bg-[var(--accent-subtle)]',
-                  current && 'border-[var(--accent-border)] bg-[var(--surface)] shadow-sm',
-                  !complete && !current && 'border-[var(--border)] bg-[var(--surface-alt)]',
+                  'min-w-0 rounded-[var(--ui-radius-md)] border px-3 py-3',
+                  complete && 'border-[var(--ui-accent-border)] bg-[var(--ui-accent-subtle)]',
+                  current && 'border-[var(--ui-accent-border)] bg-[var(--ui-surface)] shadow-sm',
+                  !complete && !current && 'border-[var(--ui-border)] bg-[var(--ui-surface-subtle)]',
                 )}
               >
                 <div className="flex items-center gap-2">
                   <span
                     className={cn(
                       'grid h-6 w-6 shrink-0 place-items-center rounded-full border text-[10px] font-semibold',
-                      complete && 'border-[var(--accent)] bg-[var(--accent)] text-white',
-                      current && 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]',
-                      !complete && !current && 'border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-muted)]',
+                      complete && 'border-[var(--ui-accent)] bg-[var(--ui-accent)] text-[var(--ui-text-inverse)]',
+                      current && 'border-[var(--ui-accent)] bg-[var(--ui-accent-subtle)] text-[var(--ui-accent)]',
+                      !complete && !current && 'border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text-muted)]',
                     )}
                   >
-                    {complete ? <CheckCircleIcon size={14} weight="fill" /> : index + 1}
+                    {complete ? <CheckCircle size={16} strokeWidth={2} aria-hidden /> : index + 1}
                   </span>
-                  <span
-                    className={cn(
-                      'truncate text-xs font-semibold',
-                      current ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]',
-                    )}
-                  >
+                  <span className={cn('truncate text-xs font-semibold', current ? 'text-[var(--ui-text)]' : 'text-[var(--ui-text-secondary)]')}>
                     {PROJECT_STAGE_LABELS[stage]}
                   </span>
                 </div>
-                <p className="mt-2 text-[11px] text-[var(--text-muted)]">{stepState}</p>
+                <p className="mt-2 text-[11px] text-[var(--ui-text-muted)]">{stepState}</p>
               </div>
             );
           })}
         </div>
       </div>
-    </div>
+    </Panel>
   );
 }
 
 export function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-[var(--border-light)] bg-[var(--surface-alt)] px-3 py-3">
-      <p className="text-xs font-semibold text-[var(--text-muted)]">{label}</p>
-      <div className="mt-1 text-sm text-[var(--text-primary)]">{value || 'Ej satt'}</div>
-    </div>
+    <Panel variant="subtle" padding="sm">
+      <p className="text-xs font-semibold text-[var(--ui-text-muted)]">{label}</p>
+      <div className="mt-1 text-sm text-[var(--ui-text)]">{value || 'Ej satt'}</div>
+    </Panel>
   );
 }
 
 export function DetailStat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{value}</p>
-    </div>
+    <Panel padding="sm">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ui-text-muted)]">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-[var(--ui-text)]">{value}</p>
+    </Panel>
   );
 }
 
@@ -134,44 +136,39 @@ export function ContextualNextStep({
 
   if (project.stage === 'details') {
     return (
-      <Card className="border-[var(--accent-border)] bg-[var(--accent-subtle)]">
-        <CardContent className="p-4">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">{'N\u00E4sta steg'}</p>
-          <p className="mt-1 text-xs text-[var(--text-secondary)]">
-            {'Skapa och skicka en ink\u00F6psorder f\u00F6r att best\u00E4lla material fr\u00E5n leverant\u00F6r.'}
-          </p>
-          <Button className="mt-3 w-full" size="sm" onClick={onPoOpen}>
-            <PlusIcon />
-            {'Skapa ink\u00F6psorder'}
-          </Button>
-        </CardContent>
-      </Card>
+      <Panel variant="selected">
+        <p className="text-sm font-semibold text-[var(--ui-text)]">Nästa steg</p>
+        <p className="mt-1 text-xs text-[var(--ui-text-secondary)]">
+          Skapa och skicka en inköpsorder för att beställa material från leverantör.
+        </p>
+        <Button className="mt-3 w-full" size="sm" onClick={onPoOpen}>
+          <Plus size={16} strokeWidth={1.75} aria-hidden />
+          Skapa inköpsorder
+        </Button>
+      </Panel>
     );
   }
 
   if (gate.reason && !gate.allowed) {
     return (
-      <Card className="border-[var(--border)]">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-2 text-sm">
-            <WarningCircleIcon size={15} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
-            <p className="text-[var(--text-secondary)]">{gate.reason}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <Panel>
+        <div className="flex items-start gap-2 text-sm">
+          <CircleAlert size={16} strokeWidth={1.75} className="mt-0.5 shrink-0 text-[var(--ui-text-muted)]" aria-hidden />
+          <p className="text-[var(--ui-text-secondary)]">{gate.reason}</p>
+        </div>
+      </Panel>
     );
   }
 
   if (gate.allowed && gate.target) {
     return (
-      <Card className="border-[var(--border)]">
-        <CardContent className="p-4 text-sm text-[var(--text-secondary)]">
-          {'Projektet \u00E4r redo att g\u00E5 vidare till '}
-          <span className="font-semibold text-[var(--text-primary)]">{PROJECT_STAGE_LABELS[gate.target]}</span>.
-        </CardContent>
-      </Card>
+      <Panel className="text-sm text-[var(--ui-text-secondary)]">
+        Projektet är redo att gå vidare till{' '}
+        <span className="font-semibold text-[var(--ui-text)]">{PROJECT_STAGE_LABELS[gate.target]}</span>.
+      </Panel>
     );
   }
 
   return null;
 }
+

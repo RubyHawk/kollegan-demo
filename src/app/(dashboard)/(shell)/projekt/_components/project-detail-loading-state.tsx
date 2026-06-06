@@ -14,17 +14,18 @@ export function ProjectDetailLoadingState() {
         </div>
         <Skeleton className="h-10 w-40" />
       </div>
-      <Skeleton className="h-24 w-full rounded-2xl" />
+      <Skeleton className="h-24 w-full rounded-[var(--ui-radius-lg)]" />
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-6">
-          <Skeleton className="h-64 w-full rounded-2xl" />
-          <Skeleton className="h-80 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-[var(--ui-radius-lg)]" />
+          <Skeleton className="h-80 w-full rounded-[var(--ui-radius-lg)]" />
         </div>
         <div className="space-y-4">
-          <Skeleton className="h-40 w-full rounded-2xl" />
-          <Skeleton className="h-64 w-full rounded-2xl" />
+          <Skeleton className="h-40 w-full rounded-[var(--ui-radius-lg)]" />
+          <Skeleton className="h-64 w-full rounded-[var(--ui-radius-lg)]" />
         </div>
       </div>
     </div>
   );
 }
+

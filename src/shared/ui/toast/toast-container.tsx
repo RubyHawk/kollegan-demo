@@ -38,36 +38,27 @@ function ToastItem({
     };
   }, [toast.action, toast.id, onDismiss]);
 
-  const borderColorMap: Record<Toast['color'], string> = {
-    amber: 'border-l-amber-400',
-    emerald: 'border-l-emerald-400',
-    red: 'border-l-red-400',
-    indigo: 'border-l-indigo-400',
-    gray: 'border-l-stone-400',
-  };
-
-  const bgColorMap: Record<Toast['color'], string> = {
-    amber: 'bg-amber-50/90 dark:bg-amber-950/90',
-    emerald: 'bg-emerald-50/90 dark:bg-emerald-950/90',
-    red: 'bg-red-50/90 dark:bg-red-950/90',
-    indigo: 'bg-indigo-50/90 dark:bg-indigo-950/90',
-    gray: 'bg-white/90 dark:bg-zinc-800/90',
+  const toneClassMap: Record<Toast['color'], string> = {
+    amber: 'border-[var(--ui-warning-border)] border-l-[var(--ui-warning-text)] bg-[var(--ui-warning-bg)] text-[var(--ui-warning-text)]',
+    emerald: 'border-[var(--ui-success-border)] border-l-[var(--ui-success-text)] bg-[var(--ui-success-bg)] text-[var(--ui-success-text)]',
+    red: 'border-[var(--ui-danger-border)] border-l-[var(--ui-danger-text)] bg-[var(--ui-danger-bg)] text-[var(--ui-danger-text)]',
+    indigo: 'border-[var(--ui-accent-border)] border-l-[var(--ui-accent)] bg-[var(--ui-accent-subtle)] text-[var(--ui-accent)]',
+    gray: 'border-[var(--ui-border)] border-l-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] text-[var(--ui-text-muted)]',
   };
 
   return (
     <div
       className={[
-        'pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl',
-        'border border-white/50 dark:border-white/10 border-l-4',
-        bgColorMap[toast.color],
-        borderColorMap[toast.color],
-        'backdrop-blur-xl shadow-elevated',
+        'pointer-events-auto flex items-center gap-3 rounded-lg px-4 py-3',
+        'border border-l-4',
+        toneClassMap[toast.color],
+        'shadow-[var(--ui-shadow-raised)]',
         'min-w-55 max-w-85',
         exiting ? 'toast-out' : 'toast-in',
       ].join(' ')}
     >
       <span className="shrink-0 text-base">{toast.icon}</span>
-      <p className="text-sm font-medium text-[var(--text-primary)] leading-snug">
+      <p className="text-sm font-medium leading-snug text-[var(--ui-text)]">
         {toast.message}
       </p>
       {toast.action ? (
@@ -77,7 +68,7 @@ function ToastItem({
             toast.action?.onClick();
             onDismiss(toast.id);
           }}
-          className="ml-1 shrink-0 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-xs font-semibold text-[var(--accent)] transition-colors hover:bg-[var(--surface-active)]"
+          className="ml-1 shrink-0 rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--ui-accent)] transition-colors hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
         >
           {toast.action.label}
         </button>

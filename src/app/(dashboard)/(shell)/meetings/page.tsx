@@ -1,15 +1,23 @@
 'use client';
 
-/**
- * /meetings
- *
- * Meetings calendar — schedule, view, and manage team meetings.
- * Connected through the meetings feature API client.
- */
-
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Ban, CalendarDays, CheckCircle, ChevronDown, ChevronUp, ExternalLink, LoaderCircle, Play, Plus, Trash2, X } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import { Button } from '@shared/ui/button';
+import { EmptyState } from '@shared/ui/empty-state';
+import { InlineAlert } from '@shared/ui/inline-alert';
+import { Input } from '@shared/ui/input';
+import { Panel } from '@shared/ui/panel';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@shared/ui/select';
+import { StatusBadge, type StatusTone } from '@shared/ui/status-badge';
+import { Textarea } from '@shared/ui/textarea';
 import {
   createMeeting,
   deleteMeeting as deleteMeetingRequest,
@@ -20,51 +28,78 @@ import {
   type MeetingStatus,
 } from '@shared/lib/api/meetings.api';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 const STATUS_LABEL: Record<MeetingStatus, string> = {
-  scheduled:   'Schemalagd',
+  scheduled: 'Schemalagd',
   in_progress: 'Pågår',
-  completed:   'Avslutad',
-  cancelled:   'Inställd',
+  completed: 'Avslutad',
+  cancelled: 'Inställd',
 };
 
-const STATUS_STYLE: Record<MeetingStatus, string> = {
-  scheduled:   'bg-blue-50 dark:bg-blue-900/25 text-blue-700 dark:text-blue-400',
-  in_progress: 'bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-400',
-  completed:   'bg-[var(--surface-alt)] text-[var(--text-muted)] border border-[var(--border)]',
-  cancelled:   'bg-red-50 dark:bg-red-900/25 text-red-600 dark:text-red-400',
+const STATUS_TONE: Record<MeetingStatus, StatusTone> = {
+  scheduled: 'info',
+  in_progress: 'success',
+  completed: 'neutral',
+  cancelled: 'danger',
 };
 
 const STATUS_TABS: { id: MeetingStatus | 'all'; label: string }[] = [
-  { id: 'all', label: 'Alla' }, { id: 'scheduled', label: 'Schemalagda' },
-  { id: 'in_progress', label: 'Pågår' }, { id: 'completed', label: 'Avslutade' }, { id: 'cancelled', label: 'Inställda' },
+  { id: 'all', label: 'Alla' },
+  { id: 'scheduled', label: 'Schemalagda' },
+  { id: 'in_progress', label: 'Pågår' },
+  { id: 'completed', label: 'Avslutade' },
+  { id: 'cancelled', label: 'Inställda' },
 ];
 
+const PROVIDER_LABEL: Record<MeetingProvider, string> = {
+  manual: 'Manuellt',
+  google_meet: 'Google Meet',
+  zoom: 'Zoom',
+  daily: 'Daily',
+};
+
+type MeetingFormState = {
+  title: string;
+  scheduledAt: string;
+  provider: MeetingProvider;
+  meetingUrl: string;
+  agenda: string;
+};
+
+const EMPTY_FORM: MeetingFormState = {
+  title: '',
+  scheduledAt: '',
+  provider: 'manual',
+  meetingUrl: '',
+  agenda: '',
+};
+
 const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('sv-SE', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  new Date(iso).toLocaleDateString('sv-SE', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
 const fmtDuration = (secs: number | null) => {
   if (!secs) return null;
-  const m = Math.floor(secs / 60);
-  return m < 60 ? `${m} min` : `${Math.floor(m / 60)}h ${m % 60}m`;
+  const minutes = Math.floor(secs / 60);
+  return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 };
 
-const EMPTY_FORM = { title: '', scheduledAt: '', provider: 'manual', meetingUrl: '', agenda: '' };
-
-// ─── Page ────────────────────────────────────────────────────────────────────
-
 export default function MeetingsPage() {
-  const [meetings,  setMeetings]  = useState<Meeting[]>([]);
-  const [total,     setTotal]     = useState(0);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState<string | null>(null);
-  const [tab,       setTab]       = useState<MeetingStatus | 'all'>('all');
-  const [showForm,  setShowForm]  = useState(false);
-  const [form,      setForm]      = useState(EMPTY_FORM);
-  const [saving,    setSaving]    = useState(false);
-  const [acting,    setActing]    = useState<string | null>(null);
-  const [expanded,  setExpanded]  = useState<string | null>(null);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<MeetingStatus | 'all'>('all');
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<MeetingFormState>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [acting, setActing] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [confirmDeleteMeeting, setConfirmDeleteMeeting] = useState<Meeting | null>(null);
 
   const load = useCallback(async (silent = false) => {
@@ -81,21 +116,29 @@ export default function MeetingsPage() {
     }
   }, [tab]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const saveMeeting = useCallback(async () => {
-    if (!form.title.trim() || !form.scheduledAt) { setError('Titel och tid krävs.'); return; }
-    setSaving(true); setError(null);
+    if (!form.title.trim() || !form.scheduledAt) {
+      setError('Titel och tid krävs.');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
     try {
       await createMeeting({
-        title:       form.title.trim(),
+        title: form.title.trim(),
         scheduledAt: new Date(form.scheduledAt).toISOString(),
-        provider:    form.provider as MeetingProvider,
-        meetingUrl:  form.meetingUrl.trim() || undefined,
-        agenda:      form.agenda.trim()     || undefined,
+        provider: form.provider,
+        meetingUrl: form.meetingUrl.trim() || undefined,
+        agenda: form.agenda.trim() || undefined,
         participants: [],
       });
-      setShowForm(false); setForm(EMPTY_FORM);
+      setShowForm(false);
+      setForm(EMPTY_FORM);
       await load(true);
     } catch {
       setError('Något gick fel. Kontrollera anslutningen och försök igen.');
@@ -129,217 +172,118 @@ export default function MeetingsPage() {
     }
   }, [load]);
 
-  const upcoming = meetings.filter(m => m.status === 'scheduled' || m.status === 'in_progress').length;
+  const upcoming = meetings.filter((meeting) => meeting.status === 'scheduled' || meeting.status === 'in_progress').length;
 
   return (
-    <div className="px-8 py-10 max-w-5xl mx-auto space-y-6">
-
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)] mb-1">Möten</h1>
-          <p className="text-sm text-[var(--text-muted)]">
-            Schemalägg och följ upp möten.
-            {upcoming > 0 && <span className="ml-2 text-[var(--accent)] font-medium">{upcoming} kommande</span>}
-          </p>
+    <div className="mx-auto max-w-5xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-xl font-semibold text-[var(--ui-text)]">Möten</h1>
+          <p className="max-w-3xl text-sm leading-6 text-[var(--ui-text-muted)]">Schemalägg och följ upp möten.</p>
+          <div className="flex flex-wrap gap-2">
+            <StatusBadge tone="neutral">{total} möten totalt</StatusBadge>
+            {upcoming > 0 ? <StatusBadge tone="accent">{upcoming} kommande</StatusBadge> : null}
+          </div>
         </div>
-        <button type="button" onClick={() => { setShowForm(v => !v); setError(null); }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity shrink-0">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+        <Button
+          type="button"
+          onClick={() => {
+            setShowForm((value) => !value);
+            setError(null);
+          }}
+        >
+          <Plus size={16} strokeWidth={1.75} />
           Nytt möte
-        </button>
-      </div>
+        </Button>
+      </header>
 
-      {/* Error */}
-      {error && (
-        <div className="rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center justify-between gap-3">
-          <span>{error}</span>
-          <button type="button" onClick={() => setError(null)} className="opacity-60 hover:opacity-100">✕</button>
-        </div>
-      )}
-
-      {/* Create form */}
-      {showForm && (
-        <div className="rounded-2xl border border-[var(--accent)]/30 bg-[var(--surface)] shadow-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Nytt möte</h2>
-            <button type="button" onClick={() => { setShowForm(false); setError(null); }} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">✕</button>
+      {error ? (
+        <InlineAlert tone="danger" title="Möten kunde inte uppdateras">
+          <div className="flex flex-wrap items-center gap-3">
+            <span>{error}</span>
+            <Button type="button" variant="secondary" size="compact" onClick={() => setError(null)}>
+              <X size={16} strokeWidth={1.75} />
+              Stäng
+            </Button>
           </div>
-          <div className="p-6 grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Titel *</label>
-              <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="t.ex. Sprint Review Q2"
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Datum & tid *</label>
-              <input type="datetime-local" value={form.scheduledAt} onChange={e => setForm(f => ({ ...f, scheduledAt: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Plattform</label>
-              <select value={form.provider} onChange={e => setForm(f => ({ ...f, provider: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
-                <option value="manual">Manuellt</option>
-                <option value="google_meet">Google Meet</option>
-                <option value="zoom">Zoom</option>
-                <option value="daily">Daily</option>
-              </select>
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Möteslänk</label>
-              <input value={form.meetingUrl} onChange={e => setForm(f => ({ ...f, meetingUrl: e.target.value }))} placeholder="https://…"
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Agenda</label>
-              <textarea value={form.agenda} rows={3} onChange={e => setForm(f => ({ ...f, agenda: e.target.value }))} placeholder="Mötespunkter…"
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none" />
-            </div>
-            <div className="sm:col-span-2 flex gap-2 pt-2 border-t border-[var(--border-light)]">
-              <button type="button" onClick={() => void saveMeeting()} disabled={saving}
-                className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {saving ? 'Sparar…' : 'Schemalägg möte'}
-              </button>
-              <button type="button" onClick={() => { setShowForm(false); setError(null); }}
-                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors">
-                Avbryt
-              </button>
-            </div>
-          </div>
+        </InlineAlert>
+      ) : null}
+
+      {showForm ? (
+        <MeetingForm
+          form={form}
+          saving={saving}
+          onChange={setForm}
+          onCancel={() => {
+            setShowForm(false);
+            setError(null);
+          }}
+          onSave={() => void saveMeeting()}
+        />
+      ) : null}
+
+      <Panel padding="sm">
+        <div className="flex gap-1 overflow-x-auto rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-1">
+          {STATUS_TABS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setTab(item.id)}
+              className={cn(
+                'h-8 whitespace-nowrap rounded-[var(--ui-radius-sm)] px-3 text-sm font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2',
+                tab === item.id && 'border border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)] text-[var(--ui-text)]',
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
-      )}
+      </Panel>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-[var(--surface-alt)] border border-[var(--border)] rounded-xl p-1 overflow-x-auto shrink-0 w-fit">
-        {STATUS_TABS.map(t => (
-          <button key={t.id} type="button" onClick={() => setTab(t.id)}
-            className={cn('px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
-              tab === t.id ? 'bg-[var(--surface)] text-[var(--text-primary)] shadow-sm border border-[var(--border)]' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
-            )}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Meetings list */}
       {loading ? (
-        <div className="flex items-center justify-center py-20 gap-3">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--text-muted)]">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-          </svg>
-          <p className="text-sm text-[var(--text-muted)]">Laddar möten…</p>
-        </div>
-      ) : meetings.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--border)] p-16 text-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-            </div>
-            <p className="text-sm font-medium text-[var(--text-primary)]">Inga möten {tab !== 'all' ? `med status "${STATUS_LABEL[tab as MeetingStatus]}"` : 'ännu'}</p>
-            <p className="text-xs text-[var(--text-muted)]">Klicka på &ldquo;Nytt möte&rdquo; för att schemalägga.</p>
+        <Panel className="grid min-h-64 place-items-center">
+          <div className="flex items-center gap-2 text-sm text-[var(--ui-text-muted)]">
+            <LoaderCircle size={18} strokeWidth={1.75} className="animate-spin" />
+            Laddar möten...
           </div>
-        </div>
+        </Panel>
+      ) : meetings.length === 0 ? (
+        <Panel>
+          <EmptyState
+            icon={CalendarDays}
+            title={tab !== 'all' ? `Inga möten med status ${STATUS_LABEL[tab].toLowerCase()}` : 'Inga möten ännu'}
+            description="Klicka på Nytt möte för att schemalägga."
+            actionLabel="Nytt möte"
+            onAction={() => setShowForm(true)}
+          />
+        </Panel>
       ) : (
         <div className="space-y-3">
-          {meetings.map(m => (
-            <div key={m.id} className={cn('rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden transition-opacity', acting === m.id && 'opacity-50')}>
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                      <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{m.title}</p>
-                      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLE[m.status]}`}>
-                        {STATUS_LABEL[m.status]}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[var(--text-muted)]">
-                      {fmtDate(m.scheduledAt)}
-                      {m.durationSeconds && ` · ${fmtDuration(m.durationSeconds)}`}
-                      {m.participants.length > 0 && ` · ${m.participants.length} deltagare`}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                    {m.status === 'scheduled' && (
-                      <button type="button" onClick={() => void updateStatus(m.id, 'in_progress')} disabled={acting === m.id}
-                        className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline disabled:opacity-40">Starta</button>
-                    )}
-                    {m.status === 'in_progress' && (
-                      <button type="button" onClick={() => void updateStatus(m.id, 'completed')} disabled={acting === m.id}
-                        className="text-xs text-[var(--accent)] hover:underline disabled:opacity-40">Avsluta</button>
-                    )}
-                    {m.status === 'scheduled' && (
-                      <button type="button" onClick={() => void updateStatus(m.id, 'cancelled')} disabled={acting === m.id}
-                        className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40">Ställ in</button>
-                    )}
-                    <button type="button" onClick={() => setConfirmDeleteMeeting(m)} disabled={acting === m.id}
-                      className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40">Ta bort</button>
-                    {(m.agenda || m.summary || m.meetingUrl) && (
-                      <button type="button" onClick={() => setExpanded(v => v === m.id ? null : m.id)}
-                        className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors">
-                        {expanded === m.id ? '▲' : '▼'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Meeting URL */}
-                {m.meetingUrl && (
-                  <a href={m.meetingUrl} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-[var(--accent)] hover:underline mt-1">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                      <polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
-                    Gå med i mötet
-                  </a>
-                )}
-              </div>
-
-              {/* Expanded details */}
-              {expanded === m.id && (
-                <div className="px-5 pb-5 border-t border-[var(--border)] pt-4 space-y-3">
-                  {m.agenda && (
-                    <div>
-                      <p className="text-xs font-semibold text-[var(--text-secondary)] mb-1">Agenda</p>
-                      <p className="text-xs text-[var(--text-muted)] whitespace-pre-line leading-relaxed">{m.agenda}</p>
-                    </div>
-                  )}
-                  {m.summary?.summary && (
-                    <div>
-                      <p className="text-xs font-semibold text-[var(--text-secondary)] mb-1">Sammanfattning (AI)</p>
-                      <p className="text-xs text-[var(--text-muted)] whitespace-pre-line leading-relaxed">{m.summary.summary}</p>
-                    </div>
-                  )}
-                  {m.participants.length > 0 && (
-                    <div>
-                      <p className="text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Deltagare</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {m.participants.map(p => (
-                          <span key={p.id} className="px-2 py-0.5 rounded-full bg-[var(--surface-alt)] border border-[var(--border)] text-[10px] text-[var(--text-secondary)]">
-                            {p.name}{p.email ? ` (${p.email})` : ''}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+          {meetings.map((meeting) => (
+            <MeetingCard
+              key={meeting.id}
+              meeting={meeting}
+              acting={acting === meeting.id}
+              expanded={expanded === meeting.id}
+              onToggleExpanded={() => setExpanded((value) => (value === meeting.id ? null : meeting.id))}
+              onStart={() => void updateStatus(meeting.id, 'in_progress')}
+              onComplete={() => void updateStatus(meeting.id, 'completed')}
+              onCancel={() => void updateStatus(meeting.id, 'cancelled')}
+              onDelete={() => setConfirmDeleteMeeting(meeting)}
+            />
           ))}
         </div>
       )}
-      {total > meetings.length && (
-        <p className="text-xs text-center text-[var(--text-muted)]">Visar {meetings.length} av {total} möten</p>
-      )}
+
+      {total > meetings.length ? (
+        <p className="text-center text-xs text-[var(--ui-text-muted)]">Visar {meetings.length} av {total} möten</p>
+      ) : null}
+
       <ConfirmDestructiveDialog
         open={Boolean(confirmDeleteMeeting)}
-        onOpenChange={(open) => { if (!open) setConfirmDeleteMeeting(null); }}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteMeeting(null);
+        }}
         title="Ta bort möte?"
         description={
           confirmDeleteMeeting
@@ -355,4 +299,157 @@ export default function MeetingsPage() {
       />
     </div>
   );
+}
+
+function MeetingForm({
+  form,
+  saving,
+  onChange,
+  onCancel,
+  onSave,
+}: {
+  form: MeetingFormState;
+  saving: boolean;
+  onChange: (next: MeetingFormState | ((current: MeetingFormState) => MeetingFormState)) => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  const setField = <Key extends keyof MeetingFormState>(key: Key, value: MeetingFormState[Key]) => {
+    onChange((current) => ({ ...current, [key]: value }));
+  };
+
+  return (
+    <Panel variant="selected" className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-[var(--ui-text)]">Nytt möte</h2>
+        <Button type="button" variant="ghost" size="icon" onClick={onCancel} aria-label="Stäng formulär">
+          <X size={16} strokeWidth={1.75} />
+        </Button>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Titel *" className="sm:col-span-2">
+          <Input value={form.title} onChange={(event) => setField('title', event.target.value)} placeholder="t.ex. Sprint Review Q2" />
+        </Field>
+        <Field label="Datum & tid *">
+          <Input type="datetime-local" value={form.scheduledAt} onChange={(event) => setField('scheduledAt', event.target.value)} />
+        </Field>
+        <Field label="Plattform">
+          <Select value={form.provider} onValueChange={(value) => setField('provider', value as MeetingProvider)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{Object.entries(PROVIDER_LABEL).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent>
+          </Select>
+        </Field>
+        <Field label="Möteslänk" className="sm:col-span-2">
+          <Input value={form.meetingUrl} onChange={(event) => setField('meetingUrl', event.target.value)} placeholder="https://..." />
+        </Field>
+        <Field label="Agenda" className="sm:col-span-2">
+          <Textarea rows={3} value={form.agenda} onChange={(event) => setField('agenda', event.target.value)} placeholder="Mötespunkter..." />
+        </Field>
+      </div>
+      <div className="flex flex-wrap gap-2 border-t border-[var(--ui-border)] pt-3">
+        <Button type="button" onClick={onSave} disabled={saving} loading={saving}>Schemalägg möte</Button>
+        <Button type="button" variant="secondary" onClick={onCancel}>Avbryt</Button>
+      </div>
+    </Panel>
+  );
+}
+
+function MeetingCard({
+  meeting,
+  acting,
+  expanded,
+  onToggleExpanded,
+  onStart,
+  onComplete,
+  onCancel,
+  onDelete,
+}: {
+  meeting: Meeting;
+  acting: boolean;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  onStart: () => void;
+  onComplete: () => void;
+  onCancel: () => void;
+  onDelete: () => void;
+}) {
+  const hasDetails = Boolean(meeting.agenda || meeting.summary || meeting.meetingUrl);
+
+  return (
+    <Panel padding="none" className={cn('overflow-hidden transition-opacity', acting && 'opacity-60')}>
+      <div className="space-y-3 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="truncate text-sm font-semibold text-[var(--ui-text)]">{meeting.title}</p>
+              <StatusBadge tone={STATUS_TONE[meeting.status]}>{STATUS_LABEL[meeting.status]}</StatusBadge>
+            </div>
+            <p className="text-xs text-[var(--ui-text-muted)]">
+              {fmtDate(meeting.scheduledAt)}
+              {meeting.durationSeconds ? ` · ${fmtDuration(meeting.durationSeconds)}` : ''}
+              {meeting.participants.length > 0 ? ` · ${meeting.participants.length} deltagare` : ''}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {meeting.status === 'scheduled' ? <ActionButton icon={Play} label="Starta" disabled={acting} onClick={onStart} /> : null}
+            {meeting.status === 'in_progress' ? <ActionButton icon={CheckCircle} label="Avsluta" disabled={acting} onClick={onComplete} /> : null}
+            {meeting.status === 'scheduled' ? <ActionButton icon={Ban} label="Ställ in" disabled={acting} onClick={onCancel} /> : null}
+            <ActionButton icon={Trash2} label="Ta bort" disabled={acting} onClick={onDelete} danger />
+            {hasDetails ? (
+              <Button type="button" variant="ghost" size="icon" onClick={onToggleExpanded} aria-label={expanded ? 'Dölj detaljer' : 'Visa detaljer'}>
+                {expanded ? <ChevronUp size={16} strokeWidth={1.75} /> : <ChevronDown size={16} strokeWidth={1.75} />}
+              </Button>
+            ) : null}
+          </div>
+        </div>
+        {meeting.meetingUrl ? (
+          <a href={meeting.meetingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--ui-accent)] hover:underline">
+            <ExternalLink size={14} strokeWidth={1.75} />
+            Gå med i mötet
+          </a>
+        ) : null}
+      </div>
+
+      {expanded ? (
+        <div className="space-y-3 border-t border-[var(--ui-border)] px-4 py-3">
+          {meeting.agenda ? <DetailBlock title="Agenda">{meeting.agenda}</DetailBlock> : null}
+          {meeting.summary?.summary ? <DetailBlock title="Sammanfattning (AI)">{meeting.summary.summary}</DetailBlock> : null}
+          {meeting.participants.length > 0 ? (
+            <div>
+              <p className="mb-1.5 text-xs font-semibold text-[var(--ui-text-secondary)]">Deltagare</p>
+              <div className="flex flex-wrap gap-1.5">
+                {meeting.participants.map((participant) => (
+                  <StatusBadge key={participant.id} tone="neutral">
+                    {participant.name}{participant.email ? ` (${participant.email})` : ''}
+                  </StatusBadge>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </Panel>
+  );
+}
+
+function ActionButton({ icon: Icon, label, disabled, onClick, danger = false }: { icon: typeof Play; label: string; disabled: boolean; onClick: () => void; danger?: boolean }) {
+  return (
+    <Button type="button" variant={danger ? 'danger' : 'secondary'} size="compact" onClick={onClick} disabled={disabled}>
+      <Icon size={16} strokeWidth={1.75} />
+      {label}
+    </Button>
+  );
+}
+
+function DetailBlock({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div>
+      <p className="mb-1 text-xs font-semibold text-[var(--ui-text-secondary)]">{title}</p>
+      <p className="whitespace-pre-line text-xs leading-5 text-[var(--ui-text-muted)]">{children}</p>
+    </div>
+  );
+}
+
+function Field({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
+  return <label className={cn('space-y-1.5 text-xs font-semibold text-[var(--ui-text-secondary)]', className)}><span>{label}</span>{children}</label>;
 }

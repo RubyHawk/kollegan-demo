@@ -1,17 +1,20 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { Check } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { cn } from '@shared/lib/utils';
-import { SPRING_SNAPPY } from '@shared/lib/motion';
-import { Icon, SaveButton } from '../_components/shared';
+import { Panel } from '@shared/ui/panel';
+import { StatusBadge } from '@shared/ui/status-badge';
+import { SaveButton } from '../_components/shared';
 import { WorkspacePreview } from './appearance-workspace-preview';
 import {
-  THEMES,
   FONT_OPTIONS,
+  THEMES,
+  type FontOption,
+  type FontSize,
   type ThemeDef,
   type ThemeMode,
-  type FontSize,
-  type FontOption,
 } from '../_components/theme-data';
 
 export const FONT_SIZE_OPTIONS: { id: FontSize; label: string; desc: string }[] = [
@@ -25,8 +28,6 @@ const MODE_OPTIONS: { id: ThemeMode; label: string; desc: string }[] = [
   { id: 'dark', label: 'Mörkt', desc: 'Dämpat fokusläge' },
   { id: 'auto', label: 'Auto', desc: 'Följer enheten' },
 ];
-
-
 
 interface AppearanceSettingsViewProps {
   theme: ThemeMode;
@@ -44,6 +45,52 @@ interface AppearanceSettingsViewProps {
   applyFont: (font: FontOption) => void;
   applyFontSize: (fontSize: FontSize) => void;
   save: () => void;
+}
+
+function SelectionIndicator({ active }: { active: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px]',
+        active
+          ? 'border-[var(--ui-accent)] bg-[var(--ui-accent)] text-[var(--ui-text-inverse)]'
+          : 'border-[var(--ui-border)] text-[var(--ui-text-muted)]',
+      )}
+    >
+      {active ? <Check size={12} strokeWidth={2} /> : null}
+    </span>
+  );
+}
+
+function OptionButton({
+  active,
+  children,
+  className,
+  onClick,
+}: {
+  active: boolean;
+  children: ReactNode;
+  className?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        'rounded-[var(--ui-radius-md)] border px-3 py-2 text-left transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ui-bg)]',
+        active
+          ? 'border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)]'
+          : 'border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-hover)]',
+        className,
+      )}
+    >
+      {children}
+    </button>
+  );
 }
 
 export function AppearanceSettingsView({
@@ -66,143 +113,103 @@ export function AppearanceSettingsView({
   return (
     <div className="space-y-4 sm:space-y-5">
       <motion.section
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-1))] p-4 shadow-[0_18px_44px_rgba(0,0,0,0.06)] sm:p-5 lg:p-6"
+        transition={{ duration: 0.18, ease: 'easeOut' }}
       >
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)] xl:items-start">
-          <div className="space-y-3">
-            <div className="space-y-3">
-              <span className="inline-flex rounded-full border border-[var(--accent-border)] bg-[var(--accent-subtle)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-                Utseende
-              </span>
+        <Panel padding="lg" className="overflow-hidden">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)] xl:items-start">
+            <div className="space-y-4">
               <div className="space-y-2">
-                <h2 className="max-w-3xl text-[2rem] font-semibold tracking-tight text-[var(--text-primary)] sm:text-[2.35rem] lg:text-[2.7rem]">
-                  Gör arbetsytan lugnare, varmare och tydligare.
-                </h2>
-                <p className="max-w-2xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
-                  Välj ett uttryck som känns premium utan att störa jobbet. Allt uppdateras direkt, men själva sidan ska också vara snabb att överblicka och lätt att justera.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-2 min-[440px]:grid-cols-3">
-              {[
-                { label: 'Accent', value: activeTheme.label },
-                { label: 'Typsnitt', value: activeFont.label },
-                { label: 'Textstorlek', value: activeFontSize.label },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 shadow-[0_8px_20px_rgba(0,0,0,0.03)]"
-                >
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                    {item.label}
+                <StatusBadge tone="accent">Utseende</StatusBadge>
+                <div className="space-y-1">
+                  <h2 className="max-w-3xl text-xl font-semibold text-[var(--ui-text)] sm:text-2xl">
+                    Gör arbetsytan lugnare, tydligare och lättare att skanna.
+                  </h2>
+                  <p className="max-w-2xl text-sm leading-6 text-[var(--ui-text-muted)]">
+                    Välj tema, typografi och textstorlek utan att lämna inställningarna. Förhandsvisningen visar hur valen känns i en kompakt ERP-yta.
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
-                    {item.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid gap-2.5 lg:grid-cols-2">
-              <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-3">
-                <div className="mb-2">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Visningsläge</p>
-                  <p className="mt-0.5 text-[11px] leading-4 text-[var(--text-muted)]">
-                    Ljust, mörkt eller auto.
-                  </p>
-                </div>
-                <div className="grid gap-1.5">
-                  {MODE_OPTIONS.map((mode) => {
-                    const active = theme === mode.id;
-                    return (
-                      <button
-                        key={mode.id}
-                        type="button"
-                        onClick={() => applyTheme(mode.id)}
-                        className={cn(
-                          'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition-all',
-                          active
-                            ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_10px_22px_rgba(0,0,0,0.05)]'
-                            : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
-                        )}
-                      >
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-[var(--text-primary)]">{mode.label}</p>
-                        </div>
-                        <span
-                          className={cn(
-                            'flex h-4.5 w-4.5 items-center justify-center rounded-full border text-[9px]',
-                            active
-                              ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
-                              : 'border-[var(--border)] text-[var(--text-muted)]',
-                          )}
-                        >
-                          {active ? '✓' : ''}
-                        </span>
-                      </button>
-                    );
-                  })}
                 </div>
               </div>
 
-              <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-3">
-                <div className="mb-2">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Textstorlek</p>
-                  <p className="mt-0.5 text-[11px] leading-4 text-[var(--text-muted)]">
-                    Tät, normal eller luftig.
-                  </p>
-                </div>
-                <div className="grid gap-1.5">
-                  {FONT_SIZE_OPTIONS.map((size) => {
-                    const active = fontSize === size.id;
-                    return (
-                      <button
-                        key={size.id}
-                        type="button"
-                        onClick={() => applyFontSize(size.id)}
-                        className={cn(
-                          'grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition-all',
-                          active
-                            ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_10px_22px_rgba(0,0,0,0.05)]'
-                            : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
-                        )}
-                      >
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-[var(--text-primary)]">{size.label}</p>
-                        </div>
-                        <span
-                          className={cn(
-                            'text-sm font-semibold text-[var(--text-primary)]',
-                            size.id === 'small' && 'text-sm',
-                            size.id === 'medium' && 'text-base',
-                            size.id === 'large' && 'text-lg',
-                          )}
+              <div className="grid gap-2 min-[440px]:grid-cols-3">
+                {[
+                  { label: 'Accent', value: activeTheme.label },
+                  { label: 'Typsnitt', value: activeFont.label },
+                  { label: 'Textstorlek', value: activeFontSize.label },
+                ].map((item) => (
+                  <Panel key={item.label} variant="subtle" padding="sm">
+                    <p className="text-xs font-medium text-[var(--ui-text-muted)]">{item.label}</p>
+                    <p className="mt-1 truncate text-sm font-semibold text-[var(--ui-text)]">{item.value}</p>
+                  </Panel>
+                ))}
+              </div>
+
+              <div className="grid gap-3 lg:grid-cols-2">
+                <Panel padding="sm" className="space-y-2">
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--ui-text)]">Visningsläge</p>
+                    <p className="text-xs leading-5 text-[var(--ui-text-muted)]">Ljust, mörkt eller auto.</p>
+                  </div>
+                  <div className="grid gap-1.5">
+                    {MODE_OPTIONS.map((mode) => {
+                      const active = theme === mode.id;
+                      return (
+                        <OptionButton
+                          key={mode.id}
+                          active={active}
+                          onClick={() => applyTheme(mode.id)}
+                          className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2"
                         >
-                          Aa
-                        </span>
-                        <span
-                          className={cn(
-                            'flex h-4.5 w-4.5 items-center justify-center rounded-full border text-[9px]',
-                            active
-                              ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
-                              : 'border-[var(--border)] text-[var(--text-muted)]',
-                          )}
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold text-[var(--ui-text)]">{mode.label}</span>
+                            <span className="block text-xs text-[var(--ui-text-muted)]">{mode.desc}</span>
+                          </span>
+                          <SelectionIndicator active={active} />
+                        </OptionButton>
+                      );
+                    })}
+                  </div>
+                </Panel>
+
+                <Panel padding="sm" className="space-y-2">
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--ui-text)]">Textstorlek</p>
+                    <p className="text-xs leading-5 text-[var(--ui-text-muted)]">Tät, normal eller luftig.</p>
+                  </div>
+                  <div className="grid gap-1.5">
+                    {FONT_SIZE_OPTIONS.map((size) => {
+                      const active = fontSize === size.id;
+                      return (
+                        <OptionButton
+                          key={size.id}
+                          active={active}
+                          onClick={() => applyFontSize(size.id)}
+                          className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2"
                         >
-                          {active ? '✓' : ''}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold text-[var(--ui-text)]">{size.label}</span>
+                            <span className="block text-xs text-[var(--ui-text-muted)]">{size.desc}</span>
+                          </span>
+                          <span
+                            className={cn(
+                              'font-semibold text-[var(--ui-text)]',
+                              size.id === 'small' && 'text-sm',
+                              size.id === 'medium' && 'text-base',
+                              size.id === 'large' && 'text-lg',
+                            )}
+                          >
+                            Aa
+                          </span>
+                          <SelectionIndicator active={active} />
+                        </OptionButton>
+                      );
+                    })}
+                  </div>
+                </Panel>
               </div>
             </div>
-          </div>
 
-          <div className="xl:pt-11">
             <WorkspacePreview
               theme={activeTheme}
               dark={resolvedDark}
@@ -210,143 +217,120 @@ export function AppearanceSettingsView({
               sizeLabel={activeFontSize.label}
             />
           </div>
-        </div>
+        </Panel>
       </motion.section>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)]">
         <motion.section
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22, delay: 0.03, ease: 'easeOut' }}
-          className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-[0_18px_44px_rgba(0,0,0,0.06)] sm:p-5"
+          transition={{ duration: 0.18, delay: 0.03, ease: 'easeOut' }}
         >
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-            <div className="max-w-xl">
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Accentpaletter</h3>
-              <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
-                Kompakta val för färgkänslan. Previewn ovan visar hur den aktiva paletten faktiskt beter sig.
-              </p>
+          <Panel padding="md" className="space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="max-w-xl">
+                <h3 className="text-base font-semibold text-[var(--ui-text)]">Accentpaletter</h3>
+                <p className="mt-1 text-sm leading-6 text-[var(--ui-text-muted)]">
+                  Kompakta val för färgkänslan. Accent ska främst synas i fokus, valda tillstånd och primära åtgärder.
+                </p>
+              </div>
+              <StatusBadge tone="accent">Aktiv: {activeTheme.label}</StatusBadge>
             </div>
-            <span className="rounded-full bg-[var(--accent)]/10 px-3 py-1 text-xs font-medium text-[var(--accent)]">
-              Aktiv: {activeTheme.label}
-            </span>
-          </div>
 
-          <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {THEMES.map((item, index) => {
-              const active = item.id === selectedTheme;
-              return (
-                <motion.button
-                  key={item.id}
-                  type="button"
-                  onClick={() => applySelectedTheme(item)}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: index * 0.02, ease: 'easeOut' }}
-                  className={cn(
-                    'relative rounded-[18px] border p-2.5 text-left transition-all',
-                    active
-                      ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_14px_28px_rgba(0,0,0,0.06)]'
-                      : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
-                  )}
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold leading-5 text-[var(--text-primary)]">{item.label}</p>
-                    <p className="mt-0.5 text-[11px] leading-4 text-[var(--text-muted)]">{item.desc}</p>
-                  </div>
-
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {item.swatches.slice(0, 4).map((swatch) => (
-                      <span
-                        key={`${item.id}-${swatch}-dot`}
-                        className="h-3.5 w-3.5 rounded-full border border-black/5 shrink-0"
-                        style={{ background: swatch }}
-                      />
-                    ))}
-                  </div>
-
-                  <AnimatePresence>
-                    {active && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0 }}
-                        transition={SPRING_SNAPPY}
-                        className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white"
-                      >
-                        <Icon path={<polyline points="20 6 9 17 4 12" />} size={11} />
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.button>
-              );
-            })}
-          </div>
+            <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {THEMES.map((item, index) => {
+                const active = item.id === selectedTheme;
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.16, delay: index * 0.015, ease: 'easeOut' }}
+                  >
+                    <OptionButton
+                      active={active}
+                      onClick={() => applySelectedTheme(item)}
+                      className="relative h-full w-full"
+                    >
+                      <span className="grid gap-2">
+                        <span className="min-w-0 pr-7">
+                          <span className="block text-sm font-semibold leading-5 text-[var(--ui-text)]">{item.label}</span>
+                          <span className="block text-xs leading-4 text-[var(--ui-text-muted)]">{item.desc}</span>
+                        </span>
+                        <span className="flex flex-wrap gap-1.5">
+                          {item.swatches.slice(0, 4).map((swatch) => (
+                            <span
+                              key={`${item.id}-${swatch}`}
+                              className="h-3.5 w-3.5 shrink-0 rounded-full border border-[var(--ui-border)]"
+                              style={{ backgroundColor: swatch }}
+                            />
+                          ))}
+                        </span>
+                      </span>
+                      <span className="absolute right-3 top-3">
+                        <SelectionIndicator active={active} />
+                      </span>
+                    </OptionButton>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </Panel>
         </motion.section>
 
         <motion.section
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22, delay: 0.05, ease: 'easeOut' }}
-          className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-[0_18px_44px_rgba(0,0,0,0.06)] sm:p-5"
+          transition={{ duration: 0.18, delay: 0.05, ease: 'easeOut' }}
         >
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Typsnitt</h3>
-            <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
-              Välj ett tydligt uttryck utan att fylla sidan med stora, onödiga kort.
-            </p>
-          </div>
+          <Panel padding="md" className="space-y-4">
+            <div>
+              <h3 className="text-base font-semibold text-[var(--ui-text)]">Typsnitt</h3>
+              <p className="mt-1 text-sm leading-6 text-[var(--ui-text-muted)]">
+                Välj ett tydligt uttryck utan att göra inställningssidan större än arbetet kräver.
+              </p>
+            </div>
 
-          <div className="grid gap-2 min-[420px]:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-            {FONT_OPTIONS.map((font, index) => {
-              const active = font.id === fontFamily;
-              return (
-                <motion.button
-                  key={font.id}
-                  type="button"
-                  onClick={() => applyFont(font)}
-                  initial={{ opacity: 0, x: 8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.18, delay: index * 0.02, ease: 'easeOut' }}
-                  className={cn(
-                    'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[20px] border px-3 py-3 text-left transition-all',
-                    active
-                      ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-[0_12px_24px_rgba(0,0,0,0.05)]'
-                      : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
-                  )}
-                >
-                  <span className="min-w-[28px] text-lg font-medium text-[var(--text-primary)]" style={font.sampleStyle}>
-                    Aa
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{font.label}</p>
-                    <p className="truncate text-xs text-[var(--text-muted)]">{font.desc}</p>
-                  </div>
-                  <span
-                    className={cn(
-                      'flex h-5 w-5 items-center justify-center rounded-full border text-[10px]',
-                      active
-                        ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
-                        : 'border-[var(--border)] text-[var(--text-muted)]',
-                    )}
+            <div className="grid gap-2 min-[420px]:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+              {FONT_OPTIONS.map((font, index) => {
+                const active = font.id === fontFamily;
+                return (
+                  <motion.div
+                    key={font.id}
+                    initial={{ opacity: 0, x: 6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.16, delay: index * 0.015, ease: 'easeOut' }}
                   >
-                    {active ? '✓' : ''}
-                  </span>
-                </motion.button>
-              );
-            })}
-          </div>
+                    <OptionButton
+                      active={active}
+                      onClick={() => applyFont(font)}
+                      className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3"
+                    >
+                      <span className="min-w-7 text-lg font-medium text-[var(--ui-text)]" style={font.sampleStyle}>
+                        Aa
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-[var(--ui-text)]">{font.label}</span>
+                        <span className="block truncate text-xs text-[var(--ui-text-muted)]">{font.desc}</span>
+                      </span>
+                      <SelectionIndicator active={active} />
+                    </OptionButton>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </Panel>
         </motion.section>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] px-4 py-4 shadow-[0_14px_36px_rgba(0,0,0,0.05)] sm:flex-row sm:items-center sm:justify-between sm:px-5">
-        <p className="text-sm text-[var(--text-muted)]">
+      <Panel padding="md" className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm leading-6 text-[var(--ui-text-muted)]">
           Inställningarna sparas lokalt direkt. Använd knappen om du vill bekräfta ändringen tydligt.
         </p>
         <div className="flex justify-end">
           <SaveButton pending={pending} saved={saved} onClick={save} />
         </div>
-      </div>
+      </Panel>
     </div>
   );
 }

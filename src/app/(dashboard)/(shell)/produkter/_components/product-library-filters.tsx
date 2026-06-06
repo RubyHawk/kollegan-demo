@@ -40,13 +40,13 @@ export function ProductFilterPanel({
 }: ProductFilterPanelProps) {
   return (
     <div className="space-y-4">
-      <label className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-3 text-sm text-[var(--text-secondary)]">
+      <label className="flex items-center justify-between rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-3 text-sm text-[var(--ui-text-secondary)]">
         Visa inaktiva
         <input
           type="checkbox"
           checked={showInactive}
           onChange={(event) => onShowInactiveChange(event.target.checked)}
-          className="rounded border-[var(--border)]"
+          className="rounded border-[var(--ui-border)]"
         />
       </label>
 
@@ -94,7 +94,7 @@ function QuickFilters({
 }) {
   return (
     <div>
-      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Snabbfilter</p>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ui-text-muted)]">Snabbfilter</p>
       <div className="space-y-1.5">
         <FilterButton
           active={!categoryFilter}
@@ -129,12 +129,12 @@ function FilterButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm transition-colors',
-        active ? 'bg-[var(--accent)]/10 text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
+        'flex w-full items-center justify-between rounded-[var(--ui-radius-panel)] px-3 py-2.5 text-left text-sm transition-colors',
+        active ? 'bg-[var(--ui-accent)]/10 text-[var(--ui-accent)]' : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-subtle)]',
       )}
     >
       <span>{label}</span>
-      <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 text-xs">{count}</span>
+      <span className="rounded-full bg-[var(--ui-surface-subtle)] px-2 py-0.5 text-xs">{count}</span>
     </button>
   );
 }
@@ -163,31 +163,31 @@ function CategoryHierarchyFilter({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Hierarki</p>
-        <button type="button" onClick={onManageCategories} className="text-xs font-medium text-[var(--accent)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ui-text-muted)]">Hierarki</p>
+        <button type="button" onClick={onManageCategories} className="text-xs font-medium text-[var(--ui-accent)]">
           Hantera
         </button>
       </div>
       <div className="space-y-2">
         {categoryTree.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[var(--border)] px-4 py-5 text-sm text-[var(--text-muted)]">
+          <div className="rounded-[var(--ui-radius-panel)] border border-dashed border-[var(--ui-border)] px-4 py-5 text-sm text-[var(--ui-text-muted)]">
             {categorySupport === 'available'
               ? 'Skapa första huvudkategorin för att börja strukturera biblioteket.'
               : categorySupportMessage ?? 'Kategorier aktiveras när databasen är uppdaterad.'}
           </div>
         ) : (
           categoryTree.map((node) => (
-            <div key={node.main.id} className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-2">
+            <div key={node.main.id} className="rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-2">
               <button
                 type="button"
                 onClick={() => onCategoryFilterChange(`main:${node.main.id}`)}
                 className={cn(
-                  'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm transition-colors',
-                  activeMainFilterId === node.main.id ? 'bg-[var(--surface-0)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)]',
+                  'flex w-full items-center justify-between rounded-[var(--ui-radius-panel)] px-3 py-2.5 text-left text-sm transition-colors',
+                  activeMainFilterId === node.main.id ? 'bg-[var(--ui-surface-raised)] text-[var(--ui-text)]' : 'text-[var(--ui-text-secondary)]',
                 )}
               >
                 <span className="font-medium">{node.main.name}</span>
-                <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 text-xs">
+                <span className="rounded-full bg-[var(--ui-surface-subtle)] px-2 py-0.5 text-xs">
                   {mainCounts.get(node.main.id) ?? 0}
                 </span>
               </button>
@@ -201,8 +201,8 @@ function CategoryHierarchyFilter({
                       className={cn(
                         'rounded-full px-2.5 py-1 text-xs transition-colors',
                         categoryFilter === `sub:${child.id}`
-                          ? 'bg-[var(--accent)] text-white'
-                          : 'bg-[var(--surface-0)] text-[var(--text-secondary)] hover:bg-[var(--surface)]',
+                          ? 'bg-[var(--ui-accent)] text-white'
+                          : 'bg-[var(--ui-surface-raised)] text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface)]',
                       )}
                     >
                       {child.name} - {subCounts.get(child.id) ?? 0}
@@ -231,7 +231,7 @@ function LegacyCategoryFilter({
 }) {
   return (
     <div>
-      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Äldre fria etiketter</p>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ui-text-muted)]">Äldre fria etiketter</p>
       <div className="flex flex-wrap gap-2">
         {labels.map((label) => (
           <button
@@ -241,8 +241,8 @@ function LegacyCategoryFilter({
             className={cn(
               'rounded-full border px-3 py-1.5 text-xs transition-colors',
               categoryFilter === `legacy:${label}`
-                ? 'border-[var(--accent)] bg-[var(--accent)]/8 text-[var(--accent)]'
-                : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
+                ? 'border-[var(--ui-accent)] bg-[var(--ui-accent)]/8 text-[var(--ui-accent)]'
+                : 'border-[var(--ui-border)] text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-subtle)]',
             )}
           >
             {label} - {counts.get(label) ?? 0}

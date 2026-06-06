@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
-import { Check, DownloadSimple, Key, PencilSimple, Printer, Trash } from '@phosphor-icons/react';
+import { KeyRound, Pencil, Trash2 } from 'lucide-react';
 import { changePassword as changeAccountPassword } from '@shared/lib/api/auth-account.api';
 import {
   deletePasskey,
@@ -24,76 +24,23 @@ import { Button } from '@shared/ui/button';
 import { CopyableCode } from '@shared/ui/copyable-code';
 import { OtpInput } from '@shared/ui/otp-input';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import { InlineAlert } from '@shared/ui/inline-alert';
 import { SectionCard, FieldLabel, Input, SaveButton } from '../_components/shared';
+import {
+  ActiveSessionsSection,
+  BackupCodesSection,
+  SecurityOverviewSection,
+  StatusPill,
+  deviceLabel,
+  formatDateTime,
+  formatRelativeDate,
+} from './sakerhet-sections';
 
 type TotpSetupState = {
   qrDataUrl: string;
   secret: string;
   otpAuthUrl?: string;
 } | null;
-
-function formatDateTime(value: string | null): string {
-  if (!value) return '—';
-  return new Date(value).toLocaleString('en-GB');
-}
-
-function formatRelativeDate(value: string | null): string {
-  if (!value) return 'Never used';
-  const diff = Date.now() - new Date(value).getTime();
-  const days = Math.max(1, Math.round(diff / 86_400_000));
-  return days === 1 ? 'Last used 1 day ago' : `Last used ${days} days ago`;
-}
-
-function formatSessionMethod(method: ActiveSessionRecord['mfaMethod']): string {
-  if (method === 'totp') return 'Authenticator app';
-  if (method === 'webauthn') return 'Passkey';
-  return 'Password only';
-}
-
-function deviceLabel(passkey: PasskeyRecord): string {
-  if (passkey.credentialDeviceType === 'singleDevice') return 'Device-bound key';
-  if (passkey.credentialBackedUp) return 'Synced passkey';
-  return 'Passkey';
-}
-
-function StatusPill({
-  children,
-  tone = 'neutral',
-}: {
-  children: React.ReactNode;
-  tone?: 'neutral' | 'success' | 'warning' | 'danger';
-}) {
-  const classes = tone === 'success'
-    ? 'bg-[var(--status-success-bg)] text-[var(--status-success-text)]'
-    : tone === 'warning'
-      ? 'bg-[var(--status-warning-bg)] text-[var(--status-warning-text)]'
-      : tone === 'danger'
-        ? 'bg-[var(--status-danger-bg)] text-[var(--status-danger-text)]'
-        : 'bg-[var(--surface-alt)] text-[var(--text-secondary)]';
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${classes}`}>{children}</span>;
-}
-
-function strengthFor(security: SecurityMfaStatus | null) {
-  if (!security || !security.enabled) {
-    return {
-      label: 'At risk',
-      tone: 'danger' as const,
-      rationale: 'No primary factor is enrolled yet. Add an authenticator app or passkey before enforcement reaches this account.',
-    };
-  }
-  if (security.totpConfigured && security.passkeysRegistered > 0) {
-    return {
-      label: 'Strong',
-      tone: 'success' as const,
-      rationale: 'Passkey and authenticator app are both available, so the account has resilient sign-in options.',
-    };
-  }
-  return {
-    label: 'Standard',
-    tone: 'warning' as const,
-    rationale: 'One primary factor is active. Add a second method to reduce recovery friction and lockout risk.',
-  };
-}
 
 export default function SakerhetClient() {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -302,9 +249,8 @@ export default function SakerhetClient() {
 
   const needsStepUp = !!security && security.enabled && !security.currentSessionMfaAuthenticated;
   const graceWarning = security && !security.enabled && security.graceExpiresAt;
-  const strength = strengthFor(security);
   const totpStep = security?.totpConfigured ? 'Done' : totpSetupState ? 'Verify' : 'Scan';
-  const backupCountLabel = security ? `${security.backupCodesRemaining} unused` : '—';
+  const backupCountLabel = security ? `${security.backupCodesRemaining} unused` : '-';
   const removePasskey = useMemo(
     () => passkeys.find((passkey) => passkey.id === removePasskeyId) ?? null,
     [passkeys, removePasskeyId],
@@ -312,43 +258,19 @@ export default function SakerhetClient() {
 
   return (
     <div className="flex flex-col gap-5">
-      <SectionCard title="Security" description="Sign-in strength, recovery coverage, and active sessions at a glance.">
-        {loading ? (
-          <p className="text-sm text-[var(--text-muted)]">Loading security state…</p>
-        ) : securityError ? (
-          <p className="text-sm text-[var(--status-danger-text)]">{securityError}</p>
-        ) : security ? (
-          <div className="grid gap-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <StatusPill tone={strength.tone}>{strength.label}</StatusPill>
-                  <StatusPill tone={security.currentSessionMfaAuthenticated ? 'success' : 'neutral'}>
-                    {security.currentSessionMfaAuthenticated ? 'Current session verified' : 'Step-up required'}
-                  </StatusPill>
-                </div>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">{strength.rationale}</p>
-              </div>
-            </div>
-            {graceWarning ? (
-              <div className="rounded-lg border border-[var(--status-warning-text)]/20 bg-[var(--status-warning-bg)] px-4 py-3 text-sm text-[var(--status-warning-text)]">
-                Add a sign-in method before {formatDateTime(security.graceExpiresAt)} to avoid enforcement blocking this account.
-              </div>
-            ) : null}
-            {needsStepUp ? (
-              <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-secondary)]">
-                Sign in again with MFA before adding, removing, or regenerating factors in this session.
-              </div>
-            ) : null}
-            {actionError ? <p className="text-sm text-[var(--status-danger-text)]">{actionError}</p> : null}
-            {actionNotice ? <p className="text-sm text-[var(--status-success-text)]">{actionNotice}</p> : null}
-          </div>
-        ) : null}
-      </SectionCard>
+      <SecurityOverviewSection
+        loading={loading}
+        securityError={securityError}
+        security={security}
+        graceWarning={graceWarning}
+        needsStepUp={needsStepUp}
+        actionError={actionError}
+        actionNotice={actionNotice}
+      />
 
       <SectionCard title="Authenticator app" description="Time-based one-time codes from 1Password, Bitwarden, or another authenticator.">
         {!security ? (
-          <p className="text-sm text-[var(--text-muted)]">Loading…</p>
+          <p className="text-sm text-[var(--ui-text-muted)]">Loading...</p>
         ) : (
           <div className="grid gap-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -357,13 +279,13 @@ export default function SakerhetClient() {
                   <StatusPill tone={security.totpConfigured ? 'success' : security.pendingTotpSetup ? 'warning' : 'neutral'}>
                     {security.totpConfigured ? 'Enabled' : security.pendingTotpSetup ? 'Pending verification' : 'Not enabled'}
                   </StatusPill>
-                  <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                  <div className="flex items-center gap-2 text-xs text-[var(--ui-text-muted)]">
                     {['Scan', 'Verify', 'Done'].map((step) => (
-                      <span key={step} className={step === totpStep ? 'font-semibold text-[var(--text-primary)]' : ''}>{step}</span>
+                      <span key={step} className={step === totpStep ? 'font-semibold text-[var(--ui-text)]' : ''}>{step}</span>
                     ))}
                   </div>
                 </div>
-                <p className="text-sm text-[var(--text-secondary)]">Use a six-digit code as a strong fallback beside passkeys.</p>
+                <p className="text-sm text-[var(--ui-text-secondary)]">Use a six-digit code as a strong fallback beside passkeys.</p>
               </div>
               {security.totpConfigured ? (
                 <Button type="button" variant="outline" onClick={() => setRemoveTotpOpen(true)} disabled={needsStepUp}>
@@ -371,32 +293,32 @@ export default function SakerhetClient() {
                 </Button>
               ) : (
                 <Button type="button" onClick={() => void startTotpEnrollment()} disabled={pendingAction === 'totp-setup' || needsStepUp}>
-                  {pendingAction === 'totp-setup' ? 'Loading…' : totpSetupState || security.pendingTotpSetup ? 'Restart setup' : 'Enable'}
+                  {pendingAction === 'totp-setup' ? 'Loading...' : totpSetupState || security.pendingTotpSetup ? 'Restart setup' : 'Enable'}
                 </Button>
               )}
             </div>
 
             {totpSetupState ? (
-              <div className="grid gap-4 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] p-4 md:grid-cols-[176px,minmax(0,1fr)]">
-                <div className="h-fit rounded-xl border border-[var(--border)] bg-white p-2">
+              <div className="grid gap-4 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-4 md:grid-cols-[176px,minmax(0,1fr)]">
+                <div className="h-fit rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-white p-2">
                   <Image src={totpSetupState.qrDataUrl} alt="Authenticator QR code" width={160} height={160} unoptimized />
                 </div>
                 <div className="grid gap-3">
-                  <p className="text-sm leading-6 text-[var(--text-secondary)]">
+                  <p className="text-sm leading-6 text-[var(--ui-text-secondary)]">
                     Scan the QR code, then enter the next code from your app to prove you control it.
                   </p>
                   <button
                     type="button"
                     onClick={() => setShowManualSecret((value) => !value)}
-                    className="w-fit text-sm font-medium text-[var(--accent)] hover:underline"
+                    className="w-fit text-sm font-medium text-[var(--ui-accent)] hover:underline"
                   >
-                    Can’t scan?
+                    Can&apos;t scan?
                   </button>
                   {showManualSecret ? <CopyableCode value={totpSetupState.secret} label="Manual setup key" /> : null}
                   <OtpInput value={totpCode} onChange={setTotpCode} ariaLabel="Authenticator confirmation code" />
                   <div>
                     <Button type="button" onClick={() => void confirmTotpEnrollment()} disabled={totpCode.length !== 6 || pendingAction === 'totp-enable'}>
-                      {pendingAction === 'totp-enable' ? 'Verifying…' : 'Confirm and enable'}
+                      {pendingAction === 'totp-enable' ? 'Verifying...' : 'Confirm and enable'}
                     </Button>
                   </div>
                 </div>
@@ -408,7 +330,7 @@ export default function SakerhetClient() {
 
       <SectionCard title="Passkeys" description="Phishing-resistant sign-in methods for trusted devices and security keys.">
         {!security ? (
-          <p className="text-sm text-[var(--text-muted)]">Loading…</p>
+          <p className="text-sm text-[var(--ui-text-muted)]">Loading...</p>
         ) : (
           <div className="grid gap-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -417,21 +339,21 @@ export default function SakerhetClient() {
                 <Input value={passkeyName} onChange={setPasskeyName} placeholder="Work laptop" />
               </div>
               <Button type="button" onClick={() => void handleAddPasskey()} disabled={pendingAction === 'passkey-add' || needsStepUp}>
-                {pendingAction === 'passkey-add' ? 'Starting…' : 'Add passkey'}
+                {pendingAction === 'passkey-add' ? 'Starting...' : 'Add passkey'}
               </Button>
             </div>
 
             {passkeys.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[var(--border)] px-4 py-5 text-sm text-[var(--text-muted)]">
+              <div className="rounded-[var(--ui-radius-lg)] border border-dashed border-[var(--ui-border)] px-4 py-5 text-sm text-[var(--ui-text-muted)]">
                 No passkeys yet. Add one to make sign-in faster and stronger.
               </div>
             ) : (
-              <div className="divide-y divide-[var(--border-light)] rounded-xl border border-[var(--border)]">
+              <div className="divide-y divide-[var(--ui-border-subtle)] rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)]">
                 {passkeys.map((passkey) => (
                   <div key={passkey.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--surface-alt)] text-[var(--text-secondary)]">
-                        <Key size={20} />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-[var(--ui-radius-md)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text-secondary)]">
+                        <KeyRound aria-hidden="true" size={16} strokeWidth={1.75} />
                       </div>
                       <div className="min-w-0">
                         {editingPasskeyId === passkey.id ? (
@@ -440,7 +362,7 @@ export default function SakerhetClient() {
                               autoFocus
                               value={editingPasskeyName}
                               onChange={(event) => setEditingPasskeyName(event.target.value)}
-                              className="h-9 rounded-lg border border-[var(--border)] bg-[var(--surface-0)] px-3 text-sm outline-none focus:border-[var(--accent)]/60 focus:ring-2 focus:ring-[var(--accent)]/30"
+                              className="h-9 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 text-sm outline-none focus:border-[var(--ui-accent)]/60 focus:ring-2 focus:ring-[var(--ui-accent)]/30"
                             />
                             <Button type="button" size="sm" onClick={() => void handleRenamePasskey(passkey.id)} disabled={pendingAction === `passkey-rename:${passkey.id}`}>
                               Save
@@ -449,11 +371,11 @@ export default function SakerhetClient() {
                         ) : (
                           <>
                             <div className="flex flex-wrap items-center gap-2">
-                              <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{passkey.name}</p>
+                              <p className="truncate text-sm font-semibold text-[var(--ui-text)]">{passkey.name}</p>
                               <StatusPill>{deviceLabel(passkey)}</StatusPill>
                             </div>
-                            <p className="mt-1 text-xs text-[var(--text-muted)]">
-                              {formatRelativeDate(passkey.lastUsedAt)} · Added {formatDateTime(passkey.createdAt)}
+                            <p className="mt-1 text-xs text-[var(--ui-text-muted)]">
+                              {formatRelativeDate(passkey.lastUsedAt)} - Added {formatDateTime(passkey.createdAt)}
                             </p>
                           </>
                         )}
@@ -470,7 +392,7 @@ export default function SakerhetClient() {
                           setEditingPasskeyName(passkey.name);
                         }}
                       >
-                        <PencilSimple />
+                        <Pencil aria-hidden="true" size={16} strokeWidth={1.75} />
                       </Button>
                       <Button
                         type="button"
@@ -480,7 +402,7 @@ export default function SakerhetClient() {
                         onClick={() => setRemovePasskeyId(passkey.id)}
                         disabled={needsStepUp}
                       >
-                        <Trash />
+                        <Trash2 aria-hidden="true" size={16} strokeWidth={1.75} />
                       </Button>
                     </div>
                   </div>
@@ -491,71 +413,18 @@ export default function SakerhetClient() {
         )}
       </SectionCard>
 
-      <SectionCard title="Backup codes" description="Recovery-only codes for the day your normal factor is unavailable.">
-        {!security ? (
-          <p className="text-sm text-[var(--text-muted)]">Loading…</p>
-        ) : (
-          <div className="grid gap-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <StatusPill tone={security.backupCodesRemaining <= 3 ? 'warning' : 'neutral'}>{backupCountLabel}</StatusPill>
-                  <p className="text-sm text-[var(--text-secondary)]">Recovery codes are not primary sign-in factors.</p>
-                </div>
-              </div>
-              <Button type="button" variant="outline" onClick={() => setRegenerateOpen(true)} disabled={!security.enabled || needsStepUp}>
-                Regenerate
-              </Button>
-            </div>
+      <BackupCodesSection
+        security={security}
+        backupCodes={backupCodes}
+        backupCountLabel={backupCountLabel}
+        needsStepUp={needsStepUp}
+        onRegenerate={() => setRegenerateOpen(true)}
+        onCopyAll={() => void copyAllBackupCodes()}
+        onDownload={downloadBackupCodes}
+        onPrint={printBackupCodes}
+      />
 
-            {backupCodes.length > 0 ? (
-              <div className="grid gap-4 rounded-xl border border-[var(--status-warning-text)]/20 bg-[var(--status-warning-bg)] p-4">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">We won’t show these again.</p>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">Store them somewhere separate from your normal sign-in device.</p>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {backupCodes.map((code) => (
-                    <div key={code} className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2">
-                      <code className="flex-1 font-mono text-sm tracking-[0.18em] text-[var(--text-primary)]">{code}</code>
-                      <button type="button" onClick={() => void navigator.clipboard.writeText(code)} className="text-xs text-[var(--accent)] hover:underline">
-                        Copy
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="outline" onClick={() => void copyAllBackupCodes()}><Check />Copy all</Button>
-                  <Button type="button" variant="outline" onClick={downloadBackupCodes}><DownloadSimple />Download .txt</Button>
-                  <Button type="button" variant="outline" onClick={printBackupCodes}><Printer />Print</Button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        )}
-      </SectionCard>
-
-      <SectionCard title="Active sessions" description="Browsers that still hold a valid session for this account.">
-        {loading ? (
-          <p className="text-sm text-[var(--text-muted)]">Loading sessions…</p>
-        ) : sessions.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">No active sessions found.</p>
-        ) : (
-          <div className="grid gap-3">
-            {sessions.map((session) => (
-              <div key={session.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">{session.userAgent || 'Unknown device'}</p>
-                  <StatusPill tone={session.mfaVerifiedAt ? 'success' : 'neutral'}>{formatSessionMethod(session.mfaMethod)}</StatusPill>
-                </div>
-                <p className="mt-1 text-xs text-[var(--text-muted)]">
-                  IP {session.ipAddress ?? 'unknown'} · Started {formatDateTime(session.issuedAt)} · Expires {formatDateTime(session.expiresAt)}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </SectionCard>
+      <ActiveSessionsSection loading={loading} sessions={sessions} />
 
       <SectionCard title="Password" description="Change your password without altering MFA enrollment.">
         <div className="flex flex-col gap-4">
@@ -573,7 +442,7 @@ export default function SakerhetClient() {
               <Input value={confirmPassword} onChange={setConfirmPassword} placeholder="Repeat password" type="password" />
             </div>
           </div>
-          {passwordError ? <p className="text-sm text-[var(--status-danger-text)]">{passwordError}</p> : null}
+          {passwordError ? <InlineAlert tone="danger">{passwordError}</InlineAlert> : null}
           <SaveButton pending={passwordPending} saved={passwordSaved} onClick={() => void changePassword()} />
         </div>
       </SectionCard>

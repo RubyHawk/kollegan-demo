@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ReactNode } from 'react';
-import { ArrowsClockwise, Check, Copy, FolderOpen, Folders, MagnifyingGlass, Plus, Sparkle } from '@phosphor-icons/react';
+import { Check, Copy, FolderOpen, Folders, Plus, RefreshCw, Search, Sparkles } from 'lucide-react';
 import { Button } from '@shared/ui/button';
 import type { OfferProduct } from '@shared/lib/api/products.api';
 import { ProductRow } from './product-row';
@@ -52,23 +52,23 @@ export function ProductLibraryPanel({
   onDelete,
 }: ProductLibraryPanelProps) {
   return (
-    <section className="order-1 overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm xl:order-2">
-      <div className="border-b border-[var(--border)] px-4 py-4 sm:px-5">
+    <section className="order-1 overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] shadow-sm xl:order-2">
+      <div className="border-b border-[var(--ui-border)] px-4 py-4 sm:px-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <p className="text-base font-semibold text-[var(--text-primary)]">Bibliotek</p>
+          <p className="text-base font-semibold text-[var(--ui-text)]">Bibliotek</p>
           <div className="flex flex-wrap gap-2">
             {hasActiveFilters && (
-              <Button type="button" variant="outline" onClick={onResetFilters} className="h-10 rounded-xl px-3.5">
-                <ArrowsClockwise size={16} weight="bold" />
+              <Button type="button" variant="outline" onClick={onResetFilters} className="h-10 rounded-[var(--ui-radius-control)] px-3.5">
+                <RefreshCw aria-hidden="true" size={16} strokeWidth={2} />
                 Rensa
               </Button>
             )}
-            <Button type="button" variant="outline" onClick={onCopyViewLink} className="h-10 rounded-xl px-3.5">
-              {viewLinkCopied ? <Check size={16} weight="bold" /> : <Copy size={16} weight="bold" />}
+            <Button type="button" variant="outline" onClick={onCopyViewLink} className="h-10 rounded-[var(--ui-radius-control)] px-3.5">
+              {viewLinkCopied ? <Check aria-hidden="true" size={16} strokeWidth={2} /> : <Copy aria-hidden="true" size={16} strokeWidth={2} />}
               Kopiera vy
             </Button>
-            <Button type="button" variant="outline" onClick={onReload} className="h-10 rounded-xl px-3.5">
-              <ArrowsClockwise size={16} weight="bold" />
+            <Button type="button" variant="outline" onClick={onReload} className="h-10 rounded-[var(--ui-radius-control)] px-3.5">
+              <RefreshCw aria-hidden="true" size={16} strokeWidth={2} />
               Ladda om
             </Button>
           </div>
@@ -76,19 +76,19 @@ export function ProductLibraryPanel({
 
         <div className="mt-4 flex flex-col gap-3 lg:flex-row">
           <label className="relative block flex-1">
-            <MagnifyingGlass size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+            <Search aria-hidden="true" size={16} strokeWidth={2} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)]" />
             <input
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder="Sök namn, beskrivning, SKU, enhet eller kategori"
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
+              className="w-full rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface)] py-3 pl-9 pr-3 text-sm text-[var(--ui-text)] placeholder:text-[var(--ui-text-muted)] focus:border-[var(--ui-accent)] focus:outline-none"
             />
           </label>
           <Button
             type="button"
             variant="outline"
             onClick={() => onFiltersOpenChange(!filtersOpen)}
-            className="rounded-2xl xl:hidden"
+            className="rounded-[var(--ui-radius-panel)] xl:hidden"
           >
             {filtersOpen ? 'Dölj filter' : 'Visa filter'}
           </Button>
@@ -103,7 +103,7 @@ export function ProductLibraryPanel({
               transition={{ duration: 0.18, ease: 'easeOut' }}
               className="overflow-hidden xl:hidden"
             >
-              <div className="mt-4 rounded-[20px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
+              <div className="mt-4 rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-4">
                 {filterPanel}
               </div>
             </motion.div>
@@ -146,7 +146,7 @@ function ProductLoadingSkeleton() {
   return (
     <div>
       {[1, 2, 3, 4].map((item) => (
-        <div key={item} className="h-14 animate-pulse border-b border-[var(--border)] last:border-b-0" />
+        <div key={item} className="h-14 animate-pulse border-b border-[var(--ui-border)] last:border-b-0" />
       ))}
     </div>
   );
@@ -165,26 +165,26 @@ function ProductEmptyState({
     <motion.div
       initial={{ opacity: 0, scale: 0.985 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="m-4 flex min-h-[360px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-6 text-center"
+      className="m-4 flex min-h-[360px] flex-col items-center justify-center rounded-[var(--ui-radius-panel)] border border-dashed border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-6 text-center"
     >
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[24px] bg-[var(--surface-0)] text-[var(--text-muted)]">
-        {hasActiveFilters ? <Sparkle size={24} weight="duotone" /> : <FolderOpen size={24} weight="duotone" />}
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[var(--ui-radius-panel)] bg-[var(--ui-surface-raised)] text-[var(--ui-text-muted)]">
+        {hasActiveFilters ? <Sparkles aria-hidden="true" size={24} strokeWidth={1.75} /> : <FolderOpen aria-hidden="true" size={24} strokeWidth={1.75} />}
       </div>
-      <p className="text-base font-semibold text-[var(--text-primary)]">
+      <p className="text-base font-semibold text-[var(--ui-text)]">
         {hasActiveFilters ? 'Ingen produkt matchar filtret' : 'Produktbiblioteket är tomt'}
       </p>
-      <p className="mt-2 max-w-md text-sm leading-7 text-[var(--text-muted)]">
+      <p className="mt-2 max-w-md text-sm leading-7 text-[var(--ui-text-muted)]">
         {hasActiveFilters
           ? 'Prova att rensa filtren eller sök bredare för att hitta rätt post.'
           : 'Börja med de vanligaste tjänsterna och ge dem en tydlig struktur så att offertsidan känns självklar för alla som jobbar i den.'}
       </p>
       <div className="mt-5 flex flex-wrap justify-center gap-2">
-        <Button type="button" onClick={onCreateProduct} className="h-10 rounded-xl px-3.5">
-          <Plus size={16} weight="bold" />
+        <Button type="button" onClick={onCreateProduct} className="h-10 rounded-[var(--ui-radius-control)] px-3.5">
+          <Plus aria-hidden="true" size={16} strokeWidth={2} />
           Ny produkt
         </Button>
-        <Button type="button" variant="outline" onClick={onManageCategories} className="h-10 rounded-xl px-3.5">
-          <Folders size={16} weight="bold" />
+        <Button type="button" variant="outline" onClick={onManageCategories} className="h-10 rounded-[var(--ui-radius-control)] px-3.5">
+          <Folders aria-hidden="true" size={16} strokeWidth={2} />
           Hantera kategorier
         </Button>
       </div>

@@ -1,8 +1,10 @@
 'use client';
 
 import { useId, useRef, useState } from 'react';
-import { ImageSquare, Trash, UploadSimple } from '@phosphor-icons/react';
+import { Image as ImageIcon, Trash2, Upload } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
+import { Button } from '@shared/ui/button';
+import { InlineAlert } from '@shared/ui/inline-alert';
 
 const ACCEPTED_TYPES = new Set([
   'image/png',
@@ -13,7 +15,7 @@ const ACCEPTED_TYPES = new Set([
 ]);
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
-const RECOMMENDED_SIZE = 'Kvadratisk PNG eller WebP, helst 512×512 px, max 2 MB.';
+const RECOMMENDED_SIZE = 'Kvadratisk PNG eller WebP, helst 512x512 px, max 2 MB.';
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -26,7 +28,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
 
 function loadImageMeta(dataUrl: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
-    const image = new Image();
+    const image = new window.Image();
     image.onerror = () => reject(new Error('Kunde inte läsa bildens storlek.'));
     image.onload = () => resolve({ width: image.width, height: image.height });
     image.src = dataUrl;
@@ -96,15 +98,13 @@ export function CompanyLogoUpload({ value, onChange }: CompanyLogoUploadProps) {
           event.preventDefault();
           setDragging(false);
           const file = event.dataTransfer.files?.[0];
-          if (file) {
-            void handleFile(file);
-          }
+          if (file) void handleFile(file);
         }}
         className={cn(
-          'group flex min-h-[152px] cursor-pointer flex-col items-center justify-center rounded-[24px] border border-dashed bg-[var(--surface)] px-4 py-5 text-center transition-colors',
+          'group flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-[var(--ui-radius-lg)] border border-dashed bg-[var(--ui-surface)] px-4 py-5 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2',
           dragging
-            ? 'border-[var(--accent)] bg-[var(--accent)]/6'
-            : 'border-[var(--border)] hover:border-[var(--accent)]/45 hover:bg-[var(--surface-alt)]',
+            ? 'border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)]'
+            : 'border-[var(--ui-border)] hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-hover)]',
         )}
       >
         {value ? (
@@ -113,21 +113,21 @@ export function CompanyLogoUpload({ value, onChange }: CompanyLogoUploadProps) {
             <img
               src={value}
               alt="Förhandsvisning av företagslogga"
-              className="h-20 w-20 rounded-2xl border border-[var(--border)] bg-white object-contain p-2 shadow-sm"
+              className="h-20 w-20 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] object-contain p-2"
             />
             <div className="space-y-1">
-              <p className="text-sm font-medium text-[var(--text-primary)]">Loggan är redo att sparas</p>
-              <p className="text-xs text-[var(--text-muted)]">Klicka eller droppa en ny bild för att byta ut den.</p>
+              <p className="text-sm font-medium text-[var(--ui-text)]">Loggan är redo att sparas</p>
+              <p className="text-xs text-[var(--ui-text-muted)]">Klicka eller droppa en ny bild för att byta ut den.</p>
             </div>
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)]">
-              <UploadSimple size={22} weight="bold" />
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-[var(--ui-radius-lg)] border border-[var(--ui-accent-border)] bg-[var(--ui-accent-subtle)] text-[var(--ui-accent)]">
+              <Upload size={22} strokeWidth={1.75} />
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-[var(--text-primary)]">Dra in loggan här eller klicka för att välja</p>
-              <p className="text-xs leading-5 text-[var(--text-muted)]">{RECOMMENDED_SIZE}</p>
+              <p className="text-sm font-medium text-[var(--ui-text)]">Dra in loggan här eller klicka för att välja</p>
+              <p className="text-xs leading-5 text-[var(--ui-text-muted)]">{RECOMMENDED_SIZE}</p>
             </div>
           </div>
         )}
@@ -141,52 +141,48 @@ export function CompanyLogoUpload({ value, onChange }: CompanyLogoUploadProps) {
         className="hidden"
         onChange={(event) => {
           const file = event.target.files?.[0];
-          if (file) {
-            void handleFile(file);
-          }
+          if (file) void handleFile(file);
           event.currentTarget.value = '';
         }}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2.5">
         <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-muted)]">Logga</p>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+          <p className="text-xs font-medium uppercase text-[var(--ui-text-muted)]">Logga</p>
+          <p className="mt-1 text-sm text-[var(--ui-text-secondary)]">
             {meta
-              ? `${meta.width}×${meta.height} px`
+              ? `${meta.width}x${meta.height} px`
               : value
                 ? 'Sparad som bilddata på företaget.'
                 : 'Ingen logga vald ännu.'}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
-          >
-            <ImageSquare size={15} weight="duotone" />
+          <Button type="button" variant="secondary" size="compact" onClick={() => inputRef.current?.click()}>
+            <ImageIcon size={16} strokeWidth={1.75} />
             {value ? 'Byt logga' : 'Välj logga'}
-          </button>
-          {value && (
-            <button
+          </Button>
+          {value ? (
+            <Button
               type="button"
+              variant="ghost"
+              size="compact"
               onClick={() => {
                 onChange('');
                 setMeta(null);
                 setError(null);
               }}
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-medium text-[var(--text-muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+              className="text-[var(--ui-danger-text)] hover:text-[var(--ui-danger-text)]"
             >
-              <Trash size={15} weight="duotone" />
+              <Trash2 size={16} strokeWidth={1.75} />
               Ta bort
-            </button>
-          )}
+            </Button>
+          ) : null}
         </div>
       </div>
 
-      {loading && <p className="text-xs text-[var(--text-muted)]">Läser in loggan…</p>}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {loading ? <p className="text-xs text-[var(--ui-text-muted)]">Läser in loggan...</p> : null}
+      {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
     </div>
   );
 }

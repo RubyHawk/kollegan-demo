@@ -1,6 +1,15 @@
 # Frontend Guidelines
 
-Kollegan ERP UI should be mobile-ready, dense where needed, and consistent across offers, projects, companies, products, templates, settings, and dashboards.
+Kollegan ERP UI is governed by `docs/DESIGN_SYSTEM.md`. This file is the short operating checklist for feature work.
+
+## Required Reading
+
+Before creating or refactoring non-login UI, read:
+
+- `docs/AI_ENGINEERING.md`
+- `docs/DESIGN_SYSTEM.md`
+- `docs/ai/UI_GENERATION_CHECKLIST.md`
+- `docs/BRANDING_AND_THEMING.md` when branding, public offers, PDFs, emails, or themes are involved
 
 ## Route Structure
 
@@ -22,44 +31,21 @@ src/app/(dashboard)/(shell)/feature/
 
 `page.tsx` composes. Containers wire state. Components render. Panels and dialogs own workflow forms. API clients own HTTP calls.
 
-## Layout
+## UI Rules
 
-Standard dashboard layout:
-
-```txt
-Page header
-→ toolbar/filter row
-→ main content
-→ optional side panel/dialog
-```
-
-Breakpoints:
-
-- mobile: default
-- tablet: `md`
-- desktop: `lg`
-- wide: `xl`/`2xl`
-
-Build mobile-first, then enhance upward. No critical workflow may require hover or desktop-only controls.
+- Use shared UI primitives from `src/shared/ui`.
+- Use `--ui-*` semantic tokens for color, radius, shadows, and state styling.
+- Use Lucide icons in ERP screens unless explicitly approved.
+- Build mobile-first and enhance upward.
+- Keep ERP screens compact, scannable, and work-focused.
+- Do not create nested cards, decorative ERP backgrounds, or marketing-style page sections.
+- Do not hardcode raw Tailwind color families for business states.
+- Do not invent page-local button, badge, input, table, panel, or toolbar systems.
+- Keep Swedish UI copy in ERP screens.
 
 ## Density
 
-Supported internal UI density modes:
-
-- `comfortable`
-- `compact`
-
-Density can affect app rows, card padding, toolbar spacing, and table cells. It must not affect public offers, PDFs, or emails.
-
-## Visual System
-
-- Use `src/shared/ui` primitives.
-- Use Phosphor icons.
-- Use semantic CSS variables.
-- Do not hardcode business-state colors.
-- Avoid nested cards.
-- Avoid decorative gradients/orbs in ERP workflows.
-- Swedish UI copy in ERP screens.
+Default density is compact. Comfortable density is reserved for setup flows, sparse forms, confirmations, and mobile touch accuracy.
 
 ## File Size
 

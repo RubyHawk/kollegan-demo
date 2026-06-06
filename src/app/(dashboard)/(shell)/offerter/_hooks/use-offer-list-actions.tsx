@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { TriangleAlert } from 'lucide-react';
 import {
   OfferActionApiError,
   bulkSendOffers,
@@ -76,11 +77,7 @@ export function useOfferListActions({
             message: 'Offerten stoppades av kvalitetskontrollen. Läs vad som måste rättas innan du skickar igen.',
             color: 'amber',
             icon: (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600">
-                <path d="M12 9v4" />
-                <path d="M12 17h.01" />
-                <path d="m3.2 18 7.9-13.7a1 1 0 0 1 1.8 0L20.8 18a1 1 0 0 1-.9 1.5H4.1a1 1 0 0 1-.9-1.5Z" />
-              </svg>
+              <TriangleAlert aria-hidden="true" size={14} strokeWidth={2} />
             ),
           });
           return;

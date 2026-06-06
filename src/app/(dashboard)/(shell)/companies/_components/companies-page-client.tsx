@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowSquareOut, Buildings, FileText, Package, Plus, UsersThree } from '@phosphor-icons/react';
+import { Building2, ExternalLink, FileText, Package, Plus, Search, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
   createCompany,
@@ -15,7 +15,13 @@ import {
 } from '@shared/lib/api/companies.api';
 import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
+import { Button } from '@shared/ui/button';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import { EmptyState } from '@shared/ui/empty-state';
+import { InlineAlert } from '@shared/ui/inline-alert';
+import { Input } from '@shared/ui/input';
+import { Panel } from '@shared/ui/panel';
+import { StatusBadge } from '@shared/ui/status-badge';
 import {
   CompanyMembersDialog,
   type AssignableUserRecord,
@@ -169,7 +175,7 @@ export function CompaniesPageClient() {
         });
         await loadMembers(membersCompany);
       } catch {
-        setError('Kunde inte skapa kontoanvändare. Försök igen.');
+        setError('Kunde inte skapa konto-användare. Försök igen.');
       } finally {
         setMemberSaving(false);
       }
@@ -231,83 +237,56 @@ export function CompaniesPageClient() {
   );
 
   return (
-    <div className="space-y-6">
-      <section className="overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)]">
+    <div className="space-y-5">
+      <Panel padding="none" className="overflow-hidden">
         <div className="grid gap-0 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="border-b border-[var(--border)] px-6 py-6 xl:border-b-0 xl:border-r">
-            <span className="rounded-full border border-[var(--accent)]/20 bg-[var(--accent)]/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-              Företag
-            </span>
-            <h2 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight text-[var(--text-primary)]">
+          <div className="border-b border-[var(--ui-border)] px-5 py-5 xl:border-b-0 xl:border-r">
+            <StatusBadge tone="accent">Företag</StatusBadge>
+            <h2 className="mt-4 max-w-2xl text-2xl font-semibold leading-tight text-[var(--ui-text)]">
               Håll branding, mallar, produkter och medlemmar samlade per företag.
             </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-secondary)]">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ui-text-muted)]">
               Varje företag styr sitt eget offertuttryck. Välj aktivt företag för att byta vilka mallar,
               produkter och kontaktuppgifter som används i resten av flödet.
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={openCreate}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-95"
-              >
-                <Plus size={16} weight="bold" />
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Button type="button" onClick={openCreate}>
+                <Plus size={16} strokeWidth={1.75} />
                 Nytt företag
-              </button>
-              {selectedCompany && (
+              </Button>
+              {selectedCompany ? (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => openTemplatesForCompany(selectedCompany)}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
-                  >
-                    <FileText size={16} weight="duotone" />
+                  <Button type="button" variant="secondary" onClick={() => openTemplatesForCompany(selectedCompany)}>
+                    <FileText size={16} strokeWidth={1.75} />
                     Öppna mallar för {selectedCompany.name}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openProductsForCompany(selectedCompany)}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
-                  >
-                    <Package size={16} weight="duotone" />
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => openProductsForCompany(selectedCompany)}>
+                    <Package size={16} strokeWidth={1.75} />
                     Öppna produkter
-                  </button>
+                  </Button>
                 </>
-              )}
+              ) : null}
             </div>
           </div>
 
-          <div className="grid gap-3 p-6 sm:grid-cols-3 xl:grid-cols-1">
-            <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-              <div className="flex items-center gap-2 text-[var(--text-muted)]">
-                <Buildings size={16} weight="duotone" />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">Företag</span>
-              </div>
-              <p className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">{companies.length}</p>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">Aktiva företag i ditt offertflöde.</p>
-            </div>
-            <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-              <div className="flex items-center gap-2 text-[var(--text-muted)]">
-                <ArrowSquareOut size={16} weight="duotone" />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">Valt nu</span>
-              </div>
-              <p className="mt-3 truncate text-lg font-semibold text-[var(--text-primary)]">
-                {selectedCompany?.name ?? 'Inget valt ännu'}
-              </p>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">Det här företaget styr vilka mallar och produkter som syns.</p>
-            </div>
-            <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] p-4">
-              <div className="flex items-center gap-2 text-[var(--text-muted)]">
-                <UsersThree size={16} weight="duotone" />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">Behörighet</span>
-              </div>
-              <p className="mt-3 text-sm font-semibold text-[var(--text-primary)]">Staff + företagsadmin</p>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">Skapa företag, koppla medlemmar och bygg branding per bolag.</p>
-            </div>
+          <div className="grid gap-3 p-5 sm:grid-cols-3 xl:grid-cols-1">
+            <MetricCard icon={Building2} label="Företag" value={companies.length} description="Aktiva företag i ditt offertflöde." />
+            <MetricCard
+              icon={ExternalLink}
+              label="Valt nu"
+              value={selectedCompany?.name ?? 'Inget valt ännu'}
+              description="Det här företaget styr vilka mallar och produkter som syns."
+            />
+            <MetricCard
+              icon={Users}
+              label="Behörighet"
+              value="Staff + företagsadmin"
+              description="Skapa företag, koppla medlemmar och bygg branding per bolag."
+            />
           </div>
         </div>
-      </section>
+      </Panel>
 
       <CompanyScopeSelector
         companies={scopedCompanies}
@@ -318,21 +297,18 @@ export function CompaniesPageClient() {
         description="Det här valet påverkar offertmallar, produktbibliotek och branding i resten av systemet."
       />
 
-      <section className="rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)]">
-        <div className="flex flex-col gap-4 border-b border-[var(--border)] px-6 py-5 md:flex-row md:items-end md:justify-between">
+      <Panel padding="none" className="overflow-hidden">
+        <div className="flex flex-col gap-4 border-b border-[var(--ui-border)] px-5 py-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Företagsöversikt</h3>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
+            <h3 className="text-lg font-semibold text-[var(--ui-text)]">Företagsöversikt</h3>
+            <p className="mt-1 text-sm text-[var(--ui-text-muted)]">
               Redigera branding, hantera medlemmar och öppna rätt mallar och produkter för varje företag.
             </p>
           </div>
 
           <div className="relative">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
+            <Search size={16} strokeWidth={1.75} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)]" />
+            <Input
               value={searchInput}
               onChange={(event) => {
                 const value = event.target.value;
@@ -341,45 +317,34 @@ export function CompaniesPageClient() {
                 searchDebounce.current = setTimeout(() => setSearch(value), 300);
               }}
               placeholder="Sök företag..."
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--accent)] focus:outline-none md:w-60"
+              className="pl-9 md:w-60"
             />
           </div>
         </div>
 
-        <div className="px-4 py-4 sm:px-6">
-          {error && (
-            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300">
-              {error}
-            </div>
-          )}
+        <div className="px-4 py-4 sm:px-5">
+          {error ? <InlineAlert tone="danger" className="mb-4">{error}</InlineAlert> : null}
 
-          {loading && (
+          {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((item) => (
-                <div key={item} className="h-28 animate-pulse rounded-[26px] bg-[var(--surface-alt)]" />
+                <div key={item} className="h-28 animate-pulse rounded-[var(--ui-radius-lg)] bg-[var(--ui-surface-subtle)]" />
               ))}
             </div>
-          )}
+          ) : null}
 
-          {!loading && companies.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-[24px] border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                <Buildings size={24} weight="duotone" />
-              </div>
-              <p className="text-sm font-medium text-[var(--text-secondary)]">Inga företag hittades</p>
-              <p className="mt-1 text-xs text-[var(--text-muted)]">Skapa ditt första företag för att börja styra branding och scope.</p>
-              <button
-                type="button"
-                onClick={openCreate}
-                className="mt-5 rounded-2xl bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-95"
-              >
-                + Nytt företag
-              </button>
-            </div>
-          )}
+          {!loading && companies.length === 0 ? (
+            <EmptyState
+              icon={Building2}
+              title="Inga företag hittades"
+              description="Skapa ditt första företag för att börja styra branding och scope."
+              actionLabel="Nytt företag"
+              onAction={openCreate}
+            />
+          ) : null}
 
-          {!loading && companies.length > 0 && (
-            <div className="overflow-hidden rounded-[26px] border border-[var(--border)] bg-[var(--surface-0)]">
+          {!loading && companies.length > 0 ? (
+            <Panel padding="none" className="overflow-hidden">
               {companies.map((company) => (
                 <CompanyRow
                   key={company.id}
@@ -395,10 +360,10 @@ export function CompaniesPageClient() {
                   onLeadIntake={setLeadIntakeCompany}
                 />
               ))}
-            </div>
-          )}
+            </Panel>
+          ) : null}
         </div>
-      </section>
+      </Panel>
 
       <CompanyModal
         key={editCompany?.id ?? (modalOpen ? 'new-company' : 'closed')}
@@ -432,7 +397,7 @@ export function CompaniesPageClient() {
         onOpenProducts={openProductsForCompany}
       />
 
-      {membersCompany && (
+      {membersCompany ? (
         <CompanyMembersDialog
           open={Boolean(membersCompany)}
           companyName={membersCompany.name}
@@ -447,7 +412,7 @@ export function CompaniesPageClient() {
           onCreateMemberAccount={handleCreateMemberAccount}
           onRemoveMember={handleRemoveMember}
         />
-      )}
+      ) : null}
 
       <LeadIntakeDialog
         open={Boolean(leadIntakeCompany)}
@@ -471,5 +436,28 @@ export function CompaniesPageClient() {
         }}
       />
     </div>
+  );
+}
+
+function MetricCard({
+  icon: Icon,
+  label,
+  value,
+  description,
+}: {
+  icon: typeof Building2;
+  label: string;
+  value: string | number;
+  description: string;
+}) {
+  return (
+    <Panel variant="subtle" className="space-y-3">
+      <div className="flex items-center gap-2 text-[var(--ui-text-muted)]">
+        <Icon size={16} strokeWidth={1.75} />
+        <span className="text-xs font-semibold uppercase">{label}</span>
+      </div>
+      <p className="truncate text-lg font-semibold text-[var(--ui-text)]">{value}</p>
+      <p className="text-sm leading-5 text-[var(--ui-text-muted)]">{description}</p>
+    </Panel>
   );
 }

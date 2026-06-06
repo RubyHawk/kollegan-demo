@@ -1,82 +1,84 @@
-/**
- * /settings/integrations
- *
- * Integration hub — connect external services like CRMs, calendar providers,
- * telephony platforms, and automation tools.
- * Placeholder with integration cards; connect to OAuth flows when ready.
- */
+import { Button } from '@shared/ui/button';
+import { Panel } from '@shared/ui/panel';
+import { StatusBadge } from '@shared/ui/status-badge';
 
-import { INTEGRATIONS } from './_data';
+import { INTEGRATIONS, type Integration } from './_data';
+
+function IntegrationIcon({ integration }: { integration: Integration }) {
+  const Icon = integration.Icon;
+
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text-secondary)]">
+      <Icon aria-hidden="true" size={16} strokeWidth={1.75} />
+    </div>
+  );
+}
+
+function IntegrationCategory({ category }: { category: string }) {
+  return (
+    <StatusBadge tone="neutral" className="text-[10px]">
+      {category}
+    </StatusBadge>
+  );
+}
+
+function IntegrationCard({ integration, connected }: { integration: Integration; connected: boolean }) {
+  return (
+    <Panel padding="lg" className={connected ? 'border-[var(--ui-success-border)]' : undefined}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <IntegrationIcon integration={integration} />
+          <div className="min-w-0">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <p className="text-sm font-semibold text-[var(--ui-text)]">{integration.name}</p>
+              <IntegrationCategory category={integration.category} />
+            </div>
+            <p className="text-xs leading-relaxed text-[var(--ui-text-muted)]">{integration.desc}</p>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2 sm:justify-end">
+          {connected ? (
+            <>
+              <StatusBadge tone="success">{integration.connectedLabel}</StatusBadge>
+              <Button type="button" variant="secondary" size="compact" disabled>
+                Hantera
+              </Button>
+            </>
+          ) : (
+            <Button type="button" size="compact" disabled>
+              Anslut
+            </Button>
+          )}
+        </div>
+      </div>
+    </Panel>
+  );
+}
 
 export default function IntegrationsPage() {
-  const connected = INTEGRATIONS.filter((i) => i.connected);
-  const available = INTEGRATIONS.filter((i) => !i.connected);
+  const connected = INTEGRATIONS.filter((integration) => integration.connected);
+  const available = INTEGRATIONS.filter((integration) => !integration.connected);
 
   return (
     <div className="space-y-6">
-
-      {/* Connected */}
-      <div>
-        <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-3">Anslutna</h2>
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Anslutna</h2>
         <div className="space-y-3">
-          {connected.map((i) => (
-            <div key={i.name} className="rounded-xl border border-emerald-200 dark:border-emerald-800/30 bg-[var(--surface)] p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center text-[var(--text-secondary)] shrink-0">
-                    <i.Icon />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">{i.name}</p>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--surface-alt)] border border-[var(--border)] rounded-full px-1.5 py-0.5">
-                        {i.category}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">{i.desc}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    {i.connectedLabel}
-                  </span>
-                  <button disabled className="rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1 text-xs text-[var(--text-secondary)] opacity-50 cursor-not-allowed">
-                    Hantera
-                  </button>
-                </div>
-              </div>
-            </div>
+          {connected.map((integration) => (
+            <IntegrationCard key={integration.name} integration={integration} connected />
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Available */}
-      <div>
-        <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-3">Tillgängliga</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {available.map((i) => (
-            <div key={i.name} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center text-[var(--text-secondary)] shrink-0">
-                <i.Icon />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">{i.name}</p>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--surface-alt)] border border-[var(--border)] rounded-full px-1.5 py-0.5">
-                    {i.category}
-                  </span>
-                </div>
-                <p className="text-xs text-[var(--text-muted)] leading-relaxed mb-3">{i.desc}</p>
-                <button disabled className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white opacity-40 cursor-not-allowed">
-                  Anslut
-                </button>
-              </div>
-            </div>
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Tillgängliga</h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {available.map((integration) => (
+            <IntegrationCard key={integration.name} integration={integration} connected={false} />
           ))}
         </div>
-      </div>
-
+      </section>
     </div>
   );
 }

@@ -4,20 +4,11 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import {
-  ArrowLeftIcon,
-  CheckCircleIcon,
-  ClockCounterClockwiseIcon,
-  FileTextIcon,
-  PackageIcon,
-  PencilSimpleIcon,
-  PlusIcon,
-  TruckIcon,
-} from '@phosphor-icons/react';
+import { ArrowLeft, CheckCircle, FileText, History, Package, Pencil, Plus, Truck } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
-import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
+import { StatusBadge, type StatusTone } from '@shared/ui/status-badge';
 import {
   ContextualNextStep,
   DetailStat,
@@ -31,15 +22,9 @@ import {
   RecordPurchaseOrderReceiptPanel,
 } from '../_components/project-panels';
 import { ProjectDetailLoadingState } from '../_components/project-detail-loading-state';
-import { STAGE_STYLE, fmtActor, fmtDate, fmtSEK } from '../_lib/project-display';
+import { fmtActor, fmtDate, fmtSEK } from '../_lib/project-display';
 import { useProjectDetailStore } from '../_store/project-detail.store';
-import {
-  PROJECT_STAGE_LABELS,
-  PROJECT_STAGES,
-  type Project,
-  type ProjectStage,
-  type PurchaseOrder,
-} from '../_store/types';
+import { PROJECT_STAGE_LABELS, PROJECT_STAGES, type Project, type ProjectStage, type PurchaseOrder } from '../_store/types';
 
 const PO_LABEL: Record<string, string> = {
   draft: 'Utkast',
@@ -48,11 +33,19 @@ const PO_LABEL: Record<string, string> = {
   cancelled: 'Makulerad',
 };
 
-const PO_STATUS_CLASS: Record<string, string> = {
-  draft: 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)]',
-  submitted: 'border-transparent bg-[var(--status-warning-bg)] text-[var(--status-warning-text)]',
-  received: 'border-transparent bg-[var(--status-success-bg)] text-[var(--status-success-text)]',
-  cancelled: 'border-transparent bg-[var(--status-danger-bg)] text-[var(--status-danger-text)]',
+const PO_STATUS_TONE: Record<string, StatusTone> = {
+  draft: 'neutral',
+  submitted: 'warning',
+  received: 'success',
+  cancelled: 'danger',
+};
+
+const STAGE_TONE: Record<ProjectStage, StatusTone> = {
+  details: 'neutral',
+  ordered: 'info',
+  arrived: 'accent',
+  in_progress: 'success',
+  completed: 'neutral',
 };
 
 function nextStage(stage: ProjectStage): ProjectStage | null {
@@ -123,13 +116,13 @@ export default function ProjectDetailPage() {
       <div className="mx-auto max-w-3xl px-8 py-10">
         <Button asChild variant="ghost" className="mb-6">
           <Link href="/projekt">
-            <ArrowLeftIcon /> Till projekt
+            <ArrowLeft size={16} strokeWidth={1.75} /> Till projekt
           </Link>
         </Button>
-        <Card className="border-[var(--border)]">
+        <Card className="border-[var(--ui-border)]">
           <CardContent className="p-8 text-center">
-            <p className="font-semibold text-[var(--text-primary)]">Projektet hittades inte</p>
-            {error && <p className="mt-2 text-sm text-[var(--text-muted)]">{error}</p>}
+            <p className="font-semibold text-[var(--ui-text)]">Projektet hittades inte</p>
+            {error && <p className="mt-2 text-sm text-[var(--ui-text-muted)]">{error}</p>}
           </CardContent>
         </Card>
       </div>
@@ -144,18 +137,18 @@ export default function ProjectDetailPage() {
     <div className="mx-auto max-w-[1360px] space-y-5 px-6 py-8 xl:px-8">
       <Button asChild variant="ghost" className="w-fit">
         <Link href="/projekt">
-          <ArrowLeftIcon /> Till projekt
+          <ArrowLeft size={16} strokeWidth={1.75} /> Till projekt
         </Link>
       </Button>
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Badge className={cn('border', STAGE_STYLE[project.stage])}>{PROJECT_STAGE_LABELS[project.stage]}</Badge>
-            {project.offerNumber && <Badge variant="secondary">Offert {project.offerNumber}</Badge>}
+            <StatusBadge tone={STAGE_TONE[project.stage]}>{PROJECT_STAGE_LABELS[project.stage]}</StatusBadge>
+            {project.offerNumber && <StatusBadge tone="neutral">Offert {project.offerNumber}</StatusBadge>}
           </div>
-          <h1 className="font-heading text-3xl font-semibold text-[var(--text-primary)]">{project.name}</h1>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">
+          <h1 className="font-heading text-3xl font-semibold text-[var(--ui-text)]">{project.name}</h1>
+          <p className="mt-1 text-sm text-[var(--ui-text-muted)]">
             {customer?.company || customer?.name || 'Kund saknas'}
             {' \u00B7 '}
             {fmtSEK(project.totalIncVat)}
@@ -169,7 +162,7 @@ export default function ProjectDetailPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={() => setDetailsOpen(true)}>
-            <PencilSimpleIcon />
+            <Pencil size={16} strokeWidth={1.75} />
             Redigera uppgifter
           </Button>
           {project.stage !== 'completed' && (
@@ -181,7 +174,7 @@ export default function ProjectDetailPage() {
       </div>
 
       {error && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-primary)]">
+        <div className="flex items-center justify-between gap-3 rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-4 py-3 text-sm text-[var(--ui-text)]">
           <span>{error}</span>
           <Button variant="ghost" size="sm" onClick={() => setError(null)}>
             {'St\u00E4ng'}
@@ -193,16 +186,16 @@ export default function ProjectDetailPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-6">
-          <Card className="border-[var(--border)]">
+          <Card className="border-[var(--ui-border)]">
             <CardHeader className="flex-row items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-lg">Kund och installation</CardTitle>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">
+                <p className="mt-1 text-sm text-[var(--ui-text-muted)]">
                   {'Uppgifter f\u00F6r montage och kontakt p\u00E5 plats.'}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => setDetailsOpen(true)}>
-                <PencilSimpleIcon />
+                <Pencil size={16} strokeWidth={1.75} />
                 Redigera
               </Button>
             </CardHeader>
@@ -233,21 +226,21 @@ export default function ProjectDetailPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-[var(--border)]">
+          <Card className="border-[var(--ui-border)]">
             <CardHeader className="flex-row items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-lg">Accepterad offert</CardTitle>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">{'Snapshot fr\u00E5n accepttillf\u00E4llet.'}</p>
+                <p className="mt-1 text-sm text-[var(--ui-text-muted)]">{'Snapshot fr\u00E5n accepttillf\u00E4llet.'}</p>
               </div>
               <Button asChild variant="outline" size="sm">
                 <Link href={`/offerter/${project.offerId}`}>
-                  <FileTextIcon /> {'\u00D6ppna offert'}
+                  <FileText size={16} strokeWidth={1.75} /> {'\u00D6ppna offert'}
                 </Link>
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="overflow-hidden rounded-xl border border-[var(--border)]">
-                <div className="grid grid-cols-[1.6fr_0.55fr_0.55fr_0.75fr_0.8fr] gap-3 bg-[var(--surface-alt)] px-4 py-3 text-xs font-semibold text-[var(--text-secondary)]">
+              <div className="overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)]">
+                <div className="grid grid-cols-[1.6fr_0.55fr_0.55fr_0.75fr_0.8fr] gap-3 bg-[var(--ui-surface-subtle)] px-4 py-3 text-xs font-semibold text-[var(--ui-text-secondary)]">
                   <span>Produkt</span>
                   <span>Antal</span>
                   <span>Enhet</span>
@@ -257,45 +250,45 @@ export default function ProjectDetailPage() {
                 {(project.lineItems ?? []).map((line) => (
                   <div
                     key={line.id}
-                    className="grid grid-cols-[1.6fr_0.55fr_0.55fr_0.75fr_0.8fr] gap-3 border-t border-[var(--border-light)] px-4 py-3 text-sm"
+                    className="grid grid-cols-[1.6fr_0.55fr_0.55fr_0.75fr_0.8fr] gap-3 border-t border-[var(--ui-border-subtle)] px-4 py-3 text-sm"
                   >
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-[var(--text-primary)]">{line.productName}</p>
-                      <p className="truncate text-xs text-[var(--text-muted)]">{line.description}</p>
+                      <p className="truncate font-medium text-[var(--ui-text)]">{line.productName}</p>
+                      <p className="truncate text-xs text-[var(--ui-text-muted)]">{line.description}</p>
                     </div>
-                    <span className="text-[var(--text-primary)]">{line.quantity}</span>
-                    <span className="text-[var(--text-secondary)]">{line.unit}</span>
-                    <span className="text-[var(--text-secondary)]">{fmtSEK(line.unitPrice)}</span>
-                    <span className="text-right font-semibold text-[var(--text-primary)]">{fmtSEK(line.lineTotalIncVat)}</span>
+                    <span className="text-[var(--ui-text)]">{line.quantity}</span>
+                    <span className="text-[var(--ui-text-secondary)]">{line.unit}</span>
+                    <span className="text-[var(--ui-text-secondary)]">{fmtSEK(line.unitPrice)}</span>
+                    <span className="text-right font-semibold text-[var(--ui-text)]">{fmtSEK(line.lineTotalIncVat)}</span>
                   </div>
                 ))}
                 {(project.lineItems ?? []).length === 0 && (
-                  <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">Offerten saknade produktrader.</div>
+                  <div className="px-4 py-8 text-center text-sm text-[var(--ui-text-muted)]">Offerten saknade produktrader.</div>
                 )}
               </div>
               <div className="mt-4 flex justify-end gap-8 text-sm">
                 <div>
-                  <p className="text-xs text-[var(--text-muted)]">Exkl. moms</p>
-                  <p className="font-semibold text-[var(--text-primary)]">{fmtSEK(project.totalExVat)}</p>
+                  <p className="text-xs text-[var(--ui-text-muted)]">Exkl. moms</p>
+                  <p className="font-semibold text-[var(--ui-text)]">{fmtSEK(project.totalExVat)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-[var(--text-muted)]">Inkl. moms</p>
-                  <p className="font-semibold text-[var(--text-primary)]">{fmtSEK(project.totalIncVat)}</p>
+                  <p className="text-xs text-[var(--ui-text-muted)]">Inkl. moms</p>
+                  <p className="font-semibold text-[var(--ui-text)]">{fmtSEK(project.totalIncVat)}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-[var(--border)]">
+          <Card className="border-[var(--ui-border)]">
             <CardHeader className="flex-row items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-lg">{'Ink\u00F6psorder'}</CardTitle>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">
+                <p className="mt-1 text-sm text-[var(--ui-text-muted)]">
                   {'Leverant\u00F6rsbest\u00E4llningar och materialankomst.'}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => setPoOpen(true)}>
-                <PlusIcon />
+                <Plus size={16} strokeWidth={1.75} />
                 {'Ny ink\u00F6psorder'}
               </Button>
             </CardHeader>
@@ -308,32 +301,32 @@ export default function ProjectDetailPage() {
                 const completedLines = lineItems.filter((line) => line.receivedQuantity >= line.quantity).length;
 
                 return (
-                  <div key={po.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+                  <div key={po.id} className="rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0 space-y-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <div className="flex items-center gap-2">
-                            <PackageIcon size={17} className="text-[var(--text-muted)]" />
-                            <p className="font-semibold text-[var(--text-primary)]">
+                            <Package size={16} strokeWidth={1.75} className="text-[var(--ui-text-muted)]" />
+                            <p className="font-semibold text-[var(--ui-text)]">
                               {po.poNumber ? `IO-${String(po.poNumber).padStart(4, '0')}` : 'Ink\u00F6psorder'}
                             </p>
                           </div>
-                          <Badge className={cn('border', PO_STATUS_CLASS[po.status] ?? PO_STATUS_CLASS.draft)}>
+                          <StatusBadge tone={PO_STATUS_TONE[po.status] ?? 'neutral'}>
                             {PO_LABEL[po.status] ?? po.status}
-                          </Badge>
+                          </StatusBadge>
                         </div>
 
                         <div className="flex flex-wrap gap-2 text-xs">
-                          <span className="rounded-full bg-[var(--surface-alt)] px-2.5 py-1 font-medium text-[var(--text-secondary)]">
+                          <span className="rounded-full bg-[var(--ui-surface-subtle)] px-2.5 py-1 font-medium text-[var(--ui-text-secondary)]">
                             {po.supplier?.name ?? 'Leverant\u00F6r saknas'}
                           </span>
-                          <span className="rounded-full bg-[var(--surface-alt)] px-2.5 py-1 text-[var(--text-muted)]">
+                          <span className="rounded-full bg-[var(--ui-surface-subtle)] px-2.5 py-1 text-[var(--ui-text-muted)]">
                             {deliveryDate ? `Planerad leverans ${deliveryDate}` : 'Ingen leverans satt'}
                           </span>
-                          <span className="rounded-full bg-[var(--surface-alt)] px-2.5 py-1 text-[var(--text-muted)]">
+                          <span className="rounded-full bg-[var(--ui-surface-subtle)] px-2.5 py-1 text-[var(--ui-text-muted)]">
                             {lineItems.length} rader
                           </span>
-                          <span className="rounded-full bg-[var(--surface-alt)] px-2.5 py-1 font-medium text-[var(--text-secondary)]">
+                          <span className="rounded-full bg-[var(--ui-surface-subtle)] px-2.5 py-1 font-medium text-[var(--ui-text-secondary)]">
                             {fmtSEK(po.totalIncVat)}
                           </span>
                         </div>
@@ -342,7 +335,7 @@ export default function ProjectDetailPage() {
                       <div className="flex gap-2">
                         {po.status === 'draft' && (
                           <Button variant="outline" size="sm" onClick={() => void submitPO(po.id)}>
-                            <TruckIcon />
+                            <Truck size={16} strokeWidth={1.75} />
                             Skicka
                           </Button>
                         )}
@@ -354,7 +347,7 @@ export default function ProjectDetailPage() {
                               setReceiptOpen(true);
                             }}
                           >
-                            <TruckIcon />
+                            <Truck size={16} strokeWidth={1.75} />
                             Registrera ankomst
                           </Button>
                         )}
@@ -362,7 +355,7 @@ export default function ProjectDetailPage() {
                     </div>
 
                     {(submittedDate || receivedDate || lineItems.length > 0) && (
-                      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[var(--border-light)] pt-3 text-xs text-[var(--text-muted)]">
+                      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[var(--ui-border-subtle)] pt-3 text-xs text-[var(--ui-text-muted)]">
                         {submittedDate ? <span>{`Skickad ${submittedDate}`}</span> : null}
                         {receivedDate ? <span>{`Ankommen ${receivedDate}`}</span> : null}
                         {lineItems.length > 0 ? <span>{`${completedLines}/${lineItems.length} rader klara`}</span> : null}
@@ -370,7 +363,7 @@ export default function ProjectDetailPage() {
                     )}
 
                     {po.notes ? (
-                      <div className="mt-4 rounded-xl border border-[var(--border-light)] bg-[var(--surface-alt)] px-3 py-2.5 text-sm text-[var(--text-secondary)]">
+                      <div className="mt-4 rounded-[var(--ui-radius-panel)] border border-[var(--ui-border-subtle)] bg-[var(--ui-surface-subtle)] px-3 py-2.5 text-sm text-[var(--ui-text-secondary)]">
                         {po.notes}
                       </div>
                     ) : null}
@@ -383,12 +376,12 @@ export default function ProjectDetailPage() {
                         return (
                           <div
                             key={line.id}
-                            className="rounded-xl border border-[var(--border-light)] bg-[var(--surface-alt)] px-3 py-3"
+                            className="rounded-[var(--ui-radius-panel)] border border-[var(--ui-border-subtle)] bg-[var(--ui-surface-subtle)] px-3 py-3"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
-                                <p className="truncate text-sm font-medium text-[var(--text-primary)]">{line.description}</p>
-                                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                                <p className="truncate text-sm font-medium text-[var(--ui-text)]">{line.description}</p>
+                                <p className="mt-1 text-xs text-[var(--ui-text-muted)]">
                                   {line.quantity} {line.unit} best\u00E4llt
                                 </p>
                               </div>
@@ -396,18 +389,18 @@ export default function ProjectDetailPage() {
                                 className={cn(
                                   'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold',
                                   progress >= 100
-                                    ? 'bg-[var(--status-success-bg)] text-[var(--status-success-text)]'
-                                    : 'bg-[var(--surface)] text-[var(--text-secondary)]',
+                                    ? 'bg-[var(--ui-success-bg)] text-[var(--ui-success-text)]'
+                                    : 'bg-[var(--ui-surface)] text-[var(--ui-text-secondary)]',
                                 )}
                               >
                                 {line.receivedQuantity}/{line.quantity} {line.unit}
                               </span>
                             </div>
-                            <div className="mt-2 h-1.5 rounded-full bg-[var(--surface)]">
+                            <div className="mt-2 h-1.5 rounded-full bg-[var(--ui-surface)]">
                               <div
                                 className={cn(
                                   'h-1.5 rounded-full transition-[width]',
-                                  progress >= 100 ? 'bg-[var(--status-success-text)]' : 'bg-[var(--accent)]',
+                                  progress >= 100 ? 'bg-[var(--ui-success-text)]' : 'bg-[var(--ui-accent)]',
                                 )}
                                 style={{ width: `${progress === 0 ? 0 : Math.max(progress, 8)}%` }}
                               />
@@ -417,7 +410,7 @@ export default function ProjectDetailPage() {
                       })}
 
                       {lineItems.length === 0 ? (
-                        <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
+                        <div className="rounded-[var(--ui-radius-panel)] border border-dashed border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-4 py-6 text-center text-sm text-[var(--ui-text-muted)]">
                           Inga rader p\u00E5 ink\u00F6psordern.
                         </div>
                       ) : null}
@@ -427,7 +420,7 @@ export default function ProjectDetailPage() {
               })}
 
               {purchaseOrders.length === 0 && (
-                <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-4 py-8 text-center text-sm text-[var(--text-muted)]">
+                <div className="rounded-[var(--ui-radius-panel)] border border-dashed border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-4 py-8 text-center text-sm text-[var(--ui-text-muted)]">
                   {'Ingen ink\u00F6psorder skapad.'}
                 </div>
               )}
@@ -439,16 +432,16 @@ export default function ProjectDetailPage() {
           <ContextualNextStep project={project} gate={gate} onPoOpen={() => setPoOpen(true)} />
 
           {project.stage === 'completed' && (
-            <Card className="border-[var(--border)]">
+            <Card className="border-[var(--ui-border)]">
               <CardContent className="p-4 text-center">
-                <CheckCircleIcon size={28} className="mx-auto text-[var(--status-accepted-text)]" weight="fill" />
-                <p className="mt-2 text-sm font-semibold text-[var(--text-primary)]">Projekt avslutat</p>
-                {project.completedAt && <p className="mt-0.5 text-xs text-[var(--text-muted)]">{fmtDate(project.completedAt)}</p>}
+                <CheckCircle size={24} strokeWidth={1.75} className="mx-auto text-[var(--ui-success-text)]" />
+                <p className="mt-2 text-sm font-semibold text-[var(--ui-text)]">Projekt avslutat</p>
+                {project.completedAt && <p className="mt-0.5 text-xs text-[var(--ui-text-muted)]">{fmtDate(project.completedAt)}</p>}
               </CardContent>
             </Card>
           )}
 
-          <Card className="border-[var(--border)]">
+          <Card className="border-[var(--ui-border)]">
             <CardHeader>
               <CardTitle className="text-lg">Aktivitet</CardTitle>
             </CardHeader>
@@ -460,12 +453,12 @@ export default function ProjectDetailPage() {
                       key={event.id}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex gap-3 rounded-xl bg-[var(--surface-alt)] p-3"
+                      className="flex gap-3 rounded-[var(--ui-radius-panel)] bg-[var(--ui-surface-subtle)] p-3"
                     >
-                      <ClockCounterClockwiseIcon size={16} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
+                      <History size={16} strokeWidth={1.75} className="mt-0.5 shrink-0 text-[var(--ui-text-muted)]" />
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">{PROJECT_STAGE_LABELS[event.toStage]}</p>
-                        <p className="text-xs text-[var(--text-muted)]">
+                        <p className="text-sm font-semibold text-[var(--ui-text)]">{PROJECT_STAGE_LABELS[event.toStage]}</p>
+                        <p className="text-xs text-[var(--ui-text-muted)]">
                           {fmtDate(event.createdAt)}
                           {' \u00B7 '}
                           {fmtActor(event.actorId)}
@@ -476,7 +469,7 @@ export default function ProjectDetailPage() {
                 </AnimatePresence>
 
                 {(project.stageEvents ?? []).length === 0 && (
-                  <p className="text-sm text-[var(--text-muted)]">Ingen aktivitet registrerad.</p>
+                  <p className="text-sm text-[var(--ui-text-muted)]">Ingen aktivitet registrerad.</p>
                 )}
               </div>
             </CardContent>

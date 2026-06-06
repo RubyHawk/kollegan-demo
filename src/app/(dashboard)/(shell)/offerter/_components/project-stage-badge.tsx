@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import type { Offer } from '../_store/types';
 import { PROJECT_STAGE_META } from '../_lib/offers-dashboard-constants';
+import type { Offer } from '../_store/types';
 
 export function ProjectStageBadge({ offer }: { offer: Offer }) {
   if (offer.status !== 'accepted') return null;
@@ -8,8 +8,8 @@ export function ProjectStageBadge({ offer }: { offer: Offer }) {
 
   if (!project) {
     return (
-      <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-muted)]">
-        <span className="h-1.5 w-1.5 rounded-full bg-[var(--text-muted)]" />
+      <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-dashed border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ui-text-muted)]">
+        <span className="h-1.5 w-1.5 rounded-full bg-[var(--ui-text-muted)]" />
         Projekt saknas
       </span>
     );
@@ -21,8 +21,12 @@ export function ProjectStageBadge({ offer }: { offer: Offer }) {
   return (
     <Link
       href={`/projekt/${project.id}`}
-      className="inline-flex w-fit items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors hover:bg-[var(--surface-hover)]"
-      style={{ background: meta.bg, color: meta.color, borderColor: `color-mix(in srgb, ${meta.color} 32%, var(--border))` }}
+      className="inline-flex w-fit items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors hover:bg-[var(--ui-surface-hover)]"
+      style={{
+        background: meta.bg,
+        color: meta.color,
+        borderColor: `color-mix(in srgb, ${meta.color} 32%, var(--ui-border))`,
+      }}
       title="Öppna projektet"
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: meta.color }} />

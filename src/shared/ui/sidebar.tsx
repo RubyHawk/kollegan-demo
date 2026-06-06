@@ -51,7 +51,7 @@ function SidebarHeader({ collapsed, onMobileClose }: SidebarHeaderProps) {
     <div
       className={cn(
         'flex items-center shrink-0 h-14',
-        'border-b border-[var(--border)]',
+        'border-b border-[var(--ui-border)]',
         collapsed ? 'justify-center px-0' : 'px-4 gap-2.5',
       )}
     >
@@ -69,7 +69,7 @@ function SidebarHeader({ collapsed, onMobileClose }: SidebarHeaderProps) {
         <AnimatePresence initial={false}>
           <motion.span
             key="wordmark"
-            className="font-heading text-lg font-semibold tracking-tight text-[var(--text-primary)] whitespace-nowrap min-w-0"
+            className="font-heading text-lg font-semibold text-[var(--ui-text)] whitespace-nowrap min-w-0"
             variants={{ hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0 } }}
             initial="hidden"
             animate="show"
@@ -86,7 +86,7 @@ function SidebarHeader({ collapsed, onMobileClose }: SidebarHeaderProps) {
           type="button"
           onClick={onMobileClose}
           aria-label="Stäng meny"
-          className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] md:hidden"
+          className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2 md:hidden"
         >
           <CloseIcon size={16} />
         </button>
@@ -130,8 +130,8 @@ function AvatarBadge({ user, size }: { user: User; size: 'sm' | 'md' }) {
     );
   }
   return (
-    <div className={`${dim} ${radius} bg-[var(--accent)]/15 flex items-center justify-center shrink-0`}>
-      <span className={`${text} font-semibold text-[var(--accent)]`}>{initials}</span>
+    <div className={`${dim} ${radius} bg-[var(--ui-accent-subtle)] flex items-center justify-center shrink-0`}>
+      <span className={`${text} font-semibold text-[var(--ui-accent)]`}>{initials}</span>
     </div>
   );
 }
@@ -220,7 +220,7 @@ function SidebarFooter({
       exit={{ opacity: 0, scale: 0.95, y: 4 }}
       transition={{ duration: 0.15, ease: EASE_SPRING }}
       className={cn(
-        'z-50 w-56 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-lg shadow-black/8',
+        'z-50 w-56 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] shadow-[var(--ui-shadow-raised)]',
         collapsed ? 'max-w-[calc(100vw-1.5rem)]' : 'absolute bottom-full mb-2 left-0',
       )}
     >
@@ -229,36 +229,36 @@ function SidebarFooter({
         <div className="flex items-center gap-3">
           {user.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.avatarUrl} alt={displayName} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+            <img src={user.avatarUrl} alt={displayName} className="w-10 h-10 rounded-lg object-cover shrink-0" />
           ) : (
-            <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/15 flex items-center justify-center shrink-0">
-              <span className="text-sm font-semibold text-[var(--accent)]">
+            <div className="w-10 h-10 rounded-lg bg-[var(--ui-accent-subtle)] flex items-center justify-center shrink-0">
+              <span className="text-sm font-semibold text-[var(--ui-accent)]">
                 {displayName.split(' ').map((w) => w?.[0]?.toUpperCase() ?? '').filter(Boolean).slice(0, 2).join('')}
               </span>
             </div>
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-              <p className="min-w-0 truncate text-sm font-semibold text-[var(--text-primary)]">{displayName}</p>
+              <p className="min-w-0 truncate text-sm font-semibold text-[var(--ui-text)]">{displayName}</p>
               {user.role ? (
-                <span className="shrink-0 rounded-md bg-[var(--surface-alt)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-secondary)]">
+                <span className="shrink-0 rounded-md bg-[var(--ui-surface-subtle)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ui-text-secondary)]">
                   {roleLabel[user.role] ?? user.role}
                 </span>
               ) : null}
             </div>
-            <p className="mt-0.5 text-xs text-[var(--text-muted)] truncate">{user.email}</p>
+            <p className="mt-0.5 text-xs text-[var(--ui-text-muted)] truncate">{user.email}</p>
           </div>
         </div>
       </div>
 
-      <div className="h-px bg-[var(--border)]" />
+      <div className="h-px bg-[var(--ui-border)]" />
 
       {/* Quick links */}
       <div className="py-1.5 px-1.5">
         <Link
           href="/installningar/profil"
           onClick={() => { setPopoverOpen(false); onMobileClose?.(); }}
-          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors"
+          className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
         >
           <UserIcon size={14} className="shrink-0" />
           Profil
@@ -266,20 +266,20 @@ function SidebarFooter({
         <Link
           href="/installningar/utseende"
           onClick={() => { setPopoverOpen(false); onMobileClose?.(); }}
-          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors"
+          className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
         >
           <SettingsIcon size={14} className="shrink-0" />
           Utseende
         </Link>
       </div>
 
-      <div className="h-px bg-[var(--border)]" />
+      <div className="h-px bg-[var(--ui-border)]" />
 
       {/* Logout */}
       <div className="py-1.5 px-1.5">
         <button
           onClick={() => { setPopoverOpen(false); onLogout(); }}
-          className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-[var(--status-danger-text)] hover:bg-[var(--status-danger-bg)] hover:text-[var(--status-danger-text)] transition-colors"
+          className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-[var(--ui-danger-text)] transition-colors hover:bg-[var(--ui-danger-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
         >
           <LogOutIcon size={14} className="shrink-0" />
           Logga ut
@@ -311,7 +311,7 @@ function SidebarFooter({
   // ── Collapsed footer ──────────────────────────────────────────────────────
   if (collapsed) {
     return (
-      <div className="relative py-3 flex flex-col items-center gap-1.5 border-t border-[var(--border)]">
+      <div className="relative py-3 flex flex-col items-center gap-1.5 border-t border-[var(--ui-border)]">
         <button
           ref={triggerRef}
           onClick={() => {
@@ -319,7 +319,7 @@ function SidebarFooter({
             if (nextOpen) updateCollapsedPopoverPosition();
             setPopoverOpen(nextOpen);
           }}
-          className="w-9 h-9 rounded-lg hover:bg-[var(--surface-hover)] flex items-center justify-center transition-colors"
+          className="w-9 h-9 rounded-md hover:bg-[var(--ui-surface-hover)] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
         >
           <AvatarBadge user={user} size="sm" />
         </button>
@@ -330,25 +330,25 @@ function SidebarFooter({
 
   // ── Expanded footer ────────────────────────────────────────────────────────
   return (
-    <div className="relative px-3 py-3 border-t border-[var(--border)]">
+    <div className="relative px-3 py-3 border-t border-[var(--ui-border)]">
       <button
         ref={triggerRef}
         onClick={() => setPopoverOpen((v) => !v)}
-        className="w-full flex items-center gap-2.5 rounded-lg px-1 py-1 -mx-1 hover:bg-[var(--surface-hover)] transition-colors group"
+        className="w-full flex items-center gap-2.5 rounded-md px-1 py-1 -mx-1 hover:bg-[var(--ui-surface-hover)] transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
       >
         <AvatarBadge user={user} size="md" />
         <div className="flex-1 min-w-0 text-left">
-          <p className="text-[13px] font-medium text-[var(--text-primary)] truncate">
+          <p className="text-[13px] font-medium text-[var(--ui-text)] truncate">
             {displayName}
           </p>
-          <p className="text-[11px] text-[var(--text-muted)] truncate">
+          <p className="text-[11px] text-[var(--ui-text-muted)] truncate">
             {user.email}
           </p>
         </div>
         <ChevronRightIcon
           size={13}
           className={cn(
-            'text-[var(--text-muted)] transition-all shrink-0',
+            'text-[var(--ui-text-muted)] transition-all shrink-0',
             popoverOpen ? 'opacity-60 rotate-90' : 'opacity-0 group-hover:opacity-40',
           )}
         />
@@ -421,8 +421,8 @@ export default function Sidebar({
             'hidden md:flex items-center justify-center',
             'absolute top-1/2 -translate-y-1/2 -right-3.5 z-10',
             'w-7 h-7 rounded-full',
-            'bg-[var(--surface)] border border-[var(--border)]',
-            'text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)]/50 hover:shadow-md',
+            'bg-[var(--ui-surface)] border border-[var(--ui-border)]',
+            'text-[var(--ui-text-muted)] hover:text-[var(--ui-accent)] hover:border-[var(--ui-accent-border)] hover:bg-[var(--ui-surface-hover)]',
             'opacity-0 shadow-sm transition-all duration-150 group-hover/sidebar:opacity-100 focus-visible:opacity-100',
           )}
         >
@@ -430,7 +430,7 @@ export default function Sidebar({
         </button>
 
         {/* Sidebar panel */}
-          <aside className="h-full w-full flex flex-col glass-sidebar border-r border-[var(--border)] overflow-hidden">
+          <aside className="h-full w-full flex flex-col border-r border-[var(--ui-border)] bg-[var(--ui-surface)] overflow-hidden">
           <SidebarHeader collapsed={collapsed} onMobileClose={onMobileClose} />
 
           {/* Scrollable nav */}
