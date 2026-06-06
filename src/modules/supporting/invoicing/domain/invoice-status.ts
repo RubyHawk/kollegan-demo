@@ -55,6 +55,24 @@ export function canMarkPaid(status: InvoiceStatus): boolean {
   return status === 'sent' || status === 'viewed' || status === 'overdue';
 }
 
+/**
+ * An invoice may be credited (reversed by a credit note) only when it has been
+ * issued and is not already reversed: status ∈ {sent, viewed, paid, overdue}.
+ * Drafts (never issued), cancelled, and already-`credited` invoices are rejected,
+ * and a credit note itself cannot be credited (documentType must be 'invoice').
+ * Marking the original `credited` after issuing the note also blocks a second
+ * credit note on the same invoice.
+ */
+export function canCredit(invoice: { status: InvoiceStatus; documentType: string }): boolean {
+  if (invoice.documentType !== 'invoice') return false;
+  return (
+    invoice.status === 'sent' ||
+    invoice.status === 'viewed' ||
+    invoice.status === 'paid' ||
+    invoice.status === 'overdue'
+  );
+}
+
 export function isInvoiceStatus(value: string): value is InvoiceStatus {
   return (INVOICE_STATUSES as readonly string[]).includes(value);
 }

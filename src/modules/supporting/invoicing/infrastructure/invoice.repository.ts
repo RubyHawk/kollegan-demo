@@ -36,6 +36,10 @@ export interface CreateInvoiceData {
   paymentReference?: string | null;
   createdBy: string;
   lineItems: InvoiceLineItemInput[];
+  /** 'invoice' (default) or 'credit_note'. Existing callers omit it. */
+  documentType?: string;
+  /** For a credit note: the id of the invoice it reverses. */
+  creditedInvoiceId?: string | null;
 }
 
 function lineItemCreateData(items: InvoiceLineItemInput[]) {
@@ -68,6 +72,10 @@ export const invoiceRepository = {
       // allows many NULLs under the unique (orgId, invoiceNumber) index, so
       // multiple drafts coexist; the real number is claimed atomically at send.
       status:           'draft',
+      // documentType defaults to 'invoice' so existing callers are unaffected;
+      // a credit note passes 'credit_note' + the credited invoice id.
+      documentType:      input.documentType ?? 'invoice',
+      creditedInvoiceId: input.creditedInvoiceId ?? null,
       issueDate:        input.issueDate,
       dueDate:          input.dueDate,
       currency:         input.currency,

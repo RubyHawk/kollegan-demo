@@ -35,12 +35,17 @@ export function getDiscountFactor(discount?: number | null): number {
 }
 
 function getLineExVat(item: InvoiceLineLike): number {
-  return Math.max(0, item.quantity) * Math.max(0, item.unitPrice) * getDiscountFactor(item.discount);
+  // Pure arithmetic — the sign of quantity flows through. Normal invoice lines
+  // carry positive quantities (the handler enforces quantity > 0), so positive
+  // totals are unchanged; a credit note negates quantity, so its lines (and the
+  // resulting totals) are negative, reducing the customer's balance.
+  return item.quantity * item.unitPrice * getDiscountFactor(item.discount);
 }
 
 /**
  * Computes invoice totals from its line items: ex-VAT subtotal, VAT summed per
- * line rate, and the inc-VAT grand total.
+ * line rate, and the inc-VAT grand total. Totals are negative for a credit note
+ * (its line quantities are negated).
  */
 export function computeInvoiceTotals(lineItems: InvoiceLineLike[]): InvoiceTotals {
   let exVat = 0;

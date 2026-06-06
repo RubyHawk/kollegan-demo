@@ -24,6 +24,7 @@ export {
   canDelete,
   canSend,
   canMarkPaid,
+  canCredit,
   isInvoiceStatus,
 } from './domain/invoice-status';
 export { computeInvoiceTotals } from './domain/invoice-pricing';
@@ -39,6 +40,9 @@ export {
   issueInvoice,
   markInvoicePaid,
 } from './application/invoice.service';
+
+export { createCreditNote } from './application/invoice-credit.service';
+export type { CreateCreditNoteOptions } from './application/invoice-credit.service';
 
 export {
   assignInvoiceNumber,
@@ -56,6 +60,7 @@ export {
   handleDeleteInvoice,
   handleSendInvoice,
   handleMarkInvoicePaid,
+  handleCreateCreditNote,
 } from './api/handlers/invoice.handler';
 
 export { handleGetInvoicePdf } from './api/handlers/invoice-pdf.handler';

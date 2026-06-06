@@ -21,6 +21,7 @@ import {
   sendInvoice,
   updateInvoice,
 } from '../../application/invoice.service';
+import { createCreditNote } from '../../application/invoice-credit.service';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -32,7 +33,7 @@ function extractId(req: NextRequest): string {
   // For nested action routes (…/[id]/send) the id is the second-to-last segment.
   const segments = req.nextUrl.pathname.split('/').filter(Boolean);
   const last = segments.at(-1) ?? '';
-  if (last === 'send' || last === 'mark-paid') return segments.at(-2) ?? '';
+  if (last === 'send' || last === 'mark-paid' || last === 'credit') return segments.at(-2) ?? '';
   return last;
 }
 
@@ -259,5 +260,29 @@ export const handleMarkInvoicePaid = createHandler(
     const paid = await markInvoicePaid(id, payload.orgId!, body.paidAt);
     if (!paid) throw Errors.notFound('Invoice');
     return ok(paid);
+  },
+);
+
+// ── Create Credit Note (kreditfaktura) ────────────────────────────────────────
+
+const CreditNoteBodySchema = z.object({
+  reason: z.string().max(5000).optional(),
+});
+
+export const handleCreateCreditNote = createHandler(
+  {
+    auth: 'jwt',
+    tag: 'Invoices:CreditNote',
+    body: CreditNoteBodySchema,
+    permission: 'invoices.write',
+    rateLimit: { max: 60, windowMs: 60_000 },
+  },
+  async (ctx) => {
+    const { body, req } = ctx as { body: z.infer<typeof CreditNoteBodySchema>; req: NextRequest };
+    const id = extractId(req);
+    const payload = await requireStaff(req);
+    const creditNote = await createCreditNote(payload.orgId!, payload.sub, id, { reason: body.reason });
+    if (!creditNote) throw Errors.notFound('Invoice');
+    return created(creditNote, invoiceLocation(creditNote.id));
   },
 );
