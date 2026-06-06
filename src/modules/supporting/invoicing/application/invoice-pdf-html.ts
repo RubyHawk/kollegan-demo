@@ -11,10 +11,12 @@
 import { escapeHtml } from '@platform/security/sanitize';
 import { INVOICE_PDF_PRINT_STYLES } from './invoice-pdf-print-styles';
 import {
+  amountToPay,
   buildVatBreakdown,
   formatMoney,
   formatPercent,
   formatQuantity,
+  rotRutDeductionLabel,
   type InvoicePdfModel,
   type InvoicePdfLine,
 } from './invoice-pdf-format';
@@ -64,6 +66,18 @@ function buyerBlock(m: InvoicePdfModel): string {
   if (m.buyer.company) lines.push(`<p class="inv-meta__value"><strong>${escapeHtml(m.buyer.company)}</strong></p>`);
   if (m.buyer.name) lines.push(`<p class="inv-meta__value">${escapeHtml(m.buyer.name)}</p>`);
   if (m.buyer.email) lines.push(`<p class="inv-meta__value">${escapeHtml(m.buyer.email)}</p>`);
+  // When a ROT/RUT deduction applies, the buyer's personnummer and property/BRF
+  // are required claim metadata and are surfaced on the invoice itself.
+  if (m.rotRut) {
+    if (m.rotRut.buyerPersonalNumber) {
+      lines.push(`<p class="inv-meta__value" style="margin-top:6px;color:#6b7c97;font-size:10.5px;">Personnummer: ${escapeHtml(m.rotRut.buyerPersonalNumber)}</p>`);
+    }
+    if (m.rotRut.propertyDesignation) {
+      lines.push(`<p class="inv-meta__value" style="color:#6b7c97;font-size:10.5px;">Fastighetsbeteckning: ${escapeHtml(m.rotRut.propertyDesignation)}</p>`);
+    } else if (m.rotRut.housingSocietyOrgNumber) {
+      lines.push(`<p class="inv-meta__value" style="color:#6b7c97;font-size:10.5px;">BRF org.nr: ${escapeHtml(m.rotRut.housingSocietyOrgNumber)}</p>`);
+    }
+  }
   if (lines.length === 0) lines.push('<p class="inv-meta__value">&mdash;</p>');
   return `
     <div class="inv-meta__box">
@@ -161,7 +175,22 @@ function vatBreakdownTable(m: InvoicePdfModel): string {
     </table>`;
 }
 
+/**
+ * The ROT/RUT rows in the totals summary: the inc-VAT subtotal, the eligible
+ * labour basis, and the deduction shown as a NEGATIVE line ("ROT-avdrag" /
+ * "RUT-avdrag −{amount}"). Empty when no deduction applies.
+ */
+function rotRutSummaryRows(m: InvoicePdfModel): string {
+  if (!m.rotRut) return '';
+  const label = rotRutDeductionLabel(m.rotRut.type);
+  return `
+        <div class="inv-summary__row"><span>Summa inkl. moms</span><strong>${formatMoney(m.totalIncVat, m.currency)}</strong></div>
+        <div class="inv-summary__row"><span>Arbetskostnad inkl. moms (underlag)</span><strong>${formatMoney(m.rotRut.laborAmount, m.currency)}</strong></div>
+        <div class="inv-summary__row"><span>${escapeHtml(label)}</span><strong>&minus;${formatMoney(m.rotRut.deductionAmount, m.currency)}</strong></div>`;
+}
+
 function totalsBlock(m: InvoicePdfModel): string {
+  const toPay = amountToPay(m.totalIncVat, m.rotRut);
   return `
     <div class="inv-totals-wrap">
       <div class="inv-totals">
@@ -169,7 +198,8 @@ function totalsBlock(m: InvoicePdfModel): string {
         <div class="inv-summary">
           <div class="inv-summary__row"><span>Summa exkl. moms</span><strong>${formatMoney(m.totalExVat, m.currency)}</strong></div>
           <div class="inv-summary__row"><span>Moms</span><strong>${formatMoney(m.totalVat, m.currency)}</strong></div>
-          <div class="inv-summary__row inv-summary__row--grand"><span>Att betala</span><strong>${formatMoney(m.totalIncVat, m.currency)}</strong></div>
+          ${rotRutSummaryRows(m)}
+          <div class="inv-summary__row inv-summary__row--grand"><span>Att betala</span><strong>${formatMoney(toPay, m.currency)}</strong></div>
         </div>
       </div>
     </div>`;
@@ -180,7 +210,7 @@ function paymentBlock(m: InvoicePdfModel): string {
     ? `<p class="inv-payment__row">Betalningsreferens: <strong>${escapeHtml(m.paymentReference)}</strong></p>`
     : '';
   const due = `<p class="inv-payment__row">Förfallodatum: <strong>${escapeHtml(formatSwedishDate(m.dueDate))}</strong></p>`;
-  const amount = `<p class="inv-payment__row">Att betala: <strong>${formatMoney(m.totalIncVat, m.currency)}</strong></p>`;
+  const amount = `<p class="inv-payment__row">Att betala: <strong>${formatMoney(amountToPay(m.totalIncVat, m.rotRut), m.currency)}</strong></p>`;
   return `
     <div class="inv-payment">
       <p class="inv-payment__label">Betalningsinformation</p>

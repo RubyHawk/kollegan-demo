@@ -49,6 +49,21 @@ export interface Invoice {
   recipientEmail?: string;
   recipientCompany?: string;
   notes?: string;
+  // ── ROT/RUT tax deduction ────────────────────────────────────────────────────
+  /** null | 'ROT' | 'RUT' — set when a labour deduction applies to this invoice. */
+  rotRutType?: string;
+  /** Personnummer of the deduction claimant (the buyer/household). */
+  buyerPersonalNumber?: string;
+  /** Fastighetsbeteckning — ROT on an owned property. */
+  propertyDesignation?: string;
+  /** BRF org.nr — ROT in a co-op apartment. */
+  housingSocietyOrgNumber?: string;
+  /** Eligible labour total, inclusive of VAT (the deduction basis). */
+  rotRutLaborAmount: number;
+  /** Deduction applied to this invoice; the buyer pays totalIncVat − this. */
+  rotRutDeductionAmount: number;
+  /** null | 'pending' | 'submitted' | 'paid'. */
+  rotRutClaimStatus?: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

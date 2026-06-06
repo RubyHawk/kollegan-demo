@@ -23,6 +23,26 @@ export interface InvoicePdfLine {
   lineVat: number;
 }
 
+/**
+ * ROT/RUT deduction view model. Present only when a deduction applies. `type`
+ * drives the label ("ROT-avdrag" / "RUT-avdrag"); the deduction is shown as a
+ * negative line under the totals and "Att betala" becomes totalIncVat − amount.
+ */
+export interface InvoicePdfRotRut {
+  /** 'ROT' | 'RUT'. */
+  type: string;
+  /** Eligible labour basis, inclusive of VAT. */
+  laborAmount: number;
+  /** Deduction amount (subtracted from the total). */
+  deductionAmount: number;
+  /** Buyer personnummer (shown in the meta block). */
+  buyerPersonalNumber?: string;
+  /** Fastighetsbeteckning — ROT on an owned property. */
+  propertyDesignation?: string;
+  /** BRF org.nr — ROT in a co-op apartment. */
+  housingSocietyOrgNumber?: string;
+}
+
 /** The full view model for one invoice document. */
 export interface InvoicePdfModel {
   seller: {
@@ -54,6 +74,22 @@ export interface InvoicePdfModel {
   totalExVat: number;
   totalVat: number;
   totalIncVat: number;
+  /** ROT/RUT deduction — present only when a deduction applies to the invoice. */
+  rotRut?: InvoicePdfRotRut;
+}
+
+/** The label for a ROT/RUT deduction line: "ROT-avdrag" / "RUT-avdrag". */
+export function rotRutDeductionLabel(type: string): string {
+  return type === 'ROT' ? 'ROT-avdrag' : 'RUT-avdrag';
+}
+
+/**
+ * The amount the buyer pays after a ROT/RUT deduction: totalIncVat − deduction.
+ * With no deduction it is simply totalIncVat.
+ */
+export function amountToPay(totalIncVat: number, rotRut?: InvoicePdfRotRut): number {
+  if (!rotRut) return totalIncVat;
+  return roundCurrency(totalIncVat - rotRut.deductionAmount);
 }
 
 /** One VAT group in the breakdown table. */

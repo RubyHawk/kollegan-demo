@@ -18,6 +18,11 @@ import type {
   UpdateInvoiceInput,
 } from '../domain/invoice.entity';
 import { canDelete, canEdit, canMarkPaid, canSend } from '../domain/invoice-status';
+import {
+  computeRotRut,
+  normalizeRotRutType,
+  validateRotRutBuyer,
+} from '../domain/rot-rut';
 import { INVOICE_PAID, INVOICE_SENT } from '../events/invoice.events';
 import {
   buildBlankInvoice,
@@ -162,6 +167,79 @@ export async function updateInvoice(
     throw Errors.conflict('Only draft invoices can be edited; this invoice has been issued');
   }
   return invoiceRepository.update(id, orgId, input);
+}
+
+/** Input for setting (or clearing) the ROT/RUT deduction on a draft invoice. */
+export interface SetInvoiceRotRutInput {
+  /** 'ROT' | 'RUT' to apply a deduction, or null/'' to clear it. */
+  rotRutType: string | null;
+  buyerPersonalNumber?: string | null;
+  propertyDesignation?: string | null;
+  housingSocietyOrgNumber?: string | null;
+}
+
+/**
+ * Sets or clears the ROT/RUT tax deduction on a DRAFT invoice (409 otherwise).
+ *
+ * Clearing (rotRutType null/empty) zeroes the deduction and nulls the buyer
+ * fields. Setting ROT/RUT validates the buyer info (400 via Errors.badRequest
+ * when the personnummer — or, for ROT, the property/BRF reference — is missing),
+ * then computes the labour basis (inc-VAT) and the deduction (30 % ROT / 50 % RUT)
+ * from the invoice's current line items and persists them. Returns null when the
+ * invoice is not found in the org.
+ */
+export async function setInvoiceRotRut(
+  orgId: string,
+  id: string,
+  input: SetInvoiceRotRutInput,
+): Promise<Invoice | null> {
+  const existing = await invoiceRepository.findById(id, orgId);
+  if (!existing) return null;
+  if (!canEdit(existing.status)) {
+    throw Errors.conflict('Only draft invoices can take a ROT/RUT deduction; this invoice has been issued');
+  }
+
+  const rotRutType = normalizeRotRutType(input.rotRutType);
+
+  // Clearing the deduction: zero the amounts and null the buyer fields.
+  if (!rotRutType) {
+    const updated = await invoiceRepository.setRotRut(id, orgId, {
+      rotRutType: null,
+      buyerPersonalNumber: null,
+      propertyDesignation: null,
+      housingSocietyOrgNumber: null,
+      rotRutLaborAmount: 0,
+      rotRutDeductionAmount: 0,
+    });
+    logger.info(TAG, `Invoice ROT/RUT cleared: ${id}`, { orgId });
+    return updated;
+  }
+
+  const buyerCheck = validateRotRutBuyer({
+    rotRutType,
+    buyerPersonalNumber: input.buyerPersonalNumber,
+    propertyDesignation: input.propertyDesignation,
+    housingSocietyOrgNumber: input.housingSocietyOrgNumber,
+  });
+  if (!buyerCheck.ok) {
+    throw Errors.badRequest(buyerCheck.error);
+  }
+
+  const { laborAmount, deductionAmount } = computeRotRut(existing.lineItems, rotRutType);
+
+  const updated = await invoiceRepository.setRotRut(id, orgId, {
+    rotRutType,
+    buyerPersonalNumber: input.buyerPersonalNumber?.trim() || null,
+    propertyDesignation: input.propertyDesignation?.trim() || null,
+    housingSocietyOrgNumber: input.housingSocietyOrgNumber?.trim() || null,
+    rotRutLaborAmount: laborAmount,
+    rotRutDeductionAmount: deductionAmount,
+  });
+
+  logger.info(TAG, `Invoice ROT/RUT set: ${id}`, {
+    orgId, rotRutType, laborAmount, deductionAmount,
+  });
+  return updated;
 }
 
 /** Soft-deletes a draft invoice. Rejects issued invoices with 409. */

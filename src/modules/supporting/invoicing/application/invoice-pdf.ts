@@ -105,6 +105,18 @@ export function buildInvoicePdfModel(invoice: Invoice, company: InvoicePdfCompan
     totalExVat: invoice.totalExVat,
     totalVat: invoice.totalVat,
     totalIncVat: invoice.totalIncVat,
+    // Surface the ROT/RUT deduction only when one applies (a type is set with a
+    // non-zero deduction). No deduction → omitted, so the PDF is unchanged.
+    rotRut: (invoice.rotRutType && invoice.rotRutDeductionAmount > 0)
+      ? {
+          type: invoice.rotRutType,
+          laborAmount: invoice.rotRutLaborAmount,
+          deductionAmount: invoice.rotRutDeductionAmount,
+          buyerPersonalNumber: nilToUndefined(invoice.buyerPersonalNumber),
+          propertyDesignation: nilToUndefined(invoice.propertyDesignation),
+          housingSocietyOrgNumber: nilToUndefined(invoice.housingSocietyOrgNumber),
+        }
+      : undefined,
   };
 }
 

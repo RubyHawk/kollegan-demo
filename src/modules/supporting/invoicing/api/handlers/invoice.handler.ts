@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createHandler } from '@platform/api/handler';
 import { ok, created } from '@platform/api/response';
 import { Errors } from '@platform/api/errors';
@@ -19,9 +19,11 @@ import {
   listInvoices,
   markInvoicePaid,
   sendInvoice,
+  setInvoiceRotRut,
   updateInvoice,
 } from '../../application/invoice.service';
 import { createCreditNote } from '../../application/invoice-credit.service';
+import { buildRotRutExport } from '../../application/invoice-rotrut-export.service';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -29,11 +31,21 @@ function extractToken(req: NextRequest): string {
   return req.headers.get('authorization')?.slice(7) ?? req.cookies.get('at')?.value ?? '';
 }
 
+// Trailing action segments under …/invoices/[id]/<action>. For these the id is
+// the second-to-last segment; for a bare …/invoices/[id] it is the last one.
+const ID_ACTION_SEGMENTS = new Set([
+  'send',
+  'mark-paid',
+  'credit',
+  'pdf',
+  'rotrut',
+  'rotrut-export',
+]);
+
 function extractId(req: NextRequest): string {
-  // For nested action routes (…/[id]/send) the id is the second-to-last segment.
   const segments = req.nextUrl.pathname.split('/').filter(Boolean);
   const last = segments.at(-1) ?? '';
-  if (last === 'send' || last === 'mark-paid' || last === 'credit') return segments.at(-2) ?? '';
+  if (ID_ACTION_SEGMENTS.has(last)) return segments.at(-2) ?? '';
   return last;
 }
 
@@ -284,5 +296,70 @@ export const handleCreateCreditNote = createHandler(
     const creditNote = await createCreditNote(payload.orgId!, payload.sub, id, { reason: body.reason });
     if (!creditNote) throw Errors.notFound('Invoice');
     return created(creditNote, invoiceLocation(creditNote.id));
+  },
+);
+
+// ── Set / Clear ROT/RUT deduction (draft only) ───────────────────────────────
+
+const RotRutBodySchema = z.object({
+  // null/undefined clears the deduction; 'ROT'/'RUT' applies it.
+  rotRutType: z.enum(['ROT', 'RUT']).nullable().optional(),
+  buyerPersonalNumber: z.string().max(50).optional(),
+  propertyDesignation: z.string().max(200).optional(),
+  housingSocietyOrgNumber: z.string().max(50).optional(),
+});
+
+export const handleSetInvoiceRotRut = createHandler(
+  {
+    auth: 'jwt',
+    tag: 'Invoices:SetRotRut',
+    body: RotRutBodySchema,
+    permission: 'invoices.write',
+    rateLimit: { max: 60, windowMs: 60_000 },
+  },
+  async (ctx) => {
+    const { body, req } = ctx as { body: z.infer<typeof RotRutBodySchema>; req: NextRequest };
+    const id = extractId(req);
+    const payload = await requireStaff(req);
+    // The service throws Errors.conflict (409, issued invoice) / Errors.badRequest
+    // (400, missing buyer info) which createHandler maps; null means not found.
+    const updated = await setInvoiceRotRut(payload.orgId!, id, {
+      rotRutType: body.rotRutType ?? null,
+      buyerPersonalNumber: body.buyerPersonalNumber,
+      propertyDesignation: body.propertyDesignation,
+      housingSocietyOrgNumber: body.housingSocietyOrgNumber,
+    });
+    if (!updated) throw Errors.notFound('Invoice');
+    return ok(updated);
+  },
+);
+
+// ── ROT/RUT HUS export (Husarbete payment-request XML) ────────────────────────
+
+export const handleRotRutExport = createHandler(
+  {
+    auth: 'jwt',
+    tag: 'Invoices:RotRutExport',
+    permission: 'invoices.read',
+    rateLimit: { max: 120, windowMs: 60_000 },
+  },
+  async (ctx) => {
+    const { req } = ctx as { req: NextRequest };
+    const id = extractId(req);
+    const payload = await requireStaff(req);
+    const invoice = await getInvoice(id, payload.orgId!);
+    const xml = await buildRotRutExport(id, payload.orgId!);
+    // 404 when the invoice is missing or carries no ROT/RUT deduction to export.
+    if (!xml) throw Errors.notFound('Invoice ROT/RUT export');
+
+    const name = invoice?.invoiceNumber != null ? String(invoice.invoiceNumber) : id;
+    return new NextResponse(xml, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Content-Disposition': `attachment; filename="husarbete-${name}.xml"`,
+        'Cache-Control': 'private, no-store',
+      },
+    });
   },
 );

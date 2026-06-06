@@ -8,6 +8,7 @@
 
 import { Prisma, prisma } from '@platform/database/prisma';
 import { computeInvoiceTotals } from '../domain/invoice-pricing';
+import { computeRotRut, normalizeRotRutType } from '../domain/rot-rut';
 import type {
   Invoice,
   InvoiceLineItemInput,
@@ -143,7 +144,7 @@ export const invoiceRepository = {
   async update(id: string, orgId: string, input: UpdateInvoiceInput): Promise<Invoice | null> {
     const existing = await prisma.invoice.findFirst({
       where: { id, organizationId: orgId, deletedAt: null },
-      select: { id: true, status: true },
+      select: { id: true, status: true, rotRutType: true },
     });
     if (!existing || existing.status !== 'draft') return null;
 
@@ -151,6 +152,15 @@ export const invoiceRepository = {
     if (input.lineItems) {
       totals = computeInvoiceTotals(input.lineItems);
       await prisma.invoiceLineItem.deleteMany({ where: { invoiceId: id } });
+    }
+
+    // Recompute the ROT/RUT deduction when the line items change on an invoice
+    // that already carries a deduction type — the labour basis is derived from
+    // the current lines, so a line edit must re-derive labour + deduction.
+    let rotRut: ReturnType<typeof computeRotRut> | undefined;
+    const rotRutType = normalizeRotRutType(existing.rotRutType);
+    if (input.lineItems && rotRutType) {
+      rotRut = computeRotRut(input.lineItems, rotRutType);
     }
 
     const data = {
@@ -164,10 +174,51 @@ export const invoiceRepository = {
       ...(input.dueDate          !== undefined ? { dueDate: new Date(input.dueDate) } : {}),
       ...(input.paymentReference !== undefined ? { paymentReference: input.paymentReference ?? null } : {}),
       ...(totals ? { totalExVat: totals.totalExVat, totalVat: totals.totalVat, totalIncVat: totals.totalIncVat } : {}),
+      ...(rotRut ? { rotRutLaborAmount: rotRut.laborAmount, rotRutDeductionAmount: rotRut.deductionAmount } : {}),
       ...(input.lineItems ? { lineItems: { create: lineItemCreateData(input.lineItems) } } : {}),
     } as Prisma.InvoiceUncheckedUpdateInput;
 
     const row = await prisma.invoice.update({ where: { id }, data, select: INVOICE_SELECT });
+    return mapInvoice(row as unknown as Record<string, unknown>);
+  },
+
+  /**
+   * Persists the ROT/RUT deduction on a draft invoice (the type, buyer fields,
+   * and the computed labour + deduction amounts). Org-scoped; returns null if the
+   * invoice is not found or is not a draft. Clearing the deduction (rotRutType
+   * null) zeroes the amounts and nulls the buyer fields — the immutability guard
+   * lives in the service layer; this is a defensive draft-only write.
+   */
+  async setRotRut(
+    id: string,
+    orgId: string,
+    fields: {
+      rotRutType: string | null;
+      buyerPersonalNumber: string | null;
+      propertyDesignation: string | null;
+      housingSocietyOrgNumber: string | null;
+      rotRutLaborAmount: number;
+      rotRutDeductionAmount: number;
+    },
+  ): Promise<Invoice | null> {
+    const existing = await prisma.invoice.findFirst({
+      where: { id, organizationId: orgId, deletedAt: null },
+      select: { id: true, status: true },
+    });
+    if (!existing || existing.status !== 'draft') return null;
+
+    const row = await prisma.invoice.update({
+      where: { id },
+      data: {
+        rotRutType:              fields.rotRutType,
+        buyerPersonalNumber:     fields.buyerPersonalNumber,
+        propertyDesignation:     fields.propertyDesignation,
+        housingSocietyOrgNumber: fields.housingSocietyOrgNumber,
+        rotRutLaborAmount:       fields.rotRutLaborAmount,
+        rotRutDeductionAmount:   fields.rotRutDeductionAmount,
+      } as Prisma.InvoiceUncheckedUpdateInput,
+      select: INVOICE_SELECT,
+    });
     return mapInvoice(row as unknown as Record<string, unknown>);
   },
 
