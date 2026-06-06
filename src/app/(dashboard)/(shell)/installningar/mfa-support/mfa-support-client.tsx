@@ -142,15 +142,15 @@ export default function MfaSupportClient({ user }: { user: UserProps }) {
 
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-y border-[var(--ui-border-subtle)] py-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ui-text-muted)]">MFA active</p>
+                <p className="text-[11px] font-semibold uppercase text-[var(--ui-text-muted)]">MFA active</p>
                 <p className="mt-1 text-xl font-semibold text-[var(--ui-text)]">{totals.enabled}</p>
               </div>
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ui-text-muted)]">In grace</p>
+                <p className="text-[11px] font-semibold uppercase text-[var(--ui-text-muted)]">In grace</p>
                 <p className="mt-1 text-xl font-semibold text-[var(--ui-warning-text)]">{totals.grace}</p>
               </div>
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ui-text-muted)]">Needs action</p>
+                <p className="text-[11px] font-semibold uppercase text-[var(--ui-text-muted)]">Needs action</p>
                 <p className="mt-1 text-xl font-semibold text-[var(--ui-danger-text)]">{totals.overdue}</p>
               </div>
             </div>
@@ -172,7 +172,7 @@ export default function MfaSupportClient({ user }: { user: UserProps }) {
             <p className="text-sm text-[var(--ui-text-muted)]">No users matched your search.</p>
           ) : (
             <div className="overflow-hidden rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)]">
-              <div className="hidden grid-cols-[minmax(220px,1.4fr)_180px_180px_180px_100px] gap-4 border-b border-[var(--ui-border-subtle)] bg-[var(--ui-surface-subtle)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ui-text-muted)] lg:grid">
+              <div className="hidden grid-cols-[minmax(220px,1.4fr)_180px_180px_180px_100px] gap-4 border-b border-[var(--ui-border-subtle)] bg-[var(--ui-surface-subtle)] px-4 py-3 text-[11px] font-semibold uppercase text-[var(--ui-text-muted)] lg:grid">
                 <span>User</span>
                 <span>Status</span>
                 <span>Last login</span>

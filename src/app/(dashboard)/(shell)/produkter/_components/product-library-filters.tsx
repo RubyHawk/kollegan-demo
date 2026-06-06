@@ -94,7 +94,7 @@ function QuickFilters({
 }) {
   return (
     <div>
-      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ui-text-muted)]">Snabbfilter</p>
+      <p className="mb-2 text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Snabbfilter</p>
       <div className="space-y-1.5">
         <FilterButton
           active={!categoryFilter}
@@ -163,7 +163,7 @@ function CategoryHierarchyFilter({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ui-text-muted)]">Hierarki</p>
+        <p className="text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Hierarki</p>
         <button type="button" onClick={onManageCategories} className="text-xs font-medium text-[var(--ui-accent)]">
           Hantera
         </button>
@@ -231,7 +231,7 @@ function LegacyCategoryFilter({
 }) {
   return (
     <div>
-      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ui-text-muted)]">Äldre fria etiketter</p>
+      <p className="mb-2 text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Äldre fria etiketter</p>
       <div className="flex flex-wrap gap-2">
         {labels.map((label) => (
           <button

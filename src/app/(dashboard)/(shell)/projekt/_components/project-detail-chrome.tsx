@@ -117,7 +117,7 @@ export function InfoRow({ label, value }: { label: string; value: React.ReactNod
 export function DetailStat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <Panel padding="sm">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--ui-text-muted)]">{label}</p>
+      <p className="text-[11px] font-semibold uppercase text-[var(--ui-text-muted)]">{label}</p>
       <p className="mt-1 text-sm font-semibold text-[var(--ui-text)]">{value}</p>
     </Panel>
   );

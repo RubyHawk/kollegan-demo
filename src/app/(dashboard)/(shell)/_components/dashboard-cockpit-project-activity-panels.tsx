@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -102,7 +102,7 @@ export function ProjectHandoffPanel({
         <div className="grid grid-cols-3 divide-x divide-[var(--cockpit-divider,var(--cockpit-border-soft))] border-b border-[var(--cockpit-divider,var(--cockpit-border-soft))]">
           {groups.map((g) => (
             <div key={g.label} className="flex flex-col px-3 py-2.5">
-              <span className="truncate text-[9px] font-semibold uppercase tracking-[.05em] text-[var(--ui-text-muted)]">{g.label}</span>
+              <span className="truncate text-[9px] font-semibold uppercase text-[var(--ui-text-muted)]">{g.label}</span>
               <span className="mt-1 text-[19px] font-bold tabular-nums leading-none text-[var(--ui-text)]">{g.count}</span>
               {g.value > 0 && (
                 <span className="mt-0.5 text-[10px] font-medium tabular-nums text-[var(--ui-text-secondary)]">{fmtCompactSEK(g.value)}</span>

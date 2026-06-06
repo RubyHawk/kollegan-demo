@@ -342,7 +342,7 @@ export function ProductModal({
 
               <div className="space-y-4 xl:sticky xl:top-0">
                 <ModalMetaCard>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ui-text-muted)]">
+                  <p className="text-[11px] font-semibold uppercase text-[var(--ui-text-muted)]">
                     Förhandsgranskning
                   </p>
                   <div className="mt-3 overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] shadow-sm">
@@ -355,7 +355,7 @@ export function ProductModal({
                           className="h-10 w-10 shrink-0 rounded-[var(--ui-radius-control)] border border-[var(--ui-border)] object-cover"
                         />
                       ) : (
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--ui-radius-control)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[10px] font-semibold tracking-[0.12em] text-[var(--ui-text-muted)]">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--ui-radius-control)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[10px] font-semibold text-[var(--ui-text-muted)]">
                           {initials}
                         </div>
                       )}
@@ -378,7 +378,7 @@ export function ProductModal({
                     <div className="space-y-3 px-4 py-4 text-sm">
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ui-text-muted)]">
+                          <p className="text-[11px] font-semibold uppercase text-[var(--ui-text-muted)]">
                             Pris
                           </p>
                           <p className="text-lg font-semibold text-[var(--ui-text)]">
@@ -395,7 +395,7 @@ export function ProductModal({
 
                       {previewLabel ? (
                         <div className="rounded-[var(--ui-radius-control)] border border-[var(--ui-border-subtle)] bg-[var(--ui-surface-subtle)] px-3 py-2">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--ui-text-muted)]">
+                          <p className="text-[11px] font-semibold uppercase text-[var(--ui-text-muted)]">
                             Etikett
                           </p>
                           <p className="mt-1 text-sm text-[var(--ui-text)]">{previewLabel}</p>

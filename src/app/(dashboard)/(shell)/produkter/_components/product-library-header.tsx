@@ -34,7 +34,7 @@ export function ProductLibraryHeader({
     <section className="overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] shadow-sm">
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_240px]">
         <div className="space-y-3 px-5 py-5 sm:px-6">
-          <div className="inline-flex rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ui-text-muted)]">
+          <div className="inline-flex rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-1 text-xs font-semibold uppercase text-[var(--ui-text-muted)]">
             Produktbibliotek
           </div>
           <h1 className="text-xl font-semibold tracking-tight text-[var(--ui-text)]">
@@ -83,7 +83,7 @@ export function ProductLibraryHeader({
 function ProductStat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-2.5">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--ui-text-muted)]">{label}</div>
+      <div className="text-[10px] font-semibold uppercase text-[var(--ui-text-muted)]">{label}</div>
       <div className="mt-1 text-lg font-semibold text-[var(--ui-text)]">{value}</div>
     </div>
   );

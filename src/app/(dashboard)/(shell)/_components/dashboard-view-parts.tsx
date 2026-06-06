@@ -83,7 +83,7 @@ export function DashboardClock() {
         </svg>
       </div>
       <div className="flex items-baseline gap-2">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Stockholm</p>
+        <p className="text-[9px] font-semibold uppercase text-[var(--text-muted)]">Stockholm</p>
         <p className="font-mono text-[14px] font-semibold tabular-nums leading-none text-[var(--text-primary)]">{time}</p>
       </div>
     </div>
@@ -147,7 +147,7 @@ export function KpiItem({ label, value, sub, icon, tone }: {
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">{label}</p>
+        <p className="text-[9px] font-semibold uppercase text-[var(--text-muted)]">{label}</p>
         <p className="mt-0.5 text-[17px] font-semibold leading-none tabular-nums text-[var(--text-primary)]">{value}</p>
         <p className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">{sub}</p>
       </div>
@@ -183,7 +183,7 @@ export function StatusDistributionCard({ countMap, total }: { countMap: Record<s
           <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">Pipeline och avslut just nu</p>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Totalt</span>
+          <span className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">Totalt</span>
           <span className="text-base font-semibold tabular-nums text-[var(--text-primary)]">{total}</span>
         </div>
       </div>
@@ -236,7 +236,7 @@ export function StatusDistributionCard({ countMap, total }: { countMap: Record<s
               <div className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3.5 py-3 shadow-[0_8px_18px_rgba(0,0,0,0.04)]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">
                       Aktiv del
                     </p>
                     <div className="mt-1 flex items-center gap-2">
@@ -245,7 +245,7 @@ export function StatusDistributionCard({ countMap, total }: { countMap: Record<s
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">andel</p>
+                    <p className="text-[10px] font-semibold uppercase text-[var(--text-muted)]">andel</p>
                     <p className="mt-1 text-sm font-semibold tabular-nums text-[var(--text-primary)]">{highlightedRow.percent}%</p>
                   </div>
                 </div>
@@ -281,7 +281,7 @@ export function StatusDistributionCard({ countMap, total }: { countMap: Record<s
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">antal</p>
+                  <p className="text-[9px] font-semibold uppercase text-[var(--text-muted)]">antal</p>
                   <p className="text-[12px] font-semibold tabular-nums text-[var(--text-primary)]">{r.count}</p>
                 </div>
               </button>
@@ -312,15 +312,15 @@ export function ProjectStatsCard({ stats }: { stats: ProjectStats }) {
 
       <div className="mt-3 grid grid-cols-3 gap-2">
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Aktiva</p>
+          <p className="text-[9px] font-semibold uppercase text-[var(--text-muted)]">Aktiva</p>
           <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{stats.active}</p>
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Klart</p>
+          <p className="text-[9px] font-semibold uppercase text-[var(--text-muted)]">Klart</p>
           <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--status-accepted-text)]">{stats.completed}</p>
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Andel</p>
+          <p className="text-[9px] font-semibold uppercase text-[var(--text-muted)]">Andel</p>
           <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--text-primary)]">{completionRate}%</p>
         </div>
       </div>

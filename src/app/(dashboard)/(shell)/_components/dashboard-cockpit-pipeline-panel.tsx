@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -102,7 +102,7 @@ function PipelineCardsView({
             className="flex min-w-0 flex-col justify-between rounded-md border border-[var(--cockpit-border-soft,var(--ui-border))] bg-[var(--ui-surface-raised)] px-2 py-2 transition-colors hover:bg-[var(--ui-surface-hover)]"
           >
             <span className="min-w-0">
-              <span className="block truncate text-[9.5px] font-semibold uppercase tracking-[.04em] text-[var(--ui-text-muted)]">{PIPELINE_SHORT_LABELS[stage.id] ?? stage.label}</span>
+              <span className="block truncate text-[9.5px] font-semibold uppercase text-[var(--ui-text-muted)]">{PIPELINE_SHORT_LABELS[stage.id] ?? stage.label}</span>
               <span className="mt-2 block text-[17px] font-bold tabular-nums leading-none text-[var(--ui-text)]">{stage.count}</span>
               <span className="mt-0.5 block truncate text-[10px] font-semibold tabular-nums text-[var(--ui-text-secondary)]">{fmtCompactSEK(stage.value)}</span>
             </span>

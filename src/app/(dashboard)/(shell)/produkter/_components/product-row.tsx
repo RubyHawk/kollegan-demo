@@ -25,7 +25,7 @@ function ProductThumbnail({
   }
 
   return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--ui-radius-control)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[10px] font-semibold tracking-[0.14em] text-[var(--ui-text-muted)]">
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--ui-radius-control)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[10px] font-semibold text-[var(--ui-text-muted)]">
       {productInitials(name)}
     </div>
   );

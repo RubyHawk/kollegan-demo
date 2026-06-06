@@ -163,7 +163,7 @@ export function BackupCodesSection({
               <div className="grid gap-2 sm:grid-cols-2">
                 {backupCodes.map((code) => (
                   <div key={code} className="flex items-center gap-2 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2">
-                    <code className="flex-1 font-mono text-sm tracking-[0.18em] text-[var(--ui-text)]">{code}</code>
+                    <code className="flex-1 font-mono text-sm text-[var(--ui-text)]">{code}</code>
                     <button type="button" onClick={() => void navigator.clipboard.writeText(code)} className="text-xs text-[var(--ui-accent)] hover:underline">
                       Copy
                     </button>

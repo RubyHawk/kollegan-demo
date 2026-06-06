@@ -122,7 +122,7 @@ function ChartTooltip({ active, payload, label }: {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.14)]">
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">{label}</p>
+      <p className="mb-2 text-[10px] font-semibold uppercase text-[var(--text-muted)]">{label}</p>
       {payload.map(p => (
         <div key={p.name} className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full" style={{ background: p.color }}/>
@@ -173,7 +173,7 @@ export function TrendCard({ activityData }: { activityData: OfferActivityPoint[]
           ].map((item, i) => (
             <div key={item.lbl} className="flex items-center gap-1.5">
               {i > 0 && <span className="h-3 w-px bg-[var(--border)]"/>}
-              <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">{item.lbl}</span>
+              <span className="text-[9px] font-bold uppercase text-[var(--text-muted)]">{item.lbl}</span>
               <span className="font-semibold tabular-nums text-[var(--text-primary)]">{item.val}</span>
             </div>
           ))}

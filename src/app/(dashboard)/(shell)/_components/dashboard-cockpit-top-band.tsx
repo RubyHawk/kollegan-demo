@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
@@ -298,7 +298,7 @@ function KpiCell({
 }) {
   return (
     <div className="relative flex min-w-0 flex-col border-b border-r border-[var(--cockpit-divider,var(--cockpit-border-soft))] px-3 pt-3 pb-0 last:border-r-0 sm:[&:nth-child(2n)]:border-r-0 xl:border-b-0 xl:[&:nth-child(2n)]:border-r xl:[&:nth-child(4n)]:border-r-0">
-      <p className="truncate text-[10px] font-semibold uppercase tracking-[.05em] text-[var(--ui-text-muted)]">{label}</p>
+      <p className="truncate text-[10px] font-semibold uppercase text-[var(--ui-text-muted)]">{label}</p>
       <p className="mt-1.5 whitespace-nowrap text-[18px] font-semibold tabular-nums leading-none text-[var(--ui-text)]">{value}</p>
       {detail !== null && (
         <p className="mt-1 truncate text-[10.5px] text-[var(--ui-text-secondary)]">{detail}</p>
