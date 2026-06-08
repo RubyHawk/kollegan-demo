@@ -1,22 +1,7 @@
 'use client';
 
 /**
- * Sidebar — modern SaaS/ERP navigation sidebar (Linear-inspired redesign)
- *
- * Visual design language:
- *  - Clean, minimal — no icon boxes, no left bars, no tree lines
- *  - Active: surface-hover bg + font-medium + accent icon (Linear-style)
- *  - Hover: surface-hover bg + primary text
- *  - Collapse: hover-reveal button in header
- *  - Section labels: small uppercase, spacing-only separation (no borders)
- *  - Footer: minimal identity row + compact icon buttons
- *
- * Animations (Framer Motion):
- *  - Labels: opacity + x slide when sidebar expands/collapses
- *  - Dropdown: height + opacity + stagger children
- *  - Chevron: rotate 0 → 90° spring
- *  - Badge: subtle pulse on mount
- *  Sidebar width: CSS transition (no Framer layout reflow)
+ * Sidebar — modern SaaS/ERP navigation sidebar.
  */
 
 import Link from 'next/link';
@@ -35,7 +20,12 @@ import { cn } from '@shared/lib/utils';
 import { BrandMark } from '@shared/ui/brand';
 import { TooltipProvider } from '@shared/ui/tooltip';
 import { KONTO_ITEMS } from '@shared/nav/settings-config';
-import { LS_DROPDOWNS_KEY, NAV_CONFIG, type SidebarProps, type User } from './sidebar-config';
+import {
+  LS_DROPDOWNS_KEY,
+  NAV_CONFIG,
+  type SidebarProps,
+  type User,
+} from './sidebar-config';
 import { SectionGroup } from './sidebar-navigation';
 
 // ─── SidebarHeader ────────────────────────────────────────────────────────────
@@ -54,7 +44,6 @@ function SidebarHeader({ collapsed, onMobileClose }: SidebarHeaderProps) {
         collapsed ? 'justify-center px-0' : 'px-4 gap-2.5',
       )}
     >
-      {/* Logo mark */}
       <motion.div
         className="flex h-7 w-7 shrink-0 items-center justify-center"
         whileHover={{ scale: 1.04 }}
@@ -63,13 +52,15 @@ function SidebarHeader({ collapsed, onMobileClose }: SidebarHeaderProps) {
         <BrandMark size={26} alt="" />
       </motion.div>
 
-      {/* Wordmark */}
       {!collapsed && (
         <AnimatePresence initial={false}>
           <motion.span
             key="wordmark"
             className="font-heading text-lg font-semibold text-[var(--ui-text)] whitespace-nowrap min-w-0"
-            variants={{ hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0 } }}
+            variants={{
+              hidden: { opacity: 0, x: -8 },
+              show: { opacity: 1, x: 0 },
+            }}
             initial="hidden"
             animate="show"
             exit="hidden"
@@ -90,7 +81,6 @@ function SidebarHeader({ collapsed, onMobileClose }: SidebarHeaderProps) {
           <CloseIcon size={16} />
         </button>
       ) : null}
-
     </div>
   );
 }
@@ -106,17 +96,18 @@ interface SidebarFooterProps {
 
 function AvatarBadge({ user, size }: { user: User; size: 'sm' | 'md' }) {
   const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
-  // Null-safe initials: take first char of each word, upper-cased, max 2 letters
-  const initials = displayName
-    .split(' ')
-    .map((w) => w?.[0]?.toUpperCase() ?? '')
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('') || '?';
-  // md = expanded footer row (slightly larger); sm = collapsed icon slot
-  const dim    = size === 'md' ? 'w-8 h-8' : 'w-7 h-7';
+
+  const initials =
+    displayName
+      .split(' ')
+      .map((word) => word?.[0]?.toUpperCase() ?? '')
+      .filter(Boolean)
+      .slice(0, 2)
+      .join('') || '?';
+
+  const dim = size === 'md' ? 'w-8 h-8' : 'w-7 h-7';
   const radius = size === 'md' ? 'rounded-lg' : 'rounded-md';
-  const text   = size === 'md' ? 'text-[11px]' : 'text-[10px]';
+  const text = size === 'md' ? 'text-[11px]' : 'text-[10px]';
 
   if (user.avatarUrl) {
     return (
@@ -128,9 +119,14 @@ function AvatarBadge({ user, size }: { user: User; size: 'sm' | 'md' }) {
       />
     );
   }
+
   return (
-    <div className={`${dim} ${radius} bg-[var(--ui-accent-subtle)] flex items-center justify-center shrink-0`}>
-      <span className={`${text} font-semibold text-[var(--ui-accent)]`}>{initials}</span>
+    <div
+      className={`${dim} ${radius} bg-[var(--ui-accent-subtle)] flex items-center justify-center shrink-0`}
+    >
+      <span className={`${text} font-semibold text-[var(--ui-accent)]`}>
+        {initials}
+      </span>
     </div>
   );
 }
@@ -142,12 +138,15 @@ function SidebarFooter({
   onMobileClose,
 }: SidebarFooterProps) {
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const [collapsedPopoverPosition, setCollapsedPopoverPosition] = useState<{ left: number; top: number } | null>(null);
+  const [collapsedPopoverPosition, setCollapsedPopoverPosition] = useState<{
+    left: number;
+    top: number;
+  } | null>(null);
+
   const popoverRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const displayName =
-    [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+  const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
 
   const roleLabel: Record<string, string> = {
     admin: 'Admin',
@@ -158,22 +157,29 @@ function SidebarFooter({
     receptionist: 'Receptionist',
   };
 
-  // Close on click outside
   useEffect(() => {
     if (!popoverOpen) return;
-    function onMouseDown(e: MouseEvent) {
+
+    function onMouseDown(event: MouseEvent) {
       if (
-        popoverRef.current && !popoverRef.current.contains(e.target as Node) &&
-        triggerRef.current && !triggerRef.current.contains(e.target as Node)
+        popoverRef.current &&
+        !popoverRef.current.contains(event.target as Node) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(event.target as Node)
       ) {
         setPopoverOpen(false);
       }
     }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setPopoverOpen(false);
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setPopoverOpen(false);
+      }
     }
+
     document.addEventListener('mousedown', onMouseDown);
     document.addEventListener('keydown', onKeyDown);
+
     return () => {
       document.removeEventListener('mousedown', onMouseDown);
       document.removeEventListener('keydown', onKeyDown);
@@ -182,6 +188,7 @@ function SidebarFooter({
 
   const updateCollapsedPopoverPosition = useCallback(() => {
     const rect = triggerRef.current?.getBoundingClientRect();
+
     if (!rect) return;
 
     const panelWidth = 224;
@@ -193,7 +200,7 @@ function SidebarFooter({
         viewportPadding,
         Math.min(desiredLeft, window.innerWidth - panelWidth - viewportPadding),
       ),
-      top: rect.top + (rect.height / 2),
+      top: rect.top + rect.height / 2,
     });
   }, []);
 
@@ -201,6 +208,7 @@ function SidebarFooter({
     if (!popoverOpen || !collapsed) return;
 
     const frame = window.requestAnimationFrame(updateCollapsedPopoverPosition);
+
     window.addEventListener('resize', updateCollapsedPopoverPosition);
     window.addEventListener('scroll', updateCollapsedPopoverPosition, true);
 
@@ -223,44 +231,62 @@ function SidebarFooter({
         collapsed ? 'max-w-[calc(100vw-1.5rem)]' : 'absolute bottom-full mb-2 left-0',
       )}
     >
-      {/* User info */}
       <div className="px-4 pt-3.5 pb-3">
         <div className="flex items-center gap-3">
           {user.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.avatarUrl} alt={displayName} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+            <img
+              src={user.avatarUrl}
+              alt={displayName}
+              className="w-10 h-10 rounded-lg object-cover shrink-0"
+            />
           ) : (
             <div className="w-10 h-10 rounded-lg bg-[var(--ui-accent-subtle)] flex items-center justify-center shrink-0">
               <span className="text-sm font-semibold text-[var(--ui-accent)]">
-                {displayName.split(' ').map((w) => w?.[0]?.toUpperCase() ?? '').filter(Boolean).slice(0, 2).join('')}
+                {displayName
+                  .split(' ')
+                  .map((word) => word?.[0]?.toUpperCase() ?? '')
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .join('')}
               </span>
             </div>
           )}
+
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-              <p className="min-w-0 truncate text-sm font-semibold text-[var(--ui-text)]">{displayName}</p>
+              <p className="min-w-0 truncate text-sm font-semibold text-[var(--ui-text)]">
+                {displayName}
+              </p>
+
               {user.role ? (
                 <span className="shrink-0 rounded-md bg-[var(--ui-surface-subtle)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ui-text-secondary)]">
                   {roleLabel[user.role] ?? user.role}
                 </span>
               ) : null}
             </div>
-            <p className="mt-0.5 text-xs text-[var(--ui-text-muted)] truncate">{user.email}</p>
+
+            <p className="mt-0.5 text-xs text-[var(--ui-text-muted)] truncate">
+              {user.email}
+            </p>
           </div>
         </div>
       </div>
 
       <div className="h-px bg-[var(--ui-border)]" />
 
-      {/* Quick links — derived from KONTO_ITEMS in settings-config.ts */}
       <div className="py-1.5 px-1.5">
         {KONTO_ITEMS.map((item) => {
           const ItemIcon = item.icon;
+
           return (
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => { setPopoverOpen(false); onMobileClose?.(); }}
+              onClick={() => {
+                setPopoverOpen(false);
+                onMobileClose?.();
+              }}
               className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
             >
               <ItemIcon size={14} className="shrink-0" />
@@ -272,10 +298,13 @@ function SidebarFooter({
 
       <div className="h-px bg-[var(--ui-border)]" />
 
-      {/* Logout */}
       <div className="py-1.5 px-1.5">
         <button
-          onClick={() => { setPopoverOpen(false); onLogout(); }}
+          type="button"
+          onClick={() => {
+            setPopoverOpen(false);
+            onLogout();
+          }}
           className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-[var(--ui-danger-text)] transition-colors hover:bg-[var(--ui-danger-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
         >
           <LogOutIcon size={14} className="shrink-0" />
@@ -285,63 +314,71 @@ function SidebarFooter({
     </motion.div>
   );
 
-  const popoverContent = collapsed
-    ? (
-        popoverOpen && collapsedPopoverPosition
-          ? createPortal(
-              <div
-                className="fixed z-[70] pointer-events-none"
-                style={{
-                  left: collapsedPopoverPosition.left,
-                  top: collapsedPopoverPosition.top,
-                  transform: 'translateY(-50%)',
-                }}
-              >
-                <div className="pointer-events-auto">{popoverPanel}</div>
-              </div>,
-              document.body,
-            )
-          : null
+  const popoverContent = collapsed ? (
+    popoverOpen && collapsedPopoverPosition ? (
+      createPortal(
+        <div
+          className="fixed z-[70] pointer-events-none"
+          style={{
+            left: collapsedPopoverPosition.left,
+            top: collapsedPopoverPosition.top,
+            transform: 'translateY(-50%)',
+          }}
+        >
+          <div className="pointer-events-auto">{popoverPanel}</div>
+        </div>,
+        document.body,
       )
-    : popoverPanel;
+    ) : null
+  ) : (
+    popoverPanel
+  );
 
-  // ── Collapsed footer ──────────────────────────────────────────────────────
   if (collapsed) {
     return (
       <div className="relative py-3 flex flex-col items-center gap-1.5 border-t border-[var(--ui-border)]">
         <button
+          type="button"
           ref={triggerRef}
           onClick={() => {
             const nextOpen = !popoverOpen;
-            if (nextOpen) updateCollapsedPopoverPosition();
+
+            if (nextOpen) {
+              updateCollapsedPopoverPosition();
+            }
+
             setPopoverOpen(nextOpen);
           }}
           className="w-9 h-9 rounded-md hover:bg-[var(--ui-surface-hover)] flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
         >
           <AvatarBadge user={user} size="sm" />
         </button>
+
         <AnimatePresence>{popoverOpen && popoverContent}</AnimatePresence>
       </div>
     );
   }
 
-  // ── Expanded footer ────────────────────────────────────────────────────────
   return (
     <div className="relative px-3 py-3 border-t border-[var(--ui-border)]">
       <button
+        type="button"
         ref={triggerRef}
-        onClick={() => setPopoverOpen((v) => !v)}
+        onClick={() => setPopoverOpen((value) => !value)}
         className="w-full flex items-center gap-2.5 rounded-md px-1 py-1 -mx-1 hover:bg-[var(--ui-surface-hover)] transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
       >
         <AvatarBadge user={user} size="md" />
+
         <div className="flex-1 min-w-0 text-left">
           <p className="text-[13px] font-medium text-[var(--ui-text)] truncate">
             {displayName}
           </p>
+
           <p className="text-[11px] text-[var(--ui-text-muted)] truncate">
             {user.email}
           </p>
         </div>
+
         <ChevronRightIcon
           size={13}
           className={cn(
@@ -350,13 +387,13 @@ function SidebarFooter({
           )}
         />
       </button>
+
       <AnimatePresence>{popoverOpen && popoverContent}</AnimatePresence>
     </div>
   );
 }
 
-// ─── Sidebar (main export) ────────────────────────────────────────────────────
-
+// ─── Sidebar ─────────────────────────────────────────────────────────────────
 
 export default function Sidebar({
   user,
@@ -365,41 +402,75 @@ export default function Sidebar({
   onLogout,
   onMobileClose,
 }: SidebarProps) {
-  const pathname      = usePathname();
+  const pathname = usePathname();
   const reducedMotion = useReducedMotion() ?? false;
-  const [openDropdowns, setOpenDropdowns] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const stored = localStorage.getItem(LS_DROPDOWNS_KEY);
-      return stored ? (JSON.parse(stored) as string[]) : [];
-    } catch {
-      return [];
-    }
-  });
+
+  /**
+   * Important:
+   * Initial state must be identical on server and first client render.
+   * Do NOT read localStorage in the useState initializer.
+   */
+  const [openDropdowns, setOpenDropdowns] = useState<string[]>([]);
+
+  /**
+   * Restore persisted dropdowns after hydration.
+   * The setState call is deferred so React's set-state-in-effect rule does not complain.
+   */
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const stored = localStorage.getItem(LS_DROPDOWNS_KEY);
+
+        if (!stored) return;
+
+        const parsed: unknown = JSON.parse(stored);
+
+        if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
+          setOpenDropdowns(parsed);
+        }
+      } catch {
+        // Ignore invalid localStorage data.
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   function toggleDropdown(key: string) {
-    setOpenDropdowns((prev) => {
-      const next = prev.includes(key)
-        ? prev.filter((k) => k !== key)
-        : [...prev, key];
-      try { localStorage.setItem(LS_DROPDOWNS_KEY, JSON.stringify(next)); }
-      catch { /* ignore */ }
+    setOpenDropdowns((previous) => {
+      const next = previous.includes(key)
+        ? previous.filter((item) => item !== key)
+        : [...previous, key];
+
+      try {
+        localStorage.setItem(LS_DROPDOWNS_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore localStorage write failures.
+      }
+
       return next;
     });
   }
 
   const visibleSections = NAV_CONFIG.filter(
-    (s) => !s.adminOnly || user.role === 'admin' || user.role === 'super_admin',
+    (section) =>
+      !section.adminOnly || user.role === 'admin' || user.role === 'super_admin',
   );
+
   const routeOpenDropdowns = NAV_CONFIG.flatMap((section) =>
     section.items.flatMap((entry) =>
       entry.type === 'dropdown' &&
-      entry.items.some((c) => pathname === c.href || pathname.startsWith(c.href + '/'))
+      entry.items.some(
+        (child) => pathname === child.href || pathname.startsWith(child.href + '/'),
+      )
         ? [entry.key]
         : [],
     ),
   );
-  const activeOpenDropdowns = Array.from(new Set([...openDropdowns, ...routeOpenDropdowns]));
+
+  const activeOpenDropdowns = Array.from(
+    new Set([...openDropdowns, ...routeOpenDropdowns]),
+  );
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -410,8 +481,8 @@ export default function Sidebar({
           collapsed ? 'w-16' : 'w-[206px]',
         )}
       >
-        {/* Collapse toggle — centered on sidebar edge, always visible */}
         <button
+          type="button"
           onClick={onToggleCollapse}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className={cn(
@@ -426,11 +497,9 @@ export default function Sidebar({
           {collapsed ? <ChevronRightIcon size={14} /> : <ChevronLeftIcon size={14} />}
         </button>
 
-        {/* Sidebar panel */}
-          <aside className="h-full w-full flex flex-col border-r border-[var(--ui-border)] bg-[var(--ui-surface)] overflow-hidden">
+        <aside className="h-full w-full flex flex-col border-r border-[var(--ui-border)] bg-[var(--ui-surface)] overflow-hidden">
           <SidebarHeader collapsed={collapsed} onMobileClose={onMobileClose} />
 
-          {/* Scrollable nav */}
           <div
             className={cn(
               'flex-1 py-2 flex flex-col overflow-y-auto scrollbar-thin',
