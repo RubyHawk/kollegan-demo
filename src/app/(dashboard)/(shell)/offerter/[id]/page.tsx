@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getOfferPdfUrl } from '@shared/lib/api/offers.api';
 import { getSessionUser } from '@modules/supporting/auth';
 import { acceptOfferOnBehalfForStaff, getStaffOfferDetail } from '@modules/supporting/offers';
+import { CreateInvoiceButton } from './_components/create-invoice-button';
 
 function fmtDate(iso?: string) {
   if (!iso) return '—';
@@ -105,6 +106,7 @@ export default async function OfferDetailsPage({
                 </button>
               </form>
             )}
+            {offer.status === 'accepted' && <CreateInvoiceButton offerId={offer.id} />}
             {offer.generatedDocument && (
               <a
                 href={getOfferPdfUrl(offer.id)}

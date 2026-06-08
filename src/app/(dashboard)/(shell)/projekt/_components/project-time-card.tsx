@@ -10,6 +10,7 @@ import type { TimeEntry } from '@shared/lib/api/time-entries.api';
 import { fmtDate } from '../_lib/project-display';
 import { useProjectTimeStore } from '../_store/project-time.store';
 import { LogTimePanel, type TimeEntryFormValues } from './log-time-panel';
+import { CreateInvoiceFromTime } from './create-invoice-from-time';
 
 function fmtHours(hours: number): string {
   return `${new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 2 }).format(hours)} h`;
@@ -47,14 +48,18 @@ export function ProjectTimeCard({ projectId }: { projectId: string }) {
     let total = 0;
     let billable = 0;
     let unbilled = 0;
+    const unbilledIds: string[] = [];
     for (const entry of entries) {
       total += entry.hours;
       if (entry.billable) {
         billable += entry.hours;
-        if (!entry.invoiceId) unbilled += entry.hours;
+        if (!entry.invoiceId) {
+          unbilled += entry.hours;
+          unbilledIds.push(entry.id);
+        }
       }
     }
-    return { total, billable, unbilled };
+    return { total, billable, unbilled, unbilledIds };
   }, [entries]);
 
   function canEdit(entry: TimeEntry): boolean {
@@ -108,12 +113,21 @@ export function ProjectTimeCard({ projectId }: { projectId: string }) {
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* TODO (M3): "Skapa faktura från tid" action goes here once invoicing exists. */}
         <div className="grid gap-3 sm:grid-cols-3">
           <SummaryStat label="Totalt" value={fmtHours(summary.total)} />
           <SummaryStat label="Debiterbart" value={fmtHours(summary.billable)} />
           <SummaryStat label="Ej fakturerat" value={fmtHours(summary.unbilled)} />
         </div>
+
+        {summary.unbilledIds.length > 0 && (
+          <div className="flex justify-end">
+            <CreateInvoiceFromTime
+              projectId={projectId}
+              entryIds={summary.unbilledIds}
+              unbilledHours={summary.unbilled}
+            />
+          </div>
+        )}
 
         {error && (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-primary)]">
