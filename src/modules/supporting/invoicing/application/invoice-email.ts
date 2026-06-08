@@ -148,8 +148,28 @@ async function send(opts: { from: string; to: string; subject: string; html: str
   throw new Error(`Resend error: ${JSON.stringify(firstAttempt.error)}`);
 }
 
+/**
+ * Master switch for invoice email delivery. Disabled by default so issuing an
+ * invoice freezes the PDF and assigns the gapless number WITHOUT emailing the
+ * customer — the wiring is fully connected but no mail leaves the system until an
+ * operator explicitly opts in with `INVOICE_EMAIL_ENABLED=true`. Independent of
+ * the offers email flow, which is unaffected.
+ */
+function invoiceEmailEnabled(): boolean {
+  return process.env.INVOICE_EMAIL_ENABLED === 'true';
+}
+
 /** Sends the issued invoice to its recipient with a link to the PDF route. */
 export async function sendInvoiceEmail(input: InvoiceEmailInput): Promise<void> {
+  if (!invoiceEmailEnabled()) {
+    logger.info(
+      TAG,
+      `Invoice email suppressed — INVOICE_EMAIL_ENABLED not set; no mail sent to ${input.to}`,
+      { invoiceNumber: input.invoiceNumber },
+    );
+    return;
+  }
+
   const heading = input.documentType === 'credit_note' ? 'Kreditfaktura' : 'Faktura';
   const subject = input.invoiceNumber != null
     ? `${heading} ${input.invoiceNumber}`
