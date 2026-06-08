@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { LoaderCircle } from 'lucide-react';
 import { getEmailSettings, updateEmailSettings } from '@shared/lib/api/settings.api';
-import { SectionCard, FieldLabel, Input, SaveButton } from '../_components/shared';
+import { FieldLabel, Input, SaveButton, SectionCard } from '../_components/shared';
 
 export default function EpostPage() {
   const [senderEmail, setSenderEmail] = useState('');
-  const [senderName, setSenderName]   = useState('');
-  const [pending, setPending]         = useState(false);
-  const [saved, setSaved]             = useState(false);
-  const [loading, setLoading]         = useState(true);
+  const [senderName, setSenderName] = useState('');
+  const [pending, setPending] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getEmailSettings()
@@ -32,7 +33,7 @@ export default function EpostPage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch {
-      // silent
+      // Keep this page non-blocking until settings errors have a product flow.
     } finally {
       setPending(false);
     }
@@ -40,8 +41,8 @@ export default function EpostPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="w-5 h-5 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+      <div className="flex items-center justify-center py-12 text-[var(--ui-text-muted)]">
+        <LoaderCircle aria-hidden="true" size={20} strokeWidth={1.75} className="animate-spin" />
       </div>
     );
   }
@@ -50,7 +51,7 @@ export default function EpostPage() {
     <div className="space-y-5">
       <SectionCard
         title="Avsändaradress"
-        description="Ange den e-postadress som utgående offerter och notifieringar skickas ifrån. Adressen måste vara verifierad hos din e-postleverantör (Resend)."
+        description="Ange den e-postadress som utgående offerter och notifieringar skickas ifrån. Adressen måste vara verifierad hos din e-postleverantör."
       >
         <div className="space-y-4">
           <div>
@@ -72,7 +73,7 @@ export default function EpostPage() {
       </SectionCard>
 
       <SectionCard title="Så fungerar det">
-        <div className="space-y-2 text-xs text-[var(--text-muted)] leading-relaxed">
+        <div className="space-y-2 text-xs leading-relaxed text-[var(--ui-text-muted)]">
           <p>
             När du anger en avsändaradress ovan kommer alla utgående offerter, påminnelser och notifieringar
             att skickas från den adressen istället för standardadressen.

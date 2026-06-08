@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { EnvelopeSimple } from '@phosphor-icons/react';
+import { Mail } from 'lucide-react';
 import { listCompanyMembers, type Company } from '@shared/lib/api/companies.api';
 import {
   createLeadIntakeForwarder,
@@ -12,7 +12,6 @@ import {
   type LeadIntakeFieldMapping,
   type LeadIntakeForwarder,
 } from '@shared/lib/api/lead-intake-forwarders.api';
-import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
 import {
   Dialog,
@@ -23,6 +22,8 @@ import {
   ModalActionFooter,
   ModalBody,
 } from '@shared/ui/dialog';
+import { InlineAlert } from '@shared/ui/inline-alert';
+import { StatusBadge } from '@shared/ui/status-badge';
 import { TooltipProvider } from '@shared/ui/tooltip';
 import {
   buildDraftName,
@@ -109,7 +110,7 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
       setSelectedId(nextSelected?.id ?? '');
       resetForm(nextSelected, forwarderPayload.defaultFieldConfig, company);
     } catch {
-      setError('Kunde inte ladda intresseanmalan-installningar.');
+      setError('Kunde inte ladda intresseanmälan-inställningar.');
     } finally {
       setLoading(false);
     }
@@ -184,7 +185,7 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
       await load();
       setSelectedId(saved.id);
     } catch {
-      setError('Kunde inte spara forwardern. Kontrollera adress, falt och mottagare.');
+      setError('Kunde inte spara forwardern. Kontrollera adress, fält och mottagare.');
     } finally {
       setSaving(false);
     }
@@ -211,15 +212,15 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
       <DialogContent mobileVariant="fullscreen" size="xl" showMobileClose className="sm:h-[min(92dvh,900px)]">
         <TooltipProvider>
           <div className="flex h-full flex-col overflow-hidden">
-            <DialogHeader className="border-b border-[var(--border)] pr-12">
+            <DialogHeader className="border-b border-[var(--ui-border)] pr-12">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex min-w-0 items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                    <EnvelopeSimple size={19} weight="duotone" />
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-accent)]">
+                    <Mail size={19} strokeWidth={1.75} />
                   </div>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <DialogTitle>Intresseanmalan</DialogTitle>
+                      <DialogTitle>Intresseanmälan</DialogTitle>
                       <ForwarderStatus forwarder={selected} />
                     </div>
                     <DialogDescription className="mt-1">
@@ -230,17 +231,13 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
                 <div className="grid grid-cols-3 gap-2 lg:min-w-[360px]">
                   <StatTile label="Aktiva" value={forwarders.filter((forwarder) => forwarder.isActive).length} />
                   <StatTile label="Mottagare" value={selectedMembers.length} />
-                  <StatTile label="Falt" value={form.fields.length} />
+                  <StatTile label="Fält" value={form.fields.length} />
                 </div>
               </div>
             </DialogHeader>
 
-            <ModalBody className="space-y-4 bg-[var(--surface-alt)]/45">
-              {error ? (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300">
-                  {error}
-                </div>
-              ) : null}
+            <ModalBody className="space-y-4 bg-[var(--ui-surface-subtle)]">
+              {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
 
               <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
                 <ForwarderSidebar
@@ -259,8 +256,8 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
                 />
 
                 <section className="min-w-0 space-y-4">
-                  <div className="flex flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="inline-flex rounded-xl bg-[var(--surface-alt)] p-1">
+                  <div className="flex flex-col gap-3 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="inline-flex rounded-[var(--ui-radius-md)] bg-[var(--ui-surface-subtle)] p-1">
                       {PANELS.map((panel) => (
                         <PanelButton
                           key={panel.value}
@@ -271,12 +268,12 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
                       ))}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary" className="rounded-full">{requiredCount} krav</Badge>
-                      <Badge variant="secondary" className="rounded-full">{customCount} extra</Badge>
+                      <StatusBadge tone="neutral">{requiredCount} krav</StatusBadge>
+                      <StatusBadge tone="neutral">{customCount} extra</StatusBadge>
                       {selected?.updatedAt ? (
-                        <Badge variant="outline" className="rounded-full text-[var(--text-muted)]">
+                        <StatusBadge tone="neutral">
                           Uppdaterad {formatDate(selected.updatedAt)}
-                        </Badge>
+                        </StatusBadge>
                       ) : null}
                     </div>
                   </div>
@@ -306,7 +303,7 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
             </ModalBody>
 
             <ModalActionFooter>
-              <div className="mr-auto hidden min-w-0 items-center gap-2 text-xs text-[var(--text-muted)] sm:flex">
+              <div className="mr-auto hidden min-w-0 items-center gap-2 text-xs text-[var(--ui-text-muted)] sm:flex">
                 {selected ? (
                   <>
                     <span className="truncate">
@@ -324,7 +321,7 @@ export function LeadIntakeDialog({ open, company, onOpenChange }: LeadIntakeDial
                 </Button>
               ) : null}
               <Button type="button" onClick={() => void save()} disabled={saving || !canSave}>
-                {saving ? 'Sparar...' : selected ? 'Spara andringar' : 'Skapa forwarder'}
+                {saving ? 'Sparar...' : selected ? 'Spara ändringar' : 'Skapa forwarder'}
               </Button>
             </ModalActionFooter>
           </div>

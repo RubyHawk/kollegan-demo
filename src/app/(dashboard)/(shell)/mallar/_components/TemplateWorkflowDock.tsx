@@ -1,6 +1,10 @@
 'use client';
 
+import { AlertCircle, Check, ChevronLeft, Eye, Loader2, Save, X } from 'lucide-react';
+import { cn } from '@shared/lib/utils';
 import type { ActiveCompanyOption } from '@shared/hooks/use-active-company';
+import { Button } from '@shared/ui/button';
+import { InlineAlert } from '@shared/ui/inline-alert';
 
 type Tab = 'offer' | 'email';
 
@@ -49,46 +53,39 @@ export function TemplateWorkflowDock({
 
   return (
     <div className="flex shrink-0 flex-col">
-      <div className="flex h-12 shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--border)] bg-[var(--surface)]/95 px-3 backdrop-blur scrollbar-none">
-
-        {/* Back to list */}
+      <div className="flex h-12 shrink-0 items-center gap-2 overflow-x-auto border-b border-[var(--ui-border)] bg-[var(--ui-surface)]/95 px-3 backdrop-blur scrollbar-none">
         <button
           type="button"
           onClick={onBack}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]"
+          className="flex shrink-0 items-center gap-1.5 rounded-[var(--ui-radius-md)] px-2 py-1.5 text-sm text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
+          <ChevronLeft size={16} strokeWidth={1.75} />
           Mallar
         </button>
 
-        <span className="shrink-0 select-none text-[var(--border)]">|</span>
+        <span className="shrink-0 select-none text-[var(--ui-border)]">|</span>
 
-        {/* Inline template name */}
         <input
           value={name}
-          onChange={(e) => onNameChange(e.target.value)}
+          onChange={(event) => onNameChange(event.target.value)}
           placeholder="Mallnamn..."
-          className="min-w-0 flex-1 rounded-md bg-transparent px-2 py-1 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none transition-colors hover:bg-[var(--surface-active)] focus:bg-[var(--surface-1)] focus:ring-1 focus:ring-[var(--accent-border)]"
+          className="min-w-0 flex-1 rounded-[var(--ui-radius-md)] bg-transparent px-2 py-1 text-sm font-medium text-[var(--ui-text)] placeholder:text-[var(--ui-text-muted)] outline-none transition-colors hover:bg-[var(--ui-surface-hover)] focus:bg-[var(--ui-surface)] focus:ring-2 focus:ring-[var(--ui-focus)]"
         />
 
-        {/* Company selector — hidden on small screens, available once there is space */}
-        {companies.length > 0 && (
+        {companies.length > 0 ? (
           <select
             value={selectedCompanyId}
-            onChange={(e) => onSelectedCompanyChange(e.target.value)}
-            className="hidden h-7 max-w-[160px] shrink-0 cursor-pointer rounded-md border border-[var(--border)] bg-[var(--surface-alt)] px-2 text-xs font-medium text-[var(--text-secondary)] outline-none transition-colors hover:border-[var(--accent-border)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-border)] md:block"
+            onChange={(event) => onSelectedCompanyChange(event.target.value)}
+            className="hidden h-8 max-w-[170px] shrink-0 cursor-pointer rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-2 text-xs font-medium text-[var(--ui-text-secondary)] outline-none transition-colors hover:border-[var(--ui-border-strong)] focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus)] md:block"
           >
             <option value="">Välj företag</option>
-            {companies.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+            {companies.map((company) => (
+              <option key={company.id} value={company.id}>{company.name}</option>
             ))}
           </select>
-        )}
+        ) : null}
 
-        {/* Tab switcher */}
-        <div className="flex shrink-0 items-center rounded-lg bg-[var(--surface-active)] p-0.5">
+        <div className="flex shrink-0 items-center rounded-[var(--ui-radius-md)] bg-[var(--ui-surface-subtle)] p-0.5">
           {(['offer', 'email'] as Tab[]).map((tab) => {
             const active = activeTab === tab;
             return (
@@ -96,114 +93,82 @@ export function TemplateWorkflowDock({
                 key={tab}
                 type="button"
                 onClick={() => onTabChange(tab)}
-                className={`relative rounded-md px-3 py-1 text-xs font-semibold transition-all ${
+                className={cn(
+                  'relative rounded-[var(--ui-radius-sm)] px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
                   active
-                    ? 'bg-[var(--surface)] text-[var(--accent)] shadow-sm'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
+                    ? 'bg-[var(--ui-surface)] text-[var(--ui-accent)]'
+                    : 'text-[var(--ui-text-secondary)] hover:text-[var(--ui-text)]',
+                )}
               >
                 {tab === 'offer' ? 'Offert' : 'E-post'}
-                {tab === 'email' && emailConfigured && (
-                  <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-                )}
+                {tab === 'email' && emailConfigured ? (
+                  <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-[var(--ui-accent)]" />
+                ) : null}
               </button>
             );
           })}
         </div>
 
-        {/* Save state indicator — hidden on small screens */}
-        <div className="hidden w-[148px] shrink-0 items-center justify-end sm:flex">
-          {saveStatus === 'saving' && (
-            <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-              </svg>
-              Sparas...
-            </span>
-          )}
-          {saveStatus === 'saved' && (
-            <span className="flex items-center gap-1.5 text-xs text-emerald-600">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              Sparat
-            </span>
-          )}
-          {saveStatus === 'dirty' && (
-            <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              Osparade ändringar
-            </span>
-          )}
+        <div className="hidden w-[156px] shrink-0 items-center justify-end sm:flex">
+          <SaveStatus status={saveStatus} />
         </div>
 
-        {/* Preview — only on the Offert tab */}
-        {activeTab === 'offer' && (
-          <button
-            type="button"
-            onClick={onPreview}
-            disabled={previewing}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-active)] disabled:opacity-50"
-          >
-            {previewing ? (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-              </svg>
-            ) : (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            )}
+        {activeTab === 'offer' ? (
+          <Button type="button" size="compact" variant="secondary" onClick={onPreview} disabled={previewing}>
+            {previewing ? <Loader2 size={16} strokeWidth={1.75} className="animate-spin" /> : <Eye size={16} strokeWidth={1.75} />}
             Förhandsgranska
-          </button>
-        )}
+          </Button>
+        ) : null}
 
-        {/* Save */}
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saving}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-        >
-          {saving ? (
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
-              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-            </svg>
-          ) : (
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-              <polyline points="17 21 17 13 7 13 7 21" />
-              <polyline points="7 3 7 8 15 8" />
-            </svg>
-          )}
+        <Button type="button" size="compact" onClick={onSave} loading={saving}>
+          {!saving ? <Save size={16} strokeWidth={1.75} /> : null}
           {isNew ? 'Skapa' : 'Spara'}
-        </button>
+        </Button>
       </div>
 
-      {/* Error banner — replaces the invisible 2px red dot */}
-      {error && (
-        <div className="flex shrink-0 items-center gap-2 border-b border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          <span className="flex-1">{error}</span>
-          {onErrorDismiss && (
-            <button type="button" onClick={onErrorDismiss} className="shrink-0 opacity-60 hover:opacity-100">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          )}
-        </div>
-      )}
+      {error ? (
+        <InlineAlert tone="danger" className="rounded-none border-x-0 border-t-0 px-4 py-2 text-xs">
+          <div className="flex items-center justify-between gap-3">
+            <span>{error}</span>
+            {onErrorDismiss ? (
+              <button type="button" onClick={onErrorDismiss} className="shrink-0 rounded-[var(--ui-radius-sm)] p-0.5 hover:bg-[var(--ui-danger-border)]/20">
+                <X size={14} strokeWidth={1.75} />
+              </button>
+            ) : null}
+          </div>
+        </InlineAlert>
+      ) : null}
     </div>
   );
+}
+
+function SaveStatus({ status }: { status: 'saving' | 'dirty' | 'saved' | 'clean' }) {
+  if (status === 'saving') {
+    return (
+      <span className="flex items-center gap-1.5 text-xs text-[var(--ui-text-muted)]">
+        <Loader2 size={14} strokeWidth={1.75} className="animate-spin" />
+        Sparas...
+      </span>
+    );
+  }
+
+  if (status === 'saved') {
+    return (
+      <span className="flex items-center gap-1.5 text-xs text-[var(--ui-success-text)]">
+        <Check size={14} strokeWidth={2} />
+        Sparat
+      </span>
+    );
+  }
+
+  if (status === 'dirty') {
+    return (
+      <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--ui-warning-text)]">
+        <AlertCircle size={14} strokeWidth={1.75} />
+        Osparade ändringar
+      </span>
+    );
+  }
+
+  return null;
 }

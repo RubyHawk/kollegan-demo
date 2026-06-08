@@ -1,10 +1,9 @@
 'use client';
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Check } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
 
 export interface UserProps {
   email: string;
@@ -17,37 +16,18 @@ export interface UserProps {
   mfaAuthenticated?: boolean;
 }
 
-// ─── Icon ──────────────────────────────────────────────────────────────────────
-
-export function Icon({ path, size = 16, className }: { path: React.ReactNode; size?: number; className?: string }) {
-  return (
-    <svg
-      width={size} height={size} viewBox="0 0 24 24"
-      fill="none" stroke="currentColor" strokeWidth="1.75"
-      strokeLinecap="round" strokeLinejoin="round"
-      className={className} aria-hidden="true"
-    >
-      {path}
-    </svg>
-  );
-}
-
-// ─── FieldLabel ────────────────────────────────────────────────────────────────
-
 export function FieldLabel({ children, description }: { children: React.ReactNode; description?: string }) {
   return (
     <div className="mb-1.5">
-      <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+      <label className="text-xs font-semibold text-[var(--ui-text-secondary)]">
         {children}
       </label>
       {description && (
-        <p className="text-[11px] text-[var(--text-muted)] mt-0.5 leading-relaxed">{description}</p>
+        <p className="text-[11px] text-[var(--ui-text-muted)] mt-0.5 leading-relaxed">{description}</p>
       )}
     </div>
   );
 }
-
-// ─── Input ─────────────────────────────────────────────────────────────────────
 
 export function Input({
   value,
@@ -57,7 +37,7 @@ export function Input({
   type = 'text',
 }: {
   value: string;
-  onChange?: (v: string) => void;
+  onChange?: (value: string) => void;
   placeholder?: string;
   readOnly?: boolean;
   type?: string;
@@ -66,36 +46,37 @@ export function Input({
     <input
       type={type}
       value={value}
-      onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+      onChange={onChange ? (event) => onChange(event.target.value) : undefined}
       placeholder={placeholder}
       readOnly={readOnly}
       className={cn(
-        'w-full px-3 py-2.5 rounded-xl text-sm border',
-        'bg-[var(--surface-0)] text-[var(--text-primary)]',
-        'placeholder:text-[var(--text-muted)]',
-        'outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)]/50',
-        'transition-colors duration-150',
+        'w-full rounded-[var(--ui-radius-md)] border px-3 py-2.5 text-sm',
+        'bg-[var(--ui-surface-raised)] text-[var(--ui-text)]',
+        'placeholder:text-[var(--ui-text-muted)]',
+        'outline-none transition-colors duration-150 focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus)]',
         readOnly
-          ? 'border-[var(--border-light)] text-[var(--text-muted)] cursor-default select-all'
-          : 'border-[var(--border)] hover:border-[var(--text-muted)]/40',
+          ? 'cursor-default select-all border-[var(--ui-border-subtle)] text-[var(--ui-text-muted)]'
+          : 'border-[var(--ui-border)] hover:border-[var(--ui-border-strong)]',
       )}
     />
   );
 }
 
-// ─── SectionCard ───────────────────────────────────────────────────────────────
-
-export function SectionCard({ title, description, children }: {
+export function SectionCard({
+  title,
+  description,
+  children,
+}: {
   title: string;
   description?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] overflow-hidden">
-      <div className="px-6 py-4 border-b border-[var(--border-light)]">
-        <h3 className="text-sm font-semibold text-[var(--text-primary)]">{title}</h3>
+    <div className="overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)]">
+      <div className="border-b border-[var(--ui-border-subtle)] px-6 py-4">
+        <h3 className="text-sm font-semibold text-[var(--ui-text)]">{title}</h3>
         {description && (
-          <p className="text-xs text-[var(--text-muted)] mt-0.5 leading-relaxed">{description}</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-[var(--ui-text-muted)]">{description}</p>
         )}
       </div>
       <div className="px-6 py-5">{children}</div>
@@ -103,22 +84,21 @@ export function SectionCard({ title, description, children }: {
   );
 }
 
-// ─── SaveButton ────────────────────────────────────────────────────────────────
-
 export function SaveButton({ pending, saved, onClick }: { pending: boolean; saved: boolean; onClick: () => void }) {
   return (
     <div className="flex items-center gap-3">
       <button
+        type="button"
         onClick={onClick}
         disabled={pending}
         className={cn(
-          'px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150',
-          'border focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40',
+        'rounded-[var(--ui-radius-md)] border px-5 py-2.5 text-sm font-semibold transition-all duration-150',
+          'focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)]',
           pending
-            ? 'bg-[var(--accent)]/60 border-[var(--accent)]/40 text-white cursor-wait'
+            ? 'cursor-wait border-[var(--ui-accent)]/40 bg-[var(--ui-accent)]/60 text-[var(--ui-text-inverse)]'
             : saved
-            ? 'bg-emerald-500 border-emerald-500/60 text-white'
-            : 'bg-[var(--accent)] border-[var(--accent)] text-white hover:bg-[var(--accent-light)] hover:border-[var(--accent-light)]',
+              ? 'border-[var(--ui-success-text)] bg-[var(--ui-success-text)] text-[var(--ui-text-inverse)]'
+              : 'border-[var(--ui-accent)] bg-[var(--ui-accent)] text-[var(--ui-text-inverse)] hover:border-[var(--ui-accent-hover)] hover:bg-[var(--ui-accent-hover)]',
         )}
       >
         <AnimatePresence mode="wait" initial={false}>
@@ -132,11 +112,11 @@ export function SaveButton({ pending, saved, onClick }: { pending: boolean; save
           >
             {saved ? (
               <>
-                <Icon path={<><polyline points="20 6 9 17 4 12"/></>} size={13} />
+                <Check aria-hidden="true" size={13} strokeWidth={2} />
                 Sparat!
               </>
             ) : pending ? (
-              'Sparar…'
+              'Sparar...'
             ) : (
               'Spara ändringar'
             )}
@@ -151,7 +131,7 @@ export function SaveButton({ pending, saved, onClick }: { pending: boolean; save
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="text-xs text-emerald-600 dark:text-emerald-400 font-medium"
+            className="text-xs font-medium text-[var(--ui-success-text)]"
           >
             Ändringarna har sparats
           </motion.span>

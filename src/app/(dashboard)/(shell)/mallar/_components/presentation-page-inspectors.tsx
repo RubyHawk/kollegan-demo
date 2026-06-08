@@ -23,7 +23,7 @@ export function PresentationPageInspector({ hf }: { hf: HFCtxValue }) {
         </Field>
 
         <Field label="Sidroll">
-          <div className="rounded-lg bg-[var(--surface-active)] px-2.5 py-1.5 text-[12px] font-medium text-[var(--text-primary)]">
+          <div className="rounded-lg bg-[var(--ui-surface-hover)] px-2.5 py-1.5 text-[12px] font-medium text-[var(--ui-text)]">
             {PAGE_ROLE_LABELS[page.role ?? 'custom']}
           </div>
         </Field>
@@ -36,12 +36,12 @@ export function PresentationPageInspector({ hf }: { hf: HFCtxValue }) {
         />
 
         {page.role === 'cover' && (
-          <div className="border-l-2 border-[var(--accent)] bg-[var(--accent-subtle)] px-3 py-1.5 text-[11px] leading-5 text-[var(--text-secondary)]">
+          <div className="border-l-2 border-[var(--ui-accent)] bg-[var(--ui-surface-selected)] px-3 py-1.5 text-[11px] leading-5 text-[var(--ui-text-secondary)]">
             Omslaget är en fri presentationssida. Lägg in titel, bild, logo och offertvariabler från vänsterpanelen och dra sedan sidan dit den ska ligga i flödet.
           </div>
         )}
 
-        <div className="border-l-2 border-[var(--border)] px-3 py-1 text-[11px] leading-5 text-[var(--text-secondary)]">
+        <div className="border-l-2 border-[var(--ui-border)] px-3 py-1 text-[11px] leading-5 text-[var(--ui-text-secondary)]">
           Sidtyp byts inte i efterhand. Lägg hellre till en ny offertsida eller presentationssida och ta bort den gamla om flödet ska ändras.
         </div>
       </div>

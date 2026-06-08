@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import type React from 'react';
-import { PlusIcon, TrashIcon } from '@phosphor-icons/react';
+import { Plus, Trash } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
 import { Button } from '@shared/ui/button';
 import {
@@ -14,6 +14,7 @@ import {
 } from '@shared/ui/dialog';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
+import { Panel } from '@shared/ui/panel';
 import { SaveStatusPill } from '@shared/ui/save-status-pill';
 import {
   Select,
@@ -22,27 +23,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@shared/ui/select';
+import { Textarea } from '@shared/ui/textarea';
 import { useProjectDetailStore } from '../_store/project-detail.store';
 import type { PurchaseOrder } from '../_store/types';
 import { useProjectDetailsDraftAutosave } from '../_hooks/use-project-details-draft-autosave';
 import { ProjectDetailsDraftBanner } from './project-details-draft-banner';
 
-function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return (
-    <textarea
-      {...props}
-      className={cn(
-        'min-h-24 w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none',
-        props.className,
-      )}
-    />
-  );
-}
-
 function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={cn('space-y-1.5', className)}>
-      <Label className="text-xs font-semibold text-[var(--text-secondary)]">{label}</Label>
+      <Label className="text-xs font-semibold text-[var(--ui-text-secondary)]">{label}</Label>
       {children}
     </div>
   );
@@ -58,13 +48,13 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 sm:p-5">
+    <Panel className="sm:p-5">
       <div className="mb-4">
-        <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-        {description ? <p className="mt-1 text-xs text-[var(--text-muted)]">{description}</p> : null}
+        <p className="text-sm font-semibold text-[var(--ui-text)]">{title}</p>
+        {description ? <p className="mt-1 text-xs text-[var(--ui-text-muted)]">{description}</p> : null}
       </div>
       {children}
-    </section>
+    </Panel>
   );
 }
 
@@ -114,16 +104,16 @@ export function EditProjectDetailsPanel({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent mobileVariant="fullscreen" className="sm:max-w-4xl">
-        <DialogHeader className="border-b border-[var(--border)] pb-4">
+        <DialogHeader className="border-b border-[var(--ui-border)] pb-4">
           <DialogTitle>Installationsuppgifter</DialogTitle>
-          <p className="text-sm text-[var(--text-muted)]">
+          <p className="text-sm text-[var(--ui-text-muted)]">
             {'Samla platsinfo, kontaktperson och interna noteringar p\u00E5 ett st\u00E4lle.'}
           </p>
         </DialogHeader>
 
         {restoredDraft && <ProjectDetailsDraftBanner onContinue={dismissRestoredDraft} />}
 
-        <div className="max-h-[72vh] overflow-y-auto bg-[var(--surface-alt)] px-5 py-5">
+        <div className="max-h-[72vh] overflow-y-auto bg-[var(--ui-surface-subtle)] px-5 py-5">
           <div className="grid gap-4">
             <Section
               title="Plats och objekt"
@@ -222,7 +212,7 @@ export function EditProjectDetailsPanel({
           </div>
         </div>
 
-        <DialogFooter className="border-t border-[var(--border)] pt-4">
+        <DialogFooter className="border-t border-[var(--ui-border)] pt-4">
           <SaveStatusPill status={saving ? 'saving' : draftStatus} className="mr-auto hidden sm:inline-flex" />
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Avbryt
@@ -265,14 +255,14 @@ export function CreatePurchaseOrderPanel({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent mobileVariant="fullscreen" className="sm:max-w-5xl">
-        <DialogHeader className="border-b border-[var(--border)] pb-4">
+        <DialogHeader className="border-b border-[var(--ui-border)] pb-4">
           <DialogTitle>{'Ink\u00F6psorder'}</DialogTitle>
-          <p className="text-sm text-[var(--text-muted)]">
+          <p className="text-sm text-[var(--ui-text-muted)]">
             {'V\u00E4lj leverant\u00F6r, s\u00E4tt leveransf\u00F6rv\u00E4ntan och fyll raderna som ska best\u00E4llas.'}
           </p>
         </DialogHeader>
 
-        <div className="max-h-[72vh] overflow-y-auto bg-[var(--surface-alt)] px-5 py-5">
+        <div className="max-h-[72vh] overflow-y-auto bg-[var(--ui-surface-subtle)] px-5 py-5">
           <div className="grid gap-4">
             <Section
               title={'Leverant\u00F6r och leverans'}
@@ -335,8 +325,8 @@ export function CreatePurchaseOrderPanel({
               title="Best\u00E4llningsrader"
               description="H\u00E5ll varje rad kompakt och tydlig s\u00E5 den blir enkel att skicka och f\u00F6lja upp."
             >
-              <div className="overflow-hidden rounded-xl border border-[var(--border)]">
-                <div className="grid grid-cols-[1.7fr_0.65fr_0.55fr_0.75fr_0.6fr_2.5rem] gap-2 border-b border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)]">
+              <div className="overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)]">
+                <div className="grid grid-cols-[1.7fr_0.65fr_0.55fr_0.75fr_0.6fr_2.5rem] gap-2 border-b border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-2 text-xs font-semibold text-[var(--ui-text-secondary)]">
                   <span>Rad</span>
                   <span>Antal</span>
                   <span>Enhet</span>
@@ -348,7 +338,7 @@ export function CreatePurchaseOrderPanel({
                 {draft.items.map((line, index) => (
                   <div
                     key={index}
-                    className="grid grid-cols-[1.7fr_0.65fr_0.55fr_0.75fr_0.6fr_2.5rem] gap-2 border-b border-[var(--border-light)] bg-[var(--surface)] px-3 py-2 last:border-b-0"
+                    className="grid grid-cols-[1.7fr_0.65fr_0.55fr_0.75fr_0.6fr_2.5rem] gap-2 border-b border-[var(--ui-border-subtle)] bg-[var(--ui-surface)] px-3 py-2 last:border-b-0"
                   >
                     <Input
                       value={line.description}
@@ -386,14 +376,14 @@ export function CreatePurchaseOrderPanel({
                       disabled={draft.items.length === 1}
                       aria-label="Ta bort rad"
                     >
-                      <TrashIcon />
+                      <Trash size={16} strokeWidth={1.75} />
                     </Button>
                   </div>
                 ))}
               </div>
 
               <Button type="button" variant="outline" className="mt-4 w-fit" onClick={() => addLine()}>
-                <PlusIcon />
+                <Plus size={16} strokeWidth={1.75} />
                 {'L\u00E4gg till rad'}
               </Button>
             </Section>
@@ -409,7 +399,7 @@ export function CreatePurchaseOrderPanel({
           </div>
         </div>
 
-        <DialogFooter className="border-t border-[var(--border)] pt-4">
+        <DialogFooter className="border-t border-[var(--ui-border)] pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Avbryt
           </Button>
@@ -459,23 +449,23 @@ export function RecordPurchaseOrderReceiptPanel({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent mobileVariant="sheet" className="sm:max-w-2xl">
-        <DialogHeader className="border-b border-[var(--border)] pb-4">
+        <DialogHeader className="border-b border-[var(--ui-border)] pb-4">
           <DialogTitle>Registrera ankomst</DialogTitle>
-          <p className="text-sm text-[var(--text-muted)]">
+          <p className="text-sm text-[var(--ui-text-muted)]">
             {'Bekr\u00E4fta vad som faktiskt har kommit fram innan projektet flyttas vidare.'}
           </p>
         </DialogHeader>
 
-        <div className="max-h-[64vh] overflow-y-auto bg-[var(--surface-alt)] px-5 py-5">
+        <div className="max-h-[64vh] overflow-y-auto bg-[var(--ui-surface-subtle)] px-5 py-5">
           <div className="space-y-3">
             {receiptDraft.map((line) => (
               <div
                 key={line.lineItemId}
-                className="grid grid-cols-[1fr_8rem] items-end gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4"
+                className="grid grid-cols-[1fr_8rem] items-end gap-3 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4"
               >
                 <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">{line.description}</p>
-                  <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  <p className="text-sm font-semibold text-[var(--ui-text)]">{line.description}</p>
+                  <p className="mt-1 text-xs text-[var(--ui-text-muted)]">
                     {'Best\u00E4llt: '}
                     {line.quantity} {line.unit}
                   </p>
@@ -493,7 +483,7 @@ export function RecordPurchaseOrderReceiptPanel({
           </div>
         </div>
 
-        <DialogFooter className="border-t border-[var(--border)] pt-4">
+        <DialogFooter className="border-t border-[var(--ui-border)] pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Avbryt
           </Button>

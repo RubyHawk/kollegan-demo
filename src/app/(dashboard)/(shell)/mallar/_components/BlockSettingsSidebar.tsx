@@ -48,7 +48,7 @@ export default function BlockSettingsSidebar() {
   if (!hf) return null;
 
   return (
-    <aside className="hidden min-h-0 shrink-0 flex-col border-l border-[var(--border)] bg-[var(--surface-0)] xl:flex xl:w-[clamp(300px,24vw,400px)]">
+    <aside className="hidden min-h-0 shrink-0 flex-col border-l border-[var(--ui-border)] bg-[var(--ui-surface-raised)] xl:flex xl:w-[clamp(300px,24vw,400px)]">
       <InspectorHeader
         title={activePage?.label ?? 'Sida'}
         meta={isDocumentPage ? 'Strukturerad offertsida' : PAGE_ROLE_LABELS[activePage?.role ?? 'custom']}
@@ -76,17 +76,17 @@ export default function BlockSettingsSidebar() {
 
 function InspectorHeader({ title, meta, pdfLabel }: { title: string; meta: string; pdfLabel: string }) {
   return (
-    <div className="shrink-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 shadow-[inset_3px_0_0_var(--accent)]">
+    <div className="shrink-0 border-b border-l-4 border-b-[var(--ui-border)] border-l-[var(--ui-accent)] bg-[var(--ui-surface)] px-4 py-2.5">
       <div className="mb-1.5 flex items-center justify-between gap-3">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Inspektor</p>
-        <span className="rounded bg-[var(--accent-subtle)] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
+        <p className="text-[10px] font-semibold uppercase text-[var(--ui-text-muted)]">Inspektor</p>
+        <span className="rounded bg-[var(--ui-surface-selected)] px-2 py-0.5 text-[9px] font-semibold uppercase text-[var(--ui-accent)]">
           {pdfLabel}
         </span>
       </div>
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-[14px] font-semibold text-[var(--text-primary)]">{title}</p>
-          <p className="mt-1 truncate text-[12px] text-[var(--text-secondary)]">{meta}</p>
+          <p className="truncate text-[14px] font-semibold text-[var(--ui-text)]">{title}</p>
+          <p className="mt-1 truncate text-[12px] text-[var(--ui-text-secondary)]">{meta}</p>
         </div>
       </div>
     </div>
@@ -99,8 +99,8 @@ function TableInspector() {
       title="Tabell"
       subtitle="Tabeller justeras direkt i dokumentytan. Markera celler och använd den fria layouten på sidan."
     >
-      <div className="border-l-2 border-[var(--border)] px-3 py-1.5 text-[12px] leading-5 text-[var(--text-secondary)]">
-        Ändra tabellinnehåll direkt i canvasen — markera celler för att redigera.
+      <div className="border-l-2 border-[var(--ui-border)] px-3 py-1.5 text-[12px] leading-5 text-[var(--ui-text-secondary)]">
+        Ändra tabellinnehåll direkt i canvasen - markera celler för att redigera.
       </div>
     </InspectorCard>
   );
@@ -154,12 +154,12 @@ function VariableInspector({ editor }: { editor: Editor }) {
     <InspectorCard title="Variabel" subtitle="Fält som fylls med offertdata automatiskt.">
       <div className="space-y-2">
         <Field label="Variabelnamn">
-          <code className="block break-all rounded-xl bg-[var(--accent-subtle)] px-3 py-2 text-[12px] font-medium text-[var(--accent)]">
+          <code className="block break-all rounded-md bg-[var(--ui-surface-selected)] px-3 py-2 text-[12px] font-medium text-[var(--ui-accent)]">
             {`{{${key}}}`}
           </code>
         </Field>
         <Field label="Etikett">
-          <div className="rounded-xl bg-[var(--surface-active)] px-3 py-2 text-[13px] font-medium text-[var(--text-primary)]">
+          <div className="rounded-md bg-[var(--ui-surface-hover)] px-3 py-2 text-[13px] font-medium text-[var(--ui-text)]">
             {label}
           </div>
         </Field>

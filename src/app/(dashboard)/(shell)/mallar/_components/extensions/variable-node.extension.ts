@@ -7,6 +7,7 @@
 
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
+import { Braces } from 'lucide-react';
 import React from 'react';
 import type { NodeViewProps } from '@tiptap/react';
 
@@ -21,24 +22,10 @@ function VariableChip({ node }: NodeViewProps) {
       {
         contentEditable: false,
         className:
-          'inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 text-xs font-mono cursor-default select-none border border-violet-200',
+          'inline-flex cursor-default select-none items-center gap-1 rounded border border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)] px-1.5 py-0.5 font-mono text-xs text-[var(--ui-accent)]',
         title: `{{${node.attrs.key as string}}}`,
       },
-      React.createElement(
-        'svg',
-        {
-          width: 10,
-          height: 10,
-          viewBox: '0 0 24 24',
-          fill: 'none',
-          stroke: 'currentColor',
-          strokeWidth: 2,
-          strokeLinecap: 'round' as const,
-          strokeLinejoin: 'round' as const,
-        },
-        React.createElement('path', { d: 'M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1' }),
-        React.createElement('path', { d: 'M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1' }),
-      ),
+      React.createElement(Braces, { size: 10, strokeWidth: 1.75 }),
       node.attrs.label as string,
     ),
   );

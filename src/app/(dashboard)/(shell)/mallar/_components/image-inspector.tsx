@@ -315,7 +315,7 @@ export function ImageInspector({ editor }: { editor: Editor }) {
               className={inputClass}
             />
           </div>
-          <p className="mt-2 text-xs text-[var(--text-muted)]">
+          <p className="mt-2 text-xs text-[var(--ui-text-muted)]">
             Lämna höjden tom för automatisk proportion. Nuvarande original: {naturalWidth ?? 'okänd'} × {naturalHeight ?? 'okänd'} px.
           </p>
         </Field>
@@ -459,7 +459,7 @@ export function ImageInspector({ editor }: { editor: Editor }) {
         <button
           type="button"
           onClick={() => editor.chain().focus().deleteSelection().run()}
-          className="w-full rounded-2xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:border-red-300 hover:bg-red-100"
+          className="w-full rounded-lg border border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] px-3 py-2.5 text-sm font-semibold text-[var(--ui-danger-text)] transition-colors hover:border-[var(--ui-danger-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
         >
           Ta bort bild
         </button>

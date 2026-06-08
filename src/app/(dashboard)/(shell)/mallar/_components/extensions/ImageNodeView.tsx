@@ -401,11 +401,11 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
           />
         )}
 
-        {/* Blue selection ring */}
+        {/* Selection ring */}
         {selected && (
           <div style={{
             position: 'absolute', inset: -2,
-            outline: '2px solid #3b82f6',
+            outline: '2px solid var(--ui-accent)',
             borderRadius: 2,
             pointerEvents: 'none',
             zIndex: 1,
@@ -444,7 +444,7 @@ export function ImageNodeView({ node, updateAttributes, selected, editor, getPos
               position: 'absolute', right: -5, bottom: -5,
               width: 10, height: 10,
               borderRadius: '50%',
-              background: '#3b82f6',
+              background: 'var(--ui-accent)',
               cursor: 'nwse-resize',
               zIndex: 2,
               boxShadow: '0 1px 4px rgba(0,0,0,0.25)',

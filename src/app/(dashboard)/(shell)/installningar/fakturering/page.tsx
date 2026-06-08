@@ -1,118 +1,106 @@
-/**
- * /settings/billing
- *
- * Billing & subscription management — plan overview, usage, and invoices.
- * Placeholder with mock subscription data; connect to Stripe/billing service
- * when payment infrastructure is in place.
- */
+import { CreditCard, Download } from 'lucide-react';
+import { Button } from '@shared/ui/button';
+import { Panel } from '@shared/ui/panel';
+import { StatusBadge } from '@shared/ui/status-badge';
 
-import { PLAN, USAGE_STATS, PAYMENT_METHOD, INVOICES } from './_data';
+import { INVOICES, PAYMENT_METHOD, PLAN, USAGE_STATS } from './_data';
 
 export default function BillingPage() {
   return (
     <div className="space-y-6">
-
-      {/* Current plan */}
-      <div className="rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-6">
-        <div className="flex items-start justify-between gap-4">
+      <Panel variant="selected" padding="lg">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold text-[var(--accent)] uppercase tracking-widest">Nuvarande plan</span>
-              <span className="rounded-full bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 text-[10px] font-semibold">
-                {PLAN.status}
-              </span>
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold uppercase text-[var(--ui-accent)]">Nuvarande plan</span>
+              <StatusBadge tone="success">{PLAN.status}</StatusBadge>
             </div>
-            <h2 className="font-heading text-xl font-bold text-[var(--text-primary)] mb-1">{PLAN.name}</h2>
-            <p className="text-sm text-[var(--text-muted)]">{PLAN.price} · {PLAN.billing}</p>
+            <h2 className="text-xl font-bold text-[var(--ui-text)]">{PLAN.name}</h2>
+            <p className="mt-1 text-sm text-[var(--ui-text-muted)]">{PLAN.price} - {PLAN.billing}</p>
           </div>
-          <button disabled className="shrink-0 px-4 py-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm font-medium text-[var(--text-secondary)] opacity-50 cursor-not-allowed">
+          <Button type="button" variant="secondary" disabled>
             Byt plan
-          </button>
+          </Button>
         </div>
 
-        {/* Usage */}
-        <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {USAGE_STATS.map((u) => (
-            <div key={u.label} className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs text-[var(--text-muted)]">{u.label}</span>
-                <span className="text-xs font-semibold text-[var(--text-secondary)]">{u.used}/{u.limit}</span>
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {USAGE_STATS.map((usage) => (
+            <div key={usage.label} className="rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3">
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <span className="text-xs text-[var(--ui-text-muted)]">{usage.label}</span>
+                <span className="text-xs font-semibold text-[var(--ui-text-secondary)]">{usage.used}/{usage.limit}</span>
               </div>
-              <div className="h-1.5 rounded-full bg-[var(--surface-alt)]">
+              <div className="h-1.5 rounded-full bg-[var(--ui-surface-subtle)]">
                 <div
-                  className="h-1.5 rounded-full bg-[var(--accent)]"
-                  style={{ width: `${Math.min(100, (u.used / u.limit) * 100)}%` }}
+                  className="h-1.5 rounded-full bg-[var(--ui-accent)]"
+                  style={{ width: `${Math.min(100, (usage.used / usage.limit) * 100)}%` }}
                 />
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </Panel>
 
-      {/* Payment method */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Betalningsmetod</h2>
-          <button disabled className="text-xs text-[var(--accent)] font-medium opacity-50 cursor-not-allowed">Byt kort</button>
+      <Panel padding="lg">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-[var(--ui-text)]">Betalningsmetod</h2>
+          <Button type="button" variant="ghost" size="compact" disabled>
+            Byt kort
+          </Button>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-7 rounded-md bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center">
-            <svg width="22" height="14" viewBox="0 0 38 24" fill="none" className="text-[var(--text-muted)]">
-              <rect width="38" height="24" rx="4" fill="currentColor" opacity="0.08" />
-              <rect x="3" y="8" width="10" height="8" rx="2" fill="currentColor" opacity="0.3" />
-            </svg>
+          <div className="flex h-8 w-11 items-center justify-center rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text-muted)]">
+            <CreditCard aria-hidden="true" size={18} strokeWidth={1.75} />
           </div>
           <div>
-            <p className="text-sm font-medium text-[var(--text-primary)]">•••• •••• •••• {PAYMENT_METHOD.last4}</p>
-            <p className="text-xs text-[var(--text-muted)]">Utgår {PAYMENT_METHOD.expires}</p>
+            <p className="text-sm font-medium text-[var(--ui-text)]">**** **** **** {PAYMENT_METHOD.last4}</p>
+            <p className="text-xs text-[var(--ui-text-muted)]">Utgår {PAYMENT_METHOD.expires}</p>
           </div>
         </div>
-      </div>
+      </Panel>
 
-      {/* Invoices */}
-      <div className="rounded-2xl border border-[var(--border)] overflow-hidden">
-        <div className="px-5 py-4 border-b border-[var(--border)] bg-[var(--surface-alt)]">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Fakturahistorik</h2>
+      <Panel padding="none" className="overflow-hidden">
+        <div className="border-b border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-5 py-4">
+          <h2 className="text-sm font-semibold text-[var(--ui-text)]">Fakturahistorik</h2>
         </div>
-        <table className="min-w-full divide-y divide-[var(--border)] text-sm">
-          <thead className="bg-[var(--surface-alt)]">
+        <table className="min-w-full divide-y divide-[var(--ui-border-subtle)] text-sm">
+          <thead className="bg-[var(--ui-surface-subtle)]">
             <tr>
-              {['Faktura', 'Datum', 'Belopp', 'Status', ''].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
+              {['Faktura', 'Datum', 'Belopp', 'Status', ''].map((heading) => (
+                <th key={heading} className="px-4 py-3 text-left text-xs font-semibold uppercase text-[var(--ui-text-muted)]">
+                  {heading}
+                </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)]">
-            {INVOICES.map((inv) => (
-              <tr key={inv.id} className="hover:bg-[var(--surface-alt)] transition-colors">
-                <td className="px-4 py-3.5 font-mono text-xs text-[var(--text-secondary)]">{inv.id}</td>
-                <td className="px-4 py-3.5 text-[var(--text-secondary)]">{inv.date}</td>
-                <td className="px-4 py-3.5 font-medium text-[var(--text-primary)]">{inv.amount}</td>
+          <tbody className="divide-y divide-[var(--ui-border-subtle)] bg-[var(--ui-surface)]">
+            {INVOICES.map((invoice) => (
+              <tr key={invoice.id} className="transition-colors hover:bg-[var(--ui-surface-hover)]">
+                <td className="px-4 py-3.5 font-mono text-xs text-[var(--ui-text-secondary)]">{invoice.id}</td>
+                <td className="px-4 py-3.5 text-[var(--ui-text-secondary)]">{invoice.date}</td>
+                <td className="px-4 py-3.5 font-medium text-[var(--ui-text)]">{invoice.amount}</td>
                 <td className="px-4 py-3.5">
-                  <span className="rounded-full bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-400 px-2.5 py-0.5 text-xs font-medium">
-                    {inv.status}
-                  </span>
+                  <StatusBadge tone="success">{invoice.status}</StatusBadge>
                 </td>
-                <td className="px-4 py-3.5">
-                  <button disabled className="text-xs text-[var(--accent)] font-medium opacity-50 cursor-not-allowed">
+                <td className="px-4 py-3.5 text-right">
+                  <Button type="button" variant="ghost" size="compact" disabled>
+                    <Download aria-hidden="true" size={16} strokeWidth={1.75} />
                     Ladda ner PDF
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </Panel>
 
-      {/* Danger zone */}
-      <div className="rounded-2xl border border-red-200 dark:border-red-800/40 p-6">
-        <h2 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-1">Farlig zon</h2>
-        <p className="text-xs text-[var(--text-muted)] mb-4">Avsluta prenumerationen och radera all data permanent.</p>
-        <button disabled className="rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 opacity-50 cursor-not-allowed">
+      <Panel variant="danger" padding="lg">
+        <h2 className="mb-1 text-sm font-semibold">Farlig zon</h2>
+        <p className="mb-4 text-xs">Avsluta prenumerationen och radera all data permanent.</p>
+        <Button type="button" variant="danger" disabled>
           Avsluta prenumeration
-        </button>
-      </div>
-
+        </Button>
+      </Panel>
     </div>
   );
 }

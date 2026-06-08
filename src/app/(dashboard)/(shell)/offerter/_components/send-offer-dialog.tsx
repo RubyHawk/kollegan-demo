@@ -11,6 +11,7 @@ import {
   ModalBody,
   ModalMetaCard,
 } from '@shared/ui/dialog';
+import { InlineAlert } from '@shared/ui/inline-alert';
 
 interface SendOfferDialogProps {
   open: boolean;
@@ -46,33 +47,33 @@ export function SendOfferDialog({
             <ModalMetaCard>
               <dl className="space-y-3 text-sm">
                 <div className="flex items-start justify-between gap-4">
-                  <dt className="text-[var(--text-muted)]">Mottagare</dt>
-                  <dd className="text-right font-medium text-[var(--text-primary)]">{recipientName}</dd>
+                  <dt className="text-[var(--ui-text-muted)]">Mottagare</dt>
+                  <dd className="text-right font-medium text-[var(--ui-text)]">{recipientName}</dd>
                 </div>
                 <div className="flex items-start justify-between gap-4">
-                  <dt className="text-[var(--text-muted)]">E-post</dt>
-                  <dd className="break-all text-right text-[var(--text-primary)]">{recipientEmail}</dd>
+                  <dt className="text-[var(--ui-text-muted)]">E-post</dt>
+                  <dd className="break-all text-right text-[var(--ui-text)]">{recipientEmail}</dd>
                 </div>
                 {recipientCompany ? (
                   <div className="flex items-start justify-between gap-4">
-                    <dt className="text-[var(--text-muted)]">Företag</dt>
-                    <dd className="text-right text-[var(--text-primary)]">{recipientCompany}</dd>
+                    <dt className="text-[var(--ui-text-muted)]">Företag</dt>
+                    <dd className="text-right text-[var(--ui-text)]">{recipientCompany}</dd>
                   </div>
                 ) : null}
               </dl>
             </ModalMetaCard>
 
-            <div className="mt-4 rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-100">
+            <InlineAlert tone="warning" className="mt-4">
               Kontrollera mottagaren noggrant. Efter utskick är det kundens länkade offertvy som blir den aktiva källan.
-            </div>
+            </InlineAlert>
           </ModalBody>
 
           <ModalActionFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Avbryt
             </Button>
-            <Button type="button" onClick={onConfirm} disabled={loading}>
-              {loading ? 'Skickar…' : 'Skicka offert'}
+            <Button type="button" onClick={onConfirm} disabled={loading} loading={loading}>
+              {loading ? 'Skickar...' : 'Skicka offert'}
             </Button>
           </ModalActionFooter>
         </div>

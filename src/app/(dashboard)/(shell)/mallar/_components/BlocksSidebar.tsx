@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useMemo, useRef, useState } from 'react';
 import { useTemplateEditor } from './editor-context';
@@ -14,19 +14,19 @@ import {
   type InsertPayload,
 } from './template-insert-actions';
 import {
-  BracketsCurly,
-  CalendarBlank,
-  Image as PhImage,
-  ListBullets,
-  MagnifyingGlass,
-  Minus as PhMinus,
-  PenNib,
+  Braces,
+  Calendar,
+  Heading1,
+  Heading2,
+  Image as ImageIcon,
+  List,
+  Minus,
+  PenLine,
+  Search,
   Table,
-  TextHOne,
-  TextHTwo,
-  TextT,
+  Text,
   User,
-} from '@phosphor-icons/react';
+} from 'lucide-react';
 import { cn } from '@shared/lib/utils';
 
 type BuilderTab = 'pages' | 'blocks' | 'variables' | 'media';
@@ -75,7 +75,7 @@ export default function BlocksSidebar() {
       label: 'Rubrik 1',
       description: 'Stor rubrik för sidans huvudbudskap.',
       group: 'Textblock',
-      icon: <TextHOne size={14} />,
+      icon: <Heading1 size={14} strokeWidth={1.75} />,
       payload: { kind: 'heading1' },
     },
     {
@@ -83,7 +83,7 @@ export default function BlocksSidebar() {
       label: 'Rubrik 2',
       description: 'Mellanrubrik för avsnitt.',
       group: 'Textblock',
-      icon: <TextHTwo size={14} />,
+      icon: <Heading2 size={14} strokeWidth={1.75} />,
       payload: { kind: 'heading2' },
     },
     {
@@ -91,7 +91,7 @@ export default function BlocksSidebar() {
       label: 'Brödtext',
       description: 'Vanlig textyta.',
       group: 'Textblock',
-      icon: <TextT size={14} />,
+      icon: <Text size={14} strokeWidth={1.75} />,
       payload: { kind: 'paragraph' },
     },
     {
@@ -99,7 +99,7 @@ export default function BlocksSidebar() {
       label: 'Punktlista',
       description: 'Lista för leveranser eller fördelar.',
       group: 'Textblock',
-      icon: <ListBullets size={14} />,
+      icon: <List size={14} strokeWidth={1.75} />,
       payload: { kind: 'bulletList' },
     },
     {
@@ -107,7 +107,7 @@ export default function BlocksSidebar() {
       label: 'Tabell',
       description: 'En enkel 3 x 3-tabell.',
       group: 'Struktur',
-      icon: <Table size={14} />,
+      icon: <Table size={14} strokeWidth={1.75} />,
       payload: { kind: 'table' },
     },
     {
@@ -115,7 +115,7 @@ export default function BlocksSidebar() {
       label: 'Avdelare',
       description: 'Tunn linje mellan avsnitt.',
       group: 'Struktur',
-      icon: <PhMinus size={14} />,
+      icon: <Minus size={14} strokeWidth={1.75} />,
       payload: { kind: 'divider' },
     },
     {
@@ -123,7 +123,7 @@ export default function BlocksSidebar() {
       label: 'Signatur',
       description: 'Manuellt signaturfält på presentationssida.',
       group: 'Signatur',
-      icon: <PenNib size={14} />,
+      icon: <PenLine size={14} strokeWidth={1.75} />,
       payload: { kind: 'signature', label: 'Signatur' },
     },
     {
@@ -131,7 +131,7 @@ export default function BlocksSidebar() {
       label: 'Namn',
       description: 'Fält för fullständigt namn.',
       group: 'Signatur',
-      icon: <User size={14} />,
+      icon: <User size={14} strokeWidth={1.75} />,
       payload: { kind: 'signatureName', label: 'Fullständigt namn' },
     },
     {
@@ -139,7 +139,7 @@ export default function BlocksSidebar() {
       label: 'Datum',
       description: 'Fält för signeringsdatum.',
       group: 'Signatur',
-      icon: <CalendarBlank size={14} />,
+      icon: <Calendar size={14} strokeWidth={1.75} />,
       payload: { kind: 'signatureDate', label: 'Signeringsdatum' },
     },
   ], []);
@@ -151,7 +151,7 @@ export default function BlocksSidebar() {
       label: placeholder.label,
       description: placeholder.key,
       group: getVariableGroup(key),
-      icon: <BracketsCurly size={14} />,
+      icon: <Braces size={14} strokeWidth={1.75} />,
       payload: { kind: 'variable', key, label: placeholder.label },
     };
   }), []);
@@ -162,7 +162,7 @@ export default function BlocksSidebar() {
 
   if (!editor || !hf) {
     return (
-      <aside className="hidden shrink-0 border-r border-[var(--border)] bg-[var(--surface-1)] xl:flex xl:w-[clamp(260px,20vw,340px)]" />
+      <aside className="hidden shrink-0 border-r border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] xl:flex xl:w-[clamp(260px,20vw,340px)]" />
     );
   }
 
@@ -193,15 +193,15 @@ export default function BlocksSidebar() {
   }
 
   return (
-    <aside className="hidden min-h-0 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface-1)] xl:flex xl:w-[clamp(260px,20vw,340px)]">
-      <div className="shrink-0 border-b border-[var(--border)] px-3 py-3">
-        <p className="text-[12px] font-semibold text-[var(--text-primary)]">Mallbyggare</p>
-        <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">
+    <aside className="hidden min-h-0 shrink-0 flex-col border-r border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] xl:flex xl:w-[clamp(260px,20vw,340px)]">
+      <div className="shrink-0 border-b border-[var(--ui-border)] px-3 py-3">
+        <p className="text-[12px] font-semibold text-[var(--ui-text)]">Mallbyggare</p>
+        <p className="mt-1 text-[11px] leading-4 text-[var(--ui-text-muted)]">
           Styr sidflödet, klicka in block eller dra dem till dokumentytan.
         </p>
       </div>
 
-      <div className="grid shrink-0 grid-cols-4 border-b border-[var(--border)] bg-[var(--surface)]">
+      <div className="grid shrink-0 grid-cols-4 border-b border-[var(--ui-border)] bg-[var(--ui-surface)]">
         {[
           { key: 'pages', label: 'Sidor' },
           { key: 'blocks', label: 'Block' },
@@ -213,10 +213,10 @@ export default function BlocksSidebar() {
             type="button"
             onClick={() => setTab(item.key as BuilderTab)}
             className={cn(
-              'h-9 border-r border-[var(--border)] text-[11px] font-semibold last:border-r-0',
+              'h-9 border-r border-[var(--ui-border)] text-[11px] font-semibold transition-colors last:border-r-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
               tab === item.key
-                ? 'bg-[var(--accent-subtle)] text-[var(--accent)]'
-                : 'text-[var(--text-secondary)] hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]',
+                ? 'bg-[var(--ui-surface-selected)] text-[var(--ui-accent)]'
+                : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)]',
             )}
           >
             {item.label}
@@ -229,26 +229,26 @@ export default function BlocksSidebar() {
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="shrink-0 px-3 py-3">
-            <label className="flex h-8 items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 text-[12px] text-[var(--text-primary)]">
-              <MagnifyingGlass size={13} className="shrink-0 text-[var(--text-muted)]" />
+            <label className="flex h-8 items-center gap-2 rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface)] px-2 text-[12px] text-[var(--ui-text)] focus-within:ring-2 focus-within:ring-[var(--ui-focus)]">
+              <Search size={14} strokeWidth={1.75} className="shrink-0 text-[var(--ui-text-muted)]" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={tab === 'variables' ? 'Sök variabel...' : 'Sök block...'}
-                className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--text-muted)]"
+                className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--ui-text-muted)]"
               />
             </label>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
             {isDocumentPage ? (
-              <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-3 py-3 text-[11px] leading-5 text-[var(--text-secondary)]">
+              <div className="rounded-lg border border-dashed border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-3 text-[11px] leading-5 text-[var(--ui-text-secondary)]">
                 Den här sidan är en strukturerad offertsida. Lägg till fria presentationssidor för manuell layout, bilder och variabler.
               </div>
             ) : (
               <>
                 {!isPageReady && (
-                  <div className="mb-3 rounded-lg border border-dashed border-[var(--accent-border)] bg-[var(--accent-subtle)] px-3 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+                  <div className="mb-3 rounded-lg border border-dashed border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)] px-3 py-2 text-[11px] leading-5 text-[var(--ui-text-secondary)]">
                     Laddar rätt sida i editorn. Vänta en halv sekund innan du lägger in bild eller text.
                   </div>
                 )}
@@ -273,7 +273,7 @@ export default function BlocksSidebar() {
                 {tab === 'media' && (
                   <div className="space-y-3">
                     {isAppendixPage && (
-                      <div className="rounded-lg border border-[var(--accent-border)] bg-[var(--accent-subtle)] px-3 py-2 text-[11px] leading-5 text-[var(--text-secondary)]">
+                      <div className="rounded-lg border border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)] px-3 py-2 text-[11px] leading-5 text-[var(--ui-text-secondary)]">
                         Bilagor passar bäst för en eller flera uppladdade bilder. Du kan också släppa bildfiler direkt på canvasen.
                       </div>
                     )}
@@ -283,14 +283,14 @@ export default function BlocksSidebar() {
                         label: isAppendixPage ? 'Lägg till bild till bilagan' : 'Bild',
                         description: 'Välj en bildfil eller släpp en bild direkt på sidan.',
                         group: 'Media',
-                        icon: <PhImage size={14} />,
+                        icon: <ImageIcon size={14} strokeWidth={1.75} />,
                         payload: { kind: 'image' },
                         clickOnly: true,
                       }}
                       disabled={!isPageReady}
                       onInsert={runPayload}
                     />
-                    <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-3 py-3 text-[11px] leading-5 text-[var(--text-secondary)]">
+                    <div className="rounded-lg border border-dashed border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-3 text-[11px] leading-5 text-[var(--ui-text-secondary)]">
                       Tips: dra en bildfil från datorn till dokumentytan för att placera den på aktiv sida.
                     </div>
                   </div>
@@ -338,7 +338,7 @@ function LibraryGroups({
   const groups = Array.from(new Set(items.map((item) => item.group)));
   if (items.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface-0)] px-3 py-3 text-[11px] text-[var(--text-muted)]">
+      <div className="rounded-lg border border-dashed border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-3 text-[11px] text-[var(--ui-text-muted)]">
         Inga träffar.
       </div>
     );
@@ -347,7 +347,7 @@ function LibraryGroups({
     <div className="space-y-4">
       {groups.map((group) => (
         <section key={group}>
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{group}</p>
+          <p className="mb-1.5 text-[10px] font-semibold uppercase text-[var(--ui-text-muted)]">{group}</p>
           <div className="space-y-1.5">
             {items.filter((item) => item.group === group).map((item) => (
               <LibraryItemButton
@@ -388,15 +388,15 @@ function LibraryItemButton({
       onClick={() => onInsert(item.payload)}
       disabled={disabled}
       title={item.clickOnly ? 'Klicka för att välja fil' : 'Klicka för att infoga eller dra till sidan'}
-      className="flex w-full items-start gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-2 text-left transition-colors hover:border-[var(--accent-border)] hover:bg-[var(--accent-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
+      className="flex w-full items-start gap-2 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] px-2.5 py-2 text-left transition-colors hover:border-[var(--ui-accent-border)] hover:bg-[var(--ui-surface-selected)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] disabled:cursor-not-allowed disabled:border-[var(--ui-border)] disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-text-disabled)] disabled:opacity-80"
     >
-      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[var(--surface-2)] text-[var(--accent)]">
+      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[var(--ui-surface-subtle)] text-[var(--ui-accent)]">
         {item.icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[12px] font-semibold text-[var(--text-primary)]">{item.label}</span>
+        <span className="block truncate text-[12px] font-semibold text-[var(--ui-text)]">{item.label}</span>
         {item.description && (
-          <span className={cn('mt-0.5 block text-[10px] leading-4 text-[var(--text-muted)]', showToken ? 'font-mono' : '')}>
+          <span className={cn('mt-0.5 block text-[10px] leading-4 text-[var(--ui-text-muted)]', showToken ? 'font-mono' : '')}>
             {item.description}
           </span>
         )}
@@ -404,3 +404,4 @@ function LibraryItemButton({
     </button>
   );
 }
+

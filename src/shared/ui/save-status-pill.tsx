@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircleIcon, CloudArrowUpIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { CheckCircle, CircleAlert, CloudUpload } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
 
 export type SaveStatus = 'idle' | 'dirty' | 'autosaving' | 'autosaved' | 'saving' | 'saved' | 'restored';
@@ -22,16 +22,16 @@ const LABELS: Record<SaveStatus, string> = {
 
 export function SaveStatusPill({ status, className }: SaveStatusPillProps) {
   const tone = status === 'dirty' || status === 'restored'
-    ? 'border-[color-mix(in_srgb,var(--status-warning-text)_22%,var(--border))] bg-[var(--status-warning-bg)] text-[var(--status-warning-text)]'
+    ? 'border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] text-[var(--ui-warning-text)]'
     : status === 'saving' || status === 'autosaving'
-      ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)] text-[var(--accent)]'
-      : 'border-[color-mix(in_srgb,var(--status-success-text)_20%,var(--border))] bg-[var(--status-success-bg)] text-[var(--status-success-text)]';
+      ? 'border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)] text-[var(--ui-accent)]'
+      : 'border-[var(--ui-success-border)] bg-[var(--ui-success-bg)] text-[var(--ui-success-text)]';
 
   const icon = status === 'dirty' || status === 'restored'
-    ? <WarningCircleIcon size={13} weight="fill" />
+    ? <CircleAlert size={13} strokeWidth={1.75} />
     : status === 'saving' || status === 'autosaving'
-      ? <CloudArrowUpIcon size={13} className="animate-pulse" />
-      : <CheckCircleIcon size={13} weight="fill" />;
+      ? <CloudUpload size={13} strokeWidth={1.75} className="animate-pulse" />
+      : <CheckCircle size={13} strokeWidth={1.75} />;
 
   return (
     <span

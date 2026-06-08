@@ -1,19 +1,12 @@
 'use client';
 
-/**
- * /crm/leads
- *
- * Lead management — list, filter by status, and create new leads.
- * Connected through the leads feature API client.
- */
-
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Check, Copy } from '@phosphor-icons/react';
-import { replaceBrowserQuery } from '@shared/lib/browser-query';
+import { ArrowLeft, Check, Copy, LoaderCircle, Plus, Search, Users, X } from 'lucide-react';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
-import ToastContainer from '@shared/ui/toast/toast-container';
-import { useToast } from '@shared/ui/toast/toast-context';
+import { replaceBrowserQuery } from '@shared/lib/browser-query';
+import { cn } from '@shared/lib/utils';
 import {
   createLead,
   listLeads,
@@ -22,55 +15,71 @@ import {
   type LeadSource,
   type LeadStatus,
 } from '@shared/lib/api/leads.api';
-import { CustomFieldsSection } from '@shared/ui/custom-fields-section';
-import { useCustomFieldDefinitions } from '@shared/lib/custom-fields/use-custom-field-definitions';
-
-// ─── Types ──────────────────────────────────────────────────────────────────
+import { Button } from '@shared/ui/button';
+import { EmptyState } from '@shared/ui/empty-state';
+import { InlineAlert } from '@shared/ui/inline-alert';
+import { Input } from '@shared/ui/input';
+import { Pagination } from '@shared/ui/pagination';
+import { Panel } from '@shared/ui/panel';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@shared/ui/select';
+import { StatusBadge, type StatusTone } from '@shared/ui/status-badge';
+import { Textarea } from '@shared/ui/textarea';
+import ToastContainer from '@shared/ui/toast/toast-container';
+import { useToast } from '@shared/ui/toast/toast-context';
 
 const STATUS_TABS: { key: LeadStatus | 'all'; label: string }[] = [
-  { key: 'all',       label: 'Alla' },
-  { key: 'new',       label: 'Nya' },
+  { key: 'all', label: 'Alla' },
+  { key: 'new', label: 'Nya' },
   { key: 'contacted', label: 'Kontaktade' },
   { key: 'qualified', label: 'Kvalificerade' },
-  { key: 'proposal',  label: 'Offert' },
-  { key: 'won',       label: 'Vunna' },
-  { key: 'lost',      label: 'Förlorade' },
+  { key: 'proposal', label: 'Offert' },
+  { key: 'won', label: 'Vunna' },
+  { key: 'lost', label: 'Förlorade' },
 ];
 
-const STATUS_BADGE: Record<LeadStatus, string> = {
-  new:       'bg-[var(--accent)]/10 text-[var(--accent)]',
-  contacted: 'bg-blue-50 dark:bg-blue-900/25 text-blue-700 dark:text-blue-400',
-  qualified: 'bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-400',
-  proposal:  'bg-amber-50 dark:bg-amber-900/25 text-amber-700 dark:text-amber-400',
-  won:       'bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-400',
-  lost:      'bg-red-50 dark:bg-red-900/25 text-red-600 dark:text-red-400',
-};
-
 const STATUS_LABEL: Record<LeadStatus, string> = {
-  new:       'Ny',
+  new: 'Ny',
   contacted: 'Kontaktad',
   qualified: 'Kvalificerad',
-  proposal:  'Offert',
-  won:       'Vunnen',
-  lost:      'Förlorad',
+  proposal: 'Offert',
+  won: 'Vunnen',
+  lost: 'Förlorad',
+};
+
+const STATUS_TONE: Record<LeadStatus, StatusTone> = {
+  new: 'accent',
+  contacted: 'info',
+  qualified: 'accent',
+  proposal: 'warning',
+  won: 'success',
+  lost: 'danger',
 };
 
 const SOURCE_LABEL: Record<LeadSource, string> = {
-  voice_call:   'Röstsamtal',
-  web_form:     'Webbformulär',
-  manual:       'Manuellt',
-  referral:     'Remiss',
-  n8n_webhook:  'n8n',
+  voice_call: 'Röstsamtal',
+  web_form: 'Webbformulär',
+  manual: 'Manuellt',
+  referral: 'Remiss',
+  n8n_webhook: 'n8n',
 };
 
 const EMPTY_FORM = {
-  name: '', email: '', phone: '', company: '',
+  name: '',
+  email: '',
+  phone: '',
+  company: '',
   status: 'new' as LeadStatus,
   source: 'manual' as LeadSource,
   estimatedValue: '',
   notes: '',
-  customFields: {} as Record<string, unknown>,
 };
+
 const PAGE_SIZE = 50;
 
 function parsePageParam(page: string | null) {
@@ -86,23 +95,20 @@ function fmt(iso: string): string {
   return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
-
 export default function LeadsPage() {
   const searchParams = useSearchParams();
-  const { toasts, addToast, dismissToast } = useToast();
   const { selectedCompanyId, selectedCompany } = useActiveCompany();
-  const [leads, setLeads]       = useState<Lead[]>([]);
-  const [total, setTotal]       = useState(0);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
-  const [tab, setTab]           = useState<LeadStatus | 'all'>(() => parseLeadStatus(searchParams.get('status')));
-  const [search, setSearch]     = useState(searchParams.get('search') ?? '');
+  const { toasts, addToast, dismissToast } = useToast();
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<LeadStatus | 'all'>(() => parseLeadStatus(searchParams.get('status')));
+  const [search, setSearch] = useState(searchParams.get('search') ?? '');
   const [currentPage, setCurrentPage] = useState(() => parsePageParam(searchParams.get('page')));
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm]         = useState(EMPTY_FORM);
-  const { definitions: customFieldDefs } = useCustomFieldDefinitions('lead');
-  const [saving, setSaving]     = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
   const [copiedLeadValue, setCopiedLeadValue] = useState<string | null>(null);
 
   const load = useCallback(async (status?: LeadStatus, q?: string) => {
@@ -127,7 +133,7 @@ export default function LeadsPage() {
 
   useEffect(() => {
     void load(tab === 'all' ? undefined : tab, search || undefined);
-  }, [load, tab, search]);
+  }, [load, search, tab]);
 
   useEffect(() => {
     replaceBrowserQuery({
@@ -141,17 +147,12 @@ export default function LeadsPage() {
     setSaving(true);
     setError(null);
     try {
-      const body: CreateLeadPayload = {
-        name:   form.name,
-        status: form.status,
-        source: form.source,
-      };
-      if (form.email)          body.email          = form.email;
-      if (form.phone)          body.phone          = form.phone;
-      if (form.company)        body.company        = form.company;
-      if (form.notes)          body.notes          = form.notes;
+      const body: CreateLeadPayload = { name: form.name, status: form.status, source: form.source };
+      if (form.email) body.email = form.email;
+      if (form.phone) body.phone = form.phone;
+      if (form.company) body.company = form.company;
+      if (form.notes) body.notes = form.notes;
       if (form.estimatedValue) body.estimatedValue = parseFloat(form.estimatedValue);
-      if (Object.keys(form.customFields).length > 0) body.customFields = form.customFields;
 
       await createLead(body);
       setShowForm(false);
@@ -162,396 +163,308 @@ export default function LeadsPage() {
     } finally {
       setSaving(false);
     }
-  }, [form, load, tab, search]);
+  }, [form, load, search, tab]);
+
+  const showCopiedToast = useCallback((message: string) => {
+    addToast({ message, color: 'emerald', icon: <Check size={14} strokeWidth={2} /> });
+  }, [addToast]);
 
   const copyLeadValue = useCallback(async (key: string, value: string, label: string) => {
     if (!value) return;
-
     await navigator.clipboard.writeText(value).catch(() => {});
     setCopiedLeadValue(key);
-    addToast({
-      message: `${label} kopierad`,
-      color: 'emerald',
-      icon: (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ),
-    });
+    showCopiedToast(`${label} kopierad`);
     window.setTimeout(() => setCopiedLeadValue(null), 1800);
-  }, [addToast]);
+  }, [showCopiedToast]);
 
   const copyCurrentViewLink = useCallback(async () => {
     await navigator.clipboard.writeText(window.location.href).catch(() => {});
     setCopiedLeadValue('view');
-    addToast({
-      message: 'Vy-länk kopierad',
-      color: 'emerald',
-      icon: (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ),
-    });
+    showCopiedToast('Vy-länk kopierad');
     window.setTimeout(() => setCopiedLeadValue(null), 1800);
-  }, [addToast]);
+  }, [showCopiedToast]);
 
-  const initials = (name: string) =>
-    name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
-
-  const AVATAR_COLORS = ['bg-violet-500','bg-blue-500','bg-emerald-500','bg-amber-500','bg-rose-500','bg-sky-500'];
-  const avatarColor = (id: string) => AVATAR_COLORS[id.charCodeAt(0) % AVATAR_COLORS.length];
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const canGoBack = currentPage > 0;
-  const canGoForward = currentPage < totalPages - 1;
   const hasActiveFilters = tab !== 'all' || Boolean(search);
 
   return (
-    <div className="px-8 py-10 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+      <PageChrome
+        total={total}
+        companyName={selectedCompany?.name}
+        onNew={() => setShowForm(true)}
+      />
 
-      {/* Header */}
-      <div className="mb-8 flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <a href="/crm" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5" /><path d="m12 19-7-7 7-7" />
-              </svg>
-            </a>
-            <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)]">Leads</h1>
-          </div>
-          <p className="text-sm text-[var(--text-muted)]">
-            Hantera inkommande leads från röstsamtal, webbformulär och andra kanaler.
-            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[var(--surface-alt)] border border-[var(--border)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
-              {total} leads totalt
-            </span>
-            {selectedCompany && (
-              <span className="ml-2 inline-flex items-center gap-1 rounded-full border border-[var(--accent)]/20 bg-[var(--accent)]/10 px-2 py-0.5 text-xs font-medium text-[var(--accent)]">
-                {selectedCompany.name}
-              </span>
-            )}
-          </p>
-        </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity shrink-0"
+      {error ? (
+        <InlineAlert
+          tone="danger"
+          title="Leads kunde inte uppdateras"
+          className="items-center justify-between"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Ny lead
-        </button>
-      </div>
-
-      {error && (
-        <div className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400">
-          <span className="flex min-w-0 items-center gap-2">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-              <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
-            </svg>
+          <div className="flex flex-wrap items-center gap-3">
             <span>{error}</span>
-          </span>
-          <button type="button" onClick={() => void load(tab === 'all' ? undefined : tab, search || undefined)} className="shrink-0 rounded-lg border border-red-200/70 px-2 py-1 text-xs font-medium hover:bg-red-100/60 dark:border-red-800/40 dark:hover:bg-red-900/30">
-            Försök igen
-          </button>
-        </div>
-      )}
+            <Button type="button" variant="secondary" size="compact" onClick={() => void load(tab === 'all' ? undefined : tab, search || undefined)}>
+              Försök igen
+            </Button>
+          </div>
+        </InlineAlert>
+      ) : null}
 
-      {/* Tabs + search */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-        <div className="flex gap-1 bg-[var(--surface-alt)] border border-[var(--border)] rounded-xl p-1 overflow-x-auto shrink-0">
-          {STATUS_TABS.map(t => (
-            <button
-              key={t.key}
-              onClick={() => {
-                setTab(t.key);
+      <Panel padding="sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="flex gap-1 overflow-x-auto rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-1">
+            {STATUS_TABS.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => {
+                  setTab(item.key);
+                  setCurrentPage(0);
+                }}
+                className={cn(
+                  'h-8 whitespace-nowrap rounded-[var(--ui-radius-sm)] px-3 text-sm font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2',
+                  tab === item.key && 'border border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)] text-[var(--ui-text)]',
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative min-w-0 flex-1 lg:max-w-sm">
+            <Search size={16} strokeWidth={1.75} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)]" />
+            <Input
+              type="search"
+              placeholder="Sök lead..."
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
                 setCurrentPage(0);
               }}
-              className={[
-                'px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
-                tab === t.key
-                  ? 'bg-[var(--surface)] text-[var(--text-primary)] shadow-sm border border-[var(--border)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
-              ].join(' ')}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <div className="relative flex-1 max-w-sm">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="search"
-            placeholder="Sök lead…"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(0);
-            }}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-        {hasActiveFilters && (
-          <button
-            type="button"
-            onClick={() => {
-              setTab('all');
-              setSearch('');
-              setCurrentPage(0);
-            }}
-            className="w-fit rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
-          >
-            Rensa filter
-          </button>
-        )}
-          <button
-            type="button"
-            onClick={() => void copyCurrentViewLink()}
-            className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)]"
-          >
-            {copiedLeadValue === 'view' ? <Check size={13} weight="bold" /> : <Copy size={13} weight="bold" />}
-            Kopiera vy
-          </button>
-        </div>
-      </div>
-
-      {/* New lead form */}
-      {showForm && (
-        <div className="mb-6 rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-6">
-          <h2 className="mb-4 text-sm font-semibold text-[var(--text-primary)]">Ny lead</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Namn *</label>
-              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Företag</label>
-              <input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">E-post</label>
-              <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Telefon</label>
-              <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Källa</label>
-              <select value={form.source} onChange={e => setForm(f => ({ ...f, source: e.target.value as LeadSource }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
-                <option value="manual">Manuellt</option>
-                <option value="voice_call">Röstsamtal</option>
-                <option value="web_form">Webbformulär</option>
-                <option value="referral">Remiss</option>
-                <option value="n8n_webhook">n8n</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Estimerat värde (kr)</label>
-              <input type="number" min={0} value={form.estimatedValue} onChange={e => setForm(f => ({ ...f, estimatedValue: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Anteckningar</label>
-              <textarea value={form.notes} rows={2} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none" />
-            </div>
-            {customFieldDefs.length > 0 && (
-              <div className="sm:col-span-2">
-                <CustomFieldsSection
-                  definitions={customFieldDefs}
-                  values={form.customFields}
-                  onChange={(customFields) => setForm(f => ({ ...f, customFields }))}
-                />
-              </div>
-            )}
+              className="pl-9"
+            />
           </div>
-          <div className="mt-4 flex gap-2">
-            <button onClick={() => void saveLead()} disabled={saving || !form.name}
-              className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {saving ? 'Sparar…' : 'Spara lead'}
-            </button>
-            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}
-              className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors">
-              Avbryt
-            </button>
+
+          <div className="flex flex-wrap gap-2 lg:ml-auto">
+            {hasActiveFilters ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="compact"
+                onClick={() => {
+                  setTab('all');
+                  setSearch('');
+                  setCurrentPage(0);
+                }}
+              >
+                <X size={16} strokeWidth={1.75} />
+                Rensa filter
+              </Button>
+            ) : null}
+            <Button type="button" variant="secondary" size="compact" onClick={() => void copyCurrentViewLink()}>
+              {copiedLeadValue === 'view' ? <Check size={16} strokeWidth={2} /> : <Copy size={16} strokeWidth={1.75} />}
+              Kopiera vy
+            </Button>
           </div>
         </div>
-      )}
+      </Panel>
 
-      {/* Table */}
-      {!loading && (
-        <div className="rounded-2xl border border-[var(--border)] overflow-hidden">
+      {showForm ? (
+        <LeadForm
+          form={form}
+          saving={saving}
+          onChange={setForm}
+          onCancel={() => {
+            setShowForm(false);
+            setForm(EMPTY_FORM);
+          }}
+          onSave={() => void saveLead()}
+        />
+      ) : null}
+
+      {loading ? (
+        <Panel className="grid min-h-64 place-items-center">
+          <div className="flex items-center gap-2 text-sm text-[var(--ui-text-muted)]">
+            <LoaderCircle size={18} strokeWidth={1.75} className="animate-spin" />
+            Laddar leads...
+          </div>
+        </Panel>
+      ) : (
+        <Panel padding="none" className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-[var(--border)] text-sm">
-              <thead className="bg-[var(--surface-alt)]">
+            <table className="min-w-full divide-y divide-[var(--ui-border)] text-sm">
+              <thead className="sticky top-0 bg-[var(--ui-surface-subtle)]">
                 <tr>
-                  {['Namn', 'Ärende', 'Kontakt', 'Källa', 'Kund', 'Värde', 'Status', 'Skapad'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
+                  {['Namn', 'Ärende', 'Kontakt', 'Källa', 'Kund', 'Värde', 'Status', 'Skapad'].map((header) => (
+                    <th key={header} className="h-10 px-4 text-left text-xs font-semibold uppercase text-[var(--ui-text-muted)]">
+                      {header}
+                    </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)]">
-                {leads.map(l => (
-                  <tr key={l.id} className="hover:bg-[var(--surface-alt)] transition-colors">
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-7 h-7 rounded-full ${avatarColor(l.id)} flex items-center justify-center text-white text-[10px] font-bold shrink-0`}>
-                          {initials(l.name)}
-                        </div>
-                        <span className="font-medium text-[var(--text-primary)] truncate max-w-[160px]">{l.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5 text-[var(--text-secondary)]">
-                      <div className="max-w-[220px]">
-                        <p className="truncate font-medium text-[var(--text-primary)]">
-                          {l.requestedService ?? l.company ?? <span className="text-[var(--text-muted)]">—</span>}
-                        </p>
-                        {(l.address || l.postalCode) && (
-                          <p className="truncate text-xs text-[var(--text-muted)]">
-                            {[l.address, l.postalCode].filter(Boolean).join(', ')}
-                          </p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5 text-[var(--text-muted)] text-xs">
-                      {l.email && (
-                        <div className="flex items-center gap-2">
-                          <CopyableLeadValue
-                            value={l.email}
-                            label="e-post"
-                            copied={copiedLeadValue === `email:${l.id}`}
-                            onCopy={() => void copyLeadValue(`email:${l.id}`, l.email ?? '', 'E-post')}
-                          />
-                          <a href={`mailto:${l.email}`} className="text-[11px] font-medium text-[var(--accent)] hover:underline">Maila</a>
-                        </div>
-                      )}
-                      {l.phone && (
-                        <div className="flex items-center gap-2">
-                          <CopyableLeadValue
-                            value={l.phone}
-                            label="telefon"
-                            copied={copiedLeadValue === `phone:${l.id}`}
-                            onCopy={() => void copyLeadValue(`phone:${l.id}`, l.phone ?? '', 'Telefon')}
-                          />
-                          <a href={`tel:${l.phone}`} className="text-[11px] font-medium text-[var(--accent)] hover:underline">Ring</a>
-                        </div>
-                      )}
-                      {!l.email && !l.phone && '—'}
-                    </td>
-                    <td className="px-4 py-3.5 text-[var(--text-secondary)]">
-                      <p>{l.sourceLabel ?? SOURCE_LABEL[l.source]}</p>
-                      {l.referralSource && <p className="max-w-[180px] truncate text-xs text-[var(--text-muted)]">{l.referralSource}</p>}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      {l.customerId ? (
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/25 dark:text-emerald-300">
-                          Länkad
-                        </span>
-                      ) : l.score != null ? (
-                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold">
-                          {l.score}
-                        </span>
-                      ) : <span className="text-[var(--text-muted)]">—</span>}
-                    </td>
-                    <td className="px-4 py-3.5 text-[var(--text-secondary)]">
-                      {l.estimatedValue != null
-                        ? new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(l.estimatedValue)
-                        : <span className="text-[var(--text-muted)]">—</span>}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGE[l.status]}`}>
-                        {STATUS_LABEL[l.status]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmt(l.createdAt)}</td>
-                  </tr>
+              <tbody className="divide-y divide-[var(--ui-border)] bg-[var(--ui-surface)]">
+                {leads.map((lead) => (
+                  <LeadRow
+                    key={lead.id}
+                    lead={lead}
+                    copiedLeadValue={copiedLeadValue}
+                    onCopy={copyLeadValue}
+                  />
                 ))}
-                {leads.length === 0 && (
+                {leads.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">
-                      Inga leads{tab !== 'all' ? ` med status "${STATUS_LABEL[tab as LeadStatus]?.toLowerCase()}"` : ''} — klicka på Ny lead för att lägga till.
+                    <td colSpan={8}>
+                      <EmptyState
+                        icon={Users}
+                        title="Inga leads hittades"
+                        description={tab !== 'all' ? `Det finns inga leads med status ${STATUS_LABEL[tab].toLowerCase()}.` : 'Skapa ett nytt lead eller justera sökningen.'}
+                        actionLabel="Ny lead"
+                        onAction={() => setShowForm(true)}
+                      />
                     </td>
                   </tr>
-                )}
+                ) : null}
               </tbody>
             </table>
           </div>
-          {total > 0 && (
-            <div className="flex flex-col gap-3 border-t border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-xs text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
-              <span className="text-center sm:text-left">
-                Visar {currentPage * PAGE_SIZE + 1}-{currentPage * PAGE_SIZE + leads.length} av {total} leads
-              </span>
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((page) => Math.max(0, page - 1))}
-                  disabled={!canGoBack}
-                  className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Föregående
-                </button>
-                <span className="tabular-nums">
-                  {currentPage + 1}/{totalPages}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((page) => page + 1)}
-                  disabled={!canGoForward}
-                  className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Nästa
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+          {total > 0 ? (
+            <Pagination
+              page={currentPage + 1}
+              pageCount={totalPages}
+              label="Leadsidor"
+              onPrevious={currentPage > 0 ? () => setCurrentPage((page) => Math.max(0, page - 1)) : undefined}
+              onNext={currentPage < totalPages - 1 ? () => setCurrentPage((page) => page + 1) : undefined}
+            />
+          ) : null}
+        </Panel>
       )}
 
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--text-muted)]">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-          </svg>
-          <p className="text-sm text-[var(--text-muted)]">Laddar leads…</p>
-        </div>
-      )}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
 
-function CopyableLeadValue({
-  value,
-  label,
-  copied,
-  onCopy,
-}: {
-  value: string;
-  label: string;
-  copied: boolean;
-  onCopy: () => void;
-}) {
+function PageChrome({ total, companyName, onNew }: { total: number; companyName?: string; onNew: () => void }) {
   return (
-    <div className="group flex max-w-[220px] items-center gap-1.5">
+    <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0 space-y-1">
+        <div className="flex items-center gap-2">
+          <Button asChild variant="ghost" size="icon" aria-label="Till CRM">
+            <Link href="/crm"><ArrowLeft size={16} strokeWidth={1.75} /></Link>
+          </Button>
+          <h1 className="text-xl font-semibold text-[var(--ui-text)]">Leads</h1>
+        </div>
+        <p className="max-w-3xl text-sm leading-6 text-[var(--ui-text-muted)]">
+          Hantera inkommande leads från röstsamtal, webbformulär och andra kanaler.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <StatusBadge tone="neutral">{total} leads totalt</StatusBadge>
+          {companyName ? <StatusBadge tone="accent">{companyName}</StatusBadge> : null}
+        </div>
+      </div>
+      <Button type="button" onClick={onNew}>
+        <Plus size={16} strokeWidth={1.75} />
+        Ny lead
+      </Button>
+    </header>
+  );
+}
+
+type LeadFormState = typeof EMPTY_FORM;
+
+function LeadForm({
+  form,
+  saving,
+  onChange,
+  onCancel,
+  onSave,
+}: {
+  form: LeadFormState;
+  saving: boolean;
+  onChange: (next: LeadFormState | ((current: LeadFormState) => LeadFormState)) => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  const setField = <Key extends keyof LeadFormState>(key: Key, value: LeadFormState[Key]) => {
+    onChange((current) => ({ ...current, [key]: value }));
+  };
+
+  return (
+    <Panel variant="selected" className="space-y-4">
+      <h2 className="text-sm font-semibold text-[var(--ui-text)]">Ny lead</h2>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Namn *"><Input value={form.name} onChange={(event) => setField('name', event.target.value)} /></Field>
+        <Field label="Företag"><Input value={form.company} onChange={(event) => setField('company', event.target.value)} /></Field>
+        <Field label="E-post"><Input type="email" value={form.email} onChange={(event) => setField('email', event.target.value)} /></Field>
+        <Field label="Telefon"><Input type="tel" value={form.phone} onChange={(event) => setField('phone', event.target.value)} /></Field>
+        <Field label="Källa">
+          <Select value={form.source} onValueChange={(value) => setField('source', value as LeadSource)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{Object.entries(SOURCE_LABEL).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent>
+          </Select>
+        </Field>
+        <Field label="Estimerat värde (kr)">
+          <Input type="number" min={0} value={form.estimatedValue} onChange={(event) => setField('estimatedValue', event.target.value)} />
+        </Field>
+        <Field label="Anteckningar" className="sm:col-span-2">
+          <Textarea rows={2} value={form.notes} onChange={(event) => setField('notes', event.target.value)} />
+        </Field>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" onClick={onSave} disabled={saving || !form.name} loading={saving}>Spara lead</Button>
+        <Button type="button" variant="secondary" onClick={onCancel}>Avbryt</Button>
+      </div>
+    </Panel>
+  );
+}
+
+function LeadRow({ lead, copiedLeadValue, onCopy }: { lead: Lead; copiedLeadValue: string | null; onCopy: (key: string, value: string, label: string) => void }) {
+  return (
+    <tr className="h-10 transition-colors hover:bg-[var(--ui-surface-hover)] focus-within:bg-[var(--ui-surface-selected)]">
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <Avatar name={lead.name} />
+          <span className="max-w-40 truncate font-medium text-[var(--ui-text)]">{lead.name}</span>
+        </div>
+      </td>
+      <td className="px-4 py-3 text-[var(--ui-text-secondary)]">
+        <p className="max-w-56 truncate font-medium text-[var(--ui-text)]">{lead.requestedService ?? lead.company ?? <span className="text-[var(--ui-text-muted)]">-</span>}</p>
+        {lead.address || lead.postalCode ? <p className="max-w-56 truncate text-xs text-[var(--ui-text-muted)]">{[lead.address, lead.postalCode].filter(Boolean).join(', ')}</p> : null}
+      </td>
+      <td className="px-4 py-3 text-xs text-[var(--ui-text-muted)]">
+        {lead.email ? <CopyableLeadValue value={lead.email} label="e-post" copied={copiedLeadValue === `email:${lead.id}`} onCopy={() => onCopy(`email:${lead.id}`, lead.email ?? '', 'E-post')} href={`mailto:${lead.email}`} action="Maila" /> : null}
+        {lead.phone ? <CopyableLeadValue value={lead.phone} label="telefon" copied={copiedLeadValue === `phone:${lead.id}`} onCopy={() => onCopy(`phone:${lead.id}`, lead.phone ?? '', 'Telefon')} href={`tel:${lead.phone}`} action="Ring" /> : null}
+        {!lead.email && !lead.phone ? '-' : null}
+      </td>
+      <td className="px-4 py-3 text-[var(--ui-text-secondary)]">
+        <p>{lead.sourceLabel ?? SOURCE_LABEL[lead.source]}</p>
+        {lead.referralSource ? <p className="max-w-44 truncate text-xs text-[var(--ui-text-muted)]">{lead.referralSource}</p> : null}
+      </td>
+      <td className="px-4 py-3">{lead.customerId ? <StatusBadge tone="success">Länkad</StatusBadge> : lead.score != null ? <StatusBadge tone="accent">Score {lead.score}</StatusBadge> : <span className="text-[var(--ui-text-muted)]">-</span>}</td>
+      <td className="px-4 py-3 text-[var(--ui-text-secondary)]">{lead.estimatedValue != null ? new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 }).format(lead.estimatedValue) : <span className="text-[var(--ui-text-muted)]">-</span>}</td>
+      <td className="px-4 py-3"><StatusBadge tone={STATUS_TONE[lead.status]}>{STATUS_LABEL[lead.status]}</StatusBadge></td>
+      <td className="px-4 py-3 text-[var(--ui-text-muted)]">{fmt(lead.createdAt)}</td>
+    </tr>
+  );
+}
+
+function CopyableLeadValue({ value, label, copied, onCopy, href, action }: { value: string; label: string; copied: boolean; onCopy: () => void; href: string; action: string }) {
+  return (
+    <div className="group flex max-w-56 items-center gap-1.5">
       <span className="truncate">{value}</span>
-      <button
-        type="button"
-        onClick={onCopy}
-        title={`Kopiera ${label}`}
-        aria-label={`Kopiera ${label}`}
-        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] opacity-0 transition hover:bg-[var(--surface-alt)] hover:text-[var(--accent)] focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 group-hover:opacity-100"
-      >
-        {copied ? <Check size={13} weight="bold" /> : <Copy size={13} weight="bold" />}
+      <button type="button" onClick={onCopy} title={`Kopiera ${label}`} aria-label={`Kopiera ${label}`} className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--ui-radius-sm)] text-[var(--ui-text-muted)] opacity-0 transition hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-accent)] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] group-hover:opacity-100">
+        {copied ? <Check size={13} strokeWidth={2} /> : <Copy size={13} strokeWidth={1.75} />}
       </button>
+      <a href={href} className="text-xs font-medium text-[var(--ui-accent)] hover:underline">{action}</a>
     </div>
   );
+}
+
+function Field({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
+  return <label className={cn('space-y-1.5 text-xs font-semibold text-[var(--ui-text-secondary)]', className)}><span>{label}</span>{children}</label>;
+}
+
+function Avatar({ name }: { name: string }) {
+  const initials = name.split(' ').map((word) => word[0]).slice(0, 2).join('').toUpperCase();
+  return <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--ui-accent-border)] bg-[var(--ui-accent-subtle)] text-[10px] font-bold text-[var(--ui-accent)]">{initials}</span>;
 }

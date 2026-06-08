@@ -266,18 +266,18 @@ export function SearchTrigger() {
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          'flex h-8 min-w-[280px] items-center gap-2 rounded-lg px-3',
-          'border border-[var(--border-light)] bg-[var(--surface-0)] shadow-sm shadow-black/[0.02]',
-          'text-sm text-[var(--text-muted)]',
-          'hover:border-[var(--text-muted)]/30 hover:bg-[var(--surface-hover)]',
+          'flex h-9 min-w-[280px] items-center gap-2 rounded-md px-3',
+          'border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-sm',
+          'text-sm text-[var(--ui-text-muted)]',
+          'hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)]',
           'transition-colors duration-150',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/30',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2',
         )}
         aria-label="Öppna snabbnavigering"
       >
-        <SearchIcon size={14} />
+        <SearchIcon size={16} />
         <span className="hidden flex-1 text-left text-[13px] sm:inline">Sök kund, offert, projekt...</span>
-        <kbd className="ml-2 hidden items-center gap-0.5 rounded border border-[var(--border-light)] bg-[var(--surface-alt)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--text-muted)] sm:inline-flex">
+        <kbd className="ml-2 hidden items-center gap-0.5 rounded border border-[var(--ui-border-subtle)] bg-[var(--ui-surface-subtle)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--ui-text-muted)] sm:inline-flex">
           {isMac ? '⌘' : 'Ctrl'}K
         </kbd>
       </button>
@@ -290,16 +290,16 @@ export function SearchTrigger() {
         }}
       >
         <DialogContent mobileVariant="fullscreen" showMobileClose className="max-w-xl p-0">
-          <DialogHeader className="border-b border-[var(--border)] px-5 pb-3 pt-5">
-            <DialogTitle className="text-base text-[var(--text-primary)]">Snabbsök</DialogTitle>
+          <DialogHeader className="border-b border-[var(--ui-border)] px-5 pb-3 pt-5">
+            <DialogTitle className="text-base text-[var(--ui-text)]">Snabbsök</DialogTitle>
             <DialogDescription>
               Hitta sidor, offerter, kunder, leads, projekt, produkter och mallar.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="border-b border-[var(--border)] px-5 py-4">
-            <div className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3">
-              <SearchIcon size={15} className="text-[var(--text-muted)]" />
+          <div className="border-b border-[var(--ui-border)] px-5 py-4">
+            <div className="flex items-center gap-3 rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3">
+              <SearchIcon size={16} className="text-[var(--ui-text-muted)]" />
               <input
                 type="text"
                 autoFocus
@@ -312,7 +312,7 @@ export function SearchTrigger() {
                   }
                 }}
                 placeholder="Sök på offert, kund, projekt, produkt eller mall..."
-                className="h-11 w-full border-0 bg-transparent p-0 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
+                className="h-11 w-full border-0 bg-transparent p-0 text-sm text-[var(--ui-text)] outline-none placeholder:text-[var(--ui-text-muted)]"
               />
             </div>
           </div>
@@ -328,24 +328,24 @@ export function SearchTrigger() {
                     type="button"
                     onClick={() => openRoute(item.href)}
                     className={cn(
-                      'flex w-full items-start justify-between gap-4 rounded-xl px-3 py-3 text-left transition-colors',
+                      'flex w-full items-start justify-between gap-4 rounded-md px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2',
                       active
-                        ? 'bg-[var(--accent-subtle)] text-[var(--text-primary)]'
-                        : 'hover:bg-[var(--surface-hover)]',
+                        ? 'bg-[var(--ui-surface-selected)] text-[var(--ui-text)]'
+                        : 'hover:bg-[var(--ui-surface-hover)]',
                     )}
                   >
                     <span className="min-w-0">
-                      <span className="mb-1 inline-flex rounded-full bg-[var(--surface-alt)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                      <span className="mb-1 inline-flex rounded-sm bg-[var(--ui-surface-subtle)] px-2 py-0.5 text-[10px] font-semibold uppercase text-[var(--ui-text-muted)]">
                         {item.category}
                       </span>
-                      <span className="block truncate text-sm font-medium text-[var(--text-primary)]">
+                      <span className="block truncate text-sm font-medium text-[var(--ui-text)]">
                         {item.label}
                       </span>
-                      <span className="mt-0.5 block truncate text-xs text-[var(--text-secondary)]">
+                      <span className="mt-0.5 block truncate text-xs text-[var(--ui-text-secondary)]">
                         {item.description}
                       </span>
                     </span>
-                    <span className="shrink-0 rounded-full border border-[var(--border)] bg-[var(--surface-0)] px-2 py-1 text-[11px] text-[var(--text-muted)]">
+                    <span className="shrink-0 rounded-sm border border-[var(--ui-border)] bg-[var(--ui-surface)] px-2 py-1 text-[11px] text-[var(--ui-text-muted)]">
                       {active ? 'Nuvarande' : item.href}
                     </span>
                   </button>
@@ -353,24 +353,24 @@ export function SearchTrigger() {
               })
             ) : entityLoading ? (
               <div className="px-3 py-8 text-center">
-                <p className="text-sm font-medium text-[var(--text-primary)]">Söker...</p>
-                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                <p className="text-sm font-medium text-[var(--ui-text)]">Söker...</p>
+                <p className="mt-1 text-xs text-[var(--ui-text-muted)]">
                   Letar bland offerter, kunder, projekt, produkter och mallar.
                 </p>
               </div>
             ) : (
               <div className="px-3 py-8 text-center">
-                <p className="text-sm font-medium text-[var(--text-primary)]">Inga träffar ännu</p>
-                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                <p className="text-sm font-medium text-[var(--ui-text)]">Inga träffar ännu</p>
+                <p className="mt-1 text-xs text-[var(--ui-text-muted)]">
                   Prova att söka på offert, kund, projekt, produkt eller mall.
                 </p>
                 {entityError && (
-                  <p className="mt-2 text-xs text-red-500">{entityError}</p>
+                  <p className="mt-2 text-xs text-[var(--ui-danger-text)]">{entityError}</p>
                 )}
               </div>
             )}
             {entityLoading && query.trim().length >= 2 && matches.length > 0 && (
-              <div className="px-3 py-2 text-center text-xs text-[var(--text-muted)]">Uppdaterar sökresultat...</div>
+              <div className="px-3 py-2 text-center text-xs text-[var(--ui-text-muted)]">Uppdaterar sökresultat...</div>
             )}
           </div>
         </DialogContent>

@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { Eye, Loader2, X } from 'lucide-react';
 import {
   createTemplate,
   getTemplate,
@@ -28,10 +29,8 @@ const TemplateEditor = dynamic(() => import('../_components/TemplateEditor'), { 
 const EmailEditor = dynamic(() => import('../_components/EmailEditor'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full items-center justify-center gap-3 text-[var(--text-muted)]">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
-        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-      </svg>
+    <div className="flex h-full items-center justify-center gap-3 text-[var(--ui-text-muted)]">
+      <Loader2 size={18} strokeWidth={1.75} className="animate-spin" aria-hidden />
       <span className="text-sm">Laddar e-postredigeraren...</span>
     </div>
   ),
@@ -297,7 +296,7 @@ export default function TemplateEditorPage() {
         }}
       />
       {draftBanner && (
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] px-4 py-2 text-xs text-[var(--ui-warning-text)]">
           <span>Osparat utkast hittades i din webbläsare.</span>
           <div className="flex items-center gap-2">
             <button
@@ -328,7 +327,7 @@ export default function TemplateEditorPage() {
                 }
                 setDraftBanner(false);
               }}
-              className="font-medium underline hover:no-underline"
+              className="font-medium underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
             >
               Återställ
             </button>
@@ -342,7 +341,7 @@ export default function TemplateEditorPage() {
                 }
                 setDraftBanner(false);
               }}
-              className="text-amber-600 hover:text-amber-800"
+              className="rounded-sm px-1 font-medium hover:bg-[var(--ui-warning-border)]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
             >
               Ignorera
             </button>
@@ -351,12 +350,12 @@ export default function TemplateEditorPage() {
       )}
 
       {migrationNotice && (
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-sky-200 bg-sky-50 px-4 py-2.5 text-xs text-sky-900">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--ui-info-border)] bg-[var(--ui-info-bg)] px-4 py-2.5 text-xs text-[var(--ui-info-text)]">
           <span>{migrationNotice}</span>
           <button
             type="button"
             onClick={() => setMigrationNotice(null)}
-            className="shrink-0 font-medium text-sky-700 hover:text-sky-900"
+            className="shrink-0 rounded-sm px-1 font-medium hover:bg-[var(--ui-info-border)]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
           >
             Stäng
           </button>
@@ -364,14 +363,14 @@ export default function TemplateEditorPage() {
       )}
 
       {loading ? (
-        <div className="grid flex-1 gap-4 overflow-hidden bg-[var(--surface-alt)] p-4 lg:grid-cols-[220px_1fr_260px]">
-          <Skeleton className="hidden h-full min-h-[520px] rounded-2xl lg:block" />
-          <Skeleton className="h-full min-h-[520px] rounded-2xl" />
-          <Skeleton className="hidden h-full min-h-[520px] rounded-2xl lg:block" />
+        <div className="grid flex-1 gap-4 overflow-hidden bg-[var(--ui-surface-subtle)] p-4 lg:grid-cols-[220px_1fr_260px]">
+          <Skeleton className="hidden h-full min-h-[520px] rounded-lg lg:block" />
+          <Skeleton className="h-full min-h-[520px] rounded-lg" />
+          <Skeleton className="hidden h-full min-h-[520px] rounded-lg lg:block" />
         </div>
       ) : (
         <>
-          <div className={`flex-1 overflow-hidden rounded-b-2xl ${activeTab === 'offer' ? '' : 'hidden'}`}>
+          <div className={`flex-1 overflow-hidden rounded-b-lg ${activeTab === 'offer' ? '' : 'hidden'}`}>
             <TemplateEditor
               initialContent={initialContentRef.current}
               editorRef={editorRef}
@@ -403,24 +402,21 @@ export default function TemplateEditorPage() {
 
       {previewing && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--ui-overlay)] p-4 backdrop-blur-sm"
           onClick={() => {
             setPreviewing(false);
             setPreviewHtml(null);
           }}
         >
           <div
-            className="relative flex h-[92vh] min-h-0 w-[min(96vw,1320px)] max-w-[1320px] flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] shadow-2xl"
+            className="relative flex h-[92vh] min-h-0 w-[min(96vw,1320px)] max-w-[1320px] flex-col overflow-hidden rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-[var(--ui-shadow-dialog)]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--surface-alt)] px-5 py-3">
+            <div className="flex shrink-0 items-center justify-between border-b border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-5 py-3">
               <div className="flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-                <span className="text-sm font-medium text-[var(--text-primary)]">Förhandsvisning</span>
-                <span className="text-xs text-[var(--text-muted)]">— med exempeldata</span>
+                <Eye size={16} strokeWidth={1.75} className="text-[var(--ui-text-muted)]" aria-hidden />
+                <span className="text-sm font-medium text-[var(--ui-text)]">Förhandsvisning</span>
+                <span className="text-xs text-[var(--ui-text-muted)]">— med exempeldata</span>
               </div>
               <button
                 type="button"
@@ -428,20 +424,16 @@ export default function TemplateEditorPage() {
                   setPreviewing(false);
                   setPreviewHtml(null);
                 }}
-                className="rounded p-1 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]"
+                className="rounded-md p-1 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
+                aria-label="Stäng förhandsvisning"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <X size={16} strokeWidth={1.75} aria-hidden />
               </button>
             </div>
 
             {previewHtml === null ? (
-              <div className="flex flex-1 items-center justify-center gap-3 text-[var(--text-muted)]">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
-                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                </svg>
+              <div className="flex flex-1 items-center justify-center gap-3 text-[var(--ui-text-muted)]">
+                <Loader2 size={18} strokeWidth={1.75} className="animate-spin" aria-hidden />
                 <span className="text-sm">Genererar förhandsvisning...</span>
               </div>
             ) : (

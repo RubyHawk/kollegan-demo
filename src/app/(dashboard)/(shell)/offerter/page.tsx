@@ -4,8 +4,6 @@
 
 import { useEffect, useCallback, useRef, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { replaceBrowserQuery } from '@shared/lib/browser-query';
-import { previewTemplate } from '@shared/lib/api/templates.api';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import { useToast } from '@shared/ui/toast/toast-context';
 import { DEFAULT_OFFER_PRICE_DISPLAY_MODE } from '@modules/supporting/offers/domain/pricing';
@@ -23,6 +21,11 @@ import { useOfferWizardLifecycle } from './_hooks/use-offer-wizard-lifecycle';
 import { useOfferWizardLookups } from './_hooks/use-offer-wizard-lookups';
 import { useOfferWizardSubmit } from './_hooks/use-offer-wizard-submit';
 import { useOfferDraftAutosave } from './_hooks/use-offer-draft-autosave';
+import { useOfferClipboardToasts } from './_hooks/use-offer-clipboard-toasts';
+import { useOfferUrlFilters } from './_hooks/use-offer-url-filters';
+import { useOfferLivePreviewScheduler } from './_hooks/use-offer-live-preview-scheduler';
+import { useOfferTableState } from './_hooks/use-offer-table-state';
+import { useSelectedCompanyBranding } from './_hooks/use-selected-company-branding';
 import {
   BulkActionBar,
   BulkSendResultBanner,
@@ -32,18 +35,7 @@ import {
   OffersPageHeader,
 } from './_components/offers-dashboard-controls';
 import type { BlockingAlert } from './_components/offer-blocking-alerts';
-import { STATUS_TABS } from './_lib/offers-dashboard-constants';
 import { pricingSummary } from './_lib/offers-dashboard-formatters';
-import type { OfferStatus } from './_store/types';
-
-function parsePageParam(page: string | null) {
-  const parsed = Number(page);
-  return Number.isFinite(parsed) && parsed > 1 ? parsed - 1 : 0;
-}
-
-function parseOfferStatus(status: string | null): OfferStatus | 'all' {
-  return STATUS_TABS.some((tab) => tab.id === status) ? (status as OfferStatus | 'all') : 'all';
-}
 
 export default function OffersPage() {
   const searchParams = useSearchParams();
@@ -52,7 +44,6 @@ export default function OffersPage() {
   const [blockingAlert, setBlockingAlert] = useState<BlockingAlert | null>(null);
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [viewLinkCopied, setViewLinkCopied] = useState(false);
-  const [filtersHydrated, setFiltersHydrated] = useState(false);
   const {
     companies,
     selectedCompany,
@@ -61,13 +52,13 @@ export default function OffersPage() {
   } = useActiveCompany();
   const {
     allOffers, serverTotal, tabCounts, loading, error,
-    searchInput, search,
+    searchInput,
     tab, sortAsc, dateFrom, dateTo, currentPage,
     selected, bulkSending, bulkResult,
     acting, confirmDeleteOffer, copied, confirmSend,
     setSearchInput, setSearch, setTab, setSortAsc, setDateFrom, setDateTo, setCurrentPage,
     setError,
-    setSelected, toggleSelected, clearSelected, setBulkSending, setBulkResult,
+    setSelected, clearSelected, setBulkSending, setBulkResult,
     setActing, setConfirmDeleteOffer, setCopied, setConfirmSend,
     resetFilters,
     load, loadCounts,
@@ -115,51 +106,19 @@ export default function OffersPage() {
     setWizardStep,
   });
 
-  useEffect(() => {
-    const initialSearch = searchParams.get('search') ?? '';
+  useOfferUrlFilters(searchParams);
 
-    setSearchInput(initialSearch);
-    setSearch(initialSearch);
-    setTab(parseOfferStatus(searchParams.get('status')));
-    setDateFrom(searchParams.get('from') ?? '');
-    setDateTo(searchParams.get('to') ?? '');
-    setSortAsc(searchParams.get('sort') === 'asc');
-    setCurrentPage(parsePageParam(searchParams.get('page')));
-    setFiltersHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!filtersHydrated) return;
-    void load();
-    void loadCounts();
-    clearSelected();
-    setBulkResult(null);
-  }, [filtersHydrated, tab, search, currentPage, dateFrom, dateTo]);
-
-  useEffect(() => {
-    if (!filtersHydrated) return;
-
-    replaceBrowserQuery({
-      status: tab === 'all' ? null : tab,
-      search: search.trim() || null,
-      from: dateFrom || null,
-      to: dateTo || null,
-      page: currentPage > 0 ? currentPage + 1 : null,
-      sort: sortAsc ? 'asc' : null,
-    });
-  }, [currentPage, dateFrom, dateTo, filtersHydrated, search, sortAsc, tab]);
-
-  const filteredOffers = useMemo(() => {
-    return allOffers.slice().sort((a, b) => {
-      const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      return sortAsc ? diff : -diff;
-    });
-  }, [allOffers, sortAsc]);
-
-  const offers     = filteredOffers;
-  const total      = tabCounts.all;
-  const totalPages = Math.max(1, Math.ceil(serverTotal / PAGE_SIZE));
-  const hasActiveOfferFilters = tab !== 'all' || Boolean(searchInput || search || dateFrom || dateTo || sortAsc);
+  const {
+    allDraftsSelected,
+    draftOffers,
+    hasActiveOfferFilters,
+    offers,
+    selectedDraftCount,
+    toggleSelect,
+    toggleSelectAllDrafts,
+    total,
+    totalPages,
+  } = useOfferTableState();
 
   const {
     createOffer,
@@ -182,16 +141,7 @@ export default function OffersPage() {
     setSaving,
     setShowForm,
   });
-  const selectedCompanyBranding = useMemo(() => (
-    selectedCompany ? {
-      name: selectedCompany.name,
-      website: selectedCompany.website,
-      logoUrl: selectedCompany.logoUrl,
-      senderEmail: selectedCompany.senderEmail,
-      senderName: selectedCompany.senderName,
-      emailHeaderConfig: selectedCompany.emailHeaderConfig,
-    } : undefined
-  ), [selectedCompany]);
+  const selectedCompanyBranding = useSelectedCompanyBranding(selectedCompany);
 
   const {
     filteredServices,
@@ -276,51 +226,11 @@ export default function OffersPage() {
     setPreviewDoc,
   });
 
-  const copyText = useCallback(async (key: string, value: string, label: string) => {
-    if (!value) return;
-    await navigator.clipboard.writeText(value).catch(() => {});
-    setCopiedText(key);
-    addToast({
-      message: `${label} kopierad`,
-      color: 'emerald',
-      icon: (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ),
-    });
-    window.setTimeout(() => setCopiedText(null), 1800);
-  }, [addToast]);
-
-  const copyCurrentViewLink = useCallback(async () => {
-    await navigator.clipboard.writeText(window.location.href).catch(() => {});
-    setViewLinkCopied(true);
-    addToast({
-      message: 'Vy-länk kopierad',
-      color: 'emerald',
-      icon: (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ),
-    });
-    window.setTimeout(() => setViewLinkCopied(false), 1800);
-  }, [addToast]);
-
-  const draftOffers = allOffers.filter((o) => o.status === 'draft');
-  const selectedDraftCount = Array.from(selected).filter((id) => allOffers.find((o) => o.id === id)?.status === 'draft').length;
-  const allDraftsSelected  = draftOffers.length > 0 && draftOffers.every((o) => selected.has(o.id));
-
-  function toggleSelect(id: string) {
-    toggleSelected(id);
-  }
-  function toggleSelectAllDrafts() {
-    if (allDraftsSelected) {
-      setSelected((prev) => { const s = new Set(prev); draftOffers.forEach((o) => s.delete(o.id)); return s; });
-    } else {
-      setSelected((prev) => { const s = new Set(prev); draftOffers.forEach((o) => s.add(o.id)); return s; });
-    }
-  }
+  const { copyCurrentViewLink, copyText } = useOfferClipboardToasts({
+    addToast,
+    setCopiedText,
+    setViewLinkCopied,
+  });
 
   const previewLooksImageLed = useMemo(
     () => Boolean(livePreviewHtml && /<img[\s>]/i.test(livePreviewHtml)),
@@ -331,43 +241,19 @@ export default function OffersPage() {
   const mottagareComplete = form.recipientName.trim().length >= 2 && emailRe.test(form.recipientEmail.trim());
   const detajerComplete   = form.title.trim().length >= 2;
 
-  const scheduleLivePreview = useCallback((currentForm: typeof form, content: string) => {
-    setPreviewDirty(true);
-    if (livePreviewTimer.current) clearTimeout(livePreviewTimer.current);
-    livePreviewTimer.current = setTimeout(async () => {
-      const validItems = currentForm.lineItems.filter((i) => i.description.trim() && i.quantity > 0);
-      try {
-        setLivePreviewLoading(true);
-        setPreviewDirty(false);
-        const html = await previewTemplate({
-          content,
-          branding: selectedCompanyBranding,
-          offer: {
-            priceDisplayMode: enforcedPriceDisplayMode,
-            title:            currentForm.title            || undefined,
-            recipientName:    currentForm.recipientName    || undefined,
-            recipientEmail:   currentForm.recipientEmail   || undefined,
-            recipientCompany: currentForm.recipientCompany || undefined,
-            notes:            currentForm.notes            || undefined,
-            lineItems:        validItems.length > 0 ? validItems : undefined,
-          },
-        });
-        if (html) setLivePreviewHtml(html);
-      } catch { /* ignore */ } finally {
-        setLivePreviewLoading(false);
-        setActiveField(null);
-      }
-    }, 1000);
-  }, [selectedCompanyBranding]);
-
-  useEffect(() => {
-    if (!showForm || wizardStep !== 2 || !cachedTplContent) return;
-    scheduleLivePreview(form, cachedTplContent);
-  }, [
-    form.title, form.recipientName, form.recipientEmail,
-    form.recipientCompany, form.notes, form.lineItems,
-    showForm, wizardStep, cachedTplContent, scheduleLivePreview,
-  ]);
+  useOfferLivePreviewScheduler({
+    form,
+    showForm,
+    wizardStep,
+    cachedTplContent,
+    livePreviewTimer,
+    selectedCompanyBranding,
+    priceDisplayMode: enforcedPriceDisplayMode,
+    setPreviewDirty,
+    setLivePreviewLoading,
+    setLivePreviewHtml,
+    setActiveField,
+  });
 
   const tots = useMemo(
     () => pricingSummary(form.lineItems, enforcedPriceDisplayMode),

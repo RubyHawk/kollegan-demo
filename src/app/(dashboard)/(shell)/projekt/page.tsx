@@ -4,10 +4,14 @@ import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarBlankIcon, MagnifyingGlassIcon, PackageIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { Calendar, Package, Search } from 'lucide-react';
 import { Button } from '@shared/ui/button';
+import { EmptyState } from '@shared/ui/empty-state';
 import { Input } from '@shared/ui/input';
-import { cn } from '@shared/lib/utils';
+import { PageHeader } from '@shared/ui/page-header';
+import { Panel } from '@shared/ui/panel';
+import { StatusBadge, type StatusTone } from '@shared/ui/status-badge';
+import { Toolbar, ToolbarGroup, ToolbarSpacer } from '@shared/ui/toolbar';
 import { useProjectsListStore } from './_store/projects-list.store';
 import {
   PROJECT_STAGE_LABELS,
@@ -17,7 +21,15 @@ import {
   type Project,
   type ProjectStage,
 } from './_store/types';
-import { STAGE_STYLE, fmtSEK, fmtDate } from './_lib/project-display';
+import { fmtSEK, fmtDate } from './_lib/project-display';
+
+const STAGE_TONE: Record<ProjectStage, StatusTone> = {
+  details: 'neutral',
+  ordered: 'info',
+  arrived: 'accent',
+  in_progress: 'success',
+  completed: 'neutral',
+};
 
 function poSummary(project: Project) {
   const orders = project.purchaseOrders ?? [];
@@ -45,50 +57,45 @@ function ProjectCard({ project }: { project: Project }) {
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
       <Link
         href={`/projekt/${project.id}`}
-        className="block rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm transition-[border-color,box-shadow,transform] hover:border-[var(--accent-border)] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+        className="block rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3 shadow-sm transition-[border-color,background-color,box-shadow] hover:border-[var(--ui-accent-border)] hover:bg-[var(--ui-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-[15px] font-semibold leading-5 text-[var(--text-primary)]">{project.name}</p>
-            <p className="mt-1 truncate text-sm text-[var(--text-secondary)]">
+            <p className="truncate text-sm font-semibold leading-5 text-[var(--ui-text)]">{project.name}</p>
+            <p className="mt-1 truncate text-sm text-[var(--ui-text-secondary)]">
               {customer?.company || customer?.name || 'Kund saknas'}
             </p>
           </div>
-          {project.offerNumber ? (
-            <span className="shrink-0 rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-muted)]">
-              Offert {project.offerNumber}
-            </span>
-          ) : null}
+          {project.offerNumber ? <StatusBadge tone="neutral" className="shrink-0">Offert {project.offerNumber}</StatusBadge> : null}
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-          <div className="rounded-xl bg-[var(--surface-alt)] px-3 py-2.5">
-            <p className="text-[var(--text-muted)]">Värde</p>
-            <p className="mt-0.5 font-semibold text-[var(--text-primary)]">{fmtSEK(project.totalIncVat)}</p>
-          </div>
-          <div className="rounded-xl bg-[var(--surface-alt)] px-3 py-2.5">
-            <p className="text-[var(--text-muted)]">Rader</p>
-            <p className="mt-0.5 font-semibold text-[var(--text-primary)]">{project.lineItems?.length ?? 0}</p>
-          </div>
+          <Panel variant="subtle" padding="sm">
+            <p className="text-[var(--ui-text-muted)]">Värde</p>
+            <p className="mt-0.5 font-semibold text-[var(--ui-text)]">{fmtSEK(project.totalIncVat)}</p>
+          </Panel>
+          <Panel variant="subtle" padding="sm">
+            <p className="text-[var(--ui-text-muted)]">Rader</p>
+            <p className="mt-0.5 font-semibold text-[var(--ui-text)]">{project.lineItems?.length ?? 0}</p>
+          </Panel>
         </div>
 
-        <div className="mt-4 space-y-2.5 border-t border-[var(--border-light)] pt-3 text-xs text-[var(--text-secondary)]">
+        <div className="mt-4 space-y-2.5 border-t border-[var(--ui-border-subtle)] pt-3 text-xs text-[var(--ui-text-secondary)]">
           <div className="flex items-center gap-2">
-            <PackageIcon size={14} className="shrink-0" />
+            <Package size={16} strokeWidth={1.75} className="shrink-0" aria-hidden />
             <span className="truncate">{summary.text}</span>
           </div>
-          {installDate && (
+          {installDate ? (
             <div className="flex items-center gap-2">
-              <CalendarBlankIcon size={14} className="shrink-0" />
+              <Calendar size={16} strokeWidth={1.75} className="shrink-0" aria-hidden />
               <span>{installDate}</span>
             </div>
-          )}
-          {blocker && (
-            <div className="flex items-center gap-2 rounded-lg bg-[var(--status-danger-bg)] px-3 py-2 text-[11px] font-medium text-[var(--status-danger-text)]">
-              <WarningCircleIcon size={13} className="shrink-0" />
-              <span className="truncate">{blocker}</span>
+          ) : null}
+          {blocker ? (
+            <div className="rounded-[var(--ui-radius-md)] border border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] px-2.5 py-2 text-xs font-medium text-[var(--ui-danger-text)]">
+              <span className="line-clamp-2">{blocker}</span>
             </div>
-          )}
+          ) : null}
         </div>
       </Link>
     </motion.div>
@@ -142,20 +149,15 @@ export default function ProjectsBoardPage() {
 
   return (
     <div className="mx-auto max-w-[1520px] space-y-6 px-6 py-8 xl:px-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)]">Projekt</h1>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">Installationer från accepterad offert till klart jobb.</p>
-        </div>
-        <div className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-secondary)]">
-          <span className="font-semibold text-[var(--text-primary)]">{total}</span>
-          projekt
-        </div>
-      </div>
+      <PageHeader
+        title="Projekt"
+        description="Installationer från accepterad offert till klart jobb."
+        meta={<StatusBadge tone="neutral">{total} projekt</StatusBadge>}
+      />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <Toolbar>
         <div className="relative w-full max-w-md">
-          <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)]" size={16} strokeWidth={1.75} aria-hidden />
           <Input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
@@ -163,30 +165,31 @@ export default function ProjectsBoardPage() {
             className="pl-9"
           />
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant={stageFilter === 'all' ? 'default' : 'outline'} size="sm">
+        <ToolbarSpacer />
+        <ToolbarGroup>
+          <Button asChild variant={stageFilter === 'all' ? 'primary' : 'outline'} size="sm">
             <Link href="/projekt">Alla</Link>
           </Button>
           {PROJECT_STAGES.map((stage) => (
-            <Button key={stage} asChild variant={stageFilter === stage ? 'default' : 'outline'} size="sm">
+            <Button key={stage} asChild variant={stageFilter === stage ? 'primary' : 'outline'} size="sm">
               <Link href={`/projekt?stage=${PROJECT_STAGE_QUERY[stage]}`}>
                 {PROJECT_STAGE_LABELS[stage]}
                 <span className="ml-1 text-xs opacity-70">{counts[stage]}</span>
               </Link>
             </Button>
           ))}
-        </div>
-      </div>
+        </ToolbarGroup>
+      </Toolbar>
 
-      {error && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-primary)]">
+      {error ? (
+        <Panel variant="danger" className="flex items-center justify-between gap-3 text-sm">
           <span>{error}</span>
           <Button variant="ghost" size="sm" onClick={() => setError(null)}>Stäng</Button>
-        </div>
-      )}
+        </Panel>
+      ) : null}
 
-      {hasMore && !loading && (
-        <div className="flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3 text-sm text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
+      {hasMore && !loading ? (
+        <Panel variant="subtle" className="flex flex-col gap-3 text-sm text-[var(--ui-text-muted)] sm:flex-row sm:items-center sm:justify-between">
           <span>Visar {projects.length} av {total} projekt.</span>
           <Button
             type="button"
@@ -198,39 +201,31 @@ export default function ProjectsBoardPage() {
           >
             {loadingMore ? 'Laddar...' : 'Visa fler'}
           </Button>
-        </div>
-      )}
+        </Panel>
+      ) : null}
 
       {loading ? (
-        <div className="grid min-h-[420px] place-items-center rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--accent)]" />
-        </div>
+        <Panel className="grid min-h-[420px] place-items-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--ui-border)] border-t-[var(--ui-accent)]" />
+        </Panel>
       ) : projects.length === 0 ? (
-        <div className="grid min-h-[420px] place-items-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-6 text-center">
-          <div>
-            <p className="text-base font-semibold text-[var(--text-primary)]">Inga projekt än</p>
-            <p className="mt-2 max-w-md text-sm text-[var(--text-muted)]">
-              När en kund accepterar en offert skapas projektet automatiskt här.
-            </p>
-            <Button asChild variant="outline" size="sm" className="mt-4">
-              <Link href="/offerter/ny">Skapa offert</Link>
-            </Button>
-          </div>
-        </div>
+        <Panel className="grid min-h-[420px] place-items-center">
+          <EmptyState
+            title="Inga projekt än"
+            description="När en kund accepterar en offert skapas projektet automatiskt här."
+            actionLabel="Skapa offert"
+            onAction={() => { window.location.href = '/offerter/ny'; }}
+          />
+        </Panel>
       ) : (
         <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
           {visibleStages.map((stage) => {
             const columnProjects = projectsByStage.get(stage) ?? [];
             return (
-              <section key={stage} className="self-start overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
-                <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className={cn('h-2.5 w-2.5 rounded-full border', STAGE_STYLE[stage])} />
-                    <h2 className="text-sm font-semibold text-[var(--text-primary)]">{PROJECT_STAGE_LABELS[stage]}</h2>
-                  </div>
-                  <span className="rounded-full bg-[var(--surface)] px-2 py-0.5 text-xs font-semibold text-[var(--text-muted)]">
-                    {counts[stage]}
-                  </span>
+              <section key={stage} className="self-start overflow-hidden rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)]">
+                <div className="flex items-center justify-between gap-3 border-b border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-4 py-3">
+                  <StatusBadge tone={STAGE_TONE[stage]}>{PROJECT_STAGE_LABELS[stage]}</StatusBadge>
+                  <StatusBadge tone="neutral">{counts[stage]}</StatusBadge>
                 </div>
                 <div className="space-y-3 p-3">
                   <AnimatePresence initial={false}>
@@ -238,11 +233,9 @@ export default function ProjectsBoardPage() {
                       <ProjectCard key={project.id} project={project} />
                     ))}
                   </AnimatePresence>
-                  {columnProjects.length === 0 && (
-                    <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-4 py-6 text-center text-sm text-[var(--text-muted)]">
-                      Inga projekt i {PROJECT_STAGE_LABELS[stage].toLowerCase()}.
-                    </div>
-                  )}
+                  {columnProjects.length === 0 ? (
+                    <EmptyState title={`Inga projekt i ${PROJECT_STAGE_LABELS[stage].toLowerCase()}.`} className="py-6" />
+                  ) : null}
                 </div>
               </section>
             );

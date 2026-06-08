@@ -1,11 +1,11 @@
 import type { ProjectStage } from '../_store/types';
 
 export const STAGE_STYLE: Record<ProjectStage, string> = {
-  details:     'bg-[var(--status-draft-bg)] text-[var(--status-draft-text)] border-[var(--status-draft-border)]',
-  ordered:     'bg-[var(--status-sent-bg)] text-[var(--status-sent-text)] border-transparent',
-  arrived:     'bg-[var(--status-viewed-bg)] text-[var(--status-viewed-text)] border-transparent',
-  in_progress: 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted-text)] border-transparent',
-  completed:   'bg-[var(--surface-alt)] text-[var(--text-muted)] border-[var(--border)]',
+  details:     'bg-[var(--ui-info-bg)] text-[var(--ui-info-text)] border-[var(--ui-info-border)]',
+  ordered:     'bg-[var(--ui-warning-bg)] text-[var(--ui-warning-text)] border-[var(--ui-warning-border)]',
+  arrived:     'bg-[var(--ui-accent-subtle)] text-[var(--ui-accent)] border-[var(--ui-accent-border)]',
+  in_progress: 'bg-[var(--ui-success-bg)] text-[var(--ui-success-text)] border-[var(--ui-success-border)]',
+  completed:   'bg-[var(--ui-surface-subtle)] text-[var(--ui-text-muted)] border-[var(--ui-border)]',
 };
 
 export function fmtSEK(value: number): string {

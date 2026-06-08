@@ -436,7 +436,7 @@ export default function TemplateEditor({ initialContent, editorRef, onUpdate, on
         stepCanvasZoom,
         activePageReady,
       }}>
-        <div className="template-editor-light grid h-full min-h-0 grid-cols-[clamp(260px,20vw,340px)_minmax(0,1fr)_clamp(300px,24vw,400px)] overflow-hidden bg-[var(--surface-2)] max-xl:grid-cols-1">
+        <div className="template-editor-light grid h-full min-h-0 grid-cols-[clamp(260px,20vw,340px)_minmax(0,1fr)_clamp(300px,24vw,400px)] overflow-hidden bg-[var(--ui-surface-subtle)] max-xl:grid-cols-1">
           <BlocksSidebar />
 
           <div className="flex min-w-0 flex-1 flex-col overflow-hidden">

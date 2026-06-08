@@ -1,5 +1,8 @@
 'use client';
 
+import { RotateCcw } from 'lucide-react';
+import { Button } from '@shared/ui/button';
+
 type OfferDraftRecoveryBannerProps = {
   onContinue: () => void;
   onDiscard: () => void;
@@ -10,15 +13,18 @@ export function OfferDraftRecoveryBanner({
   onDiscard,
 }: OfferDraftRecoveryBannerProps) {
   return (
-    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--status-warning-bg)] px-4 py-2.5 text-xs text-[var(--status-warning-text)]">
-      <span>Osparat offertutkast återställt från den här webbläsaren.</span>
+    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] px-4 py-2.5 text-xs text-[var(--ui-warning-text)]">
+      <span className="inline-flex items-center gap-2">
+        <RotateCcw size={16} strokeWidth={1.75} aria-hidden />
+        Osparat offertutkast återställt från den här webbläsaren.
+      </span>
       <div className="flex items-center gap-2">
-        <button type="button" onClick={onContinue} className="font-semibold underline-offset-2 hover:underline">
+        <Button type="button" variant="ghost" size="sm" onClick={onContinue} className="h-8 text-[var(--ui-warning-text)]">
           Fortsätt
-        </button>
-        <button type="button" onClick={onDiscard} className="opacity-75 hover:opacity-100">
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onDiscard} className="h-8 text-[var(--ui-warning-text)]">
           Börja om
-        </button>
+        </Button>
       </div>
     </div>
   );

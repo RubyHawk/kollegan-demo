@@ -1,6 +1,6 @@
 'use client';
 
-import { Clipboard, FlowArrow, Plus, Trash } from '@phosphor-icons/react';
+import { Clipboard, GitBranch, Plus, Trash2 } from 'lucide-react';
 import type { Company } from '@shared/lib/api/companies.api';
 import type {
   LeadIntakeFieldConfig,
@@ -9,8 +9,11 @@ import type {
   LeadIntakeForwarder,
 } from '@shared/lib/api/lead-intake-forwarders.api';
 import { Button } from '@shared/ui/button';
+import { EmptyState } from '@shared/ui/empty-state';
 import { ModalSection } from '@shared/ui/dialog';
 import { Input } from '@shared/ui/input';
+import { Panel } from '@shared/ui/panel';
+import { StatusBadge } from '@shared/ui/status-badge';
 import {
   Tooltip,
   TooltipContent,
@@ -29,7 +32,7 @@ import {
   RecipientToggle,
 } from './lead-intake-dialog-parts';
 
-const inputLabelClass = 'text-xs font-semibold text-[var(--text-secondary)]';
+const inputLabelClass = 'text-xs font-semibold text-[var(--ui-text-secondary)]';
 
 export function ForwarderSidebar({
   loading,
@@ -46,16 +49,16 @@ export function ForwarderSidebar({
 }) {
   return (
     <aside className="space-y-3">
-      <ModalSection className="space-y-3 bg-[var(--surface)] p-4" tone="card">
+      <ModalSection className="space-y-3 bg-[var(--ui-surface)] p-4" tone="card">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">Forwarders</p>
-            <p className="text-xs text-[var(--text-muted)]">En adress per inkommande kalla.</p>
+            <p className="text-sm font-semibold text-[var(--ui-text)]">Forwarders</p>
+            <p className="text-xs text-[var(--ui-text-muted)]">En adress per inkommande källa.</p>
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button type="button" variant="outline" size="icon" onClick={onNew} aria-label="Ny forwarder">
-                <Plus size={16} weight="bold" />
+                <Plus size={16} strokeWidth={1.75} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Ny forwarder</TooltipContent>
@@ -64,13 +67,11 @@ export function ForwarderSidebar({
 
         {loading ? (
           <div className="space-y-2">
-            <div className="h-24 animate-pulse rounded-2xl bg-[var(--surface-alt)]" />
-            <div className="h-24 animate-pulse rounded-2xl bg-[var(--surface-alt)]" />
+            <div className="h-24 animate-pulse rounded-[var(--ui-radius-lg)] bg-[var(--ui-surface-subtle)]" />
+            <div className="h-24 animate-pulse rounded-[var(--ui-radius-lg)] bg-[var(--ui-surface-subtle)]" />
           </div>
         ) : forwarders.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-4 py-5 text-sm text-[var(--text-muted)]">
-            Ingen forwarder konfigurerad.
-          </div>
+          <EmptyState title="Ingen forwarder konfigurerad" description="Skapa en forwarder för inkommande intresseanmälningar." />
         ) : (
           <div className="space-y-2">
             {forwarders.map((forwarder) => (
@@ -85,27 +86,27 @@ export function ForwarderSidebar({
         )}
       </ModalSection>
 
-      <ModalSection className="space-y-3 bg-[var(--surface)] p-4" tone="card">
-        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
-          <FlowArrow size={16} weight="duotone" className="text-[var(--accent)]" />
-          Flode
+      <ModalSection className="space-y-3 bg-[var(--ui-surface)] p-4" tone="card">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text)]">
+          <GitBranch size={16} strokeWidth={1.75} className="text-[var(--ui-accent)]" />
+          Flöde
         </div>
-        <div className="space-y-2 text-xs text-[var(--text-muted)]">
-          <div className="flex items-center gap-2 rounded-xl bg-[var(--surface-alt)] px-3 py-2">
-            <span className="h-2 w-2 rounded-full bg-sky-500" />
-            <span>Resend tar emot pa intake-adressen</span>
-          </div>
-          <div className="flex items-center gap-2 rounded-xl bg-[var(--surface-alt)] px-3 py-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span>Lead skapas och kund lankas</span>
-          </div>
-          <div className="flex items-center gap-2 rounded-xl bg-[var(--surface-alt)] px-3 py-2">
-            <span className="h-2 w-2 rounded-full bg-violet-500" />
-            <span>Forwarding skickas till mottagare</span>
-          </div>
+        <div className="space-y-2 text-xs text-[var(--ui-text-muted)]">
+          <FlowStep tone="info">Resend tar emot på intake-adressen</FlowStep>
+          <FlowStep tone="success">Lead skapas och kund länkas</FlowStep>
+          <FlowStep tone="accent">Forwarding skickas till mottagare</FlowStep>
         </div>
       </ModalSection>
     </aside>
+  );
+}
+
+function FlowStep({ tone, children }: { tone: 'info' | 'success' | 'accent'; children: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-[var(--ui-radius-lg)] bg-[var(--ui-surface-subtle)] px-3 py-2">
+      <StatusBadge tone={tone}>{tone === 'info' ? '1' : tone === 'success' ? '2' : '3'}</StatusBadge>
+      <span>{children}</span>
+    </div>
   );
 }
 
@@ -123,7 +124,7 @@ export function SetupPanel({
   onFormChange: (patch: Partial<LeadIntakeFormState>) => void;
 }) {
   return (
-    <ModalSection className="bg-[var(--surface)] p-4 sm:p-5" tone="card">
+    <ModalSection className="bg-[var(--ui-surface)] p-4 sm:p-5" tone="card">
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -132,7 +133,7 @@ export function SetupPanel({
               <Input value={form.name} onChange={(event) => onFormChange({ name: event.target.value })} />
             </label>
             <label className="space-y-1.5">
-              <span className={inputLabelClass}>Kalla</span>
+              <span className={inputLabelClass}>Källa</span>
               <Input value={form.sourceLabel} onChange={(event) => onFormChange({ sourceLabel: event.target.value })} />
             </label>
           </div>
@@ -156,7 +157,7 @@ export function SetupPanel({
                     disabled={!form.intakeAddress.trim()}
                     aria-label="Kopiera intake-adress"
                   >
-                    <Clipboard size={16} weight="duotone" />
+                    <Clipboard size={16} strokeWidth={1.75} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>{copyState === 'copied' ? 'Kopierad' : 'Kopiera adress'}</TooltipContent>
@@ -166,7 +167,7 @@ export function SetupPanel({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="space-y-1.5">
-              <span className={inputLabelClass}>Avsandarnamn</span>
+              <span className={inputLabelClass}>Avsändarnamn</span>
               <Input
                 value={form.senderName}
                 placeholder={buildSenderName(company)}
@@ -174,7 +175,7 @@ export function SetupPanel({
               />
             </label>
             <label className="space-y-1.5">
-              <span className={inputLabelClass}>Avsandaradress</span>
+              <span className={inputLabelClass}>Avsändaradress</span>
               <Input
                 type="email"
                 value={form.senderEmail}
@@ -185,39 +186,39 @@ export function SetupPanel({
           </div>
         </div>
 
-        <div className="space-y-3 rounded-2xl border border-[var(--border-light)] bg-[var(--surface-alt)] p-4">
+        <Panel variant="subtle" className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">Status</p>
-              <p className="text-xs text-[var(--text-muted)]">{form.isActive ? 'Tar emot nya mail' : 'Pausad'}</p>
+              <p className="text-sm font-semibold text-[var(--ui-text)]">Status</p>
+              <p className="text-xs text-[var(--ui-text-muted)]">{form.isActive ? 'Tar emot nya mail' : 'Pausad'}</p>
             </div>
             <label className="inline-flex cursor-pointer items-center gap-2">
               <input
                 type="checkbox"
-                className="h-4 w-4 accent-[var(--accent)]"
+                className="h-4 w-4 accent-[var(--ui-accent)]"
                 checked={form.isActive}
                 onChange={(event) => onFormChange({ isActive: event.target.checked })}
               />
-              <span className="text-sm font-semibold text-[var(--text-primary)]">Aktiv</span>
+              <span className="text-sm font-semibold text-[var(--ui-text)]">Aktiv</span>
             </label>
           </div>
 
-          <div className="rounded-xl bg-[var(--surface)] px-3 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Forwarding identity</p>
-            <p className="mt-1 truncate text-sm font-semibold text-[var(--text-primary)]">
+          <Panel padding="sm">
+            <p className="text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Forwarding identity</p>
+            <p className="mt-1 truncate text-sm font-semibold text-[var(--ui-text)]">
               {form.senderName.trim() || buildSenderName(company)}
             </p>
-            <p className="truncate text-xs text-[var(--text-muted)]">
+            <p className="truncate text-xs text-[var(--ui-text-muted)]">
               {form.senderEmail.trim() || 'Standard transport'}
             </p>
-          </div>
+          </Panel>
 
-          <div className="rounded-xl bg-[var(--surface)] px-3 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">Lead origin</p>
-            <p className="mt-1 truncate text-sm font-semibold text-[var(--text-primary)]">{form.sourceLabel || 'Framer website'}</p>
-            <p className="truncate text-xs text-[var(--text-muted)]">{company.name}</p>
-          </div>
-        </div>
+          <Panel padding="sm">
+            <p className="text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Lead origin</p>
+            <p className="mt-1 truncate text-sm font-semibold text-[var(--ui-text)]">{form.sourceLabel || 'Framer website'}</p>
+            <p className="truncate text-xs text-[var(--ui-text-muted)]">{company.name}</p>
+          </Panel>
+        </Panel>
       </div>
     </ModalSection>
   );
@@ -235,11 +236,11 @@ export function RecipientsPanel({
   onRecipientIdsChange: (ids: string[]) => void;
 }) {
   return (
-    <ModalSection className="bg-[var(--surface)] p-4 sm:p-5" tone="card">
+    <ModalSection className="bg-[var(--ui-surface)] p-4 sm:p-5" tone="card">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Mottagare</p>
-          <p className="text-xs text-[var(--text-muted)]">{selectedMembers.length} valda av {members.length} medlemmar</p>
+          <p className="text-sm font-semibold text-[var(--ui-text)]">Mottagare</p>
+          <p className="text-xs text-[var(--ui-text-muted)]">{selectedMembers.length} valda av {members.length} medlemmar</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -249,7 +250,7 @@ export function RecipientsPanel({
             onClick={() => onRecipientIdsChange(members.map((member) => member.userId))}
             disabled={members.length === 0}
           >
-            Valj alla
+            Välj alla
           </Button>
           <Button
             type="button"
@@ -266,9 +267,9 @@ export function RecipientsPanel({
       {selectedMembers.length > 0 ? (
         <div className="flex flex-wrap gap-2">
           {selectedMembers.map((member) => (
-            <span key={member.userId} className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1 text-xs font-semibold text-[var(--text-secondary)]">
+            <StatusBadge key={member.userId} tone="neutral">
               {displayName(member.user)}
-            </span>
+            </StatusBadge>
           ))}
         </div>
       ) : null}
@@ -289,9 +290,7 @@ export function RecipientsPanel({
       </div>
 
       {members.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-4 py-6 text-sm text-[var(--text-muted)]">
-          Lagg till foretagsmedlemmar forst.
-        </div>
+        <EmptyState title="Lägg till företagsmedlemmar först" description="Forwardern behöver minst en mottagare för att skicka intresseanmälningar vidare." />
       ) : null}
     </ModalSection>
   );
@@ -311,11 +310,11 @@ export function FieldsPanel({
   onAddField: () => void;
 }) {
   return (
-    <ModalSection className="bg-[var(--surface)] p-4 sm:p-5" tone="card">
+    <ModalSection className="bg-[var(--ui-surface)] p-4 sm:p-5" tone="card">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Faltmappning</p>
-          <p className="text-xs text-[var(--text-muted)]">{fields.length} etiketter matchas mot inkommande mail</p>
+          <p className="text-sm font-semibold text-[var(--ui-text)]">Fältmappning</p>
+          <p className="text-xs text-[var(--ui-text-muted)]">{fields.length} etiketter matchas mot inkommande mail</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -328,36 +327,36 @@ export function FieldsPanel({
             Framer-mall
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={onAddField}>
-            <Plus size={14} weight="bold" />
-            Falt
+            <Plus size={14} strokeWidth={1.75} />
+            Fält
           </Button>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-[var(--border)]">
-        <div className="hidden grid-cols-[1.05fr_0.9fr_180px_86px_44px] gap-2 border-b border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)] lg:grid">
+      <Panel padding="none" className="overflow-hidden">
+        <div className="hidden grid-cols-[1.05fr_0.9fr_180px_86px_44px] gap-2 border-b border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-2 text-xs font-semibold uppercase text-[var(--ui-text-muted)] lg:grid">
           <span>Label i mail</span>
           <span>Nyckel</span>
-          <span>CRM-falt</span>
+          <span>CRM-fält</span>
           <span>Krav</span>
           <span />
         </div>
-        <div className="divide-y divide-[var(--border)]">
+        <div className="divide-y divide-[var(--ui-border)]">
           {fields.map((field, index) => (
-            <div key={`${field.key}:${index}`} className="grid gap-2 bg-[var(--surface)] p-3 lg:grid-cols-[1.05fr_0.9fr_180px_86px_44px] lg:items-center">
+            <div key={`${field.key}:${index}`} className="grid gap-2 bg-[var(--ui-surface)] p-3 lg:grid-cols-[1.05fr_0.9fr_180px_86px_44px] lg:items-center">
               <label className="space-y-1 lg:space-y-0">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)] lg:hidden">Label i mail</span>
+                <span className="text-xs font-semibold uppercase text-[var(--ui-text-muted)] lg:hidden">Label i mail</span>
                 <Input value={field.label} placeholder="Namn" onChange={(event) => onUpdateField(index, { label: event.target.value })} />
               </label>
               <label className="space-y-1 lg:space-y-0">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)] lg:hidden">Nyckel</span>
+                <span className="text-xs font-semibold uppercase text-[var(--ui-text-muted)] lg:hidden">Nyckel</span>
                 <Input value={field.key} placeholder="name" onChange={(event) => onUpdateField(index, { key: event.target.value })} />
               </label>
               <FieldTargetSelect value={field.target} onChange={(value: LeadIntakeFieldTarget) => onUpdateField(index, { target: value })} />
-              <label className="inline-flex h-10 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 text-sm text-[var(--text-secondary)]">
+              <label className="inline-flex h-10 items-center gap-2 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 text-sm text-[var(--ui-text-secondary)]">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 accent-[var(--accent)]"
+                  className="h-4 w-4 accent-[var(--ui-accent)]"
                   checked={Boolean(field.required)}
                   onChange={(event) => onUpdateField(index, { required: event.target.checked })}
                 />
@@ -368,15 +367,15 @@ export function FieldsPanel({
                 variant="ghost"
                 size="icon"
                 onClick={() => onFieldsChange(fields.filter((_, idx) => idx !== index))}
-                aria-label="Ta bort falt"
-                className="text-[var(--text-muted)] hover:text-red-600"
+                aria-label="Ta bort fält"
+                className="text-[var(--ui-danger-text)] hover:text-[var(--ui-danger-text)]"
               >
-                <Trash size={16} weight="duotone" />
+                <Trash2 size={16} strokeWidth={1.75} />
               </Button>
             </div>
           ))}
         </div>
-      </div>
+      </Panel>
     </ModalSection>
   );
 }

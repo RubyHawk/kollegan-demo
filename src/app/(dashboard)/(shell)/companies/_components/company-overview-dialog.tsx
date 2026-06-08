@@ -1,15 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import {
-  ArrowSquareOut,
-  Buildings,
-  FileText,
-  Globe,
-  NotePencil,
-  Package,
-} from '@phosphor-icons/react';
+import { Building2, ExternalLink, FileText, Globe, Package, Pencil } from 'lucide-react';
 import { listCompanyMembers, type Company } from '@shared/lib/api/companies.api';
 import { listProducts } from '@shared/lib/api/products.api';
 import { listTemplates } from '@shared/lib/api/templates.api';
@@ -25,6 +18,8 @@ import {
   ModalMetaCard,
   ModalSection,
 } from '@shared/ui/dialog';
+import { InlineAlert } from '@shared/ui/inline-alert';
+import { StatusBadge } from '@shared/ui/status-badge';
 
 interface CompanyOverviewDialogProps {
   open: boolean;
@@ -108,18 +103,14 @@ function SummaryList({
   empty: string;
   actionLabel: string;
   onAction: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <ModalSection tone="subtle" className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-          {!loading ? (
-            <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-2 py-0.5 text-xs font-semibold text-[var(--text-muted)]">
-              {count}
-            </span>
-          ) : null}
+          <p className="text-sm font-semibold text-[var(--ui-text)]">{title}</p>
+          {!loading ? <StatusBadge tone="neutral">{count}</StatusBadge> : null}
         </div>
         <Button type="button" variant="ghost" size="sm" onClick={onAction}>
           {actionLabel}
@@ -128,11 +119,11 @@ function SummaryList({
 
       {loading ? (
         <div className="space-y-2">
-          <div className="h-12 animate-pulse rounded-xl bg-[var(--surface)]" />
-          <div className="h-12 animate-pulse rounded-xl bg-[var(--surface)]" />
+          <div className="h-12 animate-pulse rounded-[var(--ui-radius-lg)] bg-[var(--ui-surface)]" />
+          <div className="h-12 animate-pulse rounded-[var(--ui-radius-lg)] bg-[var(--ui-surface)]" />
         </div>
       ) : count === 0 ? (
-        <p className="text-sm text-[var(--text-muted)]">{empty}</p>
+        <p className="text-sm text-[var(--ui-text-muted)]">{empty}</p>
       ) : (
         <div className="space-y-2">{children}</div>
       )}
@@ -189,7 +180,9 @@ export function CompanyOverviewDialog({
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [company, open]);
 
   const brandingReady = useMemo(() => {
@@ -205,18 +198,18 @@ export function CompanyOverviewDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent mobileVariant="right-panel" size="right-panel" showMobileClose>
         <div className="flex h-full flex-col overflow-hidden">
-          <DialogHeader className="border-b border-[var(--border)] pr-12">
+          <DialogHeader className="border-b border-[var(--ui-border)] pr-12">
             <div className="flex items-start gap-3">
               {company.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={company.logoUrl}
                   alt={company.name}
-                  className="h-11 w-11 shrink-0 rounded-xl border border-[var(--border)] object-cover"
+                  className="h-11 w-11 shrink-0 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] object-cover"
                 />
               ) : (
-                <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-                  <Buildings size={18} weight="duotone" />
+                <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-accent)]">
+                  <Building2 size={18} strokeWidth={1.75} />
                 </div>
               )}
               <div className="min-w-0 flex-1">
@@ -225,20 +218,10 @@ export function CompanyOverviewDialog({
                   Snabb överblick över företagets profil, användare, mallar och produkter.
                 </DialogDescription>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <span
-                    className={
-                      brandingReady
-                        ? 'rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300'
-                        : 'rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300'
-                    }
-                  >
+                  <StatusBadge tone={brandingReady ? 'success' : 'warning'}>
                     {brandingReady ? 'Branding redo' : 'Branding saknas'}
-                  </span>
-                  {company.orgNumber ? (
-                    <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-[11px] text-[var(--text-muted)]">
-                      {company.orgNumber}
-                    </span>
-                  ) : null}
+                  </StatusBadge>
+                  {company.orgNumber ? <StatusBadge tone="neutral">{company.orgNumber}</StatusBadge> : null}
                 </div>
               </div>
             </div>
@@ -249,23 +232,23 @@ export function CompanyOverviewDialog({
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    <p className="text-xs font-semibold uppercase text-[var(--ui-text-muted)]">
                       Företagsprofil
                     </p>
-                    <p className="mt-1 text-sm text-[var(--text-primary)]">Adress, webbplats och snabba genvägar.</p>
+                    <p className="mt-1 text-sm text-[var(--ui-text)]">Adress, webbplats och snabba genvägar.</p>
                   </div>
                   <Button type="button" variant="outline" size="sm" onClick={() => onEdit(company)}>
-                    <NotePencil size={14} weight="duotone" />
+                    <Pencil size={14} strokeWidth={1.75} />
                     Redigera
                   </Button>
                 </div>
 
                 {addressLines.length > 0 ? (
-                  <div className="space-y-1 text-sm leading-6 text-[var(--text-secondary)]">
+                  <div className="space-y-1 text-sm leading-6 text-[var(--ui-text-secondary)]">
                     {addressLines.map((line) => <p key={line}>{line}</p>)}
                   </div>
                 ) : (
-                  <p className="text-sm text-[var(--text-muted)]">Ingen adress tillagd ännu.</p>
+                  <p className="text-sm text-[var(--ui-text-muted)]">Ingen adress tillagd ännu.</p>
                 )}
 
                 {company.website ? (
@@ -273,11 +256,11 @@ export function CompanyOverviewDialog({
                     href={company.website}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm text-[var(--accent)] hover:underline"
+                    className="inline-flex items-center gap-1.5 text-sm text-[var(--ui-accent)] hover:underline"
                   >
-                    <Globe size={14} />
+                    <Globe size={14} strokeWidth={1.75} />
                     {company.website.replace(/^https?:\/\//, '')}
-                    <ArrowSquareOut size={12} />
+                    <ExternalLink size={12} strokeWidth={1.75} />
                   </Link>
                 ) : null}
               </div>
@@ -294,20 +277,12 @@ export function CompanyOverviewDialog({
               {state.members.slice(0, 4).map((member) => {
                 const isAdmin = member.role === 'admin';
                 return (
-                  <div key={member.id} className="flex items-center justify-between gap-3 rounded-xl bg-[var(--surface)] px-3 py-2.5">
+                  <div key={member.id} className="flex items-center justify-between gap-3 rounded-[var(--ui-radius-lg)] bg-[var(--ui-surface)] px-3 py-2.5">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-[var(--text-primary)]">{getDisplayName(member.user)}</p>
-                      <p className="truncate text-xs text-[var(--text-muted)]">{member.user.email}</p>
+                      <p className="truncate text-sm font-medium text-[var(--ui-text)]">{getDisplayName(member.user)}</p>
+                      <p className="truncate text-xs text-[var(--ui-text-muted)]">{member.user.email}</p>
                     </div>
-                    <span
-                      className={
-                        isAdmin
-                          ? 'rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-[11px] font-semibold text-[var(--accent)] ring-1 ring-inset ring-[var(--accent)]/20'
-                          : 'rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-muted)]'
-                      }
-                    >
-                      {isAdmin ? 'Admin' : 'Staff'}
-                    </span>
+                    <StatusBadge tone={isAdmin ? 'accent' : 'neutral'}>{isAdmin ? 'Admin' : 'Staff'}</StatusBadge>
                   </div>
                 );
               })}
@@ -322,10 +297,10 @@ export function CompanyOverviewDialog({
               onAction={() => onOpenTemplates(company)}
             >
               {state.templates.slice(0, 4).map((template) => (
-                <div key={template.id} className="rounded-xl bg-[var(--surface)] px-3 py-2.5">
+                <div key={template.id} className="rounded-[var(--ui-radius-lg)] bg-[var(--ui-surface)] px-3 py-2.5">
                   <div className="flex items-center gap-2">
-                    <FileText size={14} weight="duotone" className="text-[var(--accent)]" />
-                    <p className="truncate text-sm font-medium text-[var(--text-primary)]">{template.name}</p>
+                    <FileText size={14} strokeWidth={1.75} className="text-[var(--ui-accent)]" />
+                    <p className="truncate text-sm font-medium text-[var(--ui-text)]">{template.name}</p>
                   </div>
                 </div>
               ))}
@@ -340,28 +315,22 @@ export function CompanyOverviewDialog({
               onAction={() => onOpenProducts(company)}
             >
               {state.products.slice(0, 4).map((product) => (
-                <div key={product.id} className="rounded-xl bg-[var(--surface)] px-3 py-2.5">
+                <div key={product.id} className="rounded-[var(--ui-radius-lg)] bg-[var(--ui-surface)] px-3 py-2.5">
                   <div className="flex items-center gap-2">
-                    <Package size={14} weight="duotone" className="text-[var(--accent)]" />
+                    <Package size={14} strokeWidth={1.75} className="text-[var(--ui-accent)]" />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-[var(--text-primary)]">{product.name}</p>
-                      {product.category ? (
-                        <p className="truncate text-xs text-[var(--text-muted)]">{product.category}</p>
-                      ) : null}
+                      <p className="truncate text-sm font-medium text-[var(--ui-text)]">{product.name}</p>
+                      {product.category ? <p className="truncate text-xs text-[var(--ui-text-muted)]">{product.category}</p> : null}
                     </div>
                   </div>
                 </div>
               ))}
             </SummaryList>
 
-            {state.error ? (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300">
-                {state.error}
-              </div>
-            ) : null}
+            {state.error ? <InlineAlert tone="danger">{state.error}</InlineAlert> : null}
           </ModalBody>
 
-          <div className="shrink-0 border-t border-[var(--border)] px-4 py-3 sm:px-6">
+          <div className="shrink-0 border-t border-[var(--ui-border)] px-4 py-3 sm:px-6">
             <DialogClose asChild>
               <Button type="button" variant="outline" className="w-full">
                 Stäng
