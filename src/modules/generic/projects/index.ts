@@ -42,3 +42,23 @@ export {
   handleProjectCounts,
   handleUpdateProjectDetails,
 } from './api/handlers/project.handler';
+
+export type {
+  TimeEntry,
+  LogTimeEntryInput,
+  EditTimeEntryPatch,
+  ListTimeEntriesFilter,
+} from './domain/time-entry.entity';
+export {
+  listTimeEntries,
+  logTimeEntry,
+  editTimeEntry,
+  removeTimeEntry,
+  TimeEntryDomainError,
+} from './application/time-entry.service';
+export {
+  handleListTimeEntries,
+  handleCreateTimeEntry,
+  handleUpdateTimeEntry,
+  handleDeleteTimeEntry,
+} from './api/handlers/time-entry.handler';
