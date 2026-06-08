@@ -4,8 +4,8 @@ import { panelVariants } from '@shared/ui/panel';
 
 describe('Quiet ERP primitive variants', () => {
   it('uses ui semantic tokens for buttons', () => {
-    expect(buttonVariants({ variant: 'primary' })).toContain('--ui-accent');
-    expect(buttonVariants({ variant: 'danger' })).toContain('--ui-danger-text');
+    expect(buttonVariants({ variant: 'default' })).toContain('--ui-accent');
+    expect(buttonVariants({ variant: 'destructive' })).toContain('--ui-danger-fill');
     expect(buttonVariants({ variant: 'secondary' })).toContain('--ui-surface-subtle');
   });
 

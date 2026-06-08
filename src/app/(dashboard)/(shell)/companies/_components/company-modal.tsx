@@ -30,6 +30,7 @@ export interface CompanyForm {
   country: string;
   website: string;
   logoUrl: string;
+  customFields: Record<string, unknown>;
 }
 
 export const EMPTY_COMPANY_FORM: CompanyForm = {
@@ -43,6 +44,7 @@ export const EMPTY_COMPANY_FORM: CompanyForm = {
   country: 'Sverige',
   website: '',
   logoUrl: '',
+  customFields: {},
 };
 
 export function formFromCompany(company: Company | null): CompanyForm {
@@ -59,6 +61,7 @@ export function formFromCompany(company: Company | null): CompanyForm {
     country: company.country ?? 'Sverige',
     website: company.website ?? '',
     logoUrl: company.logoUrl ?? '',
+    customFields: company.customFields ?? {},
   };
 }
 
