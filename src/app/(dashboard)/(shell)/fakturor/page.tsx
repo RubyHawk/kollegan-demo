@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@shared/ui/button';
@@ -17,7 +17,7 @@ import {
   invoiceRef,
 } from './_lib/invoice-display';
 
-export default function InvoicesPage() {
+function InvoicesPageInner() {
   const router = useRouter();
   const {
     invoices, total, loading, error,
@@ -227,4 +227,8 @@ export default function InvoicesPage() {
       )}
     </div>
   );
+}
+
+export default function InvoicesPage() {
+  return <Suspense><InvoicesPageInner /></Suspense>;
 }

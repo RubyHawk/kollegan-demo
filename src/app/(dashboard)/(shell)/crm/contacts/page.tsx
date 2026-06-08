@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Check, Copy, LoaderCircle, Plus, Search, Users, X } from 'lucide-react';
@@ -44,7 +44,7 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function ContactsPage() {
+function ContactsPageInner() {
   const searchParams = useSearchParams();
   const { toasts, addToast, dismissToast } = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -398,6 +398,10 @@ export default function ContactsPage() {
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
+}
+
+export default function ContactsPage() {
+  return <Suspense><ContactsPageInner /></Suspense>;
 }
 
 function ContactForm({
