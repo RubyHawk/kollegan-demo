@@ -9,57 +9,26 @@ import { MenuIcon, ChevronRightIcon, PlusIcon } from '@shared/ui/icons';
 import { SearchTrigger } from '@shared/ui/search-command';
 import { BrandLockup } from '@shared/ui/brand';
 import { logout } from '@shared/lib/api/auth-account.api';
-import type { User } from '@shared/ui/sidebar-config';
+import { NAV_CRUMB_MAP, NAV_CONFIG, type User } from '@shared/ui/sidebar-config';
 
-interface Props {
-  user: User;
-  children: React.ReactNode;
-}
-
-const SEG_LABELS: Record<string, string> = {
-  offerter: 'Offerter',
-  fakturor: 'Fakturor',
-  mallar: 'Mallar',
-  produkter: 'Produkter',
-  projekt: 'Projekt',
-  installningar: 'Inställningar',
-  anvandare: 'Användare',
-  profil: 'Profil',
-  sakerhet: 'Säkerhet',
-  utseende: 'Utseende',
-  foretag: 'Företag',
-  epost: 'E-post',
-  fakturering: 'Fakturering',
-  anslutningar: 'Anslutningar',
-  notifieringar: 'Notifieringar',
-  integrationer: 'Integrationer',
-  'anpassade-falt': 'Anpassade fält',
-  'mfa-support': 'MFA-support',
-  'logga-in': 'Logga in',
-  crm: 'CRM',
-  contacts: 'Kontakter',
-  leads: 'Leads',
-  meetings: 'Möten',
-  demos: 'Demos',
-  analytics: 'Analys',
-  reports: 'Rapporter',
-  projects: 'Projekt',
-  messages: 'Meddelanden',
-  admin: 'Admin',
-  compliance: 'Efterlevnad',
-  billing: 'Fakturering',
-  users: 'Användare',
-  profile: 'Profil',
-  integrations: 'Integrationer',
-};
+// ─── Breadcrumbs ──────────────────────────────────────────────────────────────
 
 const UUID_SEGMENT = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function labelForSegment(segment: string, previous?: string) {
+function labelForSegment(segment: string, previous?: string): string {
   if (previous === 'projekt' && UUID_SEGMENT.test(segment)) return 'Projektdetalj';
-  if (segment === 'ny' && previous === 'fakturor') return 'Ny faktura';
-  if (segment === 'ny') return 'Ny offert';
-  return SEG_LABELS[segment] ?? (segment.charAt(0).toUpperCase() + segment.slice(1));
+  // "ny" label is derived from the parent dropdown's primaryAction — e.g. "Ny offert", "Ny faktura"
+  if (segment === 'ny' && previous) {
+    for (const section of NAV_CONFIG) {
+      for (const entry of section.items) {
+        if (entry.type === 'dropdown' && entry.key === previous && entry.primaryAction) {
+          return entry.primaryAction.label;
+        }
+      }
+    }
+    return 'Ny';
+  }
+  return NAV_CRUMB_MAP[segment] ?? (segment.charAt(0).toUpperCase() + segment.slice(1));
 }
 
 function buildCrumbs(pathname: string) {
@@ -69,6 +38,36 @@ function buildCrumbs(pathname: string) {
     label: labelForSegment(seg, segs[i - 1]),
     href: i < segs.length - 1 ? `/${segs.slice(0, i + 1).join('/')}` : null,
   }));
+}
+
+// ─── Context-aware topbar CTA ─────────────────────────────────────────────────
+
+function getPrimaryAction(pathname: string): { href: string; label: string } | null {
+  for (const section of NAV_CONFIG) {
+    for (const entry of section.items) {
+      if (!entry.primaryAction) continue;
+      if (entry.type === 'link') {
+        const active = entry.exact
+          ? pathname === entry.href
+          : pathname === entry.href || pathname.startsWith(entry.href + '/');
+        if (active) return entry.primaryAction;
+      } else {
+        // Dropdown: match by the top-level path prefix of its children
+        const prefix = entry.items[0]?.href.split('/').filter(Boolean)[0];
+        if (prefix && (pathname === `/${prefix}` || pathname.startsWith(`/${prefix}/`))) {
+          return entry.primaryAction;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+interface Props {
+  user: User;
+  children: React.ReactNode;
 }
 
 const LS_KEY = 'sidebar-collapsed';
@@ -95,6 +94,7 @@ export default function AppShell({ user, children }: Props) {
   }
 
   const crumbs = buildCrumbs(pathname);
+  const primaryAction = getPrimaryAction(pathname);
   const isImmersiveTemplateEditor = pathname.startsWith('/mallar/') && pathname !== '/mallar';
 
   const topbar = (
@@ -120,18 +120,20 @@ export default function AppShell({ user, children }: Props) {
         <SearchTrigger />
         <Link
           href="/installningar/notifieringar"
-          className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
           aria-label="Notifieringar"
         >
           <Bell size={18} strokeWidth={1.75} />
         </Link>
-        <Link
-          href="/offerter/ny"
-          className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--ui-accent)] px-3 text-sm font-semibold text-[var(--ui-text-inverse)] transition-colors hover:bg-[var(--ui-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
-        >
-          <PlusIcon size={14} />
-          Ny offert
-        </Link>
+        {primaryAction && (
+          <Link
+            href={primaryAction.href}
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--ui-accent)] px-3 text-sm font-semibold text-[var(--ui-text-inverse)] transition-colors hover:bg-[var(--ui-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+          >
+            <PlusIcon size={14} />
+            {primaryAction.label}
+          </Link>
+        )}
       </div>
     </div>
   );

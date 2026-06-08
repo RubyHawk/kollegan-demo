@@ -1,6 +1,8 @@
 import {
   BarChart2,
   Bed,
+  Bell,
+  Blocks,
   Briefcase,
   Building,
   Building2,
@@ -9,6 +11,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  CircleHelp,
   Clock,
   CreditCard,
   FileText,
@@ -16,6 +19,7 @@ import {
   GripVertical,
   Home,
   Info,
+  Link2,
   Lock,
   LogOut,
   Mail,
@@ -33,6 +37,7 @@ import {
   Send,
   Settings,
   Shield,
+  Sliders,
   Sparkles,
   Sun,
   Trash2,
@@ -105,3 +110,8 @@ export const MessageSquareIcon = makeIcon(MessageSquare);
 export const CreditCardIcon = makeIcon(CreditCard);
 export const ShieldIcon = makeIcon(Shield);
 export const PackageIcon = makeIcon(Package);
+export const BellIcon = makeIcon(Bell);
+export const BlocksIcon = makeIcon(Blocks);
+export const LinkIcon = makeIcon(Link2);
+export const SlidersIcon = makeIcon(Sliders);
+export const HelpCircleIcon = makeIcon(CircleHelp);
