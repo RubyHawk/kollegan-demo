@@ -25,9 +25,6 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  UserIcon,
-  SettingsIcon,
-  ShieldIcon,
   LogOutIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
@@ -37,6 +34,7 @@ import { SPRING_SNAPPY, EASE_SPRING } from '@shared/lib/motion';
 import { cn } from '@shared/lib/utils';
 import { BrandMark } from '@shared/ui/brand';
 import { TooltipProvider } from '@shared/ui/tooltip';
+import { KONTO_ITEMS } from '@shared/nav/settings-config';
 import { LS_DROPDOWNS_KEY, NAV_CONFIG, type SidebarProps, type User } from './sidebar-config';
 import { SectionGroup } from './sidebar-navigation';
 
@@ -254,32 +252,22 @@ function SidebarFooter({
 
       <div className="h-px bg-[var(--ui-border)]" />
 
-      {/* Quick links */}
+      {/* Quick links — derived from KONTO_ITEMS in settings-config.ts */}
       <div className="py-1.5 px-1.5">
-        <Link
-          href="/installningar/profil"
-          onClick={() => { setPopoverOpen(false); onMobileClose?.(); }}
-          className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
-        >
-          <UserIcon size={14} className="shrink-0" />
-          Profil
-        </Link>
-        <Link
-          href="/installningar/sakerhet"
-          onClick={() => { setPopoverOpen(false); onMobileClose?.(); }}
-          className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
-        >
-          <ShieldIcon size={14} className="shrink-0" />
-          Säkerhet
-        </Link>
-        <Link
-          href="/installningar/utseende"
-          onClick={() => { setPopoverOpen(false); onMobileClose?.(); }}
-          className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
-        >
-          <SettingsIcon size={14} className="shrink-0" />
-          Utseende
-        </Link>
+        {KONTO_ITEMS.map((item) => {
+          const ItemIcon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => { setPopoverOpen(false); onMobileClose?.(); }}
+              className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
+            >
+              <ItemIcon size={14} className="shrink-0" />
+              {item.label}
+            </Link>
+          );
+        })}
       </div>
 
       <div className="h-px bg-[var(--ui-border)]" />

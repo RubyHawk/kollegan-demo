@@ -194,13 +194,13 @@ function NavDropdownItem({
   const contentId = `nav-dd-${entry.key}`;
   const isHighlighted = hasActiveChild || open;
 
-  // ── Collapsed mode: navigate to first child ───────────────────────────────
+  // ── Collapsed mode: navigate to collapsedHref or first child ────────────
   if (collapsed) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
           <Link
-            href={entry.items[0]?.href ?? '#'}
+            href={entry.collapsedHref ?? entry.items[0]?.href ?? '#'}
             onClick={onMobileClose}
             className={cn(
               'relative flex items-center justify-center w-9 h-9 rounded-lg outline-none mx-auto',
