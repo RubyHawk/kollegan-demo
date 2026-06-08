@@ -79,15 +79,7 @@ export const NAV_CONFIG: NavSection[] = [
           { href: '/offerter/ny', label: 'Ny offert' },
         ],
       },
-      {
-        type: 'dropdown',
-        key: 'projekt',
-        label: 'Projekt',
-        icon: BriefcaseIcon,
-        items: [
-          { href: '/projekt', label: 'Alla projekt' },
-        ],
-      },
+      { type: 'link', href: '/projekt', label: 'Projekt', icon: BriefcaseIcon },
       {
         type: 'dropdown',
         key: 'fakturor',
