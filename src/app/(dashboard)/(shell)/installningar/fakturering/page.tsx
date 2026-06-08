@@ -97,7 +97,7 @@ export default function BillingPage() {
       <Panel variant="danger" padding="lg">
         <h2 className="mb-1 text-sm font-semibold">Farlig zon</h2>
         <p className="mb-4 text-xs">Avsluta prenumerationen och radera all data permanent.</p>
-        <Button type="button" variant="danger" disabled>
+        <Button type="button" variant="destructive" disabled>
           Avsluta prenumeration
         </Button>
       </Panel>

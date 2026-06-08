@@ -380,7 +380,7 @@ function ConfirmDeleteDialog({ value, deleting, onOpenChange, onConfirm }: { val
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Avbryt
           </Button>
-          <Button type="button" variant="danger" loading={Boolean(value && deleting === value.id)} onClick={() => value && onConfirm(value.id)}>
+          <Button type="button" variant="destructive" loading={Boolean(value && deleting === value.id)} onClick={() => value && onConfirm(value.id)}>
             Ta bort
           </Button>
         </ModalActionFooter>

@@ -29,6 +29,8 @@
   --ui-danger-bg: oklch(0.265 0.055 25);
   --ui-danger-text: oklch(0.80 0.120 25);
   --ui-danger-border: oklch(0.48 0.080 25);
+  --ui-danger-fill: oklch(0.62 0.190 25);
+  --ui-danger-fill-hover: oklch(0.67 0.185 25);
   --ui-info-bg: oklch(0.265 0.055 220);
   --ui-info-text: oklch(0.80 0.120 220);
   --ui-info-border: oklch(0.48 0.080 220);

@@ -9,9 +9,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: 'bg-[var(--ui-accent)] text-[var(--ui-text-inverse)] hover:bg-[var(--ui-accent-hover)] active:bg-[var(--ui-accent-active)]',
-        primary: 'bg-[var(--ui-accent)] text-[var(--ui-text-inverse)] hover:bg-[var(--ui-accent-hover)] active:bg-[var(--ui-accent-active)]',
-        destructive: 'bg-[var(--ui-danger-text)] text-[var(--ui-text-inverse)] hover:opacity-90',
-        danger: 'bg-[var(--ui-danger-text)] text-[var(--ui-text-inverse)] hover:opacity-90',
+        destructive: 'bg-[var(--ui-danger-fill)] text-[var(--ui-text-inverse)] hover:bg-[var(--ui-danger-fill-hover)] active:bg-[var(--ui-danger-fill-hover)]',
         outline: 'border border-[var(--ui-border)] bg-transparent text-[var(--ui-text)] hover:bg-[var(--ui-surface-hover)]',
         secondary: 'border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text)] hover:bg-[var(--ui-surface-hover)]',
         ghost: 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)]',
