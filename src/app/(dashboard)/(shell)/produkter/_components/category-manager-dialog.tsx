@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { FolderOpen, Folders, Plus, StackSimple, Trash } from '@phosphor-icons/react';
+import { Building, FolderOpen, Folders, Layers, Plus, Trash } from 'lucide-react';
 import { Button } from '@shared/ui/button';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import { cn } from '@shared/lib/utils';
@@ -40,7 +40,7 @@ interface PendingDelete {
 }
 
 const inputCls =
-  'w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--accent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
+  'w-full rounded-[var(--ui-radius-control)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3.5 py-2.5 text-sm text-[var(--ui-text)] placeholder:text-[var(--ui-text-muted)] transition-colors focus:border-[var(--ui-accent)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
 
 export function CategoryManagerDialog({
   open,
@@ -74,12 +74,12 @@ export function CategoryManagerDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
           <DialogContent mobileVariant="fullscreen" size="xl" showMobileClose>
             <div className="flex min-h-0 flex-1 flex-col">
-              <DialogHeader className="border-b border-[var(--border)] pr-16">
+              <DialogHeader className="border-b border-[var(--ui-border)] pr-16">
                 <div className="flex items-center gap-3">
                   <DialogTitle className="text-xl">Produktkategorier</DialogTitle>
                   {selectedCompanyName && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]">
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--ui-text-secondary)]">
+                      <Building aria-hidden="true" size={12} strokeWidth={2} />
                       {selectedCompanyName}
                     </span>
                   )}
@@ -89,7 +89,7 @@ export function CategoryManagerDialog({
                   arbeta vidare med dess undernivåer.
                 </DialogDescription>
                 {supportMessage ? (
-                  <p className="text-sm text-amber-600 dark:text-amber-400">{supportMessage}</p>
+                  <p className="text-sm text-[var(--ui-warning-text)]">{supportMessage}</p>
                 ) : null}
               </DialogHeader>
 
@@ -98,18 +98,18 @@ export function CategoryManagerDialog({
                   <ModalSection tone="card" className="min-h-0">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <Folders size={16} weight="duotone" className="text-[var(--accent)]" />
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">Huvudkategorier</p>
+                        <Folders aria-hidden="true" size={16} strokeWidth={1.75} className="text-[var(--ui-accent)]" />
+                        <p className="text-sm font-semibold text-[var(--ui-text)]">Huvudkategorier</p>
                       </div>
-                      <span className="rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-2.5 py-1 text-xs font-semibold text-[var(--text-muted)]">
+                      <span className="rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-2.5 py-1 text-xs font-semibold text-[var(--ui-text-muted)]">
                         {categories.length}
                       </span>
                     </div>
 
                     {categories.length === 0 ? (
-                      <div className="rounded-[20px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-4 py-8 text-center">
-                        <FolderOpen size={24} weight="duotone" className="mx-auto text-[var(--text-muted)]" />
-                        <p className="mt-3 text-sm text-[var(--text-muted)]">Inga kategorier ännu.</p>
+                      <div className="rounded-[var(--ui-radius-panel)] border border-dashed border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-4 py-8 text-center">
+                        <FolderOpen aria-hidden="true" size={24} strokeWidth={1.75} className="mx-auto text-[var(--ui-text-muted)]" />
+                        <p className="mt-3 text-sm text-[var(--ui-text-muted)]">Inga kategorier ännu.</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -121,10 +121,10 @@ export function CategoryManagerDialog({
                             <div
                               key={node.main.id}
                               className={cn(
-                                'group rounded-[18px] border px-3 py-3 transition-colors',
+                                'group rounded-[var(--ui-radius-panel)] border px-3 py-3 transition-colors',
                                 isSelected
-                                  ? 'border-[var(--accent)]/20 bg-[var(--accent)]/6'
-                                  : 'border-[var(--border)] bg-[var(--surface-alt)]',
+                                  ? 'border-[var(--ui-accent)]/20 bg-[var(--ui-accent)]/6'
+                                  : 'border-[var(--ui-border)] bg-[var(--ui-surface-subtle)]',
                               )}
                             >
                               <div className="flex items-start gap-3">
@@ -133,8 +133,8 @@ export function CategoryManagerDialog({
                                   onClick={() => setSelectedMainId(node.main.id)}
                                   className="min-w-0 flex-1 text-left"
                                 >
-                                  <p className="truncate text-sm font-medium text-[var(--text-primary)]">{node.main.name}</p>
-                                  <p className="mt-1 text-xs text-[var(--text-muted)]">
+                                  <p className="truncate text-sm font-medium text-[var(--ui-text)]">{node.main.name}</p>
+                                  <p className="mt-1 text-xs text-[var(--ui-text-muted)]">
                                     {node.children.length} underkategorier
                                   </p>
                                 </button>
@@ -148,9 +148,9 @@ export function CategoryManagerDialog({
                                         variant="ghost"
                                         onClick={() => setPendingDelete({ id: node.main.id, name: node.main.name, type: 'main' })}
                                         disabled={!isAvailable || deletingId === node.main.id || hasChildren}
-                                        className="h-8 w-8 rounded-xl text-[var(--text-muted)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+                                        className="h-8 w-8 rounded-[var(--ui-radius-control)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-danger-bg)] hover:text-[var(--ui-danger-text)]"
                                       >
-                                        <Trash size={14} weight="bold" />
+                                        <Trash aria-hidden="true" size={14} strokeWidth={2} />
                                       </Button>
                                     </span>
                                   </TooltipTrigger>
@@ -165,8 +165,8 @@ export function CategoryManagerDialog({
                       </div>
                     )}
 
-                    <div className="space-y-2 border-t border-[var(--border)] pt-4">
-                      <label className="block text-xs font-medium text-[var(--text-secondary)]">Ny huvudkategori</label>
+                    <div className="space-y-2 border-t border-[var(--ui-border)] pt-4">
+                      <label className="block text-xs font-medium text-[var(--ui-text-secondary)]">Ny huvudkategori</label>
                       <div className="flex gap-2">
                         <input
                           value={mainName}
@@ -191,7 +191,7 @@ export function CategoryManagerDialog({
                           disabled={!isAvailable || saving || !mainName.trim()}
                           className="shrink-0"
                         >
-                          <Plus size={15} weight="bold" />
+                          <Plus aria-hidden="true" size={15} strokeWidth={2} />
                         </Button>
                       </div>
                     </div>
@@ -202,10 +202,10 @@ export function CategoryManagerDialog({
                       <div className="space-y-4">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-sm font-semibold text-[var(--text-primary)]">{selectedNode.main.name}</p>
-                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
+                            <p className="text-sm font-semibold text-[var(--ui-text)]">{selectedNode.main.name}</p>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[var(--ui-text-muted)]">
                               <span className="inline-flex items-center gap-1">
-                                <StackSimple size={12} />
+                                <Layers aria-hidden="true" size={12} strokeWidth={2} />
                                 {selectedNode.children.length} underkategorier
                               </span>
                               {(mainCounts.get(selectedNode.main.id) ?? 0) > 0 ? (
@@ -216,9 +216,9 @@ export function CategoryManagerDialog({
                         </div>
 
                         {selectedNode.children.length === 0 ? (
-                          <div className="rounded-[20px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-6 py-10 text-center">
-                            <p className="text-sm font-medium text-[var(--text-primary)]">Inga underkategorier ännu</p>
-                            <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
+                          <div className="rounded-[var(--ui-radius-panel)] border border-dashed border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-6 py-10 text-center">
+                            <p className="text-sm font-medium text-[var(--ui-text)]">Inga underkategorier ännu</p>
+                            <p className="mt-1 text-sm leading-6 text-[var(--ui-text-muted)]">
                               Lägg till underkategorier för att strukturera produkterna under {selectedNode.main.name}.
                             </p>
                           </div>
@@ -227,11 +227,11 @@ export function CategoryManagerDialog({
                             {selectedNode.children.map((child) => (
                               <div
                                 key={child.id}
-                                className="flex items-center justify-between gap-3 rounded-[18px] border border-[var(--border)] bg-[var(--surface-alt)] px-4 py-3"
+                                className="flex items-center justify-between gap-3 rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-4 py-3"
                               >
                                 <div className="min-w-0">
-                                  <p className="truncate text-sm font-medium text-[var(--text-primary)]">{child.name}</p>
-                                  <p className="text-xs text-[var(--text-muted)]">
+                                  <p className="truncate text-sm font-medium text-[var(--ui-text)]">{child.name}</p>
+                                  <p className="text-xs text-[var(--ui-text-muted)]">
                                     {subCounts.get(child.id) ?? 0} kopplade produkter
                                   </p>
                                 </div>
@@ -241,17 +241,17 @@ export function CategoryManagerDialog({
                                   variant="ghost"
                                   onClick={() => setPendingDelete({ id: child.id, name: child.name, type: 'sub' })}
                                   disabled={!isAvailable || deletingId === child.id}
-                                  className="h-8 w-8 shrink-0 rounded-xl text-[var(--text-muted)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+                                  className="h-8 w-8 shrink-0 rounded-[var(--ui-radius-control)] text-[var(--ui-text-muted)] hover:bg-[var(--ui-danger-bg)] hover:text-[var(--ui-danger-text)]"
                                 >
-                                  <Trash size={14} weight="bold" />
+                                  <Trash aria-hidden="true" size={14} strokeWidth={2} />
                                 </Button>
                               </div>
                             ))}
                           </div>
                         )}
 
-                        <div className="space-y-2 border-t border-[var(--border)] pt-4">
-                          <label className="block text-xs font-medium text-[var(--text-secondary)]">
+                        <div className="space-y-2 border-t border-[var(--ui-border)] pt-4">
+                          <label className="block text-xs font-medium text-[var(--ui-text-secondary)]">
                             Ny underkategori för {selectedNode.main.name}
                           </label>
                           <div className="flex gap-2">
@@ -281,19 +281,19 @@ export function CategoryManagerDialog({
                               disabled={!isAvailable || saving || !subName.trim()}
                               className="shrink-0"
                             >
-                              <Plus size={15} weight="bold" />
+                              <Plus aria-hidden="true" size={15} strokeWidth={2} />
                             </Button>
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex h-full min-h-[280px] flex-col items-center justify-center gap-3 rounded-[20px] border border-dashed border-[var(--border)] bg-[var(--surface-alt)] px-8 py-12 text-center">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]">
-                          <Folders size={22} weight="duotone" />
+                      <div className="flex h-full min-h-[280px] flex-col items-center justify-center gap-3 rounded-[var(--ui-radius-panel)] border border-dashed border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-8 py-12 text-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text-muted)]">
+                          <Folders aria-hidden="true" size={22} strokeWidth={1.75} />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-[var(--text-primary)]">Välj en huvudkategori</p>
-                          <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
+                          <p className="text-sm font-medium text-[var(--ui-text)]">Välj en huvudkategori</p>
+                          <p className="mt-1 text-sm leading-6 text-[var(--ui-text-muted)]">
                             Klicka på en kategori till vänster för att hantera dess underkategorier här.
                           </p>
                         </div>

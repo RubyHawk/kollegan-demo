@@ -1,117 +1,77 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  Bell,
+  Blocks,
+  BriefcaseBusiness,
+  Building2,
+  CircleHelp,
+  CreditCard,
+  Link as LinkIcon,
+  Mail,
+  Shield,
+  Sun,
+  User,
+  Users,
+} from 'lucide-react';
 import { cn } from '@shared/lib/utils';
-import { Icon } from './shared';
 
 interface NavItem {
   href: string;
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   adminOnly?: boolean;
   allowedRoles?: string[];
 }
 
 interface NavSection {
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   items: NavItem[];
 }
+
+const iconProps = { 'aria-hidden': true, size: 16, strokeWidth: 1.75 } as const;
+const sectionIconProps = { 'aria-hidden': true, size: 13, strokeWidth: 2 } as const;
 
 const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Konto',
-    icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-      </svg>
-    ),
+    icon: <User {...sectionIconProps} />,
     items: [
-      {
-        href: '/installningar/profil',
-        label: 'Profil',
-        icon: <Icon path={<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>} />,
-      },
-      {
-        href: '/installningar/sakerhet',
-        label: 'Säkerhet',
-        icon: <Icon path={<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />} />,
-      },
-      {
-        href: '/installningar/utseende',
-        label: 'Utseende',
-        icon: <Icon path={<><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></>} />,
-      },
+      { href: '/installningar/profil', label: 'Profil', icon: <User {...iconProps} /> },
+      { href: '/installningar/sakerhet', label: 'Säkerhet', icon: <Shield {...iconProps} /> },
+      { href: '/installningar/utseende', label: 'Utseende', icon: <Sun {...iconProps} /> },
     ],
   },
   {
     label: 'Organisation',
-    icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="7" width="20" height="14" rx="2" />
-        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-        <line x1="12" y1="12" x2="12" y2="16" />
-        <line x1="10" y1="14" x2="14" y2="14" />
-      </svg>
-    ),
+    icon: <BriefcaseBusiness {...sectionIconProps} />,
     items: [
-      {
-        href: '/installningar/epost',
-        label: 'E-post',
-        icon: <Icon path={<><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></>} />,
-      },
-      {
-        href: '/installningar/anslutningar',
-        label: 'Anslutningar',
-        icon: <Icon path={<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></>} />,
-      },
-      {
-        href: '/installningar/foretag',
-        label: 'Företag',
-        icon: <Icon path={<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 8h.01M7 12h.01M7 16h.01" /><path d="M11 8h6M11 12h6M11 16h6" /></>} />,
-      },
-      {
-        href: '/installningar/integrationer',
-        label: 'Integrationer',
-        icon: <Icon path={<><rect x="2" y="2" width="9" height="9" rx="1.5" /><rect x="13" y="2" width="9" height="9" rx="1.5" /><rect x="2" y="13" width="9" height="9" rx="1.5" /><rect x="13" y="13" width="9" height="9" rx="1.5" /></>} />,
-      },
-      {
-        href: '/installningar/notifieringar',
-        label: 'Notifieringar',
-        icon: <Icon path={<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>} />,
-      },
-      {
-        href: '/installningar/fakturering',
-        label: 'Fakturering',
-        icon: <Icon path={<><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></>} />,
-      },
-      {
-        href: '/installningar/anpassade-falt',
-        label: 'Anpassade fält',
-        icon: <Icon path={<><line x1="4" y1="9" x2="20" y2="9" /><line x1="4" y1="15" x2="20" y2="15" /><line x1="10" y1="3" x2="8" y2="21" /><line x1="16" y1="3" x2="14" y2="21" /></>} />,
-      },
+      { href: '/installningar/epost', label: 'E-post', icon: <Mail {...iconProps} /> },
+      { href: '/installningar/anslutningar', label: 'Anslutningar', icon: <LinkIcon {...iconProps} /> },
+      { href: '/installningar/foretag', label: 'Företag', icon: <Building2 {...iconProps} /> },
+      { href: '/installningar/integrationer', label: 'Integrationer', icon: <Blocks {...iconProps} /> },
+      { href: '/installningar/notifieringar', label: 'Notifieringar', icon: <Bell {...iconProps} /> },
+      { href: '/installningar/fakturering', label: 'Fakturering', icon: <CreditCard {...iconProps} /> },
     ],
   },
   {
     label: 'Admin',
-    icon: (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      </svg>
-    ),
+    icon: <Shield {...sectionIconProps} />,
     items: [
       {
         href: '/installningar/anvandare',
         label: 'Användare',
-        icon: <Icon path={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>} />,
+        icon: <Users {...iconProps} />,
         adminOnly: true,
       },
       {
         href: '/installningar/mfa-support',
         label: 'MFA-support',
-        icon: <Icon path={<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></>} />,
+        icon: <CircleHelp {...iconProps} />,
         allowedRoles: ['super_admin', 'admin', 'helpdesk'],
       },
     ],
@@ -143,8 +103,8 @@ export default function SettingsNav({ userRole }: { userRole: string }) {
           {visibleSections.map((section) => (
             <div key={section.label}>
               <div className="mb-1 flex items-center gap-1.5 px-3">
-                <span className="text-[var(--text-muted)]">{section.icon}</span>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">
+                <span className="text-[var(--ui-text-muted)]">{section.icon}</span>
+                <p className="text-[10px] font-semibold uppercase text-[var(--ui-text-muted)]">
                   {section.label}
                 </p>
               </div>
@@ -158,11 +118,11 @@ export default function SettingsNav({ userRole }: { userRole: string }) {
                       className={cn(
                         'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
                         active
-                          ? 'bg-[var(--accent)]/10 font-medium text-[var(--accent)]'
-                          : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]',
+                          ? 'bg-[var(--ui-accent-subtle)] font-medium text-[var(--ui-accent)]'
+                          : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]',
                       )}
                     >
-                      <span className={cn('shrink-0', active ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]')}>
+                      <span className={cn('shrink-0', active ? 'text-[var(--ui-accent)]' : 'text-[var(--ui-text-muted)]')}>
                         {item.icon}
                       </span>
                       {item.label}
@@ -183,13 +143,13 @@ export default function SettingsNav({ userRole }: { userRole: string }) {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex min-h-[44px] items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-colors',
+                'flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--ui-radius-control)] border px-3 py-2 text-xs font-medium transition-colors',
                 active
-                  ? 'border-[color-mix(in_srgb,var(--accent)_24%,var(--border))] bg-[color-mix(in_srgb,var(--accent)_12%,var(--surface-alt))] text-[var(--text-primary)]'
-                  : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]',
+                  ? 'border-[var(--ui-accent-border)] bg-[var(--ui-accent-subtle)] text-[var(--ui-text)]'
+                  : 'border-[var(--ui-border)] text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-subtle)]',
               )}
             >
-              <span className={cn('shrink-0', active ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]')}>
+              <span className={cn('shrink-0', active ? 'text-[var(--ui-text)]' : 'text-[var(--ui-text-muted)]')}>
                 {item.icon}
               </span>
               {item.label}

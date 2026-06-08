@@ -1,0 +1,40 @@
+:root,
+.dark {
+  --page-bg: var(--ui-bg);
+  --surface: var(--ui-surface);
+  --surface-alt: var(--ui-surface-subtle);
+  --surface-hover: var(--ui-surface-hover);
+  --surface-0: var(--ui-surface);
+  --surface-1: var(--ui-surface-subtle);
+  --surface-2: var(--ui-surface-raised);
+  --surface-3: var(--ui-surface-hover);
+  --surface-active: var(--ui-surface-active);
+  --border: var(--ui-border);
+  --border-light: var(--ui-border-subtle);
+  --text-primary: var(--ui-text);
+  --text-secondary: var(--ui-text-secondary);
+  --text-muted: var(--ui-text-muted);
+  --accent: var(--ui-accent);
+  --accent-light: var(--ui-accent-hover);
+  --accent-subtle: var(--ui-accent-subtle);
+  --accent-border: var(--ui-accent-border);
+  --status-draft-bg: var(--ui-surface-subtle);
+  --status-draft-text: var(--ui-text-muted);
+  --status-draft-border: var(--ui-border);
+  --status-sent-bg: var(--ui-info-bg);
+  --status-sent-text: var(--ui-info-text);
+  --status-viewed-bg: var(--ui-info-bg);
+  --status-viewed-text: var(--ui-info-text);
+  --status-accepted-bg: var(--ui-success-bg);
+  --status-accepted-text: var(--ui-success-text);
+  --status-success-bg: var(--ui-success-bg);
+  --status-success-text: var(--ui-success-text);
+  --status-warning-bg: var(--ui-warning-bg);
+  --status-warning-text: var(--ui-warning-text);
+  --status-danger-bg: var(--ui-danger-bg);
+  --status-danger-text: var(--ui-danger-text);
+  --status-declined-bg: var(--ui-danger-bg);
+  --status-declined-text: var(--ui-danger-text);
+  --status-expired-bg: var(--ui-warning-bg);
+  --status-expired-text: var(--ui-warning-text);
+}

@@ -32,12 +32,12 @@ export function OfferWizardShell({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-50 flex overflow-hidden bg-[var(--surface)]"
+          className="fixed inset-0 z-50 flex overflow-hidden bg-[var(--ui-surface)]"
         >
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex flex-1 overflow-hidden">
             <OfferWizardLivePreview {...livePreviewProps} />
 
-            <div className="w-full lg:w-[460px] shrink-0 border-l border-[var(--border)] bg-[var(--surface)] flex flex-col overflow-hidden">
+            <div className="flex w-full shrink-0 flex-col overflow-hidden border-l border-[var(--ui-border)] bg-[var(--ui-surface)] lg:w-[460px]">
               {notice}
               {wizardStep === 1 && <OfferWizardStepOne {...stepOneProps} />}
               {wizardStep === 2 && <OfferWizardStepTwoPanel {...stepTwoProps} />}

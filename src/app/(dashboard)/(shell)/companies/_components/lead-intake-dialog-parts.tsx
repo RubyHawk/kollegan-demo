@@ -1,17 +1,16 @@
 'use client';
 
 import {
+  AlertTriangle,
   CheckCircle,
-  GearSix,
-  UserCircle,
-  WarningCircle,
-} from '@phosphor-icons/react';
+  CircleUser,
+  Settings,
+} from 'lucide-react';
 import type {
   LeadIntakeFieldTarget,
   LeadIntakeForwarder,
 } from '@shared/lib/api/lead-intake-forwarders.api';
 import { cn } from '@shared/lib/utils';
-import { Badge } from '@shared/ui/badge';
 import {
   Select,
   SelectContent,
@@ -19,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@shared/ui/select';
+import { StatusBadge } from '@shared/ui/status-badge';
 import {
   displayName,
   targetMeta,
@@ -29,31 +29,31 @@ import {
 export function ForwarderStatus({ forwarder }: { forwarder: LeadIntakeForwarder | null }) {
   if (!forwarder) {
     return (
-      <Badge variant="secondary" className="gap-1.5 rounded-full">
-        <GearSix size={12} weight="bold" />
+      <StatusBadge tone="neutral">
+        <Settings size={12} strokeWidth={1.75} />
         Ny
-      </Badge>
+      </StatusBadge>
     );
   }
 
   return forwarder.isActive ? (
-    <Badge className="gap-1.5 rounded-full bg-emerald-600 text-white">
-      <CheckCircle size={12} weight="bold" />
+    <StatusBadge tone="success">
+      <CheckCircle size={12} strokeWidth={1.75} />
       Aktiv
-    </Badge>
+    </StatusBadge>
   ) : (
-    <Badge variant="warning" className="gap-1.5 rounded-full">
-      <WarningCircle size={12} weight="bold" />
+    <StatusBadge tone="warning">
+      <AlertTriangle size={12} strokeWidth={1.75} />
       Pausad
-    </Badge>
+    </StatusBadge>
   );
 }
 
 export function StatTile({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-xl border border-[var(--border-light)] bg-[var(--surface-alt)] px-3 py-2">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{label}</p>
-      <p className="mt-1 truncate text-sm font-semibold text-[var(--text-primary)]">{value}</p>
+    <div className="rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-2">
+      <p className="text-xs font-semibold uppercase text-[var(--ui-text-muted)]">{label}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-[var(--ui-text)]">{value}</p>
     </div>
   );
 }
@@ -72,10 +72,8 @@ export function PanelButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'h-9 rounded-lg px-3 text-sm font-semibold transition-colors',
-        active
-          ? 'bg-[var(--surface)] text-[var(--text-primary)] shadow-sm ring-1 ring-[var(--border)]'
-          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]',
+        'h-9 rounded-[var(--ui-radius-md)] px-3 text-sm font-semibold text-[var(--ui-text-muted)] transition-colors hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
+        active && 'border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)]',
       )}
     >
       {label}
@@ -97,26 +95,22 @@ export function ForwarderCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        'w-full rounded-2xl border p-3 text-left transition-colors',
+        'w-full rounded-[var(--ui-radius-lg)] border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
         selected
-          ? 'border-[var(--accent)] bg-[var(--accent)]/10 shadow-sm'
-          : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
+          ? 'border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)]'
+          : 'border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-hover)]',
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{forwarder.name}</p>
-          <p className="mt-1 truncate text-xs text-[var(--text-muted)]">{forwarder.intakeAddress}</p>
+          <p className="truncate text-sm font-semibold text-[var(--ui-text)]">{forwarder.name}</p>
+          <p className="mt-1 truncate text-xs text-[var(--ui-text-muted)]">{forwarder.intakeAddress}</p>
         </div>
         <ForwarderStatus forwarder={forwarder} />
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
-        <span className="rounded-full border border-[var(--border-light)] bg-[var(--surface-alt)] px-2 py-0.5 text-[11px] text-[var(--text-muted)]">
-          {forwarder.sourceLabel}
-        </span>
-        <span className="rounded-full border border-[var(--border-light)] bg-[var(--surface-alt)] px-2 py-0.5 text-[11px] text-[var(--text-muted)]">
-          {forwarder.recipients.length} mottagare
-        </span>
+        <StatusBadge tone="neutral">{forwarder.sourceLabel}</StatusBadge>
+        <StatusBadge tone="neutral">{forwarder.recipients.length} mottagare</StatusBadge>
       </div>
     </button>
   );
@@ -134,24 +128,24 @@ export function RecipientToggle({
   return (
     <label
       className={cn(
-        'flex min-w-0 cursor-pointer items-center justify-between gap-3 rounded-2xl border px-3 py-3 transition-colors',
+        'flex min-w-0 cursor-pointer items-center justify-between gap-3 rounded-[var(--ui-radius-lg)] border px-3 py-3 transition-colors',
         checked
-          ? 'border-[var(--accent)] bg-[var(--accent)]/10'
-          : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)]',
+          ? 'border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)]'
+          : 'border-[var(--ui-border)] bg-[var(--ui-surface)] hover:bg-[var(--ui-surface-hover)]',
       )}
     >
       <span className="flex min-w-0 items-center gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-light)] bg-[var(--surface-alt)] text-[var(--text-muted)]">
-          <UserCircle size={18} weight="duotone" />
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text-muted)]">
+          <CircleUser size={18} strokeWidth={1.75} />
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">{displayName(member.user)}</span>
-          <span className="block truncate text-xs text-[var(--text-muted)]">{member.user.email}</span>
+          <span className="block truncate text-sm font-semibold text-[var(--ui-text)]">{displayName(member.user)}</span>
+          <span className="block truncate text-xs text-[var(--ui-text-muted)]">{member.user.email}</span>
         </span>
       </span>
       <input
         type="checkbox"
-        className="h-4 w-4 accent-[var(--accent)]"
+        className="h-4 w-4 accent-[var(--ui-accent)]"
         checked={checked}
         onChange={(event) => onCheckedChange(event.target.checked)}
       />
@@ -169,11 +163,9 @@ export function FieldTargetSelect({
   const meta = targetMeta(value);
   return (
     <Select value={value} onValueChange={(next) => onChange(next as LeadIntakeFieldTarget)}>
-      <SelectTrigger className="h-10 bg-[var(--surface-alt)]">
+      <SelectTrigger className="h-10 bg-[var(--ui-surface-subtle)]">
         <SelectValue>
-          <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold ring-1', meta.tone)}>
-            {meta.label}
-          </span>
+          <StatusBadge tone={meta.tone}>{meta.label}</StatusBadge>
         </SelectValue>
       </SelectTrigger>
       <SelectContent>

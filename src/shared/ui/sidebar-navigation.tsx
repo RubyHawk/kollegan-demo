@@ -66,11 +66,11 @@ function NavItem({
         aria-current={active ? 'page' : undefined}
         className={cn(
           'relative flex items-center justify-center w-9 h-9 rounded-lg outline-none mx-auto',
-          'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+          'focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
           'transition-colors duration-150',
           active
-            ? 'text-[var(--accent)] bg-[var(--accent)]/10'
-            : 'text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]',
+            ? 'text-[var(--ui-accent)] bg-[var(--ui-accent-subtle)]'
+            : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)]',
         )}
       >
         {Icon && <Icon size={16} />}
@@ -93,11 +93,11 @@ function NavItem({
         aria-current={active ? 'page' : undefined}
         className={cn(
           'relative flex items-center pl-[34px] pr-2 py-1.5 rounded-lg text-[13px] outline-none group/child',
-          'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+          'focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
           'transition-colors duration-150',
           active
-            ? 'text-[var(--text-primary)] font-medium bg-[var(--surface-hover)]'
-            : 'text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]',
+            ? 'text-[var(--ui-text)] font-medium bg-[var(--ui-surface-hover)]'
+            : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)]',
         )}
       >
         {/* Dot indicator */}
@@ -105,8 +105,8 @@ function NavItem({
           className={cn(
             'absolute left-[19px] w-[5px] h-[5px] rounded-full transition-colors duration-150',
             active
-              ? 'bg-[var(--accent)]'
-              : 'bg-[var(--text-muted)]/40 group-hover/child:bg-[var(--text-muted)]',
+              ? 'bg-[var(--ui-accent)]'
+              : 'bg-[var(--ui-text-muted)]/40 group-hover/child:bg-[var(--ui-text-muted)]',
           )}
         />
         <span className="truncate">{label}</span>
@@ -122,11 +122,11 @@ function NavItem({
       aria-current={active ? 'page' : undefined}
       className={cn(
         'relative flex items-center gap-3 w-full px-2 py-1.5 rounded-lg text-[13px] outline-none group/navitem',
-        'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+        'focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
         'transition-colors duration-150',
         active
-          ? 'text-[var(--text-primary)] font-medium bg-[var(--surface-hover)]'
-          : 'text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]',
+          ? 'text-[var(--ui-text)] font-medium bg-[var(--ui-surface-hover)]'
+          : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)]',
       )}
     >
       {/* Bare icon */}
@@ -134,8 +134,8 @@ function NavItem({
         <Icon size={16} className={cn(
           'shrink-0 transition-colors duration-150',
           active
-            ? 'text-[var(--accent)]'
-            : 'text-[var(--text-muted)] group-hover/navitem:text-[var(--text-secondary)]',
+            ? 'text-[var(--ui-accent)]'
+            : 'text-[var(--ui-text-muted)] group-hover/navitem:text-[var(--ui-text-secondary)]',
         )} />
       )}
 
@@ -153,7 +153,7 @@ function NavItem({
       {/* Badge */}
       {badge !== undefined && badge > 0 && (
         <motion.span
-          className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--accent)] text-white text-[10.5px] font-semibold flex items-center justify-center leading-none"
+          className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--ui-accent)] text-[var(--ui-text-inverse)] text-[10.5px] font-semibold flex items-center justify-center leading-none"
           initial={{ scale: 0.6, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ ...SPRING_SNAPPY, delay: 0.1 }}
@@ -204,11 +204,11 @@ function NavDropdownItem({
             onClick={onMobileClose}
             className={cn(
               'relative flex items-center justify-center w-9 h-9 rounded-lg outline-none mx-auto',
-              'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+              'focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
               'transition-colors duration-150',
               hasActiveChild
-                ? 'text-[var(--accent)] bg-[var(--accent)]/10'
-                : 'text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]',
+                ? 'text-[var(--ui-accent)] bg-[var(--ui-accent-subtle)]'
+                : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)]',
             )}
           >
             <Icon size={16} />
@@ -229,19 +229,19 @@ function NavDropdownItem({
         aria-controls={contentId}
         className={cn(
           'relative flex items-center gap-3 w-full px-2 py-1.5 rounded-lg text-[13px] outline-none group/ddtrigger',
-          'focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+          'focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
           'transition-colors duration-150',
           isHighlighted
-            ? 'text-[var(--text-primary)] font-medium bg-[var(--surface-hover)]'
-            : 'text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]',
+            ? 'text-[var(--ui-text)] font-medium bg-[var(--ui-surface-hover)]'
+            : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)]',
         )}
       >
         {/* Bare icon */}
         <Icon size={16} className={cn(
           'shrink-0 transition-colors duration-150',
           isHighlighted
-            ? 'text-[var(--accent)]'
-            : 'text-[var(--text-muted)] group-hover/ddtrigger:text-[var(--text-secondary)]',
+            ? 'text-[var(--ui-accent)]'
+            : 'text-[var(--ui-text-muted)] group-hover/ddtrigger:text-[var(--ui-text-secondary)]',
         )} />
 
         {/* Label */}
@@ -257,7 +257,7 @@ function NavDropdownItem({
 
         {/* Rotating chevron — right arrow rotates to point down */}
         <motion.span
-          className="shrink-0 text-[var(--text-muted)]"
+          className="shrink-0 text-[var(--ui-text-muted)]"
           animate={reducedMotion ? undefined : { rotate: open ? 90 : 0 }}
           transition={SPRING_SNAPPY}
         >
@@ -285,7 +285,7 @@ function NavDropdownItem({
               animate="show"
             >
               {/* Vertical tree line */}
-              <span className="absolute left-[21px] top-1 bottom-1 w-px bg-[var(--border)]" />
+              <span className="absolute left-[21px] top-1 bottom-1 w-px bg-[var(--ui-border)]" />
               {(() => {
               // Find the best (most specific) matching child so short
               // prefixes like "/crm" don't false-match "/crm/contacts"
@@ -371,14 +371,14 @@ export function SectionGroup({
             className="px-2 mb-1"
             {...(reducedMotion ? {} : { ...labelMotion })}
           >
-            <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-muted)] select-none whitespace-nowrap">
+            <span className="text-[11px] font-medium uppercase  text-[var(--ui-text-muted)] select-none whitespace-nowrap">
               {section.section}
             </span>
           </motion.div>
         </AnimatePresence>
       ) : (
         !isFirst && (
-          <span className="w-5 h-px bg-[var(--border-light)] rounded-full my-1" />
+          <span className="w-5 h-px bg-[var(--ui-border-subtle)] rounded-full my-1" />
         )
       )}
 

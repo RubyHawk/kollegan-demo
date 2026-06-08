@@ -1,7 +1,9 @@
 'use client';
 
-import { ArrowSquareOut, EnvelopeSimple, PencilSimple, Trash, UsersThree } from '@phosphor-icons/react';
+import { ExternalLink, Mail, Pencil, Trash2, Users } from 'lucide-react';
 import type { Company } from '@shared/lib/api/companies.api';
+import { Button } from '@shared/ui/button';
+import { StatusBadge } from '@shared/ui/status-badge';
 
 function initials(name: string) {
   return name
@@ -41,8 +43,10 @@ export function CompanyRow({
   onMembers,
   onLeadIntake,
 }: CompanyRowProps) {
+  const address = companyAddress(company);
+
   return (
-    <div className="border-b border-[var(--border)] last:border-b-0">
+    <div className="border-b border-[var(--ui-border)] last:border-b-0">
       <div className="flex flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-1 items-start gap-4">
           {company.logoUrl ? (
@@ -50,83 +54,54 @@ export function CompanyRow({
             <img
               src={company.logoUrl}
               alt={company.name}
-              className="h-12 w-12 shrink-0 rounded-2xl border border-[var(--border)] object-cover"
+              className="h-12 w-12 shrink-0 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] object-cover"
             />
           ) : (
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-sm font-semibold text-[var(--text-muted)]">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-sm font-semibold text-[var(--ui-text-muted)]">
               {initials(company.name)}
             </div>
           )}
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="truncate text-sm font-semibold text-[var(--text-primary)]">{company.name}</span>
-              {active && (
-                <span className="rounded-full border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
-                  Aktivt företag
-                </span>
-              )}
+              <span className="truncate text-sm font-semibold text-[var(--ui-text)]">{company.name}</span>
+              {active ? <StatusBadge tone="accent">Aktivt företag</StatusBadge> : null}
             </div>
 
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-muted)]">
-              {companyAddress(company) && <span>{companyAddress(company)}</span>}
-              {company.website && <span>{company.website.replace(/^https?:\/\//, '')}</span>}
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--ui-text-muted)]">
+              {address ? <span>{address}</span> : null}
+              {company.website ? <span>{company.website.replace(/^https?:\/\//, '')}</span> : null}
             </div>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-          <button
-            type="button"
-            onClick={() => onActivate(company.id)}
-            className={`rounded-2xl border px-3 py-2 text-sm font-medium transition-colors ${
-              active
-                ? 'border-[var(--accent)]/35 bg-[var(--accent)]/10 text-[var(--accent)]'
-                : 'border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]'
-            }`}
-          >
+          <Button type="button" variant={active ? 'default' : 'secondary'} size="compact" onClick={() => onActivate(company.id)}>
             {active ? 'Valt nu' : 'Välj företag'}
-          </button>
-          <button
-            type="button"
-            onClick={() => onOverview(company)}
-            className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-alt)]"
-          >
-            <ArrowSquareOut size={16} weight="duotone" />
+          </Button>
+          <Button type="button" variant="secondary" size="compact" onClick={() => onOverview(company)}>
+            <ExternalLink size={16} strokeWidth={1.75} />
             Översikt
-          </button>
-          <button
+          </Button>
+          <Button type="button" variant="ghost" size="icon" onClick={() => onMembers(company)} aria-label="Hantera medlemmar">
+            <Users size={18} strokeWidth={1.75} />
+          </Button>
+          <Button type="button" variant="ghost" size="icon" onClick={() => onLeadIntake(company)} aria-label="Intresseanmälan">
+            <Mail size={18} strokeWidth={1.75} />
+          </Button>
+          <Button type="button" variant="ghost" size="icon" onClick={() => onEdit(company)} aria-label="Redigera företag">
+            <Pencil size={18} strokeWidth={1.75} />
+          </Button>
+          <Button
             type="button"
-            onClick={() => onMembers(company)}
-            className="rounded-xl p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
-            title="Hantera medlemmar"
-          >
-            <UsersThree size={18} weight="duotone" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onLeadIntake(company)}
-            className="rounded-xl p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
-            title="Intresseanmälan"
-          >
-            <EnvelopeSimple size={18} weight="duotone" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onEdit(company)}
-            className="rounded-xl p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]"
-            title="Redigera företag"
-          >
-            <PencilSimple size={18} weight="duotone" />
-          </button>
-          <button
-            type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => onDelete(company)}
-            className="rounded-xl p-2 text-[var(--text-muted)] transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-            title="Ta bort företag"
+            className="text-[var(--ui-danger-text)] hover:text-[var(--ui-danger-text)]"
+            aria-label="Ta bort företag"
           >
-            <Trash size={18} weight="duotone" />
-          </button>
+            <Trash2 size={18} strokeWidth={1.75} />
+          </Button>
         </div>
       </div>
     </div>

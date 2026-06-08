@@ -23,5 +23,6 @@
   --color-gold-600: #b8860b;
 }
 
-@import "./light.css";
-@import "./dark.css";
+@import "./ui-light.css";
+@import "./ui-dark.css";
+@import "./ui-aliases.css";

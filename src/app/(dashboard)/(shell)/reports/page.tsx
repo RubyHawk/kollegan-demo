@@ -1,13 +1,7 @@
 'use client';
 
-/**
- * /reports
- *
- * Report library — browse and generate pre-built reports as CSV downloads.
- * Pulls data from existing API endpoints and converts to CSV client-side.
- */
-
 import { useState } from 'react';
+import { Download, X } from 'lucide-react';
 import {
   loadAnnouncementsReportRows,
   loadContactsReportRows,
@@ -17,57 +11,77 @@ import {
   loadProjectsReportRows,
   type ReportRowsLoader,
 } from '@shared/lib/api/reports.api';
+import { Badge } from '@shared/ui/badge';
+import { Button } from '@shared/ui/button';
+import { InlineAlert } from '@shared/ui/inline-alert';
+import { PageHeader } from '@shared/ui/page-header';
+import { Panel } from '@shared/ui/panel';
+
+type ReportTone = 'neutral' | 'accent' | 'success' | 'warning' | 'info' | 'danger';
 
 interface Report {
-  id:       string;
-  name:     string;
-  desc:     string;
+  id: string;
+  name: string;
+  desc: string;
   category: string;
-  color:    string;
+  tone: ReportTone;
   loadRows: ReportRowsLoader;
 }
 
 const REPORTS: Report[] = [
   {
-    id: 'contacts-export', name: 'Kontaktexport',
+    id: 'contacts-export',
+    name: 'Kontaktexport',
     desc: 'Fullständig export av alla kunder och kontakter med historik.',
-    category: 'CRM', color: 'text-[var(--accent)] bg-[var(--accent)]/10',
+    category: 'CRM',
+    tone: 'accent',
     loadRows: loadContactsReportRows,
   },
   {
-    id: 'leads-export', name: 'Leadsexport',
+    id: 'leads-export',
+    name: 'Leadsexport',
     desc: 'Alla leads med status, källa, poäng och estimerat värde.',
-    category: 'CRM', color: 'text-violet-600 dark:text-violet-400 bg-violet-500/10',
+    category: 'CRM',
+    tone: 'info',
     loadRows: loadLeadsReportRows,
   },
   {
-    id: 'offers-export', name: 'Offertöversikt',
+    id: 'offers-export',
+    name: 'Offertöversikt',
     desc: 'Alla offerter med status, mottagare och totalsummor.',
-    category: 'Försäljning', color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
+    category: 'Försäljning',
+    tone: 'warning',
     loadRows: loadOffersReportRows,
   },
   {
-    id: 'projects-export', name: 'Projektöversikt',
+    id: 'projects-export',
+    name: 'Projektöversikt',
     desc: 'Status, framsteg och milstolpar för alla aktiva projekt.',
-    category: 'Projekt', color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
+    category: 'Projekt',
+    tone: 'success',
     loadRows: loadProjectsReportRows,
   },
   {
-    id: 'meetings-export', name: 'Mötesexport',
+    id: 'meetings-export',
+    name: 'Mötesexport',
     desc: 'Alla schemalagda och genomförda möten med deltagare.',
-    category: 'Team Hub', color: 'text-blue-600 dark:text-blue-400 bg-blue-500/10',
+    category: 'Team Hub',
+    tone: 'info',
     loadRows: loadMeetingsReportRows,
   },
   {
-    id: 'announcements-export', name: 'Meddelanden',
+    id: 'announcements-export',
+    name: 'Meddelanden',
     desc: 'Alla organisationens annonseringar och nyheter.',
-    category: 'Team Hub', color: 'text-rose-600 dark:text-rose-400 bg-rose-500/10',
+    category: 'Team Hub',
+    tone: 'danger',
     loadRows: loadAnnouncementsReportRows,
   },
 ];
 
 function flattenForCsv(obj: Record<string, unknown>, prefix = ''): Record<string, string> {
   const result: Record<string, string> = {};
+
   for (const [key, val] of Object.entries(obj)) {
     const fullKey = prefix ? `${prefix}.${key}` : key;
     if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
@@ -78,104 +92,121 @@ function flattenForCsv(obj: Record<string, unknown>, prefix = ''): Record<string
       result[fullKey] = val == null ? '' : String(val);
     }
   }
+
   return result;
 }
 
 function toCsv(rows: Record<string, unknown>[]): string {
   if (rows.length === 0) return 'No data';
-  const flat    = rows.map(r => flattenForCsv(r));
-  const headers = Array.from(new Set(flat.flatMap(r => Object.keys(r))));
+  const flat = rows.map((row) => flattenForCsv(row));
+  const headers = Array.from(new Set(flat.flatMap((row) => Object.keys(row))));
+
   return [
     headers.join(','),
-    ...flat.map(r => headers.map(h => `"${(r[h] ?? '').replace(/"/g, '""')}"`).join(',')),
+    ...flat.map((row) => headers.map((header) => `"${(row[header] ?? '').replace(/"/g, '""')}"`).join(',')),
   ].join('\n');
 }
 
 function downloadCsv(csv: string, filename: string) {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = filename;
-  a.click();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
   URL.revokeObjectURL(url);
 }
 
 export default function ReportsPage() {
   const [generating, setGenerating] = useState<string | null>(null);
-  const [error,      setError]      = useState<string | null>(null);
-  const [success,    setSuccess]    = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const generate = async (report: Report) => {
     setGenerating(report.id);
     setError(null);
     setSuccess(null);
+
     try {
       const rows = await report.loadRows();
       const csv = toCsv(rows);
       downloadCsv(csv, `${report.id}-${new Date().toISOString().slice(0, 10)}.csv`);
-      setSuccess(`"${report.name}" laddades ned — ${rows.length} rader.`);
+      setSuccess(`"${report.name}" laddades ned, ${rows.length} rader.`);
     } catch {
-      setError('Kunde inte ladda rapport. Kontrollera anslutningen och försök igen.');
+      setError('Kunde inte ladda rapporten. Kontrollera anslutningen och försök igen.');
     } finally {
       setGenerating(null);
     }
   };
 
   return (
-    <div className="px-8 py-10 max-w-5xl mx-auto space-y-8">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+      <PageHeader
+        title="Rapporter"
+        description="Generera strukturerade CSV-rapporter för analys och revision."
+      />
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)] mb-1">Rapporter</h1>
-          <p className="text-sm text-[var(--text-muted)]">Generera och ladda ner strukturerade CSV-rapporter för analys och revision.</p>
-        </div>
+      <div className="space-y-3" aria-live="polite">
+        {error ? (
+          <InlineAlert tone="danger">
+            <div className="flex items-center justify-between gap-3">
+              <span>{error}</span>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                aria-label="Stäng felmeddelande"
+                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-[var(--ui-danger-border)]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
+              >
+                <X size={16} strokeWidth={1.75} aria-hidden />
+              </button>
+            </div>
+          </InlineAlert>
+        ) : null}
+
+        {success ? (
+          <InlineAlert tone="success">
+            <div className="flex items-center justify-between gap-3">
+              <span>{success}</span>
+              <button
+                type="button"
+                onClick={() => setSuccess(null)}
+                aria-label="Stäng bekräftelse"
+                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-[var(--ui-success-border)]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
+              >
+                <X size={16} strokeWidth={1.75} aria-hidden />
+              </button>
+            </div>
+          </InlineAlert>
+        ) : null}
       </div>
 
-      {/* Banners */}
-      {error && (
-        <div className="rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center justify-between gap-3">
-          <span>{error}</span>
-          <button type="button" onClick={() => setError(null)} className="opacity-60 hover:opacity-100">✕</button>
-        </div>
-      )}
-      {success && (
-        <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400 flex items-center justify-between gap-3">
-          <span>{success}</span>
-          <button type="button" onClick={() => setSuccess(null)} className="opacity-60 hover:opacity-100">✕</button>
-        </div>
-      )}
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {REPORTS.map((report) => (
+          <Panel key={report.id} padding="lg" className="flex min-h-[188px] flex-col gap-4">
+            <div className="flex items-start justify-between gap-3">
+              <Badge variant={report.tone}>{report.category}</Badge>
+              <Download size={16} strokeWidth={1.75} className="mt-0.5 shrink-0 text-[var(--ui-text-muted)]" aria-hidden />
+            </div>
 
-      {/* Report grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {REPORTS.map((r) => (
-          <div key={r.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 flex flex-col gap-3">
-            <div className="flex items-start justify-between gap-2">
-              <span className={`text-[10px] font-semibold uppercase tracking-wider rounded-full px-2 py-0.5 ${r.color}`}>
-                {r.category}
-              </span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)] shrink-0 mt-0.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
+            <div className="min-w-0 space-y-1">
+              <h2 className="text-sm font-semibold text-[var(--ui-text)]">{report.name}</h2>
+              <p className="text-sm leading-6 text-[var(--ui-text-muted)]">{report.desc}</p>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">{r.name}</p>
-              <p className="text-xs text-[var(--text-muted)] leading-relaxed">{r.desc}</p>
-            </div>
-            <button
+
+            <Button
               type="button"
-              onClick={() => void generate(r)}
-              disabled={!!generating}
-              className="mt-auto text-xs font-medium text-[var(--accent)] hover:underline disabled:opacity-50 transition-opacity text-left"
+              variant="secondary"
+              size="compact"
+              loading={generating === report.id}
+              disabled={generating !== null}
+              onClick={() => void generate(report)}
+              className="mt-auto justify-start"
             >
-              {generating === r.id ? 'Genererar…' : 'Generera rapport →'}
-            </button>
-          </div>
+              {generating === report.id ? 'Genererar...' : 'Generera rapport'}
+            </Button>
+          </Panel>
         ))}
-      </div>
-
+      </section>
     </div>
   );
 }

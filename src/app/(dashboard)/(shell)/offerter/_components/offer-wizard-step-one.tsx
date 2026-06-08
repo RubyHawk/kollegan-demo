@@ -1,7 +1,12 @@
 'use client';
 
+import { ArrowRight, ExternalLink, FileText, LoaderCircle, Search, X } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
 import type { ActiveCompanyOption } from '@shared/hooks/use-active-company';
+import { Button } from '@shared/ui/button';
+import { EmptyState } from '@shared/ui/empty-state';
+import { Input } from '@shared/ui/input';
 import type { CompanyResult, ContactResult, OfferForm, OfferTemplate } from '../_store/types';
 import { OfferTemplateCard } from './offer-template-card';
 
@@ -69,202 +74,243 @@ export function OfferWizardStepOne({
   setWizardStep,
   setConfirmedSections,
 }: OfferWizardStepOneProps) {
+  const selectedContactName = contactResults.find((contact) => contact.id === form.contactId || contact.leadId === form.leadId)?.name;
+  const contactInputValue = form.contactId || form.leadId
+    ? selectedContactName ?? (contactSearch || 'Kontakt vald')
+    : contactSearch;
+
   return (
-                  <>
-                    {/* Header */}
-                    <div className="px-5 py-3.5 border-b border-[var(--border)] bg-[var(--surface-alt)] shrink-0 flex items-center gap-3">
-                      <div className="flex-1">
-                        <h3 className="text-sm font-semibold text-[var(--text-primary)]">Ny offert</h3>
-                        <p className="text-xs text-[var(--text-muted)] mt-0.5">Välj mall och mottagare</p>
-                      </div>
-                      <button onClick={closeWizard} title="Stäng"
-                        className="lg:hidden shrink-0 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-active)] transition-colors">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                      </button>
-                    </div>
+    <>
+      <div className="flex shrink-0 items-center gap-3 border-b border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-5 py-3.5">
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold text-[var(--ui-text)]">Ny offert</h3>
+          <p className="mt-0.5 text-xs text-[var(--ui-text-muted)]">Välj mall och mottagare</p>
+        </div>
+        <Button type="button" variant="ghost" size="icon" onClick={closeWizard} title="Stäng" className="shrink-0 lg:hidden" aria-label="Stäng">
+          <X size={16} strokeWidth={1.75} aria-hidden />
+        </Button>
+      </div>
 
-                    {/* Template list — scrollable */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0">
-                      {companies.length > 0 && (
-                        <div className="mb-4">
-                          <CompanyScopeSelector
-                            companies={companies}
-                            selectedCompanyId={form.companyId || selectedCompanyId}
-                            onSelect={(companyId) => {
-                              setSelectedCompanyId(companyId);
-                              setForm((current) => ({ ...current, companyId, templateId: '' }));
-                              setLivePreviewHtml(null);
-                              setCachedTplContent(null);
-                            }}
-                            compact
-                            title="Säljande företag"
-                            description="Det här företaget styr mallar, produkter och branding i offerten."
-                          />
-                        </div>
-                      )}
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] px-1 mb-3">Mall</p>
-                      {templates.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-center gap-4 px-4">
-                          <div className="w-14 h-14 rounded-xl bg-[var(--surface-alt)] border border-[var(--border)] flex items-center justify-center">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--text-muted)]">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                              <polyline points="14 2 14 8 20 8"/>
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">Inga mallar ännu</p>
-                            <p className="text-xs text-[var(--text-muted)]">Skapa en offertmall innan du skapar en offert.</p>
-                          </div>
-                          <a href="/mallar" target="_blank" rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity">
-                            Skapa mall
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>
-                            </svg>
-                          </a>
-                        </div>
-                      ) : (
-                        templates.map((t) => (
-                          <OfferTemplateCard
-                            key={t.id}
-                            template={t}
-                            selected={form.templateId === t.id}
-                            onSelect={() => void selectTemplate(t.id)}
-                            onPreview={() => void openTemplatePreview(t.id)}
-                          />
-                        ))
-                      )}
-                    </div>
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+        {companies.length > 0 ? (
+          <CompanyScopeSelector
+            companies={companies}
+            selectedCompanyId={form.companyId || selectedCompanyId}
+            onSelect={(companyId) => {
+              setSelectedCompanyId(companyId);
+              setForm((current) => ({ ...current, companyId, templateId: '' }));
+              setLivePreviewHtml(null);
+              setCachedTplContent(null);
+            }}
+            compact
+            title="Säljande företag"
+            description="Det här företaget styr mallar, produkter och branding i offerten."
+          />
+        ) : null}
 
-                    {/* Recipient section — fixed at bottom */}
-                    <div className="shrink-0 border-t border-[var(--border)] bg-[var(--surface-alt)]">
-                      <div className="px-4 py-3 space-y-2.5">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Mottagare</p>
+        <p className="px-1 text-[10px] font-semibold uppercase text-[var(--ui-text-muted)]">Mall</p>
+        {templates.length === 0 ? (
+          <EmptyState
+            icon={FileText}
+            title="Inga mallar ännu"
+            description="Skapa en offertmall innan du skapar en offert."
+          />
+        ) : (
+          templates.map((template) => (
+            <OfferTemplateCard
+              key={template.id}
+              template={template}
+              selected={form.templateId === template.id}
+              onSelect={() => void selectTemplate(template.id)}
+              onPreview={() => void openTemplatePreview(template.id)}
+            />
+          ))
+        )}
+        {templates.length === 0 ? (
+          <div className="flex justify-center">
+            <Button asChild>
+              <a href="/mallar" target="_blank" rel="noreferrer">
+                Skapa mall
+                <ExternalLink size={16} strokeWidth={1.75} aria-hidden />
+              </a>
+            </Button>
+          </div>
+        ) : null}
+      </div>
 
-                        {/* Contact search */}
-                        <div className="relative">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none z-10">
-                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                          </svg>
-                          <input
-                            value={form.contactId || form.leadId ? (contactResults.find((c) => c.id === form.contactId || c.leadId === form.leadId)?.name ?? (contactSearch || 'Kontakt vald')) : contactSearch}
-                            onChange={(e) => { if (form.contactId || form.leadId) setForm((f) => ({ ...f, contactId: '', leadId: '' })); searchContacts(e.target.value); }}
-                            placeholder="Sök kontakt eller lead för autofyll…"
-                            className="w-full pl-8 pr-8 py-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
-                          />
-                          {(contactSearch || form.contactId || form.leadId) && (
-                            <button type="button" onClick={() => { setForm((f) => ({ ...f, contactId: '', leadId: '' })); setContactSearch(''); setContactResults([]); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors z-10">
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                              </svg>
-                            </button>
-                          )}
-                          {contactSearch && !form.contactId && !form.leadId && (
-                            <div className="absolute bottom-full left-0 right-0 mb-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto">
-                              {contactLoading ? (
-                                <div className="flex items-center gap-2 px-4 py-3 text-xs text-[var(--text-muted)]">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin shrink-0">
-                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                                  </svg>
-                                  Söker…
-                                </div>
-                              ) : contactResults.length === 0 ? (
-                                <div className="px-4 py-3 text-xs text-[var(--text-muted)]">Inga kontakter hittades</div>
-                              ) : (
-                                contactResults.map((c) => (
-                                  <button key={c.id} type="button" onClick={() => pickContact(c)} className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
-                                    <div className="w-6 h-6 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-[10px] font-semibold shrink-0">
-                                      {(c.name ?? '?').charAt(0).toUpperCase()}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-xs font-medium text-[var(--text-primary)] truncate">{c.name ?? '—'}</p>
-                                      <p className="text-[10px] text-[var(--text-muted)] truncate">
-                                        {[c.kind === 'lead' ? 'Lead' : 'Kund', c.email, c.requestedService ?? c.company, c.hasOffer ? 'Har offert' : null].filter(Boolean).join(' · ')}
-                                      </p>
-                                    </div>
-                                  </button>
-                                ))
-                              )}
-                            </div>
-                          )}
-                        </div>
+      <div className="shrink-0 border-t border-[var(--ui-border)] bg-[var(--ui-surface-subtle)]">
+        <div className="space-y-2.5 px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase text-[var(--ui-text-muted)]">Mottagare</p>
 
-                        {/* Name + email quick fields */}
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            value={form.recipientName}
-                            onChange={(e) => setForm((f) => ({ ...f, recipientName: e.target.value }))}
-                            placeholder="Namn *"
-                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
-                          />
-                          <input
-                            type="email"
-                            value={form.recipientEmail}
-                            onChange={(e) => setForm((f) => ({ ...f, recipientEmail: e.target.value }))}
-                            placeholder="E-post *"
-                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
-                          />
-                        </div>
+          <div className="relative">
+            <Search size={16} strokeWidth={1.75} className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-[var(--ui-text-muted)]" aria-hidden />
+            <Input
+              value={contactInputValue}
+              onChange={(event) => {
+                if (form.contactId || form.leadId) setForm((current) => ({ ...current, contactId: '', leadId: '' }));
+                searchContacts(event.target.value);
+              }}
+              placeholder="Sök kontakt eller lead för autofyll..."
+              className="h-9 pl-9 pr-9 text-xs"
+            />
+            {(contactSearch || form.contactId || form.leadId) ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setForm((current) => ({ ...current, contactId: '', leadId: '' }));
+                  setContactSearch('');
+                  setContactResults([]);
+                }}
+                className="absolute right-1 top-1/2 z-10 size-7 -translate-y-1/2 text-[var(--ui-text-muted)]"
+                aria-label="Rensa vald kontakt"
+              >
+                <X size={14} strokeWidth={1.75} aria-hidden />
+              </Button>
+            ) : null}
+            {contactSearch && !form.contactId && !form.leadId ? (
+              <LookupMenu placement="top">
+                {contactLoading ? (
+                  <LookupLoading label="Söker..." />
+                ) : contactResults.length === 0 ? (
+                  <LookupEmpty label="Inga kontakter hittades" />
+                ) : (
+                  contactResults.map((contact) => (
+                    <button
+                      key={contact.id}
+                      type="button"
+                      onClick={() => pickContact(contact)}
+                      className="flex w-full items-center gap-3 border-b border-[var(--ui-border)] px-4 py-2.5 text-left transition-colors last:border-0 hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+                    >
+                      <ResultAvatar label={contact.name ?? '?'} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-medium text-[var(--ui-text)]">{contact.name ?? '-'}</span>
+                        <span className="block truncate text-[10px] text-[var(--ui-text-muted)]">
+                          {[contact.kind === 'lead' ? 'Lead' : 'Kund', contact.email, contact.requestedService ?? contact.company, contact.hasOffer ? 'Har offert' : null]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                      </span>
+                    </button>
+                  ))
+                )}
+              </LookupMenu>
+            ) : null}
+          </div>
 
-                        {/* Company typeahead */}
-                        <div className="relative">
-                          <input
-                            value={form.recipientCompany}
-                            onChange={(e) => { setForm((f) => ({ ...f, recipientCompany: e.target.value })); searchCompanies(e.target.value); }}
-                            onFocus={() => { if (form.recipientCompany) searchCompanies(form.recipientCompany); }}
-                            onBlur={() => setTimeout(() => setCompanyResults([]), 150)}
-                            placeholder="Företag (valfri)"
-                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
-                          />
-                          {(companyResults.length > 0 || companyLoading) && (
-                            <div className="absolute bottom-full left-0 right-0 mb-1 z-50 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg overflow-hidden">
-                              {companyLoading ? (
-                                <div className="flex items-center gap-2 px-4 py-3 text-xs text-[var(--text-muted)]">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin shrink-0"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                                  Söker…
-                                </div>
-                              ) : companyResults.map((co) => (
-                                <button key={co.id} type="button"
-                                  onMouseDown={(e) => { e.preventDefault(); setForm((f) => ({ ...f, recipientCompany: co.name })); setCompanyResults([]); }}
-                                  className="w-full text-left px-4 py-2.5 hover:bg-[var(--surface-active)] transition-colors flex items-center gap-3 border-b border-[var(--border)] last:border-0">
-                                  <div className="w-6 h-6 rounded-full bg-[var(--accent)]/15 flex items-center justify-center text-[var(--accent)] text-[10px] font-semibold shrink-0">
-                                    {co.name.charAt(0).toUpperCase()}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-medium text-[var(--text-primary)] truncate">{co.name}</p>
-                                    {co.orgNumber && <p className="text-[10px] text-[var(--text-muted)]">{co.orgNumber}</p>}
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              value={form.recipientName}
+              onChange={(event) => setForm((current) => ({ ...current, recipientName: event.target.value }))}
+              placeholder="Namn *"
+              className="h-9 text-xs"
+            />
+            <Input
+              type="email"
+              value={form.recipientEmail}
+              onChange={(event) => setForm((current) => ({ ...current, recipientEmail: event.target.value }))}
+              placeholder="E-post *"
+              className="h-9 text-xs"
+            />
+          </div>
 
-                      {/* Proceed footer */}
-                      <div className="px-4 py-3 border-t border-[var(--border)] flex items-center justify-between gap-3">
-                        <a href="/mallar" target="_blank" rel="noreferrer"
-                          className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors">
-                          Hantera mallar →
-                        </a>
-                        <button
-                          type="button"
-                          disabled={!form.templateId || !form.recipientName.trim()}
-                          onClick={() => {
-                            setConfirmedSections((s) => { const n = new Set(s); n.add('mottagare'); return n; });
-                            setWizardStep(2);
-                          }}
-                          className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed"
-                        >
-                          Fortsätt
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </>
+          <div className="relative">
+            <Input
+              value={form.recipientCompany}
+              onChange={(event) => {
+                setForm((current) => ({ ...current, recipientCompany: event.target.value }));
+                searchCompanies(event.target.value);
+              }}
+              onFocus={() => {
+                if (form.recipientCompany) searchCompanies(form.recipientCompany);
+              }}
+              onBlur={() => setTimeout(() => setCompanyResults([]), 150)}
+              placeholder="Företag (valfri)"
+              className="h-9 text-xs"
+            />
+            {(companyResults.length > 0 || companyLoading) ? (
+              <LookupMenu placement="top">
+                {companyLoading ? (
+                  <LookupLoading label="Söker..." />
+                ) : (
+                  companyResults.map((company) => (
+                    <button
+                      key={company.id}
+                      type="button"
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        setForm((current) => ({ ...current, recipientCompany: company.name }));
+                        setCompanyResults([]);
+                      }}
+                      className="flex w-full items-center gap-3 border-b border-[var(--ui-border)] px-4 py-2.5 text-left transition-colors last:border-0 hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+                    >
+                      <ResultAvatar label={company.name} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-medium text-[var(--ui-text)]">{company.name}</span>
+                        {company.orgNumber ? <span className="block text-[10px] text-[var(--ui-text-muted)]">{company.orgNumber}</span> : null}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </LookupMenu>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 border-t border-[var(--ui-border)] px-4 py-3">
+          <Button asChild variant="link" className="h-auto text-xs text-[var(--ui-text-muted)]">
+            <a href="/mallar" target="_blank" rel="noreferrer">
+              Hantera mallar
+              <ExternalLink size={14} strokeWidth={1.75} aria-hidden />
+            </a>
+          </Button>
+          <Button
+            type="button"
+            disabled={!form.templateId || !form.recipientName.trim()}
+            onClick={() => {
+              setConfirmedSections((sections) => {
+                const next = new Set(sections);
+                next.add('mottagare');
+                return next;
+              });
+              setWizardStep(2);
+            }}
+          >
+            Fortsätt
+            <ArrowRight size={16} strokeWidth={1.75} aria-hidden />
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function LookupMenu({ children, placement }: { children: ReactNode; placement: 'top' | 'bottom' }) {
+  return (
+    <div className={`${placement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'} absolute left-0 right-0 z-50 max-h-48 overflow-y-auto rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-[var(--ui-shadow-raised)]`}>
+      {children}
+    </div>
+  );
+}
+
+function LookupLoading({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-3 text-xs text-[var(--ui-text-muted)]">
+      <LoaderCircle size={16} strokeWidth={1.75} className="shrink-0 animate-spin" aria-hidden />
+      {label}
+    </div>
+  );
+}
+
+function LookupEmpty({ label }: { label: string }) {
+  return <div className="px-4 py-3 text-xs text-[var(--ui-text-muted)]">{label}</div>;
+}
+
+function ResultAvatar({ label }: { label: string }) {
+  return (
+    <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[var(--ui-accent-border)] bg-[var(--ui-accent-subtle)] text-[10px] font-semibold text-[var(--ui-accent)]">
+      {(label || '?').charAt(0).toUpperCase()}
+    </span>
   );
 }

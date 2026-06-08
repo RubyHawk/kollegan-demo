@@ -1,13 +1,9 @@
-/**
- * /admin/compliance/policies
- *
- * ISO 27001 policy vault — store, version, and review compliance policies.
- */
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import { Fragment, useCallback, useEffect, useState, type ReactNode } from 'react';
+import Link from 'next/link';
+import { ArrowLeft, ChevronRight, FileText, LoaderCircle, Plus, Trash2 } from 'lucide-react';
+import { cn } from '@shared/lib/utils';
 import {
   createPolicy,
   deletePolicy as deletePolicyRequest,
@@ -15,55 +11,81 @@ import {
   type Policy,
   type PolicyStatus,
 } from '@shared/lib/api/compliance.api';
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
-
-const STATUS_STYLES: Record<PolicyStatus, string> = {
-  draft:   'bg-[var(--surface-alt)] text-[var(--text-muted)] border border-[var(--border)]',
-  active:  'bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-400',
-  retired: 'bg-red-50 dark:bg-red-900/25 text-red-600 dark:text-red-400',
-};
+import { Button } from '@shared/ui/button';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import { EmptyState } from '@shared/ui/empty-state';
+import { InlineAlert } from '@shared/ui/inline-alert';
+import { Input } from '@shared/ui/input';
+import { Panel } from '@shared/ui/panel';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@shared/ui/select';
+import { StatusBadge, type StatusTone } from '@shared/ui/status-badge';
+import { Textarea } from '@shared/ui/textarea';
 
 const STATUS_LABEL: Record<PolicyStatus, string> = {
-  draft:   'Utkast',
-  active:  'Aktiv',
+  draft: 'Utkast',
+  active: 'Aktiv',
   retired: 'Arkiverad',
 };
 
-function fmt(iso: string | null): string {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-function reviewDueClass(iso: string | null): string {
-  if (!iso) return 'text-[var(--text-muted)]';
-  const diff = new Date(iso).getTime() - Date.now();
-  if (diff < 0)                return 'font-semibold text-red-600 dark:text-red-400';
-  if (diff < 30 * 86_400_000) return 'font-semibold text-amber-600 dark:text-amber-400';
-  return 'text-[var(--text-muted)]';
-}
-
-const EMPTY_FORM = {
-  name: '', category: '', content: '', version: '1.0',
-  reviewCycleDays: 365, owner: '',
+const STATUS_TONE: Record<PolicyStatus, StatusTone> = {
+  draft: 'neutral',
+  active: 'success',
+  retired: 'danger',
 };
 
 const POLICY_CATEGORIES = [
-  'Access Control', 'Asset Management', 'Cryptography', 'Data Retention',
-  'Incident Response', 'Information Classification', 'Network Security',
-  'Password Policy', 'Physical Security', 'Risk Assessment',
-  'Secure Development', 'Supplier Management', 'Vulnerability Management',
+  'Access Control',
+  'Asset Management',
+  'Cryptography',
+  'Data Retention',
+  'Incident Response',
+  'Information Classification',
+  'Network Security',
+  'Password Policy',
+  'Physical Security',
+  'Risk Assessment',
+  'Secure Development',
+  'Supplier Management',
+  'Vulnerability Management',
 ];
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
+const EMPTY_FORM = {
+  name: '',
+  category: '',
+  content: '',
+  version: '1.0',
+  reviewCycleDays: 365,
+  owner: '',
+};
+
+type PolicyFormState = typeof EMPTY_FORM;
+
+function fmt(iso: string | null): string {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function reviewDueTone(iso: string | null): StatusTone {
+  if (!iso) return 'neutral';
+  const diff = new Date(iso).getTime() - Date.now();
+  if (diff < 0) return 'danger';
+  if (diff < 30 * 86_400_000) return 'warning';
+  return 'neutral';
+}
 
 export default function PoliciesPage() {
   const [policies, setPolicies] = useState<Policy[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm]         = useState(EMPTY_FORM);
-  const [saving, setSaving]     = useState(false);
+  const [form, setForm] = useState<PolicyFormState>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [deletingPolicyId, setDeletingPolicyId] = useState<string | null>(null);
   const [confirmDeletePolicy, setConfirmDeletePolicy] = useState<Policy | null>(null);
@@ -81,21 +103,22 @@ export default function PoliciesPage() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const savePolicy = useCallback(async () => {
     setSaving(true);
     setError(null);
     try {
-      const body = {
-        name:            form.name,
-        category:        form.category,
-        content:         form.content,
-        version:         form.version,
+      await createPolicy({
+        name: form.name,
+        category: form.category,
+        content: form.content,
+        version: form.version,
         reviewCycleDays: form.reviewCycleDays,
-        owner:           form.owner || undefined,
-      };
-      await createPolicy(body);
+        owner: form.owner || undefined,
+      });
       setShowForm(false);
       setForm(EMPTY_FORM);
       await load();
@@ -120,186 +143,132 @@ export default function PoliciesPage() {
   }, [load]);
 
   return (
-    <div className="px-8 py-10 max-w-7xl mx-auto">
-
-      {/* Header */}
-      <div className="mb-8 flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <a href="/admin/compliance" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5" /><path d="m12 19-7-7 7-7" />
-              </svg>
-            </a>
-            <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)]">Policyer</h1>
+    <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-2">
+            <Button asChild variant="ghost" size="icon" aria-label="Till compliance">
+              <Link href="/admin/compliance"><ArrowLeft size={16} strokeWidth={1.75} /></Link>
+            </Button>
+            <h1 className="text-xl font-semibold text-[var(--ui-text)]">Policyer</h1>
           </div>
-          <p className="text-sm text-[var(--text-muted)]">
-            ISO 27001 — informationssäkerhetspolicyer och granskningsschema.
+          <p className="max-w-3xl text-sm leading-6 text-[var(--ui-text-muted)]">
+            ISO 27001, informationssäkerhetspolicyer och granskningsschema.
           </p>
+          <StatusBadge tone="neutral">{policies.length} policyer</StatusBadge>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity shrink-0"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+        <Button type="button" onClick={() => setShowForm(true)}>
+          <Plus size={16} strokeWidth={1.75} />
           Ny policy
-        </button>
-      </div>
+        </Button>
+      </header>
 
-      {error && (
-        <div className="mb-6 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
-          </svg>
-          {error}
-        </div>
-      )}
+      {error ? <InlineAlert tone="danger" title="Policyvalvet kunde inte uppdateras">{error}</InlineAlert> : null}
 
-      {/* New policy form */}
-      {showForm && (
-        <div className="mb-6 rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-6">
-          <h2 className="mb-4 text-sm font-semibold text-[var(--text-primary)]">Ny policy</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Namn</label>
-              <input value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Kategori</label>
-              <select value={form.category}
-                onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
-                <option value="">Välj kategori…</option>
-                {POLICY_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Version</label>
-              <input value={form.version}
-                onChange={e => setForm(f => ({ ...f, version: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Granskningscykel (dagar)</label>
-              <input type="number" min={30} max={730} value={form.reviewCycleDays}
-                onChange={e => setForm(f => ({ ...f, reviewCycleDays: parseInt(e.target.value) }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Ägare</label>
-              <input value={form.owner}
-                onChange={e => setForm(f => ({ ...f, owner: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Innehåll (Markdown)</label>
-              <textarea value={form.content} rows={6}
-                onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                placeholder="# Policy Title&#10;&#10;## Syfte&#10;&#10;## Räckvidd&#10;&#10;## Policy&#10;..."
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 font-mono text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none" />
-            </div>
+      {showForm ? (
+        <PolicyForm
+          form={form}
+          saving={saving}
+          onChange={setForm}
+          onCancel={() => {
+            setShowForm(false);
+            setForm(EMPTY_FORM);
+          }}
+          onSave={() => void savePolicy()}
+        />
+      ) : null}
+
+      {loading ? (
+        <Panel className="grid min-h-64 place-items-center">
+          <div className="flex items-center gap-2 text-sm text-[var(--ui-text-muted)]">
+            <LoaderCircle size={18} strokeWidth={1.75} className="animate-spin" />
+            Laddar policyer...
           </div>
-          <div className="mt-4 flex gap-2">
-            <button onClick={() => void savePolicy()} disabled={saving}
-              className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {saving ? 'Sparar…' : 'Spara policy'}
-            </button>
-            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}
-              className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors">
-              Avbryt
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Policies list */}
-      {!loading && (
-        <div className="rounded-2xl border border-[var(--border)] overflow-hidden">
+        </Panel>
+      ) : (
+        <Panel padding="none" className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-[var(--border)] text-sm">
-              <thead className="bg-[var(--surface-alt)]">
+            <table className="min-w-full divide-y divide-[var(--ui-border)] text-sm">
+              <thead className="sticky top-0 bg-[var(--ui-surface-subtle)]">
                 <tr>
-                  {['Namn', 'Kategori', 'Version', 'Status', 'Ägare', 'Nästa granskning', 'Godkänd', ''].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
+                  {['Namn', 'Kategori', 'Version', 'Status', 'Ägare', 'Nästa granskning', 'Godkänd', ''].map((header) => (
+                    <th key={header} className="h-10 px-4 text-left text-xs font-semibold uppercase text-[var(--ui-text-muted)]">
+                      {header}
+                    </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)]">
-                {policies.map(p => (
-                  <>
-                    <tr key={p.id}
-                      className="cursor-pointer hover:bg-[var(--surface-alt)] transition-colors"
-                      onClick={() => setExpanded(expanded === p.id ? null : p.id)}>
-                      <td className="px-4 py-3.5 font-medium text-[var(--text-primary)] flex items-center gap-2">
-                        <svg
-                          width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                          className={`text-[var(--text-muted)] transition-transform ${expanded === p.id ? 'rotate-90' : ''}`}
+              <tbody className="divide-y divide-[var(--ui-border)] bg-[var(--ui-surface)]">
+                {policies.map((policy) => (
+                  <Fragment key={policy.id}>
+                    <tr
+                      className="h-10 cursor-pointer transition-colors hover:bg-[var(--ui-surface-hover)] focus-within:bg-[var(--ui-surface-selected)]"
+                      onClick={() => setExpanded(expanded === policy.id ? null : policy.id)}
+                    >
+                      <td className="px-4 py-3 font-medium text-[var(--ui-text)]">
+                        <div className="flex items-center gap-2">
+                          <ChevronRight size={14} strokeWidth={1.75} className={cn('text-[var(--ui-text-muted)] transition-transform', expanded === policy.id && 'rotate-90')} />
+                          {policy.name}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-[var(--ui-text-secondary)]">{policy.category}</td>
+                      <td className="px-4 py-3"><StatusBadge tone="neutral">v{policy.version}</StatusBadge></td>
+                      <td className="px-4 py-3"><StatusBadge tone={STATUS_TONE[policy.status]}>{STATUS_LABEL[policy.status]}</StatusBadge></td>
+                      <td className="px-4 py-3 text-[var(--ui-text-muted)]">{policy.owner ?? '-'}</td>
+                      <td className="px-4 py-3"><StatusBadge tone={reviewDueTone(policy.nextReviewDate)}>{fmt(policy.nextReviewDate)}</StatusBadge></td>
+                      <td className="px-4 py-3 text-[var(--ui-text-muted)]">{fmt(policy.approvedAt)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="compact"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setConfirmDeletePolicy(policy);
+                          }}
+                          disabled={deletingPolicyId === policy.id}
                         >
-                          <path d="m9 18 6-6-6-6" />
-                        </svg>
-                        {p.name}
-                      </td>
-                      <td className="px-4 py-3.5 text-[var(--text-secondary)]">{p.category}</td>
-                      <td className="px-4 py-3.5">
-                        <span className="font-mono text-xs bg-[var(--surface-alt)] border border-[var(--border)] rounded-md px-1.5 py-0.5 text-[var(--text-muted)]">
-                          v{p.version}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[p.status]}`}>
-                          {STATUS_LABEL[p.status]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-[var(--text-muted)]">{p.owner ?? '—'}</td>
-                      <td className={`px-4 py-3.5 ${reviewDueClass(p.nextReviewDate)}`}>{fmt(p.nextReviewDate)}</td>
-                      <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmt(p.approvedAt)}</td>
-                      <td className="px-4 py-3.5">
-                        <button onClick={e => { e.stopPropagation(); setConfirmDeletePolicy(p); }} disabled={deletingPolicyId === p.id}
-                          className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40">
+                          <Trash2 size={16} strokeWidth={1.75} />
                           Ta bort
-                        </button>
+                        </Button>
                       </td>
                     </tr>
-                    {expanded === p.id && (
-                      <tr key={`${p.id}-content`}>
-                        <td colSpan={8} className="bg-[var(--surface-alt)] px-6 py-5">
-                          <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Innehåll</p>
-                          <pre className="whitespace-pre-wrap font-mono text-xs text-[var(--text-secondary)] max-h-64 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 leading-relaxed">
-                            {p.content}
+                    {expanded === policy.id ? (
+                      <tr>
+                        <td colSpan={8} className="bg-[var(--ui-surface-subtle)] px-6 py-5">
+                          <p className="mb-2 text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Innehåll</p>
+                          <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 font-mono text-xs leading-5 text-[var(--ui-text-secondary)]">
+                            {policy.content}
                           </pre>
                         </td>
                       </tr>
-                    )}
-                  </>
+                    ) : null}
+                  </Fragment>
                 ))}
-                {policies.length === 0 && (
+                {policies.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">
-                      Inga policyer ännu — klicka på Ny policy för att lägga till din första.
+                    <td colSpan={8}>
+                      <EmptyState
+                        icon={FileText}
+                        title="Inga policyer ännu"
+                        description="Lägg till den första policyn för policyvalvet."
+                        actionLabel="Ny policy"
+                        onAction={() => setShowForm(true)}
+                      />
                     </td>
                   </tr>
-                )}
+                ) : null}
               </tbody>
             </table>
           </div>
-        </div>
+        </Panel>
       )}
 
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--text-muted)]">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-          </svg>
-          <p className="text-sm text-[var(--text-muted)]">Laddar policyer…</p>
-        </div>
-      )}
       <ConfirmDestructiveDialog
         open={Boolean(confirmDeletePolicy)}
-        onOpenChange={(open) => { if (!open) setConfirmDeletePolicy(null); }}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeletePolicy(null);
+        }}
         title="Ta bort policy?"
         description={
           confirmDeletePolicy
@@ -315,4 +284,59 @@ export default function PoliciesPage() {
       />
     </div>
   );
+}
+
+function PolicyForm({
+  form,
+  saving,
+  onChange,
+  onCancel,
+  onSave,
+}: {
+  form: PolicyFormState;
+  saving: boolean;
+  onChange: (next: PolicyFormState | ((current: PolicyFormState) => PolicyFormState)) => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  const setField = <Key extends keyof PolicyFormState>(key: Key, value: PolicyFormState[Key]) => {
+    onChange((current) => ({ ...current, [key]: value }));
+  };
+
+  return (
+    <Panel variant="selected" className="space-y-4">
+      <h2 className="text-sm font-semibold text-[var(--ui-text)]">Ny policy</h2>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Namn"><Input value={form.name} onChange={(event) => setField('name', event.target.value)} /></Field>
+        <Field label="Kategori">
+          <Select value={form.category} onValueChange={(value) => setField('category', value)}>
+            <SelectTrigger><SelectValue placeholder="Välj kategori..." /></SelectTrigger>
+            <SelectContent>{POLICY_CATEGORIES.map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}</SelectContent>
+          </Select>
+        </Field>
+        <Field label="Version"><Input value={form.version} onChange={(event) => setField('version', event.target.value)} /></Field>
+        <Field label="Granskningscykel (dagar)">
+          <Input type="number" min={30} max={730} value={form.reviewCycleDays} onChange={(event) => setField('reviewCycleDays', parseInt(event.target.value, 10))} />
+        </Field>
+        <Field label="Ägare"><Input value={form.owner} onChange={(event) => setField('owner', event.target.value)} /></Field>
+        <Field label="Innehåll (Markdown)" className="sm:col-span-2">
+          <Textarea
+            value={form.content}
+            rows={6}
+            onChange={(event) => setField('content', event.target.value)}
+            placeholder="# Policy Title&#10;&#10;## Syfte&#10;&#10;## Räckvidd&#10;&#10;## Policy"
+            className="font-mono"
+          />
+        </Field>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" onClick={onSave} disabled={saving} loading={saving}>Spara policy</Button>
+        <Button type="button" variant="secondary" onClick={onCancel}>Avbryt</Button>
+      </div>
+    </Panel>
+  );
+}
+
+function Field({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
+  return <label className={cn('space-y-1.5 text-xs font-semibold text-[var(--ui-text-secondary)]', className)}><span>{label}</span>{children}</label>;
 }

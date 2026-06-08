@@ -1,14 +1,9 @@
-/**
- * /admin/compliance/risks
- *
- * ISO 27001 risk register — CRUD for information security risks.
- * Risk score = likelihood × impact (1-25). Computed server-side.
- */
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import Link from 'next/link';
+import { ArrowLeft, LoaderCircle, Plus, ShieldAlert, Trash2 } from 'lucide-react';
+import { cn } from '@shared/lib/utils';
 import {
   createRisk,
   deleteRisk as deleteRiskRequest,
@@ -17,62 +12,87 @@ import {
   type RiskStatus,
   type RiskTreatment,
 } from '@shared/lib/api/compliance.api';
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
-
-type Treatment = RiskTreatment;
+import { Button } from '@shared/ui/button';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import { EmptyState } from '@shared/ui/empty-state';
+import { InlineAlert } from '@shared/ui/inline-alert';
+import { Input } from '@shared/ui/input';
+import { Panel } from '@shared/ui/panel';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@shared/ui/select';
+import { StatusBadge, type StatusTone } from '@shared/ui/status-badge';
+import { Textarea } from '@shared/ui/textarea';
 
 const STATUS_TABS: { key: RiskStatus | 'all'; label: string }[] = [
-  { key: 'all',         label: 'Alla' },
-  { key: 'open',        label: 'Öppna' },
+  { key: 'all', label: 'Alla' },
+  { key: 'open', label: 'Öppna' },
   { key: 'in_progress', label: 'Pågående' },
-  { key: 'resolved',    label: 'Lösta' },
-  { key: 'accepted',    label: 'Accepterade' },
+  { key: 'resolved', label: 'Lösta' },
+  { key: 'accepted', label: 'Accepterade' },
 ];
 
-const RISK_SCORE_STYLE = (score: number): { badge: string; label: string } => {
-  if (score <= 6)  return { badge: 'bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-400', label: 'Låg' };
-  if (score <= 14) return { badge: 'bg-amber-50 dark:bg-amber-900/25 text-amber-700 dark:text-amber-400',         label: 'Medium' };
-  return               { badge: 'bg-red-50 dark:bg-red-900/25 text-red-700 dark:text-red-400',                    label: 'Hög' };
-};
-
-const STATUS_BADGE: Record<RiskStatus, string> = {
-  open:        'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400',
-  in_progress: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400',
-  resolved:    'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400',
-  accepted:    'bg-[var(--surface-alt)] text-[var(--text-muted)]',
-};
-
 const STATUS_LABEL: Record<RiskStatus, string> = {
-  open:        'Öppen',
+  open: 'Öppen',
   in_progress: 'Pågående',
-  resolved:    'Löst',
-  accepted:    'Accepterad',
+  resolved: 'Löst',
+  accepted: 'Accepterad',
 };
+
+const STATUS_TONE: Record<RiskStatus, StatusTone> = {
+  open: 'danger',
+  in_progress: 'warning',
+  resolved: 'success',
+  accepted: 'neutral',
+};
+
+const TREATMENT_LABEL: Record<RiskTreatment, string> = {
+  mitigate: 'Minska',
+  accept: 'Acceptera',
+  transfer: 'Överför',
+  avoid: 'Undvik',
+};
+
+type RiskScore = { tone: StatusTone; label: string };
+
+function riskScore(score: number): RiskScore {
+  if (score <= 6) return { tone: 'success', label: 'Låg' };
+  if (score <= 14) return { tone: 'warning', label: 'Medium' };
+  return { tone: 'danger', label: 'Hög' };
+}
 
 function fmt(iso: string | null): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 const EMPTY_FORM = {
-  asset: '', threat: '', vulnerability: '',
-  likelihood: 3, impact: 3,
-  treatment: 'mitigate' as Treatment,
-  treatmentDesc: '', owner: '', dueDate: '',
+  asset: '',
+  threat: '',
+  vulnerability: '',
+  likelihood: 3,
+  impact: 3,
+  treatment: 'mitigate' as RiskTreatment,
+  treatmentDesc: '',
+  owner: '',
+  dueDate: '',
 };
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
+type RiskFormState = typeof EMPTY_FORM;
 
 export default function RisksPage() {
-  const [risks, setRisks]       = useState<Risk[]>([]);
-  const [total, setTotal]       = useState(0);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
-  const [tab, setTab]           = useState<RiskStatus | 'all'>('all');
+  const [risks, setRisks] = useState<Risk[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<RiskStatus | 'all'>('all');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm]         = useState(EMPTY_FORM);
-  const [saving, setSaving]     = useState(false);
+  const [form, setForm] = useState<RiskFormState>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
   const [deletingRiskId, setDeletingRiskId] = useState<string | null>(null);
   const [confirmDeleteRisk, setConfirmDeleteRisk] = useState<Risk | null>(null);
 
@@ -90,24 +110,25 @@ export default function RisksPage() {
     }
   }, []);
 
-  useEffect(() => { void load(tab === 'all' ? undefined : tab); }, [load, tab]);
+  useEffect(() => {
+    void load(tab === 'all' ? undefined : tab);
+  }, [load, tab]);
 
   const saveRisk = useCallback(async () => {
     setSaving(true);
     setError(null);
     try {
-      const body = {
-        asset:         form.asset,
-        threat:        form.threat,
+      await createRisk({
+        asset: form.asset,
+        threat: form.threat,
         vulnerability: form.vulnerability,
-        likelihood:    form.likelihood,
-        impact:        form.impact,
-        treatment:     form.treatment,
+        likelihood: form.likelihood,
+        impact: form.impact,
+        treatment: form.treatment,
         treatmentDesc: form.treatmentDesc || undefined,
-        owner:         form.owner         || undefined,
-        dueDate:       form.dueDate       ? new Date(form.dueDate).toISOString() : undefined,
-      };
-      await createRisk(body);
+        owner: form.owner || undefined,
+        dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : undefined,
+      });
       setShowForm(false);
       setForm(EMPTY_FORM);
       await load(tab === 'all' ? undefined : tab);
@@ -131,213 +152,125 @@ export default function RisksPage() {
     }
   }, [load, tab]);
 
-  const scorePreview = form.likelihood * form.impact;
-  const scoreStyle   = RISK_SCORE_STYLE(scorePreview);
-
   return (
-    <div className="px-8 py-10 max-w-7xl mx-auto">
-
-      {/* Header */}
-      <div className="mb-8 flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <a href="/admin/compliance" className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5" /><path d="m12 19-7-7 7-7" />
-              </svg>
-            </a>
-            <h1 className="font-heading text-2xl font-semibold text-[var(--text-primary)]">Riskregister</h1>
+    <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-2">
+            <Button asChild variant="ghost" size="icon" aria-label="Till compliance">
+              <Link href="/admin/compliance"><ArrowLeft size={16} strokeWidth={1.75} /></Link>
+            </Button>
+            <h1 className="text-xl font-semibold text-[var(--ui-text)]">Riskregister</h1>
           </div>
-          <p className="text-sm text-[var(--text-muted)]">
-            ISO 27001 — riskbedömning och hantering av informationssäkerhet.
-            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[var(--surface-alt)] border border-[var(--border)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
-              {total} risker totalt
-            </span>
+          <p className="max-w-3xl text-sm leading-6 text-[var(--ui-text-muted)]">
+            ISO 27001, riskbedömning och hantering av informationssäkerhet.
           </p>
+          <StatusBadge tone="neutral">{total} risker totalt</StatusBadge>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity shrink-0"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+        <Button type="button" onClick={() => setShowForm(true)}>
+          <Plus size={16} strokeWidth={1.75} />
           Ny risk
-        </button>
-      </div>
+        </Button>
+      </header>
 
-      {error && (
-        <div className="mb-6 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
-          </svg>
-          {error}
-        </div>
-      )}
+      {error ? <InlineAlert tone="danger" title="Riskregistret kunde inte uppdateras">{error}</InlineAlert> : null}
 
-      {/* Status tabs */}
-      <div className="flex gap-1 mb-6 bg-[var(--surface-alt)] border border-[var(--border)] rounded-xl p-1 w-fit">
-        {STATUS_TABS.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={[
-              'px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
-              tab === t.key
-                ? 'bg-[var(--surface)] text-[var(--text-primary)] shadow-sm border border-[var(--border)]'
-                : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]',
-            ].join(' ')}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* New risk form */}
-      {showForm && (
-        <div className="mb-6 rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-6">
-          <h2 className="mb-4 text-sm font-semibold text-[var(--text-primary)]">Ny risk</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {(['asset', 'threat', 'vulnerability'] as const).map(field => (
-              <div key={field} className={field === 'vulnerability' ? 'sm:col-span-2' : ''}>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5 capitalize">
-                  {field === 'asset' ? 'Tillgång' : field === 'threat' ? 'Hot' : 'Sårbarhet'}
-                </label>
-                <input
-                  value={form[field]}
-                  onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
-              </div>
-            ))}
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Sannolikhet (1–5)</label>
-              <input type="number" min={1} max={5} value={form.likelihood}
-                onChange={e => setForm(f => ({ ...f, likelihood: parseInt(e.target.value) }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Påverkan (1–5)</label>
-              <input type="number" min={1} max={5} value={form.impact}
-                onChange={e => setForm(f => ({ ...f, impact: parseInt(e.target.value) }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div className="sm:col-span-2 flex items-center gap-3">
-              <p className="text-xs text-[var(--text-muted)]">Riskpoäng:</p>
-              <span className={`rounded-lg px-3 py-1 text-sm font-bold ${scoreStyle.badge}`}>
-                {scorePreview} — {scoreStyle.label}
-              </span>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Åtgärd</label>
-              <select value={form.treatment}
-                onChange={e => setForm(f => ({ ...f, treatment: e.target.value as Treatment }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
-                <option value="mitigate">Minska</option>
-                <option value="accept">Acceptera</option>
-                <option value="transfer">Överför</option>
-                <option value="avoid">Undvik</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Ägare</label>
-              <input value={form.owner}
-                onChange={e => setForm(f => ({ ...f, owner: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Förfallodatum</label>
-              <input type="date" value={form.dueDate}
-                onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Åtgärdsbeskrivning</label>
-              <textarea value={form.treatmentDesc} rows={2}
-                onChange={e => setForm(f => ({ ...f, treatmentDesc: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none" />
-            </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <button onClick={() => void saveRisk()} disabled={saving}
-              className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {saving ? 'Sparar…' : 'Spara risk'}
+      <Panel padding="sm">
+        <div className="flex gap-1 overflow-x-auto rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-1">
+          {STATUS_TABS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setTab(item.key)}
+              className={cn(
+                'h-8 whitespace-nowrap rounded-[var(--ui-radius-sm)] px-3 text-sm font-medium text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2',
+                tab === item.key && 'border border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)] text-[var(--ui-text)]',
+              )}
+            >
+              {item.label}
             </button>
-            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}
-              className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors">
-              Avbryt
-            </button>
-          </div>
+          ))}
         </div>
-      )}
+      </Panel>
 
-      {/* Table */}
-      {!loading && (
-        <div className="rounded-2xl border border-[var(--border)] overflow-hidden">
+      {showForm ? (
+        <RiskForm
+          form={form}
+          saving={saving}
+          onChange={setForm}
+          onCancel={() => {
+            setShowForm(false);
+            setForm(EMPTY_FORM);
+          }}
+          onSave={() => void saveRisk()}
+        />
+      ) : null}
+
+      {loading ? (
+        <Panel className="grid min-h-64 place-items-center">
+          <div className="flex items-center gap-2 text-sm text-[var(--ui-text-muted)]">
+            <LoaderCircle size={18} strokeWidth={1.75} className="animate-spin" />
+            Laddar risker...
+          </div>
+        </Panel>
+      ) : (
+        <Panel padding="none" className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-[var(--border)] text-sm">
-              <thead className="bg-[var(--surface-alt)]">
+            <table className="min-w-full divide-y divide-[var(--ui-border)] text-sm">
+              <thead className="sticky top-0 bg-[var(--ui-surface-subtle)]">
                 <tr>
-                  {['Tillgång', 'Hot', 'Poäng', 'Åtgärd', 'Ägare', 'Förfall', 'Status', ''].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
+                  {['Tillgång', 'Hot', 'Poäng', 'Åtgärd', 'Ägare', 'Förfall', 'Status', ''].map((header) => (
+                    <th key={header} className="h-10 px-4 text-left text-xs font-semibold uppercase text-[var(--ui-text-muted)]">
+                      {header}
+                    </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)]">
-                {risks.map(r => {
-                  const rs = RISK_SCORE_STYLE(r.riskScore);
+              <tbody className="divide-y divide-[var(--ui-border)] bg-[var(--ui-surface)]">
+                {risks.map((risk) => {
+                  const score = riskScore(risk.riskScore);
                   return (
-                    <tr key={r.id} className="hover:bg-[var(--surface-alt)] transition-colors">
-                      <td className="px-4 py-3.5 font-medium text-[var(--text-primary)] max-w-[160px] truncate">{r.asset}</td>
-                      <td className="px-4 py-3.5 text-[var(--text-secondary)] max-w-[200px] truncate">{r.threat}</td>
-                      <td className="px-4 py-3.5">
-                        <span className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-bold ${rs.badge}`}>
-                          {r.riskScore}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-[var(--text-secondary)] capitalize">
-                        {r.treatment === 'mitigate' ? 'Minska' : r.treatment === 'accept' ? 'Acceptera' : r.treatment === 'transfer' ? 'Överför' : 'Undvik'}
-                      </td>
-                      <td className="px-4 py-3.5 text-[var(--text-muted)]">{r.owner ?? '—'}</td>
-                      <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmt(r.dueDate)}</td>
-                      <td className="px-4 py-3.5">
-                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGE[r.status]}`}>
-                          {STATUS_LABEL[r.status]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <button onClick={() => setConfirmDeleteRisk(r)} disabled={deletingRiskId === r.id}
-                          className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40">
+                    <tr key={risk.id} className="h-10 transition-colors hover:bg-[var(--ui-surface-hover)] focus-within:bg-[var(--ui-surface-selected)]">
+                      <td className="max-w-40 truncate px-4 py-3 font-medium text-[var(--ui-text)]">{risk.asset}</td>
+                      <td className="max-w-56 truncate px-4 py-3 text-[var(--ui-text-secondary)]">{risk.threat}</td>
+                      <td className="px-4 py-3"><StatusBadge tone={score.tone}>{risk.riskScore} {score.label}</StatusBadge></td>
+                      <td className="px-4 py-3 text-[var(--ui-text-secondary)]">{TREATMENT_LABEL[risk.treatment]}</td>
+                      <td className="px-4 py-3 text-[var(--ui-text-muted)]">{risk.owner ?? '-'}</td>
+                      <td className="px-4 py-3 text-[var(--ui-text-muted)]">{fmt(risk.dueDate)}</td>
+                      <td className="px-4 py-3"><StatusBadge tone={STATUS_TONE[risk.status]}>{STATUS_LABEL[risk.status]}</StatusBadge></td>
+                      <td className="px-4 py-3 text-right">
+                        <Button type="button" variant="ghost" size="compact" onClick={() => setConfirmDeleteRisk(risk)} disabled={deletingRiskId === risk.id}>
+                          <Trash2 size={16} strokeWidth={1.75} />
                           Ta bort
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   );
                 })}
-                {risks.length === 0 && (
+                {risks.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">
-                      Inga risker {tab !== 'all' ? `med status "${STATUS_LABEL[tab as RiskStatus]?.toLowerCase()}"` : 'ännu'} — klicka på Ny risk för att lägga till.
+                    <td colSpan={8}>
+                      <EmptyState
+                        icon={ShieldAlert}
+                        title="Inga risker hittades"
+                        description={tab !== 'all' ? `Det finns inga risker med status ${STATUS_LABEL[tab].toLowerCase()}.` : 'Skapa den första risken för registret.'}
+                        actionLabel="Ny risk"
+                        onAction={() => setShowForm(true)}
+                      />
                     </td>
                   </tr>
-                )}
+                ) : null}
               </tbody>
             </table>
           </div>
-        </div>
+        </Panel>
       )}
 
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--text-muted)]">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-          </svg>
-          <p className="text-sm text-[var(--text-muted)]">Laddar risker…</p>
-        </div>
-      )}
       <ConfirmDestructiveDialog
         open={Boolean(confirmDeleteRisk)}
-        onOpenChange={(open) => { if (!open) setConfirmDeleteRisk(null); }}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteRisk(null);
+        }}
         title="Ta bort risk?"
         description={
           confirmDeleteRisk
@@ -353,4 +286,63 @@ export default function RisksPage() {
       />
     </div>
   );
+}
+
+function RiskForm({
+  form,
+  saving,
+  onChange,
+  onCancel,
+  onSave,
+}: {
+  form: RiskFormState;
+  saving: boolean;
+  onChange: (next: RiskFormState | ((current: RiskFormState) => RiskFormState)) => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  const setField = <Key extends keyof RiskFormState>(key: Key, value: RiskFormState[Key]) => {
+    onChange((current) => ({ ...current, [key]: value }));
+  };
+  const preview = riskScore(form.likelihood * form.impact);
+
+  return (
+    <Panel variant="selected" className="space-y-4">
+      <h2 className="text-sm font-semibold text-[var(--ui-text)]">Ny risk</h2>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Tillgång"><Input value={form.asset} onChange={(event) => setField('asset', event.target.value)} /></Field>
+        <Field label="Hot"><Input value={form.threat} onChange={(event) => setField('threat', event.target.value)} /></Field>
+        <Field label="Sårbarhet" className="sm:col-span-2"><Input value={form.vulnerability} onChange={(event) => setField('vulnerability', event.target.value)} /></Field>
+        <Field label="Sannolikhet (1-5)">
+          <Input type="number" min={1} max={5} value={form.likelihood} onChange={(event) => setField('likelihood', parseInt(event.target.value, 10))} />
+        </Field>
+        <Field label="Påverkan (1-5)">
+          <Input type="number" min={1} max={5} value={form.impact} onChange={(event) => setField('impact', parseInt(event.target.value, 10))} />
+        </Field>
+        <div className="flex items-center gap-3 sm:col-span-2">
+          <p className="text-xs text-[var(--ui-text-muted)]">Riskpoäng:</p>
+          <StatusBadge tone={preview.tone}>{form.likelihood * form.impact} {preview.label}</StatusBadge>
+        </div>
+        <Field label="Åtgärd">
+          <Select value={form.treatment} onValueChange={(value) => setField('treatment', value as RiskTreatment)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{Object.entries(TREATMENT_LABEL).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent>
+          </Select>
+        </Field>
+        <Field label="Ägare"><Input value={form.owner} onChange={(event) => setField('owner', event.target.value)} /></Field>
+        <Field label="Förfallodatum"><Input type="date" value={form.dueDate} onChange={(event) => setField('dueDate', event.target.value)} /></Field>
+        <Field label="Åtgärdsbeskrivning" className="sm:col-span-2">
+          <Textarea rows={2} value={form.treatmentDesc} onChange={(event) => setField('treatmentDesc', event.target.value)} />
+        </Field>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" onClick={onSave} disabled={saving} loading={saving}>Spara risk</Button>
+        <Button type="button" variant="secondary" onClick={onCancel}>Avbryt</Button>
+      </div>
+    </Panel>
+  );
+}
+
+function Field({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
+  return <label className={cn('space-y-1.5 text-xs font-semibold text-[var(--ui-text-secondary)]', className)}><span>{label}</span>{children}</label>;
 }

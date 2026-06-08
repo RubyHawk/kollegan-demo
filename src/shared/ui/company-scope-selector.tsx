@@ -1,6 +1,6 @@
 'use client';
 
-import { Buildings, CheckCircle } from '@phosphor-icons/react';
+import { Building2, CheckCircle } from 'lucide-react';
 import type { ActiveCompanyOption } from '@shared/hooks/use-active-company';
 
 interface CompanyScopeSelectorProps {
@@ -25,14 +25,14 @@ export function CompanyScopeSelector({
   }
 
   return (
-    <section className={`rounded-[28px] border border-[var(--border)] bg-[var(--surface-0)] ${compact ? 'p-4' : 'p-5'} shadow-sm`}>
+    <section className={`rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] ${compact ? 'p-4' : 'p-5'}`}>
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-          <Buildings size={18} weight="duotone" />
+        <div className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-accent)]">
+          <Building2 size={18} strokeWidth={1.75} />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{description}</p>
+          <p className="text-sm font-semibold text-[var(--ui-text)]">{title}</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--ui-text-muted)]">{description}</p>
         </div>
       </div>
 
@@ -44,20 +44,20 @@ export function CompanyScopeSelector({
               key={company.id}
               type="button"
               onClick={() => onSelect(company.id)}
-              className={`rounded-[22px] border px-4 py-3 text-left transition-all ${
+              className={`rounded-lg border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] ${
                 active
-                  ? 'border-[var(--accent)] bg-[var(--accent)]/8 shadow-sm'
-                  : 'border-[var(--border)] bg-[var(--surface-alt)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface)]'
+                  ? 'border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)]'
+                  : 'border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] hover:border-[var(--ui-accent-border)] hover:bg-[var(--ui-surface)]'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{company.name}</p>
+                  <p className="truncate text-sm font-semibold text-[var(--ui-text)]">{company.name}</p>
                   {company.orgNumber && (
-                    <p className="mt-1 truncate text-xs text-[var(--text-muted)]">{company.orgNumber}</p>
+                    <p className="mt-1 truncate text-xs text-[var(--ui-text-muted)]">{company.orgNumber}</p>
                   )}
                 </div>
-                {active && <CheckCircle size={18} weight="fill" className="shrink-0 text-[var(--accent)]" />}
+                {active && <CheckCircle size={18} strokeWidth={1.75} className="shrink-0 text-[var(--ui-accent)]" />}
               </div>
             </button>
           );

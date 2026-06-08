@@ -1,6 +1,6 @@
 'use client';
 
-import { Folders, Plus } from '@phosphor-icons/react';
+import { Folders, Plus } from 'lucide-react';
 import { Button } from '@shared/ui/button';
 import { CompanyScopeSelector } from '@shared/ui/company-scope-selector';
 import type { ActiveCompanyOption } from '@shared/hooks/use-active-company';
@@ -31,13 +31,13 @@ export function ProductLibraryHeader({
   onManageCategories,
 }: ProductLibraryHeaderProps) {
   return (
-    <section className="overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface-0)] shadow-sm">
+    <section className="overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] shadow-sm">
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_240px]">
         <div className="space-y-3 px-5 py-5 sm:px-6">
-          <div className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className="inline-flex rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-1 text-xs font-semibold uppercase text-[var(--ui-text-muted)]">
             Produktbibliotek
           </div>
-          <h1 className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">
+          <h1 className="text-xl font-semibold tracking-tight text-[var(--ui-text)]">
             Håll biblioteket snabbt, tydligt och lätt att lita på.
           </h1>
 
@@ -58,20 +58,20 @@ export function ProductLibraryHeader({
             />
           )}
           {companyLoading && (
-            <p className="text-xs text-[var(--text-muted)]">Läser in företagets bibliotek...</p>
+            <p className="text-xs text-[var(--ui-text-muted)]">Läser in företagets bibliotek...</p>
           )}
           {companyError && (
-            <p className="text-xs text-[var(--status-warning-text)]">{companyError}</p>
+            <p className="text-xs text-[var(--ui-warning-text)]">{companyError}</p>
           )}
         </div>
 
-        <aside className="flex flex-col justify-center gap-2 border-t border-[var(--border)] px-5 py-5 lg:border-l lg:border-t-0">
-          <Button type="button" onClick={onCreateProduct} className="h-10 rounded-xl px-3.5">
-            <Plus size={16} weight="bold" />
+        <aside className="flex flex-col justify-center gap-2 border-t border-[var(--ui-border)] px-5 py-5 lg:border-l lg:border-t-0">
+          <Button type="button" onClick={onCreateProduct} className="h-10 rounded-[var(--ui-radius-control)] px-3.5">
+            <Plus aria-hidden="true" size={16} strokeWidth={2} />
             Ny produkt
           </Button>
-          <Button type="button" variant="outline" onClick={onManageCategories} className="h-10 rounded-xl px-3.5">
-            <Folders size={16} weight="bold" />
+          <Button type="button" variant="outline" onClick={onManageCategories} className="h-10 rounded-[var(--ui-radius-control)] px-3.5">
+            <Folders aria-hidden="true" size={16} strokeWidth={2} />
             Hantera kategorier
           </Button>
         </aside>
@@ -82,9 +82,9 @@ export function ProductLibraryHeader({
 
 function ProductStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2.5">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{value}</div>
+    <div className="rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-2.5">
+      <div className="text-[10px] font-semibold uppercase text-[var(--ui-text-muted)]">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-[var(--ui-text)]">{value}</div>
     </div>
   );
 }

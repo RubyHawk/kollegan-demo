@@ -1,5 +1,8 @@
 'use client';
 
+import { X } from 'lucide-react';
+import { Button } from '@shared/ui/button';
+
 type OfferWizardStepTwoHeaderProps = {
   editingOfferId: string | null;
   templateLabel: string | null;
@@ -15,31 +18,29 @@ export function OfferWizardStepTwoHeader({
 }: OfferWizardStepTwoHeaderProps) {
   return (
     <>
-      <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 bg-[var(--surface-alt)] border-b border-[var(--border)]/50">
-        <span className="flex-1 text-[10px] text-[var(--text-muted)] truncate">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-1.5">
+        <span className="flex-1 truncate text-[10px] text-[var(--ui-text-muted)]">
           {editingOfferId ? 'Redigera offert' : 'Ny offert'}
-          {templateLabel !== null && ` · ${templateLabel}`}
+          {templateLabel !== null ? ` · ${templateLabel}` : ''}
         </span>
-        {!editingOfferId && (
-          <button
-            type="button"
-            onClick={onBackToTemplates}
-            className="shrink-0 text-[10px] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
-          >
+        {!editingOfferId ? (
+          <Button type="button" variant="link" size="compact" onClick={onBackToTemplates} className="h-auto text-[10px]">
             Byt mall
-          </button>
-        )}
-        <button
+          </Button>
+        ) : null}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={onClose}
           title="Stäng"
-          className="lg:hidden shrink-0 p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+          className="size-7 shrink-0 lg:hidden"
+          aria-label="Stäng"
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+          <X size={16} strokeWidth={1.75} aria-hidden />
+        </Button>
       </div>
-      <div className="h-0.5 w-full bg-[var(--accent)]"/>
+      <div className="h-0.5 w-full bg-[var(--ui-accent)]" />
     </>
   );
 }

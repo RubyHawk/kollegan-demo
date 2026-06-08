@@ -23,7 +23,7 @@ import { VariableNode } from './extensions/variable-node.extension';
 export function createBodyExtensions() {
   return [
     StarterKit.configure({
-      dropcursor: { color: 'var(--accent)', width: 2 },
+      dropcursor: { color: 'var(--ui-accent)', width: 2 },
       link: false,
       underline: false,
     }),

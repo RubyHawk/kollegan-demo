@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { CheckCircle } from 'lucide-react';
 import { getAccessReview, type AccessReviewUserRow } from '@shared/lib/api/compliance.api';
 import { resetUserMfaRecovery } from '@shared/lib/api/auth-security.api';
+import { Button } from '@shared/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -11,17 +13,21 @@ import {
   DialogTitle,
   ModalBody,
 } from '@shared/ui/dialog';
-import { Button } from '@shared/ui/button';
+import { InlineAlert } from '@shared/ui/inline-alert';
+import { StatusBadge } from '@shared/ui/status-badge';
+import { Textarea } from '@shared/ui/textarea';
 import { useToast } from '@shared/ui/toast/toast-context';
 import ToastContainer from '@shared/ui/toast/toast-container';
 import { FieldLabel, Input, SectionCard, type UserProps } from '../_components/shared';
 
+type MfaTone = 'success' | 'warning' | 'danger';
+
 function formatDate(value: string | null): string {
-  if (!value) return '—';
+  if (!value) return '-';
   return new Date(value).toLocaleString('en-GB');
 }
 
-function statusTone(user: AccessReviewUserRow, now: number): 'success' | 'warning' | 'danger' {
+function statusTone(user: AccessReviewUserRow, now: number): MfaTone {
   if (user.mfaEnabled) return 'success';
   if (user.mfaGraceExpiresAt && new Date(user.mfaGraceExpiresAt).getTime() > now) return 'warning';
   return 'danger';
@@ -40,13 +46,8 @@ function statusLabel(user: AccessReviewUserRow, now: number): string {
   return 'Missing MFA';
 }
 
-function StatusBadge({ children, tone }: { children: React.ReactNode; tone: 'success' | 'warning' | 'danger' }) {
-  const classes = tone === 'success'
-    ? 'bg-[var(--status-success-bg)] text-[var(--status-success-text)]'
-    : tone === 'warning'
-      ? 'bg-[var(--status-warning-bg)] text-[var(--status-warning-text)]'
-      : 'bg-[var(--status-danger-bg)] text-[var(--status-danger-text)]';
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${classes}`}>{children}</span>;
+function MfaStatusBadge({ children, tone }: { children: React.ReactNode; tone: MfaTone }) {
+  return <StatusBadge tone={tone}>{children}</StatusBadge>;
 }
 
 export default function MfaSupportClient({ user }: { user: UserProps }) {
@@ -112,7 +113,7 @@ export default function MfaSupportClient({ user }: { user: UserProps }) {
       addToast({
         message: `${targetUser.email} received a new grace window until ${formatDate(result.graceExpiresAt)}.`,
         color: 'emerald',
-        icon: '✓',
+        icon: <CheckCircle aria-hidden="true" size={16} strokeWidth={1.75} />,
       });
       setSelectedUserId(null);
       setReason('');
@@ -133,25 +134,27 @@ export default function MfaSupportClient({ user }: { user: UserProps }) {
         >
           <div className="grid gap-4">
             {!canReset ? (
-              <div className="rounded-lg border border-[var(--status-warning-text)]/20 bg-[var(--status-warning-bg)] px-4 py-3 text-sm text-[var(--status-warning-text)]">
+              <InlineAlert tone="warning">
                 This operator session is not MFA-verified. Sign in again with your own MFA before resetting another account.
-              </div>
+              </InlineAlert>
             ) : null}
-            {error ? <p className="text-sm text-[var(--status-danger-text)]">{error}</p> : null}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-y border-[var(--border-light)] py-3">
+            {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
+
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-y border-[var(--ui-border-subtle)] py-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">MFA active</p>
-                <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">{totals.enabled}</p>
+                <p className="text-[11px] font-semibold uppercase text-[var(--ui-text-muted)]">MFA active</p>
+                <p className="mt-1 text-xl font-semibold text-[var(--ui-text)]">{totals.enabled}</p>
               </div>
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">In grace</p>
-                <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[var(--status-warning-text)]">{totals.grace}</p>
+                <p className="text-[11px] font-semibold uppercase text-[var(--ui-text-muted)]">In grace</p>
+                <p className="mt-1 text-xl font-semibold text-[var(--ui-warning-text)]">{totals.grace}</p>
               </div>
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Needs action</p>
-                <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[var(--status-danger-text)]">{totals.overdue}</p>
+                <p className="text-[11px] font-semibold uppercase text-[var(--ui-text-muted)]">Needs action</p>
+                <p className="mt-1 text-xl font-semibold text-[var(--ui-danger-text)]">{totals.overdue}</p>
               </div>
             </div>
+
             <div>
               <FieldLabel description="Search name, email, or role to find the right account quickly.">Search users</FieldLabel>
               <Input value={query} onChange={setQuery} placeholder="name@company.com" />
@@ -164,19 +167,19 @@ export default function MfaSupportClient({ user }: { user: UserProps }) {
           description="Dense support view for locked-out users, lost devices, and passkey resets."
         >
           {loading ? (
-            <p className="text-sm text-[var(--text-muted)]">Loading MFA state…</p>
+            <p className="text-sm text-[var(--ui-text-muted)]">Loading MFA state...</p>
           ) : filteredUsers.length === 0 ? (
-            <p className="text-sm text-[var(--text-muted)]">No users matched your search.</p>
+            <p className="text-sm text-[var(--ui-text-muted)]">No users matched your search.</p>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-[var(--border)]">
-              <div className="hidden grid-cols-[minmax(220px,1.4fr)_180px_180px_180px_100px] gap-4 border-b border-[var(--border-light)] bg-[var(--surface-alt)] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)] lg:grid">
+            <div className="overflow-hidden rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)]">
+              <div className="hidden grid-cols-[minmax(220px,1.4fr)_180px_180px_180px_100px] gap-4 border-b border-[var(--ui-border-subtle)] bg-[var(--ui-surface-subtle)] px-4 py-3 text-[11px] font-semibold uppercase text-[var(--ui-text-muted)] lg:grid">
                 <span>User</span>
                 <span>Status</span>
                 <span>Last login</span>
                 <span>Methods</span>
                 <span>Actions</span>
               </div>
-              <div className="divide-y divide-[var(--border-light)]">
+              <div className="divide-y divide-[var(--ui-border-subtle)]">
                 {filteredUsers.map((entry) => {
                   const tone = statusTone(entry, now);
                   return (
@@ -188,18 +191,18 @@ export default function MfaSupportClient({ user }: { user: UserProps }) {
                         setReason('');
                         setError('');
                       }}
-                      className="grid w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-alt)] lg:grid-cols-[minmax(220px,1.4fr)_180px_180px_180px_100px] lg:items-center"
+                      className="grid w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ui-focus)] lg:grid-cols-[minmax(220px,1.4fr)_180px_180px_180px_100px] lg:items-center"
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{entry.name ?? entry.email}</p>
-                        <p className="truncate text-xs text-[var(--text-muted)]">{entry.email}</p>
+                        <p className="truncate text-sm font-semibold text-[var(--ui-text)]">{entry.name ?? entry.email}</p>
+                        <p className="truncate text-xs text-[var(--ui-text-muted)]">{entry.email}</p>
                       </div>
-                      <div><StatusBadge tone={tone}>{statusLabel(entry, now)}</StatusBadge></div>
-                      <p className="text-sm text-[var(--text-secondary)]">{formatDate(entry.lastLoginAt)}</p>
-                      <p className="text-sm text-[var(--text-secondary)]">
-                        {entry.totpConfigured ? 'App' : '—'} · {entry.passkeysRegistered} passkey{entry.passkeysRegistered === 1 ? '' : 's'}
+                      <div><MfaStatusBadge tone={tone}>{statusLabel(entry, now)}</MfaStatusBadge></div>
+                      <p className="text-sm text-[var(--ui-text-secondary)]">{formatDate(entry.lastLoginAt)}</p>
+                      <p className="text-sm text-[var(--ui-text-secondary)]">
+                        {entry.totpConfigured ? 'App' : '-'} - {entry.passkeysRegistered} passkey{entry.passkeysRegistered === 1 ? '' : 's'}
                       </p>
-                      <span className="text-sm font-medium text-[var(--accent)]">Open</span>
+                      <span className="text-sm font-medium text-[var(--ui-accent)]">Open</span>
                     </button>
                   );
                 })}
@@ -224,10 +227,10 @@ export default function MfaSupportClient({ user }: { user: UserProps }) {
           <ModalBody className="grid gap-5">
             {selectedUser ? (
               <>
-                <div className="grid gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] p-4 text-sm text-[var(--text-secondary)]">
+                <div className="grid gap-3 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-4 text-sm text-[var(--ui-text-secondary)]">
                   <div className="flex items-center justify-between gap-3">
                     <span>Status</span>
-                    <StatusBadge tone={statusTone(selectedUser, now)}>{statusLabel(selectedUser, now)}</StatusBadge>
+                    <MfaStatusBadge tone={statusTone(selectedUser, now)}>{statusLabel(selectedUser, now)}</MfaStatusBadge>
                   </div>
                   <div className="flex items-center justify-between gap-3"><span>Authenticator app</span><span>{selectedUser.totpConfigured ? 'Yes' : 'No'}</span></div>
                   <div className="flex items-center justify-between gap-3"><span>Passkeys</span><span>{selectedUser.passkeysRegistered}</span></div>
@@ -235,18 +238,17 @@ export default function MfaSupportClient({ user }: { user: UserProps }) {
                   <div className="flex items-center justify-between gap-3"><span>Grace expires</span><span>{formatDate(selectedUser.mfaGraceExpiresAt)}</span></div>
                 </div>
 
-                <div className="rounded-xl border border-[var(--status-warning-text)]/20 bg-[var(--status-warning-bg)] p-4 text-sm text-[var(--status-warning-text)]">
+                <InlineAlert tone="warning">
                   Resetting MFA revokes all sessions, clears existing factors, and starts a fresh 24-hour grace window.
-                </div>
+                </InlineAlert>
 
                 <div>
                   <FieldLabel description="Stored in the audit log with the operator identity. Minimum 8 characters.">Reason</FieldLabel>
-                  <textarea
+                  <Textarea
                     value={reason}
                     onChange={(event) => setReason(event.target.value)}
                     rows={4}
                     placeholder="Example: user lost their phone and needs to enroll a new passkey."
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)]/60 focus:ring-2 focus:ring-[var(--accent)]/30"
                   />
                 </div>
 
@@ -256,7 +258,7 @@ export default function MfaSupportClient({ user }: { user: UserProps }) {
                     onClick={() => void handleReset(selectedUser)}
                     disabled={!canReset || pendingReset === selectedUser.id}
                   >
-                    {pendingReset === selectedUser.id ? 'Resetting…' : 'Reset MFA'}
+                    {pendingReset === selectedUser.id ? 'Resetting...' : 'Reset MFA'}
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setSelectedUserId(null)}>
                     Cancel

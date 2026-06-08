@@ -111,7 +111,7 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
         >
           <div className="space-y-2">
             <Field label="Summering">
-              <div className="border-l-2 border-[var(--border)] px-3 py-1.5 text-[12px] leading-5 text-[var(--text-secondary)]">
+              <div className="border-l-2 border-[var(--ui-border)] px-3 py-1.5 text-[12px] leading-5 text-[var(--ui-text-secondary)]">
                 {'Summeringen visas alltid som en smal box under produkter och tj\u00e4nster, precis innan juridiska villkor.'}
               </div>
             </Field>
@@ -216,7 +216,7 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
                 step={0.01}
                 value={document.backgroundOpacity ?? 0.08}
                 onChange={(event) => hf.patchActivePage({ document: { ...document, backgroundOpacity: Number(event.target.value) } })}
-                className="w-full accent-[var(--accent)]"
+                className="w-full accent-[var(--ui-accent)]"
               />
             </Field>
 
@@ -262,9 +262,9 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
               onClick={() => openDialog('notes')}
             />
 
-            <div className="border-l-2 border-[var(--accent)] bg-[var(--accent-subtle)] px-3 py-2">
-              <p className="text-[12px] font-semibold text-[var(--text-primary)]">{'Fri offerttext skrivs direkt i canvasen'}</p>
-              <p className="mt-1 text-[12px] leading-5 text-[var(--text-secondary)]">
+            <div className="border-l-2 border-[var(--ui-accent)] bg-[var(--ui-surface-selected)] px-3 py-2">
+              <p className="text-[12px] font-semibold text-[var(--ui-text)]">{'Fri offerttext skrivs direkt i canvasen'}</p>
+              <p className="mt-1 text-[12px] leading-5 text-[var(--ui-text-secondary)]">
                 {'Den stora introytan p\u00e5 sidan \u00e4r markerad som skrivbar, s\u00e5 du slipper fler textf\u00e4lt i panelen.'}
               </p>
             </div>
@@ -275,7 +275,7 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
       <Dialog open={dialogMode !== null} onOpenChange={(open) => !open && setDialogMode(null)}>
         <DialogContent mobileVariant="sheet" size="md" showMobileClose>
           <div className="flex min-h-0 flex-1 flex-col">
-          <DialogHeader className="border-b border-[var(--border)] pr-16">
+          <DialogHeader className="border-b border-[var(--ui-border)] pr-16">
             <DialogTitle>{getDialogTitle(dialogMode)}</DialogTitle>
             <DialogDescription>{getDialogDescription(dialogMode)}</DialogDescription>
           </DialogHeader>
@@ -339,7 +339,7 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
                     autoFocus
                   />
                 </Field>
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-0)] px-3 py-2.5 text-[12px] leading-5 text-[var(--text-secondary)]">
+                <div className="rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-2.5 text-[12px] leading-5 text-[var(--ui-text-secondary)]">
                   {'Vill du hellre ladda upp en fil kan du fortfarande g\u00f6ra det i sidpanelen under samma sektion.'}
                 </div>
               </>
@@ -357,7 +357,7 @@ export function StructuredOfferInspector({ hf }: { hf: HFCtxValue }) {
             <button
               type="button"
               onClick={saveDialog}
-              className="rounded-md border border-[var(--accent-border)] bg-[var(--accent-subtle)] px-3 py-1.5 text-[12px] font-semibold text-[var(--accent)] transition-colors hover:brightness-[0.98]"
+              className="rounded-md border border-[var(--ui-accent)] bg-[var(--ui-accent)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ui-text-inverse)] transition-colors hover:border-[var(--ui-accent-hover)] hover:bg-[var(--ui-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
             >
               Spara
             </button>

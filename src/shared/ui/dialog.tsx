@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { X } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
-import { CloseIcon } from '@shared/ui/icons';
 
 const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
@@ -15,7 +15,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+      'fixed inset-0 z-50 bg-[var(--ui-overlay)] backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       className,
     )}
     {...props}
@@ -36,13 +36,13 @@ interface DialogContentProps
 
 const MOBILE_VARIANT_CLASSES: Record<DialogMobileVariant, string> = {
   center:
-    'fixed left-[50%] top-[50%] z-50 grid w-[calc(100vw-1.5rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-2xl',
+    'fixed left-[50%] top-[50%] z-50 grid w-[calc(100vw-1.5rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-[var(--ui-radius-lg)]',
   sheet:
-    'fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[88dvh] translate-y-0 rounded-t-[28px] rounded-b-none sm:left-[50%] sm:top-[50%] sm:max-h-[min(88dvh,780px)] sm:w-full sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[24px]',
+    'fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[88dvh] translate-y-0 rounded-t-[var(--ui-radius-lg)] rounded-b-none sm:left-[50%] sm:top-[50%] sm:max-h-[min(88dvh,780px)] sm:w-full sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[var(--ui-radius-lg)]',
   fullscreen:
-    'fixed inset-0 z-50 grid h-dvh w-screen rounded-none sm:left-[50%] sm:top-[50%] sm:h-auto sm:max-h-[min(92dvh,920px)] sm:w-full sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[28px]',
+    'fixed inset-0 z-50 grid h-dvh w-screen rounded-none sm:left-[50%] sm:top-[50%] sm:h-auto sm:max-h-[min(92dvh,920px)] sm:w-full sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[var(--ui-radius-lg)]',
   'right-panel':
-    'fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[88dvh] rounded-t-[28px] rounded-b-none sm:inset-y-0 sm:right-0 sm:left-auto sm:bottom-auto sm:top-0 sm:h-screen sm:max-h-full sm:w-[540px] sm:rounded-none sm:rounded-l-[24px] sm:translate-x-0 sm:translate-y-0',
+    'fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[88dvh] rounded-t-[var(--ui-radius-lg)] rounded-b-none sm:inset-y-0 sm:right-0 sm:left-auto sm:bottom-auto sm:top-0 sm:h-screen sm:max-h-full sm:w-[540px] sm:rounded-none sm:rounded-l-[var(--ui-radius-lg)] sm:translate-x-0 sm:translate-y-0',
 };
 
 const DIALOG_SIZE_CLASSES: Record<DialogSize, string> = {
@@ -65,7 +65,7 @@ const DialogContent = React.forwardRef<
       className={cn(
         MOBILE_VARIANT_CLASSES[mobileVariant],
         size ? DIALOG_SIZE_CLASSES[size] : null,
-        'border border-[var(--border)] bg-[var(--surface)] shadow-2xl overflow-hidden duration-200',
+        'border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-[var(--ui-shadow-dialog)] overflow-hidden duration-200',
         mobileVariant === 'fullscreen'
           ? 'data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-4 data-[state=open]:slide-in-from-bottom-4 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]'
           : mobileVariant === 'sheet'
@@ -81,9 +81,9 @@ const DialogContent = React.forwardRef<
       {showMobileClose ? (
         <DialogClose
           aria-label={closeLabel}
-          className="absolute right-4 top-[max(0.75rem,env(safe-area-inset-top))] z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-0)] text-[var(--text-muted)] shadow-sm transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] sm:hidden"
+          className="absolute right-4 top-[max(0.75rem,env(safe-area-inset-top))] z-10 inline-flex h-9 w-9 items-center justify-center rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text-muted)] shadow-sm transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2 sm:hidden"
         >
-          <CloseIcon size={16} />
+          <X size={16} strokeWidth={1.75} />
         </DialogClose>
       ) : null}
       {children}
@@ -117,8 +117,8 @@ const ModalSection = ({
   <section
     className={cn(
       'space-y-4',
-      tone === 'card' && 'rounded-[24px] border border-[var(--border)] bg-[var(--surface-0)] p-4 sm:p-5',
-      tone === 'subtle' && 'rounded-[22px] border border-[var(--border-light)] bg-[var(--surface-alt)] p-4',
+      tone === 'card' && 'rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 sm:p-5',
+      tone === 'subtle' && 'rounded-[var(--ui-radius-lg)] border border-[var(--ui-border-subtle)] bg-[var(--ui-surface-subtle)] p-4',
       className,
     )}
     {...props}
@@ -129,7 +129,7 @@ ModalSection.displayName = 'ModalSection';
 const ModalMetaCard = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      'rounded-[22px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-0),var(--surface-alt))] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]',
+      'rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4 shadow-[var(--ui-shadow-raised)]',
       className,
     )}
     {...props}
@@ -160,7 +160,7 @@ ModalFormGrid.displayName = 'ModalFormGrid';
 const ModalActionFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <DialogFooter
     className={cn(
-      'shrink-0 border-t border-[var(--border)] bg-[var(--surface)]/96 backdrop-blur supports-[backdrop-filter]:bg-[var(--surface)]/88',
+      'shrink-0 border-t border-[var(--ui-border)] bg-[var(--ui-surface)]/96 backdrop-blur supports-[backdrop-filter]:bg-[var(--ui-surface)]/88',
       className,
     )}
     {...props}
@@ -172,7 +172,7 @@ const DialogTitle = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title ref={ref} className={cn('text-lg font-semibold leading-tight tracking-tight text-[var(--text-primary)]', className)} {...props} />
+  <DialogPrimitive.Title ref={ref} className={cn('text-lg font-semibold leading-tight tracking-tight text-[var(--ui-text)]', className)} {...props} />
 ));
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
@@ -180,7 +180,7 @@ const DialogDescription = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Description ref={ref} className={cn('text-sm leading-6 text-[var(--text-muted)]', className)} {...props} />
+  <DialogPrimitive.Description ref={ref} className={cn('text-sm leading-6 text-[var(--ui-text-muted)]', className)} {...props} />
 ));
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 

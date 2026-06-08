@@ -1,5 +1,6 @@
 'use client';
 
+import type { StatusTone } from '@shared/ui/status-badge';
 import { cn } from '@shared/lib/utils';
 import type { Offer, OfferStatus } from '../_store/types';
 import { canRemind, fmtDate } from '../_lib/offers-dashboard-formatters';
@@ -9,7 +10,7 @@ type AttentionItem = {
   label: string;
   count: number;
   hint: string;
-  tone: 'amber' | 'blue' | 'emerald' | 'slate';
+  tone: StatusTone;
   onClick: () => void;
 };
 
@@ -19,11 +20,13 @@ type OfferAttentionStripProps = {
   onTabChange: (tab: OfferStatus | 'all') => void;
 };
 
-const TONE_CLASS: Record<AttentionItem['tone'], string> = {
-  amber: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-300',
-  blue: 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800/40 dark:bg-blue-900/20 dark:text-blue-300',
-  emerald: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/40 dark:bg-emerald-900/20 dark:text-emerald-300',
-  slate: 'border-[var(--border)] bg-[var(--surface-alt)] text-[var(--text-secondary)]',
+const TONE_CLASS: Record<StatusTone, string> = {
+  neutral: 'border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text-secondary)]',
+  success: 'border-[var(--ui-success-border)] bg-[var(--ui-success-bg)] text-[var(--ui-success-text)]',
+  warning: 'border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] text-[var(--ui-warning-text)]',
+  danger: 'border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] text-[var(--ui-danger-text)]',
+  info: 'border-[var(--ui-info-border)] bg-[var(--ui-info-bg)] text-[var(--ui-info-text)]',
+  accent: 'border-[var(--ui-accent-border)] bg-[var(--ui-accent-subtle)] text-[var(--ui-accent)]',
 };
 
 function daysUntil(date: string) {
@@ -55,7 +58,7 @@ export function OfferAttentionStrip({
       label: 'Utkast',
       count: tabCounts.draft ?? 0,
       hint: 'Offerter som inte har skickats ännu',
-      tone: 'slate',
+      tone: 'neutral',
       onClick: () => onTabChange('draft'),
     },
     {
@@ -63,7 +66,7 @@ export function OfferAttentionStrip({
       label: 'Visade utan svar',
       count: viewedUnsigned,
       hint: 'Kunder som har öppnat länken',
-      tone: 'blue',
+      tone: 'info',
       onClick: () => onTabChange('viewed'),
     },
     {
@@ -71,7 +74,7 @@ export function OfferAttentionStrip({
       label: 'Påminnelse redo',
       count: reminderReady,
       hint: 'Kan påminnas enligt cooldown',
-      tone: 'amber',
+      tone: 'warning',
       onClick: () => onTabChange('sent'),
     },
     {
@@ -79,7 +82,7 @@ export function OfferAttentionStrip({
       label: 'Går ut snart',
       count: expiringSoon.length,
       hint: oldestExpiring?.validUntil ? `Närmaste: ${fmtDate(oldestExpiring.validUntil)}` : 'Skickade offerter inom 7 dagar',
-      tone: 'emerald',
+      tone: 'success',
       onClick: () => onTabChange('sent'),
     },
   ];
@@ -94,13 +97,13 @@ export function OfferAttentionStrip({
           type="button"
           onClick={item.onClick}
           className={cn(
-            'rounded-xl border px-3 py-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25',
+            'rounded-[var(--ui-radius-lg)] border p-3 text-left transition-colors hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2',
             TONE_CLASS[item.tone],
           )}
         >
           <span className="flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold uppercase tracking-wide opacity-75">{item.label}</span>
-            <span className="text-lg font-bold tabular-nums">{item.count}</span>
+            <span className="text-xs font-semibold uppercase opacity-75">{item.label}</span>
+            <span className="tabular-nums text-lg font-bold">{item.count}</span>
           </span>
           <span className="mt-1 block truncate text-xs opacity-75">{item.hint}</span>
         </button>

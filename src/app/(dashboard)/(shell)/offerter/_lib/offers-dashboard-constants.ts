@@ -1,3 +1,4 @@
+import type { StatusTone } from '@shared/ui/status-badge';
 import type { OfferStatus, OfferProjectStage } from '../_store/types';
 
 export const STATUS_TABS: { id: OfferStatus | 'all'; label: string }[] = [
@@ -10,12 +11,21 @@ export const STATUS_TABS: { id: OfferStatus | 'all'; label: string }[] = [
 ];
 
 export const STATUS_STYLES: Record<OfferStatus, string> = {
-  draft: 'bg-[var(--status-draft-bg)] text-[var(--status-draft-text)] border border-[var(--status-draft-border)]',
-  sent: 'bg-[var(--status-sent-bg)] text-[var(--status-sent-text)]',
-  viewed: 'bg-[var(--status-viewed-bg)] text-[var(--status-viewed-text)]',
-  accepted: 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted-text)]',
-  declined: 'bg-[var(--status-declined-bg)] text-[var(--status-declined-text)]',
-  expired: 'bg-[var(--status-expired-bg)] text-[var(--status-expired-text)]',
+  draft: 'border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text-secondary)]',
+  sent: 'border border-[var(--ui-info-border)] bg-[var(--ui-info-bg)] text-[var(--ui-info-text)]',
+  viewed: 'border border-[var(--ui-accent-border)] bg-[var(--ui-accent-subtle)] text-[var(--ui-accent)]',
+  accepted: 'border border-[var(--ui-success-border)] bg-[var(--ui-success-bg)] text-[var(--ui-success-text)]',
+  declined: 'border border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] text-[var(--ui-danger-text)]',
+  expired: 'border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] text-[var(--ui-warning-text)]',
+};
+
+export const STATUS_TONE: Record<OfferStatus, StatusTone> = {
+  draft: 'neutral',
+  sent: 'info',
+  viewed: 'accent',
+  accepted: 'success',
+  declined: 'danger',
+  expired: 'warning',
 };
 
 export const STATUS_LABEL: Record<OfferStatus, string> = {
@@ -28,11 +38,11 @@ export const STATUS_LABEL: Record<OfferStatus, string> = {
 };
 
 export const PROJECT_STAGE_META: Record<OfferProjectStage, { label: string; bg: string; color: string }> = {
-  details: { label: 'Uppgifter', bg: 'var(--surface-2)', color: 'var(--text-secondary)' },
-  ordered: { label: 'Beställt', bg: 'var(--status-sent-bg)', color: 'var(--status-sent-text)' },
-  arrived: { label: 'Ankommet', bg: 'var(--status-viewed-bg)', color: 'var(--status-viewed-text)' },
-  in_progress: { label: 'Pågår', bg: 'var(--accent-subtle)', color: 'var(--accent)' },
-  completed: { label: 'Klart', bg: 'var(--surface-alt)', color: 'var(--text-muted)' },
+  details: { label: 'Uppgifter', bg: 'var(--ui-surface-subtle)', color: 'var(--ui-text-secondary)' },
+  ordered: { label: 'Beställt', bg: 'var(--ui-info-bg)', color: 'var(--ui-info-text)' },
+  arrived: { label: 'Ankommet', bg: 'var(--ui-accent-subtle)', color: 'var(--ui-accent)' },
+  in_progress: { label: 'Pågår', bg: 'var(--ui-accent-subtle)', color: 'var(--ui-accent)' },
+  completed: { label: 'Klart', bg: 'var(--ui-surface-subtle)', color: 'var(--ui-text-muted)' },
 };
 
 export const VALIDITY_OPTIONS = [

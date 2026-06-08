@@ -2,7 +2,7 @@
 
 import { NodeSelection } from '@tiptap/pm/state';
 import { BubbleMenu } from '@tiptap/react/menus';
-import { Link as LinkIcon } from '@phosphor-icons/react';
+import { Link } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
 import { useTemplateEditor } from './editor-context';
 
@@ -45,12 +45,22 @@ export function InlineFormattingMenu() {
         if (selection instanceof NodeSelection) return false;
         return selection.from !== selection.to;
       }}
-      className="flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1 shadow-lg"
+      className="flex items-center gap-1 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] p-1"
     >
-      <select value={activeStyle} onChange={(event) => applyStyle(event.target.value)} className="h-7 rounded-lg bg-[var(--surface-active)] px-2 text-[11px] font-semibold text-[var(--text-primary)] outline-none" title="Textstil">
+      <select
+        value={activeStyle}
+        onChange={(event) => applyStyle(event.target.value)}
+        className="h-7 rounded-md bg-[var(--ui-surface-hover)] px-2 text-[11px] font-semibold text-[var(--ui-text)] outline-none focus:ring-2 focus:ring-[var(--ui-focus)]"
+        title="Textstil"
+      >
         {STYLE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
-      <select value={activeFontSize} onChange={(event) => applyFontSize(event.target.value)} className="h-7 rounded-lg bg-[var(--surface-active)] px-2 text-[11px] font-semibold text-[var(--text-primary)] outline-none" title="Teckenstorlek">
+      <select
+        value={activeFontSize}
+        onChange={(event) => applyFontSize(event.target.value)}
+        className="h-7 rounded-md bg-[var(--ui-surface-hover)] px-2 text-[11px] font-semibold text-[var(--ui-text)] outline-none focus:ring-2 focus:ring-[var(--ui-focus)]"
+        title="Teckenstorlek"
+      >
         {FONT_SIZES.map((size) => <option key={size || 'auto'} value={size}>{size ? `${size}px` : 'Auto'}</option>)}
       </select>
       <InlineButton title="Fet" active={currentEditor.isActive('bold')} onClick={() => currentEditor.chain().focus().toggleBold().run()}>B</InlineButton>
@@ -67,7 +77,7 @@ export function InlineFormattingMenu() {
           currentEditor.chain().focus().setLink({ href: url.trim() }).run();
         }}
       >
-        <LinkIcon size={12} />
+        <Link size={14} strokeWidth={1.75} />
       </InlineButton>
     </BubbleMenu>
   );
@@ -79,7 +89,12 @@ function InlineButton({ title, active, onClick, children }: { title: string; act
       type="button"
       title={title}
       onClick={onClick}
-      className={cn('inline-flex h-7 min-w-7 items-center justify-center rounded-lg px-2 text-[12px] font-semibold transition-colors', active ? 'bg-[var(--accent-subtle)] text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]')}
+      className={cn(
+        'inline-flex h-7 min-w-7 items-center justify-center rounded-md px-2 text-[12px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
+        active
+          ? 'bg-[var(--ui-surface-selected)] text-[var(--ui-accent)]'
+          : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)]',
+      )}
     >
       {children}
     </button>

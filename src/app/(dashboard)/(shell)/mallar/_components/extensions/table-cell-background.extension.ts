@@ -6,7 +6,7 @@
  * rendered as an inline `style="background-color: ..."` on the <td>/<th>.
  *
  * Usage (editor command):
- *   editor.chain().focus().setCellAttribute('backgroundColor', '#ffc000').run()
+ *   editor.chain().focus().setCellAttribute('backgroundColor', 'var(--ui-warning-bg)').run()
  *   editor.chain().focus().setCellAttribute('backgroundColor', null).run()  // clear
  */
 

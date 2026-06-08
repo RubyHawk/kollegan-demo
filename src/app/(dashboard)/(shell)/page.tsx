@@ -69,7 +69,7 @@ export default async function DashboardPage() {
 
   if (!orgId) {
     return (
-      <div className="px-8 py-10 text-sm text-[var(--text-muted)]">
+      <div className="px-8 py-10 text-sm text-[var(--ui-text-muted)]">
         Ingen organisation kopplad till ditt konto.
       </div>
     );

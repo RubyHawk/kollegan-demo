@@ -1,18 +1,19 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import {
-  ChatText,
-  ClipboardText,
-  DotsSixVertical,
+  ClipboardList,
   File,
-  FileArrowUp,
-  NotePencil,
+  FileText,
+  FileUp,
+  GripVertical,
+  MessageSquareText,
+  PencilLine,
   Plus,
-  Quotes,
-  Signature,
-  Trash,
-} from '@phosphor-icons/react';
+  Quote,
+  ScrollText,
+  Trash2,
+} from 'lucide-react';
 import {
   DndContext,
   KeyboardSensor,
@@ -30,6 +31,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@shared/lib/utils';
+import { Button } from '@shared/ui/button';
 import { useHeaderFooter } from './header-footer-context';
 import { EMPTY_DOC, PAGE_ROLE_LABELS, type PageDoc, type PageRole } from './template-doc';
 
@@ -40,7 +42,7 @@ type PageBlueprint = {
   kind: 'presentation' | 'document';
   includeInCustomerPdf: boolean;
   description: string;
-  icon: React.ReactNode;
+  icon: ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
   body: object;
 };
 
@@ -52,7 +54,7 @@ const PAGE_BLUEPRINTS: PageBlueprint[] = [
     kind: 'presentation',
     includeInCustomerPdf: true,
     description: 'En fri sida för egen text, bild och layout.',
-    icon: <File size={16} />,
+    icon: File,
     body: EMPTY_DOC,
   },
   {
@@ -62,7 +64,7 @@ const PAGE_BLUEPRINTS: PageBlueprint[] = [
     kind: 'presentation',
     includeInCustomerPdf: true,
     description: 'Förstasida med rubrik, bild och offertkänsla.',
-    icon: <File size={16} />,
+    icon: FileText,
     body: {
       type: 'doc',
       content: [
@@ -78,7 +80,7 @@ const PAGE_BLUEPRINTS: PageBlueprint[] = [
     kind: 'presentation',
     includeInCustomerPdf: true,
     description: 'Bakgrund, värde, upplägg eller kundcase.',
-    icon: <ChatText size={16} />,
+    icon: MessageSquareText,
     body: {
       type: 'doc',
       content: [
@@ -94,7 +96,7 @@ const PAGE_BLUEPRINTS: PageBlueprint[] = [
     kind: 'document',
     includeInCustomerPdf: true,
     description: 'Pris, summering, villkor och offertmetadata.',
-    icon: <NotePencil size={16} />,
+    icon: PencilLine,
     body: {
       type: 'doc',
       content: [
@@ -109,7 +111,7 @@ const PAGE_BLUEPRINTS: PageBlueprint[] = [
     kind: 'presentation',
     includeInCustomerPdf: true,
     description: 'Leveransomfattning och avgränsningar.',
-    icon: <ClipboardText size={16} />,
+    icon: ClipboardList,
     body: {
       type: 'doc',
       content: [{ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Leverans & omfattning' }] }],
@@ -122,7 +124,7 @@ const PAGE_BLUEPRINTS: PageBlueprint[] = [
     kind: 'presentation',
     includeInCustomerPdf: true,
     description: 'Kundcitat, case eller social proof.',
-    icon: <Quotes size={16} />,
+    icon: Quote,
     body: {
       type: 'doc',
       content: [{ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Referenser' }] }],
@@ -135,7 +137,7 @@ const PAGE_BLUEPRINTS: PageBlueprint[] = [
     kind: 'presentation',
     includeInCustomerPdf: true,
     description: 'Längre villkor utanför offertsidan.',
-    icon: <Signature size={16} />,
+    icon: ScrollText,
     body: {
       type: 'doc',
       content: [{ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Villkor' }] }],
@@ -148,35 +150,41 @@ const PAGE_BLUEPRINTS: PageBlueprint[] = [
     kind: 'presentation',
     includeInCustomerPdf: true,
     description: 'Bildbilaga eller extra material.',
-    icon: <FileArrowUp size={16} />,
+    icon: FileUp,
     body: EMPTY_DOC,
   },
 ];
+
+type PageTone = {
+  rail: string;
+  badge: string;
+  short: string;
+};
 
 function getPageBadge(page: PageDoc) {
   if (page.kind === 'document') return 'Offertsida';
   return PAGE_ROLE_LABELS[page.role ?? 'custom'];
 }
 
-function getPageTone(page: PageDoc) {
+function getPageTone(page: PageDoc): PageTone {
   if (page.kind === 'document') {
     return {
-      rail: 'bg-slate-900',
-      badge: 'border-slate-300 bg-white text-slate-700',
+      rail: 'bg-[var(--ui-text)]',
+      badge: 'border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text-secondary)]',
       short: 'OF',
     };
   }
   switch (page.role) {
     case 'cover':
-      return { rail: 'bg-emerald-500', badge: 'border-emerald-200 bg-emerald-50 text-emerald-800', short: 'OM' };
+      return { rail: 'bg-[var(--ui-success-text)]', badge: 'border-[var(--ui-success-border)] bg-[var(--ui-success-bg)] text-[var(--ui-success-text)]', short: 'OM' };
     case 'appendix':
-      return { rail: 'bg-amber-500', badge: 'border-amber-200 bg-amber-50 text-amber-800', short: 'BI' };
+      return { rail: 'bg-[var(--ui-warning-text)]', badge: 'border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] text-[var(--ui-warning-text)]', short: 'BI' };
     case 'terms':
-      return { rail: 'bg-stone-500', badge: 'border-stone-200 bg-stone-50 text-stone-700', short: 'VI' };
+      return { rail: 'bg-[var(--ui-text-muted)]', badge: 'border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text-secondary)]', short: 'VI' };
     case 'references':
-      return { rail: 'bg-violet-500', badge: 'border-violet-200 bg-violet-50 text-violet-800', short: 'RE' };
+      return { rail: 'bg-[var(--ui-info-text)]', badge: 'border-[var(--ui-info-border)] bg-[var(--ui-info-bg)] text-[var(--ui-info-text)]', short: 'RE' };
     default:
-      return { rail: 'bg-sky-500', badge: 'border-sky-200 bg-sky-50 text-sky-800', short: 'PR' };
+      return { rail: 'bg-[var(--ui-accent)]', badge: 'border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)] text-[var(--ui-accent)]', short: 'PR' };
   }
 }
 
@@ -227,60 +235,59 @@ export default function PageNavigator() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="shrink-0 border-b border-[var(--border)] px-3 py-3">
+      <div className="shrink-0 border-b border-[var(--ui-border)] px-3 py-3">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[12px] font-semibold text-[var(--text-primary)]">Sidor</p>
-            <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">{activeDescription}</p>
+            <p className="text-xs font-semibold text-[var(--ui-text)]">Sidor</p>
+            <p className="mt-1 text-[11px] leading-4 text-[var(--ui-text-muted)]">{activeDescription}</p>
           </div>
           <div className="relative shrink-0" ref={menuRef}>
-            <button
-              type="button"
-              onClick={() => setShowBlueprints((value) => !value)}
-              className="inline-flex h-8 items-center gap-1 rounded-md bg-[var(--accent)] px-2.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
-            >
-              <Plus size={12} weight="bold" />
+            <Button type="button" size="compact" onClick={() => setShowBlueprints((value) => !value)}>
+              <Plus size={16} strokeWidth={2} />
               Sida
-            </button>
-            {showBlueprints && (
+            </Button>
+            {showBlueprints ? (
               <div
                 role="menu"
-                className="absolute left-0 top-[calc(100%+6px)] z-30 w-[270px] rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-[0_14px_34px_rgba(15,23,42,0.16)]"
+                className="absolute left-0 top-[calc(100%+6px)] z-30 w-[270px] rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-1.5 shadow-[var(--ui-shadow-raised)]"
               >
-                {PAGE_BLUEPRINTS.map((blueprint) => (
-                  <button
-                    key={blueprint.key}
-                    type="button"
-                    onClick={() => {
-                      hf.addPage({
-                        label: blueprint.label,
-                        role: blueprint.role,
-                        kind: blueprint.kind,
-                        includeInCustomerPdf: blueprint.includeInCustomerPdf,
-                        body: blueprint.body,
-                      });
-                      setShowBlueprints(false);
-                    }}
-                    className="flex w-full items-start gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-[var(--surface-active)]"
-                  >
-                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-secondary)]">
-                      {blueprint.icon}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[12px] font-semibold text-[var(--text-primary)]">{blueprint.label}</span>
-                      <span className="mt-0.5 block text-[11px] leading-4 text-[var(--text-muted)]">{blueprint.description}</span>
-                    </span>
-                  </button>
-                ))}
+                {PAGE_BLUEPRINTS.map((blueprint) => {
+                  const Icon = blueprint.icon;
+                  return (
+                    <button
+                      key={blueprint.key}
+                      type="button"
+                      onClick={() => {
+                        hf.addPage({
+                          label: blueprint.label,
+                          role: blueprint.role,
+                          kind: blueprint.kind,
+                          includeInCustomerPdf: blueprint.includeInCustomerPdf,
+                          body: blueprint.body,
+                        });
+                        setShowBlueprints(false);
+                      }}
+                      className="flex w-full items-start gap-2 rounded-[var(--ui-radius-md)] px-2 py-2 text-left transition-colors hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+                    >
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--ui-radius-sm)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text-secondary)]">
+                        <Icon size={16} strokeWidth={1.75} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-xs font-semibold text-[var(--ui-text)]">{blueprint.label}</span>
+                        <span className="mt-0.5 block text-[11px] leading-4 text-[var(--ui-text-muted)]">{blueprint.description}</span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
 
       <div className="mall-page-list min-h-0 flex-1 overflow-y-auto px-2 py-2">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={hf.pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={hf.pages.map((page) => page.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-1.5">
               {hf.pages.map((page, index) => (
                 <SortablePageRow
@@ -345,12 +352,12 @@ function SortablePageRow({
       style={style}
       onClick={onSelect}
       className={cn(
-        'group relative overflow-hidden rounded-md border bg-[var(--surface)] p-2 transition-colors',
+        'group relative overflow-hidden rounded-[var(--ui-radius-md)] border bg-[var(--ui-surface)] p-2 transition-colors',
         isDragging
-          ? 'z-10 border-slate-400 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]'
+          ? 'z-10 border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] shadow-[var(--ui-shadow-raised)]'
           : isActive
-            ? 'border-slate-400 bg-white shadow-sm'
-            : 'border-[var(--border)] hover:border-slate-300 hover:bg-white',
+            ? 'border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)]'
+            : 'border-[var(--ui-border)] hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-hover)]',
       )}
     >
       <span className={cn('absolute inset-y-0 left-0 w-1', tone.rail)} />
@@ -361,43 +368,40 @@ function SortablePageRow({
           onPointerDown={stopDnd}
           {...attributes}
           {...listeners}
-          className="mt-1 flex h-6 w-4 shrink-0 cursor-grab items-center justify-center rounded text-[var(--text-muted)] active:cursor-grabbing"
+          className="mt-1 flex h-6 w-4 shrink-0 cursor-grab items-center justify-center rounded-[var(--ui-radius-sm)] text-[var(--ui-text-muted)] active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
         >
-          <DotsSixVertical size={14} />
+          <GripVertical size={16} strokeWidth={1.75} />
         </button>
 
-        <div className="mt-0.5 flex h-9 w-7 shrink-0 items-center justify-center rounded-sm border border-slate-200 bg-white text-[9px] font-bold uppercase tracking-[0.08em] text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
+        <div className="mt-0.5 flex h-9 w-7 shrink-0 items-center justify-center rounded-[var(--ui-radius-sm)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] text-[9px] font-bold uppercase text-[var(--ui-text-muted)]">
           {tone.short}
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="shrink-0 text-[10px] font-semibold text-[var(--text-muted)]">{index + 1}/{total}</span>
+            <span className="shrink-0 text-[10px] font-semibold text-[var(--ui-text-muted)]">{index + 1}/{total}</span>
             {isActive ? (
               <input
                 value={page.label}
                 onPointerDown={stopDnd}
                 onClick={(event) => event.stopPropagation()}
                 onChange={(event) => onRename(event.target.value)}
-                className="min-w-0 flex-1 rounded border border-[var(--accent-border)] bg-[var(--surface)] px-1.5 py-0.5 text-[12px] font-semibold text-[var(--text-primary)] outline-none"
+                className="min-w-0 flex-1 rounded-[var(--ui-radius-sm)] border border-[var(--ui-accent-border)] bg-[var(--ui-surface)] px-1.5 py-0.5 text-xs font-semibold text-[var(--ui-text)] outline-none focus:ring-2 focus:ring-[var(--ui-focus)]"
               />
             ) : (
-              <p className="min-w-0 flex-1 truncate text-[12px] font-semibold text-[var(--text-primary)]">{page.label}</p>
+              <p className="min-w-0 flex-1 truncate text-xs font-semibold text-[var(--ui-text)]">{page.label}</p>
             )}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1">
-            <span
-              className={cn(
-                'rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em]',
-                tone.badge,
-              )}
-            >
+            <span className={cn('rounded-[var(--ui-radius-sm)] border px-1.5 py-0.5 text-[9px] font-semibold uppercase', tone.badge)}>
               {getPageBadge(page)}
             </span>
             <span
               className={cn(
-                'rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em]',
-                page.includeInCustomerPdf === false ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-slate-200 bg-white text-slate-600',
+                'rounded-[var(--ui-radius-sm)] border px-1.5 py-0.5 text-[9px] font-semibold uppercase',
+                page.includeInCustomerPdf === false
+                  ? 'border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] text-[var(--ui-warning-text)]'
+                  : 'border-[var(--ui-border)] bg-[var(--ui-surface-raised)] text-[var(--ui-text-secondary)]',
               )}
             >
               {page.includeInCustomerPdf === false ? 'Intern' : 'Kund + PDF'}
@@ -415,13 +419,13 @@ function SortablePageRow({
             onRemove?.();
           }}
           className={cn(
-            'mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded transition-colors',
+            'mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--ui-radius-md)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]',
             onRemove
-              ? 'text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500'
-              : 'cursor-default text-[var(--text-muted)] opacity-35',
+              ? 'text-[var(--ui-text-muted)] hover:bg-[var(--ui-danger-bg)] hover:text-[var(--ui-danger-text)]'
+              : 'cursor-default text-[var(--ui-text-disabled)]',
           )}
         >
-          <Trash size={13} />
+          <Trash2 size={16} strokeWidth={1.75} />
         </button>
       </div>
     </div>

@@ -15,21 +15,15 @@ function createHandle(): HTMLElement {
   el.className    = 'tiptap-drag-handle';
   el.draggable    = true;
   el.setAttribute('data-drag-handle', '');
-  el.innerHTML    = `
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-      <circle cx="9"  cy="5"  r="1.5"/>
-      <circle cx="15" cy="5"  r="1.5"/>
-      <circle cx="9"  cy="12" r="1.5"/>
-      <circle cx="15" cy="12" r="1.5"/>
-      <circle cx="9"  cy="19" r="1.5"/>
-      <circle cx="15" cy="19" r="1.5"/>
-    </svg>`;
+  el.textContent = '⠿';
+  el.setAttribute('aria-label', 'Flytta block');
   el.style.cssText = `
     position: fixed;
     opacity: 0;
     z-index: 100;
     cursor: grab;
-    color: #94a3b8;
+    color: var(--ui-text-muted);
+    font: 700 14px/1 system-ui, sans-serif;
     padding: 3px 4px;
     border-radius: 4px;
     transition: opacity 0.12s, background 0.12s;
@@ -95,12 +89,12 @@ function dragHandlePlugin(): Plugin {
       // ── Handle hover ─────────────────────────────────────────────────────
       handle.addEventListener('mouseenter', () => {
         if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-        handle.style.background = 'var(--surface-hover, #f1f5f9)';
-        handle.style.color      = 'var(--text-primary, #334155)';
+        handle.style.background = 'var(--ui-surface-hover)';
+        handle.style.color      = 'var(--ui-text)';
       });
       handle.addEventListener('mouseleave', () => {
         handle.style.background = 'transparent';
-        handle.style.color      = '#94a3b8';
+        handle.style.color      = 'var(--ui-text-muted)';
         scheduleHide();
       });
 

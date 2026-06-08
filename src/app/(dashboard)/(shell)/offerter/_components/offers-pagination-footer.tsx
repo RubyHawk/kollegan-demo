@@ -1,6 +1,8 @@
 'use client';
 
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
+import { Button } from '@shared/ui/button';
 
 type OffersPaginationFooterProps = {
   currentPage: number;
@@ -24,49 +26,55 @@ export function OffersPaginationFooter({
   );
 
   return (
-    <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--border)] bg-[var(--surface-alt)]">
-      <span className="text-[11px] text-[var(--text-muted)]">
+    <div className="flex items-center justify-between border-t border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-4 py-2.5">
+      <span className="text-xs text-[var(--ui-text-muted)]">
         {serverTotal === 0
           ? 'Inga resultat'
-          : `Visar ${currentPage * pageSize + 1}–${Math.min((currentPage + 1) * pageSize, serverTotal)} av ${serverTotal}`}
+          : `Visar ${currentPage * pageSize + 1}-${Math.min((currentPage + 1) * pageSize, serverTotal)} av ${serverTotal}`}
         {total > serverTotal && ` (filtrerat från ${total})`}
       </span>
-      {totalPages > 1 && (
+      {totalPages > 1 ? (
         <div className="flex items-center gap-1">
-          <button
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
             onClick={() => onPageChange((p) => Math.max(0, p - 1))}
             disabled={currentPage === 0}
-            className="px-2 py-1 rounded border border-[var(--border)] bg-[var(--surface)] text-[11px] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            aria-label="Föregående sida"
           >
-            ‹
-          </button>
+            <ChevronLeft size={16} strokeWidth={1.75} aria-hidden />
+          </Button>
           {pages.map((i, idx, arr) => (
-            <span key={i}>
-              {idx > 0 && arr[idx - 1] !== i - 1 && (
-                <span className="text-[11px] text-[var(--text-muted)] px-0.5">…</span>
-              )}
-              <button
+            <span key={i} className="inline-flex items-center gap-1">
+              {idx > 0 && arr[idx - 1] !== i - 1 ? (
+                <span className="px-0.5 text-xs text-[var(--ui-text-muted)]">...</span>
+              ) : null}
+              <Button
+                type="button"
+                variant={i === currentPage ? 'default' : 'secondary'}
+                size="icon"
                 onClick={() => onPageChange(i)}
-                className={cn(
-                  'w-6 h-6 rounded text-[11px] font-medium transition-colors',
-                  i === currentPage
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] border border-[var(--border)]',
-                )}
+                className={cn('h-7 w-7 text-xs', i === currentPage && 'pointer-events-none')}
+                aria-current={i === currentPage ? 'page' : undefined}
               >
                 {i + 1}
-              </button>
+              </Button>
             </span>
           ))}
-          <button
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
             onClick={() => onPageChange((p) => Math.min(totalPages - 1, p + 1))}
             disabled={currentPage >= totalPages - 1}
-            className="px-2 py-1 rounded border border-[var(--border)] bg-[var(--surface)] text-[11px] text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            aria-label="Nästa sida"
           >
-            ›
-          </button>
+            <ChevronRight size={16} strokeWidth={1.75} aria-hidden />
+          </Button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
+

@@ -4,8 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { replaceBrowserQuery } from '@shared/lib/browser-query';
-import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
-import ToastContainer from '@shared/ui/toast/toast-container';
 import { useToast } from '@shared/ui/toast/toast-context';
 import { useActiveCompany } from '@shared/hooks/use-active-company';
 import {
@@ -20,13 +18,14 @@ import {
   type OfferProduct,
   type ProductCategory,
 } from '@shared/lib/api/products.api';
-import { CategoryManagerDialog } from './category-manager-dialog';
-import { ProductModal } from './product-modal';
 import {
-  ProductFilterPanel,
   ProductLibraryHeader,
   ProductLibraryPanel,
 } from './product-library-sections';
+import { ProductErrorBanner } from './product-error-banner';
+import { ProductFilterSlot } from './product-filter-slot';
+import { ProductPageDialogs } from './product-page-dialogs';
+import { useProductClipboardToasts } from '../_hooks/use-product-clipboard-toasts';
 import type {
   CategoryComposerPayload,
   CategoryFilterKey,
@@ -39,22 +38,8 @@ import {
   buildStructuredCategoryLabel,
   getProductCategoryMeta,
   normalizeSearch,
+  parseCategoryFilterParam,
 } from './product-library.utils';
-
-function parseCategoryFilterParam(filter: string | null): CategoryFilterKey {
-  if (!filter) return '';
-
-  if (
-    filter === 'uncategorized'
-    || filter.startsWith('main:')
-    || filter.startsWith('sub:')
-    || filter.startsWith('legacy:')
-  ) {
-    return filter as CategoryFilterKey;
-  }
-
-  return '';
-}
 
 export function ProductsPageClient() {
   const searchParams = useSearchParams();
@@ -279,20 +264,10 @@ export function ProductsPageClient() {
     setShowInactive(false);
   };
 
-  const copyCurrentViewLink = useCallback(async () => {
-    await navigator.clipboard.writeText(window.location.href).catch(() => {});
-    setViewLinkCopied(true);
-    addToast({
-      message: 'Vy-länk kopierad',
-      color: 'emerald',
-      icon: (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ),
-    });
-    window.setTimeout(() => setViewLinkCopied(false), 1800);
-  }, [addToast]);
+  const { copyCurrentViewLink } = useProductClipboardToasts({
+    addToast,
+    setViewLinkCopied,
+  });
 
   const handleCreateCategory = useCallback(async (payload: CategoryComposerPayload) => {
     if (!selectedCompanyId) {
@@ -392,7 +367,7 @@ export function ProductsPageClient() {
     } catch {
       setError('Kunde inte uppdatera produkten. Försök igen.');
     }
-  }, [selectedCompanyId]);
+  }, []);
 
   const handleDeleteProduct = useCallback(async (product: OfferProduct) => {
     setDeletingId(product.id);
@@ -411,8 +386,8 @@ export function ProductsPageClient() {
     }
   }, [editingProduct]);
 
-  const renderFilterPanel = () => (
-    <ProductFilterPanel
+  const filterPanel = (
+    <ProductFilterSlot
       productsCount={products.length}
       uncategorizedCount={uncategorizedCount}
       showInactive={showInactive}
@@ -449,30 +424,16 @@ export function ProductsPageClient() {
 
         <AnimatePresence>
           {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className="flex items-center justify-between gap-3 rounded-[24px] border border-[var(--status-danger-bg)] bg-[var(--status-danger-bg)] px-4 py-3 text-sm text-[var(--status-danger-text)]"
-            >
-              <span>{error}</span>
-              <button
-                type="button"
-                onClick={() => void reloadAll()}
-                className="shrink-0 rounded-xl border border-[color-mix(in_srgb,var(--status-danger-text)_25%,transparent)] px-3 py-1.5 text-xs font-medium transition-colors hover:bg-[color-mix(in_srgb,var(--status-danger-text)_8%,transparent)]"
-              >
-                Försök igen
-              </button>
-            </motion.div>
+            <ProductErrorBanner error={error} onRetry={() => void reloadAll()} />
           )}
         </AnimatePresence>
 
         <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className="hidden h-fit rounded-[26px] border border-[var(--border)] bg-[var(--surface-0)] p-4 shadow-sm xl:sticky xl:top-6 xl:block">
+          <aside className="hidden h-fit rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4 shadow-sm xl:sticky xl:top-6 xl:block">
             <div className="mb-3">
-              <p className="text-sm font-semibold text-[var(--text-primary)]">Filter</p>
+              <p className="text-sm font-semibold text-[var(--ui-text)]">Filter</p>
             </div>
-            {renderFilterPanel()}
+            {filterPanel}
           </aside>
 
           <ProductLibraryPanel
@@ -484,7 +445,7 @@ export function ProductsPageClient() {
             filtersOpen={filtersOpen}
             hasActiveFilters={hasActiveFilters}
             viewLinkCopied={viewLinkCopied}
-            filterPanel={renderFilterPanel()}
+            filterPanel={filterPanel}
             onSearchChange={setSearch}
             onFiltersOpenChange={setFiltersOpen}
             onResetFilters={resetFilters}
@@ -499,54 +460,33 @@ export function ProductsPageClient() {
         </div>
       </motion.div>
 
-      {modalOpen && (
-        <ProductModal
-          key={editingProduct?.id ?? 'new-product'}
-          open={modalOpen}
-          product={editingProduct}
-          categories={categoryTree}
-          categoryById={categoryById}
-          categorySupport={categorySupport}
-          categorySupportMessage={categorySupportMessage}
-          saving={saving}
-          selectedCompanyName={selectedCompany?.name}
-          onClose={closeModal}
-          onSave={handleSave}
-          onOpenCategoryManager={openCategoryManager}
-        />
-      )}
-
-      <CategoryManagerDialog
-        open={categoryManagerOpen}
-        onOpenChange={setCategoryManagerOpen}
-        categories={categoryTree}
-        supportState={categorySupport}
-        supportMessage={categorySupportMessage}
+      <ProductPageDialogs
+        modalOpen={modalOpen}
+        editingProduct={editingProduct}
+        categoryTree={categoryTree}
+        categoryById={categoryById}
+        categorySupport={categorySupport}
+        categorySupportMessage={categorySupportMessage}
+        saving={saving}
+        selectedCompanyName={selectedCompany?.name}
+        categoryManagerOpen={categoryManagerOpen}
         mainCounts={mainCounts}
         subCounts={subCounts}
+        categorySaving={categorySaving}
+        deletingCategoryId={deletingCategoryId}
+        deleteProduct={deleteProduct}
+        deletingId={deletingId}
+        toasts={toasts}
+        onCloseProduct={closeModal}
+        onSaveProduct={handleSave}
+        onOpenCategoryManager={openCategoryManager}
+        onCategoryManagerOpenChange={setCategoryManagerOpen}
         onCreateCategory={handleCreateCategory}
         onDeleteCategory={handleDeleteCategory}
-        saving={categorySaving}
-        deletingId={deletingCategoryId}
-        selectedCompanyName={selectedCompany?.name}
+        onDeleteProductOpenChange={(open) => { if (!open) setDeleteProduct(null); }}
+        onConfirmDeleteProduct={(product) => void handleDeleteProduct(product)}
+        onDismissToast={dismissToast}
       />
-
-      <ConfirmDestructiveDialog
-        open={Boolean(deleteProduct)}
-        onOpenChange={(open) => {
-          if (!open) setDeleteProduct(null);
-        }}
-        title={deleteProduct ? `Ta bort ${deleteProduct.name}?` : 'Ta bort produkt?'}
-        description="Produkten försvinner från biblioteket och visas inte längre i offertflödet."
-        confirmLabel="Ta bort"
-        loading={!!deleteProduct && deletingId === deleteProduct.id}
-        onConfirm={() => {
-          if (deleteProduct) {
-            void handleDeleteProduct(deleteProduct);
-          }
-        }}
-      />
-      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }

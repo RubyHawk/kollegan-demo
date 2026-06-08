@@ -52,16 +52,16 @@ function startOfLocalDay(date: Date): Date {
 export function toneClasses(tone: DashboardTone): string {
   switch (tone) {
     case 'success':
-      return 'bg-[var(--status-accepted-bg)] text-[var(--status-accepted-text)] border-[color-mix(in_srgb,var(--status-accepted-text)_24%,var(--border))]';
+      return 'border-[var(--ui-success-border)] bg-[var(--ui-success-bg)] text-[var(--ui-success-text)]';
     case 'warning':
-      return 'bg-[var(--status-warning-bg)] text-[var(--status-warning-text)] border-[color-mix(in_srgb,var(--status-warning-text)_24%,var(--border))]';
+      return 'border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] text-[var(--ui-warning-text)]';
     case 'danger':
-      return 'bg-[var(--status-danger-bg)] text-[var(--status-danger-text)] border-[color-mix(in_srgb,var(--status-danger-text)_24%,var(--border))]';
+      return 'border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] text-[var(--ui-danger-text)]';
     case 'accent':
-      return 'bg-[var(--accent-subtle)] text-[var(--accent)] border-[var(--accent-border)]';
+      return 'border-[var(--ui-accent-border)] bg-[var(--ui-surface-selected)] text-[var(--ui-accent)]';
     case 'info':
-      return 'bg-[var(--status-viewed-bg)] text-[var(--status-viewed-text)] border-[color-mix(in_srgb,var(--status-viewed-text)_24%,var(--border))]';
+      return 'border-[var(--ui-info-border)] bg-[var(--ui-info-bg)] text-[var(--ui-info-text)]';
     default:
-      return 'bg-[var(--surface-2)] text-[var(--text-secondary)] border-[var(--border)]';
+      return 'border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text-secondary)]';
   }
 }

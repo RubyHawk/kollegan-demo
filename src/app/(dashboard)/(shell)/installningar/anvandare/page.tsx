@@ -1,15 +1,7 @@
 'use client';
 
-/**
- * /settings/users
- *
- * User management — list, create, and delete staff accounts.
- * Connected to GET/POST/DELETE /api/v1/staff.
- * Admin-only: access is enforced server-side on the API.
- */
-
-import { useState, useEffect, useCallback } from 'react';
-import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import { useCallback, useEffect, useState } from 'react';
+import { LoaderCircle, Plus, Trash2 } from 'lucide-react';
 import {
   createStaffUser,
   deleteStaffUser,
@@ -17,23 +9,35 @@ import {
   type StaffRole,
   type StaffUser,
 } from '@shared/lib/api/staff.api';
-
-// ─── Types ──────────────────────────────────────────────────────────────────
-
-const ROLE_BADGE: Record<string, string> = {
-  admin:        'bg-[var(--accent)]/10 text-[var(--accent)]',
-  manager:      'bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-400',
-  receptionist: 'bg-blue-50 dark:bg-blue-900/25 text-blue-700 dark:text-blue-400',
-};
+import { Button } from '@shared/ui/button';
+import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
+import { InlineAlert } from '@shared/ui/inline-alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@shared/ui/select';
+import { StatusBadge, type StatusTone } from '@shared/ui/status-badge';
+import { FieldLabel, Input, SectionCard } from '../_components/shared';
 
 const ROLE_LABEL: Record<string, string> = {
-  admin:        'Admin',
-  manager:      'Manager',
+  admin: 'Admin',
+  manager: 'Manager',
   receptionist: 'Receptionist',
 };
 
+const ROLE_TONE: Record<string, StatusTone> = {
+  admin: 'accent',
+  manager: 'info',
+  receptionist: 'neutral',
+};
+
+const EMPTY_FORM = { email: '', password: '', role: 'receptionist' as StaffRole };
+
 function fmt(iso: string | null): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
@@ -41,20 +45,21 @@ function initials(email: string): string {
   return email.slice(0, 2).toUpperCase();
 }
 
-const AVATAR_COLORS = ['bg-violet-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500'];
-function avatarColor(id: string) { return AVATAR_COLORS[id.charCodeAt(0) % AVATAR_COLORS.length]; }
-
-const EMPTY_FORM = { email: '', password: '', role: 'receptionist' as StaffRole };
-
-// ─── Page ────────────────────────────────────────────────────────────────────
+function RoleBadge({ role }: { role: string }) {
+  return (
+    <StatusBadge tone={ROLE_TONE[role] ?? 'neutral'}>
+      {ROLE_LABEL[role] ?? role}
+    </StatusBadge>
+  );
+}
 
 export default function UsersPage() {
-  const [users, setUsers]       = useState<StaffUser[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
+  const [users, setUsers] = useState<StaffUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm]         = useState(EMPTY_FORM);
-  const [saving, setSaving]     = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteUser, setConfirmDeleteUser] = useState<StaffUser | null>(null);
 
@@ -70,7 +75,9 @@ export default function UsersPage() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const saveUser = useCallback(async () => {
     setSaving(true);
@@ -101,133 +108,145 @@ export default function UsersPage() {
   }, [load]);
 
   return (
-    <div>
-
-      {/* Header */}
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm text-[var(--text-muted)]">
-            Hantera personal och deras åtkomst till systemet.
-          </p>
-        </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity shrink-0"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <p className="text-sm text-[var(--ui-text-muted)]">
+          Hantera personal och deras åtkomst till systemet.
+        </p>
+        <Button type="button" size="compact" onClick={() => setShowForm(true)}>
+          <Plus aria-hidden="true" size={16} strokeWidth={1.75} />
           Ny användare
-        </button>
+        </Button>
       </div>
 
-      {error && (
-        <div className="mb-6 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
-          </svg>
-          {error}
-        </div>
-      )}
+      {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
 
-      {/* New user form */}
-      {showForm && (
-        <div className="mb-6 rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-6">
-          <h2 className="mb-4 text-sm font-semibold text-[var(--text-primary)]">Ny användare</h2>
+      {showForm ? (
+        <SectionCard title="Ny användare" description="Skapa ett personalkonto med en tydlig roll och ett starkt startlösenord.">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">E-postadress *</label>
-              <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
+              <FieldLabel>E-postadress *</FieldLabel>
+              <Input
+                type="email"
+                value={form.email}
+                onChange={(email) => setForm((current) => ({ ...current, email }))}
+                placeholder="namn@foretag.se"
+              />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Lösenord * (min 12 tecken)</label>
-              <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors" />
+              <FieldLabel>Lösenord * (min 12 tecken)</FieldLabel>
+              <Input
+                type="password"
+                value={form.password}
+                onChange={(password) => setForm((current) => ({ ...current, password }))}
+              />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Roll</label>
-              <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value as typeof form.role }))}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors">
-                <option value="receptionist">Receptionist</option>
-                <option value="manager">Manager</option>
-                <option value="admin">Admin</option>
-              </select>
+              <FieldLabel>Roll</FieldLabel>
+              <Select
+                value={form.role}
+                onValueChange={(role) => setForm((current) => ({ ...current, role: role as StaffRole }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="receptionist">Receptionist</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          <div className="mt-4 flex gap-2">
-            <button onClick={() => void saveUser()} disabled={saving || !form.email || form.password.length < 12}
-              className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {saving ? 'Sparar…' : 'Skapa användare'}
-            </button>
-            <button onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}
-              className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] transition-colors">
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              onClick={() => void saveUser()}
+              disabled={saving || !form.email || form.password.length < 12}
+              loading={saving}
+            >
+              {saving ? 'Sparar...' : 'Skapa användare'}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setShowForm(false);
+                setForm(EMPTY_FORM);
+              }}
+            >
               Avbryt
-            </button>
+            </Button>
           </div>
-        </div>
-      )}
+        </SectionCard>
+      ) : null}
 
-      {/* Users table */}
-      {!loading && (
-        <div className="rounded-2xl border border-[var(--border)] overflow-hidden">
-          <table className="min-w-full divide-y divide-[var(--border)] text-sm">
-            <thead className="bg-[var(--surface-alt)]">
-              <tr>
-                {['Användare', 'Roll', 'Skapad', 'Senaste inloggning', ''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border)] bg-[var(--surface)]">
-              {users.map(u => (
-                <tr key={u.id} className="hover:bg-[var(--surface-alt)] transition-colors">
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-full ${avatarColor(u.id)} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
-                        {initials(u.email)}
-                      </div>
-                      <span className="text-sm font-medium text-[var(--text-primary)]">{u.email}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${ROLE_BADGE[u.role] ?? 'bg-[var(--surface-alt)] text-[var(--text-muted)]'}`}>
-                      {ROLE_LABEL[u.role] ?? u.role}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmt(u.createdAt)}</td>
-                  <td className="px-4 py-3.5 text-[var(--text-muted)]">{fmt(u.lastLogin)}</td>
-                  <td className="px-4 py-3.5">
-                    <button onClick={() => setConfirmDeleteUser(u)} disabled={deletingId === u.id}
-                      className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors disabled:opacity-40">
-                      Ta bort
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {users.length === 0 && (
+      <SectionCard title="Användare" description="Översikt över personalkonton och senaste inloggning.">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-14">
+            <LoaderCircle aria-hidden="true" size={20} strokeWidth={1.75} className="animate-spin text-[var(--ui-text-muted)]" />
+            <p className="text-sm text-[var(--ui-text-muted)]">Laddar användare...</p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)]">
+            <table className="min-w-full divide-y divide-[var(--ui-border-subtle)] text-sm">
+              <thead className="bg-[var(--ui-surface-subtle)]">
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-sm text-[var(--text-muted)]">
-                    Inga användare hittades.
-                  </td>
+                  {['Användare', 'Roll', 'Skapad', 'Senaste inloggning', ''].map((heading) => (
+                    <th key={heading} className="px-4 py-3 text-left text-xs font-semibold uppercase text-[var(--ui-text-muted)]">
+                      {heading}
+                    </th>
+                  ))}
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody className="divide-y divide-[var(--ui-border-subtle)] bg-[var(--ui-surface)]">
+                {users.map((staffUser) => (
+                  <tr key={staffUser.id} className="transition-colors hover:bg-[var(--ui-surface-hover)]">
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-xs font-bold text-[var(--ui-text-secondary)]">
+                          {initials(staffUser.email)}
+                        </div>
+                        <span className="text-sm font-medium text-[var(--ui-text)]">{staffUser.email}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <RoleBadge role={staffUser.role} />
+                    </td>
+                    <td className="px-4 py-3.5 text-[var(--ui-text-muted)]">{fmt(staffUser.createdAt)}</td>
+                    <td className="px-4 py-3.5 text-[var(--ui-text-muted)]">{fmt(staffUser.lastLogin)}</td>
+                    <td className="px-4 py-3.5 text-right">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="compact"
+                        onClick={() => setConfirmDeleteUser(staffUser)}
+                        disabled={deletingId === staffUser.id}
+                      >
+                        <Trash2 aria-hidden="true" size={16} strokeWidth={1.75} />
+                        Ta bort
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {users.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-12 text-center text-sm text-[var(--ui-text-muted)]">
+                      Inga användare hittades.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </SectionCard>
 
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-[var(--text-muted)]">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-          </svg>
-          <p className="text-sm text-[var(--text-muted)]">Laddar användare…</p>
-        </div>
-      )}
       <ConfirmDestructiveDialog
         open={Boolean(confirmDeleteUser)}
-        onOpenChange={(open) => { if (!open) setConfirmDeleteUser(null); }}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteUser(null);
+        }}
         title="Ta bort användare?"
         description={
           confirmDeleteUser

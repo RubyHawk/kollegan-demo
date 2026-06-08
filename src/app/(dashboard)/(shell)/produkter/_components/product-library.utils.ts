@@ -1,5 +1,5 @@
 import type { OfferProduct, ProductCategory } from '@shared/lib/api/products.api';
-import type { CategoryNode, ProductCategoryMeta, ProductForm } from './product-library.types';
+import type { CategoryFilterKey, CategoryNode, ProductCategoryMeta, ProductForm } from './product-library.types';
 import { EMPTY_PRODUCT_FORM } from './product-library.types';
 
 export function formatSek(value: number) {
@@ -16,6 +16,21 @@ export function productInitials(name: string) {
 
 export function normalizeSearch(value: string) {
   return value.trim().toLowerCase();
+}
+
+export function parseCategoryFilterParam(filter: string | null): CategoryFilterKey {
+  if (!filter) return '';
+
+  if (
+    filter === 'uncategorized'
+    || filter.startsWith('main:')
+    || filter.startsWith('sub:')
+    || filter.startsWith('legacy:')
+  ) {
+    return filter as CategoryFilterKey;
+  }
+
+  return '';
 }
 
 export function buildCategoryTree(categories: ProductCategory[]): CategoryNode[] {

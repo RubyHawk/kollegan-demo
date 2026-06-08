@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, CheckCircle, Plus, Trash, WarningCircle } from '@phosphor-icons/react';
+import { Bell, CheckCircle, Plus, Trash, TriangleAlert, X } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
 import {
   ACTIVE_NOTIFICATION_DEFINITIONS,
@@ -14,13 +14,13 @@ import {
 } from '@shared/lib/api/settings.api';
 
 const TONE_PILL: Record<string, string> = {
-  emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/20 dark:text-emerald-400',
-  red: 'border-red-200 bg-red-50 text-red-600 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400',
+  emerald: 'border-[var(--ui-success-border)] bg-[var(--ui-success-bg)] text-[var(--ui-success-text)]',
+  red: 'border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] text-[var(--ui-danger-text)]',
 };
 
 const TONE_ACTIVE: Record<string, string> = {
-  emerald: 'border-emerald-500 bg-emerald-500 text-white',
-  red: 'border-red-500 bg-red-500 text-white',
+  emerald: 'border-[var(--ui-success-text)] bg-[var(--ui-success-text)] text-[var(--ui-text-inverse)]',
+  red: 'border-[var(--ui-danger-text)] bg-[var(--ui-danger-text)] text-[var(--ui-text-inverse)]',
 };
 
 export default function NotifieringarPage() {
@@ -96,19 +96,19 @@ export default function NotifieringarPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-[var(--text-muted)]">Laddar notifieringskopplingar...</p>;
+    return <p className="text-sm text-[var(--ui-text-muted)]">Laddar notifieringskopplingar...</p>;
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-0)] p-5">
+      <div className="rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-5">
         <div className="flex flex-wrap items-start gap-3">
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] text-[var(--accent)]">
-            <Bell size={18} weight="duotone" />
+          <div className="inline-flex h-10 w-10 items-center justify-center rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-accent)]">
+            <Bell aria-hidden="true" size={18} strokeWidth={1.75} />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-base font-semibold text-[var(--text-primary)]">Interna notifieringsmottagare</h2>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--text-muted)]">
+            <h2 className="text-base font-semibold text-[var(--ui-text)]">Interna notifieringsmottagare</h2>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ui-text-muted)]">
               Lägg till valfria e-postadresser som ska få interna notiser när en offert accepteras eller avvisas.
               Adressen behöver inte vara kopplad till ett konto i systemet.
             </p>
@@ -117,26 +117,26 @@ export default function NotifieringarPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-400">
-          <WarningCircle size={15} weight="fill" className="shrink-0" />
+        <div className="flex items-center gap-2 rounded-[var(--ui-radius-control)] border border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] px-4 py-2.5 text-sm text-[var(--ui-danger-text)]">
+          <TriangleAlert aria-hidden="true" size={15} strokeWidth={2} className="shrink-0" />
           {error}
           <button type="button" onClick={() => setError('')} className="ml-auto opacity-60 hover:opacity-100">
-            x
+            <X aria-hidden="true" size={14} strokeWidth={2} />
           </button>
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-0)]">
-        <div className="flex items-center gap-2 border-b border-[var(--border-light)] px-5 py-3.5">
-          <Bell size={14} weight="duotone" className="text-[var(--accent)]" />
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Aktiva kopplingar</p>
-          <span className="ml-auto text-xs text-[var(--text-muted)]">
+      <div className="overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)]">
+        <div className="flex items-center gap-2 border-b border-[var(--ui-border-subtle)] px-5 py-3.5">
+          <Bell aria-hidden="true" size={14} strokeWidth={1.75} className="text-[var(--ui-accent)]" />
+          <p className="text-sm font-semibold text-[var(--ui-text)]">Aktiva kopplingar</p>
+          <span className="ml-auto text-xs text-[var(--ui-text-muted)]">
             {recipients.length === 0 ? 'Inga tillagda' : `${recipients.length} kopplingar`}
           </span>
         </div>
 
         {recipients.length > 0 ? (
-          <div className="divide-y divide-[var(--border-light)]">
+          <div className="divide-y divide-[var(--ui-border-subtle)]">
             <AnimatePresence initial={false}>
               {recipients.map((recipient) => (
                 <motion.div
@@ -149,8 +149,8 @@ export default function NotifieringarPage() {
                 >
                   <div className="flex flex-col gap-3 md:flex-row md:items-center">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-[var(--text-primary)]">{recipient.email}</p>
-                      <p className="mt-1 text-xs text-[var(--text-muted)]">
+                      <p className="truncate text-sm font-medium text-[var(--ui-text)]">{recipient.email}</p>
+                      <p className="mt-1 text-xs text-[var(--ui-text-muted)]">
                         Får notifieringar för markerade händelser utan att behöva ha ett konto i systemet.
                       </p>
                     </div>
@@ -173,10 +173,10 @@ export default function NotifieringarPage() {
                       type="button"
                       onClick={() => remove(recipient.id)}
                       disabled={saving || !canManage}
-                      className="shrink-0 rounded-lg p-1 text-[var(--text-muted)] transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-40 dark:hover:bg-red-900/20"
+                      className="shrink-0 rounded-lg p-1 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-danger-bg)] hover:text-[var(--ui-danger-text)] disabled:opacity-40"
                       aria-label="Ta bort koppling"
                     >
-                      <Trash size={13} weight="bold" />
+                      <Trash aria-hidden="true" size={13} strokeWidth={2} />
                     </button>
                   </div>
                 </motion.div>
@@ -184,13 +184,13 @@ export default function NotifieringarPage() {
             </AnimatePresence>
           </div>
         ) : (
-          <div className="px-5 py-5 text-sm text-[var(--text-muted)]">
+          <div className="px-5 py-5 text-sm text-[var(--ui-text-muted)]">
             Inga extra mottagare är tillagda ännu. Offertens ansvariga användare notifieras alltid separat.
           </div>
         )}
 
-        <div className={cn('px-5 py-4', recipients.length > 0 && 'border-t border-[var(--border-light)]')}>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Lägg till mottagare</p>
+        <div className={cn('px-5 py-4', recipients.length > 0 && 'border-t border-[var(--ui-border-subtle)]')}>
+          <p className="mb-3 text-xs font-semibold uppercase text-[var(--ui-text-muted)]">Lägg till mottagare</p>
 
           <div className="flex flex-col gap-2.5">
             <input
@@ -200,10 +200,10 @@ export default function NotifieringarPage() {
               onKeyDown={(event) => event.key === 'Enter' && addRecipient()}
               placeholder="namn@foretag.se"
               disabled={!canManage}
-              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-border)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-[var(--ui-radius-control)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-3 py-2 text-sm text-[var(--ui-text)] placeholder:text-[var(--ui-text-muted)] focus:border-[var(--ui-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-60"
             />
 
-            <p className="text-xs leading-relaxed text-[var(--text-muted)]">
+            <p className="text-xs leading-relaxed text-[var(--ui-text-muted)]">
               Den här adressen får organisationens interna notifieringar utöver offertens ansvariga användare. Inget konto krävs.
             </p>
 
@@ -227,7 +227,7 @@ export default function NotifieringarPage() {
                       'rounded-full border px-2.5 py-1 text-xs font-medium transition-all',
                       active
                         ? TONE_ACTIVE[definition.tone]
-                        : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]',
+                        : 'border-[var(--ui-border)] text-[var(--ui-text-secondary)] hover:border-[var(--ui-accent)] hover:text-[var(--ui-accent)]',
                       !canManage && 'cursor-not-allowed opacity-50',
                     )}
                   >
@@ -237,28 +237,28 @@ export default function NotifieringarPage() {
               })}
             </div>
 
-            {addError && <p className="text-xs text-red-500">{addError}</p>}
+            {addError && <p className="text-xs text-[var(--ui-danger-text)]">{addError}</p>}
 
             <button
               type="button"
               onClick={addRecipient}
               disabled={saving || !canManage}
-              className="inline-flex self-start rounded-xl bg-[var(--accent)] px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-light)] disabled:opacity-50"
+              className="inline-flex self-start rounded-[var(--ui-radius-control)] bg-[var(--ui-accent)] px-3.5 py-2 text-sm font-semibold text-[var(--ui-text-inverse)] transition-colors hover:bg-[var(--ui-accent-hover)] disabled:opacity-50"
             >
               <span className="inline-flex items-center gap-1.5">
-                <Plus size={13} weight="bold" />
+                <Plus aria-hidden="true" size={13} strokeWidth={2} />
                 Lägg till
               </span>
             </button>
           </div>
         </div>
 
-        <div className="border-t border-[var(--border-light)] bg-[var(--surface-alt)] px-5 py-3">
-          <p className="text-xs leading-relaxed text-[var(--text-muted)]">
+        <div className="border-t border-[var(--ui-border-subtle)] bg-[var(--ui-surface-subtle)] px-5 py-3">
+          <p className="text-xs leading-relaxed text-[var(--ui-text-muted)]">
             Dessa adresser får e-post vid markerade händelser utöver offertens ansvariga användare som alltid notifieras.
           </p>
           {!canManage && (
-            <p className="mt-2 text-xs text-[var(--text-muted)]">
+            <p className="mt-2 text-xs text-[var(--ui-text-muted)]">
               Du kan se organisationens kopplingar här, men bara staff kan ändra dem.
             </p>
           )}
@@ -271,9 +271,9 @@ export default function NotifieringarPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="fixed bottom-6 right-6 flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white shadow-lg"
+            className="fixed bottom-6 right-6 flex items-center gap-2 rounded-[var(--ui-radius-control)] bg-[var(--ui-success-text)] px-4 py-2.5 text-sm font-medium text-[var(--ui-text-inverse)] shadow-[var(--ui-shadow-raised)]"
           >
-            <CheckCircle size={15} weight="fill" />
+            <CheckCircle aria-hidden="true" size={15} strokeWidth={2} />
             Sparat
           </motion.div>
         )}

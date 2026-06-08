@@ -19,9 +19,9 @@ export const PLAN = {
 } as const;
 
 export const USAGE_STATS: UsageStat[] = [
-  { label: 'AI-samtal',   used: 1284, limit: 2000 },
-  { label: 'Aktiva demo', used: 1,    limit: 3    },
-  { label: 'Användare',   used: 4,    limit: 10   },
+  { label: 'AI-samtal', used: 1284, limit: 2000 },
+  { label: 'Aktiva demo', used: 1, limit: 3 },
+  { label: 'Användare', used: 4, limit: 10 },
 ];
 
 export const PAYMENT_METHOD = {

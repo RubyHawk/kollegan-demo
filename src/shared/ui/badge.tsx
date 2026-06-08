@@ -3,15 +3,20 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@shared/lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2',
+  'inline-flex items-center gap-1 rounded-[var(--ui-radius-sm)] border px-2 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)] focus:ring-offset-2',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-[var(--accent)] text-white',
-        secondary: 'border-transparent bg-[var(--surface-alt)] text-[var(--text-secondary)]',
-        destructive: 'border-transparent bg-red-500 text-white',
-        outline: 'text-[var(--text-primary)]',
-        warning: 'border-transparent bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400',
+        default: 'border-[var(--ui-accent-border)] bg-[var(--ui-accent-subtle)] text-[var(--ui-accent)]',
+        neutral: 'border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text-secondary)]',
+        secondary: 'border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text-secondary)]',
+        accent: 'border-[var(--ui-accent-border)] bg-[var(--ui-accent-subtle)] text-[var(--ui-accent)]',
+        success: 'border-[var(--ui-success-border)] bg-[var(--ui-success-bg)] text-[var(--ui-success-text)]',
+        warning: 'border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] text-[var(--ui-warning-text)]',
+        danger: 'border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] text-[var(--ui-danger-text)]',
+        destructive: 'border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] text-[var(--ui-danger-text)]',
+        info: 'border-[var(--ui-info-border)] bg-[var(--ui-info-bg)] text-[var(--ui-info-text)]',
+        outline: 'border-[var(--ui-border)] bg-transparent text-[var(--ui-text)]',
       },
     },
     defaultVariants: {

@@ -11,6 +11,8 @@ Core rules:
 - Browser code must use HTTP API clients, not repositories, Prisma, or application services.
 - Preserve existing behavior unless the task explicitly changes it.
 - Use shared UI primitives and semantic CSS tokens.
+- Before creating or refactoring non-login UI, read `docs/DESIGN_SYSTEM.md` and `docs/ai/UI_GENERATION_CHECKLIST.md`.
+- Non-login UI must use `--ui-*` tokens, shared primitives, documented templates, and Lucide icons.
+- Do not invent UI colors, radii, shadows, icon systems, or page-local primitive variants.
 - Do not create or enlarge monolithic hand-written files.
 - Update evidence docs for security-relevant changes.
-

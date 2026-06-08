@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowsClockwiseIcon, XIcon } from '@phosphor-icons/react';
+import { RefreshCw, X } from 'lucide-react';
 
 export const API_TRANSIENT_ERROR_EVENT = 'soleria:api-transient-error';
 
@@ -32,10 +32,11 @@ export function NetworkRetryBanner() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-3 z-[210] flex justify-center px-4">
-      <div className="pointer-events-auto flex max-w-xl items-center gap-3 rounded-xl border border-[var(--accent-border)] bg-[var(--surface)]/95 px-4 py-2.5 text-sm text-[var(--text-primary)] shadow-elevated backdrop-blur">
-        <ArrowsClockwiseIcon
+      <div className="pointer-events-auto flex max-w-xl items-center gap-3 rounded-lg border border-[var(--ui-accent-border)] bg-[var(--ui-surface)]/95 px-4 py-2.5 text-sm text-[var(--ui-text)] shadow-[var(--ui-shadow-raised)] backdrop-blur">
+        <RefreshCw
           size={16}
-          className={detail.willRetry ? 'animate-spin text-[var(--accent)]' : 'text-[var(--text-muted)]'}
+          strokeWidth={1.75}
+          className={detail.willRetry ? 'animate-spin text-[var(--ui-accent)]' : 'text-[var(--ui-text-muted)]'}
         />
         <span className="min-w-0 flex-1">
           {detail.willRetry
@@ -45,10 +46,10 @@ export function NetworkRetryBanner() {
         <button
           type="button"
           onClick={() => setDetail(null)}
-          className="rounded-md p-1 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-active)] hover:text-[var(--text-primary)]"
+          className="rounded-md p-1 text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
           aria-label="Stäng nätverksmeddelande"
         >
-          <XIcon size={14} />
+          <X size={14} strokeWidth={1.75} />
         </button>
       </div>
     </div>
