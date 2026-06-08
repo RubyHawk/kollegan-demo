@@ -19,7 +19,8 @@ import {
   GripVertical,
   Home,
   Info,
-  Link2,
+  Layers,
+  Link,
   Lock,
   LogOut,
   Mail,
@@ -37,7 +38,6 @@ import {
   Send,
   Settings,
   Shield,
-  Sliders,
   Sparkles,
   Sun,
   Trash2,
@@ -112,6 +112,6 @@ export const ShieldIcon = makeIcon(Shield);
 export const PackageIcon = makeIcon(Package);
 export const BellIcon = makeIcon(Bell);
 export const BlocksIcon = makeIcon(Blocks);
-export const LinkIcon = makeIcon(Link2);
-export const SlidersIcon = makeIcon(Sliders);
+export const LayersIcon = makeIcon(Layers);
+export const LinkIcon = makeIcon(Link);
 export const HelpCircleIcon = makeIcon(CircleHelp);

@@ -11,7 +11,7 @@ import {
   LinkIcon,
   BlocksIcon,
   CreditCardIcon,
-  SlidersIcon,
+  LayersIcon,
   UsersIcon,
   HelpCircleIcon,
 } from '@shared/ui/icons';
@@ -69,7 +69,7 @@ export const SETTINGS_CONFIG: SettingsSection[] = [
       { href: '/installningar/notifieringar',  label: 'Notifieringar',  icon: BellIcon      },
       { href: '/installningar/integrationer',  label: 'Integrationer',  icon: BlocksIcon    },
       { href: '/installningar/fakturering',    label: 'Fakturering',    icon: CreditCardIcon},
-      { href: '/installningar/anpassade-falt', label: 'Anpassade fält', icon: SlidersIcon   },
+      { href: '/installningar/anpassade-falt', label: 'Anpassade fält', icon: LayersIcon    },
     ],
   },
   {
