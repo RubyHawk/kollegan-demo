@@ -85,9 +85,7 @@ export const NAV_CONFIG: NavSection[] = [
         label: 'Projekt',
         icon: BriefcaseIcon,
         items: [
-          { href: '/projekt',                    label: 'Alla projekt' },
-          { href: '/projekt?stage=uppgifter',    label: 'Nya' },
-          { href: '/projekt?stage=bestallt',     label: 'Beställda' },
+          { href: '/projekt', label: 'Alla projekt' },
         ],
       },
       {
@@ -100,7 +98,17 @@ export const NAV_CONFIG: NavSection[] = [
           { href: '/fakturor/ny', label: 'Ny faktura' },
         ],
       },
-      { type: 'link', href: '/crm',      label: 'Kunder',   icon: UsersIcon },
+      {
+        type: 'dropdown',
+        key: 'kunder',
+        label: 'Kunder',
+        icon: UsersIcon,
+        items: [
+          { href: '/crm',          label: 'Översikt'  },
+          { href: '/crm/contacts', label: 'Kontakter' },
+          { href: '/crm/leads',    label: 'Leads'     },
+        ],
+      },
       { type: 'link', href: '/analytics', label: 'Aktivitet', icon: BarChart2Icon },
     ],
   },
@@ -123,8 +131,11 @@ export const NAV_CONFIG: NavSection[] = [
         label: 'Inställningar',
         icon: SettingsIcon,
         items: [
-          { href: '/installningar',        label: 'Allmänt' },
-          { href: '/installningar/profil', label: 'Profil' },
+          { href: '/installningar/epost',         label: 'E-post'        },
+          { href: '/installningar/notifieringar', label: 'Notifieringar' },
+          { href: '/installningar/fakturering',   label: 'Fakturering'   },
+          { href: '/installningar/anslutningar',  label: 'Anslutningar'  },
+          { href: '/installningar/integrationer', label: 'Integrationer' },
         ],
       },
     ],

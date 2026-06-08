@@ -27,6 +27,7 @@ import { createPortal } from 'react-dom';
 import {
   UserIcon,
   SettingsIcon,
+  ShieldIcon,
   LogOutIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
@@ -262,6 +263,14 @@ function SidebarFooter({
         >
           <UserIcon size={14} className="shrink-0" />
           Profil
+        </Link>
+        <Link
+          href="/installningar/sakerhet"
+          onClick={() => { setPopoverOpen(false); onMobileClose?.(); }}
+          className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
+        >
+          <ShieldIcon size={14} className="shrink-0" />
+          Säkerhet
         </Link>
         <Link
           href="/installningar/utseende"

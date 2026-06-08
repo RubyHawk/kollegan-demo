@@ -9,14 +9,7 @@ import { MenuIcon, ChevronRightIcon, PlusIcon } from '@shared/ui/icons';
 import { SearchTrigger } from '@shared/ui/search-command';
 import { BrandLockup } from '@shared/ui/brand';
 import { logout } from '@shared/lib/api/auth-account.api';
-
-interface User {
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  avatarUrl?: string | null;
-  role: string;
-}
+import type { User } from '@shared/ui/sidebar-config';
 
 interface Props {
   user: User;
@@ -25,16 +18,23 @@ interface Props {
 
 const SEG_LABELS: Record<string, string> = {
   offerter: 'Offerter',
-  ny: 'Ny offert',
+  fakturor: 'Fakturor',
   mallar: 'Mallar',
   produkter: 'Produkter',
   projekt: 'Projekt',
   installningar: 'Inställningar',
   anvandare: 'Användare',
   profil: 'Profil',
+  sakerhet: 'Säkerhet',
+  utseende: 'Utseende',
+  foretag: 'Företag',
+  epost: 'E-post',
   fakturering: 'Fakturering',
-  'anpassade-falt': 'Anpassade fält',
+  anslutningar: 'Anslutningar',
+  notifieringar: 'Notifieringar',
   integrationer: 'Integrationer',
+  'anpassade-falt': 'Anpassade fält',
+  'mfa-support': 'MFA-support',
   'logga-in': 'Logga in',
   crm: 'CRM',
   contacts: 'Kontakter',
@@ -57,6 +57,8 @@ const UUID_SEGMENT = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3
 
 function labelForSegment(segment: string, previous?: string) {
   if (previous === 'projekt' && UUID_SEGMENT.test(segment)) return 'Projektdetalj';
+  if (segment === 'ny' && previous === 'fakturor') return 'Ny faktura';
+  if (segment === 'ny') return 'Ny offert';
   return SEG_LABELS[segment] ?? (segment.charAt(0).toUpperCase() + segment.slice(1));
 }
 
@@ -122,7 +124,6 @@ export default function AppShell({ user, children }: Props) {
           aria-label="Notifieringar"
         >
           <Bell size={18} strokeWidth={1.75} />
-          <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--ui-accent)] text-[9px] font-bold text-[var(--ui-text-inverse)]">2</span>
         </Link>
         <Link
           href="/offerter/ny"
