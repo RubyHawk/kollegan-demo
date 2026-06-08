@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Activity, FileText, Plus, Search, Users } from 'lucide-react';
 import { listCustomers } from '@shared/lib/api/customers.api';
@@ -42,7 +42,7 @@ const STATUS_TONE: Record<string, StatusTone> = {
 const initials = (name: string) => name.split(' ').map((word) => word[0]).slice(0, 2).join('').toUpperCase();
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
 
-export default function CrmPage() {
+function CrmPageInner() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentLeads, setRecentLeads] = useState<RecentLead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,4 +194,8 @@ export default function CrmPage() {
       </section>
     </div>
   );
+}
+
+export default function CrmPage() {
+  return <Suspense><CrmPageInner /></Suspense>;
 }

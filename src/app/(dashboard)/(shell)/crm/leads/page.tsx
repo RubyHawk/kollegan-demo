@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Check, Copy, LoaderCircle, Plus, Search, Users, X } from 'lucide-react';
@@ -95,7 +95,7 @@ function fmt(iso: string): string {
   return new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function LeadsPage() {
+function LeadsPageInner() {
   const searchParams = useSearchParams();
   const { selectedCompanyId, selectedCompany } = useActiveCompany();
   const { toasts, addToast, dismissToast } = useToast();
@@ -342,6 +342,10 @@ export default function LeadsPage() {
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
+}
+
+export default function LeadsPage() {
+  return <Suspense><LeadsPageInner /></Suspense>;
 }
 
 function PageChrome({ total, companyName, onNew }: { total: number; companyName?: string; onNew: () => void }) {

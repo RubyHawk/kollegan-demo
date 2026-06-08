@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -102,7 +102,7 @@ function ProjectCard({ project }: { project: Project }) {
   );
 }
 
-export default function ProjectsBoardPage() {
+function ProjectsBoardPageInner() {
   const searchParams = useSearchParams();
   const stageQuery = searchParams.get('stage') ?? '';
   const projects = useProjectsListStore((s) => s.projects);
@@ -244,4 +244,8 @@ export default function ProjectsBoardPage() {
       )}
     </div>
   );
+}
+
+export default function ProjectsBoardPage() {
+  return <Suspense><ProjectsBoardPageInner /></Suspense>;
 }
