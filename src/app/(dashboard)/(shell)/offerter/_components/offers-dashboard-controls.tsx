@@ -193,7 +193,7 @@ export function OffersDashboardToolbar({
             <Button
               key={t.id}
               type="button"
-              variant={isActive ? 'primary' : 'secondary'}
+              variant={isActive ? 'default' : 'secondary'}
               size="sm"
               onClick={() => onTabChange(t.id)}
               className="shrink-0"

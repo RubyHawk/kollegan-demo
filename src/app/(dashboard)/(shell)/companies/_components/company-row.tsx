@@ -76,7 +76,7 @@ export function CompanyRow({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-          <Button type="button" variant={active ? 'primary' : 'secondary'} size="compact" onClick={() => onActivate(company.id)}>
+          <Button type="button" variant={active ? 'default' : 'secondary'} size="compact" onClick={() => onActivate(company.id)}>
             {active ? 'Valt nu' : 'Välj företag'}
           </Button>
           <Button type="button" variant="secondary" size="compact" onClick={() => onOverview(company)}>

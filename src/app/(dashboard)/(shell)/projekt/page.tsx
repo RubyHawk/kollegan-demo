@@ -167,11 +167,11 @@ export default function ProjectsBoardPage() {
         </div>
         <ToolbarSpacer />
         <ToolbarGroup>
-          <Button asChild variant={stageFilter === 'all' ? 'primary' : 'outline'} size="sm">
+          <Button asChild variant={stageFilter === 'all' ? 'default' : 'outline'} size="sm">
             <Link href="/projekt">Alla</Link>
           </Button>
           {PROJECT_STAGES.map((stage) => (
-            <Button key={stage} asChild variant={stageFilter === stage ? 'primary' : 'outline'} size="sm">
+            <Button key={stage} asChild variant={stageFilter === stage ? 'default' : 'outline'} size="sm">
               <Link href={`/projekt?stage=${PROJECT_STAGE_QUERY[stage]}`}>
                 {PROJECT_STAGE_LABELS[stage]}
                 <span className="ml-1 text-xs opacity-70">{counts[stage]}</span>

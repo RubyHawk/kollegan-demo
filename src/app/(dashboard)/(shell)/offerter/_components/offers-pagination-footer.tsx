@@ -52,7 +52,7 @@ export function OffersPaginationFooter({
               ) : null}
               <Button
                 type="button"
-                variant={i === currentPage ? 'primary' : 'secondary'}
+                variant={i === currentPage ? 'default' : 'secondary'}
                 size="icon"
                 onClick={() => onPageChange(i)}
                 className={cn('h-7 w-7 text-xs', i === currentPage && 'pointer-events-none')}

@@ -56,7 +56,7 @@ export default function AnslutningarPage() {
                 </div>
                 <Button
                   type="button"
-                  variant={isConnected ? 'danger' : 'secondary'}
+                  variant={isConnected ? 'destructive' : 'secondary'}
                   size="compact"
                   onClick={() => toggle(integration.id)}
                   disabled={isConnecting}

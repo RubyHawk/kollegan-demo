@@ -434,7 +434,7 @@ function MeetingCard({
 
 function ActionButton({ icon: Icon, label, disabled, onClick, danger = false }: { icon: typeof Play; label: string; disabled: boolean; onClick: () => void; danger?: boolean }) {
   return (
-    <Button type="button" variant={danger ? 'danger' : 'secondary'} size="compact" onClick={onClick} disabled={disabled}>
+    <Button type="button" variant={danger ? 'destructive' : 'secondary'} size="compact" onClick={onClick} disabled={disabled}>
       <Icon size={16} strokeWidth={1.75} />
       {label}
     </Button>
