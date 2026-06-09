@@ -36,7 +36,7 @@ interface DialogContentProps
 
 const MOBILE_VARIANT_CLASSES: Record<DialogMobileVariant, string> = {
   center:
-    'fixed left-[50%] top-[50%] z-50 grid w-[calc(100vw-1.5rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-[var(--ui-radius-lg)]',
+    'fixed left-[50%] top-[50%] z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100vw-1.5rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-[var(--ui-radius-lg)]',
   sheet:
     'fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[88dvh] translate-y-0 rounded-t-[var(--ui-radius-lg)] rounded-b-none sm:left-[50%] sm:top-[50%] sm:max-h-[min(88dvh,780px)] sm:w-full sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[var(--ui-radius-lg)]',
   fullscreen:

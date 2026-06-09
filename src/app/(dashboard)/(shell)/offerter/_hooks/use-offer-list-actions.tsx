@@ -85,7 +85,10 @@ export function useOfferListActions({
       }
 
       setBlockingAlert(null);
-      setError('Åtgärden misslyckades. Kontrollera anslutningen och försök igen.');
+      // Prefer the server's reason when it gave one (e.g. an email-delivery
+      // failure) over the generic connection fallback used for network errors.
+      const detail = e instanceof OfferActionApiError ? e.detail : undefined;
+      setError(detail ?? 'Åtgärden misslyckades. Kontrollera anslutningen och försök igen.');
     } finally {
       setActing(null);
     }

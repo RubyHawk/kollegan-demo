@@ -1,4 +1,5 @@
 import { logger } from '@platform/logging/logger';
+import { ApiError, Errors } from '@platform/api/errors';
 import { eventBus } from '@platform/events';
 import { offersRepository } from '../infrastructure/offers.repository';
 import type { CreateOfferInput, UpdateOfferInput, ListOffersFilter } from '../infrastructure/offers.repository';
@@ -205,19 +206,32 @@ export async function sendOffer(id: string, orgId: string): Promise<Offer | null
   const publicUrl = `${process.env.PUBLIC_OFFER_BASE_URL ?? `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/offerter/publik`}/${existing.publicToken}`;
   const sender = { senderEmail: branding.senderEmail, senderName: branding.senderName };
 
-  await dispatchOfferEmail(
-    buildSendToRecipientPayload(
-      {
-        ...sendSnapshot,
-        generatedDocument,
-        emailSubject: interpolatedSubject,
-        emailBody: interpolatedBody,
-        emailHeaderConfig,
-      },
-      publicUrl,
-      sender,
-    ),
-  );
+  try {
+    await dispatchOfferEmail(
+      buildSendToRecipientPayload(
+        {
+          ...sendSnapshot,
+          generatedDocument,
+          emailSubject: interpolatedSubject,
+          emailBody: interpolatedBody,
+          emailHeaderConfig,
+        },
+        publicUrl,
+        sender,
+      ),
+    );
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    // Email delivery is how an offer reaches the customer, so a delivery failure
+    // must stay a loud failure — the status transition below is skipped and the
+    // offer remains a draft. But surface the real cause (email could not be sent)
+    // instead of letting a bare Resend error bubble up as a generic 500, which
+    // the UI would otherwise show as a misleading "check your connection" error.
+    logger.error(TAG, `Offer email delivery failed: ${id}`, { err, recipientEmail: existing.recipientEmail });
+    throw Errors.badGateway(
+      'Offerten kunde inte skickas eftersom e-postutskicket misslyckades. Kontrollera att avsändardomänen är verifierad hos e-postleverantören och försök igen.',
+    );
+  }
 
   const updated = await offersRepository.update(id, orgId, {
     status: 'sent',
