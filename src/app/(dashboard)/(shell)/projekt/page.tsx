@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Calendar, Package, Search } from 'lucide-react';
 import { Button } from '@shared/ui/button';
@@ -10,6 +10,7 @@ import { EmptyState } from '@shared/ui/empty-state';
 import { Input } from '@shared/ui/input';
 import { PageHeader } from '@shared/ui/page-header';
 import { Panel } from '@shared/ui/panel';
+import { Skeleton } from '@shared/ui/skeleton';
 import { StatusBadge, type StatusTone } from '@shared/ui/status-badge';
 import { Toolbar, ToolbarGroup, ToolbarSpacer } from '@shared/ui/toolbar';
 import { useProjectsListStore } from './_store/projects-list.store';
@@ -103,6 +104,7 @@ function ProjectCard({ project }: { project: Project }) {
 }
 
 function ProjectsBoardPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const stageQuery = searchParams.get('stage') ?? '';
   const projects = useProjectsListStore((s) => s.projects);
@@ -214,7 +216,7 @@ function ProjectsBoardPageInner() {
             title="Inga projekt än"
             description="När en kund accepterar en offert skapas projektet automatiskt här."
             actionLabel="Skapa offert"
-            onAction={() => { window.location.href = '/offerter/ny'; }}
+            onAction={() => router.push('/offerter/ny')}
           />
         </Panel>
       ) : (
@@ -246,6 +248,35 @@ function ProjectsBoardPageInner() {
   );
 }
 
+function ProjectsBoardSkeleton() {
+  return (
+    <div className="space-y-4 px-6 py-8">
+      <div className="flex items-center justify-between gap-3">
+        <Skeleton className="h-7 w-40" />
+        <Skeleton className="h-9 w-32" />
+      </div>
+      <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <Panel key={index} padding="none" className="overflow-hidden">
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-4 py-3">
+              <Skeleton className="h-5 w-24 rounded-full" />
+              <Skeleton className="h-5 w-6 rounded-full" />
+            </div>
+            <div className="space-y-3 p-3">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+          </Panel>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ProjectsBoardPage() {
-  return <Suspense><ProjectsBoardPageInner /></Suspense>;
+  return (
+    <Suspense fallback={<ProjectsBoardSkeleton />}>
+      <ProjectsBoardPageInner />
+    </Suspense>
+  );
 }

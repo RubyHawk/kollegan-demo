@@ -21,6 +21,7 @@ import { InlineAlert } from '@shared/ui/inline-alert';
 import { Input } from '@shared/ui/input';
 import { Pagination } from '@shared/ui/pagination';
 import { Panel } from '@shared/ui/panel';
+import { Skeleton } from '@shared/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -344,8 +345,36 @@ function LeadsPageInner() {
   );
 }
 
+function LeadsSkeleton() {
+  return (
+    <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
+      <div className="flex items-center justify-between gap-3">
+        <Skeleton className="h-7 w-40" />
+        <Skeleton className="h-9 w-32" />
+      </div>
+      <Skeleton className="h-10 w-full max-w-sm" />
+      <Panel padding="none" className="overflow-hidden">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="flex items-center gap-3 px-4 py-3">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-3 w-44 max-w-full" />
+              <Skeleton className="h-2.5 w-28 max-w-full" />
+            </div>
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+        ))}
+      </Panel>
+    </div>
+  );
+}
+
 export default function LeadsPage() {
-  return <Suspense><LeadsPageInner /></Suspense>;
+  return (
+    <Suspense fallback={<LeadsSkeleton />}>
+      <LeadsPageInner />
+    </Suspense>
+  );
 }
 
 function PageChrome({ total, companyName, onNew }: { total: number; companyName?: string; onNew: () => void }) {

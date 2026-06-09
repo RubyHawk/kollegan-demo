@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@shared/ui/button';
@@ -230,5 +230,5 @@ function InvoicesPageInner() {
 }
 
 export default function InvoicesPage() {
-  return <Suspense><InvoicesPageInner /></Suspense>;
+  return <InvoicesPageInner />;
 }
