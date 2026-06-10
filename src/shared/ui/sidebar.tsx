@@ -14,6 +14,7 @@ import {
   ChevronRightIcon,
   ChevronLeftIcon,
   CloseIcon,
+  SettingsIcon,
 } from '@shared/ui/icons';
 import { SPRING_SNAPPY, EASE_SPRING } from '@shared/lib/motion';
 import { cn } from '@shared/lib/utils';
@@ -337,6 +338,15 @@ function SidebarFooter({
   if (collapsed) {
     return (
       <div className="relative py-3 flex flex-col items-center gap-1.5 border-t border-[var(--ui-border)]">
+        <Link
+          href="/installningar"
+          onClick={onMobileClose}
+          aria-label="Inställningar"
+          className="w-9 h-9 rounded-md hover:bg-[var(--ui-surface-hover)] flex items-center justify-center text-[var(--ui-text-muted)] transition-colors hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
+        >
+          <SettingsIcon size={18} />
+        </Link>
+
         <button
           type="button"
           ref={triggerRef}
@@ -361,32 +371,43 @@ function SidebarFooter({
 
   return (
     <div className="relative px-3 py-3 border-t border-[var(--ui-border)]">
-      <button
-        type="button"
-        ref={triggerRef}
-        onClick={() => setPopoverOpen((value) => !value)}
-        className="w-full flex items-center gap-2.5 rounded-md px-1 py-1 -mx-1 hover:bg-[var(--ui-surface-hover)] transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
-      >
-        <AvatarBadge user={user} size="md" />
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          ref={triggerRef}
+          onClick={() => setPopoverOpen((value) => !value)}
+          className="flex flex-1 min-w-0 items-center gap-2.5 rounded-md px-1 py-1 hover:bg-[var(--ui-surface-hover)] transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
+        >
+          <AvatarBadge user={user} size="md" />
 
-        <div className="flex-1 min-w-0 text-left">
-          <p className="text-[13px] font-medium text-[var(--ui-text)] truncate">
-            {displayName}
-          </p>
+          <div className="flex-1 min-w-0 text-left">
+            <p className="text-[13px] font-medium text-[var(--ui-text)] truncate">
+              {displayName}
+            </p>
 
-          <p className="text-[11px] text-[var(--ui-text-muted)] truncate">
-            {user.email}
-          </p>
-        </div>
+            <p className="text-[11px] text-[var(--ui-text-muted)] truncate">
+              {user.email}
+            </p>
+          </div>
 
-        <ChevronRightIcon
-          size={13}
-          className={cn(
-            'text-[var(--ui-text-muted)] transition-all shrink-0',
-            popoverOpen ? 'opacity-60 rotate-90' : 'opacity-0 group-hover:opacity-40',
-          )}
-        />
-      </button>
+          <ChevronRightIcon
+            size={13}
+            className={cn(
+              'text-[var(--ui-text-muted)] transition-all shrink-0',
+              popoverOpen ? 'opacity-60 rotate-90' : 'opacity-0 group-hover:opacity-40',
+            )}
+          />
+        </button>
+
+        <Link
+          href="/installningar"
+          onClick={onMobileClose}
+          aria-label="Inställningar"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--ui-text-muted)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] focus-visible:ring-offset-2"
+        >
+          <SettingsIcon size={16} />
+        </Link>
+      </div>
 
       <AnimatePresence>{popoverOpen && popoverContent}</AnimatePresence>
     </div>
