@@ -22,6 +22,8 @@ export interface SettingsItem {
   href: string;
   label: string;
   icon: IconComponent;
+  /** Short page description, shown in the settings content header. */
+  description?: string;
   /** If set, only these roles can see this item. Overrides parent section roles. */
   roles?: string[];
 }
@@ -52,9 +54,9 @@ export const SETTINGS_CONFIG: SettingsSection[] = [
     icon: UserIcon,
     // No roles — visible to all authenticated users
     items: [
-      { href: '/installningar/profil',   label: 'Profil',   icon: UserIcon   },
-      { href: '/installningar/sakerhet', label: 'Säkerhet', icon: ShieldIcon },
-      { href: '/installningar/utseende', label: 'Utseende', icon: SunIcon    },
+      { href: '/installningar/profil',   label: 'Profil',   icon: UserIcon,   description: 'Din synliga identitet och kontouppgifter.' },
+      { href: '/installningar/sakerhet', label: 'Säkerhet', icon: ShieldIcon, description: 'Lösenord, sessioner och tvåfaktor.' },
+      { href: '/installningar/utseende', label: 'Utseende', icon: SunIcon,    description: 'Tema, färg och täthet i gränssnittet.' },
     ],
   },
   {
@@ -63,13 +65,13 @@ export const SETTINGS_CONFIG: SettingsSection[] = [
     icon: CompanyIcon,
     roles: ['admin', 'super_admin'],
     items: [
-      { href: '/installningar/foretag',        label: 'Företag',        icon: CompanyIcon   },
-      { href: '/installningar/epost',          label: 'E-post',         icon: MailIcon      },
-      { href: '/installningar/anslutningar',   label: 'Anslutningar',   icon: LinkIcon      },
-      { href: '/installningar/notifieringar',  label: 'Notifieringar',  icon: BellIcon      },
-      { href: '/installningar/integrationer',  label: 'Integrationer',  icon: BlocksIcon    },
-      { href: '/installningar/fakturering',    label: 'Fakturering',    icon: CreditCardIcon},
-      { href: '/installningar/anpassade-falt', label: 'Anpassade fält', icon: LayersIcon    },
+      { href: '/installningar/foretag',        label: 'Företag',        icon: CompanyIcon,    description: 'Företagsuppgifter, adress och organisationsnummer.' },
+      { href: '/installningar/epost',          label: 'E-post',         icon: MailIcon,       description: 'Avsändaradress och e-postinställningar.' },
+      { href: '/installningar/anslutningar',   label: 'Anslutningar',   icon: LinkIcon,       description: 'Anslutna tjänster och dataflöden.' },
+      { href: '/installningar/notifieringar',  label: 'Notifieringar',  icon: BellIcon,       description: 'Välj vilka händelser du aviseras om.' },
+      { href: '/installningar/integrationer',  label: 'Integrationer',  icon: BlocksIcon,     description: 'Tredjepartsintegrationer och API-nycklar.' },
+      { href: '/installningar/fakturering',    label: 'Fakturering',    icon: CreditCardIcon, description: 'Abonnemang, betalmetod och kvitton.' },
+      { href: '/installningar/anpassade-falt', label: 'Anpassade fält', icon: LayersIcon,     description: 'Egna fält för offerter, produkter och kontakter.' },
     ],
   },
   {
@@ -82,12 +84,14 @@ export const SETTINGS_CONFIG: SettingsSection[] = [
         href: '/installningar/anvandare',
         label: 'Användare',
         icon: UsersIcon,
+        description: 'Hantera personalkonton och deras åtkomst.',
         roles: ['admin', 'super_admin'],
       },
       {
         href: '/installningar/mfa-support',
         label: 'MFA-support',
         icon: HelpCircleIcon,
+        description: 'Hjälp användare med tvåfaktorsåterställning.',
         roles: ['admin', 'super_admin', 'helpdesk'],
       },
     ],
@@ -114,6 +118,22 @@ export function getVisibleSettings(role: string): SettingsSection[] {
 /** Items always visible to all users — used by the sidebar footer popover. */
 export const KONTO_ITEMS: SettingsItem[] =
   SETTINGS_CONFIG.find((s) => s.key === 'konto')?.items ?? [];
+
+/**
+ * Resolve the settings page header (title + description) for a pathname.
+ * Used by the settings content header so each page shows its own header
+ * instead of one generic title.
+ */
+export function findSettingsMeta(pathname: string): { label: string; description?: string } | null {
+  for (const section of SETTINGS_CONFIG) {
+    for (const item of section.items) {
+      if (pathname === item.href || pathname.startsWith(item.href + '/')) {
+        return { label: item.label, description: item.description };
+      }
+    }
+  }
+  return null;
+}
 
 /**
  * Flat map of URL last-segment → display label for every settings route.
