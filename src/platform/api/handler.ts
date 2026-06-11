@@ -363,6 +363,13 @@ export function createHandler<
         }
         if (!jwtPayload) return problem(Errors.unauthorized('Invalid or expired token'));
 
+        const { resolveTenantByHost } = await import('@platform/tenancy/tenant-resolver');
+        const tenant = await resolveTenantByHost(req.headers.get('host'));
+        const isSuperAdmin = jwtPayload.roles?.includes('super_admin') ?? false;
+        if (tenant?.kind === 'portal' && jwtPayload.orgId !== tenant.organizationId && !isSuperAdmin) {
+          return problem(Errors.forbidden('Token organization does not match this portal'));
+        }
+
         // Token-level blacklist: catches individually revoked tokens (logout).
         // Fail-open if Redis is unavailable (see isTokenBlacklisted for rationale).
         if (await isTokenBlacklisted(jwtPayload.jti)) {

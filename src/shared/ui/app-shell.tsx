@@ -9,7 +9,7 @@ import { MenuIcon, ChevronRightIcon, PlusIcon } from '@shared/ui/icons';
 import { SearchTrigger } from '@shared/ui/search-command';
 import { BrandLockup } from '@shared/ui/brand';
 import { logout } from '@shared/lib/api/auth-account.api';
-import { NAV_CRUMB_MAP, NAV_CONFIG, type User } from '@shared/ui/sidebar-config';
+import { NAV_CRUMB_MAP, NAV_CONFIG, getNavConfigForModules, type User } from '@shared/ui/sidebar-config';
 
 // ─── Breadcrumbs ──────────────────────────────────────────────────────────────
 
@@ -42,8 +42,8 @@ function buildCrumbs(pathname: string) {
 
 // ─── Context-aware topbar CTA ─────────────────────────────────────────────────
 
-function getPrimaryAction(pathname: string): { href: string; label: string } | null {
-  for (const section of NAV_CONFIG) {
+function getPrimaryAction(pathname: string, navConfig = NAV_CONFIG): { href: string; label: string } | null {
+  for (const section of navConfig) {
     for (const entry of section.items) {
       if (!entry.primaryAction) continue;
       if (entry.type === 'link') {
@@ -68,11 +68,12 @@ function getPrimaryAction(pathname: string): { href: string; label: string } | n
 interface Props {
   user: User;
   children: React.ReactNode;
+  enabledModules?: string[];
 }
 
 const LS_KEY = 'sidebar-collapsed';
 
-export default function AppShell({ user, children }: Props) {
+export default function AppShell({ user, children, enabledModules = [] }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -94,7 +95,8 @@ export default function AppShell({ user, children }: Props) {
   }
 
   const crumbs = buildCrumbs(pathname);
-  const primaryAction = getPrimaryAction(pathname);
+  const navConfig = getNavConfigForModules(enabledModules);
+  const primaryAction = getPrimaryAction(pathname, navConfig);
   const isImmersiveTemplateEditor = pathname.startsWith('/mallar/') && pathname !== '/mallar';
 
   const topbar = (
@@ -146,6 +148,7 @@ export default function AppShell({ user, children }: Props) {
           collapsed={collapsed}
           onToggleCollapse={toggleCollapse}
           onLogout={handleLogout}
+          enabledModules={enabledModules}
         />
       </div>
 
@@ -162,6 +165,7 @@ export default function AppShell({ user, children }: Props) {
           collapsed={false}
           onToggleCollapse={toggleCollapse}
           onLogout={handleLogout}
+          enabledModules={enabledModules}
           onMobileClose={() => setMobileOpen(false)}
         />
       </div>

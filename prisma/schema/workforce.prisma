@@ -1,0 +1,110 @@
+// ─── Workforce / Attendance ──────────────────────────────────────────────────
+// Restaurant-friendly operational workforce tools.
+// Table prefix: wf_*
+
+model AttendanceShift {
+  id               String    @id @default(uuid())
+  organizationId   String
+  userId           String
+  clockInAt        DateTime
+  clockOutAt       DateTime?
+  status           String    @default("active") // active | completed | corrected
+  clockInSource    String?
+  clockOutSource   String?
+  deviceLabel      String?
+  location         String?
+  correctedBy      String?
+  correctionReason String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, userId, status])
+  @@index([organizationId, clockInAt])
+  @@index([deletedAt])
+  @@map("wf_attendance_shifts")
+}
+
+model StaffScheduleShift {
+  id             String    @id @default(uuid())
+  organizationId String
+  userId         String
+  startsAt       DateTime
+  endsAt         DateTime
+  roleLabel      String?
+  notes          String?
+  status         String    @default("scheduled") // scheduled | completed | cancelled
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, startsAt])
+  @@index([organizationId, userId, startsAt])
+  @@index([deletedAt])
+  @@map("wf_staff_schedule_shifts")
+}
+
+model ChecklistTask {
+  id               String    @id @default(uuid())
+  organizationId   String
+  title            String
+  area             String?
+  dueAt            DateTime?
+  assignedToUserId String?
+  completedAt      DateTime?
+  completedBy      String?
+  createdBy        String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, dueAt])
+  @@index([organizationId, completedAt])
+  @@index([deletedAt])
+  @@map("wf_checklist_tasks")
+}
+
+model InventoryNote {
+  id             String    @id @default(uuid())
+  organizationId String
+  title          String
+  content        String?
+  priority       String    @default("normal")
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([deletedAt])
+  @@map("wf_inventory_notes")
+}
+
+model SupplierNote {
+  id             String    @id @default(uuid())
+  organizationId String
+  supplierName   String?
+  title          String
+  content        String?
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([deletedAt])
+  @@map("wf_supplier_notes")
+}

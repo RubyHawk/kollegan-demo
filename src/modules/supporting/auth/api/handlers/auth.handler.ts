@@ -18,6 +18,7 @@ import { AUTH_AUDIT_ACTIONS, recordAuthAudit } from '../../application/auth-audi
 import { registerStaffAccount } from '../../application/auth-registration.service';
 import { sessionRepository } from '../../infrastructure/session.repository';
 import { BRAND_API_REALM, BRAND_PROBLEM_BASE } from '@shared/branding';
+import { resolveTenantByHost } from '@platform/tenancy/tenant-resolver';
 
 const REFRESH_TTL_SEC_STAFF = 60 * 60 * 24 * 7;
 const REFRESH_TTL_SEC_STAFF_REMEMBER = 60 * 60 * 24 * 30;
@@ -89,10 +90,12 @@ export async function handleLogin(req: NextRequest): Promise<NextResponse> {
 
   const userAgent = req.headers.get('user-agent') ?? undefined;
   const ipAddress = ip !== 'unknown' ? ip : undefined;
+  const tenant = await resolveTenantByHost(req.headers.get('host'));
+  const tenantOrgId = tenant?.kind === 'portal' ? tenant.organizationId : undefined;
 
   let outcome;
   try {
-    outcome = await login({ email, password, ipAddress, userAgent, rememberMe });
+    outcome = await login({ email, password, ipAddress, userAgent, rememberMe, organizationId: tenantOrgId });
   } catch (err: unknown) {
     const code = (err as { code?: string }).code;
 

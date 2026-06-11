@@ -7,7 +7,12 @@ export type RoleName =
   | 'user'
   | 'viewer'
   | 'customer_admin'
-  | 'customer_viewer';
+  | 'customer_viewer'
+  | 'restaurant_owner'
+  | 'restaurant_manager'
+  | 'restaurant_staff'
+  | 'restaurant_kitchen'
+  | 'restaurant_accountant';
 
 export interface Role {
   id: string;
@@ -95,5 +100,46 @@ export const SYSTEM_ROLES: Array<{ name: RoleName; displayName: string; permissi
     name: 'customer_viewer',
     displayName: 'Customer Viewer',
     permissions: ['workflow.read', 'portal.read'],
+  },
+  {
+    name: 'restaurant_owner',
+    displayName: 'Restaurant Owner',
+    permissions: [
+      'clock_in.self',
+      'attendance.read', 'attendance.correct',
+      'menu.read', 'menu.write',
+      'schedule.read', 'schedule.write',
+      'tasks.read', 'tasks.write',
+      'restaurant_reports.read',
+      'users.read', 'users.write',
+    ],
+  },
+  {
+    name: 'restaurant_manager',
+    displayName: 'Restaurant Manager',
+    permissions: [
+      'clock_in.self',
+      'attendance.read', 'attendance.correct',
+      'menu.read', 'menu.write',
+      'schedule.read', 'schedule.write',
+      'tasks.read', 'tasks.write',
+      'restaurant_reports.read',
+      'users.read', 'users.write',
+    ],
+  },
+  {
+    name: 'restaurant_staff',
+    displayName: 'Restaurant Staff',
+    permissions: ['clock_in.self', 'menu.read', 'schedule.read', 'tasks.read', 'tasks.write'],
+  },
+  {
+    name: 'restaurant_kitchen',
+    displayName: 'Restaurant Kitchen',
+    permissions: ['clock_in.self', 'menu.read', 'schedule.read', 'tasks.read', 'tasks.write'],
+  },
+  {
+    name: 'restaurant_accountant',
+    displayName: 'Restaurant Accountant',
+    permissions: ['attendance.read', 'menu.read', 'schedule.read', 'restaurant_reports.read'],
   },
 ];

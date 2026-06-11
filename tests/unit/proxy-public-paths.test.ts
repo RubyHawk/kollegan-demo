@@ -9,10 +9,14 @@ describe('proxy public path allowlist', () => {
     expect(isPublicPath('/api/v1/auth/login')).toBe(true);
     expect(isPublicPath('/api/v1/auth/mfa/verify')).toBe(true);
     expect(isPublicPath('/api/v1/auth/webauthn/authenticate/options')).toBe(true);
+    expect(isPublicPath('/site')).toBe(true);
+    expect(isPublicPath('/api/v1/public-site')).toBe(true);
+    expect(isPublicPath('/api/v1/public-site/reservations')).toBe(true);
   });
 
   it('does not make unrelated v1 API routes public', () => {
     expect(isPublicPath('/api/v1/projekt')).toBe(false);
     expect(isPublicPath('/api/v1/companies')).toBe(false);
+    expect(isPublicPath('/api/v1/public-site-extra')).toBe(false);
   });
 });

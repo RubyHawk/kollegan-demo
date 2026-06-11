@@ -1,0 +1,61 @@
+// ─── Tenant Domains / Module Enablement ───────────────────────────────────────
+// Platform support for resolving public and portal hosts to organizations.
+// Table prefix: org_*
+
+model OrganizationDomain {
+  id             String    @id @default(uuid())
+  organizationId String
+  hostname       String
+  kind           String    // public | portal | offer
+  isPrimary      Boolean   @default(false)
+  verifiedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([hostname])
+  @@index([organizationId, kind])
+  @@map("org_domains")
+}
+
+model OrganizationModule {
+  id             String   @id @default(uuid())
+  organizationId String
+  moduleKey      String
+  enabled        Boolean  @default(true)
+  config         Json     @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, moduleKey])
+  @@index([organizationId, enabled])
+  @@map("org_modules")
+}
+
+model PublicSiteSettings {
+  id             String   @id @default(uuid())
+  organizationId String   @unique
+  siteName       String
+  heroTitle      String
+  heroSubtitle   String?
+  about          String?
+  phone          String?
+  email          String?
+  addressLine1   String?
+  addressLine2   String?
+  postalCode     String?
+  city           String?
+  country        String?  @default("SE")
+  reservationEmail String?
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("org_public_site_settings")
+}

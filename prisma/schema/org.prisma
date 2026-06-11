@@ -57,6 +57,19 @@ model Organization {
   customFieldDefinitions CustomFieldDefinition[]
   invoices       Invoice[]
   timeEntries    TimeEntry[]
+  domains        OrganizationDomain[]
+  modules        OrganizationModule[]
+  publicSiteSettings PublicSiteSettings?
+  restaurantMenuCategories RestaurantMenuCategory[]
+  restaurantMenuItems RestaurantMenuItem[]
+  restaurantOpeningHours RestaurantOpeningHour[]
+  restaurantEvents RestaurantEvent[]
+  restaurantReservationRequests RestaurantReservationRequest[]
+  attendanceShifts AttendanceShift[]
+  staffScheduleShifts StaffScheduleShift[]
+  checklistTasks ChecklistTask[]
+  inventoryNotes InventoryNote[]
+  supplierNotes SupplierNote[]
 
   @@index([slug])
   @@index([orgType])

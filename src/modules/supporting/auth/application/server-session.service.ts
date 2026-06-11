@@ -11,6 +11,11 @@ const ROLE_PRIORITY = [
   'viewer',
   'customer_admin',
   'customer_viewer',
+  'restaurant_owner',
+  'restaurant_manager',
+  'restaurant_staff',
+  'restaurant_kitchen',
+  'restaurant_accountant',
 ] as const;
 
 function pickPrimaryRole(roles: string[], fallback: string): string {
@@ -43,6 +48,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
           lastName: null,
           avatarUrl: null,
           userType: payload.userType ?? 'staff',
+          orgId: payload.orgId ?? null,
           role: pickPrimaryRole(roles, payload.userType ?? 'staff'),
           roles,
           mfaEnabled: false,

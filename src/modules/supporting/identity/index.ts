@@ -15,6 +15,12 @@ export {
   handleGetOrgNotificationRecipients,
   handleUpdateOrgNotificationRecipients,
 } from './api/handlers/org-settings.handler';
+export {
+  listEnabledOrganizationModules,
+  normalizeTenantHost,
+  organizationHasModule,
+  resolveTenantByHost,
+} from './application/tenant.service';
 export type {
   Organization,
   OrgMember,
@@ -27,3 +33,9 @@ export type {
   NotificationTagDefinition,
   NotificationTagScope,
 } from './domain/organization.entity';
+export type {
+  OrganizationDomain,
+  OrganizationDomainKind,
+  OrganizationModule,
+  TenantResolution,
+} from './domain/tenant.entity';

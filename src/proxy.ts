@@ -9,8 +9,11 @@ const SECRET_KEY = new TextEncoder().encode(
 const PUBLIC_PREFIXES = [
   '/logga-in',
   '/registrera',
+  '/site',
   '/api/auth/',
   '/api/v1/auth/',
+  '/api/v1/public-site',
+  '/api/v1/public-site/',
   '/api/docs',
   '/api/demo/',
   // Vapi & n8n webhooks have their own auth
@@ -25,7 +28,10 @@ const PUBLIC_PREFIXES = [
 ];
 
 export function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  return PUBLIC_PREFIXES.some((prefix) => {
+    if (prefix.endsWith('/')) return pathname.startsWith(prefix);
+    return pathname === prefix || pathname.startsWith(`${prefix}/`);
+  });
 }
 
 /** Known app routes on the offert subdomain that must NOT be treated as offer tokens */
@@ -37,15 +43,30 @@ const APP_ROUTES = [
 ];
 
 const OFFER_SUBDOMAIN = process.env.PUBLIC_OFFER_SUBDOMAIN ?? 'offert';
+const PUBLIC_SITE_HOSTS = (process.env.PUBLIC_SITE_HOSTS ?? 'restaurantdomain.se')
+  .split(',')
+  .map((host) => host.trim().toLowerCase())
+  .filter(Boolean);
+const OFFER_HOSTS = (process.env.PUBLIC_OFFER_HOSTS ?? `offert.soleria.se,${OFFER_SUBDOMAIN}.soleria.se`)
+  .split(',')
+  .map((host) => host.trim().toLowerCase())
+  .filter(Boolean);
 const PUBLIC_OFFER_TOKEN_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const host = request.headers.get('host') ?? '';
-  const hostname = host.split(':')[0];
+  const hostname = host.split(':')[0]?.toLowerCase() ?? '';
+
+  if (PUBLIC_SITE_HOSTS.includes(hostname)) {
+    const { pathname } = request.nextUrl;
+    if (!pathname.startsWith('/site') && !pathname.startsWith('/api/') && !pathname.startsWith('/_next/')) {
+      return NextResponse.rewrite(new URL(`/site${pathname === '/' ? '' : pathname}`, request.url));
+    }
+  }
 
   // Subdomain routing: offert.soleria.se/<token> → /offers/public/<token>
   // Only rewrite bare single-segment paths that are NOT known app routes.
-  if (hostname.startsWith(`${OFFER_SUBDOMAIN}.`)) {
+  if (OFFER_HOSTS.includes(hostname) || hostname.startsWith(`${OFFER_SUBDOMAIN}.`)) {
     const { pathname } = request.nextUrl;
     const isAppRoute = APP_ROUTES.some((p) => pathname === p || pathname.startsWith(p + '/'));
     if (!isAppRoute) {

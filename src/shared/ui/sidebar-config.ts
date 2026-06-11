@@ -2,7 +2,6 @@
 
 import {
   BriefcaseIcon,
-  UserIcon,
   SettingsIcon,
   FileTextIcon,
   ReceiptIcon,
@@ -12,6 +11,8 @@ import {
   HomeIcon,
   UsersIcon,
   BarChart2Icon,
+  ClockIcon,
+  CalendarIcon,
 } from '@shared/ui/icons';
 import type { IconComponent } from '@shared/nav/types';
 import { SETTINGS_CRUMB_MAP } from '@shared/nav/settings-config';
@@ -31,6 +32,7 @@ export interface NavLink {
   adminOnly?: boolean;
   /** CTA shown in the topbar when the user is on this route. */
   primaryAction?: { href: string; label: string };
+  moduleKey?: string;
 }
 
 export interface NavDropdown {
@@ -46,6 +48,7 @@ export interface NavDropdown {
   collapsedHref?: string;
   /** CTA shown in the topbar when the user is anywhere under this dropdown. */
   primaryAction?: { href: string; label: string };
+  moduleKey?: string;
   items: Array<{ href: string; label: string; adminOnly?: boolean }>;
 }
 
@@ -55,6 +58,7 @@ export interface NavSection {
   section: string;
   items: NavEntry[];
   adminOnly?: boolean;
+  moduleKey?: string;
 }
 
 export interface User {
@@ -63,6 +67,7 @@ export interface User {
   lastName: string | null;
   avatarUrl?: string | null;
   role: string;
+  orgId?: string | null;
 }
 
 export interface SidebarProps {
@@ -71,6 +76,7 @@ export interface SidebarProps {
   onToggleCollapse: () => void;
   onLogout: () => void;
   onMobileClose?: () => void;
+  enabledModules?: string[];
 }
 
 // ─── Navigation config ────────────────────────────────────────────────────────
@@ -79,12 +85,13 @@ export const NAV_CONFIG: NavSection[] = [
   {
     section: 'Huvudmeny',
     items: [
-      { type: 'link', href: '/', label: 'Översikt', icon: HomeIcon, exact: true },
+      { type: 'link', href: '/', label: 'Översikt', icon: HomeIcon, exact: true, moduleKey: 'offers' },
       {
         type: 'dropdown',
         key: 'offerter',
         label: 'Offerter',
         icon: ReceiptIcon,
+        moduleKey: 'offers',
         primaryAction: { href: '/offerter/ny', label: 'Ny offert' },
         items: [
           { href: '/offerter',    label: 'Alla offerter' },
@@ -93,12 +100,13 @@ export const NAV_CONFIG: NavSection[] = [
       },
       // Single link — no sub-pages warrant a dropdown today.
       // Convert back to dropdown when project phases get dedicated routes.
-      { type: 'link', href: '/projekt', label: 'Projekt', icon: BriefcaseIcon },
+      { type: 'link', href: '/projekt', label: 'Projekt', icon: BriefcaseIcon, moduleKey: 'projects' },
       {
         type: 'dropdown',
         key: 'fakturor',
         label: 'Fakturor',
         icon: CreditCardIcon,
+        moduleKey: 'invoicing',
         primaryAction: { href: '/fakturor/ny', label: 'Ny faktura' },
         items: [
           { href: '/fakturor',    label: 'Alla fakturor' },
@@ -110,20 +118,31 @@ export const NAV_CONFIG: NavSection[] = [
         key: 'kunder',
         label: 'Kunder',
         icon: UsersIcon,
+        moduleKey: 'offers',
         items: [
           { href: '/crm',          label: 'Översikt'  },
           { href: '/crm/contacts', label: 'Kontakter' },
           { href: '/crm/leads',    label: 'Leads'     },
         ],
       },
-      { type: 'link', href: '/analytics', label: 'Aktivitet', icon: BarChart2Icon },
+      { type: 'link', href: '/analytics', label: 'Aktivitet', icon: BarChart2Icon, moduleKey: 'offers' },
+    ],
+  },
+  {
+    section: 'Restaurang',
+    items: [
+      { type: 'link', href: '/', label: 'Dagens drift', icon: HomeIcon, exact: true, moduleKey: 'restaurant_public_site' },
+      { type: 'link', href: '/narvaro', label: 'Narvaro', icon: ClockIcon, moduleKey: 'clock_in' },
+      { type: 'link', href: '/schema', label: 'Schema', icon: CalendarIcon, moduleKey: 'staff_schedule' },
+      { type: 'link', href: '/meny', label: 'Meny', icon: PackageIcon, moduleKey: 'restaurant_menu' },
+      { type: 'link', href: '/uppgifter', label: 'Uppgifter', icon: FileTextIcon, moduleKey: 'tasks' },
     ],
   },
   {
     section: 'Verktyg',
     items: [
-      { type: 'link', href: '/mallar',    label: 'Mallar',           icon: FileTextIcon },
-      { type: 'link', href: '/produkter', label: 'Produktbibliotek', icon: PackageIcon  },
+      { type: 'link', href: '/mallar',    label: 'Mallar',           icon: FileTextIcon, moduleKey: 'offers' },
+      { type: 'link', href: '/produkter', label: 'Produktbibliotek', icon: PackageIcon, moduleKey: 'offers' },
     ],
   },
   {
@@ -184,3 +203,18 @@ export const NAV_CRUMB_MAP: Record<string, string> = {
 };
 
 export const LS_DROPDOWNS_KEY = 'sidebar-open-dropdowns';
+
+function navEntryEnabled(entry: NavEntry, enabledModules: string[]): boolean {
+  return !entry.moduleKey || enabledModules.includes(entry.moduleKey);
+}
+
+export function getNavConfigForModules(enabledModules: string[]): NavSection[] {
+  if (enabledModules.length === 0) return NAV_CONFIG;
+
+  return NAV_CONFIG
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((entry) => navEntryEnabled(entry, enabledModules)),
+    }))
+    .filter((section) => section.items.length > 0);
+}

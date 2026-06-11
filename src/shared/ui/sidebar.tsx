@@ -22,7 +22,7 @@ import { TooltipProvider } from '@shared/ui/tooltip';
 import { KONTO_ITEMS } from '@shared/nav/settings-config';
 import {
   LS_DROPDOWNS_KEY,
-  NAV_CONFIG,
+  getNavConfigForModules,
   type SidebarProps,
   type User,
 } from './sidebar-config';
@@ -401,6 +401,7 @@ export default function Sidebar({
   onToggleCollapse,
   onLogout,
   onMobileClose,
+  enabledModules = [],
 }: SidebarProps) {
   const pathname = usePathname();
   const reducedMotion = useReducedMotion() ?? false;
@@ -452,12 +453,13 @@ export default function Sidebar({
     });
   }
 
-  const visibleSections = NAV_CONFIG.filter(
+  const navConfig = getNavConfigForModules(enabledModules);
+  const visibleSections = navConfig.filter(
     (section) =>
       !section.adminOnly || user.role === 'admin' || user.role === 'super_admin',
   );
 
-  const routeOpenDropdowns = NAV_CONFIG.flatMap((section) =>
+  const routeOpenDropdowns = navConfig.flatMap((section) =>
     section.items.flatMap((entry) =>
       entry.type === 'dropdown' &&
       entry.items.some(

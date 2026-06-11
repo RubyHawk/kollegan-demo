@@ -41,6 +41,8 @@ model User {
   webAuthnCredentials WebAuthnCredential[]
   companyMemberships  CompanyMember[]
   timeEntries         TimeEntry[]
+  attendanceShifts    AttendanceShift[]
+  staffScheduleShifts StaffScheduleShift[]
   leadIntakeRecipients LeadIntakeForwarderRecipient[]
 
   @@index([email])
