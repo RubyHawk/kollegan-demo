@@ -29,7 +29,7 @@ export default function SettingsNav({ userRole }: { userRole: string }) {
   return (
     <nav
       aria-label="Inställningar"
-      className="hidden w-60 shrink-0 flex-col border-r border-[var(--ui-border)] bg-[var(--ui-surface)] md:flex md:h-full"
+      className="hidden w-60 shrink-0 flex-col border-r border-[var(--ui-border-subtle)] bg-[var(--ui-surface)] md:flex md:h-full"
     >
       <div className="shrink-0 px-3 pb-2 pt-4">
         <div className="relative">
@@ -43,7 +43,7 @@ export default function SettingsNav({ userRole }: { userRole: string }) {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Sök inställning…"
             aria-label="Sök inställning"
-            className="h-8 w-full rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-bg)] pl-8 pr-7 text-[13px] text-[var(--ui-text)] placeholder:text-[var(--ui-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+            className="h-8 w-full rounded-[var(--ui-radius-control)] border border-transparent bg-[var(--ui-surface-subtle)] pl-8 pr-7 text-[13px] text-[var(--ui-text)] transition-colors placeholder:text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-hover)] focus:border-[var(--ui-accent)] focus:bg-[var(--ui-surface-raised)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
           />
           {query && (
             <button
@@ -77,8 +77,8 @@ export default function SettingsNav({ userRole }: { userRole: string }) {
           return (
             <div key={section.key}>
               <div className="mb-2 flex items-center gap-2 px-1">
-                <SectionIcon size={14} className="text-[var(--ui-text-muted)]" />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--ui-text-muted)]">
+                <SectionIcon size={13} className="text-[var(--ui-text-muted)]" />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ui-text-muted)]">
                   {section.label}
                 </span>
               </div>

@@ -165,11 +165,13 @@ export function getVisibleSettings(role: string): SettingsSection[] {
     .filter((s) => s.items.length > 0);
 }
 
-/** Resolve the settings item that owns a pathname (exact match or sub-route). */
-export function getSettingsItemForPath(pathname: string): SettingsItem | null {
+/** Resolve the settings section + item that own a pathname (exact match or sub-route). */
+export function getSettingsContextForPath(
+  pathname: string,
+): { section: SettingsSection; item: SettingsItem } | null {
   for (const section of SETTINGS_CONFIG) {
     for (const item of section.items) {
-      if (pathname === item.href || pathname.startsWith(item.href + '/')) return item;
+      if (pathname === item.href || pathname.startsWith(item.href + '/')) return { section, item };
     }
   }
   return null;
