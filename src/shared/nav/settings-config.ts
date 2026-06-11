@@ -21,6 +21,8 @@ import {
 export interface SettingsItem {
   href: string;
   label: string;
+  /** Short page intro, rendered by the settings page header and the command palette. */
+  description: string;
   icon: IconComponent;
   /** If set, only these roles can see this item. Overrides parent section roles. */
   roles?: string[];
@@ -52,9 +54,24 @@ export const SETTINGS_CONFIG: SettingsSection[] = [
     icon: UserIcon,
     // No roles — visible to all authenticated users
     items: [
-      { href: '/installningar/profil',   label: 'Profil',   icon: UserIcon   },
-      { href: '/installningar/sakerhet', label: 'Säkerhet', icon: ShieldIcon },
-      { href: '/installningar/utseende', label: 'Utseende', icon: SunIcon    },
+      {
+        href: '/installningar/profil',
+        label: 'Profil',
+        description: 'Namn, avatar och kontaktuppgifter för ditt konto.',
+        icon: UserIcon,
+      },
+      {
+        href: '/installningar/sakerhet',
+        label: 'Säkerhet',
+        description: 'Lösenord, tvåfaktorsautentisering, passkeys och aktiva sessioner.',
+        icon: ShieldIcon,
+      },
+      {
+        href: '/installningar/utseende',
+        label: 'Utseende',
+        description: 'Tema, accentfärg, typsnitt och textstorlek.',
+        icon: SunIcon,
+      },
     ],
   },
   {
@@ -63,13 +80,48 @@ export const SETTINGS_CONFIG: SettingsSection[] = [
     icon: CompanyIcon,
     roles: ['admin', 'super_admin'],
     items: [
-      { href: '/installningar/foretag',        label: 'Företag',        icon: CompanyIcon   },
-      { href: '/installningar/epost',          label: 'E-post',         icon: MailIcon      },
-      { href: '/installningar/anslutningar',   label: 'Anslutningar',   icon: LinkIcon      },
-      { href: '/installningar/notifieringar',  label: 'Notifieringar',  icon: BellIcon      },
-      { href: '/installningar/integrationer',  label: 'Integrationer',  icon: BlocksIcon    },
-      { href: '/installningar/fakturering',    label: 'Fakturering',    icon: CreditCardIcon},
-      { href: '/installningar/anpassade-falt', label: 'Anpassade fält', icon: LayersIcon    },
+      {
+        href: '/installningar/foretag',
+        label: 'Företag',
+        description: 'Bolagsuppgifter, medlemmar och branding per företag.',
+        icon: CompanyIcon,
+      },
+      {
+        href: '/installningar/epost',
+        label: 'E-post',
+        description: 'Avsändarnamn och avsändaradress för utgående e-post.',
+        icon: MailIcon,
+      },
+      {
+        href: '/installningar/anslutningar',
+        label: 'Anslutningar',
+        description: 'Anslut Soleria till verktygen ni redan använder.',
+        icon: LinkIcon,
+      },
+      {
+        href: '/installningar/notifieringar',
+        label: 'Notifieringar',
+        description: 'Interna e-postmottagare för offert- och systemhändelser.',
+        icon: BellIcon,
+      },
+      {
+        href: '/installningar/integrationer',
+        label: 'Integrationer',
+        description: 'Aktivera och hantera tredjepartsintegrationer.',
+        icon: BlocksIcon,
+      },
+      {
+        href: '/installningar/fakturering',
+        label: 'Fakturering',
+        description: 'Plan, betalningsmetod och fakturahistorik.',
+        icon: CreditCardIcon,
+      },
+      {
+        href: '/installningar/anpassade-falt',
+        label: 'Anpassade fält',
+        description: 'Egna fält per objekttyp för extra information.',
+        icon: LayersIcon,
+      },
     ],
   },
   {
@@ -81,12 +133,14 @@ export const SETTINGS_CONFIG: SettingsSection[] = [
       {
         href: '/installningar/anvandare',
         label: 'Användare',
+        description: 'Hantera personal och deras åtkomst till systemet.',
         icon: UsersIcon,
         roles: ['admin', 'super_admin'],
       },
       {
         href: '/installningar/mfa-support',
         label: 'MFA-support',
+        description: 'Återställ MFA för utelåsta användare, med spårbar logg.',
         icon: HelpCircleIcon,
         roles: ['admin', 'super_admin', 'helpdesk'],
       },
@@ -109,6 +163,16 @@ export function getVisibleSettings(role: string): SettingsSection[] {
       items: s.items.filter((item) => canSeeSettingsItem(role, item)),
     }))
     .filter((s) => s.items.length > 0);
+}
+
+/** Resolve the settings item that owns a pathname (exact match or sub-route). */
+export function getSettingsItemForPath(pathname: string): SettingsItem | null {
+  for (const section of SETTINGS_CONFIG) {
+    for (const item of section.items) {
+      if (pathname === item.href || pathname.startsWith(item.href + '/')) return item;
+    }
+  }
+  return null;
 }
 
 /** Items always visible to all users — used by the sidebar footer popover. */
