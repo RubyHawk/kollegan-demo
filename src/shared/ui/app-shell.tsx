@@ -117,7 +117,7 @@ export default function AppShell({ user, children }: Props) {
         ))}
       </nav>
       <div className="flex items-center gap-2">
-        <SearchTrigger />
+        <SearchTrigger userRole={user.role} />
         <Link
           href="/installningar/notifieringar"
           className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--ui-text-secondary)] transition-colors hover:bg-[var(--ui-surface-hover)] hover:text-[var(--ui-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"

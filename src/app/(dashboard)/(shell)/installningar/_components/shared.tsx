@@ -50,12 +50,12 @@ export function Input({
       placeholder={placeholder}
       readOnly={readOnly}
       className={cn(
-        'w-full rounded-[var(--ui-radius-md)] border px-3 py-2.5 text-sm',
+        'w-full rounded-[var(--ui-radius-control)] border px-3 py-2 text-sm',
         'bg-[var(--ui-surface-raised)] text-[var(--ui-text)]',
         'placeholder:text-[var(--ui-text-muted)]',
         'outline-none transition-colors duration-150 focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus)]',
         readOnly
-          ? 'cursor-default select-all border-[var(--ui-border-subtle)] text-[var(--ui-text-muted)]'
+          ? 'cursor-default select-all border-[var(--ui-border-subtle)] bg-[var(--ui-surface-subtle)] text-[var(--ui-text-muted)]'
           : 'border-[var(--ui-border)] hover:border-[var(--ui-border-strong)]',
       )}
     />
@@ -66,20 +66,28 @@ export function SectionCard({
   title,
   description,
   children,
+  footer,
 }: {
   title: string;
   description?: string;
   children: React.ReactNode;
+  /** Optional action band (e.g. a save button) pinned to the bottom of the card. */
+  footer?: React.ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)]">
-      <div className="border-b border-[var(--ui-border-subtle)] px-6 py-4">
+    <div className="overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border-subtle)] bg-[var(--ui-surface-raised)] shadow-[var(--ui-shadow-raised)]">
+      <div className="px-6 pb-1 pt-5">
         <h3 className="text-sm font-semibold text-[var(--ui-text)]">{title}</h3>
         {description && (
-          <p className="mt-0.5 text-xs leading-relaxed text-[var(--ui-text-muted)]">{description}</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-[var(--ui-text-muted)]">{description}</p>
         )}
       </div>
       <div className="px-6 py-5">{children}</div>
+      {footer && (
+        <div className="flex items-center justify-end gap-3 border-t border-[var(--ui-border-subtle)] bg-[var(--ui-surface-subtle)] px-6 py-3.5">
+          {footer}
+        </div>
+      )}
     </div>
   );
 }

@@ -2,13 +2,10 @@
 
 import {
   BriefcaseIcon,
-  UserIcon,
-  SettingsIcon,
   FileTextIcon,
   ReceiptIcon,
   CreditCardIcon,
   PackageIcon,
-  CompanyIcon,
   HomeIcon,
   UsersIcon,
   BarChart2Icon,
@@ -126,18 +123,8 @@ export const NAV_CONFIG: NavSection[] = [
       { type: 'link', href: '/produkter', label: 'Produktbibliotek', icon: PackageIcon  },
     ],
   },
-  {
-    // The Administration section provides quick-jump shortcuts for admins.
-    // Detailed settings navigation lives inside the settings pages (settings-nav.tsx),
-    // derived from SETTINGS_CONFIG — not duplicated here.
-    section: 'Administration',
-    adminOnly: true,
-    items: [
-      { type: 'link', href: '/installningar/anvandare', label: 'Användare',    icon: UsersIcon    },
-      { type: 'link', href: '/installningar/foretag',   label: 'Företag',      icon: CompanyIcon  },
-      { type: 'link', href: '/installningar',           label: 'Inställningar', icon: SettingsIcon },
-    ],
-  },
+  // Settings/administration are not part of the main nav — they're reached via the
+  // settings cog in the account footer (see sidebar.tsx) and the in-settings rail.
 ];
 
 // ─── Breadcrumb label map ─────────────────────────────────────────────────────
