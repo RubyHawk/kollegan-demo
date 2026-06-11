@@ -1,7 +1,8 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Activity, FileText, Plus, Search, Users } from 'lucide-react';
 import { listCustomers } from '@shared/lib/api/customers.api';
 import { listLeads, type Lead } from '@shared/lib/api/leads.api';
@@ -43,6 +44,7 @@ const initials = (name: string) => name.split(' ').map((word) => word[0]).slice(
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric' });
 
 function CrmPageInner() {
+  const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentLeads, setRecentLeads] = useState<RecentLead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,7 @@ function CrmPageInner() {
 
   const handleSearchSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (search.trim()) window.location.href = `/crm/contacts?search=${encodeURIComponent(search.trim())}`;
+    if (search.trim()) router.push(`/crm/contacts?search=${encodeURIComponent(search.trim())}`);
   };
 
   const statCards = stats ? [
@@ -141,7 +143,7 @@ function CrmPageInner() {
         {[
           { href: '/crm/contacts', label: 'Kontakter', desc: 'Alla kunder och individer', icon: Users },
           { href: '/crm/leads', label: 'Leads', desc: 'Pipeline och konvertering', icon: Activity },
-          { href: '/offers', label: 'Offerter', desc: 'Skapa och följ upp offerter', icon: FileText },
+          { href: '/offerter', label: 'Offerter', desc: 'Skapa och följ upp offerter', icon: FileText },
         ].map((item) => {
           const Icon = item.icon;
           return (
@@ -197,5 +199,5 @@ function CrmPageInner() {
 }
 
 export default function CrmPage() {
-  return <Suspense><CrmPageInner /></Suspense>;
+  return <CrmPageInner />;
 }

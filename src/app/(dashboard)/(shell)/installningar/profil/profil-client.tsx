@@ -66,7 +66,11 @@ export default function ProfilClient({ user }: { user: UserProps }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <SectionCard title="Profilinformation" description="Din synliga identitet inom Soleria.">
+      <SectionCard
+        title="Profilinformation"
+        description="Din synliga identitet inom Soleria."
+        footer={<SaveButton pending={pending} saved={saved} onClick={() => void save()} />}
+      >
         <div className="mb-6 flex items-center gap-4 border-b border-[var(--ui-border-subtle)] pb-5">
           <div className="relative">
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
@@ -101,7 +105,7 @@ export default function ProfilClient({ user }: { user: UserProps }) {
           </div>
         </div>
 
-        <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <FieldLabel>Förnamn</FieldLabel>
             <Input value={firstName} onChange={setFirstName} placeholder="Ditt förnamn" />
@@ -112,8 +116,7 @@ export default function ProfilClient({ user }: { user: UserProps }) {
           </div>
         </div>
 
-        {error ? <InlineAlert tone="danger" className="mb-3">{error}</InlineAlert> : null}
-        <SaveButton pending={pending} saved={saved} onClick={() => void save()} />
+        {error ? <InlineAlert tone="danger" className="mt-4">{error}</InlineAlert> : null}
       </SectionCard>
 
       <SectionCard title="Kontoinformation" description="Dessa uppgifter hanteras av din organisation och kan inte ändras här.">

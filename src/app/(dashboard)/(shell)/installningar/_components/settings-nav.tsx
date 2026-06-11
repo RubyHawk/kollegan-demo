@@ -1,85 +1,119 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@shared/lib/utils';
 import { getVisibleSettings } from '@shared/nav/settings-config';
+import { SearchIcon, CloseIcon } from '@shared/ui/icons';
+import { cn } from '@shared/lib/utils';
 
+// Desktop settings rail — deliberately lighter than the main sidebar so it reads
+// as secondary navigation: icons on group titles only, items as a text list on a
+// hairline guide, active item marked by a thin accent bar. The filter input stays
+// pinned above the scrolling list. Mobile nav lives in settings-nav-mobile.tsx.
 export default function SettingsNav({ userRole }: { userRole: string }) {
   const pathname = usePathname();
+  const [query, setQuery] = useState('');
+
   const sections = getVisibleSettings(userRole);
-  const allItems = sections.flatMap((s) => s.items);
+  const q = query.trim().toLowerCase();
+  const filtered = sections
+    .map((section) => ({
+      ...section,
+      items: q ? section.items.filter((item) => item.label.toLowerCase().includes(q)) : section.items,
+    }))
+    .filter((section) => section.items.length > 0);
+
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   return (
-    <>
-      {/* Desktop sidebar */}
-      <nav className="hidden w-48 shrink-0 pr-6 md:block">
-        <div className="flex flex-col gap-5">
-          {sections.map((section) => {
-            const SectionIcon = section.icon;
-            return (
-              <div key={section.key}>
-                <div className="mb-1 flex items-center gap-1.5 px-3">
-                  <span className="text-[var(--ui-text-muted)]">
-                    <SectionIcon size={13} />
-                  </span>
-                  <p className="text-[10px] font-semibold uppercase text-[var(--ui-text-muted)]">
-                    {section.label}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  {section.items.map((item) => {
-                    const active = pathname === item.href;
-                    const ItemIcon = item.icon;
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
+    <nav
+      aria-label="Inställningar"
+      className="hidden w-60 shrink-0 flex-col border-r border-[var(--ui-border-subtle)] bg-[var(--ui-surface)] md:flex md:h-full"
+    >
+      <div className="shrink-0 px-3 pb-2 pt-4">
+        <div className="relative">
+          <SearchIcon
+            size={14}
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--ui-text-muted)]"
+          />
+          <input
+            type="text"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Sök inställning…"
+            aria-label="Sök inställning"
+            className="h-8 w-full rounded-[var(--ui-radius-control)] border border-transparent bg-[var(--ui-surface-subtle)] pl-8 pr-7 text-[13px] text-[var(--ui-text)] transition-colors placeholder:text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-hover)] focus:border-[var(--ui-accent)] focus:bg-[var(--ui-surface-raised)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              aria-label="Rensa sökning"
+              className="absolute right-1.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-[var(--ui-text-muted)] transition-colors hover:text-[var(--ui-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+            >
+              <CloseIcon size={12} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-4">
+        {filtered.length === 0 && (
+          <div className="px-1 text-[13px] text-[var(--ui-text-muted)]">
+            <p>Inga träffar.</p>
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="mt-1 text-[var(--ui-accent)] transition-colors hover:text-[var(--ui-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+            >
+              Rensa
+            </button>
+          </div>
+        )}
+
+        {filtered.map((section) => {
+          const SectionIcon = section.icon;
+          return (
+            <div key={section.key}>
+              <div className="mb-2 flex items-center gap-2 px-1">
+                <SectionIcon size={13} className="text-[var(--ui-text-muted)]" />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ui-text-muted)]">
+                  {section.label}
+                </span>
+              </div>
+              <div className="relative ml-[10px] flex flex-col">
+                <span className="absolute bottom-1 left-0 top-1 w-px bg-[var(--ui-border)]" />
+                {section.items.map((item) => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      aria-current={active ? 'page' : undefined}
+                      className="relative rounded-r-md py-[7px] pl-3.5 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+                    >
+                      {active && (
+                        <span className="absolute bottom-1.5 left-0 top-1.5 w-[2px] rounded-full bg-[var(--ui-accent)]" />
+                      )}
+                      <span
                         className={cn(
-                          'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
+                          'transition-colors',
                           active
-                            ? 'bg-[var(--ui-accent-subtle)] font-medium text-[var(--ui-accent)]'
-                            : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-subtle)] hover:text-[var(--ui-text)]',
+                            ? 'font-medium text-[var(--ui-accent)]'
+                            : 'text-[var(--ui-text-secondary)] hover:text-[var(--ui-text)]',
                         )}
                       >
-                        <span className={cn('shrink-0', active ? 'text-[var(--ui-accent)]' : 'text-[var(--ui-text-muted)]')}>
-                          <ItemIcon size={16} />
-                        </span>
                         {item.label}
-                      </Link>
-                    );
-                  })}
-                </div>
+                      </span>
+                    </Link>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-      </nav>
-
-      {/* Mobile grid */}
-      <nav className="grid grid-cols-2 gap-2 pb-4 sm:grid-cols-3 md:hidden">
-        {allItems.map((item) => {
-          const active = pathname === item.href;
-          const ItemIcon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex min-h-[44px] items-center justify-center gap-2 rounded-[var(--ui-radius-md)] border px-3 py-2 text-xs font-medium transition-colors',
-                active
-                  ? 'border-[var(--ui-accent-border)] bg-[var(--ui-accent-subtle)] text-[var(--ui-text)]'
-                  : 'border-[var(--ui-border)] text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-subtle)]',
-              )}
-            >
-              <span className={cn('shrink-0', active ? 'text-[var(--ui-text)]' : 'text-[var(--ui-text-muted)]')}>
-                <ItemIcon size={16} />
-              </span>
-              {item.label}
-            </Link>
+            </div>
           );
         })}
-      </nav>
-    </>
+      </div>
+    </nav>
   );
 }

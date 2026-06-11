@@ -101,21 +101,6 @@ export default function NotifieringarPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-5">
-        <div className="flex flex-wrap items-start gap-3">
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] text-[var(--ui-accent)]">
-            <Bell aria-hidden="true" size={18} strokeWidth={1.75} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-base font-semibold text-[var(--ui-text)]">Interna notifieringsmottagare</h2>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ui-text-muted)]">
-              Lägg till valfria e-postadresser som ska få interna notiser när en offert accepteras eller avvisas.
-              Adressen behöver inte vara kopplad till ett konto i systemet.
-            </p>
-          </div>
-        </div>
-      </div>
-
       {error && (
         <div className="flex items-center gap-2 rounded-[var(--ui-radius-control)] border border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] px-4 py-2.5 text-sm text-[var(--ui-danger-text)]">
           <TriangleAlert aria-hidden="true" size={15} strokeWidth={2} className="shrink-0" />

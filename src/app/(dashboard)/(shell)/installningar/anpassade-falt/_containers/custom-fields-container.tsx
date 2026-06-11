@@ -108,15 +108,7 @@ export function CustomFieldsContainer() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-heading text-lg font-semibold text-[var(--text-primary)]">
-            Anpassade fält
-          </h2>
-          <p className="text-sm text-[var(--text-muted)]">
-            Skapa egna fält per objekttyp för att samla in extra information.
-          </p>
-        </div>
+      <div className="flex justify-end">
         <Button onClick={openCreate} className="shrink-0">
           <Plus size={16} />
           Lägg till fält
