@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { SearchIcon } from '@shared/ui/icons';
 import { cn } from '@shared/lib/utils';
+import { SETTINGS_CONFIG, getVisibleSettings } from '@shared/nav/settings-config';
 import { listCustomers } from '@shared/lib/api/customers.api';
 import { listLeads } from '@shared/lib/api/leads.api';
 import { listOffers } from '@shared/lib/api/offers.api';
@@ -37,10 +38,22 @@ const COMMAND_ITEMS: CommandItem[] = [
   { href: '/mallar', label: 'Mallar', description: 'Hantera offermallar och innehåll', keywords: ['mallar', 'templates'], category: 'Sida' },
   { href: '/produkter', label: 'Produkter', description: 'Uppdatera produkter och tjänster', keywords: ['produkter', 'services', 'produktbibliotek'], category: 'Sida' },
   { href: '/reports', label: 'Rapporter', description: 'Exportera rapporter och CSV-underlag', keywords: ['rapporter', 'export', 'csv'], category: 'Sida' },
-  { href: '/installningar/foretag', label: 'Företag', description: 'Se bolagsuppgifter, medlemmar och branding per företag', keywords: ['foretag', 'bolag', 'companies', 'branding'], category: 'Sida' },
-  { href: '/installningar', label: 'Inställningar', description: 'Anpassa system och utseende', keywords: ['installningar', 'settings'], category: 'Sida' },
-  { href: '/installningar/profil', label: 'Profil', description: 'Uppdatera konto och kontaktuppgifter', keywords: ['profil', 'konto', 'account'], category: 'Sida' },
 ];
+
+// Settings routes are derived from SETTINGS_CONFIG so the palette always matches
+// the settings rail — including role visibility (no dead-end results).
+function buildSettingsCommands(userRole?: string): CommandItem[] {
+  const sections = userRole ? getVisibleSettings(userRole) : SETTINGS_CONFIG;
+  return sections.flatMap((section) =>
+    section.items.map((item) => ({
+      href: item.href,
+      label: item.label,
+      description: item.description,
+      keywords: [item.href.split('/').filter(Boolean).at(-1)!, 'installningar', 'settings', section.label.toLowerCase()],
+      category: 'Inställningar',
+    })),
+  );
+}
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Utkast',
@@ -83,9 +96,10 @@ function includesQuery(item: CommandItem, normalized: string) {
   return haystack.includes(normalized);
 }
 
-export function SearchTrigger() {
+export function SearchTrigger({ userRole }: { userRole?: string }) {
   const router = useRouter();
   const pathname = usePathname();
+  const allCommands = useMemo(() => [...COMMAND_ITEMS, ...buildSettingsCommands(userRole)], [userRole]);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [entityResults, setEntityResults] = useState<CommandItem[]>([]);
@@ -246,13 +260,13 @@ export function SearchTrigger() {
 
   const matches = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return COMMAND_ITEMS;
+    if (!normalized) return allCommands;
 
-    const pageMatches = COMMAND_ITEMS.filter((item) => includesQuery(item, normalized));
+    const pageMatches = allCommands.filter((item) => includesQuery(item, normalized));
     return normalized.length >= 2
       ? [...entityResults, ...pageMatches].slice(0, 18)
       : pageMatches;
-  }, [entityResults, query]);
+  }, [allCommands, entityResults, query]);
 
   function openRoute(href: string) {
     setOpen(false);
