@@ -109,10 +109,7 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <p className="text-sm text-[var(--ui-text-muted)]">
-          Hantera personal och deras åtkomst till systemet.
-        </p>
+      <div className="flex justify-end">
         <Button type="button" size="compact" onClick={() => setShowForm(true)}>
           <Plus aria-hidden="true" size={16} strokeWidth={1.75} />
           Ny användare
