@@ -88,6 +88,7 @@ const allowlist = [
       /^\/api\/demo\/$/,
       /^\/api\/ai\/$/,
       /^\/api\/n8n\/$/,
+      /^\/api\/health$/,
       /^\/api\/offers\/public\/$/,
       /^\/api\/$/,
     ],
