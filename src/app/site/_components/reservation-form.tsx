@@ -78,8 +78,8 @@ export function ReservationForm() {
       >
         {status === 'saving' ? 'Skickar...' : 'Skicka bokningsförfrågan'}
       </button>
-      {status === 'sent' ? <p className="text-sm font-bold text-[#2f7d52]">Förfrågan är skickad. Vi återkommer med bekräftelse.</p> : null}
-      {status === 'error' ? <p className="text-sm font-bold text-[#a33a2f]">{error || 'Det gick inte att skicka förfrågan.'}</p> : null}
+      {status === 'sent' ? <p role="status" className="text-sm font-bold text-[#2f7d52]">Förfrågan är skickad. Vi återkommer med bekräftelse.</p> : null}
+      {status === 'error' ? <p role="alert" className="text-sm font-bold text-[#a33a2f]">{error || 'Det gick inte att skicka förfrågan.'}</p> : null}
     </form>
   );
 }

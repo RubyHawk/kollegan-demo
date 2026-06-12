@@ -7,6 +7,7 @@ import { InlineAlert } from '@shared/ui/inline-alert';
 import { Label } from '@shared/ui/label';
 import { PageHeader } from '@shared/ui/page-header';
 import { Panel } from '@shared/ui/panel';
+import { Skeleton } from '@shared/ui/skeleton';
 import { Textarea } from '@shared/ui/textarea';
 import { Badge } from '@shared/ui/badge';
 import { CheckCircleIcon, PlusIcon, TrashIcon } from '@shared/ui/icons';
@@ -258,7 +259,12 @@ export function WebbplatsPageClient() {
               </Button>
             </form>
           ) : (
-            <p className="text-sm text-[var(--ui-text-muted)]">Laddar webbplatsinställningar.</p>
+            <div className="space-y-3" aria-label="Laddar webbplatsinställningar" role="status">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-10 w-2/3" />
+            </div>
           )}
         </Panel>
 

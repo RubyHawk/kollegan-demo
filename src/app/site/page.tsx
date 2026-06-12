@@ -23,10 +23,10 @@ export default async function PublicHomePage() {
             <h1 className="mt-4 text-5xl font-black leading-none tracking-normal sm:text-7xl">{site.settings.heroTitle}</h1>
             {site.settings.heroSubtitle ? <p className="mt-5 max-w-xl text-lg leading-8 text-[#fffaf0]/82">{site.settings.heroSubtitle}</p> : null}
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/site/meny" className="rounded-md bg-[#f4d06f] px-5 py-3 text-sm font-black text-[#211f1c] hover:bg-[#ffd96f]">
+              <Link href="/site/meny" className="inline-flex min-h-11 items-center rounded-md bg-[#f4d06f] px-5 py-3 text-sm font-black text-[#211f1c] hover:bg-[#ffd96f]">
                 Se menyn
               </Link>
-              <Link href="/site/boka" className="rounded-md border border-[#fffaf0]/25 px-5 py-3 text-sm font-black text-[#fffaf0] hover:bg-white/10">
+              <Link href="/site/boka" className="inline-flex min-h-11 items-center rounded-md border border-[#fffaf0]/25 px-5 py-3 text-sm font-black text-[#fffaf0] hover:bg-white/10">
                 Boka bord
               </Link>
             </div>

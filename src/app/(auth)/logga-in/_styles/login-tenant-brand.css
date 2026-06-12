@@ -1,0 +1,225 @@
+/*
+ * Tenant portal login branding.
+ *
+ * The default (platform/Soleria) experience is untouched. Tenant brands are
+ * scoped under .auth-scope[data-brand='<key>'] and re-skin the shared login
+ * shell: page backdrop, brand scene, focus/accent states, and submit button.
+ */
+
+/* ─── Generic tenant scene (any non-platform brand) ───────────────────────── */
+
+.auth-scope .auth-tenant-scene {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+  padding: 2.4rem 2.2rem;
+}
+
+.auth-scope .auth-tenant-scene__glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.auth-scope .auth-tenant-scene__content {
+  display: grid;
+  gap: 0.9rem;
+  max-width: 26rem;
+}
+
+.auth-scope .auth-tenant-scene__eyebrow {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 760;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.auth-scope .auth-tenant-scene__wordmark {
+  margin: 0;
+  font-size: clamp(2.4rem, 4.4vw, 3.4rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+}
+
+.auth-scope .auth-tenant-scene__tagline {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.auth-scope .auth-tenant-scene__highlights {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.84rem;
+  font-weight: 640;
+}
+
+.auth-scope .auth-tenant-scene__highlights li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.auth-scope .auth-tenant-scene__highlights li::before {
+  content: '';
+  width: 0.42rem;
+  height: 0.42rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+
+.auth-scope .auth-tenant-mark {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 0.55rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+@media (max-width: 1100px) {
+  .auth-scope .auth-tenant-scene {
+    min-height: 15rem;
+    padding: 1.8rem 1.6rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-scope .auth-tenant-scene {
+    min-height: 11rem;
+    padding: 1.4rem 1.25rem;
+  }
+
+  .auth-scope .auth-tenant-scene__highlights {
+    display: none;
+  }
+}
+
+/* ─── Fluffy's skin ───────────────────────────────────────────────────────── */
+
+.auth-scope[data-brand='fluffys'] {
+  --auth-accent: #f4d06f;
+  --auth-accent-strong: rgb(173 132 38);
+  --auth-glow: 0 0 0 4px rgb(244 208 111 / 0.26);
+  --auth-page-bg: linear-gradient(160deg, #1b1815 0%, #272219 100%);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-page-wave--a {
+  fill: rgb(244 208 111 / 0.035);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-page-wave--b {
+  fill: rgb(255 250 240 / 0.018);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-page-wave--c {
+  fill: rgb(244 208 111 / 0.05);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-shell {
+  border-color: rgb(244 208 111 / 0.12);
+  background: #211f1c;
+  box-shadow: 0 32px 80px rgb(0 0 0 / 0.55);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-tenant-scene {
+  background: #211f1c;
+  color: #fffaf0;
+}
+
+.auth-scope[data-brand='fluffys'] .auth-tenant-scene__glow {
+  background:
+    radial-gradient(circle at 18% 14%, rgb(244 208 111 / 0.16), transparent 38%),
+    radial-gradient(circle at 86% 88%, rgb(244 208 111 / 0.1), transparent 42%);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-tenant-scene__eyebrow {
+  color: #f4d06f;
+}
+
+.auth-scope[data-brand='fluffys'] .auth-tenant-scene__tagline {
+  color: rgb(255 250 240 / 0.78);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-tenant-scene__highlights {
+  color: rgb(255 250 240 / 0.86);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-tenant-scene__highlights li::before {
+  background: #f4d06f;
+}
+
+.auth-scope[data-brand='fluffys'] .auth-tenant-mark {
+  border: 1px solid rgb(244 208 111 / 0.4);
+  background: #211f1c;
+  color: #f4d06f;
+}
+
+.auth-scope[data-brand='fluffys'] .auth-console__wash {
+  background:
+    radial-gradient(circle at 22% 10%, rgb(244 208 111 / 0.16), transparent 30%),
+    radial-gradient(circle at 88% 72%, rgb(244 208 111 / 0.08), transparent 32%);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-console__brand {
+  color: #211f1c;
+}
+
+.auth-scope[data-brand='fluffys'] .auth-input-shell:focus-within {
+  border-color: var(--auth-accent-strong);
+  box-shadow: 0 0 0 3px rgb(244 208 111 / 0.3);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-check-input:focus-visible + .auth-check-box {
+  box-shadow: 0 0 0 4px rgb(244 208 111 / 0.3);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-check-input:checked + .auth-check-box {
+  background: linear-gradient(135deg, #f4d06f, rgb(244 186 96));
+  color: #211f1c;
+}
+
+.auth-scope[data-brand='fluffys'] .auth-password-toggle:hover {
+  background: rgb(244 208 111 / 0.22);
+  color: rgb(122 90 22);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-password-toggle:focus-visible {
+  box-shadow: 0 0 0 4px rgb(244 208 111 / 0.3);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-submit-button {
+  border-color: #15130f;
+  background: linear-gradient(180deg, #2c2823, #211f1c);
+  color: #fffaf0;
+  box-shadow:
+    0 2px 12px rgb(20 17 12 / 0.32),
+    inset 0 1px 0 rgb(255 250 240 / 0.08);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-submit-button:not(:disabled):hover {
+  background: linear-gradient(180deg, #38332c, #2a2620);
+  box-shadow:
+    0 4px 16px rgb(20 17 12 / 0.4),
+    inset 0 1px 0 rgb(255 250 240 / 0.1);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-dev-login__link:hover,
+.auth-scope[data-brand='fluffys'] .auth-mfa-back:hover,
+.auth-scope[data-brand='fluffys'] .auth-mfa-tab--idle:hover {
+  color: rgb(122 90 22);
+}
+
+.auth-scope[data-brand='fluffys'] .auth-console-footer svg {
+  color: rgb(173 132 38 / 0.85);
+}

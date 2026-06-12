@@ -20,7 +20,7 @@ export default async function PublicAboutPage() {
           <p className="mt-5 max-w-3xl text-lg leading-8 text-[#211f1c]/75">
             {site.settings.about ?? 'Fluffy’s serverar subs, pizza, panini, wraps och tillbehör med snabb service och tydlig meny.'}
           </p>
-          <Link href="/site/kontakt" className="mt-7 inline-block rounded-md bg-[#211f1c] px-5 py-3 text-sm font-black text-white hover:bg-[#bf4f2f]">
+          <Link href="/site/kontakt" className="mt-7 inline-flex min-h-11 items-center rounded-md bg-[#211f1c] px-5 py-3 text-sm font-black text-white hover:bg-[#bf4f2f]">
             Hitta hit
           </Link>
         </div>

@@ -24,7 +24,7 @@ export default async function PublicContactPage() {
             {site.settings.phone ? <p>{site.settings.phone}</p> : null}
             {site.settings.email ? <p>{site.settings.email}</p> : null}
           </div>
-          <Link href="/site/boka" className="mt-7 inline-block rounded-md bg-[#211f1c] px-5 py-3 text-sm font-black text-white hover:bg-[#bf4f2f]">
+          <Link href="/site/boka" className="mt-7 inline-flex min-h-11 items-center rounded-md bg-[#211f1c] px-5 py-3 text-sm font-black text-white hover:bg-[#bf4f2f]">
             Boka bord
           </Link>
         </div>

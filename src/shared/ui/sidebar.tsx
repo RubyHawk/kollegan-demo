@@ -14,11 +14,12 @@ import {
 } from '@shared/ui/icons';
 import { SPRING_SNAPPY, EASE_SPRING } from '@shared/lib/motion';
 import { cn } from '@shared/lib/utils';
-import { BrandMark } from '@shared/ui/brand';
+import { BrandMark, OrgLetterMark } from '@shared/ui/brand';
 import { TooltipProvider } from '@shared/ui/tooltip';
 import {
   LS_DROPDOWNS_KEY,
   getNavConfigForModules,
+  type ShellBrand,
   type SidebarProps,
 } from './sidebar-config';
 import { SidebarFooter } from './sidebar-footer';
@@ -29,9 +30,11 @@ import { SectionGroup } from './sidebar-navigation';
 interface SidebarHeaderProps {
   collapsed: boolean;
   onMobileClose?: () => void;
+  brand?: ShellBrand;
 }
 
-function SidebarHeader({ collapsed, onMobileClose }: SidebarHeaderProps) {
+function SidebarHeader({ collapsed, onMobileClose, brand }: SidebarHeaderProps) {
+  const isTenantBrand = brand ? !brand.isPlatform : false;
   return (
     <div
       className={cn(
@@ -45,7 +48,7 @@ function SidebarHeader({ collapsed, onMobileClose }: SidebarHeaderProps) {
         whileHover={{ scale: 1.04 }}
         transition={SPRING_SNAPPY}
       >
-        <BrandMark size={26} alt="" />
+        {isTenantBrand && brand ? <OrgLetterMark name={brand.name} size={26} /> : <BrandMark size={26} alt="" />}
       </motion.div>
 
       {!collapsed && (
@@ -62,7 +65,7 @@ function SidebarHeader({ collapsed, onMobileClose }: SidebarHeaderProps) {
             exit="hidden"
             transition={{ duration: 0.14, ease: EASE_SPRING }}
           >
-            Soleria
+            {brand?.name ?? 'Soleria'}
           </motion.span>
         </AnimatePresence>
       )}
@@ -90,6 +93,7 @@ export default function Sidebar({
   onLogout,
   onMobileClose,
   enabledModules = [],
+  brand,
 }: SidebarProps) {
   const pathname = usePathname();
   const reducedMotion = useReducedMotion() ?? false;
@@ -188,7 +192,7 @@ export default function Sidebar({
         </button>
 
         <aside className="h-full w-full flex flex-col border-r border-[var(--ui-border)] bg-[var(--ui-surface)] overflow-hidden">
-          <SidebarHeader collapsed={collapsed} onMobileClose={onMobileClose} />
+          <SidebarHeader collapsed={collapsed} onMobileClose={onMobileClose} brand={brand} />
 
           <div
             className={cn(

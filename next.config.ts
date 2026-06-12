@@ -10,6 +10,9 @@ const primaryOrigin = allowedOrigins[0] ?? 'https://app.kollegan.ai';
 
 const nextConfig: NextConfig = {
   // instrumentation.ts is enabled by default in Next.js 15+
+  // Dev-only: allow tenant hostnames (mapped to 127.0.0.1 in /etc/hosts) so
+  // host-based branding and the public-site rewrite can be tested locally.
+  allowedDevOrigins: ['portal.fluffys.se', 'fluffys.se', 'offert.soleria.se'],
 
   async headers() {
     return [
