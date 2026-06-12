@@ -2,13 +2,18 @@ import { prisma } from '@platform/database/prisma';
 import type {
   CreateMenuCategoryInput,
   CreateMenuItemInput,
+  CreateRestaurantEventInput,
   CreateReservationRequestInput,
   ListReservationRequestsInput,
   PublicRestaurantSite,
+  PublicSiteSettingsView,
+  RestaurantEventManagementView,
   RestaurantMenuCategoryView,
   RestaurantMenuItemView,
   RestaurantOpeningHourView,
   RestaurantReservationRequestView,
+  UpdatePublicSiteSettingsInput,
+  UpdateRestaurantEventInput,
   UpdateReservationRequestInput,
   UpsertOpeningHourInput,
 } from '../domain/restaurant-menu.entity';
@@ -75,6 +80,17 @@ type ReservationRow = {
   createdAt: Date;
 };
 
+type EventRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  startsAt: Date;
+  endsAt: Date | null;
+  isPublished: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 function mapReservation(row: ReservationRow): RestaurantReservationRequestView {
   return {
     id: row.id,
@@ -91,7 +107,20 @@ function mapReservation(row: ReservationRow): RestaurantReservationRequestView {
   };
 }
 
-function fallbackSettings(name: string) {
+function mapEvent(row: EventRow): RestaurantEventManagementView {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    startsAt: row.startsAt.toISOString(),
+    endsAt: row.endsAt?.toISOString() ?? null,
+    isPublished: row.isPublished,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function fallbackSettings(name: string): PublicSiteSettingsView {
   return {
     siteName: name,
     heroTitle: name,
@@ -202,6 +231,170 @@ export const restaurantMenuRepository = {
         endsAt: event.endsAt?.toISOString() ?? null,
       })),
     };
+  },
+
+  async getPublicSiteSettings(organizationId: string): Promise<PublicSiteSettingsView | null> {
+    const org = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { name: true, publicSiteSettings: true },
+    });
+    if (!org) return null;
+    return org.publicSiteSettings ?? fallbackSettings(org.name);
+  },
+
+  async upsertPublicSiteSettings(
+    organizationId: string,
+    input: UpdatePublicSiteSettingsInput,
+  ): Promise<PublicSiteSettingsView | null> {
+    const org = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { name: true, publicSiteSettings: true },
+    });
+    if (!org) return null;
+
+    const existing = org.publicSiteSettings ?? fallbackSettings(org.name);
+    return prisma.publicSiteSettings.upsert({
+      where: { organizationId },
+      create: {
+        organizationId,
+        siteName: input.siteName ?? existing.siteName,
+        heroTitle: input.heroTitle ?? existing.heroTitle,
+        heroSubtitle: input.heroSubtitle ?? existing.heroSubtitle,
+        about: input.about ?? existing.about,
+        phone: input.phone ?? existing.phone,
+        email: input.email ?? existing.email,
+        addressLine1: input.addressLine1 ?? existing.addressLine1,
+        addressLine2: input.addressLine2 ?? existing.addressLine2,
+        postalCode: input.postalCode ?? existing.postalCode,
+        city: input.city ?? existing.city,
+        country: input.country ?? existing.country ?? 'SE',
+        reservationEmail: input.reservationEmail ?? existing.reservationEmail,
+        seoTitle: input.seoTitle ?? existing.seoTitle,
+        seoDescription: input.seoDescription ?? existing.seoDescription,
+      },
+      update: {
+        ...(input.siteName !== undefined ? { siteName: input.siteName } : {}),
+        ...(input.heroTitle !== undefined ? { heroTitle: input.heroTitle } : {}),
+        ...(input.heroSubtitle !== undefined ? { heroSubtitle: input.heroSubtitle } : {}),
+        ...(input.about !== undefined ? { about: input.about } : {}),
+        ...(input.phone !== undefined ? { phone: input.phone } : {}),
+        ...(input.email !== undefined ? { email: input.email } : {}),
+        ...(input.addressLine1 !== undefined ? { addressLine1: input.addressLine1 } : {}),
+        ...(input.addressLine2 !== undefined ? { addressLine2: input.addressLine2 } : {}),
+        ...(input.postalCode !== undefined ? { postalCode: input.postalCode } : {}),
+        ...(input.city !== undefined ? { city: input.city } : {}),
+        ...(input.country !== undefined ? { country: input.country } : {}),
+        ...(input.reservationEmail !== undefined ? { reservationEmail: input.reservationEmail } : {}),
+        ...(input.seoTitle !== undefined ? { seoTitle: input.seoTitle } : {}),
+        ...(input.seoDescription !== undefined ? { seoDescription: input.seoDescription } : {}),
+      },
+      select: {
+        siteName: true,
+        heroTitle: true,
+        heroSubtitle: true,
+        about: true,
+        phone: true,
+        email: true,
+        addressLine1: true,
+        addressLine2: true,
+        postalCode: true,
+        city: true,
+        country: true,
+        reservationEmail: true,
+        seoTitle: true,
+        seoDescription: true,
+      },
+    });
+  },
+
+  async listEvents(organizationId: string): Promise<RestaurantEventManagementView[]> {
+    const rows = await prisma.restaurantEvent.findMany({
+      where: { organizationId, deletedAt: null },
+      orderBy: [{ startsAt: 'desc' }, { createdAt: 'desc' }],
+      take: 100,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        startsAt: true,
+        endsAt: true,
+        isPublished: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return rows.map((row) => mapEvent(row as EventRow));
+  },
+
+  async createEvent(
+    organizationId: string,
+    actorId: string,
+    input: CreateRestaurantEventInput,
+  ): Promise<RestaurantEventManagementView> {
+    const row = await prisma.restaurantEvent.create({
+      data: {
+        organizationId,
+        title: input.title,
+        description: input.description ?? null,
+        startsAt: new Date(input.startsAt),
+        endsAt: input.endsAt ? new Date(input.endsAt) : null,
+        isPublished: input.isPublished ?? false,
+        createdBy: actorId,
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        startsAt: true,
+        endsAt: true,
+        isPublished: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return mapEvent(row as EventRow);
+  },
+
+  async updateEvent(
+    organizationId: string,
+    eventId: string,
+    input: UpdateRestaurantEventInput,
+  ): Promise<RestaurantEventManagementView | null> {
+    const existing = await prisma.restaurantEvent.findFirst({
+      where: { id: eventId, organizationId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) return null;
+
+    const row = await prisma.restaurantEvent.update({
+      where: { id: eventId },
+      data: {
+        ...(input.title !== undefined ? { title: input.title } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.startsAt !== undefined ? { startsAt: new Date(input.startsAt) } : {}),
+        ...(input.endsAt !== undefined ? { endsAt: input.endsAt ? new Date(input.endsAt) : null } : {}),
+        ...(input.isPublished !== undefined ? { isPublished: input.isPublished } : {}),
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        startsAt: true,
+        endsAt: true,
+        isPublished: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return mapEvent(row as EventRow);
+  },
+
+  async softDeleteEvent(organizationId: string, eventId: string): Promise<boolean> {
+    const result = await prisma.restaurantEvent.updateMany({
+      where: { id: eventId, organizationId, deletedAt: null },
+      data: { deletedAt: new Date(), isPublished: false },
+    });
+    return result.count === 1;
   },
 
   async listMenu(organizationId: string): Promise<RestaurantMenuCategoryView[]> {

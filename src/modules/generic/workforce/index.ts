@@ -2,6 +2,7 @@ export type {
   AttendanceShift,
   AttendanceShiftWithUser,
   ClockInInput,
+  ClockableStaffMember,
   ClockOutInput,
   CorrectAttendanceShiftInput,
 } from './domain/attendance.entity';
@@ -10,6 +11,9 @@ export {
   clockOut,
   correctAttendanceShift,
   getCurrentAttendanceShift,
+  kioskClockIn,
+  kioskClockOut,
+  listClockableStaffForKiosk,
   listTodayAttendance,
 } from './application/attendance.service';
 export {
@@ -17,6 +21,9 @@ export {
   handleClockOut,
   handleCorrectAttendanceShift,
   handleGetCurrentAttendanceShift,
+  handleKioskClockIn,
+  handleKioskClockOut,
+  handleListKioskClockableStaff,
   handleListTodayAttendance,
 } from './api/handlers/attendance.handler';
 export type {

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
+  <title id="title">Fluffy's menu board graphic</title>
+  <desc id="desc">A graphic menu board with pizza, subs, panini, wraps, sides, drinks, and desserts.</desc>
+  <rect width="1200" height="900" fill="#151312"/>
+  <rect x="42" y="42" width="1116" height="816" rx="18" fill="#211f1c" stroke="#f4d06f" stroke-width="8"/>
+  <text x="90" y="135" fill="#f4d06f" font-family="Arial, Helvetica, sans-serif" font-size="68" font-weight="800">Fluffy's</text>
+  <text x="92" y="184" fill="#f7f0df" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" letter-spacing="3">SUBS · PIZZA · PANINI · WRAPS</text>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <g transform="translate(90 255)">
+      <text fill="#ff7f50" font-size="34" font-weight="800">Pizzor</text>
+      <text y="58" fill="#f7f0df" font-size="24">Det enkla</text><text x="300" y="58" fill="#f4d06f" font-size="24" text-anchor="end">S/M/L</text>
+      <text y="102" fill="#f7f0df" font-size="24">Taco &amp; Kaos</text><text x="300" y="102" fill="#f4d06f" font-size="24" text-anchor="end">89/149/239</text>
+      <text y="146" fill="#f7f0df" font-size="24">Kyckling &amp; Pesto</text><text x="300" y="146" fill="#f4d06f" font-size="24" text-anchor="end">89/149/239</text>
+      <text y="190" fill="#f7f0df" font-size="24">Pick'n Mix Kebaben</text><text x="300" y="190" fill="#f4d06f" font-size="24" text-anchor="end">89/149/239</text>
+    </g>
+    <g transform="translate(465 255)">
+      <text fill="#69c5ff" font-size="34" font-weight="800">Subs</text>
+      <text y="58" fill="#f7f0df" font-size="24">Ham &amp; Cheese</text><text x="255" y="58" fill="#f4d06f" font-size="24" text-anchor="end">73/108</text>
+      <text y="102" fill="#f7f0df" font-size="24">Chicken Teriyaki</text><text x="255" y="102" fill="#f4d06f" font-size="24" text-anchor="end">79/119</text>
+      <text y="146" fill="#f7f0df" font-size="24">Tonfiskröra</text><text x="255" y="146" fill="#f4d06f" font-size="24" text-anchor="end">79/119</text>
+      <text y="190" fill="#f7f0df" font-size="24">Biff BBQ</text><text x="255" y="190" fill="#f4d06f" font-size="24" text-anchor="end">85/125</text>
+    </g>
+    <g transform="translate(795 255)">
+      <text fill="#9be379" font-size="34" font-weight="800">Snabbt &amp; gott</text>
+      <text y="58" fill="#f7f0df" font-size="24">Grillad panini</text><text x="285" y="58" fill="#f4d06f" font-size="24" text-anchor="end">fr. 79</text>
+      <text y="102" fill="#f7f0df" font-size="24">Sallad eller wrap</text><text x="285" y="102" fill="#f4d06f" font-size="24" text-anchor="end">fr. 89</text>
+      <text y="146" fill="#f7f0df" font-size="24">Vitlöksbröd</text><text x="285" y="146" fill="#f4d06f" font-size="24" text-anchor="end">39</text>
+      <text y="190" fill="#f7f0df" font-size="24">Cookies &amp; dessert</text><text x="285" y="190" fill="#f4d06f" font-size="24" text-anchor="end">fr. 25</text>
+    </g>
+  </g>
+  <path d="M92 718h1016" stroke="#f4d06f" stroke-width="3" stroke-dasharray="12 14"/>
+  <text x="90" y="785" fill="#f7f0df" font-family="Arial, Helvetica, sans-serif" font-size="33" font-weight="800">Laxå · Takeaway · Lunch · Kväll</text>
+  <circle cx="1042" cy="750" r="72" fill="#ff7f50"/>
+  <text x="1042" y="740" fill="#151312" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="900" text-anchor="middle">NYBAKAT</text>
+  <text x="1042" y="774" fill="#151312" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="900" text-anchor="middle">VARJE DAG</text>
+</svg>

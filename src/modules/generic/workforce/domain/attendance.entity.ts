@@ -24,14 +24,26 @@ export interface AttendanceShiftWithUser extends AttendanceShift {
   };
 }
 
+export interface ClockableStaffMember {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  employeeCode: string | null;
+  clockPinUpdatedAt: string | null;
+  activeShift: AttendanceShift | null;
+}
+
 export interface ClockInInput {
   deviceLabel?: string | null;
   location?: string | null;
+  source?: 'portal' | 'kiosk';
 }
 
 export interface ClockOutInput {
   deviceLabel?: string | null;
   location?: string | null;
+  source?: 'portal' | 'kiosk';
 }
 
 export interface CorrectAttendanceShiftInput {

@@ -18,6 +18,9 @@ model User {
   emailVerifiedAt DateTime?
   lastLoginAt     DateTime?
   lastLoginIp     String?   // last octet masked (GDPR)
+  employeeCode    String?   // restaurant kiosk identifier, normalized per org
+  clockPinHash    String?   // bcrypt hash; never expose via API/UI
+  clockPinUpdatedAt DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime? // soft delete — GDPR anonymize then purge
@@ -49,6 +52,7 @@ model User {
   @@index([organizationId])
   @@index([userType, organizationId])
   @@index([deletedAt])
+  @@unique([organizationId, employeeCode])
   @@map("usr_users")
 }
 

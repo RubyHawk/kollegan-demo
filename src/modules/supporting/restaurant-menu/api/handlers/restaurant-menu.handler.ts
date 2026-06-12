@@ -1,16 +1,22 @@
 import { z } from 'zod';
 import { createHandler } from '@platform/api/handler';
 import { Errors } from '@platform/api/errors';
-import { created, ok } from '@platform/api/response';
+import { created, noContent, ok } from '@platform/api/response';
 import type { JWTPayload } from '@platform/auth/jwt';
 import {
   createPublicReservationRequest,
+  createRestaurantEvent,
   createRestaurantMenuCategory,
   createRestaurantMenuItem,
+  deleteRestaurantEvent,
+  getPublicSiteSettings,
   getPublicRestaurantSite,
+  listRestaurantEvents,
   listReservationRequests,
   listRestaurantMenu,
   listRestaurantOpeningHours,
+  updatePublicSiteSettings,
+  updateRestaurantEvent,
   updateReservationRequest,
   upsertRestaurantOpeningHour,
 } from '../../application/restaurant-menu.service';
@@ -19,6 +25,13 @@ import { tenantHasModule } from '@platform/tenancy/tenant-resolver';
 function requireOrg(payload: JWTPayload | null): string {
   if (!payload?.orgId) throw Errors.forbidden('Organization context required');
   return payload.orgId;
+}
+
+function eventIdFromUrl(req: Request): string {
+  const pathname = new URL(req.url).pathname;
+  const id = pathname.split('/').filter(Boolean).at(-1);
+  if (!id) throw Errors.badRequest('Restaurant event id is required');
+  return id;
 }
 
 async function requireRestaurantModule(orgId: string, moduleKey: string) {
@@ -73,6 +86,35 @@ const ReservationListQuerySchema = z.object({
 const ReservationUpdateSchema = z.object({
   status: ReservationStatusSchema,
 });
+
+const NullableText = (max: number) => z.string().max(max).nullable().optional();
+
+const PublicSiteSettingsSchema = z.object({
+  siteName: z.string().min(1).max(120).optional(),
+  heroTitle: z.string().min(1).max(160).optional(),
+  heroSubtitle: NullableText(300),
+  about: NullableText(3000),
+  phone: NullableText(60),
+  email: z.string().email().max(254).nullable().optional(),
+  addressLine1: NullableText(160),
+  addressLine2: NullableText(160),
+  postalCode: NullableText(20),
+  city: NullableText(120),
+  country: NullableText(2),
+  reservationEmail: z.string().email().max(254).nullable().optional(),
+  seoTitle: NullableText(160),
+  seoDescription: NullableText(300),
+});
+
+const EventSchema = z.object({
+  title: z.string().min(1).max(160),
+  description: z.string().max(2000).nullable().optional(),
+  startsAt: z.string().datetime(),
+  endsAt: z.string().datetime().nullable().optional(),
+  isPublished: z.boolean().optional(),
+});
+
+const EventUpdateSchema = EventSchema.partial();
 
 export const handleGetPublicRestaurantSite = createHandler(
   {
@@ -181,6 +223,95 @@ export const handleListRestaurantReservations = createHandler(
     const orgId = requireOrg(auth);
     await requireRestaurantModule(orgId, 'restaurant_public_site');
     return ok({ reservations: await listReservationRequests(orgId, query ?? {}) });
+  },
+);
+
+export const handleGetPublicSiteSettings = createHandler(
+  {
+    tag: 'RestaurantPublicSiteSettings:Get',
+    auth: 'jwt',
+    permission: 'public_site.read',
+    rateLimit: { max: 60, windowMs: 60_000 },
+  },
+  async ({ auth }) => {
+    const orgId = requireOrg(auth);
+    await requireRestaurantModule(orgId, 'restaurant_public_site');
+    return ok({ settings: await getPublicSiteSettings(orgId) });
+  },
+);
+
+export const handleUpdatePublicSiteSettings = createHandler(
+  {
+    tag: 'RestaurantPublicSiteSettings:Update',
+    auth: 'jwt',
+    permission: 'public_site.write',
+    rateLimit: { max: 30, windowMs: 60_000 },
+    body: PublicSiteSettingsSchema,
+  },
+  async ({ auth, body }) => {
+    const orgId = requireOrg(auth);
+    await requireRestaurantModule(orgId, 'restaurant_public_site');
+    return ok({ settings: await updatePublicSiteSettings(orgId, body!) });
+  },
+);
+
+export const handleListRestaurantEvents = createHandler(
+  {
+    tag: 'RestaurantEvents:List',
+    auth: 'jwt',
+    permission: 'public_site.read',
+    rateLimit: { max: 60, windowMs: 60_000 },
+  },
+  async ({ auth }) => {
+    const orgId = requireOrg(auth);
+    await requireRestaurantModule(orgId, 'restaurant_public_site');
+    return ok({ events: await listRestaurantEvents(orgId) });
+  },
+);
+
+export const handleCreateRestaurantEvent = createHandler(
+  {
+    tag: 'RestaurantEvents:Create',
+    auth: 'jwt',
+    permission: 'public_site.write',
+    rateLimit: { max: 30, windowMs: 60_000 },
+    body: EventSchema,
+  },
+  async ({ auth, body }) => {
+    const orgId = requireOrg(auth);
+    await requireRestaurantModule(orgId, 'restaurant_public_site');
+    const event = await createRestaurantEvent(orgId, auth!.sub, body!);
+    return created({ event }, `/api/v1/restaurant/events/${event.id}`);
+  },
+);
+
+export const handleUpdateRestaurantEvent = createHandler(
+  {
+    tag: 'RestaurantEvents:Update',
+    auth: 'jwt',
+    permission: 'public_site.write',
+    rateLimit: { max: 40, windowMs: 60_000 },
+    body: EventUpdateSchema,
+  },
+  async ({ auth, body, req }) => {
+    const orgId = requireOrg(auth);
+    await requireRestaurantModule(orgId, 'restaurant_public_site');
+    return ok({ event: await updateRestaurantEvent(orgId, eventIdFromUrl(req), body!) });
+  },
+);
+
+export const handleDeleteRestaurantEvent = createHandler(
+  {
+    tag: 'RestaurantEvents:Delete',
+    auth: 'jwt',
+    permission: 'public_site.write',
+    rateLimit: { max: 20, windowMs: 60_000 },
+  },
+  async ({ auth, req }) => {
+    const orgId = requireOrg(auth);
+    await requireRestaurantModule(orgId, 'restaurant_public_site');
+    await deleteRestaurantEvent(orgId, eventIdFromUrl(req));
+    return noContent();
   },
 );
 
