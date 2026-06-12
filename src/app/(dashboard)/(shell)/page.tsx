@@ -79,7 +79,7 @@ export default async function DashboardPage() {
 
   const enabledModules = await listEnabledOrganizationModules(orgId);
   if (enabledModules.includes('restaurant_public_site')) {
-    return <RestaurantDashboard organizationId={orgId} userId={user.id} />;
+    return <RestaurantDashboard organizationId={orgId} userId={user.id} roles={user.roles} />;
   }
 
   const data = await getDashboardReadModel(orgId);
