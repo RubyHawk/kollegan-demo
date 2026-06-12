@@ -1,6 +1,8 @@
 import { getDashboardOrganizationIdForUser, getDashboardReadModel } from '@modules/generic/dashboard';
 import { getSessionUser } from '@modules/supporting/auth';
+import { listEnabledOrganizationModules } from '@modules/supporting/identity';
 import DashboardView from './_components/DashboardView';
+import { RestaurantDashboard } from './_components/restaurant-dashboard';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -73,6 +75,11 @@ export default async function DashboardPage() {
         Ingen organisation kopplad till ditt konto.
       </div>
     );
+  }
+
+  const enabledModules = await listEnabledOrganizationModules(orgId);
+  if (enabledModules.includes('restaurant_public_site')) {
+    return <RestaurantDashboard organizationId={orgId} userId={user.id} />;
   }
 
   const data = await getDashboardReadModel(orgId);

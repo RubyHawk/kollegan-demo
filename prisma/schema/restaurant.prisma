@@ -1,0 +1,112 @@
+// ─── Restaurant Public Content ────────────────────────────────────────────────
+// Tenant-owned restaurant website content and simple booking requests.
+// Table prefix: rst_*
+
+model RestaurantMenuCategory {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  sortOrder      Int       @default(0)
+  isActive       Boolean   @default(true)
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization         @relation(fields: [organizationId], references: [id])
+  items        RestaurantMenuItem[]
+
+  @@index([organizationId, sortOrder])
+  @@index([deletedAt])
+  @@map("rst_menu_categories")
+}
+
+model RestaurantMenuItem {
+  id             String    @id @default(uuid())
+  organizationId String
+  categoryId     String
+  name           String
+  description    String?
+  priceCents     Int?
+  currency       String    @default("SEK")
+  imageUrl       String?
+  allergens      String[]  @default([])
+  tags           String[]  @default([])
+  isAvailable    Boolean   @default(true)
+  sortOrder      Int       @default(0)
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization           @relation(fields: [organizationId], references: [id])
+  category     RestaurantMenuCategory @relation(fields: [categoryId], references: [id])
+
+  @@index([organizationId, categoryId, sortOrder])
+  @@index([organizationId, isAvailable])
+  @@index([deletedAt])
+  @@map("rst_menu_items")
+}
+
+model RestaurantOpeningHour {
+  id             String   @id @default(uuid())
+  organizationId String
+  dayOfWeek      Int      // 1 = Monday, 7 = Sunday
+  opensAt        String?
+  closesAt       String?
+  isClosed       Boolean  @default(false)
+  label          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, dayOfWeek])
+  @@map("rst_opening_hours")
+}
+
+model RestaurantEvent {
+  id             String    @id @default(uuid())
+  organizationId String
+  title          String
+  description    String?
+  startsAt       DateTime
+  endsAt         DateTime?
+  isPublished    Boolean   @default(false)
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, startsAt])
+  @@index([organizationId, isPublished])
+  @@index([deletedAt])
+  @@map("rst_events")
+}
+
+model RestaurantReservationRequest {
+  id             String    @id @default(uuid())
+  organizationId String
+  guestName      String
+  guestEmail     String?
+  guestPhone     String?
+  partySize      Int
+  requestedAt    DateTime
+  message        String?
+  status         String    @default("new") // new | confirmed | declined | cancelled
+  handledBy      String?
+  handledAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, requestedAt])
+  @@index([organizationId, status])
+  @@index([deletedAt])
+  @@map("rst_reservation_requests")
+}

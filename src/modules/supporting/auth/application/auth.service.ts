@@ -47,6 +47,7 @@ export interface LoginInput {
   userAgent?: string;
   ipAddress?: string;
   rememberMe?: boolean;
+  organizationId?: string;
 }
 
 /** Full token result — returned when MFA is not required or already completed. */
@@ -180,6 +181,10 @@ export async function login(input: LoginInput): Promise<LoginOutcome> {
     }
     user = await migrateStaffUser(staffUser);
     roles = await userRepository.getUserRoles(user.id, user.organizationId ?? '');
+  }
+
+  if (input.organizationId && user.organizationId !== input.organizationId) {
+    throw Object.assign(new Error('Invalid credentials'), { code: 'INVALID_CREDENTIALS' });
   }
 
   await userRepository.updateLastLogin(user.id, input.ipAddress ?? null);

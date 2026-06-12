@@ -18,7 +18,7 @@ import { BrandMark } from '@shared/ui/brand';
 import { TooltipProvider } from '@shared/ui/tooltip';
 import {
   LS_DROPDOWNS_KEY,
-  NAV_CONFIG,
+  getNavConfigForModules,
   type SidebarProps,
 } from './sidebar-config';
 import { SidebarFooter } from './sidebar-footer';
@@ -89,6 +89,7 @@ export default function Sidebar({
   onToggleCollapse,
   onLogout,
   onMobileClose,
+  enabledModules = [],
 }: SidebarProps) {
   const pathname = usePathname();
   const reducedMotion = useReducedMotion() ?? false;
@@ -140,12 +141,13 @@ export default function Sidebar({
     });
   }
 
-  const visibleSections = NAV_CONFIG.filter(
+  const navConfig = getNavConfigForModules(enabledModules);
+  const visibleSections = navConfig.filter(
     (section) =>
       !section.adminOnly || user.role === 'admin' || user.role === 'super_admin',
   );
 
-  const routeOpenDropdowns = NAV_CONFIG.flatMap((section) =>
+  const routeOpenDropdowns = navConfig.flatMap((section) =>
     section.items.flatMap((entry) =>
       entry.type === 'dropdown' &&
       entry.items.some(

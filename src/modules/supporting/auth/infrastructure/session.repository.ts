@@ -13,6 +13,11 @@ const ROLE_PRIORITY = [
   'viewer',
   'customer_admin',
   'customer_viewer',
+  'restaurant_owner',
+  'restaurant_manager',
+  'restaurant_staff',
+  'restaurant_kitchen',
+  'restaurant_accountant',
 ] as const;
 
 function pickPrimaryRole(roles: string[], fallback: string): string {
@@ -54,6 +59,7 @@ export const sessionRepository = {
         lastName: true,
         avatarUrl: true,
         userType: true,
+        organizationId: true,
         mfaEnabled: true,
       },
     });
@@ -68,6 +74,7 @@ export const sessionRepository = {
 
     return {
       ...user,
+      orgId: user.organizationId,
       role,
       roles,
       mfaAuthenticated: !!session.mfaVerifiedAt && !!session.mfaMethod,
