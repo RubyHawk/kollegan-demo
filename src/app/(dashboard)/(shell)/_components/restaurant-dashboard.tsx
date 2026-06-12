@@ -15,7 +15,7 @@ function todayOpeningLabel(hours: Awaited<ReturnType<typeof listRestaurantOpenin
   const isoDay = new Date().getDay() || 7;
   const hour = hours.find((item) => item.dayOfWeek === isoDay);
   if (!hour) return 'Ej angivet';
-  if (hour.isClosed) return hour.label ?? 'Stangt';
+  if (hour.isClosed) return hour.label ?? 'Stängt';
   return `${hour.opensAt} - ${hour.closesAt}`;
 }
 
@@ -40,9 +40,9 @@ export async function RestaurantDashboard({ organizationId, userId }: { organiza
       <KpiStrip
         items={[
           { id: 'staff', label: 'Incheckade', value: activeStaff.length, detail: 'Aktiv personal just nu', tone: activeStaff.length > 0 ? 'success' : 'neutral' },
-          { id: 'hours', label: 'Oppet idag', value: todayOpeningLabel(hours), detail: 'Publika oppettider' },
+          { id: 'hours', label: 'Öppet idag', value: todayOpeningLabel(hours), detail: 'Publika öppettider' },
           { id: 'menu', label: 'Menyrader', value: menuItems, detail: `${categories.length} kategorier`, tone: menuItems > 0 ? 'info' : 'warning' },
-          { id: 'tasks', label: 'Uppgifter', value: 'MVP', detail: 'Checklistor kommer i nasta steg' },
+          { id: 'tasks', label: 'Uppgifter', value: 'MVP', detail: 'Checklistor kommer i nästa steg' },
         ]}
       />
 
