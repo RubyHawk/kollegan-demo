@@ -1,17 +1,10 @@
-import { PageHeader } from '@shared/ui/page-header';
-import { Panel } from '@shared/ui/panel';
+import { getSessionUser, hasPermission } from '@modules/supporting/auth';
+import { ScheduleClient } from './schedule-client';
 
-export default function SchedulePage() {
-  return (
-    <div className="space-y-6 p-4 md:p-6">
-      <PageHeader
-        eyebrow="Restaurang"
-        title="Schema"
-        description="Schemaläggning är förberedd i datamodellen och byggs ut efter klock-in-MVP:t."
-      />
-      <Panel>
-        <p className="text-sm text-[var(--ui-text-muted)]">Nästa steg: skapa, ändra och publicera arbetspass per medarbetare.</p>
-      </Panel>
-    </div>
-  );
+export const dynamic = 'force-dynamic';
+
+export default async function SchedulePage() {
+  const user = await getSessionUser();
+  const canEdit = user ? await hasPermission(user.roles, 'schedule.write').catch(() => false) : false;
+  return <ScheduleClient canEdit={canEdit} currentUserId={user?.id ?? ''} />;
 }
