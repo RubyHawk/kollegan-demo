@@ -10,6 +10,7 @@ const PUBLIC_PREFIXES = [
   '/logga-in',
   '/registrera',
   '/site',
+  '/api/health',
   '/api/auth/',
   '/api/v1/auth/',
   '/api/v1/public-site',
@@ -43,7 +44,7 @@ const APP_ROUTES = [
 ];
 
 const OFFER_SUBDOMAIN = process.env.PUBLIC_OFFER_SUBDOMAIN ?? 'offert';
-const PUBLIC_SITE_HOSTS = (process.env.PUBLIC_SITE_HOSTS ?? 'restaurantdomain.se')
+const PUBLIC_SITE_HOSTS = (process.env.PUBLIC_SITE_HOSTS ?? 'fluffys.se')
   .split(',')
   .map((host) => host.trim().toLowerCase())
   .filter(Boolean);
@@ -53,21 +54,73 @@ const OFFER_HOSTS = (process.env.PUBLIC_OFFER_HOSTS ?? `offert.soleria.se,${OFFE
   .filter(Boolean);
 const PUBLIC_OFFER_TOKEN_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+type AppSurface = 'public' | 'portal' | null;
+
+function resolveAppSurface(value = process.env.APP_SURFACE): AppSurface {
+  if (value === 'public' || value === 'portal') return value;
+  return null;
+}
+
+const APP_SURFACE = resolveAppSurface();
+
+const PUBLIC_SURFACE_PREFIXES = [
+  '/site',
+  '/api/v1/public-site',
+  '/api/health',
+  '/_next/',
+  '/favicon',
+];
+
+export function isPublicSurfacePath(pathname: string): boolean {
+  return PUBLIC_SURFACE_PREFIXES.some((prefix) => {
+    if (prefix.endsWith('/')) return pathname.startsWith(prefix);
+    return pathname === prefix || pathname.startsWith(`${prefix}/`);
+  });
+}
+
+export function isPublicSiteHost(hostname: string): boolean {
+  return PUBLIC_SITE_HOSTS.includes(hostname.toLowerCase());
+}
+
+export function isPortalSurfaceBlockedPath(pathname: string, hostname: string): boolean {
+  return isPublicSiteHost(hostname)
+    || pathname === '/site'
+    || pathname.startsWith('/site/')
+    || pathname === '/api/v1/public-site'
+    || pathname.startsWith('/api/v1/public-site/');
+}
+
+function maybeRewritePublicSite(request: NextRequest, hostname: string): NextResponse | null {
+  if (!isPublicSiteHost(hostname)) return null;
+
+  const { pathname } = request.nextUrl;
+  if (!pathname.startsWith('/site') && !pathname.startsWith('/api/') && !pathname.startsWith('/_next/')) {
+    return NextResponse.rewrite(new URL(`/site${pathname === '/' ? '' : pathname}`, request.url));
+  }
+
+  return null;
+}
+
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const host = request.headers.get('host') ?? '';
   const hostname = host.split(':')[0]?.toLowerCase() ?? '';
+  const { pathname } = request.nextUrl;
 
-  if (PUBLIC_SITE_HOSTS.includes(hostname)) {
-    const { pathname } = request.nextUrl;
-    if (!pathname.startsWith('/site') && !pathname.startsWith('/api/') && !pathname.startsWith('/_next/')) {
-      return NextResponse.rewrite(new URL(`/site${pathname === '/' ? '' : pathname}`, request.url));
-    }
+  if (APP_SURFACE === 'portal' && isPortalSurfaceBlockedPath(pathname, hostname)) {
+    return new NextResponse(null, { status: 404 });
+  }
+
+  const publicSiteRewrite = maybeRewritePublicSite(request, hostname);
+  if (publicSiteRewrite) return publicSiteRewrite;
+
+  if (APP_SURFACE === 'public') {
+    if (isPublicSurfacePath(pathname)) return NextResponse.next();
+    return new NextResponse(null, { status: 404 });
   }
 
   // Subdomain routing: offert.soleria.se/<token> → /offers/public/<token>
   // Only rewrite bare single-segment paths that are NOT known app routes.
   if (OFFER_HOSTS.includes(hostname) || hostname.startsWith(`${OFFER_SUBDOMAIN}.`)) {
-    const { pathname } = request.nextUrl;
     const isAppRoute = APP_ROUTES.some((p) => pathname === p || pathname.startsWith(p + '/'));
     if (!isAppRoute) {
       const token = pathname.slice(1);
@@ -77,8 +130,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
     return NextResponse.next();
   }
-
-  const { pathname } = request.nextUrl;
 
   if (isPublicPath(pathname)) {
     return NextResponse.next();

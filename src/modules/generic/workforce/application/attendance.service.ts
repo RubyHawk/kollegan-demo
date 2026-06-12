@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import { Errors } from '@platform/api/errors';
 import { logger } from '@platform/logging/logger';
 import { organizationHasModule } from '@modules/supporting/identity';
@@ -80,6 +81,59 @@ export async function listTodayAttendance(organizationId: string) {
   await requireClockInModule(organizationId);
   const { from, to } = localDayBounds();
   return attendanceRepository.listShiftsInRange(organizationId, from, to);
+}
+
+async function verifyKioskPin(organizationId: string, userId: string, pin: string) {
+  const state = await attendanceRepository.findClockPinState(organizationId, userId);
+  if (!state || !state.isActive) throw Errors.notFound('Clockable staff member not found');
+  if (!state.clockPinHash) throw Errors.conflict('Staff member does not have a clock-in PIN');
+
+  const valid = await bcrypt.compare(pin, state.clockPinHash);
+  if (!valid) throw Errors.forbidden('Invalid employee PIN');
+}
+
+export async function listClockableStaffForKiosk(organizationId: string) {
+  await requireClockInModule(organizationId);
+  return attendanceRepository.listClockableStaff(organizationId);
+}
+
+export async function kioskClockIn(
+  organizationId: string,
+  userId: string,
+  pin: string,
+  input: ClockInInput,
+) {
+  await requireClockInModule(organizationId);
+  await verifyKioskPin(organizationId, userId, pin);
+
+  const active = await attendanceRepository.findActiveShift(organizationId, userId);
+  if (active) throw Errors.conflict('Selected staff member already has an active shift');
+
+  const shift = await attendanceRepository.createShift(organizationId, userId, {
+    ...input,
+    source: 'kiosk',
+  });
+  logger.info(TAG, 'Kiosk clock-in recorded', { organizationId, userId, shiftId: shift.id });
+  return shift;
+}
+
+export async function kioskClockOut(
+  organizationId: string,
+  userId: string,
+  pin: string,
+  input: ClockOutInput,
+) {
+  await requireClockInModule(organizationId);
+  await verifyKioskPin(organizationId, userId, pin);
+
+  const shift = await attendanceRepository.completeActiveShift(organizationId, userId, {
+    ...input,
+    source: 'kiosk',
+  });
+  if (!shift) throw Errors.conflict('Selected staff member has no active shift to clock out from');
+
+  logger.info(TAG, 'Kiosk clock-out recorded', { organizationId, userId, shiftId: shift.id });
+  return shift;
 }
 
 export async function correctAttendanceShift(

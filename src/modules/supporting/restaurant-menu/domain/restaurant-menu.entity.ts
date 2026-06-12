@@ -55,6 +55,12 @@ export interface RestaurantEventView {
   endsAt: string | null;
 }
 
+export interface RestaurantEventManagementView extends RestaurantEventView {
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type RestaurantReservationStatus = 'new' | 'confirmed' | 'declined' | 'cancelled';
 
 export interface RestaurantReservationRequestView {
@@ -124,4 +130,37 @@ export interface ListReservationRequestsInput {
 
 export interface UpdateReservationRequestInput {
   status: RestaurantReservationStatus;
+}
+
+export interface UpdatePublicSiteSettingsInput {
+  siteName?: string;
+  heroTitle?: string;
+  heroSubtitle?: string | null;
+  about?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  postalCode?: string | null;
+  city?: string | null;
+  country?: string | null;
+  reservationEmail?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+}
+
+export interface CreateRestaurantEventInput {
+  title: string;
+  description?: string | null;
+  startsAt: string;
+  endsAt?: string | null;
+  isPublished?: boolean;
+}
+
+export interface UpdateRestaurantEventInput {
+  title?: string;
+  description?: string | null;
+  startsAt?: string;
+  endsAt?: string | null;
+  isPublished?: boolean;
 }

@@ -9,6 +9,7 @@ APP_DIR="${APP_DIR:-/var/www/offert}"
 ARTIFACT_PATH="${1:-}"
 DEPLOY_SHA="${2:-}"
 SERVICE_NAME="${SERVICE_NAME:-kollegan}"
+SERVICE_NAMES="${SERVICE_NAMES:-$SERVICE_NAME}"
 DEPLOY_STATE_DIR="${DEPLOY_STATE_DIR:-$APP_DIR/.deploy-state}"
 APP_BASE_URL="${APP_BASE_URL:-}"
 DEFAULT_LOCAL_HEALTHCHECK_URLS="http://127.0.0.1:3000/api/health,http://localhost:3000/api/health,http://127.0.0.1/api/health,http://localhost/api/health"
@@ -63,7 +64,14 @@ rm -f "$ARTIFACT_PATH"
 
 DATABASE_URL="${DATABASE_URL:-postgresql://user:pass@localhost:5432/kollegan?schema=public}" npx prisma generate
 npx prisma migrate deploy
-sudo systemctl restart "$SERVICE_NAME"
+
+IFS=',' read -r -a service_names <<< "$SERVICE_NAMES"
+for service in "${service_names[@]}"; do
+  service="$(echo "$service" | xargs)"
+  if [ -n "$service" ]; then
+    sudo systemctl restart "$service"
+  fi
+done
 
 IFS=',' read -r -a health_urls <<< "$HEALTHCHECK_URLS_CSV"
 last_error=""
@@ -81,5 +89,10 @@ for ((attempt=1; attempt<=HEALTHCHECK_ATTEMPTS; attempt+=1)); do
 done
 
 echo "Health check failed after restart. Last probe error: ${last_error:-unknown}" >&2
-sudo systemctl --no-pager --full status "$SERVICE_NAME" || true
+for service in "${service_names[@]}"; do
+  service="$(echo "$service" | xargs)"
+  if [ -n "$service" ]; then
+    sudo systemctl --no-pager --full status "$service" || true
+  fi
+done
 exit 1

@@ -14,11 +14,24 @@ export type {
 } from './application/account.service';
 export { createDevelopmentAccessToken } from './application/dev-login.service';
 export { createLegacyStaffUser, deleteLegacyStaffUser, listLegacyStaffUsers } from './application/staff-users.service';
+export {
+  createRestaurantStaff,
+  deactivateRestaurantStaff,
+  listRestaurantStaff,
+  resetRestaurantStaffPin,
+  updateRestaurantStaff,
+} from './application/restaurant-staff.service';
 export type {
   CreateLegacyStaffUserInput,
   LegacyStaffRole,
   LegacyStaffUser,
 } from './domain/staff-user.entity';
+export type {
+  CreateRestaurantStaffInput,
+  RestaurantStaffMember,
+  RestaurantStaffRole,
+  UpdateRestaurantStaffInput,
+} from './domain/restaurant-staff.entity';
 
 export {
   generateTotpSetup,
@@ -74,6 +87,13 @@ export {
   handleDeleteStaff,
   handleListStaff,
 } from './api/handlers/staff.handler';
+export {
+  handleCreateRestaurantStaff,
+  handleDeactivateRestaurantStaff,
+  handleListRestaurantStaff,
+  handleResetRestaurantStaffPin,
+  handleUpdateRestaurantStaff,
+} from './api/handlers/restaurant-staff.handler';
 export {
   handleMfaStatus,
   handleMfaSetup,

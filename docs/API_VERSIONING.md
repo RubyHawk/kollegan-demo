@@ -29,7 +29,7 @@ Handlers own:
 
 Browser code uses feature API clients, not inline fetch.
 
-Literal non-versioned `/api/*` references outside route files are exceptions, not the default. New exceptions are allowed only for documented public-document routes, demos, OpenAPI specs, proxy allowlists, or infrastructure/integration endpoints. Browser and ERP product flows must prefer `/api/v1/**`, and CI blocks new unapproved non-versioned literals outside route files.
+Literal non-versioned `/api/*` references outside route files are exceptions, not the default. New exceptions are allowed only for documented public-document routes, demos, OpenAPI specs, proxy allowlists, or infrastructure/integration endpoints. `/api/health` remains non-versioned as an infrastructure health endpoint for service checks and proxy surface allowlists; it is not a browser or ERP product API. Browser and ERP product flows must prefer `/api/v1/**`, and CI blocks new unapproved non-versioned literals outside route files.
 
 ## Route Lifecycle
 

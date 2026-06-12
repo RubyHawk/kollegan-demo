@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost, apiPut } from '../api-client';
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '../api-client';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -34,6 +34,34 @@ export interface RestaurantOpeningHour {
   closesAt: string | null;
   isClosed: boolean;
   label: string | null;
+}
+
+export interface PublicSiteSettings {
+  siteName: string;
+  heroTitle: string;
+  heroSubtitle: string | null;
+  about: string | null;
+  phone: string | null;
+  email: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  postalCode: string | null;
+  city: string | null;
+  country: string | null;
+  reservationEmail: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+}
+
+export interface RestaurantEvent {
+  id: string;
+  title: string;
+  description: string | null;
+  startsAt: string;
+  endsAt: string | null;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type RestaurantReservationStatus = 'new' | 'confirmed' | 'declined' | 'cancelled';
@@ -94,6 +122,16 @@ export interface ReservationListParams {
   to?: string;
 }
 
+export type SavePublicSiteSettingsPayload = Partial<PublicSiteSettings>;
+
+export interface SaveRestaurantEventPayload {
+  title?: string;
+  description?: string | null;
+  startsAt?: string;
+  endsAt?: string | null;
+  isPublished?: boolean;
+}
+
 export async function listRestaurantMenu(): Promise<RestaurantMenuCategory[]> {
   const res = await apiGet<ApiEnvelope<{ categories: RestaurantMenuCategory[] }>>('/api/v1/restaurant/menu');
   return res.data.categories;
@@ -143,4 +181,33 @@ export async function updateRestaurantReservation(
     { status },
   );
   return res.data.reservation;
+}
+
+export async function getPublicSiteSettings(): Promise<PublicSiteSettings> {
+  const res = await apiGet<ApiEnvelope<{ settings: PublicSiteSettings }>>('/api/v1/restaurant/public-site-settings');
+  return res.data.settings;
+}
+
+export async function savePublicSiteSettings(payload: SavePublicSiteSettingsPayload): Promise<PublicSiteSettings> {
+  const res = await apiPatch<ApiEnvelope<{ settings: PublicSiteSettings }>>('/api/v1/restaurant/public-site-settings', payload);
+  return res.data.settings;
+}
+
+export async function listRestaurantEvents(): Promise<RestaurantEvent[]> {
+  const res = await apiGet<ApiEnvelope<{ events: RestaurantEvent[] }>>('/api/v1/restaurant/events');
+  return res.data.events;
+}
+
+export async function createRestaurantEvent(payload: Required<Pick<SaveRestaurantEventPayload, 'title' | 'startsAt'>> & SaveRestaurantEventPayload): Promise<RestaurantEvent> {
+  const res = await apiPost<ApiEnvelope<{ event: RestaurantEvent }>>('/api/v1/restaurant/events', payload);
+  return res.data.event;
+}
+
+export async function updateRestaurantEvent(id: string, payload: SaveRestaurantEventPayload): Promise<RestaurantEvent> {
+  const res = await apiPatch<ApiEnvelope<{ event: RestaurantEvent }>>(`/api/v1/restaurant/events/${id}`, payload);
+  return res.data.event;
+}
+
+export async function deleteRestaurantEvent(id: string): Promise<void> {
+  await apiDelete(`/api/v1/restaurant/events/${id}`);
 }

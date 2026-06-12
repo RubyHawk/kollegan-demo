@@ -1,0 +1,31 @@
+.fluffy-public {
+  color: #211f1c;
+  background: #fffaf0;
+}
+
+.fluffy-rise {
+  animation: fluffy-rise 520ms ease-out both;
+}
+
+.fluffy-link {
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fluffy-rise {
+    animation: none;
+  }
+}
+
+@keyframes fluffy-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

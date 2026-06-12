@@ -8,6 +8,9 @@ import {
   clockOut,
   correctAttendanceShift,
   getCurrentAttendanceShift,
+  kioskClockIn,
+  kioskClockOut,
+  listClockableStaffForKiosk,
   listTodayAttendance,
 } from '../../application/attendance.service';
 
@@ -33,6 +36,11 @@ const CorrectionSchema = z.object({
   clockOutAt: z.string().datetime().nullable().optional(),
   status: z.enum(['active', 'completed', 'corrected']).optional(),
   correctionReason: z.string().min(1).max(1000),
+});
+
+const KioskClockEventSchema = ClockEventSchema.extend({
+  userId: z.string().uuid(),
+  pin: z.string().regex(/^\d{4,8}$/),
 });
 
 export const handleGetCurrentAttendanceShift = createHandler(
@@ -86,6 +94,47 @@ export const handleListTodayAttendance = createHandler(
   async ({ auth }) => {
     const orgId = requireOrg(auth);
     return ok({ shifts: await listTodayAttendance(orgId) });
+  },
+);
+
+export const handleListKioskClockableStaff = createHandler(
+  {
+    tag: 'Attendance:KioskStaff',
+    auth: 'jwt',
+    permission: 'attendance.kiosk',
+    rateLimit: { max: 60, windowMs: 60_000 },
+  },
+  async ({ auth }) => {
+    const orgId = requireOrg(auth);
+    return ok({ staff: await listClockableStaffForKiosk(orgId) });
+  },
+);
+
+export const handleKioskClockIn = createHandler(
+  {
+    tag: 'Attendance:KioskClockIn',
+    auth: 'jwt',
+    permission: 'attendance.kiosk',
+    rateLimit: { max: 30, windowMs: 60_000 },
+    body: KioskClockEventSchema,
+  },
+  async ({ auth, body }) => {
+    const orgId = requireOrg(auth);
+    return ok({ shift: await kioskClockIn(orgId, body!.userId, body!.pin, body ?? {}) });
+  },
+);
+
+export const handleKioskClockOut = createHandler(
+  {
+    tag: 'Attendance:KioskClockOut',
+    auth: 'jwt',
+    permission: 'attendance.kiosk',
+    rateLimit: { max: 30, windowMs: 60_000 },
+    body: KioskClockEventSchema,
+  },
+  async ({ auth, body }) => {
+    const orgId = requireOrg(auth);
+    return ok({ shift: await kioskClockOut(orgId, body!.userId, body!.pin, body ?? {}) });
   },
 );
 

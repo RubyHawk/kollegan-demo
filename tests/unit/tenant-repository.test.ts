@@ -24,7 +24,7 @@ describe('tenantRepository.resolveByHost', () => {
     vi.mocked(prisma.organizationDomain.findUnique).mockResolvedValue({
       id: 'domain_1',
       organizationId: 'org_1',
-      hostname: 'portal.restaurantdomain.se',
+      hostname: 'portal.fluffys.se',
       kind: 'portal',
       isPrimary: true,
       verifiedAt: new Date(),
@@ -32,16 +32,16 @@ describe('tenantRepository.resolveByHost', () => {
       updatedAt: new Date(),
       organization: {
         id: 'org_1',
-        slug: 'restaurant-demo',
-        name: 'Restaurant Demo',
+        slug: 'fluffys',
+        name: "Fluffy's",
         modules: [{ moduleKey: 'clock_in' }, { moduleKey: 'restaurant_menu' }],
       },
     } as never);
 
-    await expect(tenantRepository.resolveByHost('Portal.RestaurantDomain.se:443')).resolves.toMatchObject({
+    await expect(tenantRepository.resolveByHost('Portal.Fluffys.se:443')).resolves.toMatchObject({
       organizationId: 'org_1',
-      organizationSlug: 'restaurant-demo',
-      hostname: 'portal.restaurantdomain.se',
+      organizationSlug: 'fluffys',
+      hostname: 'portal.fluffys.se',
       kind: 'portal',
       enabledModules: ['clock_in', 'restaurant_menu'],
     });

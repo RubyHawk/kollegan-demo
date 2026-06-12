@@ -11,6 +11,7 @@ import {
   BarChart2Icon,
   ClockIcon,
   CalendarIcon,
+  LinkIcon,
 } from '@shared/ui/icons';
 import type { IconComponent } from '@shared/nav/types';
 import { SETTINGS_CRUMB_MAP } from '@shared/nav/settings-config';
@@ -132,8 +133,10 @@ export const NAV_CONFIG: NavSection[] = [
       { type: 'link', href: '/', label: 'Dagens drift', icon: HomeIcon, exact: true, moduleKey: 'restaurant_public_site' },
       { type: 'link', href: '/bokningar', label: 'Bokningar', icon: CalendarIcon, moduleKey: 'restaurant_public_site' },
       { type: 'link', href: '/narvaro', label: 'Närvaro', icon: ClockIcon, moduleKey: 'clock_in' },
+      { type: 'link', href: '/personal', label: 'Personal', icon: UsersIcon, moduleKey: 'clock_in' },
       { type: 'link', href: '/schema', label: 'Schema', icon: CalendarIcon, moduleKey: 'staff_schedule' },
       { type: 'link', href: '/meny', label: 'Meny', icon: PackageIcon, moduleKey: 'restaurant_menu' },
+      { type: 'link', href: '/webbplats', label: 'Webbplats', icon: LinkIcon, moduleKey: 'restaurant_public_site' },
       { type: 'link', href: '/uppgifter', label: 'Uppgifter', icon: FileTextIcon, moduleKey: 'tasks' },
     ],
   },

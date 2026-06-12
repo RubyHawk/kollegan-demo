@@ -30,6 +30,16 @@ export interface AttendanceShiftWithUser extends AttendanceShift {
   };
 }
 
+export interface ClockableStaffMember {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  employeeCode: string | null;
+  clockPinUpdatedAt: string | null;
+  activeShift: AttendanceShift | null;
+}
+
 export async function getCurrentAttendanceShift(): Promise<AttendanceShift | null> {
   const res = await apiGet<ApiEnvelope<{ shift: AttendanceShift | null }>>('/api/v1/attendance/current');
   return res.data.shift;
@@ -48,6 +58,31 @@ export async function clockOut(payload: { deviceLabel?: string | null; location?
 export async function listTodayAttendance(): Promise<AttendanceShiftWithUser[]> {
   const res = await apiGet<ApiEnvelope<{ shifts: AttendanceShiftWithUser[] }>>('/api/v1/attendance/today');
   return res.data.shifts;
+}
+
+export async function listKioskClockableStaff(): Promise<ClockableStaffMember[]> {
+  const res = await apiGet<ApiEnvelope<{ staff: ClockableStaffMember[] }>>('/api/v1/attendance/kiosk/staff');
+  return res.data.staff;
+}
+
+export async function kioskClockIn(payload: {
+  userId: string;
+  pin: string;
+  deviceLabel?: string | null;
+  location?: string | null;
+}): Promise<AttendanceShift> {
+  const res = await apiPost<ApiEnvelope<{ shift: AttendanceShift }>>('/api/v1/attendance/kiosk/clock-in', payload);
+  return res.data.shift;
+}
+
+export async function kioskClockOut(payload: {
+  userId: string;
+  pin: string;
+  deviceLabel?: string | null;
+  location?: string | null;
+}): Promise<AttendanceShift> {
+  const res = await apiPost<ApiEnvelope<{ shift: AttendanceShift }>>('/api/v1/attendance/kiosk/clock-out', payload);
+  return res.data.shift;
 }
 
 export async function correctAttendanceShift(
