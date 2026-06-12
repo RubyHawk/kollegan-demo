@@ -13,7 +13,9 @@
  *   - amr claim added to JWT: ['pwd'] or ['pwd','otp'] or ['pwd','hwk'].
  *
  * MFA enforcement rules (see requiresMfa()):
- *   - All staff users (userType='staff')
+ *   - All staff users (userType='staff'), except users whose only roles are
+ *     clock-in-only restaurant roles (restaurant_staff, restaurant_kitchen).
+ *     Any additional role with broader access reinstates the requirement.
  *   - Customer admins (userType='customer' + role includes 'customer_admin')
  */
 
@@ -79,11 +81,22 @@ export type LoginOutcome = LoginResult | MfaChallengeResult;
 // ─── MFA enforcement helpers ───────────────────────────────────────────────────
 
 /**
- * Returns true if this user MUST complete MFA to get tokens.
- * Staff: always. Customer admins: yes. Customer viewers: no.
+ * Roles whose portal access is limited to clocking in/out and read-only
+ * views. They hold no edit permissions for menu, schedule, reservations,
+ * or user management, so password-only login is an accepted risk for them.
  */
-function requiresMfa(userType: string, roles: string[]): boolean {
-  if (userType === 'staff') return true;
+const MFA_EXEMPT_STAFF_ROLES = new Set<string>(['restaurant_staff', 'restaurant_kitchen']);
+
+/**
+ * Returns true if this user MUST complete MFA to get tokens.
+ * Staff: always, except clock-in-only restaurant roles. Users with no roles
+ * at all stay on the strict path. Customer admins: yes. Customer viewers: no.
+ */
+export function requiresMfa(userType: string, roles: string[]): boolean {
+  if (userType === 'staff') {
+    if (roles.length > 0 && roles.every((role) => MFA_EXEMPT_STAFF_ROLES.has(role))) return false;
+    return true;
+  }
   if (userType === 'customer' && roles.includes('customer_admin')) return true;
   return false;
 }
