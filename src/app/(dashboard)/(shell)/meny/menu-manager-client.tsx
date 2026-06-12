@@ -14,6 +14,7 @@ import {
   type RestaurantMenuCategory,
 } from '@shared/lib/api/restaurant.api';
 import { PlusIcon } from '@shared/ui/icons';
+import { OpeningHoursManager } from './opening-hours-manager';
 
 function formatPrice(priceCents: number | null, currency: string) {
   if (priceCents == null) return 'Pris saknas';
@@ -183,6 +184,8 @@ export function MenuManagerClient() {
           </div>
         </Panel>
       </div>
+
+      <OpeningHoursManager />
     </div>
   );
 }
