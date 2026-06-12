@@ -69,6 +69,12 @@ export interface User {
   orgId?: string | null;
 }
 
+/** Workspace identity shown in the shell header. Defaults to the platform brand. */
+export interface ShellBrand {
+  name: string;
+  isPlatform: boolean;
+}
+
 export interface SidebarProps {
   user: User;
   collapsed: boolean;
@@ -76,6 +82,7 @@ export interface SidebarProps {
   onLogout: () => void;
   onMobileClose?: () => void;
   enabledModules?: string[];
+  brand?: ShellBrand;
 }
 
 // ─── Navigation config ────────────────────────────────────────────────────────

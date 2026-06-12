@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
+import { EmptyState } from '@shared/ui/empty-state';
+import { Skeleton } from '@shared/ui/skeleton';
 import { PageHeader } from '@shared/ui/page-header';
 import { Panel } from '@shared/ui/panel';
 import { InlineAlert } from '@shared/ui/inline-alert';
@@ -96,7 +98,7 @@ export function TasksClient({ canWrite }: { canWrite: boolean }) {
           disabled={!canWrite || saving}
           onChange={(event) => void setCompleted(task.id, event.target.checked)}
           aria-label={task.completedAt ? `Återöppna ${task.title}` : `Slutför ${task.title}`}
-          className="mt-1 size-4 accent-[var(--ui-primary)]"
+          className="mt-1 size-4 accent-[var(--ui-accent)]"
         />
         <div className="min-w-0 flex-1 space-y-0.5">
           <p className={`text-sm ${task.completedAt ? 'text-[var(--ui-text-muted)] line-through' : 'font-medium text-[var(--ui-text)]'}`}>
@@ -130,9 +132,13 @@ export function TasksClient({ canWrite }: { canWrite: boolean }) {
               <StatusBadge tone={openTasks.length > 0 ? 'warning' : 'success'}>{openTasks.length} öppna</StatusBadge>
             </div>
             {loading ? (
-              <p className="text-sm text-[var(--ui-text-muted)]">Laddar uppgifter…</p>
+              <div className="space-y-2" aria-label="Laddar uppgifter" role="status">
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-9 w-2/3" />
+              </div>
             ) : openTasks.length === 0 ? (
-              <p className="text-sm text-[var(--ui-text-muted)]">Allt är klart. Inga öppna uppgifter.</p>
+              <EmptyState title="Allt är klart" description="Inga öppna uppgifter just nu." />
             ) : (
               <div className="divide-y divide-[var(--ui-border)]">{openTasks.map(renderTask)}</div>
             )}

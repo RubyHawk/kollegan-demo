@@ -2,13 +2,16 @@
 
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
+import type { PortalBrand } from '@modules/generic/branding';
 import { AuthBrandMark } from './AuthBrandMark';
 import { LoginConsoleFooter } from './LoginConsoleFooter';
 import { LoginConsoleHeader } from './LoginConsoleHeader';
+import { TenantBrandMark } from './TenantBrandMark';
 import { EASE_OUT_SOFT } from './motion';
 
 interface LoginAccessConsoleProps {
   mode: 'login' | 'mfa';
+  brand: PortalBrand;
   title: string;
   subtitle: string;
   children: ReactNode;
@@ -16,10 +19,13 @@ interface LoginAccessConsoleProps {
 
 export function LoginAccessConsole({
   mode,
+  brand,
   title,
   subtitle,
   children,
 }: LoginAccessConsoleProps) {
+  const isPlatform = brand.key === 'platform';
+
   return (
     <motion.section
       className="auth-console"
@@ -32,20 +38,22 @@ export function LoginAccessConsole({
       <div className="auth-console__topbar">
         <div className="auth-console__brand">
           <span className="auth-console__brand-mark">
-            <AuthBrandMark size={34} />
+            {isPlatform ? <AuthBrandMark size={34} /> : <TenantBrandMark name={brand.name} size={34} />}
           </span>
           <span>
-            <strong>Soleria</strong>
-            <small>Intern arbetsyta</small>
+            <strong>{brand.name}</strong>
+            <small>{brand.workspaceLabel}</small>
           </span>
         </div>
-        <span className="auth-console__sun-anchor">
-          <AuthBrandMark size={20} />
-          <span>
-            <strong>Solfilm</strong>
-            <small>redo</small>
+        {isPlatform ? (
+          <span className="auth-console__sun-anchor">
+            <AuthBrandMark size={20} />
+            <span>
+              <strong>Solfilm</strong>
+              <small>redo</small>
+            </span>
           </span>
-        </span>
+        ) : null}
       </div>
 
       <div className="auth-console__panel">
@@ -53,7 +61,7 @@ export function LoginAccessConsole({
         <div className="auth-console__content">{children}</div>
       </div>
 
-      <LoginConsoleFooter />
+      <LoginConsoleFooter note={brand.accessNote} />
     </motion.section>
   );
 }

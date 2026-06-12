@@ -62,6 +62,30 @@ export function BrandLockup({
   );
 }
 
+/** Letter-based mark for tenant organizations without a dedicated logo asset. */
+export function OrgLetterMark({
+  name,
+  size = 26,
+  className,
+}: {
+  name: string;
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center justify-center rounded-md bg-[var(--ui-accent)] font-bold text-[var(--ui-text-inverse)]',
+        className,
+      )}
+      style={{ width: size, height: size, fontSize: Math.round(size * 0.5) }}
+      aria-hidden="true"
+    >
+      {(name.trim().charAt(0) || '?').toUpperCase()}
+    </span>
+  );
+}
+
 export function BrandScene({
   className,
   priority = false,

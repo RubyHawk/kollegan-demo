@@ -1,3 +1,6 @@
+export { resolvePortalBrand } from './portal-brand';
+export type { PortalBrand, PortalBrandKey, PortalBrandTenant } from './portal-brand';
+
 export interface BrandingProfile {
   companyName: string;
   senderName: string;

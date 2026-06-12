@@ -100,7 +100,7 @@ export function KioskAttendancePanel({ onChanged }: { onChanged: () => Promise<v
               <span className="block truncate text-xs text-[var(--ui-text-muted)]">{member.employeeCode ?? displayCodeFallback(member.email)}</span>
             </span>
             <Badge variant={member.activeShift ? 'success' : 'neutral'}>
-              {member.activeShift ? `In ${time(member.activeShift.clockInAt)}` : 'Ute'}
+              {member.activeShift ? `Inne ${time(member.activeShift.clockInAt)}` : 'Ute'}
             </Badge>
           </button>
         ))}

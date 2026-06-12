@@ -5,6 +5,7 @@ import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { InlineAlert } from '@shared/ui/inline-alert';
 import { Label } from '@shared/ui/label';
+import { EmptyState } from '@shared/ui/empty-state';
 import { PageHeader } from '@shared/ui/page-header';
 import { Panel } from '@shared/ui/panel';
 import { Badge } from '@shared/ui/badge';
@@ -222,7 +223,10 @@ export function PersonalPageClient() {
 
         <div className="space-y-3">
           {staff.length === 0 ? (
-            <p className="text-sm text-[var(--ui-text-muted)]">Ingen personal är upplagd ännu.</p>
+            <EmptyState
+              title="Ingen personal är upplagd ännu"
+              description="Lägg till den första medarbetaren med formuläret ovan."
+            />
           ) : staff.map((member) => (
             <article key={member.id} className="rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-4">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">

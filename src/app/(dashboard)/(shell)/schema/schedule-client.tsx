@@ -6,6 +6,7 @@ import { Input } from '@shared/ui/input';
 import { PageHeader } from '@shared/ui/page-header';
 import { Panel } from '@shared/ui/panel';
 import { InlineAlert } from '@shared/ui/inline-alert';
+import { Skeleton } from '@shared/ui/skeleton';
 import { StatusBadge } from '@shared/ui/status-badge';
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from '@shared/ui/icons';
 import {
@@ -182,7 +183,12 @@ export function ScheduleClient({ canEdit, currentUserId }: { canEdit: boolean; c
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
         <Panel className="space-y-4">
           {loading ? (
-            <p className="text-sm text-[var(--ui-text-muted)]">Laddar schema…</p>
+            <div className="space-y-3" aria-label="Laddar schema" role="status">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-12 w-full" />
+            </div>
           ) : (
             days.map(({ date, shifts: dayShifts }) => (
               <section key={date.toISOString()} className="space-y-2">
@@ -230,7 +236,7 @@ export function ScheduleClient({ canEdit, currentUserId }: { canEdit: boolean; c
           <Panel className="h-fit space-y-4">
             <h2 className="text-sm font-semibold text-[var(--ui-text)]">Nytt pass</h2>
             <form onSubmit={createShift} className="space-y-3">
-              <select name="userId" className={SELECT_CLASS} required defaultValue="">
+              <select name="userId" className={SELECT_CLASS} required defaultValue="" aria-label="Välj medarbetare">
                 <option value="" disabled>Välj medarbetare</option>
                 {members.map((member) => (
                   <option key={member.id} value={member.id}>{memberName(member)}</option>

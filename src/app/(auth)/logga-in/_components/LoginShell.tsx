@@ -2,15 +2,17 @@
 
 import { MotionConfig } from 'framer-motion';
 import { useState } from 'react';
+import type { PortalBrand } from '@modules/generic/branding';
 import { AuthSidebar } from './AuthSidebar';
 import { LoginCinematicOverlay } from './LoginCinematicOverlay';
 import { LoginForm } from './LoginForm';
 
 interface LoginShellProps {
   redirect: string;
+  brand: PortalBrand;
 }
 
-export function LoginShell({ redirect }: LoginShellProps) {
+export function LoginShell({ redirect, brand }: LoginShellProps) {
   const [cinematicActive, setCinematicActive] = useState(false);
   const [cinematicWindowMarkup, setCinematicWindowMarkup] = useState('');
 
@@ -52,6 +54,7 @@ export function LoginShell({ redirect }: LoginShellProps) {
       <div
         className="auth-scope auth-page-shell"
         data-state={cinematicActive ? 'cinematic' : 'idle'}
+        data-brand={brand.key}
       >
         <div className="auth-page-shell__backdrop" aria-hidden="true">
           <svg className="auth-page-wave auth-page-wave--a" viewBox="0 0 2880 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -65,9 +68,10 @@ export function LoginShell({ redirect }: LoginShellProps) {
           </svg>
         </div>
         <div className="auth-shell">
-          <AuthSidebar />
+          <AuthSidebar brand={brand} />
           <LoginForm
             redirect={redirect}
+            brand={brand}
             onCinematicStart={handleCinematicStart}
           />
         </div>

@@ -4,6 +4,7 @@ import { EnvelopeSimple, LockKey } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useRef, useState, type FormEvent } from 'react';
+import type { PortalBrand } from '@modules/generic/branding';
 import {
   devLoginUrl,
   login,
@@ -36,10 +37,11 @@ const HEADLINES: Record<Step, { title: string; sub: string }> = {
 
 interface LoginFormProps {
   redirect: string;
+  brand: PortalBrand;
   onCinematicStart: () => void;
 }
 
-export function LoginForm({ redirect, onCinematicStart }: LoginFormProps) {
+export function LoginForm({ redirect, brand, onCinematicStart }: LoginFormProps) {
   const router = useRouter();
   const { arm } = useCinematic();
   const [step, setStep] = useState<Step>('login');
@@ -56,7 +58,8 @@ export function LoginForm({ redirect, onCinematicStart }: LoginFormProps) {
   const emailInputRef = useRef<HTMLInputElement | null>(null);
 
   function handleSuccessRedirect() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    // The cinematic hand-off is part of the Soleria brand experience only.
+    if (brand.key !== 'platform' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       router.push(redirect);
       return;
     }
@@ -146,6 +149,7 @@ export function LoginForm({ redirect, onCinematicStart }: LoginFormProps) {
             >
               <LoginAccessConsole
                 mode={step}
+                brand={brand}
                 title={header.title}
                 subtitle={header.sub}
               >
