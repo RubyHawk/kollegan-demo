@@ -26,6 +26,20 @@ function priceSummary(priceCents: number | null, currency: string, tags: string[
   return tags.length > 0 ? tags.join(' / ') : 'Pris saknas';
 }
 
+function parsePriceCents(value: FormDataEntryValue | null) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return null;
+  const price = Number(raw.replace(',', '.'));
+  return Number.isFinite(price) ? Math.round(price * 100) : null;
+}
+
+function parseTags(value: FormDataEntryValue | null) {
+  return String(value ?? '')
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
 export function MenuManagerClient() {
   const [categories, setCategories] = useState<RestaurantMenuCategory[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
@@ -83,7 +97,8 @@ export function MenuManagerClient() {
         categoryId,
         name: String(form.get('name') ?? ''),
         description: String(form.get('description') ?? '') || null,
-        priceCents: Math.round(Number(form.get('price') ?? 0) * 100),
+        priceCents: parsePriceCents(form.get('price')),
+        tags: parseTags(form.get('tags')),
       });
       event.currentTarget.reset();
       setSelectedCategoryId(categoryId);
@@ -134,6 +149,7 @@ export function MenuManagerClient() {
               </select>
               <Input name="name" placeholder="Rättens namn" required />
               <Input name="price" type="number" min="0" step="1" placeholder="Pris i kronor" />
+              <Input name="tags" placeholder="Prisvarianter, ex. S 89, M 149, L 239" />
               <Textarea name="description" placeholder="Beskrivning, råvaror eller allergener" rows={4} />
               <Button type="submit" loading={saving} disabled={categories.length === 0}>
                 <PlusIcon />
