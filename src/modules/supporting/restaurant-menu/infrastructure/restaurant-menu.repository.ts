@@ -3,10 +3,13 @@ import type {
   CreateMenuCategoryInput,
   CreateMenuItemInput,
   CreateReservationRequestInput,
+  ListReservationRequestsInput,
   PublicRestaurantSite,
   RestaurantMenuCategoryView,
   RestaurantMenuItemView,
   RestaurantOpeningHourView,
+  RestaurantReservationRequestView,
+  UpdateReservationRequestInput,
   UpsertOpeningHourInput,
 } from '../domain/restaurant-menu.entity';
 
@@ -55,6 +58,36 @@ function mapCategory(row: CategoryRow): RestaurantMenuCategoryView {
     sortOrder: row.sortOrder,
     isActive: row.isActive,
     items: row.items.map(mapItem),
+  };
+}
+
+type ReservationRow = {
+  id: string;
+  guestName: string;
+  guestEmail: string | null;
+  guestPhone: string | null;
+  partySize: number;
+  requestedAt: Date;
+  message: string | null;
+  status: string;
+  handledBy: string | null;
+  handledAt: Date | null;
+  createdAt: Date;
+};
+
+function mapReservation(row: ReservationRow): RestaurantReservationRequestView {
+  return {
+    id: row.id,
+    guestName: row.guestName,
+    guestEmail: row.guestEmail,
+    guestPhone: row.guestPhone,
+    partySize: row.partySize,
+    requestedAt: row.requestedAt.toISOString(),
+    message: row.message,
+    status: row.status as RestaurantReservationRequestView['status'],
+    handledBy: row.handledBy,
+    handledAt: row.handledAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
   };
 }
 
@@ -284,5 +317,76 @@ export const restaurantMenuRepository = {
       },
       select: { id: true, status: true, createdAt: true },
     });
+  },
+
+  async listReservationRequests(
+    organizationId: string,
+    input: ListReservationRequestsInput,
+  ): Promise<RestaurantReservationRequestView[]> {
+    const rows = await prisma.restaurantReservationRequest.findMany({
+      where: {
+        organizationId,
+        deletedAt: null,
+        ...(input.status ? { status: input.status } : {}),
+        ...(input.from || input.to ? {
+          requestedAt: {
+            ...(input.from ? { gte: new Date(input.from) } : {}),
+            ...(input.to ? { lte: new Date(input.to) } : {}),
+          },
+        } : {}),
+      },
+      orderBy: [{ requestedAt: 'asc' }, { createdAt: 'asc' }],
+      take: 100,
+      select: {
+        id: true,
+        guestName: true,
+        guestEmail: true,
+        guestPhone: true,
+        partySize: true,
+        requestedAt: true,
+        message: true,
+        status: true,
+        handledBy: true,
+        handledAt: true,
+        createdAt: true,
+      },
+    });
+    return rows.map((row) => mapReservation(row as ReservationRow));
+  },
+
+  async updateReservationRequest(
+    organizationId: string,
+    reservationId: string,
+    actorId: string,
+    input: UpdateReservationRequestInput,
+  ): Promise<RestaurantReservationRequestView | null> {
+    const existing = await prisma.restaurantReservationRequest.findFirst({
+      where: { id: reservationId, organizationId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) return null;
+
+    const row = await prisma.restaurantReservationRequest.update({
+      where: { id: reservationId },
+      data: {
+        status: input.status,
+        handledBy: actorId,
+        handledAt: new Date(),
+      },
+      select: {
+        id: true,
+        guestName: true,
+        guestEmail: true,
+        guestPhone: true,
+        partySize: true,
+        requestedAt: true,
+        message: true,
+        status: true,
+        handledBy: true,
+        handledAt: true,
+        createdAt: true,
+      },
+    });
+    return mapReservation(row as ReservationRow);
   },
 };

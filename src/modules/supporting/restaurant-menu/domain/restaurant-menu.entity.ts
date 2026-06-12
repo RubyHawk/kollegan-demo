@@ -55,6 +55,22 @@ export interface RestaurantEventView {
   endsAt: string | null;
 }
 
+export type RestaurantReservationStatus = 'new' | 'confirmed' | 'declined' | 'cancelled';
+
+export interface RestaurantReservationRequestView {
+  id: string;
+  guestName: string;
+  guestEmail: string | null;
+  guestPhone: string | null;
+  partySize: number;
+  requestedAt: string;
+  message: string | null;
+  status: RestaurantReservationStatus;
+  handledBy: string | null;
+  handledAt: string | null;
+  createdAt: string;
+}
+
 export interface PublicRestaurantSite {
   organizationId: string;
   organizationName: string;
@@ -98,4 +114,14 @@ export interface CreateReservationRequestInput {
   partySize: number;
   requestedAt: string;
   message?: string | null;
+}
+
+export interface ListReservationRequestsInput {
+  status?: RestaurantReservationStatus;
+  from?: string;
+  to?: string;
+}
+
+export interface UpdateReservationRequestInput {
+  status: RestaurantReservationStatus;
 }

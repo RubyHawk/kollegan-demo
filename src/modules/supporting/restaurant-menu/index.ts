@@ -2,11 +2,15 @@ export type {
   CreateMenuCategoryInput,
   CreateMenuItemInput,
   CreateReservationRequestInput,
+  ListReservationRequestsInput,
   PublicRestaurantSite,
   RestaurantEventView,
   RestaurantMenuCategoryView,
   RestaurantMenuItemView,
   RestaurantOpeningHourView,
+  RestaurantReservationRequestView,
+  RestaurantReservationStatus,
+  UpdateReservationRequestInput,
   UpsertOpeningHourInput,
 } from './domain/restaurant-menu.entity';
 export {
@@ -14,8 +18,10 @@ export {
   createRestaurantMenuCategory,
   createRestaurantMenuItem,
   getPublicRestaurantSite,
+  listReservationRequests,
   listRestaurantMenu,
   listRestaurantOpeningHours,
+  updateReservationRequest,
   upsertRestaurantOpeningHour,
 } from './application/restaurant-menu.service';
 export {
@@ -23,7 +29,9 @@ export {
   handleCreateRestaurantMenuCategory,
   handleCreateRestaurantMenuItem,
   handleGetPublicRestaurantSite,
+  handleListRestaurantReservations,
   handleListRestaurantMenu,
   handleListRestaurantOpeningHours,
+  handleUpdateRestaurantReservation,
   handleUpsertRestaurantOpeningHour,
 } from './api/handlers/restaurant-menu.handler';

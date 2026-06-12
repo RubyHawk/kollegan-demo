@@ -5,6 +5,8 @@ import type {
   CreateMenuCategoryInput,
   CreateMenuItemInput,
   CreateReservationRequestInput,
+  ListReservationRequestsInput,
+  UpdateReservationRequestInput,
   UpsertOpeningHourInput,
 } from '../domain/restaurant-menu.entity';
 
@@ -70,4 +72,27 @@ export async function upsertRestaurantOpeningHour(
   input: UpsertOpeningHourInput,
 ) {
   return restaurantMenuRepository.upsertOpeningHour(organizationId, input);
+}
+
+export async function listReservationRequests(
+  organizationId: string,
+  input: ListReservationRequestsInput,
+) {
+  return restaurantMenuRepository.listReservationRequests(organizationId, input);
+}
+
+export async function updateReservationRequest(
+  organizationId: string,
+  reservationId: string,
+  actorId: string,
+  input: UpdateReservationRequestInput,
+) {
+  const reservation = await restaurantMenuRepository.updateReservationRequest(
+    organizationId,
+    reservationId,
+    actorId,
+    input,
+  );
+  if (!reservation) throw Errors.notFound('Reservation request not found');
+  return reservation;
 }

@@ -107,6 +107,7 @@ export const SYSTEM_ROLES: Array<{ name: RoleName; displayName: string; permissi
     permissions: [
       'clock_in.self',
       'attendance.read', 'attendance.correct',
+      'reservations.read', 'reservations.write',
       'menu.read', 'menu.write',
       'schedule.read', 'schedule.write',
       'tasks.read', 'tasks.write',
@@ -120,6 +121,7 @@ export const SYSTEM_ROLES: Array<{ name: RoleName; displayName: string; permissi
     permissions: [
       'clock_in.self',
       'attendance.read', 'attendance.correct',
+      'reservations.read', 'reservations.write',
       'menu.read', 'menu.write',
       'schedule.read', 'schedule.write',
       'tasks.read', 'tasks.write',
@@ -140,6 +142,6 @@ export const SYSTEM_ROLES: Array<{ name: RoleName; displayName: string; permissi
   {
     name: 'restaurant_accountant',
     displayName: 'Restaurant Accountant',
-    permissions: ['attendance.read', 'menu.read', 'schedule.read', 'restaurant_reports.read'],
+    permissions: ['attendance.read', 'reservations.read', 'menu.read', 'schedule.read', 'restaurant_reports.read'],
   },
 ];

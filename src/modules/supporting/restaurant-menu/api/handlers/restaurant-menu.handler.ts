@@ -8,8 +8,10 @@ import {
   createRestaurantMenuCategory,
   createRestaurantMenuItem,
   getPublicRestaurantSite,
+  listReservationRequests,
   listRestaurantMenu,
   listRestaurantOpeningHours,
+  updateReservationRequest,
   upsertRestaurantOpeningHour,
 } from '../../application/restaurant-menu.service';
 import { tenantHasModule } from '@platform/tenancy/tenant-resolver';
@@ -58,6 +60,18 @@ const ReservationSchema = z.object({
   partySize: z.number().int().min(1).max(40),
   requestedAt: z.string().datetime(),
   message: z.string().max(1000).nullable().optional(),
+});
+
+const ReservationStatusSchema = z.enum(['new', 'confirmed', 'declined', 'cancelled']);
+
+const ReservationListQuerySchema = z.object({
+  status: ReservationStatusSchema.optional(),
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+});
+
+const ReservationUpdateSchema = z.object({
+  status: ReservationStatusSchema,
 });
 
 export const handleGetPublicRestaurantSite = createHandler(
@@ -152,5 +166,38 @@ export const handleUpsertRestaurantOpeningHour = createHandler(
     await requireRestaurantModule(orgId, 'restaurant_menu');
     const openingHour = await upsertRestaurantOpeningHour(orgId, body!);
     return ok({ openingHour });
+  },
+);
+
+export const handleListRestaurantReservations = createHandler(
+  {
+    tag: 'RestaurantReservations:List',
+    auth: 'jwt',
+    permission: 'reservations.read',
+    rateLimit: { max: 60, windowMs: 60_000 },
+    query: ReservationListQuerySchema,
+  },
+  async ({ auth, query }) => {
+    const orgId = requireOrg(auth);
+    await requireRestaurantModule(orgId, 'restaurant_public_site');
+    return ok({ reservations: await listReservationRequests(orgId, query ?? {}) });
+  },
+);
+
+export const handleUpdateRestaurantReservation = createHandler(
+  {
+    tag: 'RestaurantReservations:Update',
+    auth: 'jwt',
+    permission: 'reservations.write',
+    rateLimit: { max: 40, windowMs: 60_000 },
+    body: ReservationUpdateSchema,
+  },
+  async ({ auth, body, req }) => {
+    const orgId = requireOrg(auth);
+    await requireRestaurantModule(orgId, 'restaurant_public_site');
+    const reservationId = req.nextUrl.pathname.split('/').filter(Boolean).at(-1);
+    if (!reservationId) throw Errors.validation('Reservation id is required');
+    const reservation = await updateReservationRequest(orgId, reservationId, auth!.sub, body!);
+    return ok({ reservation });
   },
 );
