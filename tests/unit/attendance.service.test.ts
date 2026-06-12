@@ -20,7 +20,7 @@ vi.mock('@platform/logging/logger', () => ({
 
 import { organizationHasModule } from '@modules/supporting/identity';
 import { attendanceRepository } from '../../src/modules/generic/workforce/infrastructure/attendance.repository';
-import { clockIn } from '../../src/modules/generic/workforce/application/attendance.service';
+import { clockIn, localDayBounds } from '../../src/modules/generic/workforce/application/attendance.service';
 
 describe('attendance service', () => {
   beforeEach(() => {
@@ -50,5 +50,25 @@ describe('attendance service', () => {
       problem: { status: 409 },
     });
     expect(attendanceRepository.createShift).not.toHaveBeenCalled();
+  });
+});
+
+describe('localDayBounds', () => {
+  it('covers the full Stockholm day in winter (CET, UTC+1)', () => {
+    const { from, to } = localDayBounds(new Date('2026-01-15T10:00:00Z'));
+    expect(from.toISOString()).toBe('2026-01-14T23:00:00.000Z');
+    expect(to.toISOString()).toBe('2026-01-15T23:00:00.000Z');
+  });
+
+  it('covers the full Stockholm day in summer (CEST, UTC+2)', () => {
+    const { from, to } = localDayBounds(new Date('2026-06-15T10:00:00Z'));
+    expect(from.toISOString()).toBe('2026-06-14T22:00:00.000Z');
+    expect(to.toISOString()).toBe('2026-06-15T22:00:00.000Z');
+  });
+
+  it('handles the spring DST transition day (23-hour day)', () => {
+    const { from, to } = localDayBounds(new Date('2026-03-29T10:00:00Z'));
+    expect(from.toISOString()).toBe('2026-03-28T23:00:00.000Z');
+    expect(to.toISOString()).toBe('2026-03-29T22:00:00.000Z');
   });
 });

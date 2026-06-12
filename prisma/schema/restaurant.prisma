@@ -3,7 +3,7 @@
 // Table prefix: rst_*
 
 model RestaurantMenuCategory {
-  id             String    @id @default(uuid())
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId String
   name           String
   description    String?
@@ -11,7 +11,7 @@ model RestaurantMenuCategory {
   isActive       Boolean   @default(true)
   createdBy      String?
   createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  updatedAt      DateTime  @default(now()) @updatedAt
   deletedAt      DateTime?
 
   organization Organization         @relation(fields: [organizationId], references: [id])
@@ -23,7 +23,7 @@ model RestaurantMenuCategory {
 }
 
 model RestaurantMenuItem {
-  id             String    @id @default(uuid())
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId String
   categoryId     String
   name           String
@@ -37,7 +37,7 @@ model RestaurantMenuItem {
   sortOrder      Int       @default(0)
   createdBy      String?
   createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  updatedAt      DateTime  @default(now()) @updatedAt
   deletedAt      DateTime?
 
   organization Organization           @relation(fields: [organizationId], references: [id])
@@ -50,7 +50,7 @@ model RestaurantMenuItem {
 }
 
 model RestaurantOpeningHour {
-  id             String   @id @default(uuid())
+  id             String   @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId String
   dayOfWeek      Int      // 1 = Monday, 7 = Sunday
   opensAt        String?
@@ -58,7 +58,7 @@ model RestaurantOpeningHour {
   isClosed       Boolean  @default(false)
   label          String?
   createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime @default(now()) @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id])
 
@@ -67,7 +67,7 @@ model RestaurantOpeningHour {
 }
 
 model RestaurantEvent {
-  id             String    @id @default(uuid())
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId String
   title          String
   description    String?
@@ -76,7 +76,7 @@ model RestaurantEvent {
   isPublished    Boolean   @default(false)
   createdBy      String?
   createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  updatedAt      DateTime  @default(now()) @updatedAt
   deletedAt      DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -88,7 +88,7 @@ model RestaurantEvent {
 }
 
 model RestaurantReservationRequest {
-  id             String    @id @default(uuid())
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId String
   guestName      String
   guestEmail     String?
@@ -100,7 +100,7 @@ model RestaurantReservationRequest {
   handledBy      String?
   handledAt      DateTime?
   createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  updatedAt      DateTime  @default(now()) @updatedAt
   deletedAt      DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id])

@@ -3,7 +3,7 @@
 // Table prefix: wf_*
 
 model AttendanceShift {
-  id               String    @id @default(uuid())
+  id               String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId   String
   userId           String
   clockInAt        DateTime
@@ -16,7 +16,7 @@ model AttendanceShift {
   correctedBy      String?
   correctionReason String?
   createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  updatedAt        DateTime  @default(now()) @updatedAt
   deletedAt        DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -29,7 +29,7 @@ model AttendanceShift {
 }
 
 model StaffScheduleShift {
-  id             String    @id @default(uuid())
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId String
   userId         String
   startsAt       DateTime
@@ -39,7 +39,7 @@ model StaffScheduleShift {
   status         String    @default("scheduled") // scheduled | completed | cancelled
   createdBy      String?
   createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  updatedAt      DateTime  @default(now()) @updatedAt
   deletedAt      DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -52,7 +52,7 @@ model StaffScheduleShift {
 }
 
 model ChecklistTask {
-  id               String    @id @default(uuid())
+  id               String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId   String
   title            String
   area             String?
@@ -62,7 +62,7 @@ model ChecklistTask {
   completedBy      String?
   createdBy        String?
   createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  updatedAt        DateTime  @default(now()) @updatedAt
   deletedAt        DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -74,14 +74,14 @@ model ChecklistTask {
 }
 
 model InventoryNote {
-  id             String    @id @default(uuid())
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId String
   title          String
   content        String?
   priority       String    @default("normal")
   createdBy      String?
   createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  updatedAt      DateTime  @default(now()) @updatedAt
   deletedAt      DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -92,14 +92,14 @@ model InventoryNote {
 }
 
 model SupplierNote {
-  id             String    @id @default(uuid())
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId String
   supplierName   String?
   title          String
   content        String?
   createdBy      String?
   createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  updatedAt      DateTime  @default(now()) @updatedAt
   deletedAt      DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id])

@@ -15,12 +15,41 @@ async function requireClockInModule(organizationId: string) {
   if (!enabled) throw Errors.forbidden('Clock-in module is not enabled for this organization');
 }
 
-function localDayBounds(now = new Date()): { from: Date; to: Date } {
-  const localDate = now.toLocaleDateString('sv-SE', { timeZone: 'Europe/Stockholm' });
+const ATTENDANCE_TIME_ZONE = 'Europe/Stockholm';
+
+function timeZoneOffsetMs(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('sv-SE', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value);
+  const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute'), get('second'));
+  return asUtc - date.getTime();
+}
+
+function zonedMidnightToUtc(year: number, month: number, day: number): Date {
+  // Guess midnight UTC, then correct by the zone offset at that instant.
+  // The second pass settles dates where the offset changes across the guess (DST edges).
+  let utc = Date.UTC(year, month - 1, day);
+  for (let pass = 0; pass < 2; pass++) {
+    utc = Date.UTC(year, month - 1, day) - timeZoneOffsetMs(new Date(utc), ATTENDANCE_TIME_ZONE);
+  }
+  return new Date(utc);
+}
+
+export function localDayBounds(now = new Date()): { from: Date; to: Date } {
+  const localDate = now.toLocaleDateString('sv-SE', { timeZone: ATTENDANCE_TIME_ZONE });
   const [year, month, day] = localDate.split('-').map(Number);
-  const from = new Date(Date.UTC(year, month - 1, day, -2, 0, 0));
-  const to = new Date(Date.UTC(year, month - 1, day + 1, -2, 0, 0));
-  return { from, to };
+  return {
+    from: zonedMidnightToUtc(year, month, day),
+    to: zonedMidnightToUtc(year, month, day + 1),
+  };
 }
 
 export async function getCurrentAttendanceShift(organizationId: string, userId: string) {

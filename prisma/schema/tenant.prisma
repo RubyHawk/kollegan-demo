@@ -3,14 +3,14 @@
 // Table prefix: org_*
 
 model OrganizationDomain {
-  id             String    @id @default(uuid())
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId String
   hostname       String
   kind           String    // public | portal | offer
   isPrimary      Boolean   @default(false)
   verifiedAt     DateTime?
   createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  updatedAt      DateTime  @default(now()) @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id])
 
@@ -20,13 +20,13 @@ model OrganizationDomain {
 }
 
 model OrganizationModule {
-  id             String   @id @default(uuid())
+  id             String   @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId String
   moduleKey      String
   enabled        Boolean  @default(true)
   config         Json     @default("{}")
   createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime @default(now()) @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id])
 
@@ -36,7 +36,7 @@ model OrganizationModule {
 }
 
 model PublicSiteSettings {
-  id             String   @id @default(uuid())
+  id             String   @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId String   @unique
   siteName       String
   heroTitle      String
@@ -53,7 +53,7 @@ model PublicSiteSettings {
   seoTitle       String?
   seoDescription String?
   createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  updatedAt      DateTime @default(now()) @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id])
 
