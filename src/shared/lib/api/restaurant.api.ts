@@ -99,6 +99,26 @@ export interface CreateMenuItemPayload {
   sortOrder?: number;
 }
 
+export interface UpdateMenuCategoryPayload {
+  name?: string;
+  description?: string | null;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateMenuItemPayload {
+  categoryId?: string;
+  name?: string;
+  description?: string | null;
+  priceCents?: number | null;
+  currency?: string;
+  imageUrl?: string | null;
+  allergens?: string[];
+  tags?: string[];
+  isAvailable?: boolean;
+  sortOrder?: number;
+}
+
 export interface SaveOpeningHourPayload {
   dayOfWeek: number;
   opensAt?: string | null;
@@ -145,6 +165,24 @@ export async function createRestaurantMenuCategory(payload: CreateMenuCategoryPa
 export async function createRestaurantMenuItem(payload: CreateMenuItemPayload): Promise<RestaurantMenuItem> {
   const res = await apiPost<ApiEnvelope<{ item: RestaurantMenuItem }>>('/api/v1/restaurant/menu/items', payload);
   return res.data.item;
+}
+
+export async function updateRestaurantMenuCategory(id: string, payload: UpdateMenuCategoryPayload): Promise<RestaurantMenuCategory> {
+  const res = await apiPatch<ApiEnvelope<{ category: RestaurantMenuCategory }>>(`/api/v1/restaurant/menu/categories/${id}`, payload);
+  return res.data.category;
+}
+
+export async function deleteRestaurantMenuCategory(id: string): Promise<void> {
+  await apiDelete(`/api/v1/restaurant/menu/categories/${id}`);
+}
+
+export async function updateRestaurantMenuItem(id: string, payload: UpdateMenuItemPayload): Promise<RestaurantMenuItem> {
+  const res = await apiPatch<ApiEnvelope<{ item: RestaurantMenuItem }>>(`/api/v1/restaurant/menu/items/${id}`, payload);
+  return res.data.item;
+}
+
+export async function deleteRestaurantMenuItem(id: string): Promise<void> {
+  await apiDelete(`/api/v1/restaurant/menu/items/${id}`);
 }
 
 export async function listRestaurantOpeningHours(): Promise<RestaurantOpeningHour[]> {

@@ -8,6 +8,8 @@ import type {
   CreateReservationRequestInput,
   ListReservationRequestsInput,
   PublicRestaurantSite,
+  UpdateMenuCategoryInput,
+  UpdateMenuItemInput,
   UpdatePublicSiteSettingsInput,
   UpdateRestaurantEventInput,
   UpdateReservationRequestInput,
@@ -88,6 +90,44 @@ export async function createRestaurantMenuItem(
   const item = await restaurantMenuRepository.createItem(organizationId, actorId, input);
   clearPublicSiteCache();
   return item;
+}
+
+export async function updateRestaurantMenuCategory(
+  organizationId: string,
+  categoryId: string,
+  input: UpdateMenuCategoryInput,
+) {
+  const category = await restaurantMenuRepository.updateCategory(organizationId, categoryId, input);
+  if (!category) throw Errors.notFound('Menu category not found');
+  clearPublicSiteCache();
+  return category;
+}
+
+export async function deleteRestaurantMenuCategory(organizationId: string, categoryId: string) {
+  const ok = await restaurantMenuRepository.softDeleteCategory(organizationId, categoryId);
+  if (!ok) throw Errors.notFound('Menu category not found');
+  clearPublicSiteCache();
+}
+
+export async function updateRestaurantMenuItem(
+  organizationId: string,
+  itemId: string,
+  input: UpdateMenuItemInput,
+) {
+  if (input.categoryId !== undefined) {
+    const categoryOk = await restaurantMenuRepository.categoryExistsInOrg(organizationId, input.categoryId);
+    if (!categoryOk) throw Errors.validation('Menu category does not belong to this organization');
+  }
+  const item = await restaurantMenuRepository.updateItem(organizationId, itemId, input);
+  if (!item) throw Errors.notFound('Menu item not found');
+  clearPublicSiteCache();
+  return item;
+}
+
+export async function deleteRestaurantMenuItem(organizationId: string, itemId: string) {
+  const ok = await restaurantMenuRepository.softDeleteItem(organizationId, itemId);
+  if (!ok) throw Errors.notFound('Menu item not found');
+  clearPublicSiteCache();
 }
 
 export async function listRestaurantOpeningHours(organizationId: string) {

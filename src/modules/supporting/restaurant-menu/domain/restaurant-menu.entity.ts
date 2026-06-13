@@ -105,6 +105,26 @@ export interface CreateMenuItemInput {
   sortOrder?: number;
 }
 
+export interface UpdateMenuCategoryInput {
+  name?: string;
+  description?: string | null;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateMenuItemInput {
+  categoryId?: string;
+  name?: string;
+  description?: string | null;
+  priceCents?: number | null;
+  currency?: string;
+  imageUrl?: string | null;
+  allergens?: string[];
+  tags?: string[];
+  isAvailable?: boolean;
+  sortOrder?: number;
+}
+
 export interface UpsertOpeningHourInput {
   dayOfWeek: number;
   opensAt?: string | null;

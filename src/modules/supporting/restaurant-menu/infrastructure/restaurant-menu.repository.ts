@@ -12,6 +12,8 @@ import type {
   RestaurantMenuItemView,
   RestaurantOpeningHourView,
   RestaurantReservationRequestView,
+  UpdateMenuCategoryInput,
+  UpdateMenuItemInput,
   UpdatePublicSiteSettingsInput,
   UpdateRestaurantEventInput,
   UpdateReservationRequestInput,
@@ -467,6 +469,118 @@ export const restaurantMenuRepository = {
       select: { id: true },
     });
     return Boolean(category);
+  },
+
+  async updateCategory(
+    organizationId: string,
+    categoryId: string,
+    input: UpdateMenuCategoryInput,
+  ): Promise<RestaurantMenuCategoryView | null> {
+    const existing = await prisma.restaurantMenuCategory.findFirst({
+      where: { id: categoryId, organizationId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) return null;
+
+    const row = await prisma.restaurantMenuCategory.update({
+      where: { id: categoryId },
+      data: {
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
+        ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        sortOrder: true,
+        isActive: true,
+        items: {
+          where: { deletedAt: null },
+          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+          select: {
+            id: true,
+            categoryId: true,
+            name: true,
+            description: true,
+            priceCents: true,
+            currency: true,
+            imageUrl: true,
+            allergens: true,
+            tags: true,
+            isAvailable: true,
+            sortOrder: true,
+          },
+        },
+      },
+    });
+    return mapCategory(row as CategoryRow);
+  },
+
+  // Soft delete: the category is hidden and its items are tombstoned together so
+  // neither the portal list nor the cached public site surfaces orphaned rows.
+  async softDeleteCategory(organizationId: string, categoryId: string): Promise<boolean> {
+    const result = await prisma.restaurantMenuCategory.updateMany({
+      where: { id: categoryId, organizationId, deletedAt: null },
+      data: { deletedAt: new Date(), isActive: false },
+    });
+    if (result.count !== 1) return false;
+    await prisma.restaurantMenuItem.updateMany({
+      where: { categoryId, organizationId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    return true;
+  },
+
+  async updateItem(
+    organizationId: string,
+    itemId: string,
+    input: UpdateMenuItemInput,
+  ): Promise<RestaurantMenuItemView | null> {
+    const existing = await prisma.restaurantMenuItem.findFirst({
+      where: { id: itemId, organizationId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) return null;
+
+    const row = await prisma.restaurantMenuItem.update({
+      where: { id: itemId },
+      data: {
+        ...(input.categoryId !== undefined ? { categoryId: input.categoryId } : {}),
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.priceCents !== undefined ? { priceCents: input.priceCents } : {}),
+        ...(input.currency !== undefined ? { currency: input.currency } : {}),
+        ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
+        ...(input.allergens !== undefined ? { allergens: input.allergens } : {}),
+        ...(input.tags !== undefined ? { tags: input.tags } : {}),
+        ...(input.isAvailable !== undefined ? { isAvailable: input.isAvailable } : {}),
+        ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
+      },
+      select: {
+        id: true,
+        categoryId: true,
+        name: true,
+        description: true,
+        priceCents: true,
+        currency: true,
+        imageUrl: true,
+        allergens: true,
+        tags: true,
+        isAvailable: true,
+        sortOrder: true,
+      },
+    });
+    return mapItem(row as CategoryRow['items'][number]);
+  },
+
+  async softDeleteItem(organizationId: string, itemId: string): Promise<boolean> {
+    const result = await prisma.restaurantMenuItem.updateMany({
+      where: { id: itemId, organizationId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    return result.count === 1;
   },
 
   async listOpeningHours(organizationId: string): Promise<RestaurantOpeningHourView[]> {

@@ -9,6 +9,8 @@ import {
   createRestaurantMenuCategory,
   createRestaurantMenuItem,
   deleteRestaurantEvent,
+  deleteRestaurantMenuCategory,
+  deleteRestaurantMenuItem,
   getPublicSiteSettings,
   getPublicRestaurantSite,
   listRestaurantEvents,
@@ -17,6 +19,8 @@ import {
   listRestaurantOpeningHours,
   updatePublicSiteSettings,
   updateRestaurantEvent,
+  updateRestaurantMenuCategory,
+  updateRestaurantMenuItem,
   updateReservationRequest,
   upsertRestaurantOpeningHour,
 } from '../../application/restaurant-menu.service';
@@ -27,11 +31,15 @@ function requireOrg(payload: JWTPayload | null): string {
   return payload.orgId;
 }
 
-function eventIdFromUrl(req: Request): string {
+function idFromUrl(req: Request, label: string): string {
   const pathname = new URL(req.url).pathname;
   const id = pathname.split('/').filter(Boolean).at(-1);
-  if (!id) throw Errors.badRequest('Restaurant event id is required');
+  if (!id) throw Errors.badRequest(`${label} id is required`);
   return id;
+}
+
+function eventIdFromUrl(req: Request): string {
+  return idFromUrl(req, 'Restaurant event');
 }
 
 async function requireRestaurantModule(orgId: string, moduleKey: string) {
@@ -57,6 +65,15 @@ const ItemSchema = z.object({
   isAvailable: z.boolean().optional(),
   sortOrder: z.number().int().min(0).max(10_000).optional(),
 });
+
+const CategoryUpdateSchema = z.object({
+  name: z.string().min(1).max(120).optional(),
+  description: z.string().max(500).nullable().optional(),
+  sortOrder: z.number().int().min(0).max(10_000).optional(),
+  isActive: z.boolean().optional(),
+});
+
+const ItemUpdateSchema = ItemSchema.partial();
 
 const OpeningHourSchema = z.object({
   dayOfWeek: z.number().int().min(1).max(7),
@@ -178,6 +195,68 @@ export const handleCreateRestaurantMenuItem = createHandler(
     await requireRestaurantModule(orgId, 'restaurant_menu');
     const item = await createRestaurantMenuItem(orgId, auth!.sub, body!);
     return created({ item }, `/api/v1/restaurant/menu/items?id=${item.id}`);
+  },
+);
+
+export const handleUpdateRestaurantMenuCategory = createHandler(
+  {
+    tag: 'RestaurantMenu:UpdateCategory',
+    auth: 'jwt',
+    permission: 'menu.write',
+    rateLimit: { max: 40, windowMs: 60_000 },
+    body: CategoryUpdateSchema,
+  },
+  async ({ auth, body, req }) => {
+    const orgId = requireOrg(auth);
+    await requireRestaurantModule(orgId, 'restaurant_menu');
+    const category = await updateRestaurantMenuCategory(orgId, idFromUrl(req, 'Menu category'), body!);
+    return ok({ category });
+  },
+);
+
+export const handleDeleteRestaurantMenuCategory = createHandler(
+  {
+    tag: 'RestaurantMenu:DeleteCategory',
+    auth: 'jwt',
+    permission: 'menu.write',
+    rateLimit: { max: 20, windowMs: 60_000 },
+  },
+  async ({ auth, req }) => {
+    const orgId = requireOrg(auth);
+    await requireRestaurantModule(orgId, 'restaurant_menu');
+    await deleteRestaurantMenuCategory(orgId, idFromUrl(req, 'Menu category'));
+    return noContent();
+  },
+);
+
+export const handleUpdateRestaurantMenuItem = createHandler(
+  {
+    tag: 'RestaurantMenu:UpdateItem',
+    auth: 'jwt',
+    permission: 'menu.write',
+    rateLimit: { max: 60, windowMs: 60_000 },
+    body: ItemUpdateSchema,
+  },
+  async ({ auth, body, req }) => {
+    const orgId = requireOrg(auth);
+    await requireRestaurantModule(orgId, 'restaurant_menu');
+    const item = await updateRestaurantMenuItem(orgId, idFromUrl(req, 'Menu item'), body!);
+    return ok({ item });
+  },
+);
+
+export const handleDeleteRestaurantMenuItem = createHandler(
+  {
+    tag: 'RestaurantMenu:DeleteItem',
+    auth: 'jwt',
+    permission: 'menu.write',
+    rateLimit: { max: 30, windowMs: 60_000 },
+  },
+  async ({ auth, req }) => {
+    const orgId = requireOrg(auth);
+    await requireRestaurantModule(orgId, 'restaurant_menu');
+    await deleteRestaurantMenuItem(orgId, idFromUrl(req, 'Menu item'));
+    return noContent();
   },
 );
 
