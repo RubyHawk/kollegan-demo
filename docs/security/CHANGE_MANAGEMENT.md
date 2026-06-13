@@ -39,6 +39,7 @@ High-risk changes require explicit review and evidence link.
 - High-risk progressive-delivery changes should record rollout/rollback decisions in `docs/security/FEATURE_FLAG_ROLLOUT_LOG.md`.
 - Feature flags are for risk-managed rollout and rollback, not indefinite parallel API surfaces; after a flagged migration is complete, superseded duplicate routes should be removed through the normal evidence-backed cleanup flow.
 - Deploys to production are versioned from Git: the deploy workflow builds the release artifact in CI, ships the tracked deploy script with the release bundle, installs that script to the fixed VPS path, and then deploys the exact merged commit.
+- Production deploys must restart every systemd service backed by the shared Next build; currently that means both `kollegan` and `fluffys-public`, and the deploy succeeds only when every configured health-check URL passes (both local runtime ports `3000` and `3100`), so one healthy service cannot mask a stale or failed sibling.
 - Deploy-on-main classification is intentionally narrower than general process validation: only runtime-affecting changes and real release-path changes such as `deploy.yml` and `scripts/deploy-release.sh` should trigger a production deploy or CI rebuild on `main`.
 - Release artifact promotion is best-effort only: if PR artifact lookup, download, or validation fails, deploy must fall back to a fresh CI rebuild instead of aborting the production release.
 - Schema changes remain additive-first and must link migration evidence in `docs/security/AUDIT_EVIDENCE_INDEX.md`.
