@@ -2,21 +2,33 @@
   position: relative;
   overflow: clip;
   border-bottom: 1px solid var(--fp-line);
-  background: linear-gradient(180deg, var(--fp-paper-strong), var(--fp-paper));
+  background:
+    radial-gradient(circle at 20% 24%, rgba(242, 140, 0, 0.12) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 86% 18%, rgba(82, 26, 147, 0.1), transparent 32%),
+    linear-gradient(90deg, rgba(9, 8, 7, 0.055), transparent 13%, transparent 86%, rgba(9, 8, 7, 0.04)),
+    linear-gradient(180deg, var(--fp-paper-strong), var(--fp-paper));
+  background-size: 26px 26px, auto, auto, auto;
 }
 
-.fluffy-landing::before {
-  display: none;
+.fluffy-landing::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 8px;
+  background: linear-gradient(90deg, var(--fp-purple), var(--fp-orange), var(--fp-purple));
+  opacity: 0.18;
 }
 
 .fluffy-landing__grid {
   position: relative;
   z-index: 1;
   display: grid;
-  min-height: 650px;
+  min-height: 660px;
   align-items: center;
-  gap: 42px;
-  padding-block: 48px 36px;
+  gap: 58px;
+  padding-block: 44px 30px;
 }
 
 .fluffy-landing__copy {
@@ -28,32 +40,79 @@
 .fluffy-ticket-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 24px;
+  gap: 16px;
+  margin-top: 26px;
   max-width: 660px;
 }
 
 .fluffy-ticket {
   position: relative;
-  min-height: 158px;
-  border: 1px dashed rgba(9, 8, 7, 0.22);
-  border-radius: var(--fp-radius-small);
-  background: #f8eddd;
-  box-shadow: 0 7px 18px rgba(9, 8, 7, 0.09);
-  padding: 18px;
+  min-height: 170px;
+  border: 1px solid rgba(9, 8, 7, 0.18);
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 12px 12px, rgba(9, 8, 7, 0.045) 0 1px, transparent 1.6px),
+    linear-gradient(180deg, #fbf1df, #f2e2c9);
+  background-size: 18px 18px, auto;
+  box-shadow: 0 18px 26px rgba(9, 8, 7, 0.13);
+  clip-path: polygon(0 7px, 7px 0, calc(100% - 7px) 0, 100% 7px, 100% calc(100% - 7px), calc(100% - 7px) 100%, 7px 100%, 0 calc(100% - 7px));
+  padding: 18px 20px;
+}
+
+.fluffy-ticket::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 82px;
+  height: 22px;
+  background: rgba(173, 149, 113, 0.42);
+  box-shadow: 0 1px 0 rgba(255, 250, 240, 0.34) inset;
+  transform: translateX(-50%) rotate(-2deg);
+}
+
+.fluffy-ticket--quick {
+  transform: rotate(-1.2deg);
 }
 
 .fluffy-ticket--orange {
-  background: var(--fp-orange);
+  background:
+    radial-gradient(circle at 11px 11px, rgba(9, 8, 7, 0.08) 0 1.2px, transparent 1.8px),
+    linear-gradient(180deg, #f79b06, var(--fp-orange));
   color: var(--fp-ink);
+  transform: rotate(1.1deg);
+}
+
+.fluffy-ticket--parking {
+  transform: rotate(1.4deg);
+}
+
+.fluffy-ticket__head,
+.fluffy-ticket__icons {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.fluffy-ticket__head svg,
+.fluffy-ticket__icons svg {
+  width: 30px;
+  height: 30px;
+  color: var(--fp-purple);
+  stroke-width: 2.25;
+}
+
+.fluffy-ticket__icons {
+  margin-bottom: 8px;
 }
 
 .fluffy-ticket h2 {
   margin: 0;
   color: var(--fp-purple);
-  font-size: 1.25rem;
+  font-family: var(--fluffy-display-font);
+  font-size: 1.45rem;
   font-weight: 950;
-  line-height: 1;
+  line-height: 0.92;
   text-transform: uppercase;
 }
 
@@ -65,34 +124,49 @@
 .fluffy-ticket li {
   margin: 9px 0 0;
   color: rgba(9, 8, 7, 0.78);
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   font-weight: 800;
   line-height: 1.35;
 }
 
 .fluffy-ticket ul {
+  display: grid;
+  gap: 5px;
   list-style: none;
-  margin: 10px 0 0;
+  margin: 11px 0 0;
   padding: 0;
 }
 
 .fluffy-ticket li::before {
-  content: "✓";
+  content: none;
+}
+
+.fluffy-ticket li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+}
+
+.fluffy-ticket li svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
   color: var(--fp-purple);
-  font-weight: 950;
-  margin-right: 7px;
+  stroke-width: 3;
 }
 
 .fluffy-ticket strong {
   display: block;
-  margin-top: 10px;
+  margin-top: 13px;
   border: 3px solid var(--fp-ink);
   background: rgba(9, 8, 7, 0.08);
   color: var(--fp-ink);
-  font-size: 2rem;
+  font-family: var(--fluffy-display-font);
+  font-size: clamp(1.65rem, 2.7vw, 2.28rem);
   font-weight: 950;
-  line-height: 1;
-  padding: 10px;
+  line-height: 0.96;
+  padding: 10px 8px;
   text-align: center;
 }
 
@@ -100,121 +174,29 @@
   display: inline-block;
   margin-top: 10px;
   color: var(--fp-red);
+  font-family: var(--fluffy-display-font);
   font-weight: 950;
   text-transform: uppercase;
-}
-
-.fluffy-collage {
-  position: relative;
-  min-height: 520px;
-}
-
-.fluffy-collage-card,
-.fluffy-collage-strip {
-  position: absolute;
-  overflow: hidden;
-  border: 1px solid rgba(9, 8, 7, 0.25);
-  border-radius: var(--fp-radius);
-  background: var(--fp-paper-strong);
-  box-shadow: var(--fp-shadow-card);
-}
-
-.fluffy-collage-card img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.fluffy-collage-card--pizza {
-  top: 0;
-  left: 4%;
-  width: 48%;
-  height: 248px;
-  transform: rotate(-4deg);
-}
-
-.fluffy-collage-card--pizza img {
-  object-position: 43% 12%;
-}
-
-.fluffy-collage-card--subs {
-  top: 20px;
-  right: 0;
-  width: 42%;
-  height: 236px;
-  transform: rotate(3deg);
-}
-
-.fluffy-collage-card--subs img {
-  object-position: 88% 50%;
-}
-
-.fluffy-collage-strip {
-  top: 265px;
-  left: 9%;
-  z-index: 3;
-  display: flex;
-  min-height: 78px;
-  width: 54%;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  border: 3px solid var(--fp-purple);
-  background: var(--fp-ink);
-  color: var(--fp-white);
-  font-size: 2.35rem;
-  font-weight: 950;
-  text-transform: uppercase;
-}
-
-.fluffy-collage-strip span:first-child {
-  color: var(--fp-orange);
-}
-
-.fluffy-collage-strip img {
-  width: 56px;
-  height: 56px;
-}
-
-.fluffy-collage-card--gluten {
-  top: 360px;
-  left: 12%;
-  width: 50%;
-  height: 120px;
-  transform: rotate(-2deg);
-}
-
-.fluffy-collage-card--gluten img {
-  object-position: 50% 72%;
-}
-
-.fluffy-collage-card--panini {
-  top: 298px;
-  right: 4%;
-  width: 39%;
-  height: 205px;
-  transform: rotate(4deg);
-}
-
-.fluffy-collage-card--panini img {
-  object-position: 84% 48%;
 }
 
 .fluffy-info-strip {
   position: relative;
   z-index: 3;
   margin-top: -1px;
-  background: var(--fp-ink);
+  background: var(--fp-paper);
   color: var(--fp-white);
+  padding-block: 10px 14px;
 }
 
 .fluffy-info-strip__inner {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1px;
-  border-inline: 1px solid rgba(255, 250, 240, 0.14);
+  overflow: hidden;
+  border: 2px solid rgba(82, 26, 147, 0.82);
+  border-radius: 10px;
   background: rgba(255, 250, 240, 0.14);
+  box-shadow: 0 16px 32px rgba(9, 8, 7, 0.14);
 }
 
 .fluffy-info-strip article {
@@ -222,9 +204,9 @@
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: 16px;
-  min-height: 96px;
+  min-height: 90px;
   background: var(--fp-ink);
-  padding: 18px 22px;
+  padding: 18px 24px;
 }
 
 .fluffy-info-strip svg {
@@ -262,10 +244,6 @@
 }
 
 @media (max-width: 760px) {
-  .fluffy-landing::before {
-    width: 12px;
-  }
-
   .fluffy-landing__grid {
     min-height: auto;
     padding-block: 36px 28px;
@@ -277,57 +255,6 @@
 
   .fluffy-ticket {
     min-height: auto;
-  }
-
-  .fluffy-collage {
-    min-height: 380px;
-  }
-
-  .fluffy-collage-card--pizza,
-  .fluffy-collage-card--subs,
-  .fluffy-collage-card--gluten,
-  .fluffy-collage-card--panini,
-  .fluffy-collage-strip {
-    transform: none;
-  }
-
-  .fluffy-collage-card--pizza {
-    left: 0;
-    width: 58%;
-    height: 170px;
-  }
-
-  .fluffy-collage-card--subs {
-    right: 0;
-    width: 48%;
-    height: 166px;
-  }
-
-  .fluffy-collage-strip {
-    top: 184px;
-    left: 5%;
-    min-height: 60px;
-    width: 82%;
-    font-size: 1.55rem;
-  }
-
-  .fluffy-collage-strip img {
-    width: 42px;
-    height: 42px;
-  }
-
-  .fluffy-collage-card--gluten {
-    top: 260px;
-    left: 0;
-    width: 56%;
-    height: 92px;
-  }
-
-  .fluffy-collage-card--panini {
-    top: 246px;
-    right: 0;
-    width: 46%;
-    height: 126px;
   }
 
   .fluffy-info-strip__inner {

@@ -10,6 +10,7 @@
 
 .fluffy-title,
 .fluffy-page-title {
+  position: relative;
   margin: 8px 0 0;
   color: var(--fp-ink);
   font-family: var(--fluffy-display-font);
@@ -23,13 +24,25 @@
   line-height: 0.83;
 }
 
+.fluffy-landing .fluffy-title::after {
+  content: "";
+  display: block;
+  width: min(78%, 560px);
+  height: 9px;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: var(--fp-purple);
+  transform: skewX(-18deg);
+  transform-origin: left center;
+}
+
 .fluffy-page-title {
   font-size: clamp(3.1rem, 5.8vw, 5rem);
   line-height: 0.9;
 }
 
 .fluffy-lede {
-  max-width: 620px;
+  max-width: 560px;
   color: rgba(9, 8, 7, 0.86);
   font-size: clamp(1rem, 1.45vw, 1.2rem);
   font-weight: 750;
@@ -41,6 +54,7 @@
   min-height: 60px;
   align-items: center;
   justify-content: center;
+  gap: 14px;
   border: 2px solid var(--fp-ink);
   border-radius: var(--fp-radius-small);
   color: var(--fp-ink);
@@ -51,6 +65,12 @@
   text-decoration: none;
   text-transform: uppercase;
   transition: background 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.fluffy-button svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2.8;
 }
 
 .fluffy-button:hover,
