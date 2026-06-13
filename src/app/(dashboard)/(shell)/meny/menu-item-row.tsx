@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { UtensilsCrossed } from 'lucide-react';
 import { Button } from '@shared/ui/button';
 import { StatusBadge } from '@shared/ui/status-badge';
 import { InlineAlert } from '@shared/ui/inline-alert';
@@ -9,6 +8,7 @@ import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog'
 import { EditIcon, TrashIcon } from '@shared/ui/icons';
 import type { RestaurantMenuItem, UpdateMenuItemPayload } from '@shared/lib/api/restaurant.api';
 import { priceSummary } from './menu-utils';
+import { guessEmoji } from './menu-ingredient-palette';
 import { MenuItemEditorDialog, type MenuItemDraft } from './menu-item-editor-dialog';
 
 interface MenuItemRowProps {
@@ -72,19 +72,18 @@ export function MenuItemRow({ item, categoryName, onUpdate, onDelete }: MenuItem
       </div>
 
       {item.ingredients.length > 0 ? (
-        <ul className="space-y-1.5 pt-0.5">
+        <ul className="flex flex-wrap gap-1.5 pt-0.5">
           {item.ingredients.map((ingredient, index) => {
             const label = ingredientLabel(ingredient.quantity, ingredient.unit);
             return (
-              <li key={`${ingredient.name}-${index}`} className="flex items-center gap-2.5">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--ui-accent-subtle)] text-[var(--ui-accent-active)]">
-                  <UtensilsCrossed size={12} strokeWidth={2} />
-                </span>
-                <span className="text-sm text-[var(--ui-text)]">
-                  {label ? <span className="font-semibold">{label} </span> : null}
-                  {ingredient.name}
-                  {ingredient.note ? <span className="text-[var(--ui-text-muted)]"> · {ingredient.note}</span> : null}
-                </span>
+              <li
+                key={`${ingredient.name}-${index}`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] px-2.5 py-1 text-sm text-[var(--ui-text)]"
+                title={ingredient.note ?? undefined}
+              >
+                <span className="text-base leading-none">{ingredient.emoji ?? guessEmoji(ingredient.name)}</span>
+                <span>{ingredient.name}</span>
+                {label ? <span className="text-xs text-[var(--ui-text-muted)]">{label}</span> : null}
               </li>
             );
           })}

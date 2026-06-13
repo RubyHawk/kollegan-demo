@@ -54,6 +54,7 @@ const CategorySchema = z.object({
 });
 
 const IngredientSchema = z.object({
+  emoji: z.string().max(16).nullable().optional(),
   name: z.string().min(1).max(120),
   quantity: z.string().max(40).nullable().optional(),
   unit: z.string().max(40).nullable().optional(),
