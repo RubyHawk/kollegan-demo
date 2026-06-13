@@ -11,9 +11,9 @@ async function resolveShellBrand(orgId: string | null | undefined): Promise<Shel
   try {
     const org = orgId ? await identityService.getOrg(orgId) : null;
     const brand = resolvePortalBrand(org ? { organizationSlug: org.slug, organizationName: org.name } : null);
-    return { name: brand.name, isPlatform: brand.key === 'platform' };
+    return { name: brand.name, isPlatform: brand.key === 'platform', key: brand.key };
   } catch {
-    return { name: BRAND_NAME, isPlatform: true };
+    return { name: BRAND_NAME, isPlatform: true, key: 'platform' };
   }
 }
 

@@ -1,0 +1,116 @@
+/*
+ * Fluffy's portal skin.
+ *
+ * Re-skins the authenticated portal shell for the Fluffy's tenant only. The
+ * brand key is resolved per-org in the dashboard shell layout and surfaced as
+ * data-brand="fluffys" on the app-shell root, so Soleria / offert hosts never
+ * match this block and stay byte-for-byte unchanged.
+ *
+ * The portal chrome consumes --ui-* tokens directly; shared shadcn primitives
+ * read the bridge tokens (--background / --card / --primary / ...) and a few
+ * legacy components read the base aliases (--accent / --surface / ...). All
+ * three layers are re-pointed at the overridden --ui-* values here so no
+ * Soleria blue leaks anywhere under the Fluffy's shell, in light or dark mode.
+ *
+ * Palette: warm paper/cream surfaces, ink text, tomato accent (matching the
+ * public fluffys.se site and the portal mark), with a warm focus highlight.
+ * Status tints (success/warning/danger/info) inherit the accessible defaults.
+ */
+
+[data-brand='fluffys'] {
+  /* ── Canonical UI tokens — warm light ── */
+  --ui-bg: #f7ecd9;
+  --ui-surface: #fffdf7;
+  --ui-surface-subtle: #f4e9d4;
+  --ui-surface-raised: #fffefb;
+  --ui-surface-hover: #efe2c9;
+  --ui-surface-active: #e7d6b8;
+  --ui-surface-selected: #f8ddd2;
+  --ui-border: #ddcaa4;
+  --ui-border-subtle: #e9dcc1;
+  --ui-border-strong: #c7ad7e;
+  --ui-text: #171412;
+  --ui-text-secondary: #463c33;
+  --ui-text-muted: #7c6e5e;
+  --ui-text-disabled: #aa9c87;
+  --ui-text-inverse: #fffaf0;
+  --ui-accent: #d65332;
+  --ui-accent-hover: #c0492b;
+  --ui-accent-active: #9f3828;
+  --ui-accent-subtle: #f8ddd2;
+  --ui-accent-border: #ecb3a0;
+  --ui-focus: #c2492b;
+  --ui-overlay: rgb(23 20 18 / 0.42);
+  --ui-shadow-raised: 0 1px 2px rgb(23 20 18 / 0.08), 0 8px 24px rgb(23 20 18 / 0.06);
+  --ui-shadow-dialog: 0 18px 60px rgb(23 20 18 / 0.20);
+
+  /* ── Base aliases (mirror ui-aliases.css against the warm tokens) ── */
+  --page-bg: var(--ui-bg);
+  --surface: var(--ui-surface);
+  --surface-alt: var(--ui-surface-subtle);
+  --surface-hover: var(--ui-surface-hover);
+  --surface-0: var(--ui-surface);
+  --surface-1: var(--ui-surface-subtle);
+  --surface-2: var(--ui-surface-raised);
+  --surface-3: var(--ui-surface-hover);
+  --surface-active: var(--ui-surface-active);
+  --border: var(--ui-border);
+  --border-light: var(--ui-border-subtle);
+  --text-primary: var(--ui-text);
+  --text-secondary: var(--ui-text-secondary);
+  --text-muted: var(--ui-text-muted);
+  --accent: var(--ui-accent);
+  --accent-light: var(--ui-accent-hover);
+  --accent-subtle: var(--ui-accent-subtle);
+  --accent-border: var(--ui-accent-border);
+
+  /* ── shadcn bridge (mirror globals.css against the warm tokens) ── */
+  --background: var(--ui-bg);
+  --foreground: var(--ui-text);
+  --card: var(--ui-surface);
+  --card-foreground: var(--ui-text);
+  --popover: var(--ui-surface-raised);
+  --popover-foreground: var(--ui-text);
+  --primary: var(--ui-accent);
+  --primary-foreground: var(--ui-text-inverse);
+  --secondary: var(--ui-surface-subtle);
+  --secondary-foreground: var(--ui-text);
+  --muted: var(--ui-surface-subtle);
+  --muted-foreground: var(--ui-text-muted);
+  --input: var(--ui-border);
+  --ring: var(--ui-focus);
+  --sidebar: var(--ui-surface);
+  --sidebar-foreground: var(--ui-text);
+  --sidebar-primary: var(--ui-accent);
+  --sidebar-primary-foreground: var(--ui-text-inverse);
+  --sidebar-accent: var(--ui-surface-selected);
+  --sidebar-accent-foreground: var(--ui-text);
+  --sidebar-border: var(--ui-border);
+  --sidebar-ring: var(--ui-focus);
+}
+
+/* ── Canonical UI tokens — warm dark (echoes the portal login: ink + gold) ── */
+.dark [data-brand='fluffys'] {
+  --ui-bg: #171412;
+  --ui-surface: #211f1c;
+  --ui-surface-subtle: #1d1a17;
+  --ui-surface-raised: #2a2622;
+  --ui-surface-hover: #302923;
+  --ui-surface-active: #3a322b;
+  --ui-surface-selected: #3a2a20;
+  --ui-border: #3a322b;
+  --ui-border-subtle: #2a2520;
+  --ui-border-strong: #534739;
+  --ui-text: #fff8ed;
+  --ui-text-secondary: rgb(255 248 237 / 0.80);
+  --ui-text-muted: rgb(255 248 237 / 0.56);
+  --ui-text-disabled: rgb(255 248 237 / 0.36);
+  --ui-text-inverse: #171412;
+  --ui-accent: #f0b844;
+  --ui-accent-hover: #f4d06f;
+  --ui-accent-active: #d99f2f;
+  --ui-accent-subtle: rgb(240 184 68 / 0.16);
+  --ui-accent-border: rgb(240 184 68 / 0.38);
+  --ui-focus: #f4d06f;
+  --ui-overlay: rgb(10 8 6 / 0.62);
+}

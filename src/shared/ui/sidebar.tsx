@@ -14,7 +14,7 @@ import {
 } from '@shared/ui/icons';
 import { SPRING_SNAPPY, EASE_SPRING } from '@shared/lib/motion';
 import { cn } from '@shared/lib/utils';
-import { BrandMark, OrgLetterMark } from '@shared/ui/brand';
+import { OrgBrandMark } from '@shared/ui/brand';
 import { TooltipProvider } from '@shared/ui/tooltip';
 import {
   LS_DROPDOWNS_KEY,
@@ -34,7 +34,6 @@ interface SidebarHeaderProps {
 }
 
 function SidebarHeader({ collapsed, onMobileClose, brand }: SidebarHeaderProps) {
-  const isTenantBrand = brand ? !brand.isPlatform : false;
   return (
     <div
       className={cn(
@@ -48,7 +47,7 @@ function SidebarHeader({ collapsed, onMobileClose, brand }: SidebarHeaderProps) 
         whileHover={{ scale: 1.04 }}
         transition={SPRING_SNAPPY}
       >
-        {isTenantBrand && brand ? <OrgLetterMark name={brand.name} size={26} /> : <BrandMark size={26} alt="" />}
+        <OrgBrandMark brandKey={brand?.key} name={brand?.name} isPlatform={brand?.isPlatform} size={26} />
       </motion.div>
 
       {!collapsed && (
