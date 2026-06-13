@@ -1,7 +1,11 @@
+.fluffy-menu-page-hero {
+  padding-block: 38px 30px;
+}
+
 .fluffy-menu-page-hero__grid {
   display: grid;
   gap: 28px;
-  align-items: end;
+  align-items: center;
 }
 
 .fluffy-menu-popular {
@@ -191,6 +195,15 @@
   border-radius: 0 0 var(--fp-radius) var(--fp-radius);
   background: var(--fp-paper-strong);
   padding: 12px;
+}
+
+.fluffy-menu-board:not(.fluffy-menu-board--focused) .fluffy-menu-row {
+  min-height: 46px;
+  padding-block: 6px;
+}
+
+.fluffy-menu-board:not(.fluffy-menu-board--focused) .fluffy-menu-category__summary {
+  min-height: 54px;
 }
 
 .fluffy-menu-board--focused {

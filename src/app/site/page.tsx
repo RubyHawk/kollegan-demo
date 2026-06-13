@@ -1,5 +1,13 @@
 import Link from 'next/link';
-import { Clock3Icon, MapPinIcon, ParkingCircleIcon, TimerResetIcon } from 'lucide-react';
+import {
+  ArrowRightIcon,
+  CarFrontIcon,
+  CheckIcon,
+  Clock3Icon,
+  MapPinIcon,
+  ParkingCircleIcon,
+  TimerResetIcon,
+} from 'lucide-react';
 import { MenuCategoryPreview } from './_components/menu-list';
 import { OpeningHours } from './_components/opening-hours';
 import { SiteShell } from './_components/site-shell';
@@ -48,22 +56,31 @@ export default async function PublicHomePage() {
             </p>
 
             <div className="fluffy-ticket-row" aria-label="Snabbinfo">
-              <article className="fluffy-ticket">
-                <h2>Snabbt stopp</h2>
+              <article className="fluffy-ticket fluffy-ticket--quick">
+                <div className="fluffy-ticket__head">
+                  <TimerResetIcon aria-hidden="true" />
+                  <h2>Snabbt stopp</h2>
+                </div>
                 <p>Fyll på energi och fortsätt resan.</p>
                 <ul>
-                  <li>Välsmakande mat</li>
-                  <li>Generösa portioner</li>
-                  <li>Enkelt och snabbt</li>
-                  <li>Gott pris</li>
+                  {['Välsmakande mat', 'Generösa portioner', 'Enkelt & snabbt', 'Gott pris'].map((item) => (
+                    <li key={item}>
+                      <CheckIcon aria-hidden="true" />
+                      {item}
+                    </li>
+                  ))}
                 </ul>
               </article>
-              <article className="fluffy-ticket fluffy-ticket--orange">
+              <article className="fluffy-ticket fluffy-ticket--orange fluffy-ticket--hours">
                 <h2>Öppet</h2>
                 <p>Alla dagar</p>
                 <strong>{hoursLabel}</strong>
               </article>
-              <article className="fluffy-ticket">
+              <article className="fluffy-ticket fluffy-ticket--parking">
+                <div className="fluffy-ticket__icons" aria-hidden="true">
+                  <ParkingCircleIcon />
+                  <CarFrontIcon />
+                </div>
                 <h2>Parkering</h2>
                 <p>Gratis parkering för bil, MC och lastbil.</p>
                 <Link href={publicSiteHref(routePrefix, '/kontakt#parkering')}>Hitta hit</Link>
@@ -72,32 +89,55 @@ export default async function PublicHomePage() {
 
             <Link href={publicSiteHref(routePrefix, '/meny')} className="fluffy-button fluffy-button--primary">
               Se menyn
+              <ArrowRightIcon aria-hidden="true" />
             </Link>
           </div>
 
           <div className="fluffy-collage fluffy-rise fluffy-delay-1" aria-label="Fluffy's menybilder">
-            <figure className="fluffy-collage-card fluffy-collage-card--pizza">
+            <figure className="fluffy-menu-ticket fluffy-menu-ticket--taco">
+              <figcaption>
+                <span>19</span>
+                <strong>Tacokebab</strong>
+                <small>Välj mellan kebab / gyros / kyckling</small>
+                <em>89 / 149 / 239</em>
+              </figcaption>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="Menybild med pizzor och kebabpizza" />
+              <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
             </figure>
-            <figure className="fluffy-collage-card fluffy-collage-card--subs">
+            <figure className="fluffy-menu-ticket fluffy-menu-ticket--mix">
+              <figcaption>
+                <span>21</span>
+                <strong>Pick&apos;n mix kebaben</strong>
+                <small>Sallad, tomat, gurka, feferoni, lök, sås</small>
+                <em>89 / 149 / 239</em>
+              </figcaption>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/fluffys/menu/subs-classic-board.jpg" alt="Menybild med subs" />
+              <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
             </figure>
-            <figure className="fluffy-collage-strip">
+            <div className="fluffy-collage-sign" aria-hidden="true">
               <span>Subs</span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/fluffys/favicon.svg" alt="" />
               <span>Pizza</span>
+            </div>
+            <figure className="fluffy-gluten-ticket">
+              <span aria-hidden="true">Gluten free</span>
+              <figcaption>
+                <strong>Glutenfritt</strong>
+                <em>189:-</em>
+                <small>Samma goda pizzor, nu även på glutenfri botten.</small>
+              </figcaption>
             </figure>
-            <figure className="fluffy-collage-card fluffy-collage-card--gluten">
+            <figure className="fluffy-sub-ticket">
+              <figcaption>
+                <strong>Italian duo</strong>
+                <small>Peperoni, salami, ost, sallad</small>
+                <em>74 / 109</em>
+              </figcaption>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/fluffys/menu/sides-sauces-board.jpg" alt="Menybild med glutenfritt och tillbehör" />
+              <img src="/fluffys/menu/subs-classic-board.jpg" alt="" />
             </figure>
-            <figure className="fluffy-collage-card fluffy-collage-card--panini">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/fluffys/menu/panini-salad-board.jpg" alt="Menybild med panini och sallad" />
-            </figure>
+            <span className="fluffy-collage-arrow" aria-hidden="true">-&gt;</span>
           </div>
         </div>
       </section>

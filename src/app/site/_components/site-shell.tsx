@@ -12,6 +12,10 @@ const NAV: Array<{ path: `/${string}`; label: string }> = [
   { path: '/kontakt', label: 'Kontakt' },
 ];
 
+function publicBrandName(siteName: string) {
+  return siteName.toLocaleLowerCase('sv-SE').includes('laxå') ? siteName : `${siteName} Laxå`;
+}
+
 export function SiteShell({
   site,
   children,
@@ -24,6 +28,7 @@ export function SiteShell({
   routePrefix?: string;
 }) {
   const address = addressLine(site);
+  const brandName = publicBrandName(site.settings.siteName);
 
   return (
     <main className="fluffy-public">
@@ -33,7 +38,7 @@ export function SiteShell({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/fluffys/favicon.svg" alt="" className="fluffy-brand__mark" />
             <span className="fluffy-brand__text">
-              <strong>{site.settings.siteName}</strong>
+              <strong>{brandName}</strong>
               <small>Mat vid vägen</small>
             </span>
           </Link>

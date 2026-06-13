@@ -6,7 +6,6 @@ import {
   categoryDisplay,
   categoryImage,
   itemPriceFallback,
-  menuItemImage,
   menuItemParts,
   menuSlug,
   priceParts,
@@ -77,17 +76,17 @@ function MenuItemRow({ item }: { item: RestaurantMenuItemView }) {
 }
 
 function FeaturedItemCard({
-  category,
   item,
   index,
 }: {
-  category: RestaurantMenuCategoryView;
   item: RestaurantMenuItemView;
   index: number;
 }) {
   const { number, label } = menuItemParts(item.name);
   const price = itemPriceFallback(item);
-  const image = menuItemImage(category, item);
+  const image = item.imageUrl;
+
+  if (!image) return null;
 
   return (
     <article className="fluffy-featured-item">
@@ -115,8 +114,9 @@ function CategorySection({
   focused: boolean;
 }) {
   const display = categoryDisplay(category);
-  const featured = focused ? category.items.slice(0, 3) : [];
-  const rows = focused ? category.items.slice(featured.length) : category.items;
+  const featured = focused ? category.items.filter((item) => Boolean(item.imageUrl)).slice(0, 3) : [];
+  const featuredIds = new Set(featured.map((item) => item.id));
+  const rows = focused ? category.items.filter((item) => !featuredIds.has(item.id)) : category.items;
   const isOpen = focused || index < 3;
 
   return (
@@ -136,7 +136,7 @@ function CategorySection({
           {featured.length > 0 ? (
             <div className="fluffy-featured-grid">
               {featured.map((item, itemIndex) => (
-                <FeaturedItemCard key={item.id} category={category} item={item} index={itemIndex} />
+                <FeaturedItemCard key={item.id} item={item} index={itemIndex} />
               ))}
             </div>
           ) : null}

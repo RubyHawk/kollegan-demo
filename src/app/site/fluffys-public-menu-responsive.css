@@ -16,11 +16,14 @@
   }
 
   .fluffy-menu-board:not(.fluffy-menu-board--focused) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: block;
+    columns: 2 420px;
+    column-gap: 12px;
   }
 
-  .fluffy-menu-board:not(.fluffy-menu-board--focused) .fluffy-menu-category:first-child {
-    grid-column: span 2;
+  .fluffy-menu-board:not(.fluffy-menu-board--focused) .fluffy-menu-category {
+    break-inside: avoid;
+    margin-bottom: 12px;
   }
 }
 
