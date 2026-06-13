@@ -419,7 +419,8 @@ jobs:
 
             APP_DIR="$app_dir" \
             APP_BASE_URL="${{ env.NEXT_PUBLIC_APP_URL }}" \
-            HEALTHCHECK_URLS="${{ secrets.DEPLOY_HEALTHCHECK_URLS }}" \
+            SERVICE_NAMES="${{ vars.DEPLOY_SERVICE_NAMES || 'kollegan,fluffys-public' }}" \
+            HEALTHCHECK_URLS="${{ secrets.DEPLOY_HEALTHCHECK_URLS || 'http://127.0.0.1:3000/api/health,http://127.0.0.1:3100/api/health' }}" \
             "$app_dir/deploy_kollegan.sh" "$artifact_path" ${{ github.sha }}
 
             rm -f "$bundle_path"
