@@ -9,7 +9,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { categories, ingredients } from '../prisma/seed-data/ingredient-catalog.mjs';
+import { categories, ingredients } from '../prisma/seed-data/ingredients/index.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'prisma/migrations/20260613000002_ingredient_catalog');
@@ -97,17 +97,25 @@ ${categoryRows}
 ON CONFLICT ("id") DO NOTHING;
 `;
 
+const categoryEmoji = new Map(categories.map((category) => [category.id, category.emoji]));
 const ingredientValues = [];
 const seenSlugs = new Set();
 for (const [categoryId, items] of Object.entries(ingredients)) {
-  for (const [name, emoji, unit, aliases = [], allergens = []] of items) {
+  if (!categoryEmoji.has(categoryId)) {
+    throw new Error(`Ingredient group "${categoryId}" has no matching category`);
+  }
+  for (const [name, emoji = '', unit = '', aliases = [], allergens = []] of items) {
     const slug = slugify(name);
+    if (!slug) throw new Error(`Empty slug for ingredient "${name}"`);
     if (seenSlugs.has(slug)) {
       throw new Error(`Duplicate ingredient slug "${slug}" (${name})`);
     }
     seenSlugs.add(slug);
+    // Emoji falls back to the category emoji so the long tail stays one-tap to add.
+    const resolvedEmoji = (emoji && emoji.trim()) || categoryEmoji.get(categoryId) || '🍽️';
+    const unitSql = unit && String(unit).trim() ? sqlStr(String(unit).trim()) : 'NULL';
     ingredientValues.push(
-      `  (${sqlStr(categoryId)}, ${sqlStr(slug)}, ${sqlStr(name)}, ${sqlStr(emoji)}, ${sqlStr(unit)}, ${sqlArray(aliases)}, ${sqlArray(allergens)})`,
+      `  (${sqlStr(categoryId)}, ${sqlStr(slug)}, ${sqlStr(name)}, ${sqlStr(resolvedEmoji)}, ${unitSql}, ${sqlArray(aliases)}, ${sqlArray(allergens)})`,
     );
   }
 }

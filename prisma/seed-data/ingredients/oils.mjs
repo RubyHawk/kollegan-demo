@@ -1,0 +1,28 @@
+// Oljor & fetter. Tuple: [name, emoji?, defaultUnit?, aliases?, allergens?]
+export default {
+  category: 'oils',
+  items: [
+    ['Olivolja', '🫒', 'msk', ['olive oil']],
+    ['Extra virgin-olivolja', '🫒', 'msk', ['extra virgin olive oil']],
+    ['Rapsolja', '🌻', 'msk', ['rapeseed oil', 'canola']],
+    ['Solrosolja', '🌻', 'msk', ['sunflower oil']],
+    ['Sesamolja', '🌰', 'tsk', ['sesame oil'], ['sesame']],
+    ['Kokosolja', '🥥', 'msk', ['coconut oil']],
+    ['Jordnötsolja', '🥜', 'msk', ['peanut oil'], ['peanuts']],
+    ['Avokadoolja', '🥑', 'msk', ['avocado oil']],
+    ['Linfröolja', '🌱', 'msk', ['flaxseed oil']],
+    ['Vindruvskärnolja', '🍇', 'msk', ['grapeseed oil']],
+    ['Valnötsolja', '🌰', 'msk', ['walnut oil'], ['nuts']],
+    ['Tryffelolja', '🍄', 'tsk', ['truffle oil']],
+    ['Chiliolja', '🌶️', 'tsk', ['chili oil']],
+    ['Margarin', '🧈', 'g', ['margarine']],
+    ['Ister', '🧈', 'g', ['lard']],
+    ['Ankfett', '🦆', 'msk', ['duck fat']],
+    ['Frityrolja', '🛢️', 'dl', ['frying oil']],
+    ['Matlagningsspray', '🛢️', 'spray', ['cooking spray']],
+    ['Palmolja', '🛢️', 'msk', ['palm oil']],
+    ['Hampaolja', '🌱', 'msk', ['hemp oil']],
+    ['Pumpakärneolja', '🎃', 'tsk', ['pumpkin seed oil']],
+    ['Senapsolja', '🛢️', 'tsk', ['mustard oil'], ['mustard']],
+  ],
+};
