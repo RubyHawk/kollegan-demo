@@ -1,51 +1,35 @@
 'use client';
 
 import { useState } from 'react';
+import { UtensilsCrossed } from 'lucide-react';
 import { Button } from '@shared/ui/button';
-import { Input } from '@shared/ui/input';
-import { Textarea } from '@shared/ui/textarea';
 import { StatusBadge } from '@shared/ui/status-badge';
 import { InlineAlert } from '@shared/ui/inline-alert';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import { EditIcon, TrashIcon } from '@shared/ui/icons';
 import type { RestaurantMenuItem, UpdateMenuItemPayload } from '@shared/lib/api/restaurant.api';
-import { parsePriceCents, parseTags, priceSummary, priceToInput } from './menu-utils';
+import { priceSummary } from './menu-utils';
+import { MenuItemEditorDialog, type MenuItemDraft } from './menu-item-editor-dialog';
 
 interface MenuItemRowProps {
   item: RestaurantMenuItem;
+  categoryName: string;
   onUpdate: (id: string, payload: UpdateMenuItemPayload) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
-export function MenuItemRow({ item, onUpdate, onDelete }: MenuItemRowProps) {
-  const [editing, setEditing] = useState(false);
+function ingredientLabel(quantity: string | null, unit: string | null): string {
+  return [quantity, unit].filter(Boolean).join(' ');
+}
+
+export function MenuItemRow({ item, categoryName, onUpdate, onDelete }: MenuItemRowProps) {
+  const [editorOpen, setEditorOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [error, setError] = useState('');
 
-  async function save(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const name = String(form.get('name') ?? '').trim();
-    if (!name) {
-      setError('Rätten behöver ett namn.');
-      return;
-    }
-    setBusy(true);
-    setError('');
-    try {
-      await onUpdate(item.id, {
-        name,
-        priceCents: parsePriceCents(form.get('price')),
-        tags: parseTags(form.get('tags')),
-        description: String(form.get('description') ?? '').trim() || null,
-      });
-      setEditing(false);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
+  async function saveDraft(draft: MenuItemDraft) {
+    await onUpdate(item.id, draft);
   }
 
   async function toggleAvailable() {
@@ -72,26 +56,6 @@ export function MenuItemRow({ item, onUpdate, onDelete }: MenuItemRowProps) {
     }
   }
 
-  if (editing) {
-    return (
-      <form onSubmit={save} className="space-y-3 py-3">
-        <Input name="name" defaultValue={item.name} placeholder="Rättens namn" required />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Input name="price" type="number" min="0" step="1" defaultValue={priceToInput(item.priceCents)} placeholder="Pris i kronor" />
-          <Input name="tags" defaultValue={item.tags.join(', ')} placeholder="Prisvarianter, ex. S 89, M 149" />
-        </div>
-        <Textarea name="description" defaultValue={item.description ?? ''} placeholder="Beskrivning, råvaror eller allergener" rows={3} />
-        {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit" size="compact" loading={busy}>Spara</Button>
-          <Button type="button" variant="ghost" size="compact" disabled={busy} onClick={() => { setEditing(false); setError(''); }}>
-            Avbryt
-          </Button>
-        </div>
-      </form>
-    );
-  }
-
   return (
     <article className="grid gap-2 py-3">
       <div className="flex items-start justify-between gap-3">
@@ -101,23 +65,44 @@ export function MenuItemRow({ item, onUpdate, onDelete }: MenuItemRowProps) {
             {!item.isAvailable ? <StatusBadge tone="neutral">Dold</StatusBadge> : null}
           </div>
           {item.description ? <p className="text-sm text-[var(--ui-text-muted)]">{item.description}</p> : null}
-          {item.tags.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {item.tags.map((tag) => (
-                <span key={tag} className="rounded-[var(--ui-radius-sm)] border border-[var(--ui-border)] px-1.5 py-0.5 text-xs text-[var(--ui-text-muted)]">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          ) : null}
         </div>
         <p className="shrink-0 text-right text-sm tabular-nums text-[var(--ui-text-secondary)]">
           {priceSummary(item.priceCents, item.currency, item.tags)}
         </p>
       </div>
 
+      {item.ingredients.length > 0 ? (
+        <ul className="space-y-1.5 pt-0.5">
+          {item.ingredients.map((ingredient, index) => {
+            const label = ingredientLabel(ingredient.quantity, ingredient.unit);
+            return (
+              <li key={`${ingredient.name}-${index}`} className="flex items-center gap-2.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--ui-accent-subtle)] text-[var(--ui-accent-active)]">
+                  <UtensilsCrossed size={12} strokeWidth={2} />
+                </span>
+                <span className="text-sm text-[var(--ui-text)]">
+                  {label ? <span className="font-semibold">{label} </span> : null}
+                  {ingredient.name}
+                  {ingredient.note ? <span className="text-[var(--ui-text-muted)]"> · {ingredient.note}</span> : null}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+
+      {item.tags.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {item.tags.map((tag) => (
+            <span key={tag} className="rounded-[var(--ui-radius-sm)] border border-[var(--ui-border)] px-1.5 py-0.5 text-xs text-[var(--ui-text-muted)]">
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-1">
-        <Button type="button" variant="ghost" size="compact" onClick={() => setEditing(true)}>
+        <Button type="button" variant="ghost" size="compact" onClick={() => setEditorOpen(true)}>
           <EditIcon size={14} />
           Redigera
         </Button>
@@ -130,7 +115,15 @@ export function MenuItemRow({ item, onUpdate, onDelete }: MenuItemRowProps) {
         </Button>
       </div>
 
-      {error && !editing ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
+      {error ? <InlineAlert tone="danger">{error}</InlineAlert> : null}
+
+      <MenuItemEditorDialog
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        item={item}
+        categoryName={categoryName}
+        onSubmit={saveDraft}
+      />
 
       <ConfirmDestructiveDialog
         open={confirmOpen}

@@ -4,6 +4,8 @@ export type {
   CreateRestaurantEventInput,
   CreateReservationRequestInput,
   ListReservationRequestsInput,
+  MenuItemIngredient,
+  MenuItemIngredientInput,
   PublicRestaurantSite,
   PublicSiteSettingsView,
   RestaurantEventManagementView,

@@ -4,6 +4,13 @@ interface ApiEnvelope<T> {
   data: T;
 }
 
+export interface MenuItemIngredient {
+  name: string;
+  quantity: string | null;
+  unit: string | null;
+  note: string | null;
+}
+
 export interface RestaurantMenuItem {
   id: string;
   categoryId: string;
@@ -14,6 +21,7 @@ export interface RestaurantMenuItem {
   imageUrl: string | null;
   allergens: string[];
   tags: string[];
+  ingredients: MenuItemIngredient[];
   isAvailable: boolean;
   sortOrder: number;
 }
@@ -86,6 +94,13 @@ export interface CreateMenuCategoryPayload {
   sortOrder?: number;
 }
 
+export interface MenuItemIngredientInput {
+  name: string;
+  quantity?: string | null;
+  unit?: string | null;
+  note?: string | null;
+}
+
 export interface CreateMenuItemPayload {
   categoryId: string;
   name: string;
@@ -95,6 +110,7 @@ export interface CreateMenuItemPayload {
   imageUrl?: string | null;
   allergens?: string[];
   tags?: string[];
+  ingredients?: MenuItemIngredientInput[];
   isAvailable?: boolean;
   sortOrder?: number;
 }
@@ -115,6 +131,7 @@ export interface UpdateMenuItemPayload {
   imageUrl?: string | null;
   allergens?: string[];
   tags?: string[];
+  ingredients?: MenuItemIngredientInput[];
   isAvailable?: boolean;
   sortOrder?: number;
 }

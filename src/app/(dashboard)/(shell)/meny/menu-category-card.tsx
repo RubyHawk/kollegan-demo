@@ -15,7 +15,7 @@ import type {
   UpdateMenuItemPayload,
 } from '@shared/lib/api/restaurant.api';
 import { MenuItemRow } from './menu-item-row';
-import { parsePriceCents, parseTags } from './menu-utils';
+import { MenuItemEditorDialog, type MenuItemDraft } from './menu-item-editor-dialog';
 
 interface MenuCategoryCardProps {
   category: RestaurantMenuCategory;
@@ -35,7 +35,7 @@ export function MenuCategoryCard({
   onDeleteItem,
 }: MenuCategoryCardProps) {
   const [editingCategory, setEditingCategory] = useState(false);
-  const [addingItem, setAddingItem] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [error, setError] = useState('');
@@ -63,31 +63,8 @@ export function MenuCategoryCard({
     }
   }
 
-  async function addItem(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formEl = event.currentTarget;
-    const form = new FormData(formEl);
-    const name = String(form.get('name') ?? '').trim();
-    if (!name) {
-      setError('Rätten behöver ett namn.');
-      return;
-    }
-    setBusy(true);
-    setError('');
-    try {
-      await onCreateItem(category.id, {
-        name,
-        priceCents: parsePriceCents(form.get('price')),
-        tags: parseTags(form.get('tags')),
-        description: String(form.get('description') ?? '').trim() || null,
-      });
-      formEl.reset();
-      setAddingItem(false);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
+  async function addItem(draft: MenuItemDraft) {
+    await onCreateItem(category.id, draft);
   }
 
   async function confirmDelete() {
@@ -142,32 +119,28 @@ export function MenuCategoryCard({
           <p className="py-3 text-sm text-[var(--ui-text-muted)]">Inga rätter ännu — lägg till den första nedan.</p>
         ) : (
           category.items.map((item) => (
-            <MenuItemRow key={item.id} item={item} onUpdate={onUpdateItem} onDelete={onDeleteItem} />
+            <MenuItemRow
+              key={item.id}
+              item={item}
+              categoryName={category.name}
+              onUpdate={onUpdateItem}
+              onDelete={onDeleteItem}
+            />
           ))
         )}
       </div>
 
-      {addingItem ? (
-        <form onSubmit={addItem} className="space-y-3 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-3">
-          <Input name="name" placeholder="Rättens namn" required />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input name="price" type="number" min="0" step="1" placeholder="Pris i kronor" />
-            <Input name="tags" placeholder="Prisvarianter, ex. S 89, M 149" />
-          </div>
-          <Textarea name="description" placeholder="Beskrivning, råvaror eller allergener" rows={3} />
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" size="compact" loading={busy}>Lägg till rätt</Button>
-            <Button type="button" variant="ghost" size="compact" disabled={busy} onClick={() => { setAddingItem(false); setError(''); }}>
-              Avbryt
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <Button type="button" variant="secondary" size="compact" onClick={() => setAddingItem(true)}>
-          <PlusIcon size={14} />
-          Lägg till rätt
-        </Button>
-      )}
+      <Button type="button" variant="secondary" size="compact" onClick={() => setAddOpen(true)}>
+        <PlusIcon size={14} />
+        Lägg till rätt
+      </Button>
+
+      <MenuItemEditorDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        categoryName={category.name}
+        onSubmit={addItem}
+      />
 
       <ConfirmDestructiveDialog
         open={confirmOpen}

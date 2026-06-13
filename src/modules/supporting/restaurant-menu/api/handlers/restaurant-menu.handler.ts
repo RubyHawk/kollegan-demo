@@ -53,6 +53,13 @@ const CategorySchema = z.object({
   sortOrder: z.number().int().min(0).max(10_000).optional(),
 });
 
+const IngredientSchema = z.object({
+  name: z.string().min(1).max(120),
+  quantity: z.string().max(40).nullable().optional(),
+  unit: z.string().max(40).nullable().optional(),
+  note: z.string().max(200).nullable().optional(),
+});
+
 const ItemSchema = z.object({
   categoryId: z.string().uuid(),
   name: z.string().min(1).max(160),
@@ -62,6 +69,7 @@ const ItemSchema = z.object({
   imageUrl: z.string().url().max(1000).nullable().optional(),
   allergens: z.array(z.string().max(40)).max(20).optional(),
   tags: z.array(z.string().max(40)).max(20).optional(),
+  ingredients: z.array(IngredientSchema).max(60).optional(),
   isAvailable: z.boolean().optional(),
   sortOrder: z.number().int().min(0).max(10_000).optional(),
 });
