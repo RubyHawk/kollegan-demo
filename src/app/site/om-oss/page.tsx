@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { SiteShell } from '../_components/site-shell';
-import { getSiteData, siteMetadata } from '../_lib/public-site-data';
+import { getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from '../_lib/public-site-data';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,9 +10,10 @@ export async function generateMetadata() {
 
 export default async function PublicAboutPage() {
   const { site, isFallback } = await getSiteData();
+  const routePrefix = await getPublicSiteRoutePrefix();
 
   return (
-    <SiteShell site={site} isFallback={isFallback}>
+    <SiteShell site={site} isFallback={isFallback} routePrefix={routePrefix}>
       <section className="fluffy-page-hero">
         <div className="fluffy-shell fluffy-grid fluffy-grid--contact">
           <div className="fluffy-copy fluffy-rise">
@@ -22,10 +23,10 @@ export default async function PublicAboutPage() {
               {site.settings.about ?? 'Fluffy’s serverar subs, pizza, panini, wraps och tillbehör med snabb service och tydlig meny.'}
             </p>
             <div className="fluffy-actions">
-              <Link href="/kontakt" className="fluffy-button fluffy-button--dark">
+              <Link href={publicSiteHref(routePrefix, '/kontakt')} className="fluffy-button fluffy-button--dark">
                 Hitta hit
               </Link>
-              <Link href="/meny" className="fluffy-button">
+              <Link href={publicSiteHref(routePrefix, '/meny')} className="fluffy-button">
                 Se menyn
               </Link>
             </div>

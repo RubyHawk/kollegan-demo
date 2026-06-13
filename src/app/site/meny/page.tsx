@@ -1,6 +1,6 @@
 import { MenuList } from '../_components/menu-list';
 import { SiteShell } from '../_components/site-shell';
-import { getSiteData, siteMetadata } from '../_lib/public-site-data';
+import { getPublicSiteRoutePrefix, getSiteData, siteMetadata } from '../_lib/public-site-data';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,9 +10,10 @@ export async function generateMetadata() {
 
 export default async function PublicMenuPage() {
   const { site, isFallback } = await getSiteData();
+  const routePrefix = await getPublicSiteRoutePrefix();
 
   return (
-    <SiteShell site={site} isFallback={isFallback}>
+    <SiteShell site={site} isFallback={isFallback} routePrefix={routePrefix}>
       <section className="fluffy-page-hero">
         <div className="fluffy-shell fluffy-grid fluffy-grid--menu">
           <div className="fluffy-copy fluffy-rise">
