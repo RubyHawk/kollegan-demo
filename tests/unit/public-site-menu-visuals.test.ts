@@ -38,6 +38,16 @@ describe('public site menu visuals', () => {
     ]);
   });
 
+  it('keeps every published price variant for drink-style items', () => {
+    expect(priceParts(item({ tags: ['Liten 20', 'Mellan 25', 'Stor 30', 'Burk 25', 'PET 35'] }))).toEqual([
+      { label: 'Liten', value: '20' },
+      { label: 'Mellan', value: '25' },
+      { label: 'Stor', value: '30' },
+      { label: 'Burk', value: '25' },
+      { label: 'PET', value: '35' },
+    ]);
+  });
+
   it('falls back to a single price when an item has priceCents', () => {
     expect(priceParts(item({ priceCents: 5900 }))).toEqual([{ label: 'Pris', value: '59' }]);
   });

@@ -184,12 +184,6 @@ body:has(.fluffy-public) {
   transform: translateY(-1px);
 }
 
-.fluffy-header__menu {
-  display: inline-grid;
-  color: var(--fp-white);
-  place-items: center;
-}
-
 .fluffy-fallback {
   border-bottom: 1px solid rgba(242, 140, 0, 0.55);
   background: rgba(242, 140, 0, 0.18);

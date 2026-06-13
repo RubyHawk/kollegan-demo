@@ -48,7 +48,7 @@ function PriceColumns({ item }: { item: RestaurantMenuItemView }) {
 
   return (
     <dl className="fluffy-price-columns" aria-label="Priser">
-      {parts.slice(0, 4).map((part) => (
+      {parts.map((part) => (
         <div key={`${item.id}-${part.label}`} className="fluffy-price-columns__part">
           <dt>{part.label}</dt>
           <dd>{part.value}</dd>

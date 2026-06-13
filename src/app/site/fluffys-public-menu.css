@@ -364,9 +364,9 @@
 
 .fluffy-price-columns {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(44px, auto);
+  grid-template-columns: repeat(auto-fit, minmax(44px, auto));
   gap: 12px;
+  justify-content: end;
   margin: 0;
   color: var(--fp-red);
   text-align: center;

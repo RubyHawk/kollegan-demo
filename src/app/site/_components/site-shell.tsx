@@ -48,9 +48,19 @@ export function SiteShell({
             <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-header__cta">
               Beställ / Boka
             </Link>
-            <span className="fluffy-header__menu" aria-hidden="true">
-              <MenuIcon size={30} strokeWidth={2.25} />
-            </span>
+            <details className="fluffy-header__menu">
+              <summary aria-label="Öppna meny">
+                <MenuIcon size={30} strokeWidth={2.25} />
+              </summary>
+              <nav className="fluffy-header__menu-panel" aria-label="Mobilnavigation">
+                {NAV.map((item) => (
+                  <Link key={`mobile-${item.label}-${item.path}`} href={publicSiteHref(routePrefix, item.path)}>
+                    {item.label}
+                  </Link>
+                ))}
+                <Link href={publicSiteHref(routePrefix, '/boka')}>Beställ / Boka</Link>
+              </nav>
+            </details>
           </div>
         </div>
       </header>
