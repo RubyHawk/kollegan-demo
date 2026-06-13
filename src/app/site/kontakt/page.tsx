@@ -33,7 +33,7 @@ export default async function PublicContactPage() {
           </div>
 
           <div className="fluffy-menu-grid">
-            <section className="fluffy-card fluffy-info-card fluffy-rise fluffy-delay-1">
+            <section id="parkering" className="fluffy-card fluffy-info-card fluffy-rise fluffy-delay-1">
               <p className="fluffy-eyebrow">Hitta oss</p>
               <h2>{site.settings.siteName}</h2>
               {address ? <p>{address}</p> : null}

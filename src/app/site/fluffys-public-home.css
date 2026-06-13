@@ -1,0 +1,340 @@
+.fluffy-landing {
+  position: relative;
+  overflow: clip;
+  border-bottom: 1px solid var(--fp-line);
+  background: linear-gradient(180deg, var(--fp-paper-strong), var(--fp-paper));
+}
+
+.fluffy-landing::before {
+  display: none;
+}
+
+.fluffy-landing__grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-height: 650px;
+  align-items: center;
+  gap: 42px;
+  padding-block: 48px 36px;
+}
+
+.fluffy-landing__copy {
+  position: relative;
+  z-index: 2;
+  max-width: 670px;
+}
+
+.fluffy-ticket-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+  max-width: 660px;
+}
+
+.fluffy-ticket {
+  position: relative;
+  min-height: 158px;
+  border: 1px dashed rgba(9, 8, 7, 0.22);
+  border-radius: var(--fp-radius-small);
+  background: #f8eddd;
+  box-shadow: 0 7px 18px rgba(9, 8, 7, 0.09);
+  padding: 18px;
+}
+
+.fluffy-ticket--orange {
+  background: var(--fp-orange);
+  color: var(--fp-ink);
+}
+
+.fluffy-ticket h2 {
+  margin: 0;
+  color: var(--fp-purple);
+  font-size: 1.25rem;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.fluffy-ticket--orange h2 {
+  color: var(--fp-ink);
+}
+
+.fluffy-ticket p,
+.fluffy-ticket li {
+  margin: 9px 0 0;
+  color: rgba(9, 8, 7, 0.78);
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.fluffy-ticket ul {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.fluffy-ticket li::before {
+  content: "✓";
+  color: var(--fp-purple);
+  font-weight: 950;
+  margin-right: 7px;
+}
+
+.fluffy-ticket strong {
+  display: block;
+  margin-top: 10px;
+  border: 3px solid var(--fp-ink);
+  background: rgba(9, 8, 7, 0.08);
+  color: var(--fp-ink);
+  font-size: 2rem;
+  font-weight: 950;
+  line-height: 1;
+  padding: 10px;
+  text-align: center;
+}
+
+.fluffy-ticket a {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--fp-red);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.fluffy-collage {
+  position: relative;
+  min-height: 520px;
+}
+
+.fluffy-collage-card,
+.fluffy-collage-strip {
+  position: absolute;
+  overflow: hidden;
+  border: 1px solid rgba(9, 8, 7, 0.25);
+  border-radius: var(--fp-radius);
+  background: var(--fp-paper-strong);
+  box-shadow: var(--fp-shadow-card);
+}
+
+.fluffy-collage-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fluffy-collage-card--pizza {
+  top: 0;
+  left: 4%;
+  width: 48%;
+  height: 248px;
+  transform: rotate(-4deg);
+}
+
+.fluffy-collage-card--pizza img {
+  object-position: 43% 12%;
+}
+
+.fluffy-collage-card--subs {
+  top: 20px;
+  right: 0;
+  width: 42%;
+  height: 236px;
+  transform: rotate(3deg);
+}
+
+.fluffy-collage-card--subs img {
+  object-position: 88% 50%;
+}
+
+.fluffy-collage-strip {
+  top: 265px;
+  left: 9%;
+  z-index: 3;
+  display: flex;
+  min-height: 78px;
+  width: 54%;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 3px solid var(--fp-purple);
+  background: var(--fp-ink);
+  color: var(--fp-white);
+  font-size: 2.35rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.fluffy-collage-strip span:first-child {
+  color: var(--fp-orange);
+}
+
+.fluffy-collage-strip img {
+  width: 56px;
+  height: 56px;
+}
+
+.fluffy-collage-card--gluten {
+  top: 360px;
+  left: 12%;
+  width: 50%;
+  height: 120px;
+  transform: rotate(-2deg);
+}
+
+.fluffy-collage-card--gluten img {
+  object-position: 50% 72%;
+}
+
+.fluffy-collage-card--panini {
+  top: 298px;
+  right: 4%;
+  width: 39%;
+  height: 205px;
+  transform: rotate(4deg);
+}
+
+.fluffy-collage-card--panini img {
+  object-position: 84% 48%;
+}
+
+.fluffy-info-strip {
+  position: relative;
+  z-index: 3;
+  margin-top: -1px;
+  background: var(--fp-ink);
+  color: var(--fp-white);
+}
+
+.fluffy-info-strip__inner {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  border-inline: 1px solid rgba(255, 250, 240, 0.14);
+  background: rgba(255, 250, 240, 0.14);
+}
+
+.fluffy-info-strip article {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 16px;
+  min-height: 96px;
+  background: var(--fp-ink);
+  padding: 18px 22px;
+}
+
+.fluffy-info-strip svg {
+  width: 42px;
+  height: 42px;
+  color: var(--fp-orange);
+}
+
+.fluffy-info-strip h2 {
+  margin: 0;
+  color: var(--fp-white);
+  font-size: 1rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.fluffy-info-strip p {
+  margin: 3px 0 0;
+  color: rgba(255, 250, 240, 0.82);
+  font-size: 0.92rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+@media (min-width: 980px) {
+  .fluffy-landing__grid {
+    grid-template-columns: minmax(0, 0.96fr) minmax(460px, 1.04fr);
+  }
+}
+
+@media (max-width: 1050px) {
+  .fluffy-info-strip__inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .fluffy-landing::before {
+    width: 12px;
+  }
+
+  .fluffy-landing__grid {
+    min-height: auto;
+    padding-block: 36px 28px;
+  }
+
+  .fluffy-ticket-row {
+    grid-template-columns: 1fr;
+  }
+
+  .fluffy-ticket {
+    min-height: auto;
+  }
+
+  .fluffy-collage {
+    min-height: 380px;
+  }
+
+  .fluffy-collage-card--pizza,
+  .fluffy-collage-card--subs,
+  .fluffy-collage-card--gluten,
+  .fluffy-collage-card--panini,
+  .fluffy-collage-strip {
+    transform: none;
+  }
+
+  .fluffy-collage-card--pizza {
+    left: 0;
+    width: 58%;
+    height: 170px;
+  }
+
+  .fluffy-collage-card--subs {
+    right: 0;
+    width: 48%;
+    height: 166px;
+  }
+
+  .fluffy-collage-strip {
+    top: 184px;
+    left: 5%;
+    min-height: 60px;
+    width: 82%;
+    font-size: 1.55rem;
+  }
+
+  .fluffy-collage-strip img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .fluffy-collage-card--gluten {
+    top: 260px;
+    left: 0;
+    width: 56%;
+    height: 92px;
+  }
+
+  .fluffy-collage-card--panini {
+    top: 246px;
+    right: 0;
+    width: 46%;
+    height: 126px;
+  }
+
+  .fluffy-info-strip__inner {
+    grid-template-columns: 1fr;
+  }
+
+  .fluffy-info-strip article {
+    min-height: 84px;
+  }
+}
