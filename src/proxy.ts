@@ -48,6 +48,7 @@ const PUBLIC_SITE_HOSTS = (process.env.PUBLIC_SITE_HOSTS ?? 'fluffys.se')
   .split(',')
   .map((host) => host.trim().toLowerCase())
   .filter(Boolean);
+const FLUFFYS_HOSTS = new Set(['fluffys.se', 'www.fluffys.se', 'portal.fluffys.se']);
 const OFFER_HOSTS = (process.env.PUBLIC_OFFER_HOSTS ?? `offert.soleria.se,${OFFER_SUBDOMAIN}.soleria.se`)
   .split(',')
   .map((host) => host.trim().toLowerCase())
@@ -82,6 +83,14 @@ export function isPublicSiteHost(hostname: string): boolean {
   return PUBLIC_SITE_HOSTS.includes(hostname.toLowerCase());
 }
 
+export function isFluffysHost(hostname: string): boolean {
+  return FLUFFYS_HOSTS.has(hostname.toLowerCase());
+}
+
+export function shouldRewriteFluffysFavicon(pathname: string, hostname: string): boolean {
+  return pathname === '/favicon.ico' && isFluffysHost(hostname);
+}
+
 export function isPortalSurfaceBlockedPath(pathname: string, hostname: string): boolean {
   return isPublicSiteHost(hostname)
     || pathname === '/site'
@@ -101,10 +110,18 @@ function maybeRewritePublicSite(request: NextRequest, hostname: string): NextRes
   return null;
 }
 
+function maybeRewriteFluffysFavicon(request: NextRequest, hostname: string): NextResponse | null {
+  if (!shouldRewriteFluffysFavicon(request.nextUrl.pathname, hostname)) return null;
+  return NextResponse.rewrite(new URL('/fluffys/favicon.svg', request.url));
+}
+
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const host = request.headers.get('host') ?? '';
   const hostname = host.split(':')[0]?.toLowerCase() ?? '';
   const { pathname } = request.nextUrl;
+
+  const fluffysFaviconRewrite = maybeRewriteFluffysFavicon(request, hostname);
+  if (fluffysFaviconRewrite) return fluffysFaviconRewrite;
 
   if (APP_SURFACE === 'portal' && isPortalSurfaceBlockedPath(pathname, hostname)) {
     return new NextResponse(null, { status: 404 });
@@ -168,5 +185,5 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?|ttf|otf)).*)'],
+  matcher: ['/favicon.ico', '/((?!_next/static|_next/image|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?|ttf|otf)).*)'],
 };

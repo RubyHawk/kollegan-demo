@@ -1,4 +1,6 @@
 import './fluffys-public.css';
+import './fluffys-public-menu.css';
+import './fluffys-public-forms.css';
 import type { ReactNode } from 'react';
 
 export default function SiteLayout({ children }: { children: ReactNode }) {

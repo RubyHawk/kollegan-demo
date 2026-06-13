@@ -15,32 +15,46 @@ export default async function PublicContactPage() {
 
   return (
     <SiteShell site={site} isFallback={isFallback}>
-      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.8fr_1.2fr]">
-        <div className="fluffy-rise">
-          <p className="text-sm font-black uppercase tracking-[0.16em] text-[#bf4f2f]">Kontakt</p>
-          <h1 className="mt-2 text-5xl font-black leading-tight text-[#211f1c]">Öppettider och kontakt.</h1>
-          <div className="mt-6 space-y-2 text-base font-semibold leading-7 text-[#211f1c]/75">
-            {address ? <p>{address}</p> : null}
-            {site.settings.phone ? <p>{site.settings.phone}</p> : null}
-            {site.settings.email ? <p>{site.settings.email}</p> : null}
-          </div>
-          <Link href="/site/boka" className="mt-7 inline-flex min-h-11 items-center rounded-md bg-[#211f1c] px-5 py-3 text-sm font-black text-white hover:bg-[#bf4f2f]">
-            Boka bord
-          </Link>
-        </div>
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-1">
-          <section className="fluffy-rise rounded-lg border border-[#211f1c]/10 bg-white p-5 shadow-sm">
-            <h2 className="text-2xl font-black text-[#211f1c]">Öppet</h2>
-            <div className="mt-4">
-              <OpeningHours hours={site.openingHours} />
+      <section className="fluffy-page-hero">
+        <div className="fluffy-shell fluffy-grid fluffy-grid--contact">
+          <div className="fluffy-copy fluffy-rise">
+            <p className="fluffy-eyebrow">Kontakt</p>
+            <h1 className="fluffy-page-title">Öppettider, takeaway och bord.</h1>
+            <p>Hör av dig om du vill boka, fråga om menyn eller bara dubbelkolla när köket är öppet.</p>
+            <div className="fluffy-actions">
+              <Link href="/boka" className="fluffy-button fluffy-button--dark">
+                Boka bord
+              </Link>
+              <Link href="/meny" className="fluffy-button">
+                Se menyn
+              </Link>
             </div>
-          </section>
-          <section className="fluffy-rise rounded-lg border border-[#211f1c]/10 bg-[#211f1c] p-5 text-[#fffaf0] shadow-sm">
-            <h2 className="text-2xl font-black">Takeaway</h2>
-            <p className="mt-3 text-sm leading-6 text-[#fffaf0]/75">
-              Ring restaurangen eller skicka en bokningsförfrågan så återkommer vi så snabbt vi kan.
-            </p>
-          </section>
+          </div>
+
+          <div className="fluffy-menu-grid">
+            <section className="fluffy-card fluffy-info-card fluffy-rise fluffy-delay-1">
+              <p className="fluffy-eyebrow">Hitta oss</p>
+              <h2>{site.settings.siteName}</h2>
+              {address ? <p>{address}</p> : null}
+              {site.settings.phone ? <p>{site.settings.phone}</p> : null}
+              {site.settings.email ? <p>{site.settings.email}</p> : null}
+            </section>
+            <section className="fluffy-card fluffy-info-card fluffy-rise fluffy-delay-2">
+              <p className="fluffy-eyebrow">Takeaway</p>
+              <h2>Ring in eller skicka en fråga</h2>
+              <p>Vi återkommer så snabbt vi kan när restaurangen har kontrollerat läget.</p>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section className="fluffy-section fluffy-section--white">
+        <div className="fluffy-shell fluffy-grid fluffy-grid--contact">
+          <div className="fluffy-copy">
+            <p className="fluffy-eyebrow">Öppet</p>
+            <h2 className="fluffy-page-title">Planera ditt besök.</h2>
+          </div>
+          <OpeningHours hours={site.openingHours} />
         </div>
       </section>
     </SiteShell>

@@ -13,21 +13,34 @@ export default async function PublicMenuPage() {
 
   return (
     <SiteShell site={site} isFallback={isFallback}>
-      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[0.7fr_1.3fr]">
-        <div className="fluffy-rise">
-          <p className="text-sm font-black uppercase tracking-[0.16em] text-[#bf4f2f]">Meny</p>
-          <h1 className="mt-2 text-5xl font-black leading-tight text-[#211f1c]">Välj något varmt, krispigt, snabbt eller extra stort.</h1>
-          <p className="mt-4 leading-7 text-[#211f1c]/70">
-            Priser och varianter hämtas från restaurangens publicerade meny.
-          </p>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/fluffys/menu-board.svg"
-            alt="Fluffy's menyboard"
-            className="mt-8 w-full rounded-lg border border-[#211f1c]/10 shadow-lg"
-          />
+      <section className="fluffy-page-hero">
+        <div className="fluffy-shell fluffy-grid fluffy-grid--menu">
+          <div className="fluffy-copy fluffy-rise">
+            <p className="fluffy-eyebrow">Meny</p>
+            <h1 className="fluffy-page-title">Välj något varmt, krispigt, snabbt eller extra stort.</h1>
+            <p>Priser, storlekar och varianter hämtas från restaurangens publicerade meny.</p>
+            <div className="fluffy-proof-strip" aria-label="Menytyper">
+              <span>Subs</span>
+              <span>Pizza</span>
+              <span>Panini</span>
+              <span>Wraps</span>
+            </div>
+          </div>
+          <figure className="fluffy-board-card fluffy-page-media fluffy-rise fluffy-delay-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/fluffys/menu-board.svg"
+              alt="Fluffy's menyboard"
+              className="fluffy-board-media"
+            />
+          </figure>
         </div>
-        <MenuList categories={site.categories} />
+      </section>
+
+      <section className="fluffy-section fluffy-section--white">
+        <div className="fluffy-shell">
+          <MenuList categories={site.categories} />
+        </div>
       </section>
     </SiteShell>
   );

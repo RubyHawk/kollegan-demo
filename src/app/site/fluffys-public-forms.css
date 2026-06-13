@@ -1,0 +1,232 @@
+.fluffy-page-hero {
+  padding-block: clamp(48px, 8vw, 82px);
+}
+
+.fluffy-page-media {
+  align-self: start;
+}
+
+.fluffy-form {
+  display: grid;
+  gap: 14px;
+  padding: clamp(18px, 3vw, 26px);
+}
+
+.fluffy-form__grid {
+  display: grid;
+  gap: 14px;
+}
+
+.fluffy-field {
+  display: grid;
+  gap: 7px;
+  color: var(--fp-ink);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.fluffy-input {
+  min-height: 46px;
+  width: 100%;
+  border: 1px solid var(--fp-line-strong);
+  border-radius: var(--fp-radius);
+  background: var(--fp-paper-strong);
+  color: var(--fp-ink);
+  font: inherit;
+  font-weight: 700;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.fluffy-input:focus-visible {
+  border-color: var(--fp-ink);
+  box-shadow: 0 0 0 3px rgba(240, 184, 68, 0.34);
+}
+
+textarea.fluffy-input {
+  min-height: 108px;
+  resize: vertical;
+}
+
+.fluffy-form button {
+  width: 100%;
+  cursor: pointer;
+}
+
+.fluffy-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.fluffy-success,
+.fluffy-error {
+  border-radius: var(--fp-radius);
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.5;
+  margin: 0;
+  padding: 12px 14px;
+}
+
+.fluffy-success {
+  background: rgba(125, 164, 98, 0.16);
+  color: #315f2b;
+}
+
+.fluffy-error {
+  background: rgba(214, 83, 50, 0.14);
+  color: #8f2d20;
+}
+
+.fluffy-footer {
+  border-top: 1px solid rgba(255, 250, 240, 0.14);
+  background: var(--fp-ink);
+  color: var(--fp-white);
+}
+
+.fluffy-footer__inner {
+  display: grid;
+  gap: 28px;
+  padding-block: 38px;
+}
+
+.fluffy-footer__brand {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 950;
+}
+
+.fluffy-footer p {
+  margin: 8px 0 0;
+}
+
+.fluffy-footer__meta {
+  color: rgba(255, 250, 240, 0.76);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.fluffy-rise {
+  animation: fluffy-rise 620ms var(--fp-ease) both;
+}
+
+.fluffy-delay-1 {
+  animation-delay: 90ms;
+}
+
+.fluffy-delay-2 {
+  animation-delay: 170ms;
+}
+
+@keyframes fluffy-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fluffy-sheen {
+  from {
+    transform: translateX(-120%);
+  }
+
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@media (min-width: 720px) {
+  .fluffy-form__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fluffy-proof-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .fluffy-event-grid,
+  .fluffy-info-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .fluffy-footer__inner {
+    grid-template-columns: 1fr auto;
+  }
+
+  .fluffy-footer__meta {
+    text-align: right;
+  }
+}
+
+@media (min-width: 960px) {
+  .fluffy-hero__inner {
+    grid-template-columns: minmax(0, 0.92fr) minmax(420px, 1.08fr);
+  }
+
+  .fluffy-grid--menu {
+    grid-template-columns: minmax(340px, 0.72fr) minmax(0, 1.28fr);
+  }
+
+  .fluffy-grid--contact {
+    grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+  }
+
+  .fluffy-menu-grid--compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 719px) {
+  .fluffy-shell {
+    width: min(100% - 24px, 1180px);
+  }
+
+  .fluffy-header__inner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+    padding-block: 11px;
+  }
+
+  .fluffy-nav {
+    width: 100%;
+  }
+
+  .fluffy-nav a {
+    padding-inline: 10px;
+  }
+
+  .fluffy-hero__inner {
+    min-height: auto;
+    padding-top: 36px;
+  }
+
+  .fluffy-quick-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .fluffy-board-card {
+    transform: none;
+  }
+
+  .fluffy-menu-item__top {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fluffy-public *,
+  .fluffy-public *::before,
+  .fluffy-public *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}

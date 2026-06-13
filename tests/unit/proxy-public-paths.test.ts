@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { isPortalSurfaceBlockedPath, isPublicPath, isPublicSurfacePath } from '../../src/proxy';
+import {
+  config,
+  isFluffysHost,
+  isPortalSurfaceBlockedPath,
+  isPublicPath,
+  isPublicSurfacePath,
+  shouldRewriteFluffysFavicon,
+} from '../../src/proxy';
 
 describe('proxy public path allowlist', () => {
   it('keeps legacy and v1 auth endpoints public for signed-out flows', () => {
@@ -35,5 +42,16 @@ describe('proxy public path allowlist', () => {
     expect(isPortalSurfaceBlockedPath('/logga-in', 'portal.fluffys.se')).toBe(false);
     expect(isPortalSurfaceBlockedPath('/offerter/publik/token', 'portal.fluffys.se')).toBe(false);
     expect(isPortalSurfaceBlockedPath('/logga-in', 'fluffys.se')).toBe(true);
+  });
+
+  it('routes Fluffy hosts to the Fluffy favicon without changing Soleria hosts', () => {
+    expect(isFluffysHost('fluffys.se')).toBe(true);
+    expect(isFluffysHost('www.fluffys.se')).toBe(true);
+    expect(isFluffysHost('portal.fluffys.se')).toBe(true);
+    expect(isFluffysHost('offert.soleria.se')).toBe(false);
+    expect(shouldRewriteFluffysFavicon('/favicon.ico', 'portal.fluffys.se')).toBe(true);
+    expect(shouldRewriteFluffysFavicon('/favicon.ico', 'fluffys.se')).toBe(true);
+    expect(shouldRewriteFluffysFavicon('/favicon.ico', 'offert.soleria.se')).toBe(false);
+    expect(config.matcher).toContain('/favicon.ico');
   });
 });

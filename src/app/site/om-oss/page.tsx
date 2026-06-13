@@ -13,33 +13,62 @@ export default async function PublicAboutPage() {
 
   return (
     <SiteShell site={site} isFallback={isFallback}>
-      <section className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_0.9fr]">
-        <div className="fluffy-rise">
-          <p className="text-sm font-black uppercase tracking-[0.16em] text-[#bf4f2f]">Om oss</p>
-          <h1 className="mt-2 text-5xl font-black leading-tight text-[#211f1c]">{site.settings.heroTitle}</h1>
-          <p className="mt-5 max-w-3xl text-lg leading-8 text-[#211f1c]/75">
-            {site.settings.about ?? 'Fluffy’s serverar subs, pizza, panini, wraps och tillbehör med snabb service och tydlig meny.'}
-          </p>
-          <Link href="/site/kontakt" className="mt-7 inline-flex min-h-11 items-center rounded-md bg-[#211f1c] px-5 py-3 text-sm font-black text-white hover:bg-[#bf4f2f]">
-            Hitta hit
-          </Link>
+      <section className="fluffy-page-hero">
+        <div className="fluffy-shell fluffy-grid fluffy-grid--contact">
+          <div className="fluffy-copy fluffy-rise">
+            <p className="fluffy-eyebrow">Om oss</p>
+            <h1 className="fluffy-page-title">{site.settings.heroTitle}</h1>
+            <p>
+              {site.settings.about ?? 'Fluffy’s serverar subs, pizza, panini, wraps och tillbehör med snabb service och tydlig meny.'}
+            </p>
+            <div className="fluffy-actions">
+              <Link href="/kontakt" className="fluffy-button fluffy-button--dark">
+                Hitta hit
+              </Link>
+              <Link href="/meny" className="fluffy-button">
+                Se menyn
+              </Link>
+            </div>
+          </div>
+          <figure className="fluffy-board-card fluffy-page-media fluffy-rise fluffy-delay-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/fluffys/menu-board.svg" alt="Fluffy's menyboard" className="fluffy-board-media" />
+          </figure>
         </div>
-        <div className="fluffy-rise rounded-lg border border-[#211f1c]/10 bg-white p-5 shadow-sm">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/fluffys/menu-board.svg" alt="Fluffy's menyboard" className="w-full rounded-md" />
+      </section>
+
+      <section className="fluffy-section fluffy-section--white">
+        <div className="fluffy-shell fluffy-info-grid">
+          <article className="fluffy-card fluffy-info-card">
+            <p className="fluffy-eyebrow">01</p>
+            <h2>Snabbt på riktigt</h2>
+            <p>Menyn är byggd för lunch, takeaway och kvällar när alla vill ha något olika.</p>
+          </article>
+          <article className="fluffy-card fluffy-info-card">
+            <p className="fluffy-eyebrow">02</p>
+            <h2>Tydlig meny</h2>
+            <p>Subs, pizza, panini och wraps ligger som kodad webbmeny, inte som en svårläst PDF.</p>
+          </article>
+          <article className="fluffy-card fluffy-info-card">
+            <p className="fluffy-eyebrow">03</p>
+            <h2>Lätt att nå</h2>
+            <p>Kontakt, öppettider och bokningsförfrågan finns nära till hands på mobil och desktop.</p>
+          </article>
         </div>
       </section>
 
       {site.events.length > 0 ? (
-        <section className="border-t border-[#211f1c]/10 bg-white">
-          <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
-            <p className="text-sm font-black uppercase tracking-[0.16em] text-[#bf4f2f]">På gång</p>
-            <div className="mt-5 grid gap-4 md:grid-cols-3">
+        <section className="fluffy-section">
+          <div className="fluffy-shell">
+            <p className="fluffy-eyebrow">På gång</p>
+            <div className="fluffy-event-grid">
               {site.events.map((event) => (
-                <article key={event.id} className="rounded-lg border border-[#211f1c]/10 bg-[#fffaf0] p-5">
-                  <p className="text-sm font-bold text-[#211f1c]/60">{new Intl.DateTimeFormat('sv-SE', { dateStyle: 'medium' }).format(new Date(event.startsAt))}</p>
-                  <h2 className="mt-2 text-lg font-black text-[#211f1c]">{event.title}</h2>
-                  {event.description ? <p className="mt-2 text-sm leading-6 text-[#211f1c]/70">{event.description}</p> : null}
+                <article key={event.id} className="fluffy-card fluffy-event-card">
+                  <time dateTime={new Date(event.startsAt).toISOString()}>
+                    {new Intl.DateTimeFormat('sv-SE', { dateStyle: 'medium' }).format(new Date(event.startsAt))}
+                  </time>
+                  <h2>{event.title}</h2>
+                  {event.description ? <p>{event.description}</p> : null}
                 </article>
               ))}
             </div>
