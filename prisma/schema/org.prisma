@@ -62,6 +62,7 @@ model Organization {
   publicSiteSettings PublicSiteSettings?
   restaurantMenuCategories RestaurantMenuCategory[]
   restaurantMenuItems RestaurantMenuItem[]
+  ingredients Ingredient[]
   restaurantOpeningHours RestaurantOpeningHour[]
   restaurantEvents RestaurantEvent[]
   restaurantReservationRequests RestaurantReservationRequest[]

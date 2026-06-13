@@ -6,7 +6,13 @@ import { StatusBadge } from '@shared/ui/status-badge';
 import { InlineAlert } from '@shared/ui/inline-alert';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import { EditIcon, TrashIcon } from '@shared/ui/icons';
-import type { RestaurantMenuItem, UpdateMenuItemPayload } from '@shared/lib/api/restaurant.api';
+import type {
+  CatalogIngredient,
+  CreateIngredientPayload,
+  IngredientCatalog,
+  RestaurantMenuItem,
+  UpdateMenuItemPayload,
+} from '@shared/lib/api/restaurant.api';
 import { priceSummary } from './menu-utils';
 import { guessEmoji } from './menu-ingredient-palette';
 import { MenuItemEditorDialog, type MenuItemDraft } from './menu-item-editor-dialog';
@@ -14,6 +20,8 @@ import { MenuItemEditorDialog, type MenuItemDraft } from './menu-item-editor-dia
 interface MenuItemRowProps {
   item: RestaurantMenuItem;
   categoryName: string;
+  catalog: IngredientCatalog;
+  onCreateIngredient: (payload: CreateIngredientPayload) => Promise<CatalogIngredient>;
   onUpdate: (id: string, payload: UpdateMenuItemPayload) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
@@ -22,7 +30,7 @@ function ingredientLabel(quantity: string | null, unit: string | null): string {
   return [quantity, unit].filter(Boolean).join(' ');
 }
 
-export function MenuItemRow({ item, categoryName, onUpdate, onDelete }: MenuItemRowProps) {
+export function MenuItemRow({ item, categoryName, catalog, onCreateIngredient, onUpdate, onDelete }: MenuItemRowProps) {
   const [editorOpen, setEditorOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -121,6 +129,8 @@ export function MenuItemRow({ item, categoryName, onUpdate, onDelete }: MenuItem
         onOpenChange={setEditorOpen}
         item={item}
         categoryName={categoryName}
+        catalog={catalog}
+        onCreateIngredient={onCreateIngredient}
         onSubmit={saveDraft}
       />
 

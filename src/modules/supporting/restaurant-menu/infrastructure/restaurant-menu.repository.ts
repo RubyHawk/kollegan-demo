@@ -76,6 +76,7 @@ function parseIngredients(value: Prisma.JsonValue | null | undefined): MenuItemI
     const name = toNullableString(record.name);
     if (!name) continue;
     ingredients.push({
+      ingredientId: toNullableString(record.ingredientId),
       emoji: toNullableString(record.emoji),
       name,
       quantity: toNullableString(record.quantity),
@@ -94,6 +95,7 @@ function normalizeIngredients(input: MenuItemIngredientInput[] | undefined): Men
     const name = toNullableString(entry?.name);
     if (!name) continue;
     ingredients.push({
+      ingredientId: toNullableString(entry.ingredientId),
       emoji: toNullableString(entry.emoji),
       name,
       quantity: toNullableString(entry.quantity),

@@ -11,14 +11,18 @@ import { EmptyState } from '@shared/ui/empty-state';
 import { Skeleton } from '@shared/ui/skeleton';
 import { PlusIcon } from '@shared/ui/icons';
 import {
+  createIngredient,
   createRestaurantMenuCategory,
   createRestaurantMenuItem,
   deleteRestaurantMenuCategory,
   deleteRestaurantMenuItem,
+  getIngredientCatalog,
   listRestaurantMenu,
   updateRestaurantMenuCategory,
   updateRestaurantMenuItem,
+  type CreateIngredientPayload,
   type CreateMenuItemPayload,
+  type IngredientCatalog,
   type RestaurantMenuCategory,
   type UpdateMenuCategoryPayload,
   type UpdateMenuItemPayload,
@@ -28,6 +32,7 @@ import { OpeningHoursManager } from './opening-hours-manager';
 
 export function MenuManagerClient() {
   const [categories, setCategories] = useState<RestaurantMenuCategory[]>([]);
+  const [catalog, setCatalog] = useState<IngredientCatalog>({ categories: [], ingredients: [] });
   const [loading, setLoading] = useState(true);
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [error, setError] = useState('');
@@ -45,7 +50,22 @@ export function MenuManagerClient() {
 
   useEffect(() => {
     void load();
+    // The ingredient catalog is large and rarely changes — load it once.
+    getIngredientCatalog()
+      .then(setCatalog)
+      .catch(() => {
+        // A catalog failure shouldn't block menu editing; the picker just stays empty.
+      });
   }, []);
+
+  async function handleCreateIngredient(payload: CreateIngredientPayload) {
+    const ingredient = await createIngredient(payload);
+    setCatalog((current) => ({
+      ...current,
+      ingredients: [...current.ingredients.filter((entry) => entry.id !== ingredient.id), ingredient],
+    }));
+    return ingredient;
+  }
 
   async function createCategory(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -149,6 +169,8 @@ export function MenuManagerClient() {
             <MenuCategoryCard
               key={category.id}
               category={category}
+              catalog={catalog}
+              onCreateIngredient={handleCreateIngredient}
               onUpdateCategory={updateCategory}
               onDeleteCategory={deleteCategory}
               onCreateItem={createItem}

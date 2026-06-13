@@ -5,6 +5,7 @@ interface ApiEnvelope<T> {
 }
 
 export interface MenuItemIngredient {
+  ingredientId: string | null;
   emoji: string | null;
   name: string;
   quantity: string | null;
@@ -96,11 +97,44 @@ export interface CreateMenuCategoryPayload {
 }
 
 export interface MenuItemIngredientInput {
+  ingredientId?: string | null;
   emoji?: string | null;
   name: string;
   quantity?: string | null;
   unit?: string | null;
   note?: string | null;
+}
+
+export interface IngredientCategory {
+  id: string;
+  name: string;
+  emoji: string | null;
+  sortOrder: number;
+}
+
+export interface CatalogIngredient {
+  id: string;
+  categoryId: string;
+  name: string;
+  emoji: string | null;
+  defaultUnit: string | null;
+  aliases: string[];
+  allergens: string[];
+  isCustom: boolean;
+}
+
+export interface IngredientCatalog {
+  categories: IngredientCategory[];
+  ingredients: CatalogIngredient[];
+}
+
+export interface CreateIngredientPayload {
+  categoryId: string;
+  name: string;
+  emoji?: string | null;
+  defaultUnit?: string | null;
+  aliases?: string[];
+  allergens?: string[];
 }
 
 export interface CreateMenuItemPayload {
@@ -202,6 +236,16 @@ export async function updateRestaurantMenuItem(id: string, payload: UpdateMenuIt
 
 export async function deleteRestaurantMenuItem(id: string): Promise<void> {
   await apiDelete(`/api/v1/restaurant/menu/items/${id}`);
+}
+
+export async function getIngredientCatalog(): Promise<IngredientCatalog> {
+  const res = await apiGet<ApiEnvelope<{ catalog: IngredientCatalog }>>('/api/v1/restaurant/ingredients');
+  return res.data.catalog;
+}
+
+export async function createIngredient(payload: CreateIngredientPayload): Promise<CatalogIngredient> {
+  const res = await apiPost<ApiEnvelope<{ ingredient: CatalogIngredient }>>('/api/v1/restaurant/ingredients', payload);
+  return res.data.ingredient;
 }
 
 export async function listRestaurantOpeningHours(): Promise<RestaurantOpeningHour[]> {

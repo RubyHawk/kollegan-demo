@@ -16,6 +16,7 @@ export interface PublicSiteSettingsView {
 }
 
 export interface MenuItemIngredient {
+  ingredientId: string | null;
   emoji: string | null;
   name: string;
   quantity: string | null;
@@ -24,6 +25,7 @@ export interface MenuItemIngredient {
 }
 
 export interface MenuItemIngredientInput {
+  ingredientId?: string | null;
   emoji?: string | null;
   name: string;
   quantity?: string | null;

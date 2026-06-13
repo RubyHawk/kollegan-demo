@@ -13,14 +13,17 @@ import {
 } from '@shared/ui/dialog';
 import { Button } from '@shared/ui/button';
 import { InlineAlert } from '@shared/ui/inline-alert';
-import type { MenuItemIngredientInput, RestaurantMenuItem } from '@shared/lib/api/restaurant.api';
+import type {
+  CatalogIngredient,
+  CreateIngredientPayload,
+  IngredientCatalog,
+  MenuItemIngredientInput,
+  RestaurantMenuItem,
+} from '@shared/lib/api/restaurant.api';
 import { parsePriceCents, parseTags, priceToInput } from './menu-utils';
-import {
-  COMMON_UNITS,
-  INGREDIENT_PALETTE,
-  guessEmoji,
-  type PaletteIngredient,
-} from './menu-ingredient-palette';
+import { COMMON_UNITS, guessEmoji } from './menu-ingredient-palette';
+
+const CUSTOM_CATEGORY_ID = 'other';
 
 export interface MenuItemDraft {
   name: string;
@@ -32,6 +35,7 @@ export interface MenuItemDraft {
 
 interface DraftIngredient {
   key: string;
+  ingredientId: string | null;
   emoji: string;
   name: string;
   quantity: string;
@@ -44,6 +48,8 @@ interface MenuItemEditorDialogProps {
   onOpenChange: (open: boolean) => void;
   item?: RestaurantMenuItem;
   categoryName: string;
+  catalog: IngredientCatalog;
+  onCreateIngredient: (payload: CreateIngredientPayload) => Promise<CatalogIngredient>;
   onSubmit: (draft: MenuItemDraft) => Promise<void>;
 }
 
@@ -57,6 +63,7 @@ function toDraftRows(item?: RestaurantMenuItem): DraftIngredient[] {
   if (!item) return [];
   return item.ingredients.map((ingredient) => ({
     key: makeKey(),
+    ingredientId: ingredient.ingredientId,
     emoji: ingredient.emoji ?? guessEmoji(ingredient.name),
     name: ingredient.name,
     quantity: ingredient.quantity ?? '',
@@ -69,25 +76,23 @@ function amountLabel(row: DraftIngredient): string {
   return [row.quantity, row.unit].filter(Boolean).join(' ');
 }
 
-export function MenuItemEditorDialog({ open, onOpenChange, item, categoryName, onSubmit }: MenuItemEditorDialogProps) {
+export function MenuItemEditorDialog(props: MenuItemEditorDialogProps) {
+  const { open, onOpenChange } = props;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent mobileVariant="sheet" size="lg" showMobileClose className="flex max-h-[92dvh] flex-col p-0">
         {/* Mounted only while open, so each open re-seeds the form from `item`. */}
-        <EditorForm item={item} categoryName={categoryName} onSubmit={onSubmit} onClose={() => onOpenChange(false)} />
+        <EditorForm {...props} onClose={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   );
 }
 
-interface EditorFormProps {
-  item?: RestaurantMenuItem;
-  categoryName: string;
-  onSubmit: (draft: MenuItemDraft) => Promise<void>;
+interface EditorFormProps extends MenuItemEditorDialogProps {
   onClose: () => void;
 }
 
-function EditorForm({ item, categoryName, onSubmit, onClose }: EditorFormProps) {
+function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit, onClose }: EditorFormProps) {
   const isEdit = Boolean(item);
   const [name, setName] = useState(item?.name ?? '');
   const [price, setPrice] = useState(priceToInput(item?.priceCents ?? null));
@@ -97,48 +102,72 @@ function EditorForm({ item, categoryName, onSubmit, onClose }: EditorFormProps) 
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
 
   const activeRow = rows.find((row) => row.key === activeKey) ?? null;
 
+  const groups = useMemo(() => {
+    const byCategory = new Map<string, CatalogIngredient[]>();
+    for (const ingredient of catalog.ingredients) {
+      const list = byCategory.get(ingredient.categoryId) ?? [];
+      list.push(ingredient);
+      byCategory.set(ingredient.categoryId, list);
+    }
+    return catalog.categories
+      .map((category) => ({ category, items: byCategory.get(category.id) ?? [] }))
+      .filter((group) => group.items.length > 0);
+  }, [catalog]);
+
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return null;
-    const seen = new Set<string>();
-    const found: PaletteIngredient[] = [];
-    for (const group of INGREDIENT_PALETTE) {
-      for (const ingredient of group.items) {
-        const id = `${ingredient.emoji}-${ingredient.name}`;
-        if (ingredient.name.toLowerCase().includes(q) && !seen.has(id)) {
-          seen.add(id);
-          found.push(ingredient);
-        }
-      }
-    }
-    return found;
-  }, [query]);
+    return catalog.ingredients.filter((ingredient) =>
+      ingredient.name.toLowerCase().includes(q) ||
+      ingredient.aliases.some((alias) => alias.toLowerCase().includes(q)),
+    );
+  }, [query, catalog]);
 
   function patchRow(key: string, patch: Partial<DraftIngredient>) {
     setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)));
   }
 
-  function addIngredient(emoji: string, ingredientName: string, unit: string) {
-    const existing = rows.find((row) => row.name.toLowerCase() === ingredientName.toLowerCase());
+  function addCatalogIngredient(ingredient: CatalogIngredient) {
+    const existing = rows.find((row) => row.ingredientId === ingredient.id);
     if (existing) {
       setActiveKey(existing.key);
       return;
     }
     const key = makeKey();
-    setRows((current) => [...current, { key, emoji, name: ingredientName, quantity: '1', unit, note: '' }]);
+    setRows((current) => [
+      ...current,
+      {
+        key,
+        ingredientId: ingredient.id,
+        emoji: ingredient.emoji ?? guessEmoji(ingredient.name),
+        name: ingredient.name,
+        quantity: '1',
+        unit: ingredient.defaultUnit ?? '',
+        note: '',
+      },
+    ]);
     setActiveKey(key);
   }
 
-  function addCustom() {
+  async function addCustom() {
     const seed = query.trim();
-    const key = makeKey();
-    setRows((current) => [...current, { key, emoji: seed ? guessEmoji(seed) : '🍽️', name: seed, quantity: '1', unit: '', note: '' }]);
-    setActiveKey(key);
-    setQuery('');
+    if (!seed) return;
+    setCreating(true);
+    setError('');
+    try {
+      const ingredient = await onCreateIngredient({ categoryId: CUSTOM_CATEGORY_ID, name: seed, emoji: guessEmoji(seed) });
+      addCatalogIngredient(ingredient);
+      setQuery('');
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setCreating(false);
+    }
   }
 
   function removeRow(key: string) {
@@ -165,6 +194,7 @@ function EditorForm({ item, categoryName, onSubmit, onClose }: EditorFormProps) 
     const ingredients: MenuItemIngredientInput[] = rows
       .filter((row) => row.name.trim())
       .map((row) => ({
+        ingredientId: row.ingredientId,
         emoji: row.emoji || null,
         name: row.name.trim(),
         quantity: row.quantity.trim() || null,
@@ -201,7 +231,6 @@ function EditorForm({ item, categoryName, onSubmit, onClose }: EditorFormProps) 
       </DialogHeader>
 
       <ModalBody className="space-y-6">
-        {/* Dish identity — big title, calm price row */}
         <div className="space-y-3">
           <input
             value={name}
@@ -237,7 +266,6 @@ function EditorForm({ item, categoryName, onSubmit, onClose }: EditorFormProps) 
           </div>
         </div>
 
-        {/* What's in the dish — tappable pills */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-[var(--ui-text)]">I rätten</h3>
@@ -274,7 +302,6 @@ function EditorForm({ item, categoryName, onSubmit, onClose }: EditorFormProps) 
             </div>
           )}
 
-          {/* Adjuster for the tapped ingredient — steppers + unit chips, no typing needed */}
           {activeRow ? (
             <div className="space-y-3 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface-subtle)] p-3">
               <div className="flex items-center gap-2">
@@ -347,41 +374,46 @@ function EditorForm({ item, categoryName, onSubmit, onClose }: EditorFormProps) 
           ) : null}
         </section>
 
-        {/* Palette — tap to add */}
+        {/* Catalog picker — tap to add from the shared ingredient library */}
         <section className="space-y-3">
           <div className="flex items-center gap-2 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3">
             <Search size={16} className="shrink-0 text-[var(--ui-text-muted)]" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Sök ingrediens…"
+              placeholder="Sök bland alla ingredienser…"
               aria-label="Sök ingrediens"
               className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[var(--ui-text)] placeholder:text-[var(--ui-text-muted)] focus:outline-none"
             />
-            <button type="button" onClick={addCustom} className="shrink-0 whitespace-nowrap rounded-full bg-[var(--ui-surface-subtle)] px-3 py-1 text-xs font-semibold text-[var(--ui-accent-active)] hover:bg-[var(--ui-surface-hover)]">
-              + Egen
-            </button>
+            {query.trim() ? (
+              <button type="button" disabled={creating} onClick={addCustom} className="shrink-0 whitespace-nowrap rounded-full bg-[var(--ui-accent-subtle)] px-3 py-1 text-xs font-semibold text-[var(--ui-accent-active)] hover:bg-[var(--ui-surface-hover)] disabled:opacity-60">
+                {creating ? 'Lägger till…' : `+ Lägg till “${query.trim()}”`}
+              </button>
+            ) : null}
           </div>
 
           {matches ? (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {matches.map((ingredient) => (
-                <PaletteTile key={`${ingredient.emoji}-${ingredient.name}`} ingredient={ingredient} onAdd={addIngredient} />
-              ))}
-              {matches.length === 0 ? (
-                <button type="button" onClick={addCustom} className="col-span-full rounded-[var(--ui-radius-md)] border border-dashed border-[var(--ui-border)] px-4 py-3 text-sm text-[var(--ui-text-muted)] hover:bg-[var(--ui-surface-hover)]">
-                  Lägg till “{query.trim()}” som egen ingrediens
-                </button>
-              ) : null}
-            </div>
+            matches.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {matches.map((ingredient) => (
+                  <PaletteTile key={ingredient.id} ingredient={ingredient} onAdd={addCatalogIngredient} />
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-[var(--ui-radius-md)] border border-dashed border-[var(--ui-border)] px-4 py-3 text-center text-sm text-[var(--ui-text-muted)]">
+                Hittade ingen träff — tryck “+ Lägg till” för att spara den som egen ingrediens.
+              </p>
+            )
           ) : (
             <div className="space-y-4">
-              {INGREDIENT_PALETTE.map((group) => (
-                <div key={group.label} className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">{group.label}</p>
+              {groups.map((group) => (
+                <div key={group.category.id} className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">
+                    {group.category.emoji ? `${group.category.emoji} ` : ''}{group.category.name}
+                  </p>
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                     {group.items.map((ingredient) => (
-                      <PaletteTile key={`${ingredient.emoji}-${ingredient.name}`} ingredient={ingredient} onAdd={addIngredient} />
+                      <PaletteTile key={ingredient.id} ingredient={ingredient} onAdd={addCatalogIngredient} />
                     ))}
                   </div>
                 </div>
@@ -390,7 +422,6 @@ function EditorForm({ item, categoryName, onSubmit, onClose }: EditorFormProps) 
           )}
         </section>
 
-        {/* Optional description */}
         <div className="space-y-1.5">
           <label htmlFor="item-desc" className="text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">Beskrivning för gästen (valfritt)</label>
           <textarea
@@ -418,14 +449,14 @@ function EditorForm({ item, categoryName, onSubmit, onClose }: EditorFormProps) 
   );
 }
 
-function PaletteTile({ ingredient, onAdd }: { ingredient: PaletteIngredient; onAdd: (emoji: string, name: string, unit: string) => void }) {
+function PaletteTile({ ingredient, onAdd }: { ingredient: CatalogIngredient; onAdd: (ingredient: CatalogIngredient) => void }) {
   return (
     <button
       type="button"
-      onClick={() => onAdd(ingredient.emoji, ingredient.name, ingredient.unit ?? '')}
+      onClick={() => onAdd(ingredient)}
       className="flex flex-col items-center gap-1 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2.5 text-center transition-colors hover:border-[var(--ui-accent-border)] hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
     >
-      <span className="text-2xl leading-none">{ingredient.emoji}</span>
+      <span className="text-2xl leading-none">{ingredient.emoji ?? guessEmoji(ingredient.name)}</span>
       <span className="text-xs leading-tight text-[var(--ui-text)]">{ingredient.name}</span>
     </button>
   );

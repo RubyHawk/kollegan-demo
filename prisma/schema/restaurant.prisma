@@ -2,6 +2,47 @@
 // Tenant-owned restaurant website content and simple booking requests.
 // Table prefix: rst_*
 
+// Shared ingredient catalog. Categories are a global reference table; ingredients
+// are global (organizationId NULL = seeded library shared by every tenant) or
+// tenant-custom (organizationId set). Dishes reference catalog entries by id but
+// also snapshot emoji/name/unit on the menu item for stable display.
+model IngredientCategory {
+  id        String   @id // stable slug used as primary key, e.g. "vegetables"
+  name      String
+  emoji     String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  ingredients Ingredient[]
+
+  @@map("rst_ingredient_categories")
+}
+
+model Ingredient {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  organizationId String? // NULL = global seeded catalog; set = tenant-custom
+  categoryId     String
+  slug           String
+  name           String
+  emoji          String?
+  defaultUnit    String?
+  aliases        String[]  @default([]) // synonyms (incl. english) for search
+  allergens      String[]  @default([]) // EU allergen codes
+  isActive       Boolean   @default(true)
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
+  deletedAt      DateTime?
+
+  category     IngredientCategory @relation(fields: [categoryId], references: [id])
+  organization Organization?      @relation(fields: [organizationId], references: [id])
+
+  @@index([categoryId])
+  @@index([organizationId])
+  @@index([name])
+  @@map("rst_ingredients")
+}
+
 model RestaurantMenuCategory {
   id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
   organizationId String

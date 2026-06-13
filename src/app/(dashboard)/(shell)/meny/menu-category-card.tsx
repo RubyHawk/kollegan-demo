@@ -9,7 +9,10 @@ import { InlineAlert } from '@shared/ui/inline-alert';
 import { ConfirmDestructiveDialog } from '@shared/ui/confirm-destructive-dialog';
 import { EditIcon, PlusIcon, TrashIcon } from '@shared/ui/icons';
 import type {
+  CatalogIngredient,
+  CreateIngredientPayload,
   CreateMenuItemPayload,
+  IngredientCatalog,
   RestaurantMenuCategory,
   UpdateMenuCategoryPayload,
   UpdateMenuItemPayload,
@@ -19,6 +22,8 @@ import { MenuItemEditorDialog, type MenuItemDraft } from './menu-item-editor-dia
 
 interface MenuCategoryCardProps {
   category: RestaurantMenuCategory;
+  catalog: IngredientCatalog;
+  onCreateIngredient: (payload: CreateIngredientPayload) => Promise<CatalogIngredient>;
   onUpdateCategory: (id: string, payload: UpdateMenuCategoryPayload) => Promise<void>;
   onDeleteCategory: (id: string) => Promise<void>;
   onCreateItem: (categoryId: string, payload: Omit<CreateMenuItemPayload, 'categoryId'>) => Promise<void>;
@@ -28,6 +33,8 @@ interface MenuCategoryCardProps {
 
 export function MenuCategoryCard({
   category,
+  catalog,
+  onCreateIngredient,
   onUpdateCategory,
   onDeleteCategory,
   onCreateItem,
@@ -123,6 +130,8 @@ export function MenuCategoryCard({
               key={item.id}
               item={item}
               categoryName={category.name}
+              catalog={catalog}
+              onCreateIngredient={onCreateIngredient}
               onUpdate={onUpdateItem}
               onDelete={onDeleteItem}
             />
@@ -139,6 +148,8 @@ export function MenuCategoryCard({
         open={addOpen}
         onOpenChange={setAddOpen}
         categoryName={category.name}
+        catalog={catalog}
+        onCreateIngredient={onCreateIngredient}
         onSubmit={addItem}
       />
 
