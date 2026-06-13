@@ -32,54 +32,51 @@ export function ReservationForm() {
     }
   }
 
-  const inputClass = 'h-11 rounded-md border border-[#211f1c]/20 bg-white px-3 text-base text-[#211f1c] outline-none focus:ring-2 focus:ring-[#f4d06f]';
-  const labelClass = 'grid gap-1 text-sm font-bold text-[#211f1c]';
-
   return (
-    <form onSubmit={onSubmit} className="grid gap-3 rounded-lg border border-[#211f1c]/10 bg-white p-4 shadow-sm">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className={labelClass}>
+    <form onSubmit={onSubmit} className="fluffy-card fluffy-form">
+      <div className="fluffy-form__grid">
+        <label className="fluffy-field">
           Namn
-          <input name="guestName" required className={inputClass} />
+          <input name="guestName" required className="fluffy-input" autoComplete="name" />
         </label>
-        <label className={labelClass}>
+        <label className="fluffy-field">
           Antal
-          <input name="partySize" required type="number" min={1} max={40} defaultValue={2} className={inputClass} />
+          <input name="partySize" required type="number" min={1} max={40} defaultValue={2} className="fluffy-input" />
         </label>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className={labelClass}>
+      <div className="fluffy-form__grid">
+        <label className="fluffy-field">
           Datum
-          <input name="date" required type="date" className={inputClass} />
+          <input name="date" required type="date" className="fluffy-input" />
         </label>
-        <label className={labelClass}>
+        <label className="fluffy-field">
           Tid
-          <input name="time" required type="time" defaultValue="19:00" className={inputClass} />
+          <input name="time" required type="time" defaultValue="19:00" className="fluffy-input" />
         </label>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className={labelClass}>
+      <div className="fluffy-form__grid">
+        <label className="fluffy-field">
           E-post
-          <input name="guestEmail" type="email" className={inputClass} />
+          <input name="guestEmail" type="email" className="fluffy-input" autoComplete="email" />
         </label>
-        <label className={labelClass}>
+        <label className="fluffy-field">
           Telefon
-          <input name="guestPhone" className={inputClass} />
+          <input name="guestPhone" className="fluffy-input" autoComplete="tel" />
         </label>
       </div>
-      <label className={labelClass}>
+      <label className="fluffy-field">
         Meddelande
-        <textarea name="message" rows={3} className="rounded-md border border-[#211f1c]/20 bg-white px-3 py-2 text-base text-[#211f1c] outline-none focus:ring-2 focus:ring-[#f4d06f]" />
+        <textarea name="message" rows={3} className="fluffy-input" />
       </label>
       <button
         type="submit"
         disabled={status === 'saving'}
-        className="h-11 rounded-md bg-[#211f1c] px-4 text-sm font-black text-white transition hover:bg-[#bf4f2f] disabled:opacity-60"
+        className="fluffy-button fluffy-button--dark"
       >
         {status === 'saving' ? 'Skickar...' : 'Skicka bokningsförfrågan'}
       </button>
-      {status === 'sent' ? <p role="status" className="text-sm font-bold text-[#2f7d52]">Förfrågan är skickad. Vi återkommer med bekräftelse.</p> : null}
-      {status === 'error' ? <p role="alert" className="text-sm font-bold text-[#a33a2f]">{error || 'Det gick inte att skicka förfrågan.'}</p> : null}
+      {status === 'sent' ? <p role="status" className="fluffy-success">Förfrågan är skickad. Vi återkommer med bekräftelse.</p> : null}
+      {status === 'error' ? <p role="alert" className="fluffy-error">{error || 'Det gick inte att skicka förfrågan.'}</p> : null}
     </form>
   );
 }

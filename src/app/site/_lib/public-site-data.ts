@@ -26,6 +26,16 @@ const FALLBACK_SITE: PublicRestaurantSite = {
   events: [],
 };
 
+const FLUFFYS_MARK_PATH = '/fluffys/favicon.svg';
+
+function iconSet(path: string): Metadata['icons'] {
+  return {
+    icon: path,
+    shortcut: path,
+    apple: path,
+  };
+}
+
 export const DAY_LABELS: Record<number, string> = {
   1: 'Måndag',
   2: 'Tisdag',
@@ -57,6 +67,7 @@ export async function siteMetadata(titleSuffix?: string): Promise<Metadata> {
   return {
     title: titleSuffix ? `${titleSuffix} | ${title}` : title,
     description: site.settings.seoDescription ?? site.settings.heroSubtitle ?? undefined,
+    icons: iconSet(FLUFFYS_MARK_PATH),
     alternates: {
       canonical: titleSuffix ? `https://fluffys.se/${titleSuffix.toLowerCase().replace(/\s+/g, '-')}` : 'https://fluffys.se',
     },

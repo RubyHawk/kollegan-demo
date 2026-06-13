@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import localFont from 'next/font/local';
 import './globals.css';
 import { Providers } from './providers';
@@ -12,15 +13,45 @@ import {
 } from './(dashboard)/(shell)/installningar/_components/theme-data';
 import { THEME_COOKIE_KEYS, THEME_COOKIE_MAX_AGE, THEME_STORAGE_KEYS } from '@shared/lib/theme-preferences';
 
-export const metadata: Metadata = {
-  title: BRAND_NAME,
-  description: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
-  icons: {
-    icon: BRAND_MARK_PATH,
-    shortcut: BRAND_MARK_PATH,
-    apple: BRAND_MARK_PATH,
-  },
-};
+const FLUFFYS_MARK_PATH = '/fluffys/favicon.svg';
+
+function iconSet(path: string): Metadata['icons'] {
+  return {
+    icon: path,
+    shortcut: path,
+    apple: path,
+  };
+}
+
+function normalizeHost(host: string | null) {
+  return (host ?? '').split(':')[0]?.toLowerCase() ?? '';
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const host = normalizeHost((await headers()).get('host'));
+
+  if (host === 'portal.fluffys.se') {
+    return {
+      title: "Fluffy's Portal",
+      description: "Fluffy's arbetsyta för bokningar, personal, närvaro och webbplats.",
+      icons: iconSet(FLUFFYS_MARK_PATH),
+    };
+  }
+
+  if (host === 'fluffys.se' || host === 'www.fluffys.se') {
+    return {
+      title: "Fluffy's",
+      description: "Fluffy's i Laxå - subs, pizza, panini, wraps och takeaway.",
+      icons: iconSet(FLUFFYS_MARK_PATH),
+    };
+  }
+
+  return {
+    title: BRAND_NAME,
+    description: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
+    icons: iconSet(BRAND_MARK_PATH),
+  };
+}
 
 const defaultTheme = THEMES.find((theme) => theme.id === DEFAULT_THEME_ID) ?? THEMES[0];
 const themePayload = {
