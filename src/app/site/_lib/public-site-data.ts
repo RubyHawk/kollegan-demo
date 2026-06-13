@@ -36,6 +36,31 @@ function iconSet(path: string): Metadata['icons'] {
   };
 }
 
+function publicSiteHosts(value = process.env.PUBLIC_SITE_HOSTS ?? 'fluffys.se') {
+  return value
+    .split(',')
+    .map((host) => host.trim().split(':')[0]?.toLowerCase())
+    .filter(Boolean);
+}
+
+function normalizeHost(host: string | null) {
+  return (host ?? '').split(':')[0]?.toLowerCase() ?? '';
+}
+
+export function isPrettyPublicSiteHost(host: string | null, hosts?: string) {
+  return publicSiteHosts(hosts).includes(normalizeHost(host));
+}
+
+export async function getPublicSiteRoutePrefix() {
+  const headerStore = await headers();
+  return isPrettyPublicSiteHost(headerStore.get('host')) ? '' : '/site';
+}
+
+export function publicSiteHref(routePrefix: string, path: '/' | `/${string}`) {
+  if (path === '/') return routePrefix || '/';
+  return `${routePrefix}${path}`;
+}
+
 export const DAY_LABELS: Record<number, string> = {
   1: 'Måndag',
   2: 'Tisdag',

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { MenuList } from './_components/menu-list';
 import { OpeningHours } from './_components/opening-hours';
 import { SiteShell } from './_components/site-shell';
-import { getSiteData, siteMetadata } from './_lib/public-site-data';
+import { getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from './_lib/public-site-data';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,10 +12,11 @@ export async function generateMetadata() {
 
 export default async function PublicHomePage() {
   const { site, isFallback } = await getSiteData();
+  const routePrefix = await getPublicSiteRoutePrefix();
   const menuPreview = site.categories.slice(0, 4);
 
   return (
-    <SiteShell site={site} isFallback={isFallback}>
+    <SiteShell site={site} isFallback={isFallback} routePrefix={routePrefix}>
       <section className="fluffy-hero">
         <div className="fluffy-shell fluffy-hero__inner">
           <div className="fluffy-hero__copy fluffy-rise">
@@ -23,10 +24,10 @@ export default async function PublicHomePage() {
             <h1 className="fluffy-title">{site.settings.heroTitle}</h1>
             {site.settings.heroSubtitle ? <p className="fluffy-lede">{site.settings.heroSubtitle}</p> : null}
             <div className="fluffy-actions">
-              <Link href="/meny" className="fluffy-button">
+              <Link href={publicSiteHref(routePrefix, '/meny')} className="fluffy-button">
                 Se menyn
               </Link>
-              <Link href="/boka" className="fluffy-button fluffy-button--ghost">
+              <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-button fluffy-button--ghost">
                 Boka bord
               </Link>
             </div>
@@ -62,7 +63,7 @@ export default async function PublicHomePage() {
               <span>Wraps</span>
             </div>
             <p>
-              <Link href="/meny" className="fluffy-link">
+              <Link href={publicSiteHref(routePrefix, '/meny')} className="fluffy-link">
                 Visa hela menyn
               </Link>
             </p>

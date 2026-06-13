@@ -1,23 +1,25 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { PublicRestaurantSite } from '@modules/supporting/restaurant-menu';
-import { addressLine } from '../_lib/public-site-data';
+import { addressLine, publicSiteHref } from '../_lib/public-site-data';
 
-const NAV = [
-  { href: '/meny', label: 'Meny' },
-  { href: '/om-oss', label: 'Om oss' },
-  { href: '/kontakt', label: 'Kontakt' },
-  { href: '/boka', label: 'Boka' },
+const NAV: Array<{ path: `/${string}`; label: string }> = [
+  { path: '/meny', label: 'Meny' },
+  { path: '/om-oss', label: 'Om oss' },
+  { path: '/kontakt', label: 'Kontakt' },
+  { path: '/boka', label: 'Boka' },
 ];
 
 export function SiteShell({
   site,
   children,
   isFallback = false,
+  routePrefix = '',
 }: {
   site: PublicRestaurantSite;
   children: ReactNode;
   isFallback?: boolean;
+  routePrefix?: string;
 }) {
   const address = addressLine(site);
 
@@ -25,13 +27,13 @@ export function SiteShell({
     <main className="fluffy-public">
       <header className="fluffy-header">
         <div className="fluffy-shell fluffy-header__inner">
-          <Link href="/" className="fluffy-brand">
+          <Link href={publicSiteHref(routePrefix, '/')} className="fluffy-brand">
             <span className="fluffy-brand__mark">sub</span>
             <span>{site.settings.siteName}</span>
           </Link>
           <nav className="fluffy-nav" aria-label="Huvudnavigation">
             {NAV.map((item) => (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.path} href={publicSiteHref(routePrefix, item.path)}>
                 {item.label}
               </Link>
             ))}

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { OpeningHours } from '../_components/opening-hours';
 import { SiteShell } from '../_components/site-shell';
-import { addressLine, getSiteData, siteMetadata } from '../_lib/public-site-data';
+import { addressLine, getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from '../_lib/public-site-data';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,10 +11,11 @@ export async function generateMetadata() {
 
 export default async function PublicContactPage() {
   const { site, isFallback } = await getSiteData();
+  const routePrefix = await getPublicSiteRoutePrefix();
   const address = addressLine(site);
 
   return (
-    <SiteShell site={site} isFallback={isFallback}>
+    <SiteShell site={site} isFallback={isFallback} routePrefix={routePrefix}>
       <section className="fluffy-page-hero">
         <div className="fluffy-shell fluffy-grid fluffy-grid--contact">
           <div className="fluffy-copy fluffy-rise">
@@ -22,10 +23,10 @@ export default async function PublicContactPage() {
             <h1 className="fluffy-page-title">Öppettider, takeaway och bord.</h1>
             <p>Hör av dig om du vill boka, fråga om menyn eller bara dubbelkolla när köket är öppet.</p>
             <div className="fluffy-actions">
-              <Link href="/boka" className="fluffy-button fluffy-button--dark">
+              <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-button fluffy-button--dark">
                 Boka bord
               </Link>
-              <Link href="/meny" className="fluffy-button">
+              <Link href={publicSiteHref(routePrefix, '/meny')} className="fluffy-button">
                 Se menyn
               </Link>
             </div>
