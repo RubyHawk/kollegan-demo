@@ -15,22 +15,43 @@
 .fluffy-scribble__shadow {
   stroke: var(--fp-orange);
   stroke-width: 4.8;
-  opacity: 0.42;
+  opacity: 0.54;
 }
 
 .fluffy-scribble__ink {
   stroke: currentColor;
-  stroke-width: 4.2;
+  stroke-width: 5.2;
 }
 
 .fluffy-nav__scribble {
   position: absolute;
-  right: -6px;
-  bottom: -1px;
-  left: -6px;
-  width: calc(100% + 12px);
-  height: 15px;
+  right: -10px;
+  bottom: -3px;
+  left: -10px;
+  width: calc(100% + 20px);
+  height: 18px;
   color: var(--fp-orange);
+}
+
+.fluffy-nav a::after {
+  content: "";
+  position: absolute;
+  right: -7px;
+  bottom: 0;
+  left: -7px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--fp-orange);
+  opacity: 0;
+  transform: scaleX(0.18) rotate(-1deg);
+  transform-origin: left center;
+}
+
+.fluffy-nav a:hover::after,
+.fluffy-nav a:focus-visible::after {
+  opacity: 0.52;
+  transform: scaleX(1) rotate(-1deg);
+  transition: opacity 140ms ease, transform 360ms var(--fp-ease);
 }
 
 .fluffy-nav a:hover .fluffy-nav__scribble path,
@@ -40,9 +61,9 @@
 }
 
 .fluffy-title__scribble {
-  width: min(78%, 560px);
-  height: 21px;
-  margin-top: -2px;
+  width: min(82%, 520px);
+  height: 24px;
+  margin-top: -6px;
   color: var(--fp-purple);
 }
 

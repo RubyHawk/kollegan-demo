@@ -10,6 +10,17 @@
   background-size: 26px 26px, auto, auto, auto;
 }
 
+.fluffy-landing::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(91deg, transparent 0 0, rgba(9, 8, 7, 0.03) 42%, transparent 66%),
+    repeating-linear-gradient(178deg, transparent 0 34px, rgba(9, 8, 7, 0.022) 35px 36px);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
 .fluffy-landing::after {
   content: "";
   position: absolute;
@@ -25,10 +36,10 @@
   position: relative;
   z-index: 1;
   display: grid;
-  min-height: 660px;
+  min-height: 640px;
   align-items: center;
-  gap: 58px;
-  padding-block: 44px 30px;
+  gap: 38px;
+  padding-block: 42px 28px;
 }
 
 .fluffy-landing__copy {
@@ -37,57 +48,90 @@
   max-width: 670px;
 }
 
+.fluffy-landing__copy .fluffy-eyebrow {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.fluffy-landing__copy .fluffy-eyebrow::after {
+  content: "";
+  width: clamp(86px, 12vw, 180px);
+  height: 9px;
+  background:
+    linear-gradient(90deg, transparent 0 14px, var(--fp-orange) 14px 16px, transparent 16px 30px),
+    linear-gradient(90deg, var(--fp-purple), var(--fp-purple));
+  background-position: 0 1px, 0 5px;
+  background-size: 30px 5px, 100% 2px;
+  background-repeat: repeat-x, no-repeat;
+  transform: rotate(-1deg);
+}
+
 .fluffy-ticket-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(168px, 1fr));
-  gap: 18px;
-  margin-top: 26px;
-  max-width: 660px;
+  grid-template-columns: minmax(174px, 0.9fr) minmax(166px, 0.74fr) minmax(176px, 0.8fr);
+  gap: 0;
+  margin-top: 24px;
+  max-width: 640px;
   align-items: end;
 }
 
 .fluffy-ticket {
   position: relative;
   isolation: isolate;
-  min-height: 174px;
+  min-height: 162px;
   border: 1px solid rgba(9, 8, 7, 0.24);
   border-radius: 5px;
   background:
+    radial-gradient(circle at 0 15px, transparent 0 7px, rgba(9, 8, 7, 0.16) 7.5px 8px, transparent 8.5px) left top / 15px 32px repeat-y,
+    radial-gradient(circle at 100% 15px, transparent 0 7px, rgba(9, 8, 7, 0.16) 7.5px 8px, transparent 8.5px) right top / 15px 32px repeat-y,
     linear-gradient(92deg, transparent 0 8px, rgba(82, 26, 147, 0.14) 8px 9px, transparent 9px calc(100% - 9px), rgba(82, 26, 147, 0.14) calc(100% - 9px) calc(100% - 8px), transparent calc(100% - 8px)),
     radial-gradient(circle at 12px 12px, rgba(9, 8, 7, 0.055) 0 1px, transparent 1.6px),
     linear-gradient(180deg, #fbf1df, #f2e2c9);
-  background-size: auto, 18px 18px, auto;
+  background-size: 15px 32px, 15px 32px, auto, 18px 18px, auto;
   box-shadow: 0 18px 22px rgba(9, 8, 7, 0.11), 0 1px 0 rgba(255, 250, 240, 0.8) inset;
-  clip-path: polygon(0 7%, 3% 4%, 0 0, 100% 0, 97% 4%, 100% 7%, 100% 93%, 97% 96%, 100% 100%, 0 100%, 3% 96%, 0 93%);
-  padding: 22px 24px;
+  clip-path: polygon(0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px));
+  padding: 20px 20px;
 }
 
 .fluffy-ticket::before {
   content: "";
   position: absolute;
-  top: -2px;
+  top: -4px;
   left: 50%;
   z-index: 5;
-  width: 82px;
-  height: 22px;
-  background: rgba(173, 149, 113, 0.42);
+  width: 92px;
+  height: 25px;
+  background:
+    linear-gradient(90deg, transparent 0 8px, rgba(255, 255, 255, 0.18) 8px 10px, transparent 10px 18px),
+    rgba(173, 149, 113, 0.45);
+  background-size: 18px 100%, auto;
   box-shadow: 0 1px 0 rgba(255, 250, 240, 0.34) inset;
   transform: translateX(-50%) rotate(-2deg);
 }
 
 .fluffy-ticket--quick {
+  z-index: 3;
   transform: rotate(-1.2deg);
 }
 
 .fluffy-ticket--orange {
   background:
+    radial-gradient(circle at 0 15px, transparent 0 7px, rgba(9, 8, 7, 0.18) 7.5px 8px, transparent 8.5px) left top / 15px 32px repeat-y,
+    radial-gradient(circle at 100% 15px, transparent 0 7px, rgba(9, 8, 7, 0.18) 7.5px 8px, transparent 8.5px) right top / 15px 32px repeat-y,
     radial-gradient(circle at 11px 11px, rgba(9, 8, 7, 0.08) 0 1.2px, transparent 1.8px),
     linear-gradient(180deg, #f79b06, var(--fp-orange));
   color: var(--fp-ink);
+  z-index: 4;
+  margin-left: -8px;
+  min-height: 178px;
   transform: rotate(1.1deg);
 }
 
 .fluffy-ticket--parking {
+  z-index: 2;
+  margin-left: -10px;
   transform: rotate(1.4deg);
 }
 
@@ -121,13 +165,21 @@
   text-shadow: 0.8px 0 0 rgba(82, 26, 147, 0.18);
 }
 
+.fluffy-ticket--parking h2 {
+  font-size: clamp(1.04rem, 1.24vw, 1.25rem);
+}
+
+.fluffy-ticket--parking {
+  padding-inline: 18px;
+}
+
 .fluffy-ticket--orange h2 {
   color: var(--fp-ink);
 }
 
 .fluffy-ticket p,
 .fluffy-ticket li {
-  margin: 9px 0 0;
+  margin: 8px 0 0;
   color: rgba(9, 8, 7, 0.78);
   font-size: 0.84rem;
   font-weight: 800;
@@ -136,7 +188,7 @@
 
 .fluffy-ticket ul {
   display: grid;
-  gap: 5px;
+  gap: 4px;
   list-style: none;
   margin: 11px 0 0;
   padding: 0;
@@ -163,7 +215,7 @@
 
 .fluffy-ticket strong {
   display: block;
-  margin-top: 12px;
+  margin-top: 10px;
   border: 3px solid rgba(9, 8, 7, 0.92);
   background: rgba(9, 8, 7, 0.08);
   color: var(--fp-ink);
@@ -239,7 +291,7 @@
 
 @media (min-width: 980px) {
   .fluffy-landing__grid {
-    grid-template-columns: minmax(0, 0.96fr) minmax(460px, 1.04fr);
+    grid-template-columns: minmax(0, 0.78fr) minmax(560px, 1.22fr);
   }
 }
 
@@ -257,6 +309,12 @@
 
   .fluffy-ticket-row {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .fluffy-ticket--orange,
+  .fluffy-ticket--parking {
+    margin-left: 0;
   }
 
   .fluffy-ticket {
