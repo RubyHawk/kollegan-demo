@@ -1,0 +1,109 @@
+.fluffy-scribble {
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.fluffy-scribble path {
+  fill: none;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fluffy-scribble__shadow {
+  stroke: var(--fp-orange);
+  stroke-width: 4.8;
+  opacity: 0.42;
+}
+
+.fluffy-scribble__ink {
+  stroke: currentColor;
+  stroke-width: 4.2;
+}
+
+.fluffy-nav__scribble {
+  position: absolute;
+  right: -6px;
+  bottom: -1px;
+  left: -6px;
+  width: calc(100% + 12px);
+  height: 15px;
+  color: var(--fp-orange);
+}
+
+.fluffy-nav a:hover .fluffy-nav__scribble path,
+.fluffy-nav a:focus-visible .fluffy-nav__scribble path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 420ms var(--fp-ease);
+}
+
+.fluffy-title__scribble {
+  width: min(78%, 560px);
+  height: 21px;
+  margin-top: -2px;
+  color: var(--fp-purple);
+}
+
+.fluffy-title__scribble path {
+  animation: fluffy-draw-stroke 760ms var(--fp-ease) 220ms both;
+}
+
+.fluffy-ticket::after,
+.fluffy-menu-ticket::after,
+.fluffy-gluten-ticket::after,
+.fluffy-sub-ticket::after {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  z-index: 4;
+  border: 1px dashed rgba(82, 26, 147, 0.42);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.fluffy-ticket .fluffy-ticket__stamp {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  background: var(--fp-ink);
+  color: var(--fp-white);
+  font-family: var(--fluffy-display-font);
+  font-size: 0.86rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1;
+  padding: 8px 12px 7px;
+  text-transform: uppercase;
+  transform: rotate(-1deg);
+}
+
+.fluffy-ticket--orange .fluffy-ticket__stamp {
+  color: var(--fp-white);
+}
+
+@keyframes fluffy-draw-stroke {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fluffy-title__scribble path {
+    animation: none;
+    stroke-dashoffset: 0;
+    transition: none;
+  }
+
+  .fluffy-nav a:hover .fluffy-nav__scribble path,
+  .fluffy-nav a:focus-visible .fluffy-nav__scribble path {
+    transition: none;
+  }
+}

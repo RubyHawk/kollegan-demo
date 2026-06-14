@@ -1,5 +1,6 @@
 import './fluffys-public.css';
 import './fluffys-public-type.css';
+import './fluffys-public-texture.css';
 import './fluffys-public-header.css';
 import './fluffys-public-home.css';
 import './fluffys-public-collage.css';
