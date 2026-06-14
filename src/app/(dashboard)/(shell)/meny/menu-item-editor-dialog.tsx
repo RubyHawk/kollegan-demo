@@ -21,9 +21,10 @@ import type {
   RestaurantMenuItem,
 } from '@shared/lib/api/restaurant.api';
 import { parsePriceCents, priceToInput } from './menu-utils';
-import { COMMON_UNITS, guessEmoji } from './menu-ingredient-palette';
+import { PRIMARY_UNITS, POPULAR_INGREDIENTS, guessEmoji } from './menu-ingredient-palette';
 
 const CUSTOM_CATEGORY_ID = 'other';
+const POPULAR_TAB = '__popular__';
 
 const SIZE_PRESETS: Array<{ name: string; labels: string[] }> = [
   { name: 'S / M / L', labels: ['S', 'M', 'L'] },
@@ -127,6 +128,8 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
   const [description, setDescription] = useState(item?.description ?? '');
   const [rows, setRows] = useState<DraftIngredient[]>(() => toDraftRows(item));
   const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>(POPULAR_TAB);
+  const [noteOpenKey, setNoteOpenKey] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -134,17 +137,32 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
 
   const activeRow = rows.find((row) => row.key === activeKey) ?? null;
 
-  const groups = useMemo(() => {
-    const byCategory = new Map<string, CatalogIngredient[]>();
+  const byCategory = useMemo(() => {
+    const map = new Map<string, CatalogIngredient[]>();
     for (const ingredient of catalog.ingredients) {
-      const list = byCategory.get(ingredient.categoryId) ?? [];
+      const list = map.get(ingredient.categoryId) ?? [];
       list.push(ingredient);
-      byCategory.set(ingredient.categoryId, list);
+      map.set(ingredient.categoryId, list);
     }
-    return catalog.categories
-      .map((category) => ({ category, items: byCategory.get(category.id) ?? [] }))
-      .filter((group) => group.items.length > 0);
+    return map;
   }, [catalog]);
+
+  const popular = useMemo(() => {
+    const byName = new Map(catalog.ingredients.map((ingredient) => [ingredient.name.toLowerCase(), ingredient] as const));
+    return POPULAR_INGREDIENTS
+      .map((name) => byName.get(name.toLowerCase()))
+      .filter((ingredient): ingredient is CatalogIngredient => Boolean(ingredient));
+  }, [catalog]);
+
+  // One tab per non-empty category, with a curated "Populära" tab first — so the
+  // picker shows ~20 tiles at a time instead of the entire 1000+ catalog.
+  const tabs = useMemo(() => {
+    const withItems = catalog.categories.filter((category) => (byCategory.get(category.id)?.length ?? 0) > 0);
+    return [
+      ...(popular.length > 0 ? [{ id: POPULAR_TAB, name: 'Populära', emoji: '⭐' }] : []),
+      ...withItems.map((category) => ({ id: category.id, name: category.name, emoji: category.emoji })),
+    ];
+  }, [catalog, byCategory, popular]);
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -280,9 +298,16 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
     }
   }
 
-  const unitOptions = activeRow && activeRow.unit && !COMMON_UNITS.includes(activeRow.unit)
-    ? [activeRow.unit, ...COMMON_UNITS]
-    : COMMON_UNITS;
+  const unitOptions = activeRow && activeRow.unit && !PRIMARY_UNITS.includes(activeRow.unit)
+    ? [activeRow.unit, ...PRIMARY_UNITS]
+    : PRIMARY_UNITS;
+
+  const currentTab = tabs.find((tab) => tab.id === activeCategory) ?? tabs[0] ?? null;
+  const browseTiles = !currentTab
+    ? []
+    : currentTab.id === POPULAR_TAB
+      ? popular
+      : byCategory.get(currentTab.id) ?? [];
 
   return (
     <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
@@ -291,7 +316,7 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
         <DialogDescription>{categoryName}</DialogDescription>
       </DialogHeader>
 
-      <ModalBody className="space-y-7">
+      <ModalBody className="space-y-6">
         {/* ── Namn ── */}
         <input
           value={name}
@@ -495,13 +520,24 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
                 </div>
               </div>
 
-              <input
-                value={activeRow.note}
-                onChange={(e) => patchRow(activeRow.key, { note: e.target.value })}
-                placeholder="Anteckning, t.ex. färsk eller fryst (valfritt)"
-                aria-label="Anteckning"
-                className="w-full rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2 text-sm text-[var(--ui-text)] placeholder:text-[var(--ui-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
-              />
+              {activeRow.note.trim() || noteOpenKey === activeRow.key ? (
+                <input
+                  value={activeRow.note}
+                  onChange={(e) => patchRow(activeRow.key, { note: e.target.value })}
+                  placeholder="Anteckning, t.ex. färsk eller fryst"
+                  aria-label="Anteckning"
+                  autoFocus={noteOpenKey === activeRow.key}
+                  className="w-full rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2 text-sm text-[var(--ui-text)] placeholder:text-[var(--ui-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setNoteOpenKey(activeRow.key)}
+                  className="self-start text-xs font-semibold text-[var(--ui-accent-active)] hover:underline"
+                >
+                  + Anteckning
+                </button>
+              )}
             </div>
           ) : null}
 
@@ -524,30 +560,43 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
 
           {matches ? (
             matches.length > 0 ? (
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
                 {matches.map((ingredient) => (
                   <PaletteTile key={ingredient.id} ingredient={ingredient} onAdd={addCatalogIngredient} />
                 ))}
               </div>
             ) : (
-              <p className="rounded-[var(--ui-radius-md)] border border-dashed border-[var(--ui-border)] px-4 py-3 text-center text-sm text-[var(--ui-text-muted)]">
+              <p className="rounded-[var(--ui-radius-lg)] border border-dashed border-[var(--ui-border)] px-4 py-3 text-center text-sm text-[var(--ui-text-muted)]">
                 Hittade ingen träff — tryck “+ Lägg till” för att spara den som egen ingrediens.
               </p>
             )
           ) : (
-            <div className="space-y-4">
-              {groups.map((group) => (
-                <div key={group.category.id} className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--ui-text-muted)]">
-                    {group.category.emoji ? `${group.category.emoji} ` : ''}{group.category.name}
-                  </p>
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                    {group.items.map((ingredient) => (
-                      <PaletteTile key={ingredient.id} ingredient={ingredient} onAdd={addCatalogIngredient} />
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div className="space-y-3">
+              <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+                {tabs.map((tab) => {
+                  const selected = currentTab?.id === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveCategory(tab.id)}
+                      className={[
+                        'shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                        selected
+                          ? 'border-[var(--ui-accent)] bg-[var(--ui-accent)] text-[var(--ui-text-inverse)]'
+                          : 'border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-hover)]',
+                      ].join(' ')}
+                    >
+                      {tab.emoji ? `${tab.emoji} ` : ''}{tab.name}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                {browseTiles.map((ingredient) => (
+                  <PaletteTile key={ingredient.id} ingredient={ingredient} onAdd={addCatalogIngredient} />
+                ))}
+              </div>
             </div>
           )}
         </section>
@@ -592,10 +641,10 @@ function PaletteTile({ ingredient, onAdd }: { ingredient: CatalogIngredient; onA
     <button
       type="button"
       onClick={() => onAdd(ingredient)}
-      className="flex flex-col items-center gap-1 rounded-[var(--ui-radius-md)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2.5 text-center transition-colors hover:border-[var(--ui-accent-border)] hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
+      className="flex min-h-[68px] flex-col items-center justify-center gap-1 rounded-[var(--ui-radius-lg)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2 text-center transition-colors hover:border-[var(--ui-accent-border)] hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]"
     >
       <span className="text-2xl leading-none">{ingredient.emoji ?? guessEmoji(ingredient.name)}</span>
-      <span className="text-xs leading-tight text-[var(--ui-text)]">{ingredient.name}</span>
+      <span className="line-clamp-2 text-[11px] leading-tight text-[var(--ui-text)]">{ingredient.name}</span>
     </button>
   );
 }
