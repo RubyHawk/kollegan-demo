@@ -52,11 +52,12 @@
   left: 5%;
   z-index: 3;
   display: grid;
-  grid-template-columns: minmax(108px, 0.68fr) minmax(128px, 1fr);
-  align-items: center;
+  grid-template-columns: minmax(120px, 1fr) minmax(88px, 0.6fr);
+  align-items: start;
   width: 47%;
-  height: 184px;
-  padding: 14px 12px 12px 14px;
+  height: auto;
+  min-height: 220px;
+  padding: 14px 12px 14px 14px;
   transform: rotate(-3deg);
 }
 
@@ -66,17 +67,18 @@
   right: 0;
   z-index: 4;
   display: grid;
-  grid-template-columns: minmax(108px, 0.78fr) minmax(108px, 1fr);
-  align-items: center;
+  grid-template-columns: minmax(120px, 1fr) minmax(88px, 0.6fr);
+  align-items: start;
   width: 42%;
-  height: 184px;
-  padding: 14px 12px 12px 14px;
+  height: auto;
+  min-height: 220px;
+  padding: 14px 12px 14px 14px;
   transform: rotate(4deg);
 }
 
-/* Italian Duo sub cutout — lower right */
+/* Italian Duo sub cutout — level with the sign */
 .fluffy-cutout--sub {
-  top: 292px;
+  top: 245px;
   right: 2%;
   z-index: 6;
   width: 39%;
@@ -195,6 +197,69 @@
   transform-origin: 88% 28%;
 }
 
+/* Ingredient dot list — from portal item.ingredients */
+.fluffy-cutout__ingredients {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.fluffy-cutout__ingredients li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fp-ink);
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.fluffy-cutout__ingredients li::before {
+  content: "";
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.fluffy-cutout__ingredients li[data-dot="green"]::before  { background: #3e8c3e; }
+.fluffy-cutout__ingredients li[data-dot="yellow"]::before { background: #e8c426; }
+.fluffy-cutout__ingredients li[data-dot="purple"]::before { background: var(--fp-purple); }
+.fluffy-cutout__ingredients li[data-dot="orange"]::before { background: var(--fp-orange); }
+.fluffy-cutout__ingredients li[data-dot="red"]::before    { background: #c0392b; }
+.fluffy-cutout__ingredients li[data-dot="gray"]::before   { background: #aaa; }
+
+/* S / M / L price row — from portal item.tags */
+.fluffy-cutout__prices {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(9, 8, 7, 0.12);
+}
+
+.fluffy-cutout__prices span {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  color: var(--fp-red);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.04rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.fluffy-cutout__prices abbr {
+  color: var(--fp-ink);
+  font-size: 0.6rem;
+  font-weight: 950;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
 /* SUBS / PIZZA sign — horizontal black bar */
 .fluffy-collage-sign {
   position: absolute;
@@ -306,6 +371,18 @@
   line-height: 0.95;
 }
 
+.fluffy-gluten-ticket__cta {
+  display: block;
+  margin-top: 4px;
+  color: var(--fp-orange);
+  font-family: var(--fluffy-display-font);
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 @media (max-width: 760px) {
   .fluffy-collage {
     min-height: 480px;
@@ -316,10 +393,14 @@
     left: 2%;
     width: 58%;
     height: 150px;
+    min-height: auto;
     grid-template-columns: minmax(96px, 0.7fr) minmax(100px, 1fr);
+    align-items: center;
   }
 
-  .fluffy-cutout--taco small {
+  .fluffy-cutout--taco small,
+  .fluffy-cutout__ingredients,
+  .fluffy-cutout__prices {
     display: none;
   }
 

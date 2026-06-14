@@ -21,9 +21,16 @@
 .fluffy-menu-band .fluffy-menu-preview {
   border-radius: 0;
   background: transparent;
+  margin-block: 0;
 }
 
-.fluffy-menu-band .fluffy-menu-preview__intro p,
+.fluffy-menu-band .fluffy-menu-preview__intro p {
+  color: var(--fp-white);
+  font-family: var(--fluffy-display-font);
+  font-size: clamp(3.2rem, 6vw, 6.4rem);
+  line-height: 0.88;
+}
+
 .fluffy-menu-band .fluffy-menu-preview__item strong {
   color: var(--fp-white);
 }
