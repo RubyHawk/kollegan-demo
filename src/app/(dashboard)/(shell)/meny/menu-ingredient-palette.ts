@@ -102,6 +102,21 @@ export const INGREDIENT_PALETTE: PaletteGroup[] = [
 /** Tappable unit chips shown when adjusting an ingredient. */
 export const COMMON_UNITS = ['g', 'hg', 'dl', 'cl', 'msk', 'tsk', 'st', 'skiva', 'klick', 'nypa'];
 
+/** The handful of units staff reach for most — the picker shows only these as chips. */
+export const PRIMARY_UNITS = ['g', 'st', 'skiva', 'dl', 'msk', 'tsk'];
+
+/**
+ * Common picks surfaced under a "Populära" tab so the most-used ingredients are
+ * one tap instead of scrolling the full 1000+ catalog. Matched by name against
+ * the live catalog; anything missing is simply skipped.
+ */
+export const POPULAR_INGREDIENTS = [
+  'Mozzarella', 'Cheddar', 'Parmesan', 'Fetaost', 'Skinka', 'Bacon', 'Salami',
+  'Kycklingfilé', 'Tonfisk', 'Räkor', 'Champinjoner', 'Tomat', 'Röd lök',
+  'Vitlök', 'Röd paprika', 'Jalapeño', 'Gröna oliver', 'Ananas', 'Ruccola',
+  'Basilika', 'Pesto', 'Vitlökssås',
+];
+
 const NAME_EMOJI = new Map<string, string>(
   INGREDIENT_PALETTE.flatMap((group) => group.items.map((item) => [item.name.toLowerCase(), item.emoji] as const)),
 );
