@@ -20,7 +20,7 @@ import type {
   MenuItemIngredientInput,
   RestaurantMenuItem,
 } from '@shared/lib/api/restaurant.api';
-import { isPriceTag, parsePriceCents, parseVariantTag, priceToInput } from './menu-utils';
+import { MENU_BADGES, isPriceTag, parsePriceCents, parseVariantTag, priceToInput } from './menu-utils';
 import { PRIMARY_UNITS, POPULAR_INGREDIENTS, guessEmoji } from './menu-ingredient-palette';
 
 const CUSTOM_CATEGORY_ID = 'other';
@@ -119,8 +119,10 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
   const [priceMode, setPriceMode] = useState<PriceMode>(() => (item?.tags.some(isPriceTag) ? 'sizes' : 'single'));
   const [singlePrice, setSinglePrice] = useState(priceToInput(item?.priceCents ?? null));
   const [sizes, setSizes] = useState<SizeRow[]>(() => toSizeRows(item));
-  // Non-price tags (e.g. "Glutenfri") carry through untouched so editing never drops them.
-  const [badgeTags] = useState<string[]>(() => (item?.tags ?? []).filter((tag) => !isPriceTag(tag)));
+  // Non-price tags (e.g. "Glutenfri") are first-class badges — editable, and
+  // kept separate from price variants so saving never drops a price or a label.
+  const [badges, setBadges] = useState<string[]>(() => (item?.tags ?? []).filter((tag) => !isPriceTag(tag)));
+  const [badgeInput, setBadgeInput] = useState('');
   const [description, setDescription] = useState(item?.description ?? '');
   const [rows, setRows] = useState<DraftIngredient[]>(() => toDraftRows(item));
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -187,6 +189,21 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
         .map((label) => ({ key: makeKey(), label, price: '' }));
       return [...current, ...additions];
     });
+  }
+
+  // ── Märkningar (badges) ────────────────────────────────────────────────────
+  function toggleBadge(label: string) {
+    setBadges((current) => (current.includes(label) ? current.filter((b) => b !== label) : [...current, label]));
+  }
+  function addCustomBadge() {
+    const value = badgeInput.trim();
+    if (!value) return;
+    if (isPriceTag(value)) {
+      setError('En märkning kan inte sluta med ett pris.');
+      return;
+    }
+    setBadges((current) => (current.includes(value) ? current : [...current, value]));
+    setBadgeInput('');
   }
 
   // ── Ingredients ──────────────────────────────────────────────────────────
@@ -260,7 +277,7 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
     }
 
     let priceCents: number | null = null;
-    let tags: string[] = [...badgeTags];
+    let tags: string[] = [...badges];
     if (priceMode === 'single') {
       priceCents = parsePriceCents(singlePrice);
     } else {
@@ -270,7 +287,7 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
           const price = size.price.trim();
           return price ? `${size.label.trim()} ${price}` : size.label.trim();
         });
-      tags = [...sizeTags, ...badgeTags];
+      tags = [...sizeTags, ...badges];
     }
 
     const ingredients: MenuItemIngredientInput[] = rows
@@ -299,6 +316,7 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
     ? [activeRow.unit, ...PRIMARY_UNITS]
     : PRIMARY_UNITS;
 
+  const badgeChoices = Array.from(new Set([...MENU_BADGES, ...badges]));
   const currentTab = tabs.find((tab) => tab.id === activeCategory) ?? tabs[0] ?? null;
   const browseTiles = !currentTab
     ? []
@@ -417,6 +435,51 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
               </div>
             </div>
           )}
+        </section>
+
+        {/* ── Märkningar (badges) ── */}
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold text-[var(--ui-text)]">
+            Märkningar <span className="font-normal text-[var(--ui-text-muted)]">(valfritt)</span>
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            {badgeChoices.map((label) => {
+              const selected = badges.includes(label);
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => toggleBadge(label)}
+                  className={[
+                    'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                    selected
+                      ? 'border-[var(--ui-accent)] bg-[var(--ui-accent)] text-[var(--ui-text-inverse)]'
+                      : 'border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text-secondary)] hover:bg-[var(--ui-surface-hover)]',
+                  ].join(' ')}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              value={badgeInput}
+              onChange={(e) => setBadgeInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addCustomBadge();
+                }
+              }}
+              placeholder="Egen märkning…"
+              aria-label="Egen märkning"
+              className="h-9 min-w-0 flex-1 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 text-sm text-[var(--ui-text)] placeholder:text-[var(--ui-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] sm:max-w-[14rem]"
+            />
+            <Button type="button" variant="secondary" size="compact" disabled={!badgeInput.trim()} onClick={addCustomBadge}>
+              Lägg till
+            </Button>
+          </div>
         </section>
 
         {/* ── Innehåll (ingredients) ── */}

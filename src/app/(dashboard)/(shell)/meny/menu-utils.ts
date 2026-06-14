@@ -47,3 +47,8 @@ export function parseVariantTag(tag: string): { label: string; price: string } {
   if (match) return { label: match[1] ?? '', price: (match[2] ?? '').replace(/[:-]+$/, '') };
   return { label: tag.trim(), price: '' };
 }
+
+/** Common dietary/marketing badges offered as one-tap toggles in the editor. */
+export const MENU_BADGES = [
+  'Glutenfri', 'Laktosfri', 'Vegetarisk', 'Vegansk', 'Stark', 'Mild', 'Nyhet', 'Husets favorit',
+];

@@ -13,7 +13,7 @@ import type {
   RestaurantMenuItem,
   UpdateMenuItemPayload,
 } from '@shared/lib/api/restaurant.api';
-import { priceSummary } from './menu-utils';
+import { isPriceTag, priceSummary } from './menu-utils';
 import { guessEmoji } from './menu-ingredient-palette';
 import { MenuItemEditorDialog, type MenuItemDraft } from './menu-item-editor-dialog';
 
@@ -98,9 +98,9 @@ export function MenuItemRow({ item, categoryName, catalog, onCreateIngredient, o
         </ul>
       ) : null}
 
-      {item.tags.length > 0 ? (
+      {item.tags.some((tag) => !isPriceTag(tag)) ? (
         <div className="flex flex-wrap gap-1.5">
-          {item.tags.map((tag) => (
+          {item.tags.filter((tag) => !isPriceTag(tag)).map((tag) => (
             <span key={tag} className="rounded-[var(--ui-radius-sm)] border border-[var(--ui-border)] px-1.5 py-0.5 text-xs text-[var(--ui-text-muted)]">
               {tag}
             </span>
