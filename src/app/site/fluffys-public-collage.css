@@ -1,0 +1,341 @@
+.fluffy-collage {
+  position: relative;
+  min-height: 555px;
+  isolation: isolate;
+}
+
+.fluffy-collage::before {
+  content: "";
+  position: absolute;
+  inset: 42px 18px 30px 28px;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(82, 26, 147, 0.16), transparent 62%);
+  filter: blur(7px);
+}
+
+.fluffy-menu-ticket,
+.fluffy-gluten-ticket,
+.fluffy-sub-ticket,
+.fluffy-collage-sign {
+  position: absolute;
+  overflow: hidden;
+  border: 1px solid rgba(9, 8, 7, 0.25);
+  background: var(--fp-paper-strong);
+  box-shadow: var(--fp-shadow-card);
+}
+
+.fluffy-menu-ticket,
+.fluffy-gluten-ticket,
+.fluffy-sub-ticket {
+  border-radius: 6px;
+  background:
+    radial-gradient(circle at 13px 13px, rgba(9, 8, 7, 0.04) 0 1px, transparent 1.6px),
+    linear-gradient(180deg, #fffaf0, #f3e7d5);
+  background-size: 22px 22px, auto;
+  clip-path: polygon(0 9px, 9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px));
+}
+
+.fluffy-menu-ticket::before,
+.fluffy-sub-ticket::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 24%;
+  z-index: 3;
+  width: 92px;
+  height: 24px;
+  background: rgba(174, 147, 110, 0.38);
+  transform: rotate(-3deg);
+}
+
+.fluffy-menu-ticket {
+  display: block;
+  padding: 0;
+}
+
+.fluffy-gluten-ticket figcaption,
+.fluffy-sub-ticket figcaption {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fluffy-menu-ticket figcaption {
+  display: none;
+}
+
+.fluffy-menu-ticket span {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--fp-purple);
+  color: var(--fp-white);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.2rem;
+  font-weight: 950;
+}
+
+.fluffy-menu-ticket strong,
+.fluffy-gluten-ticket strong,
+.fluffy-sub-ticket strong {
+  color: var(--fp-ink);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.55rem;
+  font-weight: 950;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.fluffy-menu-ticket small,
+.fluffy-gluten-ticket small,
+.fluffy-sub-ticket small {
+  color: var(--fp-purple);
+  font-size: 0.74rem;
+  font-weight: 950;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.fluffy-menu-ticket em,
+.fluffy-gluten-ticket em,
+.fluffy-sub-ticket em {
+  color: var(--fp-red);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.6rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.fluffy-menu-ticket img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border-radius: 0;
+  object-fit: cover;
+  box-shadow: none;
+  transform: scale(1);
+  transform-origin: center;
+}
+
+.fluffy-menu-ticket--taco {
+  top: 8px;
+  left: 0;
+  z-index: 3;
+  width: 55%;
+  height: 246px;
+  transform: rotate(-4deg);
+}
+
+.fluffy-menu-ticket--taco img {
+  object-position: 25% 12%;
+  transform: scale(1.42);
+  transform-origin: 28% 8%;
+}
+
+.fluffy-menu-ticket--mix {
+  top: 24px;
+  right: 0;
+  z-index: 4;
+  width: 45%;
+  height: 238px;
+  transform: rotate(4deg);
+}
+
+.fluffy-menu-ticket--mix img {
+  object-position: 92% 12%;
+  transform: scale(1.58);
+  transform-origin: 100% 8%;
+}
+
+.fluffy-collage-sign {
+  top: 260px;
+  left: 13%;
+  z-index: 5;
+  display: flex;
+  min-height: 86px;
+  width: 66%;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border: 3px solid var(--fp-purple);
+  border-radius: 7px;
+  background: var(--fp-ink);
+  color: var(--fp-white);
+  box-shadow: 0 12px 30px rgba(9, 8, 7, 0.28), 0 0 0 3px rgba(242, 140, 0, 0.18) inset;
+  font-family: var(--fluffy-display-font);
+  font-size: clamp(1.9rem, 3vw, 3rem);
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+  transform: rotate(-1deg);
+}
+
+.fluffy-collage-sign span:first-child {
+  color: var(--fp-orange);
+}
+
+.fluffy-collage-sign img {
+  width: clamp(48px, 6vw, 68px);
+  height: clamp(48px, 6vw, 68px);
+}
+
+.fluffy-gluten-ticket {
+  top: 366px;
+  left: 7%;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 16px;
+  width: 54%;
+  min-height: 122px;
+  padding: 18px 20px;
+  transform: rotate(-2deg);
+}
+
+.fluffy-gluten-ticket > span {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  border: 4px solid var(--fp-orange);
+  border-radius: 50%;
+  background: var(--fp-ink);
+  color: var(--fp-orange);
+  font-size: 0.62rem;
+  font-weight: 950;
+  line-height: 1.05;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.fluffy-gluten-ticket strong {
+  font-size: 1.75rem;
+}
+
+.fluffy-gluten-ticket em {
+  color: var(--fp-purple);
+  font-size: 2.4rem;
+}
+
+.fluffy-sub-ticket {
+  top: 342px;
+  right: 2%;
+  z-index: 4;
+  width: 39%;
+  min-height: 188px;
+  padding: 16px 16px 8px;
+  transform: rotate(4deg);
+}
+
+.fluffy-sub-ticket img {
+  display: block;
+  width: 100%;
+  height: 116px;
+  object-fit: cover;
+  object-position: 9% 45%;
+  transform: scale(1.18);
+}
+
+.fluffy-sub-ticket strong {
+  font-size: 1.36rem;
+}
+
+.fluffy-sub-ticket em {
+  font-size: 1.45rem;
+}
+
+.fluffy-collage-arrow {
+  position: absolute;
+  top: 382px;
+  left: 2%;
+  color: var(--fp-purple);
+  font-family: var(--fluffy-display-font);
+  font-size: 2.3rem;
+  font-weight: 950;
+  transform: rotate(-12deg);
+}
+
+@media (max-width: 760px) {
+  .fluffy-collage {
+    min-height: 500px;
+  }
+
+  .fluffy-menu-ticket strong,
+  .fluffy-gluten-ticket strong,
+  .fluffy-sub-ticket strong {
+    font-size: 1.1rem;
+  }
+
+  .fluffy-menu-ticket small {
+    display: none;
+  }
+
+  .fluffy-menu-ticket img {
+    min-height: 0;
+  }
+
+  .fluffy-menu-ticket--taco {
+    left: 0;
+    width: 62%;
+    height: 166px;
+  }
+
+  .fluffy-menu-ticket--mix {
+    right: 0;
+    width: 54%;
+    height: 166px;
+  }
+
+  .fluffy-collage-sign {
+    top: 190px;
+    left: 7%;
+    min-height: 68px;
+    width: 86%;
+  }
+
+  .fluffy-collage-sign img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .fluffy-gluten-ticket {
+    top: 286px;
+    left: 0;
+    width: 62%;
+    min-height: 112px;
+    padding: 14px;
+  }
+
+  .fluffy-gluten-ticket > span {
+    width: 58px;
+    height: 58px;
+  }
+
+  .fluffy-gluten-ticket em {
+    font-size: 1.7rem;
+  }
+
+  .fluffy-sub-ticket {
+    top: 300px;
+    right: 0;
+    width: 52%;
+    min-height: 150px;
+    padding: 12px;
+  }
+
+  .fluffy-sub-ticket img {
+    height: 86px;
+  }
+
+  .fluffy-collage-arrow {
+    display: none;
+  }
+}

@@ -1,0 +1,93 @@
+.fluffy-eyebrow {
+  margin: 0;
+  color: var(--fp-purple);
+  font-family: var(--fluffy-display-font);
+  font-size: clamp(1rem, 1.5vw, 1.35rem);
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.fluffy-title,
+.fluffy-page-title {
+  position: relative;
+  margin: 8px 0 0;
+  color: var(--fp-ink);
+  font-family: var(--fluffy-display-font);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.fluffy-title {
+  max-width: 760px;
+  font-size: clamp(4.4rem, 8.4vw, 7.8rem);
+  line-height: 0.83;
+}
+
+.fluffy-landing .fluffy-title::after {
+  content: "";
+  display: block;
+  width: min(78%, 560px);
+  height: 9px;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: var(--fp-purple);
+  transform: skewX(-18deg);
+  transform-origin: left center;
+}
+
+.fluffy-page-title {
+  font-size: clamp(3.1rem, 5.8vw, 5rem);
+  line-height: 0.9;
+}
+
+.fluffy-lede {
+  max-width: 560px;
+  color: rgba(9, 8, 7, 0.86);
+  font-size: clamp(1rem, 1.45vw, 1.2rem);
+  font-weight: 750;
+  line-height: 1.48;
+}
+
+.fluffy-button {
+  display: inline-flex;
+  min-height: 60px;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border: 2px solid var(--fp-ink);
+  border-radius: var(--fp-radius-small);
+  color: var(--fp-ink);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.35rem;
+  font-weight: 950;
+  padding: 0 34px;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.fluffy-button svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2.8;
+}
+
+.fluffy-button:hover,
+.fluffy-button:focus-visible {
+  transform: translateY(-2px);
+}
+
+.fluffy-button--primary {
+  margin-top: 26px;
+  background: var(--fp-purple);
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 12px 22px rgba(82, 26, 147, 0.22);
+  color: #fff8ec;
+}
+
+.fluffy-button--primary:hover,
+.fluffy-button--primary:focus-visible {
+  background: var(--fp-orange);
+  color: var(--fp-ink);
+}

@@ -1,14 +1,20 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { MenuIcon } from 'lucide-react';
 import type { PublicRestaurantSite } from '@modules/supporting/restaurant-menu';
 import { addressLine, publicSiteHref } from '../_lib/public-site-data';
 
 const NAV: Array<{ path: `/${string}`; label: string }> = [
   { path: '/meny', label: 'Meny' },
-  { path: '/om-oss', label: 'Om oss' },
+  { path: '/#oppettider', label: 'Öppettider' },
+  { path: '/kontakt#parkering', label: 'Parkering' },
+  { path: '/kontakt', label: 'Hitta hit' },
   { path: '/kontakt', label: 'Kontakt' },
-  { path: '/boka', label: 'Boka' },
 ];
+
+function publicBrandName(siteName: string) {
+  return siteName.toLocaleLowerCase('sv-SE').includes('laxå') ? siteName : `${siteName} Laxå`;
+}
 
 export function SiteShell({
   site,
@@ -22,22 +28,45 @@ export function SiteShell({
   routePrefix?: string;
 }) {
   const address = addressLine(site);
+  const brandName = publicBrandName(site.settings.siteName);
 
   return (
     <main className="fluffy-public">
       <header className="fluffy-header">
         <div className="fluffy-shell fluffy-header__inner">
           <Link href={publicSiteHref(routePrefix, '/')} className="fluffy-brand">
-            <span className="fluffy-brand__mark">sub</span>
-            <span>{site.settings.siteName}</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/fluffys/favicon.svg" alt="" className="fluffy-brand__mark" />
+            <span className="fluffy-brand__text">
+              <strong>{brandName}</strong>
+              <small>Mat vid vägen</small>
+            </span>
           </Link>
           <nav className="fluffy-nav" aria-label="Huvudnavigation">
             {NAV.map((item) => (
-              <Link key={item.path} href={publicSiteHref(routePrefix, item.path)}>
+              <Link key={`${item.label}-${item.path}`} href={publicSiteHref(routePrefix, item.path)}>
                 {item.label}
               </Link>
             ))}
           </nav>
+          <div className="fluffy-header__actions">
+            <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-header__cta">
+              Beställ / Boka
+            </Link>
+            <details className="fluffy-header__menu">
+              <summary aria-label="Öppna meny">
+                <MenuIcon size={30} strokeWidth={2.25} />
+              </summary>
+              <nav className="fluffy-header__menu-panel" aria-label="Mobilnavigation">
+                {NAV.map((item) => (
+                  <Link key={`mobile-${item.label}-${item.path}`} href={publicSiteHref(routePrefix, item.path)}>
+                    {item.label}
+                  </Link>
+                ))}
+                <Link href={publicSiteHref(routePrefix, '/boka')}>Beställ / Boka</Link>
+              </nav>
+            </details>
+          </div>
         </div>
       </header>
 

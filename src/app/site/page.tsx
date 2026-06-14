@@ -1,8 +1,17 @@
 import Link from 'next/link';
-import { MenuList } from './_components/menu-list';
+import {
+  ArrowRightIcon,
+  CarFrontIcon,
+  CheckIcon,
+  Clock3Icon,
+  MapPinIcon,
+  ParkingCircleIcon,
+  TimerResetIcon,
+} from 'lucide-react';
+import { MenuCategoryPreview } from './_components/menu-list';
 import { OpeningHours } from './_components/opening-hours';
 import { SiteShell } from './_components/site-shell';
-import { getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from './_lib/public-site-data';
+import { addressLine, getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from './_lib/public-site-data';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,73 +19,171 @@ export async function generateMetadata() {
   return siteMetadata();
 }
 
+function todayHoursLabel(site: Awaited<ReturnType<typeof getSiteData>>['site']) {
+  const today = new Intl.DateTimeFormat('sv-SE', { weekday: 'short', timeZone: 'Europe/Stockholm' }).format(new Date());
+  const dayMap: Record<string, number> = {
+    mån: 1,
+    tis: 2,
+    ons: 3,
+    tors: 4,
+    fre: 5,
+    lör: 6,
+    sön: 7,
+  };
+  const todayNumber = dayMap[today.replace('.', '')] ?? 1;
+  const hour = site.openingHours.find((entry) => entry.dayOfWeek === todayNumber) ?? site.openingHours.find((entry) => !entry.isClosed);
+
+  if (!hour) return '10:00 - 22:00';
+  if (hour.isClosed) return hour.label ?? 'Stängt';
+  return [hour.opensAt, hour.closesAt].filter(Boolean).join(' - ') || 'Öppet idag';
+}
+
 export default async function PublicHomePage() {
   const { site, isFallback } = await getSiteData();
   const routePrefix = await getPublicSiteRoutePrefix();
-  const menuPreview = site.categories.slice(0, 4);
+  const hoursLabel = todayHoursLabel(site);
+  const address = addressLine(site) || 'Värgårdsvägen 6, 695 31 Laxå';
 
   return (
     <SiteShell site={site} isFallback={isFallback} routePrefix={routePrefix}>
-      <section className="fluffy-hero">
-        <div className="fluffy-shell fluffy-hero__inner">
-          <div className="fluffy-hero__copy fluffy-rise">
-            <p className="fluffy-eyebrow">Laxå · subs · pizza · takeaway</p>
-            <h1 className="fluffy-title">{site.settings.heroTitle}</h1>
-            {site.settings.heroSubtitle ? <p className="fluffy-lede">{site.settings.heroSubtitle}</p> : null}
-            <div className="fluffy-actions">
-              <Link href={publicSiteHref(routePrefix, '/meny')} className="fluffy-button">
-                Se menyn
-              </Link>
-              <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-button fluffy-button--ghost">
-                Boka bord
-              </Link>
-            </div>
-            <div className="fluffy-quick-facts" aria-label="Snabbinfo">
-              <span>Nybakat och snabbt</span>
-              <span>Lunch och kväll</span>
-              <span>Takeaway redo</span>
-            </div>
-          </div>
-
-          <div className="fluffy-hero__media fluffy-rise fluffy-delay-1">
-            <figure className="fluffy-board-card">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/fluffys/menu-board.svg"
-                alt="Fluffy's meny som grafisk menyboard"
-              />
-            </figure>
-          </div>
-        </div>
-      </section>
-
-      <section className="fluffy-section">
-        <div className="fluffy-shell fluffy-grid fluffy-grid--menu">
-          <div className="fluffy-copy fluffy-rise">
-            <p className="fluffy-eyebrow">Meny</p>
-            <h2 className="fluffy-page-title">Subs, pizza och favoriter för hela bordet.</h2>
-            {site.settings.about ? <p>{site.settings.about}</p> : null}
-            <div className="fluffy-proof-strip" aria-label="Menyhöjdpunkter">
-              <span>Subs</span>
-              <span>Pizza</span>
-              <span>Panini</span>
-              <span>Wraps</span>
-            </div>
-            <p>
-              <Link href={publicSiteHref(routePrefix, '/meny')} className="fluffy-link">
-                Visa hela menyn
-              </Link>
+      <section className="fluffy-landing">
+        <div className="fluffy-shell fluffy-landing__grid">
+          <div className="fluffy-landing__copy fluffy-rise">
+            <p className="fluffy-eyebrow">Fluffy&apos;s Laxå</p>
+            <h1 className="fluffy-title">Mat vid vägen</h1>
+            <p className="fluffy-lede">
+              Snabbt, gott och prisvärt för alla smaker och alla tillfällen. Bygg din favorit eller välj från våra klassiker.
             </p>
+
+            <div className="fluffy-ticket-row" aria-label="Snabbinfo">
+              <article className="fluffy-ticket fluffy-ticket--quick">
+                <div className="fluffy-ticket__head">
+                  <TimerResetIcon aria-hidden="true" />
+                  <h2>Snabbt stopp</h2>
+                </div>
+                <p>Fyll på energi och fortsätt resan.</p>
+                <ul>
+                  {['Välsmakande mat', 'Generösa portioner', 'Enkelt & snabbt', 'Gott pris'].map((item) => (
+                    <li key={item}>
+                      <CheckIcon aria-hidden="true" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+              <article className="fluffy-ticket fluffy-ticket--orange fluffy-ticket--hours">
+                <h2>Öppet</h2>
+                <p>Alla dagar</p>
+                <strong>{hoursLabel}</strong>
+              </article>
+              <article className="fluffy-ticket fluffy-ticket--parking">
+                <div className="fluffy-ticket__icons" aria-hidden="true">
+                  <ParkingCircleIcon />
+                  <CarFrontIcon />
+                </div>
+                <h2>Parkering</h2>
+                <p>Gratis parkering för bil, MC och lastbil.</p>
+                <Link href={publicSiteHref(routePrefix, '/kontakt#parkering')}>Hitta hit</Link>
+              </article>
+            </div>
+
+            <Link href={publicSiteHref(routePrefix, '/meny')} className="fluffy-button fluffy-button--primary">
+              Se menyn
+              <ArrowRightIcon aria-hidden="true" />
+            </Link>
           </div>
-          <MenuList categories={menuPreview.length > 0 ? menuPreview : site.categories} compact />
+
+          <div className="fluffy-collage fluffy-rise fluffy-delay-1" aria-label="Fluffy's menybilder">
+            <figure className="fluffy-menu-ticket fluffy-menu-ticket--taco">
+              <figcaption>
+                <span>19</span>
+                <strong>Tacokebab</strong>
+                <small>Välj mellan kebab / gyros / kyckling</small>
+                <em>89 / 149 / 239</em>
+              </figcaption>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
+            </figure>
+            <figure className="fluffy-menu-ticket fluffy-menu-ticket--mix">
+              <figcaption>
+                <span>21</span>
+                <strong>Pick&apos;n mix kebaben</strong>
+                <small>Sallad, tomat, gurka, feferoni, lök, sås</small>
+                <em>89 / 149 / 239</em>
+              </figcaption>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
+            </figure>
+            <div className="fluffy-collage-sign" aria-hidden="true">
+              <span>Subs</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/fluffys/favicon.svg" alt="" />
+              <span>Pizza</span>
+            </div>
+            <figure className="fluffy-gluten-ticket">
+              <span aria-hidden="true">Gluten free</span>
+              <figcaption>
+                <strong>Glutenfritt</strong>
+                <em>189:-</em>
+                <small>Samma goda pizzor, nu även på glutenfri botten.</small>
+              </figcaption>
+            </figure>
+            <figure className="fluffy-sub-ticket">
+              <figcaption>
+                <strong>Italian duo</strong>
+                <small>Peperoni, salami, ost, sallad</small>
+                <em>74 / 109</em>
+              </figcaption>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/fluffys/menu/subs-classic-board.jpg" alt="" />
+            </figure>
+            <span className="fluffy-collage-arrow" aria-hidden="true">-&gt;</span>
+          </div>
         </div>
       </section>
+
+      <section className="fluffy-info-strip" aria-label="Praktisk information" id="oppettider">
+        <div className="fluffy-shell fluffy-info-strip__inner">
+          <article>
+            <Clock3Icon aria-hidden="true" />
+            <div>
+              <h2>Öppet idag</h2>
+              <p>{hoursLabel}</p>
+            </div>
+          </article>
+          <article id="parkering">
+            <ParkingCircleIcon aria-hidden="true" />
+            <div>
+              <h2>Parkering</h2>
+              <p>Gratis parkering för bil, MC och lastbil</p>
+            </div>
+          </article>
+          <article>
+            <MapPinIcon aria-hidden="true" />
+            <div>
+              <h2>Hitta hit</h2>
+              <p>{address}</p>
+            </div>
+          </article>
+          <article>
+            <TimerResetIcon aria-hidden="true" />
+            <div>
+              <h2>Snabbt stopp</h2>
+              <p>Beställ, ät och fortsätt resan.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <div className="fluffy-shell">
+        <MenuCategoryPreview categories={site.categories} routePrefix={routePrefix} />
+      </div>
 
       <section className="fluffy-section fluffy-section--white">
         <div className="fluffy-shell fluffy-grid fluffy-grid--contact">
           <div className="fluffy-copy fluffy-rise">
-            <p className="fluffy-eyebrow">Öppet</p>
-            <h2 className="fluffy-page-title">Kom förbi eller beställ takeaway.</h2>
+            <p className="fluffy-eyebrow">Öppettider</p>
+            <h2 className="fluffy-page-title">Kom förbi när du är på väg.</h2>
             <p>Öppettiderna hämtas från restaurangen och uppdateras när teamet ändrar dem i portalen.</p>
           </div>
           <OpeningHours hours={site.openingHours} />
