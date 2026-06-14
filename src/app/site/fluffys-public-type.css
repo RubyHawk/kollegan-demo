@@ -24,16 +24,9 @@
   line-height: 0.83;
 }
 
-.fluffy-landing .fluffy-title::after {
-  content: "";
+.fluffy-title > span {
   display: block;
-  width: min(78%, 560px);
-  height: 9px;
-  margin-top: 10px;
-  border-radius: 999px;
-  background: var(--fp-purple);
-  transform: skewX(-18deg);
-  transform-origin: left center;
+  text-shadow: 1px 0 0 rgba(9, 8, 7, 0.2), -1px 1px 0 rgba(9, 8, 7, 0.08);
 }
 
 .fluffy-page-title {

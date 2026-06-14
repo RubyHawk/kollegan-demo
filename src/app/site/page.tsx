@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { MenuCategoryPreview } from './_components/menu-list';
 import { OpeningHours } from './_components/opening-hours';
+import { ScribbleStroke } from './_components/scribble-stroke';
 import { SiteShell } from './_components/site-shell';
 import { addressLine, getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from './_lib/public-site-data';
 
@@ -50,7 +51,10 @@ export default async function PublicHomePage() {
         <div className="fluffy-shell fluffy-landing__grid">
           <div className="fluffy-landing__copy fluffy-rise">
             <p className="fluffy-eyebrow">Fluffy&apos;s Laxå</p>
-            <h1 className="fluffy-title">Mat vid vägen</h1>
+            <h1 className="fluffy-title">
+              <span>Mat vid vägen</span>
+              <ScribbleStroke className="fluffy-title__scribble" />
+            </h1>
             <p className="fluffy-lede">
               Snabbt, gott och prisvärt för alla smaker och alla tillfällen. Bygg din favorit eller välj från våra klassiker.
             </p>
@@ -73,10 +77,11 @@ export default async function PublicHomePage() {
               </article>
               <article className="fluffy-ticket fluffy-ticket--orange fluffy-ticket--hours">
                 <h2>Öppet</h2>
-                <p>Alla dagar</p>
+                <p className="fluffy-ticket__stamp">Alla dagar</p>
                 <strong>{hoursLabel}</strong>
               </article>
               <article className="fluffy-ticket fluffy-ticket--parking">
+                <span className="fluffy-ticket__stamp">Gratis</span>
                 <div className="fluffy-ticket__icons" aria-hidden="true">
                   <ParkingCircleIcon />
                   <CarFrontIcon />
@@ -101,8 +106,10 @@ export default async function PublicHomePage() {
                 <small>Välj mellan kebab / gyros / kyckling</small>
                 <em>89 / 149 / 239</em>
               </figcaption>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
+              <span className="fluffy-menu-ticket__photo" aria-hidden="true">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
+              </span>
             </figure>
             <figure className="fluffy-menu-ticket fluffy-menu-ticket--mix">
               <figcaption>
@@ -111,8 +118,10 @@ export default async function PublicHomePage() {
                 <small>Sallad, tomat, gurka, feferoni, lök, sås</small>
                 <em>89 / 149 / 239</em>
               </figcaption>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
+              <span className="fluffy-menu-ticket__photo" aria-hidden="true">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
+              </span>
             </figure>
             <div className="fluffy-collage-sign" aria-hidden="true">
               <span>Subs</span>

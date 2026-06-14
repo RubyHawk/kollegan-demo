@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { MenuIcon } from 'lucide-react';
 import type { PublicRestaurantSite } from '@modules/supporting/restaurant-menu';
 import { addressLine, publicSiteHref } from '../_lib/public-site-data';
+import { ScribbleStroke } from './scribble-stroke';
 
 const NAV: Array<{ path: `/${string}`; label: string }> = [
   { path: '/meny', label: 'Meny' },
@@ -45,7 +46,8 @@ export function SiteShell({
           <nav className="fluffy-nav" aria-label="Huvudnavigation">
             {NAV.map((item) => (
               <Link key={`${item.label}-${item.path}`} href={publicSiteHref(routePrefix, item.path)}>
-                {item.label}
+                <span>{item.label}</span>
+                <ScribbleStroke className="fluffy-nav__scribble" />
               </Link>
             ))}
           </nav>

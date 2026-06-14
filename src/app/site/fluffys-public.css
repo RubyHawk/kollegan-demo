@@ -128,30 +128,16 @@ body:has(.fluffy-public) {
 
 .fluffy-nav a {
   position: relative;
+  display: inline-grid;
   flex: 0 0 auto;
   color: inherit;
   padding: 10px 0;
   text-decoration: none;
 }
 
-.fluffy-nav a::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  bottom: 5px;
-  left: 0;
-  height: 3px;
-  border-radius: 999px;
-  background: var(--fp-orange);
-  opacity: 0;
-  transform: scaleX(0.4);
-  transition: opacity 160ms ease, transform 160ms ease;
-}
-
-.fluffy-nav a:hover::after,
-.fluffy-nav a:focus-visible::after {
-  opacity: 1;
-  transform: scaleX(1);
+.fluffy-nav a span {
+  position: relative;
+  z-index: 1;
 }
 
 .fluffy-header__actions {
