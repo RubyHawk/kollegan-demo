@@ -1,3 +1,33 @@
+/* Dark menu-preview band on homepage */
+.fluffy-menu-band {
+  position: relative;
+  background: var(--fp-ink);
+  padding-block: 36px 48px;
+}
+
+.fluffy-menu-band::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: 0;
+  width: 100%;
+  height: 14px;
+  background:
+    radial-gradient(circle at 50% 0, transparent 9px, var(--fp-ink) 9.5px)
+    0 0 / 20px 14px repeat-x;
+  pointer-events: none;
+}
+
+.fluffy-menu-band .fluffy-menu-preview {
+  border-radius: 0;
+  background: transparent;
+}
+
+.fluffy-menu-band .fluffy-menu-preview__intro p,
+.fluffy-menu-band .fluffy-menu-preview__item strong {
+  color: var(--fp-white);
+}
+
 .fluffy-landing {
   position: relative;
   overflow: clip;
@@ -241,9 +271,9 @@
   position: relative;
   z-index: 3;
   margin-top: -1px;
-  background: var(--fp-paper);
+  background: var(--fp-ink);
   color: var(--fp-white);
-  padding-block: 10px 14px;
+  padding-block: 0;
 }
 
 .fluffy-info-strip__inner {
@@ -251,10 +281,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1px;
   overflow: hidden;
-  border: 2px solid rgba(82, 26, 147, 0.82);
-  border-radius: 10px;
-  background: rgba(255, 250, 240, 0.14);
-  box-shadow: 0 16px 32px rgba(9, 8, 7, 0.14);
+  background: rgba(255, 250, 240, 0.08);
 }
 
 .fluffy-info-strip article {

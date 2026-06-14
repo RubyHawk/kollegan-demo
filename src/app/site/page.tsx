@@ -99,54 +99,45 @@ export default async function PublicHomePage() {
           </div>
 
           <div className="fluffy-collage fluffy-rise fluffy-delay-1" aria-label="Fluffy's menybilder">
-            <div className="fluffy-collage-board">
-              <div className="fluffy-board-heading">
-                <span>Dagens</span>
-                <strong>Pizzor &amp; subs</strong>
-                <small>Snabbt stopp i Laxå</small>
-              </div>
-              <div className="fluffy-board-clippings">
-                <figure className="fluffy-menu-ticket fluffy-menu-ticket--taco">
-                  <figcaption>
-                    <span>19</span>
-                    <strong>Tacokebab</strong>
-                    <small>Välj mellan kebab / gyros / kyckling</small>
-                    <em>89 / 149 / 239</em>
-                  </figcaption>
-                  <span className="fluffy-menu-ticket__photo" aria-hidden="true">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
-                  </span>
-                </figure>
-                <figure className="fluffy-menu-ticket fluffy-menu-ticket--mix">
-                  <figcaption>
-                    <span>21</span>
-                    <strong>Pick&apos;n mix kebaben</strong>
-                    <small>Sallad, tomat, gurka, feferoni, lök, sås</small>
-                    <em>89 / 149 / 239</em>
-                  </figcaption>
-                  <span className="fluffy-menu-ticket__photo" aria-hidden="true">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
-                  </span>
-                </figure>
-              </div>
-              <div className="fluffy-collage-sign" aria-hidden="true">
-                <span>Subs</span>
+            <figure className="fluffy-cutout fluffy-cutout--taco">
+              <figcaption>
+                <span>19</span>
+                <strong>Tacokebab</strong>
+                <small>Välj mellan kebab / gyros / kyckling</small>
+                <em>89 / 149 / 239</em>
+              </figcaption>
+              <span className="fluffy-cutout__photo" aria-hidden="true">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/fluffys/favicon.svg" alt="" />
-                <span>Pizza</span>
-              </div>
-              <figure className="fluffy-gluten-ticket">
-                <span aria-hidden="true">Gluten free</span>
-                <figcaption>
-                  <strong>Glutenfritt</strong>
-                  <em>189:-</em>
-                  <small>Samma goda pizzor, nu även på glutenfri botten.</small>
-                </figcaption>
-              </figure>
+                <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
+              </span>
+            </figure>
+            <figure className="fluffy-cutout fluffy-cutout--mix">
+              <figcaption>
+                <span>21</span>
+                <strong>Pick&apos;n mix kebaben</strong>
+                <small>Sallad, tomat, gurka, feferoni, lök, sås</small>
+                <em>89 / 149 / 239</em>
+              </figcaption>
+              <span className="fluffy-cutout__photo" aria-hidden="true">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
+              </span>
+            </figure>
+            <div className="fluffy-collage-sign" aria-hidden="true">
+              <span>Subs</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/fluffys/favicon.svg" alt="" />
+              <span>Pizza</span>
             </div>
-            <figure className="fluffy-sub-ticket">
+            <figure className="fluffy-gluten-ticket">
+              <span aria-hidden="true">Gluten free</span>
+              <figcaption>
+                <strong>Glutenfritt</strong>
+                <em>189:-</em>
+                <small>Samma goda pizzor, nu även på glutenfri botten.</small>
+              </figcaption>
+            </figure>
+            <figure className="fluffy-cutout fluffy-cutout--sub">
               <figcaption>
                 <strong>Italian duo</strong>
                 <small>Peperoni, salami, ost, sallad</small>
@@ -155,7 +146,6 @@ export default async function PublicHomePage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/fluffys/menu/subs-classic-board.jpg" alt="" />
             </figure>
-            <span className="fluffy-collage-arrow" aria-hidden="true">-&gt;</span>
           </div>
         </div>
       </section>
@@ -193,9 +183,11 @@ export default async function PublicHomePage() {
         </div>
       </section>
 
-      <div className="fluffy-shell">
-        <MenuCategoryPreview categories={site.categories} routePrefix={routePrefix} />
-      </div>
+      <section className="fluffy-menu-band">
+        <div className="fluffy-shell">
+          <MenuCategoryPreview categories={site.categories} routePrefix={routePrefix} />
+        </div>
+      </section>
 
       <section className="fluffy-section fluffy-section--white">
         <div className="fluffy-shell fluffy-grid fluffy-grid--contact">
