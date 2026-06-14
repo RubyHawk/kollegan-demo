@@ -15,6 +15,24 @@ export interface PublicSiteSettingsView {
   seoDescription: string | null;
 }
 
+export interface MenuItemIngredient {
+  ingredientId: string | null;
+  emoji: string | null;
+  name: string;
+  quantity: string | null;
+  unit: string | null;
+  note: string | null;
+}
+
+export interface MenuItemIngredientInput {
+  ingredientId?: string | null;
+  emoji?: string | null;
+  name: string;
+  quantity?: string | null;
+  unit?: string | null;
+  note?: string | null;
+}
+
 export interface RestaurantMenuItemView {
   id: string;
   categoryId: string;
@@ -25,6 +43,7 @@ export interface RestaurantMenuItemView {
   imageUrl: string | null;
   allergens: string[];
   tags: string[];
+  ingredients: MenuItemIngredient[];
   isAvailable: boolean;
   sortOrder: number;
 }
@@ -101,6 +120,28 @@ export interface CreateMenuItemInput {
   imageUrl?: string | null;
   allergens?: string[];
   tags?: string[];
+  ingredients?: MenuItemIngredientInput[];
+  isAvailable?: boolean;
+  sortOrder?: number;
+}
+
+export interface UpdateMenuCategoryInput {
+  name?: string;
+  description?: string | null;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateMenuItemInput {
+  categoryId?: string;
+  name?: string;
+  description?: string | null;
+  priceCents?: number | null;
+  currency?: string;
+  imageUrl?: string | null;
+  allergens?: string[];
+  tags?: string[];
+  ingredients?: MenuItemIngredientInput[];
   isAvailable?: boolean;
   sortOrder?: number;
 }

@@ -73,6 +73,12 @@ export interface User {
 export interface ShellBrand {
   name: string;
   isPlatform: boolean;
+  /**
+   * Resolved portal brand key (e.g. 'platform', 'fluffys'). Surfaced on the
+   * shell root as `data-brand` so a tenant skin can re-point the `--ui-*`
+   * tokens for that tenant only, leaving other hosts byte-for-byte unchanged.
+   */
+  key?: string;
 }
 
 export interface SidebarProps {

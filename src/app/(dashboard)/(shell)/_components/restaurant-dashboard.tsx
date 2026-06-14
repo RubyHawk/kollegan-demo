@@ -1,5 +1,5 @@
+import Image from 'next/image';
 import Link from 'next/link';
-import { PageHeader } from '@shared/ui/page-header';
 import { Panel } from '@shared/ui/panel';
 import { KpiStrip } from '@shared/ui/kpi-strip';
 import { StatusBadge } from '@shared/ui/status-badge';
@@ -123,6 +123,17 @@ function formatClock(value: string) {
   }).format(new Date(value));
 }
 
+function stockholmLongDate(date: Date) {
+  const formatted = new Intl.DateTimeFormat('sv-SE', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: RESTAURANT_TIME_ZONE,
+  }).format(date);
+
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
 export async function RestaurantDashboard({
   organizationId,
   userId,
@@ -190,14 +201,37 @@ export async function RestaurantDashboard({
   const overdueTasks = openTasks.filter((task) => task.dueAt && new Date(task.dueAt).getTime() < now.getTime());
   const taskPreview = openTasks.slice(0, 4);
   const schedulePreview = scheduledToday.filter((shift) => shift.status !== 'cancelled').slice(0, 4);
+  const dateLabel = stockholmLongDate(now);
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <PageHeader
-        eyebrow="Restaurangportal"
-        title="Dagens drift"
-        description="Snabb överblick över bemanning, öppettider, meny och dagens viktigaste arbetsflöden."
-      />
+      <header className="relative overflow-hidden rounded-[var(--ui-radius-panel)] border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 md:p-6">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--ui-accent-subtle)] via-transparent to-transparent"
+        />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <Image
+              src="/fluffys/favicon.svg"
+              alt=""
+              width={48}
+              height={48}
+              className="h-12 w-12 shrink-0 rounded-[12px] shadow-sm"
+            />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--ui-accent-active)]">
+                Fluffy’s · Personalportal
+              </p>
+              <h1 className="text-2xl font-semibold leading-tight text-[var(--ui-text)]">Dagens drift</h1>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--ui-text-muted)]">
+                Snabb överblick över bemanning, öppettider, meny och dagens viktigaste arbetsflöden.
+              </p>
+            </div>
+          </div>
+          <p className="shrink-0 text-sm font-medium text-[var(--ui-text-secondary)]">{dateLabel}</p>
+        </div>
+      </header>
 
       <KpiStrip
         items={[

@@ -62,6 +62,45 @@ export function BrandLockup({
   );
 }
 
+/** Per-tenant logo assets, keyed by resolved portal brand key. */
+const TENANT_BRAND_MARKS: Record<string, string> = {
+  fluffys: '/fluffys/favicon.svg',
+};
+
+/**
+ * Shell brand mark resolver. Prefers a tenant logo asset (e.g. Fluffy's),
+ * falls back to a generated letter mark for other tenants, and the platform
+ * mark for the platform brand.
+ */
+export function OrgBrandMark({
+  brandKey,
+  name,
+  isPlatform,
+  size = 26,
+  className,
+}: {
+  brandKey?: string;
+  name?: string;
+  isPlatform?: boolean;
+  size?: number;
+  className?: string;
+}) {
+  const asset = brandKey ? TENANT_BRAND_MARKS[brandKey] : undefined;
+  if (asset) {
+    return (
+      <Image
+        src={asset}
+        alt=""
+        width={size}
+        height={size}
+        className={cn('rounded-[7px] object-contain', className)}
+      />
+    );
+  }
+  if (!isPlatform && name) return <OrgLetterMark name={name} size={size} className={className} />;
+  return <BrandMark size={size} alt="" className={className} />;
+}
+
 /** Letter-based mark for tenant organizations without a dedicated logo asset. */
 export function OrgLetterMark({
   name,

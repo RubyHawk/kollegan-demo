@@ -1,7 +1,9 @@
-import { prisma } from '@platform/database/prisma';
+import { prisma, Prisma } from '@platform/database/prisma';
 import type {
   CreateMenuCategoryInput,
   CreateMenuItemInput,
+  MenuItemIngredient,
+  MenuItemIngredientInput,
   CreateRestaurantEventInput,
   CreateReservationRequestInput,
   ListReservationRequestsInput,
@@ -12,6 +14,8 @@ import type {
   RestaurantMenuItemView,
   RestaurantOpeningHourView,
   RestaurantReservationRequestView,
+  UpdateMenuCategoryInput,
+  UpdateMenuItemInput,
   UpdatePublicSiteSettingsInput,
   UpdateRestaurantEventInput,
   UpdateReservationRequestInput,
@@ -34,10 +38,73 @@ type CategoryRow = {
     imageUrl: string | null;
     allergens: string[];
     tags: string[];
+    ingredients: Prisma.JsonValue | null;
     isAvailable: boolean;
     sortOrder: number;
   }>;
 };
+
+/** Columns selected for every menu item read, so all mappers stay in sync. */
+const MENU_ITEM_SELECT = {
+  id: true,
+  categoryId: true,
+  name: true,
+  description: true,
+  priceCents: true,
+  currency: true,
+  imageUrl: true,
+  allergens: true,
+  tags: true,
+  ingredients: true,
+  isAvailable: true,
+  sortOrder: true,
+} as const;
+
+function toNullableString(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+/** Defensively parse the JSON column into typed ingredients, dropping junk. */
+function parseIngredients(value: Prisma.JsonValue | null | undefined): MenuItemIngredient[] {
+  if (!Array.isArray(value)) return [];
+  const ingredients: MenuItemIngredient[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const record = entry as Record<string, unknown>;
+    const name = toNullableString(record.name);
+    if (!name) continue;
+    ingredients.push({
+      ingredientId: toNullableString(record.ingredientId),
+      emoji: toNullableString(record.emoji),
+      name,
+      quantity: toNullableString(record.quantity),
+      unit: toNullableString(record.unit),
+      note: toNullableString(record.note),
+    });
+  }
+  return ingredients;
+}
+
+/** Normalize incoming ingredients to a clean, storable JSON array. */
+function normalizeIngredients(input: MenuItemIngredientInput[] | undefined): MenuItemIngredient[] {
+  if (!input) return [];
+  const ingredients: MenuItemIngredient[] = [];
+  for (const entry of input) {
+    const name = toNullableString(entry?.name);
+    if (!name) continue;
+    ingredients.push({
+      ingredientId: toNullableString(entry.ingredientId),
+      emoji: toNullableString(entry.emoji),
+      name,
+      quantity: toNullableString(entry.quantity),
+      unit: toNullableString(entry.unit),
+      note: toNullableString(entry.note),
+    });
+  }
+  return ingredients;
+}
 
 function mapItem(row: CategoryRow['items'][number]): RestaurantMenuItemView {
   return {
@@ -50,6 +117,7 @@ function mapItem(row: CategoryRow['items'][number]): RestaurantMenuItemView {
     imageUrl: row.imageUrl,
     allergens: row.allergens,
     tags: row.tags,
+    ingredients: parseIngredients(row.ingredients),
     isAvailable: row.isAvailable,
     sortOrder: row.sortOrder,
   };
@@ -166,19 +234,7 @@ export const restaurantMenuRepository = {
             items: {
               where: { deletedAt: null, isAvailable: true },
               orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-              select: {
-                id: true,
-                categoryId: true,
-                name: true,
-                description: true,
-                priceCents: true,
-                currency: true,
-                imageUrl: true,
-                allergens: true,
-                tags: true,
-                isAvailable: true,
-                sortOrder: true,
-              },
+              select: MENU_ITEM_SELECT,
             },
           },
         },
@@ -410,19 +466,7 @@ export const restaurantMenuRepository = {
         items: {
           where: { deletedAt: null },
           orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-          select: {
-            id: true,
-            categoryId: true,
-            name: true,
-            description: true,
-            priceCents: true,
-            currency: true,
-            imageUrl: true,
-            allergens: true,
-            tags: true,
-            isAvailable: true,
-            sortOrder: true,
-          },
+          select: MENU_ITEM_SELECT,
         },
       },
     });
@@ -455,6 +499,7 @@ export const restaurantMenuRepository = {
         imageUrl: input.imageUrl ?? null,
         allergens: input.allergens ?? [],
         tags: input.tags ?? [],
+        ingredients: normalizeIngredients(input.ingredients) as unknown as Prisma.InputJsonValue,
         isAvailable: input.isAvailable ?? true,
         sortOrder: input.sortOrder ?? 0,
       },
@@ -467,6 +512,97 @@ export const restaurantMenuRepository = {
       select: { id: true },
     });
     return Boolean(category);
+  },
+
+  async updateCategory(
+    organizationId: string,
+    categoryId: string,
+    input: UpdateMenuCategoryInput,
+  ): Promise<RestaurantMenuCategoryView | null> {
+    const existing = await prisma.restaurantMenuCategory.findFirst({
+      where: { id: categoryId, organizationId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) return null;
+
+    const row = await prisma.restaurantMenuCategory.update({
+      where: { id: categoryId },
+      data: {
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
+        ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        sortOrder: true,
+        isActive: true,
+        items: {
+          where: { deletedAt: null },
+          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+          select: MENU_ITEM_SELECT,
+        },
+      },
+    });
+    return mapCategory(row as CategoryRow);
+  },
+
+  // Soft delete: the category is hidden and its items are tombstoned together so
+  // neither the portal list nor the cached public site surfaces orphaned rows.
+  async softDeleteCategory(organizationId: string, categoryId: string): Promise<boolean> {
+    const result = await prisma.restaurantMenuCategory.updateMany({
+      where: { id: categoryId, organizationId, deletedAt: null },
+      data: { deletedAt: new Date(), isActive: false },
+    });
+    if (result.count !== 1) return false;
+    await prisma.restaurantMenuItem.updateMany({
+      where: { categoryId, organizationId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    return true;
+  },
+
+  async updateItem(
+    organizationId: string,
+    itemId: string,
+    input: UpdateMenuItemInput,
+  ): Promise<RestaurantMenuItemView | null> {
+    const existing = await prisma.restaurantMenuItem.findFirst({
+      where: { id: itemId, organizationId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) return null;
+
+    const row = await prisma.restaurantMenuItem.update({
+      where: { id: itemId },
+      data: {
+        ...(input.categoryId !== undefined ? { categoryId: input.categoryId } : {}),
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.priceCents !== undefined ? { priceCents: input.priceCents } : {}),
+        ...(input.currency !== undefined ? { currency: input.currency } : {}),
+        ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
+        ...(input.allergens !== undefined ? { allergens: input.allergens } : {}),
+        ...(input.tags !== undefined ? { tags: input.tags } : {}),
+        ...(input.ingredients !== undefined
+          ? { ingredients: normalizeIngredients(input.ingredients) as unknown as Prisma.InputJsonValue }
+          : {}),
+        ...(input.isAvailable !== undefined ? { isAvailable: input.isAvailable } : {}),
+        ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
+      },
+      select: MENU_ITEM_SELECT,
+    });
+    return mapItem(row as CategoryRow['items'][number]);
+  },
+
+  async softDeleteItem(organizationId: string, itemId: string): Promise<boolean> {
+    const result = await prisma.restaurantMenuItem.updateMany({
+      where: { id: itemId, organizationId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    return result.count === 1;
   },
 
   async listOpeningHours(organizationId: string): Promise<RestaurantOpeningHourView[]> {

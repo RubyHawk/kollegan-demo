@@ -7,7 +7,7 @@ import { Bell } from 'lucide-react';
 import Sidebar from '@shared/ui/sidebar';
 import { MenuIcon, ChevronRightIcon, PlusIcon } from '@shared/ui/icons';
 import { SearchTrigger } from '@shared/ui/search-command';
-import { BrandLockup, OrgLetterMark } from '@shared/ui/brand';
+import { BrandLockup, OrgBrandMark } from '@shared/ui/brand';
 import { logout } from '@shared/lib/api/auth-account.api';
 import { NAV_CRUMB_MAP, NAV_CONFIG, getNavConfigForModules, type ShellBrand, type User } from '@shared/ui/sidebar-config';
 
@@ -142,7 +142,7 @@ export default function AppShell({ user, children, enabledModules = [], brand }:
   );
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-[var(--ui-bg)]">
+    <div data-brand={brand?.key} className="flex h-dvh overflow-hidden bg-[var(--ui-bg)]">
       <div className="hidden h-full md:flex">
         <Sidebar
           user={user}
@@ -185,7 +185,7 @@ export default function AppShell({ user, children, enabledModules = [], brand }:
             </button>
             {brand && !brand.isPlatform ? (
               <div className="flex items-center gap-2">
-                <OrgLetterMark name={brand.name} size={22} />
+                <OrgBrandMark brandKey={brand.key} name={brand.name} isPlatform={brand.isPlatform} size={22} />
                 <span className="font-heading text-sm font-semibold text-[var(--ui-text)]">{brand.name}</span>
               </div>
             ) : (

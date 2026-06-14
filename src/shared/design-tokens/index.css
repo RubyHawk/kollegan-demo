@@ -26,3 +26,7 @@
 @import "./ui-light.css";
 @import "./ui-dark.css";
 @import "./ui-aliases.css";
+
+/* Tenant portal skins — scoped to [data-brand]; must load after the base
+   tokens/aliases so the override wins at equal selector specificity. */
+@import "./brand-fluffys.css";

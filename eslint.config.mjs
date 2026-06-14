@@ -19,6 +19,16 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
   ]),
 
+  // ─── Seed data: per-category ingredient segments ─────────────────────────────
+  // These are plain data modules; a default-exported object literal is the whole
+  // point, so the anonymous-default-export rule doesn't apply.
+  {
+    files: ["prisma/seed-data/**/*.mjs"],
+    rules: {
+      "import/no-anonymous-default-export": "off",
+    },
+  },
+
   // ─── Architecture: Core domain isolation ─────────────────────────────────────
   // Core modules (automation, voice) must NEVER import from supporting or generic.
   // They communicate cross-domain via the event bus (string-based event types only).
