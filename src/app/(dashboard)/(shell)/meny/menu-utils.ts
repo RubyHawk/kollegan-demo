@@ -28,3 +28,22 @@ export function parseTags(value: FormDataEntryValue | null): string[] {
 export function priceToInput(priceCents: number | null): string {
   return priceCents == null ? '' : String(Math.round(priceCents / 100));
 }
+
+/**
+ * A menu item's `tags` are overloaded: price variants like "S 89" AND plain
+ * badges like "Glutenfri". This mirrors the public menu's price parser
+ * (src/app/site/_lib/menu-visuals.ts): a tag is a price only if it ends with a
+ * number. Everything else is a badge and must be preserved untouched so editing
+ * a single-priced item never wipes its price or labels.
+ */
+export const PRICE_TAG_RE = /^(.+?)\s+(\d+[:-]?)$/;
+
+export function isPriceTag(tag: string): boolean {
+  return PRICE_TAG_RE.test(tag.trim());
+}
+
+export function parseVariantTag(tag: string): { label: string; price: string } {
+  const match = tag.trim().match(PRICE_TAG_RE);
+  if (match) return { label: match[1] ?? '', price: (match[2] ?? '').replace(/[:-]+$/, '') };
+  return { label: tag.trim(), price: '' };
+}

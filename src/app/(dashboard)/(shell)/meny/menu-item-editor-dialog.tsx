@@ -20,7 +20,7 @@ import type {
   MenuItemIngredientInput,
   RestaurantMenuItem,
 } from '@shared/lib/api/restaurant.api';
-import { parsePriceCents, priceToInput } from './menu-utils';
+import { isPriceTag, parsePriceCents, parseVariantTag, priceToInput } from './menu-utils';
 import { PRIMARY_UNITS, POPULAR_INGREDIENTS, guessEmoji } from './menu-ingredient-palette';
 
 const CUSTOM_CATEGORY_ID = 'other';
@@ -73,17 +73,11 @@ function makeKey() {
     : Math.random().toString(36).slice(2);
 }
 
-// Stored variant tags are "Label Price" (e.g. "S 89"); the public menu parses
-// the same shape, so we keep it and only edit it as structured rows here.
-function parseVariantTag(tag: string): { label: string; price: string } {
-  const match = tag.trim().match(/^(.*\S)\s+(\d+(?:[.,]\d+)?)$/);
-  if (match) return { label: match[1], price: match[2] };
-  return { label: tag.trim(), price: '' };
-}
-
+// Only price-variant tags ("S 89") become size rows; badge tags ("Glutenfri")
+// are kept aside and preserved on save (see menu-utils + public menu parser).
 function toSizeRows(item?: RestaurantMenuItem): SizeRow[] {
   if (!item) return [];
-  return item.tags.map((tag) => ({ key: makeKey(), ...parseVariantTag(tag) }));
+  return item.tags.filter(isPriceTag).map((tag) => ({ key: makeKey(), ...parseVariantTag(tag) }));
 }
 
 function toDraftRows(item?: RestaurantMenuItem): DraftIngredient[] {
@@ -122,9 +116,11 @@ interface EditorFormProps extends MenuItemEditorDialogProps {
 function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit, onClose }: EditorFormProps) {
   const isEdit = Boolean(item);
   const [name, setName] = useState(item?.name ?? '');
-  const [priceMode, setPriceMode] = useState<PriceMode>(() => (item && item.tags.length > 0 ? 'sizes' : 'single'));
+  const [priceMode, setPriceMode] = useState<PriceMode>(() => (item?.tags.some(isPriceTag) ? 'sizes' : 'single'));
   const [singlePrice, setSinglePrice] = useState(priceToInput(item?.priceCents ?? null));
   const [sizes, setSizes] = useState<SizeRow[]>(() => toSizeRows(item));
+  // Non-price tags (e.g. "Glutenfri") carry through untouched so editing never drops them.
+  const [badgeTags] = useState<string[]>(() => (item?.tags ?? []).filter((tag) => !isPriceTag(tag)));
   const [description, setDescription] = useState(item?.description ?? '');
   const [rows, setRows] = useState<DraftIngredient[]>(() => toDraftRows(item));
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -264,16 +260,17 @@ function EditorForm({ item, categoryName, catalog, onCreateIngredient, onSubmit,
     }
 
     let priceCents: number | null = null;
-    let tags: string[] = [];
+    let tags: string[] = [...badgeTags];
     if (priceMode === 'single') {
       priceCents = parsePriceCents(singlePrice);
     } else {
-      tags = sizes
+      const sizeTags = sizes
         .filter((size) => size.label.trim())
         .map((size) => {
           const price = size.price.trim();
           return price ? `${size.label.trim()} ${price}` : size.label.trim();
         });
+      tags = [...sizeTags, ...badgeTags];
     }
 
     const ingredients: MenuItemIngredientInput[] = rows
