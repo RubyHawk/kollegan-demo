@@ -13,6 +13,7 @@ function item(overrides: Partial<RestaurantMenuItemView>): RestaurantMenuItemVie
     imageUrl: null,
     allergens: [],
     tags: [],
+    ingredients: [],
     isAvailable: true,
     sortOrder: 1,
     ...overrides,
