@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { CupSodaIcon, PizzaIcon, SaladIcon, SandwichIcon, SoupIcon, UtensilsIcon } from 'lucide-react';
 import type { RestaurantMenuCategoryView, RestaurantMenuItemView } from '@modules/supporting/restaurant-menu';
 import { publicSiteHref } from '../_lib/public-site-data';
+import { MenuGlyph } from './menu-glyphs';
 import { ScribbleStroke } from './scribble-stroke';
 import {
   categoryDisplay,
@@ -201,7 +202,7 @@ export function MenuCategoryPreview({ categories, routePrefix = '' }: { categori
           return (
             <Link key={category.id} href={tabHref(routePrefix, menuSlug(category.name))} className="fluffy-menu-preview__item">
               <span className="fluffy-menu-preview__icon">
-                <CategoryIcon iconKey={display.iconKey} />
+                <MenuGlyph iconKey={display.iconKey} />
               </span>
               <strong>{display.label}</strong>
               {category.description ? <span>{category.description}</span> : null}

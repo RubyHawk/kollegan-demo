@@ -8,6 +8,7 @@ export type MenuPricePart = {
 const CATEGORY_IMAGE_FALLBACKS = [
   { match: ['pizza', 'pizzor'], image: '/fluffys/menu/pizza-kebab-board.jpg' },
   { match: ['subs'], image: '/fluffys/menu/subs-classic-board.jpg' },
+  { match: ['kebab', 'gyros'], image: '/fluffys/menu/pizza-kebab-board.jpg' },
   { match: ['panini'], image: '/fluffys/menu/panini-salad-board.jpg' },
   { match: ['sallad', 'wrap'], image: '/fluffys/menu/panini-salad-board.jpg' },
   { match: ['tillbehor', 'tillbehör', 'sås', 'sas'], image: '/fluffys/menu/sides-sauces-board.jpg' },
@@ -17,6 +18,7 @@ const CATEGORY_IMAGE_FALLBACKS = [
 const CATEGORY_ICON_LABELS = [
   { match: ['pizza', 'pizzor'], key: 'pizza', label: 'Pizza' },
   { match: ['subs'], key: 'subs', label: 'Subs' },
+  { match: ['kebab', 'gyros'], key: 'kebab', label: 'Kebab' },
   { match: ['panini'], key: 'panini', label: 'Panini' },
   { match: ['sallad', 'wrap'], key: 'salad', label: 'Sallad' },
   { match: ['tillbehor', 'tillbehör', 'sås', 'sas'], key: 'sides', label: 'Tillbehör' },
