@@ -52,6 +52,11 @@ function CutoutPrices({ item }: { item: RestaurantMenuItemView }) {
   );
 }
 
+const GRID_CUTOUT_FALLBACKS: Record<'taco' | 'mix', string> = {
+  taco: '/fluffys/menu/pizza-kebab-board.jpg',
+  mix: '/fluffys/menu/panini-salad-board.jpg',
+};
+
 function GridCutout({ item, modifier }: { item: RestaurantMenuItemView; modifier: 'taco' | 'mix' }) {
   const { number, label } = menuItemParts(item.name);
   return (
@@ -63,12 +68,10 @@ function GridCutout({ item, modifier }: { item: RestaurantMenuItemView; modifier
         <CutoutIngredients item={item} />
         <CutoutPrices item={item} />
       </figcaption>
-      {item.imageUrl ? (
-        <span className="fluffy-cutout__photo" aria-hidden="true">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={item.imageUrl} alt="" />
-        </span>
-      ) : null}
+      <span className="fluffy-cutout__photo" aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={item.imageUrl ?? GRID_CUTOUT_FALLBACKS[modifier]} alt="" />
+      </span>
     </figure>
   );
 }
@@ -125,7 +128,7 @@ export default async function PublicHomePage() {
   const address = addressLine(site) || 'Värgårdsvägen 6, 695 31 Laxå';
 
   const allItems = site.categories.flatMap((c) => c.items);
-  const featuredItems = allItems.filter((item) => Boolean(item.imageUrl));
+  const featuredItems = allItems.filter((item) => !/gluten/i.test(item.name));
   const [tacoItem, mixItem, subItem] = featuredItems;
   const glutenItem = allItems.find((item) => /gluten/i.test(item.name));
   const glutenPrice = glutenItem ? priceParts(glutenItem)[0] : null;
