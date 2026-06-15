@@ -32,10 +32,6 @@
     grid-template-columns: 1fr;
   }
 
-  .fluffy-menu-preview__items {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .fluffy-featured-grid {
     grid-template-columns: 1fr;
   }

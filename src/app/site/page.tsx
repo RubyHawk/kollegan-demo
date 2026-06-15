@@ -14,7 +14,7 @@ import { OpeningHours } from './_components/opening-hours';
 import { ScribbleStroke } from './_components/scribble-stroke';
 import { SiteShell } from './_components/site-shell';
 import { addressLine, getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from './_lib/public-site-data';
-import { menuItemParts, priceParts } from './_lib/menu-visuals';
+import { categoryImage, menuItemParts, priceParts } from './_lib/menu-visuals';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,12 +52,7 @@ function CutoutPrices({ item }: { item: RestaurantMenuItemView }) {
   );
 }
 
-const GRID_CUTOUT_FALLBACKS: Record<'taco' | 'mix', string> = {
-  taco: '/fluffys/menu/pizza-kebab-board.jpg',
-  mix: '/fluffys/menu/panini-salad-board.jpg',
-};
-
-function GridCutout({ item, modifier }: { item: RestaurantMenuItemView; modifier: 'taco' | 'mix' }) {
+function GridCutout({ item, modifier, fallbackSrc }: { item: RestaurantMenuItemView; modifier: 'taco' | 'mix'; fallbackSrc: string }) {
   const { number, label } = menuItemParts(item.name);
   return (
     <figure className={`fluffy-cutout fluffy-cutout--${modifier}`}>
@@ -70,7 +65,7 @@ function GridCutout({ item, modifier }: { item: RestaurantMenuItemView; modifier
       </figcaption>
       <span className="fluffy-cutout__photo" aria-hidden="true">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={item.imageUrl ?? GRID_CUTOUT_FALLBACKS[modifier]} alt="" />
+        <img src={item.imageUrl ?? fallbackSrc} alt="" />
       </span>
     </figure>
   );
@@ -128,8 +123,25 @@ export default async function PublicHomePage() {
   const address = addressLine(site) || 'Värgårdsvägen 6, 695 31 Laxå';
 
   const allItems = site.categories.flatMap((c) => c.items);
-  const featuredItems = allItems.filter((item) => !/gluten/i.test(item.name));
-  const [tacoItem, mixItem, subItem] = featuredItems;
+
+  // Build a map of item id → category so we can derive category-aware image fallbacks
+  const itemCategoryMap = new Map(
+    site.categories.flatMap((c) => c.items.map((item) => [item.id, c])),
+  );
+  const itemFallbackSrc = (item: RestaurantMenuItemView) => {
+    const cat = itemCategoryMap.get(item.id);
+    return cat ? categoryImage(cat) : '/fluffys/menu/pizza-kebab-board.jpg';
+  };
+
+  // Select collage cutout items: exclude gluten items; subItem prefers subs category
+  const nonGlutenItems = allItems.filter((item) => !/gluten/i.test(item.name));
+  const subCategoryItems = site.categories
+    .filter((c) => /sub/i.test(c.name))
+    .flatMap((c) => c.items);
+  const mainCandidates = nonGlutenItems.filter((item) => !subCategoryItems.some((s) => s.id === item.id));
+  const [tacoItem, mixItem] = mainCandidates;
+  const subItem = subCategoryItems[0] ?? nonGlutenItems[2];
+
   const glutenItem = allItems.find((item) => /gluten/i.test(item.name));
   const glutenPrice = glutenItem ? priceParts(glutenItem)[0] : null;
 
@@ -187,8 +199,8 @@ export default async function PublicHomePage() {
           </div>
 
           <div className="fluffy-collage fluffy-rise fluffy-delay-1" aria-label="Fluffy's menybilder">
-            {tacoItem ? <GridCutout item={tacoItem} modifier="taco" /> : null}
-            {mixItem ? <GridCutout item={mixItem} modifier="mix" /> : null}
+            {tacoItem ? <GridCutout item={tacoItem} modifier="taco" fallbackSrc={itemFallbackSrc(tacoItem)} /> : null}
+            {mixItem ? <GridCutout item={mixItem} modifier="mix" fallbackSrc={itemFallbackSrc(mixItem)} /> : null}
             <div className="fluffy-collage-sign" aria-hidden="true">
               <span>Subs</span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -267,7 +279,7 @@ export default async function PublicHomePage() {
               {site.events.map((event) => (
                 <article key={event.id} className="fluffy-card fluffy-event-card fluffy-rise">
                   <time dateTime={new Date(event.startsAt).toISOString()}>
-                    {new Intl.DateTimeFormat('sv-SE', { dateStyle: 'medium' }).format(new Date(event.startsAt))}
+                    {new Intl.DateTimeFormat('sv-SE', { dateStyle: 'medium', timeZone: 'Europe/Stockholm' }).format(new Date(event.startsAt))}
                   </time>
                   <h3>{event.title}</h3>
                   {event.description ? <p>{event.description}</p> : null}
