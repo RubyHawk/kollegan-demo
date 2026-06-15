@@ -447,7 +447,15 @@
     height: 58px;
   }
 
+  .fluffy-gluten-ticket strong {
+    font-size: 1.1rem;
+  }
+
   .fluffy-gluten-ticket em {
     font-size: 1.7rem;
+  }
+
+  .fluffy-gluten-ticket small {
+    display: none;
   }
 }
