@@ -308,10 +308,22 @@
   padding: 18px 24px;
 }
 
-.fluffy-info-strip svg {
-  width: 42px;
-  height: 42px;
+.fluffy-info-strip__icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--fp-orange);
+  background: rgba(242, 140, 0, 0.14);
   color: var(--fp-orange);
+}
+
+.fluffy-info-strip__icon svg {
+  width: 26px;
+  height: 26px;
 }
 
 .fluffy-info-strip h2 {

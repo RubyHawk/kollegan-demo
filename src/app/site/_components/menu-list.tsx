@@ -200,7 +200,6 @@ export function MenuCategoryPreview({ categories, routePrefix = '' }: { categori
           const display = categoryDisplay(category);
           return (
             <Link key={category.id} href={tabHref(routePrefix, menuSlug(category.name))} className="fluffy-menu-preview__item">
-              <CategoryBadge index={index} />
               <span className="fluffy-menu-preview__icon">
                 <CategoryIcon iconKey={display.iconKey} />
               </span>

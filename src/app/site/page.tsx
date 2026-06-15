@@ -224,28 +224,28 @@ export default async function PublicHomePage() {
       <section className="fluffy-info-strip" aria-label="Praktisk information" id="oppettider">
         <div className="fluffy-shell fluffy-info-strip__inner">
           <article>
-            <Clock3Icon aria-hidden="true" />
+            <span className="fluffy-info-strip__icon" aria-hidden="true"><Clock3Icon /></span>
             <div>
               <h2>Öppet idag</h2>
               <p>{hoursLabel}</p>
             </div>
           </article>
           <article id="parkering">
-            <ParkingCircleIcon aria-hidden="true" />
+            <span className="fluffy-info-strip__icon" aria-hidden="true"><ParkingCircleIcon /></span>
             <div>
               <h2>Parkering</h2>
               <p>Gratis parkering för bil, MC och lastbil</p>
             </div>
           </article>
           <article>
-            <MapPinIcon aria-hidden="true" />
+            <span className="fluffy-info-strip__icon" aria-hidden="true"><MapPinIcon /></span>
             <div>
               <h2>Hitta hit</h2>
               <p>{address}</p>
             </div>
           </article>
           <article>
-            <TimerResetIcon aria-hidden="true" />
+            <span className="fluffy-info-strip__icon" aria-hidden="true"><TimerResetIcon /></span>
             <div>
               <h2>Snabbt stopp</h2>
               <p>Beställ, ät och fortsätt resan.</p>

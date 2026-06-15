@@ -99,9 +99,9 @@
 
 .fluffy-menu-preview__item {
   display: grid;
-  grid-template-rows: auto auto auto 1fr;
+  grid-template-rows: auto auto 1fr;
   gap: 10px;
-  min-height: 206px;
+  min-height: 240px;
   color: var(--fp-white);
   padding: 24px 18px;
   text-decoration: none;
@@ -115,13 +115,14 @@
 }
 
 .fluffy-menu-preview__icon {
-  color: var(--fp-orange);
+  color: rgba(255, 250, 240, 0.82);
   line-height: 1;
 }
 
 .fluffy-menu-preview__icon svg {
-  width: 60px;
-  height: 60px;
+  width: 88px;
+  height: 88px;
+  stroke-width: 1.5;
 }
 
 .fluffy-menu-preview__item strong {
