@@ -255,6 +255,10 @@ export default async function PublicHomePage() {
       </section>
 
       <section className="fluffy-menu-band">
+        {/* SVG wave sits at top — cleaner than CSS gradient scallops */}
+        <svg aria-hidden="true" className="fluffy-menu-band__wave" viewBox="0 0 1440 20" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,20 V10 C160,0 320,20 480,10 S800,0 960,10 S1280,20 1440,10 V20 Z" fill="currentColor" />
+        </svg>
         <div className="fluffy-shell">
           <MenuCategoryPreview categories={site.categories} routePrefix={routePrefix} />
         </div>
