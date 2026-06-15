@@ -71,7 +71,7 @@
 }
 
 .fluffy-menu-preview__intro {
-  padding: 30px;
+  padding: 20px 28px;
 }
 
 .fluffy-menu-preview__intro p {
@@ -100,10 +100,10 @@
 .fluffy-menu-preview__item {
   display: grid;
   grid-template-rows: auto auto 1fr;
-  gap: 10px;
-  min-height: 240px;
+  gap: 8px;
+  min-height: 0;
   color: var(--fp-white);
-  padding: 24px 18px;
+  padding: 20px 18px;
   text-decoration: none;
   transition: background 160ms ease, transform 160ms ease;
 }
@@ -120,8 +120,8 @@
 }
 
 .fluffy-menu-preview__icon svg {
-  width: 88px;
-  height: 88px;
+  width: 40px;
+  height: 40px;
   stroke-width: 1.5;
 }
 

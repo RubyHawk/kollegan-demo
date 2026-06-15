@@ -2,7 +2,7 @@
 .fluffy-menu-band {
   position: relative;
   background: var(--fp-ink);
-  padding-block: 36px 48px;
+  padding-block: 0;
 }
 
 .fluffy-menu-band::before {
@@ -24,17 +24,21 @@
   margin-block: 0;
 }
 
+.fluffy-menu-band .fluffy-menu-preview__intro {
+  padding: 20px 28px;
+}
+
 .fluffy-menu-band .fluffy-menu-preview__intro p {
   color: var(--fp-white);
   font-family: var(--fluffy-display-font);
-  font-size: clamp(3.2rem, 6vw, 6.4rem);
-  line-height: 0.88;
+  font-size: clamp(2.2rem, 3.4vw, 3.4rem);
+  line-height: 0.9;
 }
 
 .fluffy-menyn-scribble {
-  width: min(100%, 220px);
-  height: 18px;
-  margin-top: -6px;
+  width: min(100%, 160px);
+  height: 12px;
+  margin-top: -4px;
   color: var(--fp-purple);
 }
 
