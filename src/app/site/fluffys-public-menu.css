@@ -1,6 +1,20 @@
 
 .fluffy-menu-page-hero {
   padding-block: 38px 30px;
+  background: var(--fp-ink);
+  border-bottom-color: rgba(255, 250, 240, 0.1);
+}
+
+.fluffy-menu-page-hero .fluffy-eyebrow { color: var(--fp-orange); }
+.fluffy-menu-page-hero h1             { color: var(--fp-white); }
+.fluffy-menu-page-hero .fluffy-copy > p { color: rgba(255, 250, 240, 0.7); }
+
+.fluffy-public--dark {
+  background: var(--fp-ink);
+}
+
+.fluffy-section--menu {
+  background: var(--fp-ink);
 }
 
 .fluffy-menu-page-hero__grid {
@@ -15,23 +29,23 @@
   gap: 10px;
   align-items: center;
   justify-content: flex-end;
-  border-left: 2px dotted rgba(82, 26, 147, 0.45);
+  border-left: 2px dotted rgba(242, 140, 0, 0.45);
   padding-left: 22px;
 }
 
 .fluffy-menu-popular p {
   width: 100%;
   margin: 0;
-  color: var(--fp-purple);
+  color: var(--fp-orange);
   font-size: 1rem;
   font-weight: 950;
 }
 
 .fluffy-menu-popular span {
-  border: 1px solid var(--fp-line-strong);
+  border: 1px solid rgba(255, 250, 240, 0.18);
   border-radius: var(--fp-radius-small);
-  background: var(--fp-paper-strong);
-  color: var(--fp-ink);
+  background: rgba(255, 250, 240, 0.08);
+  color: var(--fp-white);
   font-size: 0.92rem;
   font-weight: 900;
   padding: 9px 12px;
@@ -191,10 +205,10 @@
 .fluffy-menu-board {
   display: grid;
   gap: 12px;
-  border: 1px solid var(--fp-line-strong);
+  border: 1px solid rgba(255, 250, 240, 0.1);
   border-top: 0;
   border-radius: 0 0 var(--fp-radius) var(--fp-radius);
-  background: var(--fp-paper-strong);
+  background: var(--fp-ink);
   padding: 12px;
 }
 
@@ -213,9 +227,9 @@
 
 .fluffy-menu-category {
   overflow: hidden;
-  border: 1px dashed rgba(82, 26, 147, 0.35);
+  border: 1px dashed rgba(255, 250, 240, 0.12);
   border-radius: var(--fp-radius);
-  background: rgba(255, 250, 240, 0.86);
+  background: rgba(255, 250, 240, 0.03);
 }
 
 .fluffy-menu-category__summary {
@@ -280,9 +294,9 @@
   min-height: 206px;
   grid-template-columns: minmax(0, 0.9fr) minmax(120px, 1.1fr);
   overflow: hidden;
-  border: 1px solid var(--fp-line-strong);
+  border: 1px solid rgba(255, 250, 240, 0.1);
   border-radius: var(--fp-radius-small);
-  background: var(--fp-paper);
+  background: rgba(255, 250, 240, 0.05);
 }
 
 .fluffy-featured-item__copy {
@@ -294,7 +308,7 @@
 
 .fluffy-featured-item h3 {
   margin: 0;
-  color: var(--fp-ink);
+  color: var(--fp-white);
   font-size: 1.25rem;
   font-weight: 950;
   line-height: 1.05;
@@ -303,20 +317,20 @@
 
 .fluffy-featured-item p {
   margin: 0;
-  color: rgba(9, 8, 7, 0.72);
+  color: rgba(255, 250, 240, 0.6);
   font-size: 0.9rem;
   line-height: 1.42;
 }
 
 .fluffy-featured-item strong {
-  color: var(--fp-red);
+  color: var(--fp-orange);
   font-size: 1rem;
   font-weight: 950;
 }
 
 .fluffy-featured-item__media {
   min-width: 0;
-  background: var(--fp-paper-aged);
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .fluffy-featured-item__media img {
@@ -338,7 +352,7 @@
   align-items: center;
   gap: 18px;
   min-height: 54px;
-  border-top: 1px dotted rgba(9, 8, 7, 0.26);
+  border-top: 1px dotted rgba(255, 250, 240, 0.12);
   padding: 8px 0;
 }
 
@@ -357,7 +371,7 @@
 
 .fluffy-menu-row h3 {
   margin: 0;
-  color: var(--fp-ink);
+  color: var(--fp-white);
   font-size: 1rem;
   font-weight: 950;
   line-height: 1.14;
@@ -366,7 +380,7 @@
 
 .fluffy-menu-row p {
   margin: 3px 0 0;
-  color: rgba(9, 8, 7, 0.66);
+  color: rgba(255, 250, 240, 0.58);
   font-size: 0.82rem;
   font-weight: 700;
   line-height: 1.32;
@@ -392,7 +406,7 @@
 }
 
 .fluffy-price-columns dt {
-  color: var(--fp-ink);
+  color: rgba(255, 250, 240, 0.5);
   font-size: 0.76rem;
   font-weight: 950;
   text-transform: uppercase;
@@ -400,13 +414,13 @@
 
 .fluffy-price-columns dd {
   margin: 0;
-  color: var(--fp-red);
+  color: var(--fp-orange);
   font-size: 1.05rem;
   font-weight: 950;
 }
 
 .fluffy-menu-price-empty {
-  color: rgba(9, 8, 7, 0.52);
+  color: rgba(255, 250, 240, 0.38);
   font-size: 0.82rem;
   font-weight: 850;
   text-align: right;
@@ -415,7 +429,7 @@
 .fluffy-menu-empty {
   margin: 0;
   padding: 18px;
-  color: rgba(9, 8, 7, 0.68);
+  color: rgba(255, 250, 240, 0.55);
   font-weight: 800;
 }
 
@@ -454,9 +468,9 @@
 }
 
 .fluffy-aside-card--paper {
-  border-color: var(--fp-line);
-  background: var(--fp-paper-strong);
-  color: var(--fp-ink);
+  border-color: rgba(255, 250, 240, 0.1);
+  background: rgba(255, 250, 240, 0.06);
+  color: var(--fp-white);
 }
 
 .fluffy-aside-card h2 {
