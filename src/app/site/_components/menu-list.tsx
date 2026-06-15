@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { CupSodaIcon, PizzaIcon, SaladIcon, SandwichIcon, SoupIcon, UtensilsIcon } from 'lucide-react';
 import type { RestaurantMenuCategoryView, RestaurantMenuItemView } from '@modules/supporting/restaurant-menu';
 import { publicSiteHref } from '../_lib/public-site-data';
+import { ScribbleStroke } from './scribble-stroke';
 import {
   categoryDisplay,
   categoryImage,
@@ -191,6 +192,7 @@ export function MenuCategoryPreview({ categories, routePrefix = '' }: { categori
     <section className="fluffy-menu-preview" aria-labelledby="fluffy-menu-preview-title">
       <div className="fluffy-menu-preview__intro">
         <p id="fluffy-menu-preview-title">Menyn</p>
+        <ScribbleStroke className="fluffy-menyn-scribble" />
         <span>Något för alla smaker. Bygg din favorit.</span>
       </div>
       <div className="fluffy-menu-preview__items">

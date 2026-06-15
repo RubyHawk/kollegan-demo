@@ -31,8 +31,15 @@
   line-height: 0.88;
 }
 
-.fluffy-menu-band .fluffy-menu-preview__item strong {
-  color: var(--fp-white);
+.fluffy-menyn-scribble {
+  width: min(100%, 220px);
+  height: 18px;
+  margin-top: -6px;
+  color: var(--fp-purple);
+}
+
+.fluffy-menyn-scribble path {
+  stroke-dashoffset: 0;
 }
 
 .fluffy-landing {

@@ -100,8 +100,8 @@
 .fluffy-menu-preview__item {
   display: grid;
   grid-template-rows: auto auto auto 1fr;
-  gap: 8px;
-  min-height: 174px;
+  gap: 10px;
+  min-height: 206px;
   color: var(--fp-white);
   padding: 24px 18px;
   text-decoration: none;
@@ -120,8 +120,8 @@
 }
 
 .fluffy-menu-preview__icon svg {
-  width: 42px;
-  height: 42px;
+  width: 60px;
+  height: 60px;
 }
 
 .fluffy-menu-preview__item strong {
