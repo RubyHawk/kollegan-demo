@@ -14,13 +14,13 @@
 
 .fluffy-scribble__shadow {
   stroke: var(--fp-orange);
-  stroke-width: 4.8;
-  opacity: 0.54;
+  stroke-width: 6.2;
+  opacity: 0.62;
 }
 
 .fluffy-scribble__ink {
   stroke: currentColor;
-  stroke-width: 5.2;
+  stroke-width: 6.8;
 }
 
 .fluffy-nav__scribble {
@@ -61,9 +61,9 @@
 }
 
 .fluffy-title__scribble {
-  width: min(82%, 520px);
-  height: 24px;
-  margin-top: -6px;
+  width: min(88%, 560px);
+  height: 32px;
+  margin-top: -10px;
   color: var(--fp-purple);
 }
 
@@ -72,9 +72,8 @@
 }
 
 .fluffy-ticket::after,
-.fluffy-menu-ticket::after,
-.fluffy-gluten-ticket::after,
-.fluffy-sub-ticket::after {
+.fluffy-cutout::after,
+.fluffy-gluten-ticket::after {
   content: "";
   position: absolute;
   inset: 10px;

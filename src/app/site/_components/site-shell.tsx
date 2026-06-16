@@ -22,17 +22,19 @@ export function SiteShell({
   children,
   isFallback = false,
   routePrefix = '',
+  mainClassName,
 }: {
   site: PublicRestaurantSite;
   children: ReactNode;
   isFallback?: boolean;
   routePrefix?: string;
+  mainClassName?: string;
 }) {
   const address = addressLine(site);
   const brandName = publicBrandName(site.settings.siteName);
 
   return (
-    <main className="fluffy-public">
+    <main className={mainClassName ? `fluffy-public ${mainClassName}` : 'fluffy-public'}>
       <header className="fluffy-header">
         <div className="fluffy-shell fluffy-header__inner">
           <Link href={publicSiteHref(routePrefix, '/')} className="fluffy-brand">

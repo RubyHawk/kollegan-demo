@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { CupSodaIcon, PizzaIcon, SaladIcon, SandwichIcon, SoupIcon, UtensilsIcon } from 'lucide-react';
 import type { RestaurantMenuCategoryView, RestaurantMenuItemView } from '@modules/supporting/restaurant-menu';
 import { publicSiteHref } from '../_lib/public-site-data';
+import { MenuGlyph } from './menu-glyphs';
+import { ScribbleStroke } from './scribble-stroke';
 import {
   categoryDisplay,
   categoryImage,
@@ -191,6 +193,7 @@ export function MenuCategoryPreview({ categories, routePrefix = '' }: { categori
     <section className="fluffy-menu-preview" aria-labelledby="fluffy-menu-preview-title">
       <div className="fluffy-menu-preview__intro">
         <p id="fluffy-menu-preview-title">Menyn</p>
+        <ScribbleStroke className="fluffy-menyn-scribble" />
         <span>Något för alla smaker. Bygg din favorit.</span>
       </div>
       <div className="fluffy-menu-preview__items">
@@ -198,9 +201,8 @@ export function MenuCategoryPreview({ categories, routePrefix = '' }: { categori
           const display = categoryDisplay(category);
           return (
             <Link key={category.id} href={tabHref(routePrefix, menuSlug(category.name))} className="fluffy-menu-preview__item">
-              <CategoryBadge index={index} />
               <span className="fluffy-menu-preview__icon">
-                <CategoryIcon iconKey={display.iconKey} />
+                <MenuGlyph iconKey={display.iconKey} />
               </span>
               <strong>{display.label}</strong>
               {category.description ? <span>{category.description}</span> : null}

@@ -1,3 +1,57 @@
+/* Dark menu-preview band on homepage */
+.fluffy-menu-band {
+  position: relative;
+  z-index: 4;
+  background: var(--fp-ink);
+  padding-block: 0;
+}
+
+/* Torn paper edge — dark ink shaped by SVG mask, paints above the info strip gap */
+.fluffy-menu-band::before {
+  content: "";
+  position: absolute;
+  top: -78px;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: var(--fp-ink);
+  -webkit-mask-image: url("/fluffys/torn-edge.svg");
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-image: url("/fluffys/torn-edge.svg");
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.fluffy-menu-band .fluffy-menu-preview {
+  border-radius: 0;
+  background: transparent;
+  margin-block: 0;
+}
+
+.fluffy-menu-band .fluffy-menu-preview__intro {
+  padding: 20px 28px;
+}
+
+.fluffy-menu-band .fluffy-menu-preview__intro p {
+  color: var(--fp-white);
+  font-family: var(--fluffy-display-font);
+  font-size: clamp(2.2rem, 3.4vw, 3.4rem);
+  line-height: 0.9;
+}
+
+.fluffy-menyn-scribble {
+  width: min(100%, 160px);
+  height: 12px;
+  margin-top: -4px;
+  color: var(--fp-purple);
+}
+
+.fluffy-menyn-scribble path {
+  stroke-dashoffset: 0;
+}
+
 .fluffy-landing {
   position: relative;
   overflow: clip;
@@ -241,9 +295,10 @@
   position: relative;
   z-index: 3;
   margin-top: -1px;
-  background: var(--fp-paper);
+  margin-bottom: 52px;
+  background: var(--fp-ink);
   color: var(--fp-white);
-  padding-block: 10px 14px;
+  padding-block: 0;
 }
 
 .fluffy-info-strip__inner {
@@ -251,10 +306,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1px;
   overflow: hidden;
-  border: 2px solid rgba(82, 26, 147, 0.82);
-  border-radius: 10px;
-  background: rgba(255, 250, 240, 0.14);
-  box-shadow: 0 16px 32px rgba(9, 8, 7, 0.14);
+  background: rgba(255, 250, 240, 0.08);
 }
 
 .fluffy-info-strip article {
@@ -267,10 +319,22 @@
   padding: 18px 24px;
 }
 
-.fluffy-info-strip svg {
-  width: 42px;
-  height: 42px;
+.fluffy-info-strip__icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--fp-orange);
+  background: rgba(242, 140, 0, 0.14);
   color: var(--fp-orange);
+}
+
+.fluffy-info-strip__icon svg {
+  width: 26px;
+  height: 26px;
 }
 
 .fluffy-info-strip h2 {

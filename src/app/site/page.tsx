@@ -8,16 +8,93 @@ import {
   ParkingCircleIcon,
   TimerResetIcon,
 } from 'lucide-react';
+import type { RestaurantMenuItemView } from '@modules/supporting/restaurant-menu';
 import { MenuCategoryPreview } from './_components/menu-list';
 import { OpeningHours } from './_components/opening-hours';
 import { ScribbleStroke } from './_components/scribble-stroke';
 import { SiteShell } from './_components/site-shell';
 import { addressLine, getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from './_lib/public-site-data';
+import { categoryImage, menuItemParts, priceParts } from './_lib/menu-visuals';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata() {
   return siteMetadata();
+}
+
+const DOT_PALETTE = ['green', 'yellow', 'purple', 'orange', 'red', 'gray'] as const;
+
+function CutoutIngredients({ item }: { item: RestaurantMenuItemView }) {
+  if (!item.ingredients.length) return null;
+  return (
+    <ul className="fluffy-cutout__ingredients">
+      {item.ingredients.slice(0, 5).map((ing, i) => (
+        <li key={ing.name} data-dot={DOT_PALETTE[i % DOT_PALETTE.length]}>
+          {ing.name}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function CutoutPrices({ item }: { item: RestaurantMenuItemView }) {
+  const prices = priceParts(item);
+  if (!prices.length) return null;
+  return (
+    <div className="fluffy-cutout__prices">
+      {prices.map((p) => (
+        <span key={p.label}>
+          <abbr>{p.label}</abbr>
+          {p.value}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function GridCutout({ item, modifier, fallbackSrc }: { item: RestaurantMenuItemView; modifier: 'taco' | 'mix'; fallbackSrc: string }) {
+  const { number, label } = menuItemParts(item.name);
+  return (
+    <figure className={`fluffy-cutout fluffy-cutout--${modifier}`}>
+      <figcaption>
+        {number ? <span>{number}</span> : null}
+        <strong>{label}</strong>
+        {item.description ? <small>{item.description}</small> : null}
+        <CutoutIngredients item={item} />
+        <CutoutPrices item={item} />
+      </figcaption>
+      <span className="fluffy-cutout__photo" aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={item.imageUrl ?? fallbackSrc} alt="" />
+      </span>
+    </figure>
+  );
+}
+
+function SubCutout({ item }: { item: RestaurantMenuItemView }) {
+  const { number, label } = menuItemParts(item.name);
+  const prices = priceParts(item);
+  return (
+    <figure className="fluffy-cutout fluffy-cutout--sub">
+      <figcaption>
+        {number ? <span>{number}</span> : null}
+        <strong>{label}</strong>
+        {item.description ? <small>{item.description}</small> : null}
+        {prices.length > 0 ? (
+          <div className="fluffy-cutout__prices">
+            {prices.map((p) => (
+              <span key={p.label}>
+                <abbr>{p.label}</abbr>
+                {p.value}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </figcaption>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={item.imageUrl ?? '/fluffys/menu/subs-classic-board.jpg'} alt="" />
+    </figure>
+  );
 }
 
 function todayHoursLabel(site: Awaited<ReturnType<typeof getSiteData>>['site']) {
@@ -44,6 +121,29 @@ export default async function PublicHomePage() {
   const routePrefix = await getPublicSiteRoutePrefix();
   const hoursLabel = todayHoursLabel(site);
   const address = addressLine(site) || 'Värgårdsvägen 6, 695 31 Laxå';
+
+  const allItems = site.categories.flatMap((c) => c.items);
+
+  // Build a map of item id → category so we can derive category-aware image fallbacks
+  const itemCategoryMap = new Map(
+    site.categories.flatMap((c) => c.items.map((item) => [item.id, c])),
+  );
+  const itemFallbackSrc = (item: RestaurantMenuItemView) => {
+    const cat = itemCategoryMap.get(item.id);
+    return cat ? categoryImage(cat) : '/fluffys/menu/pizza-kebab-board.jpg';
+  };
+
+  // Select collage cutout items: exclude gluten items; subItem prefers subs category
+  const nonGlutenItems = allItems.filter((item) => !/gluten/i.test(item.name));
+  const subCategoryItems = site.categories
+    .filter((c) => /sub/i.test(c.name))
+    .flatMap((c) => c.items);
+  const mainCandidates = nonGlutenItems.filter((item) => !subCategoryItems.some((s) => s.id === item.id));
+  const [tacoItem, mixItem] = mainCandidates;
+  const subItem = subCategoryItems[0] ?? nonGlutenItems[2];
+
+  const glutenItem = allItems.find((item) => /gluten/i.test(item.name));
+  const glutenPrice = glutenItem ? priceParts(glutenItem)[0] : null;
 
   return (
     <SiteShell site={site} isFallback={isFallback} routePrefix={routePrefix}>
@@ -99,63 +199,24 @@ export default async function PublicHomePage() {
           </div>
 
           <div className="fluffy-collage fluffy-rise fluffy-delay-1" aria-label="Fluffy's menybilder">
-            <div className="fluffy-collage-board">
-              <div className="fluffy-board-heading">
-                <span>Dagens</span>
-                <strong>Pizzor &amp; subs</strong>
-                <small>Snabbt stopp i Laxå</small>
-              </div>
-              <div className="fluffy-board-clippings">
-                <figure className="fluffy-menu-ticket fluffy-menu-ticket--taco">
-                  <figcaption>
-                    <span>19</span>
-                    <strong>Tacokebab</strong>
-                    <small>Välj mellan kebab / gyros / kyckling</small>
-                    <em>89 / 149 / 239</em>
-                  </figcaption>
-                  <span className="fluffy-menu-ticket__photo" aria-hidden="true">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
-                  </span>
-                </figure>
-                <figure className="fluffy-menu-ticket fluffy-menu-ticket--mix">
-                  <figcaption>
-                    <span>21</span>
-                    <strong>Pick&apos;n mix kebaben</strong>
-                    <small>Sallad, tomat, gurka, feferoni, lök, sås</small>
-                    <em>89 / 149 / 239</em>
-                  </figcaption>
-                  <span className="fluffy-menu-ticket__photo" aria-hidden="true">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/fluffys/menu/pizza-kebab-board.jpg" alt="" />
-                  </span>
-                </figure>
-              </div>
-              <div className="fluffy-collage-sign" aria-hidden="true">
-                <span>Subs</span>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/fluffys/favicon.svg" alt="" />
-                <span>Pizza</span>
-              </div>
-              <figure className="fluffy-gluten-ticket">
-                <span aria-hidden="true">Gluten free</span>
-                <figcaption>
-                  <strong>Glutenfritt</strong>
-                  <em>189:-</em>
-                  <small>Samma goda pizzor, nu även på glutenfri botten.</small>
-                </figcaption>
-              </figure>
-            </div>
-            <figure className="fluffy-sub-ticket">
-              <figcaption>
-                <strong>Italian duo</strong>
-                <small>Peperoni, salami, ost, sallad</small>
-                <em>74 / 109</em>
-              </figcaption>
+            {tacoItem ? <GridCutout item={tacoItem} modifier="taco" fallbackSrc={itemFallbackSrc(tacoItem)} /> : null}
+            {mixItem ? <GridCutout item={mixItem} modifier="mix" fallbackSrc={itemFallbackSrc(mixItem)} /> : null}
+            <div className="fluffy-collage-sign" aria-hidden="true">
+              <span>Subs</span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/fluffys/menu/subs-classic-board.jpg" alt="" />
+              <img src="/fluffys/favicon.svg" alt="" />
+              <span>Pizza</span>
+            </div>
+            <figure className="fluffy-gluten-ticket">
+              <span aria-hidden="true">Gluten free</span>
+              <figcaption>
+                <strong>Glutenfritt</strong>
+                <em>{glutenPrice ? `${glutenPrice.value}:-` : '189:-'}</em>
+                <small>{glutenItem?.description ?? 'Samma goda pizzor, nu även på glutenfri botten.'}</small>
+                <span className="fluffy-gluten-ticket__cta">Fråga personalen om dagens utbud</span>
+              </figcaption>
             </figure>
-            <span className="fluffy-collage-arrow" aria-hidden="true">-&gt;</span>
+            {subItem ? <SubCutout item={subItem} /> : null}
           </div>
         </div>
       </section>
@@ -163,28 +224,28 @@ export default async function PublicHomePage() {
       <section className="fluffy-info-strip" aria-label="Praktisk information" id="oppettider">
         <div className="fluffy-shell fluffy-info-strip__inner">
           <article>
-            <Clock3Icon aria-hidden="true" />
+            <span className="fluffy-info-strip__icon" aria-hidden="true"><Clock3Icon /></span>
             <div>
               <h2>Öppet idag</h2>
               <p>{hoursLabel}</p>
             </div>
           </article>
           <article id="parkering">
-            <ParkingCircleIcon aria-hidden="true" />
+            <span className="fluffy-info-strip__icon" aria-hidden="true"><ParkingCircleIcon /></span>
             <div>
               <h2>Parkering</h2>
               <p>Gratis parkering för bil, MC och lastbil</p>
             </div>
           </article>
           <article>
-            <MapPinIcon aria-hidden="true" />
+            <span className="fluffy-info-strip__icon" aria-hidden="true"><MapPinIcon /></span>
             <div>
               <h2>Hitta hit</h2>
               <p>{address}</p>
             </div>
           </article>
           <article>
-            <TimerResetIcon aria-hidden="true" />
+            <span className="fluffy-info-strip__icon" aria-hidden="true"><TimerResetIcon /></span>
             <div>
               <h2>Snabbt stopp</h2>
               <p>Beställ, ät och fortsätt resan.</p>
@@ -193,9 +254,11 @@ export default async function PublicHomePage() {
         </div>
       </section>
 
-      <div className="fluffy-shell">
-        <MenuCategoryPreview categories={site.categories} routePrefix={routePrefix} />
-      </div>
+      <section className="fluffy-menu-band">
+        <div className="fluffy-shell">
+          <MenuCategoryPreview categories={site.categories} routePrefix={routePrefix} />
+        </div>
+      </section>
 
       <section className="fluffy-section fluffy-section--white">
         <div className="fluffy-shell fluffy-grid fluffy-grid--contact">
@@ -216,7 +279,7 @@ export default async function PublicHomePage() {
               {site.events.map((event) => (
                 <article key={event.id} className="fluffy-card fluffy-event-card fluffy-rise">
                   <time dateTime={new Date(event.startsAt).toISOString()}>
-                    {new Intl.DateTimeFormat('sv-SE', { dateStyle: 'medium' }).format(new Date(event.startsAt))}
+                    {new Intl.DateTimeFormat('sv-SE', { dateStyle: 'medium', timeZone: 'Europe/Stockholm' }).format(new Date(event.startsAt))}
                   </time>
                   <h3>{event.title}</h3>
                   {event.description ? <p>{event.description}</p> : null}

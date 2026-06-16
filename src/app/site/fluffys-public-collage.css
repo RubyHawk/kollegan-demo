@@ -16,125 +16,22 @@
   filter: blur(10px);
 }
 
-.fluffy-collage-board {
-  position: absolute;
-  top: 14px;
-  right: 1%;
-  left: 0;
-  min-height: 468px;
-  overflow: visible;
-  border: 2px solid rgba(255, 250, 240, 0.28);
-  border-radius: 14px;
-  background:
-    repeating-linear-gradient(178deg, transparent 0 18px, rgba(255, 250, 240, 0.025) 19px 20px),
-    radial-gradient(circle at 16px 16px, rgba(255, 250, 240, 0.045) 0 1px, transparent 1.7px),
-    linear-gradient(90deg, rgba(242, 140, 0, 0.22) 0 2px, transparent 2px calc(100% - 2px), rgba(82, 26, 147, 0.35) calc(100% - 2px)),
-    radial-gradient(circle at 20% 30%, rgba(242, 140, 0, 0.16), transparent 28%),
-    radial-gradient(circle at 78% 20%, rgba(82, 26, 147, 0.24), transparent 30%),
-    linear-gradient(180deg, #17120f, var(--fp-ink));
-  background-size: auto, 24px 24px, auto, auto, auto, auto;
-  box-shadow:
-    0 22px 44px rgba(9, 8, 7, 0.28),
-    0 0 0 4px rgba(82, 26, 147, 0.42),
-    0 0 0 7px rgba(242, 140, 0, 0.2),
-    0 0 42px rgba(242, 140, 0, 0.14) inset;
-  padding: 24px 24px 28px;
-  transform: rotate(-0.7deg);
-}
-
-.fluffy-collage-board::before {
-  content: "";
-  position: absolute;
-  inset: 10px;
-  border: 1px dashed rgba(255, 250, 240, 0.28);
-  border-radius: 9px;
-  pointer-events: none;
-}
-
-.fluffy-collage-board::after {
-  content: "";
-  position: absolute;
-  right: 16px;
-  bottom: 14px;
-  left: 16px;
-  height: 20px;
-  border-bottom: 3px solid rgba(242, 140, 0, 0.74);
-  border-radius: 50%;
-  opacity: 0.62;
-  pointer-events: none;
-}
-
-.fluffy-board-heading {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: baseline;
-  gap: 10px 18px;
-  margin: 0 0 14px;
-  color: var(--fp-white);
-  text-transform: uppercase;
-}
-
-.fluffy-board-heading span {
-  display: inline-flex;
-  width: fit-content;
-  background: var(--fp-orange);
-  color: var(--fp-ink);
-  font-size: 0.82rem;
-  font-weight: 950;
-  line-height: 1;
-  padding: 8px 11px;
-  transform: rotate(-3deg);
-}
-
-.fluffy-board-heading strong {
-  color: var(--fp-white);
-  font-family: var(--fluffy-display-font);
-  font-size: clamp(2.45rem, 4.25vw, 4.05rem);
-  font-weight: 950;
-  line-height: 0.86;
-}
-
-.fluffy-board-heading small {
-  grid-column: 2;
-  color: var(--fp-orange);
-  font-size: 0.82rem;
-  font-weight: 950;
-  letter-spacing: 0;
-}
-
-.fluffy-board-clippings {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr);
-  gap: 18px;
-  padding-inline: 2px;
-}
-
-.fluffy-menu-ticket,
-.fluffy-gluten-ticket,
-.fluffy-sub-ticket,
-.fluffy-collage-sign {
+/* Base for all floating paper cutouts */
+.fluffy-cutout {
   position: absolute;
   overflow: hidden;
-  border: 1px solid rgba(9, 8, 7, 0.25);
-  background: var(--fp-paper-strong);
-  box-shadow: var(--fp-shadow-card);
-}
-
-.fluffy-menu-ticket,
-.fluffy-gluten-ticket,
-.fluffy-sub-ticket {
+  border: 1px solid rgba(9, 8, 7, 0.22);
   border-radius: 6px;
   background:
     radial-gradient(circle at 13px 13px, rgba(9, 8, 7, 0.04) 0 1px, transparent 1.6px),
     linear-gradient(180deg, #fffaf0, #f3e7d5);
   background-size: 22px 22px, auto;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.22);
   clip-path: polygon(0 9px, 9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px));
 }
 
-.fluffy-menu-ticket::before,
-.fluffy-sub-ticket::before {
+/* Tape strip above each cutout */
+.fluffy-cutout::before {
   content: "";
   position: absolute;
   top: -10px;
@@ -142,31 +39,65 @@
   z-index: 3;
   width: 92px;
   height: 24px;
-  background: rgba(174, 147, 110, 0.38);
+  background:
+    linear-gradient(90deg, transparent 0 8px, rgba(255, 255, 255, 0.18) 8px 10px, transparent 10px 18px),
+    rgba(174, 147, 110, 0.38);
+  background-size: 18px 100%, auto;
   transform: rotate(-3deg);
 }
 
-.fluffy-menu-ticket {
-  position: relative;
+/* Tacokebab cutout — upper left */
+.fluffy-cutout--taco {
+  top: 10px;
+  left: 5%;
+  z-index: 3;
   display: grid;
-  grid-template-columns: minmax(108px, 0.68fr) minmax(128px, 1fr);
-  align-items: center;
-  width: auto;
-  height: 184px;
-  padding: 14px 12px 12px 14px;
+  grid-template-columns: minmax(120px, 1fr) minmax(88px, 0.6fr);
+  align-items: start;
+  width: 47%;
+  height: auto;
+  min-height: 220px;
+  padding: 14px 12px 14px 14px;
+  transform: rotate(-3deg);
 }
 
-.fluffy-gluten-ticket figcaption,
-.fluffy-sub-ticket figcaption {
-  position: relative;
-  z-index: 2;
+/* Pick'n Mix cutout — upper right */
+.fluffy-cutout--mix {
+  top: 20px;
+  right: 0;
+  z-index: 4;
   display: grid;
-  align-content: start;
-  gap: 8px;
-  min-width: 0;
+  grid-template-columns: minmax(120px, 1fr) minmax(88px, 0.6fr);
+  align-items: start;
+  width: 42%;
+  height: auto;
+  min-height: 220px;
+  padding: 14px 12px 14px 14px;
+  transform: rotate(4deg);
 }
 
-.fluffy-menu-ticket figcaption {
+/* Italian Duo sub cutout — level with the sign */
+.fluffy-cutout--sub {
+  top: 245px;
+  right: 2%;
+  z-index: 6;
+  width: 39%;
+  min-height: 158px;
+  padding: 16px 16px 8px;
+  transform: rotate(4deg);
+}
+
+.fluffy-cutout--sub img {
+  display: block;
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  object-position: 9% 45%;
+  transform: scale(1.18);
+}
+
+/* Figcaption shared styles */
+.fluffy-cutout figcaption {
   position: relative;
   z-index: 2;
   display: grid;
@@ -177,7 +108,13 @@
   padding: 4px 8px 0 0;
 }
 
-.fluffy-menu-ticket figcaption > span {
+.fluffy-cutout--sub figcaption {
+  gap: 8px;
+  padding: 0;
+}
+
+/* Number badge */
+.fluffy-cutout figcaption > span {
   display: inline-grid;
   width: 34px;
   height: 34px;
@@ -190,9 +127,7 @@
   font-weight: 950;
 }
 
-.fluffy-menu-ticket strong,
-.fluffy-gluten-ticket strong,
-.fluffy-sub-ticket strong {
+.fluffy-cutout strong {
   color: var(--fp-ink);
   font-family: var(--fluffy-display-font);
   font-size: 1.28rem;
@@ -202,9 +137,15 @@
   overflow-wrap: normal;
 }
 
-.fluffy-menu-ticket small,
-.fluffy-gluten-ticket small,
-.fluffy-sub-ticket small {
+.fluffy-cutout--mix strong {
+  font-size: 1.04rem;
+}
+
+.fluffy-cutout--sub strong {
+  font-size: 1.36rem;
+}
+
+.fluffy-cutout small {
   color: var(--fp-purple);
   font-size: 0.64rem;
   font-weight: 950;
@@ -212,9 +153,7 @@
   text-transform: uppercase;
 }
 
-.fluffy-menu-ticket em,
-.fluffy-gluten-ticket em,
-.fluffy-sub-ticket em {
+.fluffy-cutout em {
   color: var(--fp-red);
   font-family: var(--fluffy-display-font);
   font-size: 1.34rem;
@@ -223,7 +162,12 @@
   line-height: 0.95;
 }
 
-.fluffy-menu-ticket__photo {
+.fluffy-cutout--sub em {
+  font-size: 1.45rem;
+}
+
+/* Circular food photo */
+.fluffy-cutout__photo {
   display: grid;
   width: clamp(118px, 11vw, 152px);
   aspect-ratio: 1;
@@ -233,7 +177,7 @@
   box-shadow: 0 5px 0 rgba(9, 8, 7, 0.85), 0 12px 22px rgba(9, 8, 7, 0.2);
 }
 
-.fluffy-menu-ticket__photo img {
+.fluffy-cutout__photo img {
   display: block;
   width: 100%;
   height: 100%;
@@ -241,48 +185,90 @@
   box-shadow: none;
 }
 
-.fluffy-menu-ticket--taco {
-  top: auto;
-  left: auto;
-  z-index: 3;
-  transform: rotate(-3.5deg) translateY(3px);
-}
-
-.fluffy-menu-ticket--taco .fluffy-menu-ticket__photo img {
+.fluffy-cutout--taco .fluffy-cutout__photo img {
   object-position: 2% 18%;
   transform: scale(2.08);
   transform-origin: 18% 26%;
 }
 
-.fluffy-menu-ticket--mix {
-  top: auto;
-  right: auto;
-  z-index: 4;
-  transform: rotate(3.2deg) translateY(6px);
-}
-
-.fluffy-menu-ticket--mix {
-  width: auto;
-  grid-template-columns: minmax(108px, 0.78fr) minmax(108px, 1fr);
-}
-
-.fluffy-menu-ticket--mix strong {
-  font-size: 1.04rem;
-}
-
-.fluffy-menu-ticket--mix .fluffy-menu-ticket__photo img {
+.fluffy-cutout--mix .fluffy-cutout__photo img {
   object-position: 100% 20%;
   transform: scale(2.18);
   transform-origin: 88% 28%;
 }
 
+/* Ingredient dot list — from portal item.ingredients */
+.fluffy-cutout__ingredients {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.fluffy-cutout__ingredients li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fp-ink);
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.fluffy-cutout__ingredients li::before {
+  content: "";
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.fluffy-cutout__ingredients li[data-dot="green"]::before  { background: #3e8c3e; }
+.fluffy-cutout__ingredients li[data-dot="yellow"]::before { background: #e8c426; }
+.fluffy-cutout__ingredients li[data-dot="purple"]::before { background: var(--fp-purple); }
+.fluffy-cutout__ingredients li[data-dot="orange"]::before { background: var(--fp-orange); }
+.fluffy-cutout__ingredients li[data-dot="red"]::before    { background: #c0392b; }
+.fluffy-cutout__ingredients li[data-dot="gray"]::before   { background: #aaa; }
+
+/* S / M / L price row — from portal item.tags */
+.fluffy-cutout__prices {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(9, 8, 7, 0.12);
+}
+
+.fluffy-cutout__prices span {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  color: var(--fp-red);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.04rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.fluffy-cutout__prices abbr {
+  color: var(--fp-ink);
+  font-size: 0.6rem;
+  font-weight: 950;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+/* SUBS / PIZZA sign — horizontal black bar */
 .fluffy-collage-sign {
-  top: 226px;
-  left: 12%;
+  position: absolute;
+  top: 250px;
+  left: 2%;
   z-index: 5;
   display: flex;
   min-height: 78px;
-  width: 74%;
+  width: 56%;
   align-items: center;
   justify-content: center;
   gap: 14px;
@@ -308,8 +294,10 @@
   height: clamp(48px, 6vw, 68px);
 }
 
+/* Glutenfritt ticket — lower left */
 .fluffy-gluten-ticket {
-  top: 322px;
+  position: absolute;
+  top: 340px;
   left: 6%;
   z-index: 2;
   display: grid;
@@ -318,6 +306,15 @@
   gap: 16px;
   width: 59%;
   min-height: 112px;
+  overflow: hidden;
+  border: 1px solid rgba(9, 8, 7, 0.25);
+  border-radius: 6px;
+  background:
+    radial-gradient(circle at 13px 13px, rgba(9, 8, 7, 0.04) 0 1px, transparent 1.6px),
+    linear-gradient(180deg, #fffaf0, #f3e7d5);
+  background-size: 22px 22px, auto;
+  box-shadow: var(--fp-shadow-card);
+  clip-path: polygon(0 9px, 9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px));
   padding: 16px 20px;
   transform: rotate(-2deg);
 }
@@ -338,116 +335,98 @@
   text-transform: uppercase;
 }
 
+.fluffy-gluten-ticket figcaption {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
 .fluffy-gluten-ticket strong {
+  color: var(--fp-ink);
+  font-family: var(--fluffy-display-font);
   font-size: 1.75rem;
+  font-weight: 950;
+  line-height: 0.95;
+  text-transform: uppercase;
+  overflow-wrap: normal;
+}
+
+.fluffy-gluten-ticket small {
+  color: var(--fp-purple);
+  font-size: 0.64rem;
+  font-weight: 950;
+  line-height: 1.25;
+  text-transform: uppercase;
 }
 
 .fluffy-gluten-ticket em {
   color: var(--fp-purple);
-  font-size: 2.4rem;
-}
-
-.fluffy-sub-ticket {
-  top: 326px;
-  right: -2%;
-  z-index: 6;
-  width: 35%;
-  min-height: 158px;
-  padding: 16px 16px 8px;
-  transform: rotate(4deg);
-}
-
-.fluffy-sub-ticket img {
-  display: block;
-  width: 100%;
-  height: 100px;
-  object-fit: cover;
-  object-position: 9% 45%;
-  transform: scale(1.18);
-}
-
-.fluffy-sub-ticket strong {
-  font-size: 1.36rem;
-}
-
-.fluffy-sub-ticket em {
-  font-size: 1.45rem;
-}
-
-.fluffy-collage-arrow {
-  position: absolute;
-  top: 358px;
-  left: -1%;
-  color: var(--fp-purple);
   font-family: var(--fluffy-display-font);
-  font-size: 2.3rem;
+  font-size: 2.4rem;
+  font-style: normal;
   font-weight: 950;
-  transform: rotate(-12deg);
+  line-height: 0.95;
+}
+
+.fluffy-gluten-ticket__cta {
+  display: block;
+  margin-top: 4px;
+  color: var(--fp-orange);
+  font-family: var(--fluffy-display-font);
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 @media (max-width: 760px) {
   .fluffy-collage {
-    min-height: 520px;
+    min-height: 480px;
   }
 
-  .fluffy-collage-board {
-    top: 6px;
-    right: 0;
-    min-height: 408px;
-    padding: 18px;
-    transform: rotate(-0.5deg);
-  }
-
-  .fluffy-board-heading {
-    margin-bottom: 12px;
-  }
-
-  .fluffy-board-heading strong {
-    font-size: clamp(2rem, 13vw, 3.1rem);
-  }
-
-  .fluffy-board-heading small {
-    display: none;
-  }
-
-  .fluffy-board-clippings {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .fluffy-menu-ticket strong,
-  .fluffy-gluten-ticket strong,
-  .fluffy-sub-ticket strong {
-    font-size: 1.1rem;
-  }
-
-  .fluffy-menu-ticket small {
-    display: none;
-  }
-
-  .fluffy-menu-ticket img {
-    min-height: 0;
-  }
-
-  .fluffy-menu-ticket--taco {
-    width: auto;
+  .fluffy-cutout--taco {
+    top: 8px;
+    left: 2%;
+    width: 58%;
     height: 150px;
-    grid-template-columns: minmax(112px, 0.7fr) minmax(116px, 1fr);
+    min-height: auto;
+    grid-template-columns: minmax(96px, 0.7fr) minmax(100px, 1fr);
+    align-items: center;
   }
 
-  .fluffy-menu-ticket--mix {
+  .fluffy-cutout--taco small,
+  .fluffy-cutout__ingredients,
+  .fluffy-cutout__prices {
     display: none;
   }
 
-  .fluffy-menu-ticket__photo {
+  .fluffy-cutout--taco .fluffy-cutout__photo {
     width: min(36vw, 132px);
   }
 
+  .fluffy-cutout--mix {
+    display: none;
+  }
+
+  .fluffy-cutout--sub {
+    top: 290px;
+    right: 0;
+    width: 50%;
+  }
+
+  .fluffy-cutout--sub img {
+    height: 86px;
+  }
+
   .fluffy-collage-sign {
-    top: 220px;
-    left: 6%;
+    top: 210px;
+    left: 4%;
     min-height: 68px;
-    width: 86%;
+    width: 88%;
   }
 
   .fluffy-collage-sign img {
@@ -456,7 +435,7 @@
   }
 
   .fluffy-gluten-ticket {
-    top: 308px;
+    top: 326px;
     left: 0;
     width: 70%;
     min-height: 106px;
@@ -468,23 +447,15 @@
     height: 58px;
   }
 
+  .fluffy-gluten-ticket strong {
+    font-size: 1.1rem;
+  }
+
   .fluffy-gluten-ticket em {
     font-size: 1.7rem;
   }
 
-  .fluffy-sub-ticket {
-    top: 376px;
-    right: 0;
-    width: 53%;
-    min-height: 142px;
-    padding: 12px;
-  }
-
-  .fluffy-sub-ticket img {
-    height: 86px;
-  }
-
-  .fluffy-collage-arrow {
+  .fluffy-gluten-ticket small {
     display: none;
   }
 }

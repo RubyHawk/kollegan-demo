@@ -32,7 +32,7 @@ export default async function PublicMenuPage({ searchParams }: PublicMenuPagePro
   const callHref = phoneHref(site.settings.phone);
 
   return (
-    <SiteShell site={site} isFallback={isFallback} routePrefix={routePrefix}>
+    <SiteShell site={site} isFallback={isFallback} routePrefix={routePrefix} mainClassName="fluffy-public--dark">
       <section className="fluffy-menu-page-hero">
         <div className="fluffy-shell fluffy-menu-page-hero__grid">
           <div className="fluffy-copy fluffy-rise">
