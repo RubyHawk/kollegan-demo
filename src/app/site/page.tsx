@@ -254,11 +254,18 @@ export default async function PublicHomePage() {
         </div>
       </section>
 
-      <section className="fluffy-menu-band">
-        {/* SVG wave sits at top — cleaner than CSS gradient scallops */}
-        <svg aria-hidden="true" className="fluffy-menu-band__wave" viewBox="0 0 1440 20" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M0,20 V10 C160,0 320,20 480,10 S800,0 960,10 S1280,20 1440,10 V20 Z" fill="currentColor" />
+      {/* Sits between sections at z-index 5 — transparent teeth of the wave
+          expose the cream page background, creating the painted-edge look */}
+      <div className="fluffy-band-edge" aria-hidden="true">
+        <svg viewBox="0 0 1440 52" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M0,52 L0,34 C55,20 95,42 155,30 C205,20 235,44 295,32 C340,22 372,12 420,30 C462,44 500,22 550,34 C592,44 625,18 675,28 C715,37 748,48 800,32 C842,18 878,36 930,26 C968,18 1000,40 1050,32 C1090,24 1125,12 1175,28 C1218,42 1252,22 1300,32 C1338,40 1375,20 1420,30 L1440,28 L1440,52 Z"
+            fill="currentColor"
+          />
         </svg>
+      </div>
+
+      <section className="fluffy-menu-band">
         <div className="fluffy-shell">
           <MenuCategoryPreview categories={site.categories} routePrefix={routePrefix} />
         </div>
