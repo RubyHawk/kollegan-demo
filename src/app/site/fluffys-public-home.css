@@ -21,7 +21,7 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 52px;
+  height: 26px;
   display: block;
 }
 
@@ -296,7 +296,7 @@
   position: relative;
   z-index: 3;
   margin-top: -1px;
-  margin-bottom: 32px;
+  margin-bottom: 18px;
   background: var(--fp-ink);
   color: var(--fp-white);
   padding-block: 0;

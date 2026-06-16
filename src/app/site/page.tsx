@@ -257,9 +257,9 @@ export default async function PublicHomePage() {
       {/* Sits between sections at z-index 5 — transparent teeth of the wave
           expose the cream page background, creating the painted-edge look */}
       <div className="fluffy-band-edge" aria-hidden="true">
-        <svg viewBox="0 0 1440 52" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 1440 26" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
           <path
-            d="M0,52 L0,34 C55,20 95,42 155,30 C205,20 235,44 295,32 C340,22 372,12 420,30 C462,44 500,22 550,34 C592,44 625,18 675,28 C715,37 748,48 800,32 C842,18 878,36 930,26 C968,18 1000,40 1050,32 C1090,24 1125,12 1175,28 C1218,42 1252,22 1300,32 C1338,40 1375,20 1420,30 L1440,28 L1440,52 Z"
+            d="M0,26 L0,14 L90,12 Q160,8 230,13 L310,15 L390,11 Q450,7 510,13 L600,15 Q660,13 720,9 L810,13 L900,15 L970,11 Q1040,7 1110,13 L1190,15 L1270,11 Q1340,9 1400,13 L1440,12 L1440,26 Z"
             fill="currentColor"
           />
         </svg>
