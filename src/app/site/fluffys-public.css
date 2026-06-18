@@ -16,6 +16,8 @@
   --fp-shadow-soft: 0 14px 34px rgba(9, 8, 7, 0.14);
   --fp-shadow-card: 0 18px 42px rgba(9, 8, 7, 0.18);
   --fp-ease: cubic-bezier(0.2, 0.75, 0.2, 1);
+  /* Heavy poster-display face for headlines (self-hosted via next/font in app/layout.tsx). */
+  --fluffy-display-font: var(--font-archivo-black), "Arial Black", "Helvetica Neue", Impact, sans-serif;
   min-height: 100dvh;
   overflow-x: clip;
   color: var(--fp-ink);
@@ -24,6 +26,8 @@
     linear-gradient(180deg, var(--fp-paper), #f4e7d6 64%, var(--fp-paper));
   background-size: 26px 26px, auto;
   font-family: Arial, Helvetica, sans-serif;
+  /* Archivo Black ships a single (black) weight — never let the browser fake a heavier one. */
+  font-synthesis-weight: none;
 }
 
 html:has(.fluffy-public),
