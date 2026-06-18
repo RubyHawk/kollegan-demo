@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { CupSodaIcon, PizzaIcon, SaladIcon, SandwichIcon, SoupIcon, UtensilsIcon } from 'lucide-react';
 import type { RestaurantMenuCategoryView, RestaurantMenuItemView } from '@modules/supporting/restaurant-menu';
 import { publicSiteHref } from '../_lib/public-site-data';
+import { MenuGlyph } from './menu-glyphs';
+import { ScribbleStroke } from './scribble-stroke';
 import {
   categoryDisplay,
   categoryImage,
@@ -15,6 +17,7 @@ type MenuListProps = {
   categories: RestaurantMenuCategoryView[];
   activeSlug?: string;
   variant?: 'overview' | 'focused' | 'preview';
+  openAll?: boolean;
 };
 
 function tabHref(routePrefix: string, slug: string | null) {
@@ -108,19 +111,21 @@ function CategorySection({
   category,
   index,
   focused,
+  openAll = false,
 }: {
   category: RestaurantMenuCategoryView;
   index: number;
   focused: boolean;
+  openAll?: boolean;
 }) {
   const display = categoryDisplay(category);
   const featured = focused ? category.items.filter((item) => Boolean(item.imageUrl)).slice(0, 3) : [];
   const featuredIds = new Set(featured.map((item) => item.id));
   const rows = focused ? category.items.filter((item) => !featuredIds.has(item.id)) : category.items;
-  const isOpen = focused || index < 3;
+  const isOpen = focused || openAll || index < 3;
 
   return (
-    <details className="fluffy-menu-category" open={isOpen}>
+    <details className="fluffy-menu-category" id={`cat-${menuSlug(category.name)}`} open={isOpen}>
       <summary className="fluffy-menu-category__summary">
         <span className="fluffy-menu-category__title">
           <CategoryBadge index={index} />
@@ -182,7 +187,7 @@ export function MenuTabs({
   );
 }
 
-export function MenuCategoryPreview({ categories, routePrefix = '' }: { categories: RestaurantMenuCategoryView[]; routePrefix?: string }) {
+export function MenuCategoryPreview({ categories }: { categories: RestaurantMenuCategoryView[] }) {
   const preview = categories.slice(0, 5);
 
   if (preview.length === 0) return null;
@@ -191,20 +196,20 @@ export function MenuCategoryPreview({ categories, routePrefix = '' }: { categori
     <section className="fluffy-menu-preview" aria-labelledby="fluffy-menu-preview-title">
       <div className="fluffy-menu-preview__intro">
         <p id="fluffy-menu-preview-title">Menyn</p>
+        <ScribbleStroke className="fluffy-menyn-scribble" />
         <span>Något för alla smaker. Bygg din favorit.</span>
       </div>
       <div className="fluffy-menu-preview__items">
-        {preview.map((category, index) => {
+        {preview.map((category) => {
           const display = categoryDisplay(category);
           return (
-            <Link key={category.id} href={tabHref(routePrefix, menuSlug(category.name))} className="fluffy-menu-preview__item">
-              <CategoryBadge index={index} />
+            <a key={category.id} href={`#cat-${menuSlug(category.name)}`} className="fluffy-menu-preview__item">
               <span className="fluffy-menu-preview__icon">
-                <CategoryIcon iconKey={display.iconKey} />
+                <MenuGlyph iconKey={display.iconKey} />
               </span>
               <strong>{display.label}</strong>
               {category.description ? <span>{category.description}</span> : null}
-            </Link>
+            </a>
           );
         })}
       </div>
@@ -223,7 +228,7 @@ export function MenuBoardHero({ category }: { category: RestaurantMenuCategoryVi
   );
 }
 
-export function MenuList({ categories, activeSlug, variant = 'overview' }: MenuListProps) {
+export function MenuList({ categories, activeSlug, variant = 'overview', openAll = false }: MenuListProps) {
   if (categories.length === 0) {
     return (
       <div className="fluffy-card fluffy-info-card">
@@ -244,6 +249,7 @@ export function MenuList({ categories, activeSlug, variant = 'overview' }: MenuL
           category={category}
           index={categories.findIndex((entry) => entry.id === category.id)}
           focused={variant === 'focused' && Boolean(activeCategory)}
+          openAll={openAll}
         />
       ))}
     </div>

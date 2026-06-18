@@ -209,6 +209,13 @@ const instrumentSerif = localFont({
   display: 'swap',
 });
 
+// Heavy poster-display face for the Fluffy public marketing site headlines.
+const archivoBlack = localFont({
+  src: '../../public/fonts/archivo-black-400.woff2',
+  variable: '--font-archivo-black',
+  display: 'swap',
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -225,6 +232,7 @@ export default function RootLayout({
         cormorant.variable,
         jetbrainsMono.variable,
         instrumentSerif.variable,
+        archivoBlack.variable,
       )}
     >
       <head>

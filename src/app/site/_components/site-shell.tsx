@@ -6,10 +6,10 @@ import { addressLine, publicSiteHref } from '../_lib/public-site-data';
 import { ScribbleStroke } from './scribble-stroke';
 
 const NAV: Array<{ path: `/${string}`; label: string }> = [
-  { path: '/meny', label: 'Meny' },
+  { path: '/#meny', label: 'Meny' },
   { path: '/#oppettider', label: 'Öppettider' },
-  { path: '/kontakt#parkering', label: 'Parkering' },
-  { path: '/kontakt', label: 'Hitta hit' },
+  { path: '/#parkering', label: 'Parkering' },
+  { path: '/#hitta-hit', label: 'Hitta hit' },
   { path: '/kontakt', label: 'Kontakt' },
 ];
 
@@ -22,17 +22,19 @@ export function SiteShell({
   children,
   isFallback = false,
   routePrefix = '',
+  mainClassName,
 }: {
   site: PublicRestaurantSite;
   children: ReactNode;
   isFallback?: boolean;
   routePrefix?: string;
+  mainClassName?: string;
 }) {
   const address = addressLine(site);
   const brandName = publicBrandName(site.settings.siteName);
 
   return (
-    <main className="fluffy-public">
+    <main className={mainClassName ? `fluffy-public ${mainClassName}` : 'fluffy-public'}>
       <header className="fluffy-header">
         <div className="fluffy-shell fluffy-header__inner">
           <Link href={publicSiteHref(routePrefix, '/')} className="fluffy-brand">
