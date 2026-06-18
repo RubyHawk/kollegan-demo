@@ -211,7 +211,7 @@ export default async function PublicHomePage() {
               <span aria-hidden="true">Gluten free</span>
               <figcaption>
                 <strong>Glutenfritt</strong>
-                <em>{glutenPrice ? `${glutenPrice.value}:-` : '189:-'}</em>
+                {glutenPrice ? <em>{`${glutenPrice.value}:-`}</em> : null}
                 <small>{glutenItem?.description ?? 'Samma goda pizzor, nu även på glutenfri botten.'}</small>
                 <span className="fluffy-gluten-ticket__cta">Fråga personalen om dagens utbud</span>
               </figcaption>

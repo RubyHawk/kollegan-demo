@@ -2,7 +2,10 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { getPublicRestaurantSite, type PublicRestaurantSite } from '@modules/supporting/restaurant-menu';
 
-const FALLBACK_SITE: PublicRestaurantSite = {
+// Demo menu shown only when the live portal can't be reached. It carries prices, so it must
+// never be served during a real production outage (it would render fabricated, purchasable-
+// looking entries). See fallbackSite() — production falls back to the empty variant instead.
+const FALLBACK_DEMO_SITE: PublicRestaurantSite = {
   organizationId: 'fallback-fluffys',
   organizationName: "Fluffy's",
   settings: {
@@ -164,6 +167,21 @@ const FALLBACK_SITE: PublicRestaurantSite = {
   events: [],
 };
 
+// Production-safe outage fallback: same brand/settings, but no menu, prices, or hours.
+const FALLBACK_EMPTY_SITE: PublicRestaurantSite = {
+  ...FALLBACK_DEMO_SITE,
+  categories: [],
+  openingHours: [],
+};
+
+// The demo menu is only acceptable outside production, or when a demo deployment opts in via
+// PUBLIC_SITE_DEMO=true. Anywhere else (a real production outage) we serve the empty site so no
+// fabricated prices are shown.
+function fallbackSite(): PublicRestaurantSite {
+  const showDemo = process.env.NODE_ENV !== 'production' || process.env.PUBLIC_SITE_DEMO === 'true';
+  return showDemo ? FALLBACK_DEMO_SITE : FALLBACK_EMPTY_SITE;
+}
+
 const FLUFFYS_MARK_PATH = '/fluffys/favicon.svg';
 
 function iconSet(path: string): Metadata['icons'] {
@@ -218,7 +236,7 @@ export async function getSiteData(): Promise<{ site: PublicRestaurantSite; isFal
     };
   } catch {
     return {
-      site: FALLBACK_SITE,
+      site: fallbackSite(),
       isFallback: true,
     };
   }
