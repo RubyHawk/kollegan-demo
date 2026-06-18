@@ -1,27 +1,28 @@
-/* Dark menu-preview band on homepage */
+/* Dark menu-preview band on homepage — the lower half of one continuous dark "menu board".
+   The info strip sits flush on top of this (see .fluffy-info-strip), so together they read
+   as a single dark board taped onto the cream page. The torn-paper edges live at the two
+   boundaries where dark actually meets cream: the strip's top and this band's bottom. */
 .fluffy-menu-band {
   position: relative;
   z-index: 4;
   background: var(--fp-ink);
-  padding-block: 0;
+  padding-block: 0 30px;
 }
 
-/* Torn paper edge — dark ink shaped by SVG mask, paints above the info strip gap */
-.fluffy-menu-band::before {
+/* Torn paper edge at the bottom — cream of the next (light) section bites up into the dark. */
+.fluffy-menu-band::after {
   content: "";
   position: absolute;
-  top: -78px;
+  bottom: -1px;
   left: 0;
   right: 0;
-  height: 80px;
-  background: var(--fp-ink);
-  -webkit-mask-image: url("/fluffys/torn-edge.svg");
-  -webkit-mask-size: 100% 100%;
-  -webkit-mask-repeat: no-repeat;
-  mask-image: url("/fluffys/torn-edge.svg");
-  mask-size: 100% 100%;
-  mask-repeat: no-repeat;
+  height: 30px;
+  background: var(--fp-paper-strong);
+  -webkit-mask: url("/fluffys/paper-tear.svg") bottom center / 100% 100% no-repeat;
+  mask: url("/fluffys/paper-tear.svg") bottom center / 100% 100% no-repeat;
+  transform: scaleY(-1);
   pointer-events: none;
+  z-index: 5;
 }
 
 .fluffy-menu-band .fluffy-menu-preview {
@@ -295,10 +296,25 @@
   position: relative;
   z-index: 3;
   margin-top: -1px;
-  margin-bottom: 52px;
+  margin-bottom: 0;
   background: var(--fp-ink);
   color: var(--fp-white);
-  padding-block: 0;
+  padding-block: 30px 0;
+}
+
+/* Torn paper edge at the top — cream of the hero above bites down into the dark board. */
+.fluffy-info-strip::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: var(--fp-paper);
+  -webkit-mask: url("/fluffys/paper-tear.svg") top center / 100% 100% no-repeat;
+  mask: url("/fluffys/paper-tear.svg") top center / 100% 100% no-repeat;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .fluffy-info-strip__inner {
