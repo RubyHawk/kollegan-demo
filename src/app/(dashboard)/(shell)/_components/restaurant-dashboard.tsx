@@ -18,8 +18,14 @@ import {
   listRestaurantMenu,
   type RestaurantReservationRequestView,
 } from '@modules/supporting/restaurant-menu';
+import {
+  getCurrentBusinessDay,
+  getRestaurantOrderSummary,
+  listRestaurantOrders,
+} from '@modules/supporting/restaurant-orders';
 import { AttendanceControls } from '../narvaro/attendance-controls';
 import { RestaurantReservationsDashboardPanel } from './restaurant-reservations-dashboard-panel';
+import { RestaurantOrdersDashboardPanel } from './restaurant-orders-dashboard-panel';
 
 const RESTAURANT_TIME_ZONE = 'Europe/Stockholm';
 
@@ -134,6 +140,15 @@ function stockholmLongDate(date: Date) {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
+function formatMoney(cents: number) {
+  return new Intl.NumberFormat('sv-SE', {
+    style: 'currency',
+    currency: 'SEK',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
 export async function RestaurantDashboard({
   organizationId,
   userId,
@@ -143,17 +158,30 @@ export async function RestaurantDashboard({
   userId: string;
   roles: string[];
 }) {
-  const [canReadReservations, canWriteReservations, canReadSchedule, canReadTasks] = await Promise.all([
+  const [
+    canReadReservations,
+    canWriteReservations,
+    canReadSchedule,
+    canReadTasks,
+    canReadOrders,
+    canWriteOrders,
+    canReadOrderReports,
+  ] = await Promise.all([
     hasPermission(roles, 'reservations.read').catch(() => false),
     hasPermission(roles, 'reservations.write').catch(() => false),
     hasPermission(roles, 'schedule.read').catch(() => false),
     hasPermission(roles, 'tasks.read').catch(() => false),
+    hasPermission(roles, 'orders.read').catch(() => false),
+    hasPermission(roles, 'orders.write').catch(() => false),
+    hasPermission(roles, 'restaurant_reports.read').catch(() => false),
   ]);
   const now = new Date();
   const { start: todayStart, end: todayEnd, nextStart: tomorrowStart } = stockholmDayBounds(now);
   const emptyReservations = Promise.resolve<RestaurantReservationRequestView[]>([]);
   const emptySchedule = Promise.resolve<Awaited<ReturnType<typeof listScheduleShifts>>>([]);
   const emptyTasks = Promise.resolve<Awaited<ReturnType<typeof listChecklistTasks>>>([]);
+  const emptyOrders = Promise.resolve<Awaited<ReturnType<typeof listRestaurantOrders>>>([]);
+  const emptyOrderSummary = Promise.resolve<Awaited<ReturnType<typeof getRestaurantOrderSummary>> | null>(null);
 
   const [
     currentShift,
@@ -165,6 +193,9 @@ export async function RestaurantDashboard({
     upcomingConfirmed,
     scheduledToday,
     openTasks,
+    businessDay,
+    activeOrders,
+    orderSummary,
   ] = await Promise.all([
     getCurrentAttendanceShift(organizationId, userId).catch(() => null),
     listTodayAttendance(organizationId).catch(() => []),
@@ -195,6 +226,15 @@ export async function RestaurantDashboard({
     canReadTasks
       ? listChecklistTasks(organizationId, { includeCompleted: false }).catch(() => [])
       : emptyTasks,
+    canReadOrders
+      ? getCurrentBusinessDay(organizationId).catch(() => null)
+      : Promise.resolve(null),
+    canReadOrders
+      ? listRestaurantOrders(organizationId, { activeOnly: true }).catch(() => [])
+      : emptyOrders,
+    canReadOrders && canReadOrderReports
+      ? getRestaurantOrderSummary(organizationId).catch(() => null)
+      : emptyOrderSummary,
   ]);
   const activeStaff = todayShifts.filter((shift) => shift.status === 'active');
   const menuItems = categories.reduce((sum, category) => sum + category.items.length, 0);
@@ -259,8 +299,34 @@ export async function RestaurantDashboard({
             detail: canReadTasks ? `${overdueTasks.length} försenade` : 'Begränsad åtkomst',
             tone: overdueTasks.length > 0 ? 'warning' : 'neutral',
           },
+          ...(canReadOrders ? [
+            {
+              id: 'order-sales',
+              label: 'Kassa idag',
+              value: canReadOrderReports ? formatMoney(orderSummary?.salesCents ?? 0) : '-',
+              detail: businessDay ? 'Driftläge öppet' : 'Ingen dag startad',
+              tone: businessDay ? 'success' as const : 'neutral' as const,
+            },
+            {
+              id: 'active-orders',
+              label: 'Aktiva ordrar',
+              value: activeOrders.length,
+              detail: `${orderSummary?.unpaidOrderCount ?? 0} obetalda`,
+              tone: activeOrders.length > 0 ? 'warning' as const : 'neutral' as const,
+            },
+          ] : []),
         ]}
       />
+
+      {canReadOrders ? (
+        <RestaurantOrdersDashboardPanel
+          businessDay={businessDay}
+          activeOrders={activeOrders}
+          orderSummary={orderSummary}
+          canWriteOrders={canWriteOrders}
+          canReadOrderReports={canReadOrderReports}
+        />
+      ) : null}
 
       <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
         <Panel className="space-y-4">

@@ -26,6 +26,7 @@ const PUBLIC_PREFIXES = [
   // Next.js internals
   '/_next/',
   '/favicon',
+  '/manifest.webmanifest',
 ];
 
 export function isPublicPath(pathname: string): boolean {
@@ -38,9 +39,9 @@ export function isPublicPath(pathname: string): boolean {
 /** Known app routes on the offert subdomain that must NOT be treated as offer tokens */
 const APP_ROUTES = [
   '/', '/admin', '/analytics', '/announcements', '/companies', '/crm',
-  '/demos', '/installningar', '/logga-in', '/mallar', '/meetings',
+  '/demos', '/drift', '/installningar', '/kassa', '/logga-in', '/mallar', '/meetings',
   '/messages', '/offerter', '/produkter', '/projects', '/projekt',
-  '/registrera', '/reports', '/api/', '/_next/', '/favicon',
+  '/ordrar', '/registrera', '/reports', '/api/', '/_next/', '/favicon', '/manifest.webmanifest',
 ];
 
 const OFFER_SUBDOMAIN = process.env.PUBLIC_OFFER_SUBDOMAIN ?? 'offert';
@@ -70,6 +71,7 @@ const PUBLIC_SURFACE_PREFIXES = [
   '/api/health',
   '/_next/',
   '/favicon',
+  '/manifest.webmanifest',
 ];
 
 export function isPublicSurfacePath(pathname: string): boolean {

@@ -152,3 +152,86 @@ model RestaurantReservationRequest {
   @@index([deletedAt])
   @@map("rst_reservation_requests")
 }
+
+model RestaurantBusinessDay {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  organizationId String
+  businessDate   DateTime
+  status         String    @default("open") // open | closed
+  openedBy       String?
+  openedAt       DateTime  @default(now())
+  closedBy       String?
+  closedAt       DateTime?
+  openingNote    String?
+  closingNote    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now()) @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  orders       RestaurantOrder[]
+
+  @@index([organizationId, businessDate])
+  @@index([organizationId, status])
+  @@index([deletedAt])
+  @@map("rst_business_days")
+}
+
+model RestaurantOrder {
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  organizationId  String
+  businessDayId   String?
+  orderNumber     Int
+  source          String    @default("portal") // portal | public
+  status          String    @default("new") // new | preparing | ready | completed | cancelled
+  paymentStatus   String    @default("unpaid") // unpaid | paid | refunded
+  paymentMethod   String?   // cash | card | swish | other
+  fulfillmentType String    @default("takeaway") // takeaway | dine_in | counter
+  customerName    String?
+  note            String?
+  subtotalCents   Int       @default(0)
+  totalCents      Int       @default(0)
+  currency        String    @default("SEK")
+  paidAt          DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+  createdBy       String?
+  updatedBy       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+  deletedAt       DateTime?
+
+  organization Organization           @relation(fields: [organizationId], references: [id])
+  businessDay  RestaurantBusinessDay? @relation(fields: [businessDayId], references: [id])
+  items        RestaurantOrderItem[]
+
+  @@unique([businessDayId, orderNumber])
+  @@index([organizationId, businessDayId])
+  @@index([organizationId, status])
+  @@index([organizationId, paymentStatus])
+  @@index([organizationId, createdAt])
+  @@index([deletedAt])
+  @@map("rst_orders")
+}
+
+model RestaurantOrderItem {
+  id             String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  organizationId String
+  orderId        String
+  menuItemId     String?
+  name           String
+  quantity       Int      @default(1)
+  unitPriceCents Int      @default(0)
+  lineTotalCents Int      @default(0)
+  note           String?
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id])
+  order        RestaurantOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, orderId])
+  @@index([menuItemId])
+  @@map("rst_order_items")
+}
