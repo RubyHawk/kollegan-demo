@@ -9,7 +9,7 @@ import {
   TimerResetIcon,
 } from 'lucide-react';
 import type { RestaurantMenuItemView } from '@modules/supporting/restaurant-menu';
-import { MenuCategoryPreview } from './_components/menu-list';
+import { MenuCategoryPreview, MenuList } from './_components/menu-list';
 import { OpeningHours } from './_components/opening-hours';
 import { ScribbleStroke } from './_components/scribble-stroke';
 import { SiteShell } from './_components/site-shell';
@@ -192,7 +192,7 @@ export default async function PublicHomePage() {
               </article>
             </div>
 
-            <Link href={publicSiteHref(routePrefix, '/meny')} className="fluffy-button fluffy-button--primary">
+            <Link href={publicSiteHref(routePrefix, '/#meny')} className="fluffy-button fluffy-button--primary">
               Se menyn
               <ArrowRightIcon aria-hidden="true" />
             </Link>
@@ -221,7 +221,7 @@ export default async function PublicHomePage() {
         </div>
       </section>
 
-      <section className="fluffy-info-strip" aria-label="Praktisk information" id="oppettider">
+      <section className="fluffy-info-strip" aria-label="Praktisk information">
         <div className="fluffy-shell fluffy-info-strip__inner">
           <article>
             <span className="fluffy-info-strip__icon" aria-hidden="true"><Clock3Icon /></span>
@@ -237,7 +237,7 @@ export default async function PublicHomePage() {
               <p>Gratis parkering för bil, MC och lastbil</p>
             </div>
           </article>
-          <article>
+          <article id="hitta-hit">
             <span className="fluffy-info-strip__icon" aria-hidden="true"><MapPinIcon /></span>
             <div>
               <h2>Hitta hit</h2>
@@ -254,13 +254,16 @@ export default async function PublicHomePage() {
         </div>
       </section>
 
-      <section className="fluffy-menu-band">
+      <section className="fluffy-menu-band" id="meny">
         <div className="fluffy-shell">
-          <MenuCategoryPreview categories={site.categories} routePrefix={routePrefix} />
+          <MenuCategoryPreview categories={site.categories} />
+          <div className="fluffy-menu-band__list">
+            <MenuList categories={site.categories} variant="overview" openAll />
+          </div>
         </div>
       </section>
 
-      <section className="fluffy-section fluffy-section--white">
+      <section className="fluffy-section fluffy-section--white" id="oppettider">
         <div className="fluffy-shell fluffy-grid fluffy-grid--contact">
           <div className="fluffy-copy fluffy-rise">
             <p className="fluffy-eyebrow">Öppettider</p>

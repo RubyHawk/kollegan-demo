@@ -19,7 +19,6 @@
   /* Heavy poster-display face for headlines (self-hosted via next/font in app/layout.tsx). */
   --fluffy-display-font: var(--font-archivo-black), "Arial Black", "Helvetica Neue", Impact, sans-serif;
   min-height: 100dvh;
-  overflow-x: clip;
   color: var(--fp-ink);
   background:
     radial-gradient(circle at 12px 12px, rgba(9, 8, 7, 0.035) 1px, transparent 1.5px),
@@ -34,11 +33,21 @@ html:has(.fluffy-public),
 body:has(.fluffy-public) {
   height: auto;
   min-height: 100%;
+}
+
+/* One-page scroll: make <html> the sole scroll container so the sticky header attaches to
+   the viewport and "moves with you". <body> must NOT scroll (a second scroll container
+   would re-trap the sticky), and horizontal overflow is clipped at the scrollport.
+   Anchored nav jumps land below the sticky header via scroll-padding. */
+html:has(.fluffy-public) {
+  overflow-x: hidden;
   overflow-y: auto;
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
 }
 
 body:has(.fluffy-public) {
-  overflow-x: clip;
+  overflow: visible;
 }
 
 .fluffy-public * {

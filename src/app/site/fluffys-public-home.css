@@ -45,12 +45,13 @@
 .fluffy-menyn-scribble {
   width: min(100%, 160px);
   height: 12px;
-  margin-top: -4px;
+  margin-top: -2px;
   color: var(--fp-purple);
 }
 
-.fluffy-menyn-scribble path {
-  stroke-dashoffset: 0;
+/* Full menu inlined under the MENYN preview strip — the menu "continues" on the same scroll. */
+.fluffy-menu-band__list {
+  margin-top: 30px;
 }
 
 .fluffy-landing {

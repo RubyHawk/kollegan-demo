@@ -6,10 +6,10 @@ import { addressLine, publicSiteHref } from '../_lib/public-site-data';
 import { ScribbleStroke } from './scribble-stroke';
 
 const NAV: Array<{ path: `/${string}`; label: string }> = [
-  { path: '/meny', label: 'Meny' },
+  { path: '/#meny', label: 'Meny' },
   { path: '/#oppettider', label: 'Öppettider' },
-  { path: '/kontakt#parkering', label: 'Parkering' },
-  { path: '/kontakt', label: 'Hitta hit' },
+  { path: '/#parkering', label: 'Parkering' },
+  { path: '/#hitta-hit', label: 'Hitta hit' },
   { path: '/kontakt', label: 'Kontakt' },
 ];
 
