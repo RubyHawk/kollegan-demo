@@ -384,28 +384,44 @@
 }
 
 @media (max-width: 760px) {
+  /* Drop the desktop absolute collage for a tidy stacked composition: the overlapping
+     cutouts were clipping off-screen on narrow viewports. Flow order = taco card,
+     SUBS/PIZZA banner, glutenfritt, sub. */
   .fluffy-collage {
-    min-height: 480px;
+    min-height: 0;
+    margin-top: 8px;
+    display: grid;
+    gap: 16px;
   }
 
-  .fluffy-cutout--taco {
-    top: 8px;
-    left: 2%;
-    width: 58%;
-    height: 150px;
-    min-height: auto;
-    grid-template-columns: minmax(96px, 0.7fr) minmax(100px, 1fr);
-    align-items: center;
-  }
-
-  .fluffy-cutout--taco small,
-  .fluffy-cutout__ingredients,
-  .fluffy-cutout__prices {
+  .fluffy-collage::before {
     display: none;
   }
 
-  .fluffy-cutout--taco .fluffy-cutout__photo {
-    width: min(36vw, 132px);
+  .fluffy-cutout,
+  .fluffy-collage-sign,
+  .fluffy-gluten-ticket {
+    position: static;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    width: auto;
+    margin: 0;
+  }
+
+  .fluffy-cutout--taco {
+    grid-template-columns: 1fr minmax(112px, 0.82fr);
+    align-items: center;
+    height: auto;
+    min-height: 0;
+    padding: 16px;
+    transform: rotate(-1deg);
+  }
+
+  .fluffy-cutout--taco small,
+  .fluffy-cutout__ingredients {
+    display: none;
   }
 
   .fluffy-cutout--mix {
@@ -413,49 +429,38 @@
   }
 
   .fluffy-cutout--sub {
-    top: 290px;
-    right: 0;
-    width: 50%;
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: 0;
+    padding: 16px;
+    transform: rotate(1deg);
   }
 
   .fluffy-cutout--sub img {
-    height: 86px;
+    height: 128px;
   }
 
   .fluffy-collage-sign {
-    top: 210px;
-    left: 4%;
-    min-height: 68px;
-    width: 88%;
-  }
-
-  .fluffy-collage-sign img {
-    width: 42px;
-    height: 42px;
+    min-height: 72px;
+    transform: rotate(-0.6deg);
   }
 
   .fluffy-gluten-ticket {
-    top: 326px;
-    left: 0;
-    width: 70%;
-    min-height: 106px;
-    padding: 14px;
+    min-height: 0;
+    padding: 16px 18px;
+    transform: rotate(1deg);
   }
 
   .fluffy-gluten-ticket > span {
-    width: 58px;
-    height: 58px;
+    width: 62px;
+    height: 62px;
   }
 
   .fluffy-gluten-ticket strong {
-    font-size: 1.1rem;
+    font-size: 1.5rem;
   }
 
   .fluffy-gluten-ticket em {
-    font-size: 1.7rem;
-  }
-
-  .fluffy-gluten-ticket small {
-    display: none;
+    font-size: 2rem;
   }
 }
