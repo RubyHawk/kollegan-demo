@@ -124,9 +124,20 @@ const FALLBACK_DEMO_SITE: PublicRestaurantSite = {
   events: [],
 };
 
-// Production-safe outage fallback: same brand/settings, but no menu, prices, or hours.
+// Production-safe outage fallback: brand identity only — no menu, prices, hours, or the demo
+// contact details (a real outage must not surface a fabricated phone/address/maps link).
 const FALLBACK_EMPTY_SITE: PublicRestaurantSite = {
   ...FALLBACK_DEMO_SITE,
+  settings: {
+    ...FALLBACK_DEMO_SITE.settings,
+    phone: null,
+    email: null,
+    addressLine1: null,
+    addressLine2: null,
+    postalCode: null,
+    city: null,
+    reservationEmail: null,
+  },
   categories: [],
   openingHours: [],
 };
