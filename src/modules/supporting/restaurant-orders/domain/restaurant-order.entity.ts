@@ -1,7 +1,10 @@
+import { parseMenuVariants } from '@shared/lib/menu/menu-variants';
+
 export const RESTAURANT_ORDER_STATUSES = ['new', 'preparing', 'ready', 'completed', 'cancelled'] as const;
 export const RESTAURANT_PAYMENT_STATUSES = ['unpaid', 'paid', 'refunded'] as const;
 export const RESTAURANT_PAYMENT_METHODS = ['cash', 'card', 'swish', 'other'] as const;
-export const RESTAURANT_FULFILLMENT_TYPES = ['takeaway', 'dine_in', 'counter'] as const;
+export const RESTAURANT_FULFILLMENT_TYPES = ['takeaway', 'dine_in', 'counter', 'delivery'] as const;
+export const PUBLIC_FULFILLMENT_TYPES = ['takeaway', 'delivery'] as const;
 
 export type RestaurantOrderStatus = (typeof RESTAURANT_ORDER_STATUSES)[number];
 export type RestaurantPaymentStatus = (typeof RESTAURANT_PAYMENT_STATUSES)[number];
@@ -47,6 +50,8 @@ export interface RestaurantOrderView {
   paymentMethod: RestaurantPaymentMethod | null;
   fulfillmentType: RestaurantFulfillmentType;
   customerName: string | null;
+  customerPhone: string | null;
+  deliveryAddress: string | null;
   note: string | null;
   subtotalCents: number;
   totalCents: number;
@@ -66,6 +71,7 @@ export interface CreateRestaurantOrderItemInput {
   name?: string | null;
   quantity: number;
   unitPriceCents?: number | null;
+  variantLabel?: string | null;
   note?: string | null;
 }
 
@@ -108,6 +114,21 @@ export interface RestaurantMenuItemSnapshot {
   name: string;
   priceCents: number | null;
   currency: string;
+  isAvailable: boolean;
+  tags: string[];
+}
+
+export type PublicFulfillmentType = (typeof PUBLIC_FULFILLMENT_TYPES)[number];
+
+// Customer-facing online order (public website). Name + phone are required so the kitchen can
+// reach the customer; deliveryAddress is required by the service when fulfillmentType = delivery.
+export interface CreatePublicRestaurantOrderInput {
+  fulfillmentType: PublicFulfillmentType;
+  customerName: string;
+  customerPhone: string;
+  deliveryAddress?: string | null;
+  note?: string | null;
+  items: CreateRestaurantOrderItemInput[];
 }
 
 export interface NormalizedOrderItem {
@@ -192,6 +213,47 @@ export function normalizeOrderItems(
       sortOrder: index,
     };
   }).filter((item) => item.name);
+}
+
+/**
+ * Variant-aware normalization for public online orders. Every line must reference an available menu
+ * item; the price is taken from that item's own variants (parsed from the menu row), NEVER from the
+ * client. A line is dropped when the item is unknown/unavailable, resolves to no priced variant, or
+ * names a size that does not exist. The chosen size is appended to the stored line name, e.g.
+ * "1. Det enkla (M)".
+ */
+export function buildPublicOrderItems(
+  input: CreateRestaurantOrderItemInput[],
+  menuItems: Map<string, RestaurantMenuItemSnapshot>,
+): NormalizedOrderItem[] {
+  const out: NormalizedOrderItem[] = [];
+  for (const item of input) {
+    const menuItem = item.menuItemId ? menuItems.get(item.menuItemId) : null;
+    if (!menuItem || menuItem.isAvailable === false) continue;
+
+    const variants = parseMenuVariants(menuItem.tags, menuItem.priceCents);
+    if (variants.length === 0) continue;
+
+    const wantsLabel = item.variantLabel != null && item.variantLabel !== '';
+    const variant = wantsLabel
+      ? variants.find((candidate) => candidate.label === item.variantLabel)
+      : variants.length === 1
+        ? variants[0]
+        : undefined;
+    if (!variant) continue;
+
+    const quantity = Math.max(1, Math.floor(item.quantity));
+    out.push({
+      menuItemId: menuItem.id,
+      name: variant.label ? `${menuItem.name} (${variant.label})` : menuItem.name,
+      quantity,
+      unitPriceCents: variant.priceCents,
+      lineTotalCents: quantity * variant.priceCents,
+      note: item.note?.trim() || null,
+      sortOrder: out.length,
+    });
+  }
+  return out;
 }
 
 export function calculateOrderTotals(items: NormalizedOrderItem[], currency = 'SEK'): RestaurantOrderTotals {

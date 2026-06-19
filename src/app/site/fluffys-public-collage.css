@@ -147,7 +147,7 @@
 
 .fluffy-cutout small {
   color: var(--fp-purple);
-  font-size: 0.64rem;
+  font-size: 0.74rem;
   font-weight: 950;
   line-height: 1.25;
   text-transform: uppercase;
@@ -254,7 +254,7 @@
 
 .fluffy-cutout__prices abbr {
   color: var(--fp-ink);
-  font-size: 0.6rem;
+  font-size: 0.68rem;
   font-weight: 950;
   text-decoration: none;
   text-transform: uppercase;
@@ -356,7 +356,7 @@
 
 .fluffy-gluten-ticket small {
   color: var(--fp-purple);
-  font-size: 0.64rem;
+  font-size: 0.74rem;
   font-weight: 950;
   line-height: 1.25;
   text-transform: uppercase;
@@ -374,9 +374,9 @@
 .fluffy-gluten-ticket__cta {
   display: block;
   margin-top: 4px;
-  color: var(--fp-orange);
+  color: var(--fp-orange-dark);
   font-family: var(--fluffy-display-font);
-  font-size: 0.58rem;
+  font-size: 0.72rem;
   font-style: normal;
   font-weight: 950;
   letter-spacing: 0.04em;

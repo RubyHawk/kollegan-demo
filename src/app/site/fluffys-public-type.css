@@ -21,7 +21,7 @@
 .fluffy-title {
   max-width: 760px;
   font-size: clamp(4rem, 6.55vw, 6.25rem);
-  line-height: 0.85;
+  line-height: 0.9;
 }
 
 .fluffy-title > span {
@@ -31,7 +31,7 @@
 
 .fluffy-page-title {
   font-size: clamp(3.1rem, 5.8vw, 5rem);
-  line-height: 0.9;
+  line-height: 0.95;
 }
 
 .fluffy-lede {

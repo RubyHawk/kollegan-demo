@@ -1,0 +1,466 @@
+/* Ordering hub (/bestall): the "Avhämtning" (pickup) and "Leverans" (delivery) cards. Scoped to
+   .fluffy-public; reuses --fp-* tokens and the shared .fluffy-card / .fluffy-button system. */
+
+.fluffy-order-grid {
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 760px) {
+  .fluffy-order-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.fluffy-order-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 28px;
+}
+
+.fluffy-order-icon {
+  display: inline-grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  margin-bottom: 14px;
+  border: 2px solid var(--fp-orange);
+  border-radius: 14px;
+  background: rgba(242, 140, 0, 0.12);
+  color: var(--fp-orange-dark);
+}
+
+.fluffy-order-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.fluffy-order-card h2 {
+  margin: 0;
+  color: var(--fp-ink);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.6rem;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.fluffy-order-card p {
+  margin: 12px 0 0;
+  max-width: 42ch;
+  color: rgba(9, 8, 7, 0.72);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.fluffy-order-card .fluffy-button {
+  margin-top: 20px;
+}
+
+.fluffy-order-card .fluffy-muted {
+  margin-top: 12px;
+}
+
+.fluffy-order-providers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* ── Online ordering cart (/bestall) ──────────────────────────────────────────
+   Menu picker (left) + sticky order panel (right). Mobile-first single column.
+   Bare .fluffy-* selectors and --fp-* tokens, matching the rest of this file. */
+
+.fluffy-cart-layout {
+  display: grid;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (min-width: 920px) {
+  .fluffy-cart-layout {
+    grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+    gap: 32px;
+  }
+}
+
+.fluffy-cart-cat + .fluffy-cart-cat {
+  margin-top: 26px;
+}
+
+.fluffy-cart-cat h3 {
+  margin: 0 0 12px;
+  color: var(--fp-ink);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.35rem;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.fluffy-cart-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.fluffy-cart-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border: 1px solid var(--fp-line);
+  border-radius: var(--fp-radius-small);
+  background: var(--fp-paper-strong);
+}
+
+.fluffy-cart-item__head {
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.fluffy-cart-item__name {
+  margin: 0;
+  color: var(--fp-ink);
+  font-weight: 900;
+  font-size: 1rem;
+}
+
+.fluffy-cart-item__desc {
+  margin: 3px 0 0;
+  color: var(--fp-ink-soft);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.fluffy-variant-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fluffy-variant-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 2px solid var(--fp-line-strong);
+  border-radius: 999px;
+  background: var(--fp-white);
+  color: var(--fp-ink);
+  font: inherit;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 140ms var(--fp-ease, ease), background 140ms var(--fp-ease, ease),
+    transform 140ms var(--fp-ease, ease);
+}
+
+.fluffy-variant-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.fluffy-variant-btn__size {
+  font-weight: 900;
+}
+
+.fluffy-variant-btn__price {
+  color: var(--fp-orange-dark);
+}
+
+.fluffy-variant-btn:hover {
+  border-color: var(--fp-orange);
+}
+
+.fluffy-variant-btn:active {
+  transform: translateY(1px);
+}
+
+.fluffy-variant-btn:focus-visible {
+  outline: none;
+  border-color: var(--fp-purple);
+  box-shadow: 0 0 0 3px rgba(242, 140, 0, 0.34);
+}
+
+.fluffy-cart-panel {
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid var(--fp-line);
+  border-radius: var(--fp-radius);
+  background: var(--fp-paper-strong);
+  box-shadow: var(--fp-shadow-soft);
+}
+
+@media (min-width: 920px) {
+  .fluffy-cart-panel {
+    position: sticky;
+    top: 96px;
+  }
+}
+
+.fluffy-cart-panel__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fluffy-cart-panel__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 2px solid var(--fp-orange);
+  border-radius: 12px;
+  background: rgba(242, 140, 0, 0.12);
+  color: var(--fp-orange-dark);
+}
+
+.fluffy-cart-panel__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.fluffy-cart-panel h2 {
+  margin: 0;
+  color: var(--fp-ink);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.4rem;
+  text-transform: uppercase;
+}
+
+.fluffy-cart-empty {
+  margin: 0;
+  color: var(--fp-ink-soft);
+  font-size: 0.95rem;
+}
+
+.fluffy-cart-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.fluffy-cart-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fluffy-cart-line__info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fluffy-cart-line__name {
+  color: var(--fp-ink);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.fluffy-cart-line__price {
+  color: var(--fp-ink-soft);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.fluffy-qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.fluffy-qty button {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--fp-line-strong);
+  border-radius: 9px;
+  background: var(--fp-white);
+  color: var(--fp-ink);
+  cursor: pointer;
+  transition: border-color 140ms var(--fp-ease, ease);
+}
+
+.fluffy-qty button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.fluffy-qty button:hover {
+  border-color: var(--fp-orange);
+}
+
+.fluffy-qty button:focus-visible {
+  outline: none;
+  border-color: var(--fp-purple);
+  box-shadow: 0 0 0 3px rgba(242, 140, 0, 0.34);
+}
+
+.fluffy-qty span {
+  min-width: 22px;
+  text-align: center;
+  font-weight: 900;
+}
+
+.fluffy-cart-subtotal {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px dashed var(--fp-line-strong);
+  color: var(--fp-ink);
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
+.fluffy-cart-form {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+
+.fluffy-fulfillment {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fluffy-fulfillment button {
+  min-height: 44px;
+  border: 2px solid var(--fp-line-strong);
+  border-radius: var(--fp-radius-small);
+  background: var(--fp-white);
+  color: var(--fp-ink);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  transition: border-color 140ms var(--fp-ease, ease), background 140ms var(--fp-ease, ease);
+}
+
+.fluffy-fulfillment button[aria-pressed='true'] {
+  border-color: var(--fp-orange);
+  background: rgba(242, 140, 0, 0.14);
+  color: var(--fp-orange-dark);
+}
+
+.fluffy-fulfillment button:focus-visible {
+  outline: none;
+  border-color: var(--fp-purple);
+  box-shadow: 0 0 0 3px rgba(242, 140, 0, 0.34);
+}
+
+.fluffy-cart-paynote {
+  margin: 0;
+  color: var(--fp-ink-soft);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.fluffy-cart-form button[type='submit'] {
+  width: 100%;
+  cursor: pointer;
+}
+
+.fluffy-cart-form button[type='submit']:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.fluffy-cart-confirm {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 28px;
+}
+
+.fluffy-cart-confirm__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: rgba(45, 122, 62, 0.16);
+  color: #22562d;
+}
+
+.fluffy-cart-confirm__icon svg {
+  width: 30px;
+  height: 30px;
+}
+
+.fluffy-cart-confirm h2 {
+  margin: 0;
+  color: var(--fp-ink);
+  font-family: var(--fluffy-display-font);
+  font-size: 1.6rem;
+  text-transform: uppercase;
+}
+
+.fluffy-cart-confirm__number {
+  margin: 0;
+  font-weight: 900;
+  font-size: 1.15rem;
+  color: var(--fp-orange-dark);
+}
+
+.fluffy-cart-confirm .fluffy-button {
+  margin-top: 8px;
+}
+
+.fluffy-cart-jump {
+  position: sticky;
+  bottom: 16px;
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 14px 18px;
+  border-radius: 999px;
+  background: var(--fp-ink);
+  color: var(--fp-white);
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: var(--fp-shadow-card);
+}
+
+.fluffy-cart-jump svg {
+  width: 18px;
+  height: 18px;
+}
+
+.fluffy-cart-jump:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 140, 0, 0.5);
+}
+
+@media (min-width: 920px) {
+  .fluffy-cart-jump {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fluffy-variant-btn,
+  .fluffy-qty button,
+  .fluffy-fulfillment button {
+    transition: none;
+  }
+}

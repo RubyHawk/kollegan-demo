@@ -2,11 +2,19 @@ import { describe, expect, it } from 'vitest';
 import {
   assertOrderStatusTransition,
   buildOrderSummary,
+  buildPublicOrderItems,
   calculateOrderTotals,
   normalizeOrderItems,
   type RestaurantBusinessDayView,
+  type RestaurantMenuItemSnapshot,
   type RestaurantOrderView,
 } from '../../src/modules/supporting/restaurant-orders/domain/restaurant-order.entity';
+
+const variantMenu = new Map<string, RestaurantMenuItemSnapshot>([
+  ['pizza', { id: 'pizza', name: '1. Det enkla', priceCents: null, currency: 'SEK', isAvailable: true, tags: ['S 69', 'M 119', 'L 199'] }],
+  ['cola', { id: 'cola', name: 'Läsk 33cl', priceCents: 2_500, currency: 'SEK', isAvailable: true, tags: [] }],
+  ['soldout', { id: 'soldout', name: 'Skagenröra', priceCents: null, currency: 'SEK', isAvailable: false, tags: ['Liten 75'] }],
+]);
 
 const businessDay: RestaurantBusinessDayView = {
   id: 'day_1',
@@ -35,6 +43,8 @@ function order(overrides: Partial<RestaurantOrderView> = {}): RestaurantOrderVie
     paymentMethod: 'card',
     fulfillmentType: 'counter',
     customerName: null,
+    customerPhone: null,
+    deliveryAddress: null,
     note: null,
     subtotalCents: 12_000,
     totalCents: 12_000,
@@ -65,7 +75,7 @@ function order(overrides: Partial<RestaurantOrderView> = {}): RestaurantOrderVie
 describe('restaurant order domain rules', () => {
   it('normalizes menu snapshots and calculates totals', () => {
     const menu = new Map([
-      ['menu_1', { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK' }],
+      ['menu_1', { id: 'menu_1', name: 'Kebabsub', priceCents: 6_000, currency: 'SEK', isAvailable: true, tags: [] }],
     ]);
 
     const items = normalizeOrderItems([
@@ -82,6 +92,22 @@ describe('restaurant order domain rules', () => {
       totalCents: 13_500,
       currency: 'SEK',
     });
+  });
+
+  it('builds public order lines from menu variants, dropping unorderable lines', () => {
+    const items = buildPublicOrderItems([
+      { menuItemId: 'pizza', quantity: 2, variantLabel: 'M', unitPriceCents: 1 },
+      { menuItemId: 'cola', quantity: 1 },
+      { menuItemId: 'pizza', quantity: 1, variantLabel: 'XXL' }, // unknown size → dropped
+      { menuItemId: 'soldout', quantity: 1, variantLabel: 'Liten' }, // unavailable → dropped
+      { menuItemId: 'missing', quantity: 1 }, // unknown item → dropped
+    ], variantMenu);
+
+    expect(items).toEqual([
+      { menuItemId: 'pizza', name: '1. Det enkla (M)', quantity: 2, unitPriceCents: 11_900, lineTotalCents: 23_800, note: null, sortOrder: 0 },
+      { menuItemId: 'cola', name: 'Läsk 33cl', quantity: 1, unitPriceCents: 2_500, lineTotalCents: 2_500, note: null, sortOrder: 1 },
+    ]);
+    expect(calculateOrderTotals(items)).toEqual({ subtotalCents: 26_300, totalCents: 26_300, currency: 'SEK' });
   });
 
   it('allows active workflow transitions and blocks terminal rollback', () => {

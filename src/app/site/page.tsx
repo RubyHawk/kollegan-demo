@@ -3,9 +3,11 @@ import {
   ArrowRightIcon,
   CarFrontIcon,
   CheckIcon,
-  Clock3Icon,
+  MailIcon,
   MapPinIcon,
+  NavigationIcon,
   ParkingCircleIcon,
+  PhoneIcon,
   TimerResetIcon,
 } from 'lucide-react';
 import type { RestaurantMenuItemView } from '@modules/supporting/restaurant-menu';
@@ -123,6 +125,13 @@ export default async function PublicHomePage() {
   const hoursLabel = todayHoursLabel(site);
   const address = addressLine(site) || 'Värgårdsvägen 6, 695 31 Laxå';
 
+  // Contact-band hrefs (reuses the same shapes as the footer). Phone/email are optional so the
+  // strip stays correct on the production-safe empty fallback site too.
+  const telDigits = site.settings.phone?.replace(/[^\d+]/g, '');
+  const telHref = telDigits ? `tel:${telDigits}` : null;
+  const mapsQuery = [site.settings.siteName, address].filter(Boolean).join(', ');
+  const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
+
   const allItems = site.categories.flatMap((c) => c.items);
 
   // Build a map of item id → category so we can derive category-aware image fallbacks
@@ -181,7 +190,7 @@ export default async function PublicHomePage() {
                 <p className="fluffy-ticket__stamp">Alla dagar</p>
                 <strong>{hoursLabel}</strong>
               </article>
-              <article className="fluffy-ticket fluffy-ticket--parking">
+              <article id="parkering" className="fluffy-ticket fluffy-ticket--parking">
                 <span className="fluffy-ticket__stamp">Gratis</span>
                 <div className="fluffy-ticket__icons" aria-hidden="true">
                   <ParkingCircleIcon />
@@ -222,22 +231,8 @@ export default async function PublicHomePage() {
         </div>
       </section>
 
-      <section className="fluffy-info-strip" aria-label="Praktisk information">
+      <section className="fluffy-info-strip" aria-label="Hitta hit och kontakt">
         <div className="fluffy-shell fluffy-info-strip__inner">
-          <article>
-            <span className="fluffy-info-strip__icon" aria-hidden="true"><Clock3Icon /></span>
-            <div>
-              <h2>Öppet idag</h2>
-              <p>{hoursLabel}</p>
-            </div>
-          </article>
-          <article id="parkering">
-            <span className="fluffy-info-strip__icon" aria-hidden="true"><ParkingCircleIcon /></span>
-            <div>
-              <h2>Parkering</h2>
-              <p>Gratis parkering för bil, MC och lastbil</p>
-            </div>
-          </article>
           <article id="hitta-hit">
             <span className="fluffy-info-strip__icon" aria-hidden="true"><MapPinIcon /></span>
             <div>
@@ -246,12 +241,30 @@ export default async function PublicHomePage() {
             </div>
           </article>
           <article>
-            <span className="fluffy-info-strip__icon" aria-hidden="true"><TimerResetIcon /></span>
+            <span className="fluffy-info-strip__icon" aria-hidden="true"><NavigationIcon /></span>
             <div>
-              <h2>Snabbt stopp</h2>
-              <p>Beställ, ät och fortsätt resan.</p>
+              <h2>Vägbeskrivning</h2>
+              <p><a href={mapsHref} target="_blank" rel="noreferrer">Öppna i Google Maps</a></p>
             </div>
           </article>
+          {telHref ? (
+            <article>
+              <span className="fluffy-info-strip__icon" aria-hidden="true"><PhoneIcon /></span>
+              <div>
+                <h2>Ring oss</h2>
+                <p><a href={telHref}>{site.settings.phone}</a></p>
+              </div>
+            </article>
+          ) : null}
+          {site.settings.email ? (
+            <article>
+              <span className="fluffy-info-strip__icon" aria-hidden="true"><MailIcon /></span>
+              <div>
+                <h2>Mejla</h2>
+                <p><a href={`mailto:${site.settings.email}`}>{site.settings.email}</a></p>
+              </div>
+            </article>
+          ) : null}
         </div>
       </section>
 

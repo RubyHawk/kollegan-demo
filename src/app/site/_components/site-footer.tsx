@@ -81,8 +81,11 @@ export function FluffysFooter({ site, routePrefix = '' }: { site: PublicRestaura
               {settings.email}
             </a>
           ) : null}
+          <Link href={publicSiteHref(routePrefix, '/bestall')} className="fluffy-footer__cta fluffy-footer__cta--order">
+            Beställ
+          </Link>
           <Link href={publicSiteHref(routePrefix, '/boka')} className="fluffy-footer__cta">
-            Beställ / Boka
+            Boka bord
           </Link>
         </div>
 
@@ -90,6 +93,7 @@ export function FluffysFooter({ site, routePrefix = '' }: { site: PublicRestaura
           <h2>Snabblänkar</h2>
           <Link className="fluffy-footer__link" href={publicSiteHref(routePrefix, '/#meny')}>Meny</Link>
           <Link className="fluffy-footer__link" href={publicSiteHref(routePrefix, '/#oppettider')}>Öppettider</Link>
+          <Link className="fluffy-footer__link" href={publicSiteHref(routePrefix, '/bestall')}>Beställ</Link>
           <Link className="fluffy-footer__link" href={publicSiteHref(routePrefix, '/boka')}>Boka bord</Link>
           <Link className="fluffy-footer__link" href={publicSiteHref(routePrefix, '/kontakt')}>Kontakt</Link>
         </nav>
