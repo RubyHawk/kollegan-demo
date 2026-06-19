@@ -47,6 +47,8 @@ export interface RestaurantOrder {
   paymentMethod: RestaurantPaymentMethod | null;
   fulfillmentType: RestaurantFulfillmentType;
   customerName: string | null;
+  customerPhone: string | null;
+  deliveryAddress: string | null;
   note: string | null;
   subtotalCents: number;
   totalCents: number;

@@ -229,6 +229,17 @@ describe('public restaurant order service', () => {
     vi.mocked(restaurantOrderRepository.createOrder).mockResolvedValue({ ...order, source: 'public' });
   });
 
+  it('requires the public site module to be enabled (404)', async () => {
+    vi.mocked(tenantHasModule).mockResolvedValue(false);
+    await expect(createPublicRestaurantOrder('fluffys.se', {
+      fulfillmentType: 'takeaway',
+      customerName: 'Alex',
+      customerPhone: '+46700000000',
+      items: [{ menuItemId: 'menu_1', quantity: 1 }],
+    })).rejects.toMatchObject({ problem: { status: 404 } });
+    expect(restaurantOrderRepository.createOrder).not.toHaveBeenCalled();
+  });
+
   it('rejects delivery without an address (400)', async () => {
     await expect(createPublicRestaurantOrder('fluffys.se', {
       fulfillmentType: 'delivery',

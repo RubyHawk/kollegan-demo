@@ -193,6 +193,11 @@ export async function createPublicRestaurantOrder(
   input: CreatePublicRestaurantOrderInput,
 ) {
   const organizationId = await resolvePublicRestaurantOrganization(host);
+  // Public online ordering is part of the public site: require it to be enabled (mirrors the public
+  // menu/reservation flows) as well as the POS orders module, so a POS-only org with the public site
+  // turned off does not accept external orders.
+  const publicSiteEnabled = await tenantHasModule(organizationId, 'restaurant_public_site');
+  if (!publicSiteEnabled) throw Errors.notFound('Restaurant site not found');
   await requireOrdersModule(organizationId);
 
   const customerName = cleanText(input.customerName);
