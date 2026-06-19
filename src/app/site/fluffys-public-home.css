@@ -1,58 +1,6 @@
-/* Dark menu-preview band on homepage — the lower half of one continuous dark "menu board".
-   The info strip sits flush on top of this (see .fluffy-info-strip), so together they read
-   as a single dark board taped onto the cream page. The torn-paper edges live at the two
-   boundaries where dark actually meets cream: the strip's top and this band's bottom. */
-.fluffy-menu-band {
-  position: relative;
-  z-index: 4;
-  background: var(--fp-ink);
-  padding-block: 0 30px;
-}
-
-/* Torn paper edge at the bottom — cream of the next (light) section bites up into the dark. */
-.fluffy-menu-band::after {
-  content: "";
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 30px;
-  background: var(--fp-paper-strong);
-  -webkit-mask: url("/fluffys/paper-tear.svg") bottom center / 100% 100% no-repeat;
-  mask: url("/fluffys/paper-tear.svg") bottom center / 100% 100% no-repeat;
-  transform: scaleY(-1);
-  pointer-events: none;
-  z-index: 5;
-}
-
-.fluffy-menu-band .fluffy-menu-preview {
-  border-radius: 0;
-  background: transparent;
-  margin-block: 0;
-}
-
-.fluffy-menu-band .fluffy-menu-preview__intro {
-  padding: 20px 28px;
-}
-
-.fluffy-menu-band .fluffy-menu-preview__intro p {
-  color: var(--fp-white);
-  font-family: var(--fluffy-display-font);
-  font-size: clamp(2.2rem, 3.4vw, 3.4rem);
-  line-height: 0.9;
-}
-
-.fluffy-menyn-scribble {
-  width: min(100%, 160px);
-  height: 12px;
-  margin-top: -2px;
-  color: var(--fp-purple);
-}
-
-/* Full menu inlined under the MENYN preview strip — the menu "continues" on the same scroll. */
-.fluffy-menu-band__list {
-  margin-top: 30px;
-}
+/* The homepage dark "board" is now just the info strip; the menu lives on warm paper below it
+   (see fluffys-public-menu.css). The info strip therefore carries a torn-paper edge on BOTH
+   sides: top (hero → dark) and bottom (dark → paper menu). */
 
 .fluffy-landing {
   position: relative;
@@ -300,7 +248,7 @@
   margin-bottom: 0;
   background: var(--fp-ink);
   color: var(--fp-white);
-  padding-block: 30px 0;
+  padding-block: 30px;
 }
 
 /* Torn paper edge at the top — cream of the hero above bites down into the dark board. */
@@ -314,6 +262,22 @@
   background: var(--fp-paper);
   -webkit-mask: url("/fluffys/paper-tear.svg") top center / 100% 100% no-repeat;
   mask: url("/fluffys/paper-tear.svg") top center / 100% 100% no-repeat;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Torn paper edge at the bottom — the warm paper menu below bites up into the dark strip. */
+.fluffy-info-strip::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: var(--fp-paper-strong);
+  -webkit-mask: url("/fluffys/paper-tear.svg") bottom center / 100% 100% no-repeat;
+  mask: url("/fluffys/paper-tear.svg") bottom center / 100% 100% no-repeat;
+  transform: scaleY(-1);
   pointer-events: none;
   z-index: 2;
 }

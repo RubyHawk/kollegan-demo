@@ -2,7 +2,8 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { MenuIcon } from 'lucide-react';
 import type { PublicRestaurantSite } from '@modules/supporting/restaurant-menu';
-import { addressLine, publicSiteHref } from '../_lib/public-site-data';
+import { publicSiteHref } from '../_lib/public-site-data';
+import { FluffysFooter } from './site-footer';
 import { ScribbleStroke } from './scribble-stroke';
 
 const NAV: Array<{ path: `/${string}`; label: string }> = [
@@ -30,7 +31,6 @@ export function SiteShell({
   routePrefix?: string;
   mainClassName?: string;
 }) {
-  const address = addressLine(site);
   const brandName = publicBrandName(site.settings.siteName);
 
   return (
@@ -82,19 +82,7 @@ export function SiteShell({
 
       {children}
 
-      <footer className="fluffy-footer">
-        <div className="fluffy-shell fluffy-footer__inner">
-          <div>
-            <p className="fluffy-footer__brand">{site.settings.siteName}</p>
-            {site.settings.heroSubtitle ? <p className="fluffy-footer__meta">{site.settings.heroSubtitle}</p> : null}
-          </div>
-          <div className="fluffy-footer__meta">
-            {address ? <p>{address}</p> : null}
-            {site.settings.phone ? <p>{site.settings.phone}</p> : null}
-            {site.settings.email ? <p>{site.settings.email}</p> : null}
-          </div>
-        </div>
-      </footer>
+      <FluffysFooter site={site} routePrefix={routePrefix} />
     </main>
   );
 }

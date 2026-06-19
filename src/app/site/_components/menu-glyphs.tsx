@@ -63,6 +63,18 @@ export function MenuGlyph({ iconKey }: MenuGlyphProps) {
     );
   }
 
+  if (iconKey === 'salad') {
+    return (
+      <svg {...common}>
+        <path d="M9 23 h30 l-3 12 a3 3 0 0 1 -3 2.6 H15 a3 3 0 0 1 -3 -2.6 Z" fill="currentColor" />
+        <circle cx="18" cy="18.5" r="4.6" fill="currentColor" />
+        <circle cx="26" cy="15" r="5.2" fill="currentColor" />
+        <circle cx="33" cy="19" r="4.2" fill="currentColor" />
+        <path d="M15 30 h18 M18 35 h12" stroke={INK} strokeWidth="1.7" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
   if (iconKey === 'sides' || iconKey === 'drinks') {
     return (
       <svg {...common}>

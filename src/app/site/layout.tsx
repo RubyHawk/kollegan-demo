@@ -6,6 +6,8 @@ import './fluffys-public-home.css';
 import './fluffys-public-collage.css';
 import './fluffys-public-menu.css';
 import './fluffys-public-menu-responsive.css';
+import './fluffys-public-hours.css';
+import './fluffys-public-footer.css';
 import './fluffys-public-forms.css';
 import type { ReactNode } from 'react';
 

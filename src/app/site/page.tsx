@@ -9,8 +9,9 @@ import {
   TimerResetIcon,
 } from 'lucide-react';
 import type { RestaurantMenuItemView } from '@modules/supporting/restaurant-menu';
-import { MenuCategoryPreview, MenuList } from './_components/menu-list';
-import { OpeningHours } from './_components/opening-hours';
+import { MenuBoard } from './_components/menu-list';
+import { AvailabilityStatus } from './_components/availability-status';
+import { WeeklyHours } from './_components/opening-hours';
 import { ScribbleStroke } from './_components/scribble-stroke';
 import { SiteShell } from './_components/site-shell';
 import { addressLine, getPublicSiteRoutePrefix, getSiteData, publicSiteHref, siteMetadata } from './_lib/public-site-data';
@@ -254,23 +255,29 @@ export default async function PublicHomePage() {
         </div>
       </section>
 
-      <section className="fluffy-menu-band" id="meny">
-        <div className="fluffy-shell">
-          <MenuCategoryPreview categories={site.categories} />
-          <div className="fluffy-menu-band__list">
-            <MenuList categories={site.categories} variant="overview" openAll />
-          </div>
+      <section className="fluffy-menu" id="meny">
+        <div className="fluffy-menu__intro fluffy-shell">
+          <p className="fluffy-eyebrow">Menyn</p>
+          <h2 className="fluffy-menu__title">
+            <span>Menyn</span>
+            <ScribbleStroke className="fluffy-menu__scribble" />
+          </h2>
+          <p className="fluffy-menu__lede">Något för alla smaker — bygg din favorit eller välj en klassiker.</p>
         </div>
+        <MenuBoard categories={site.categories} />
       </section>
 
       <section className="fluffy-section fluffy-section--white" id="oppettider">
-        <div className="fluffy-shell fluffy-grid fluffy-grid--contact">
-          <div className="fluffy-copy fluffy-rise">
+        <div className="fluffy-shell fluffy-availability">
+          <div className="fluffy-availability__lead fluffy-rise">
             <p className="fluffy-eyebrow">Öppettider</p>
-            <h2 className="fluffy-page-title">Kom förbi när du är på väg.</h2>
-            <p>Öppettiderna hämtas från restaurangen och uppdateras när teamet ändrar dem i portalen.</p>
+            <h2 className="fluffy-availability__title">Kika in när du är på väg</h2>
+            <AvailabilityStatus hours={site.openingHours} />
           </div>
-          <OpeningHours hours={site.openingHours} />
+          <div className="fluffy-availability__week fluffy-rise fluffy-delay-1">
+            <p className="fluffy-availability__week-title">Veckans tider</p>
+            <WeeklyHours hours={site.openingHours} />
+          </div>
         </div>
       </section>
 
