@@ -183,6 +183,19 @@ body:has(.fluffy-public) {
   transform: translateY(-1px);
 }
 
+/* "Beställ" is the filled primary action; "Boka bord" stays the ghost outline beside it. */
+.fluffy-header__cta--order {
+  background: var(--fp-orange);
+  color: var(--fp-ink);
+}
+
+.fluffy-header__cta--order:hover,
+.fluffy-header__cta--order:focus-visible {
+  background: var(--fp-orange-dark);
+  border-color: var(--fp-orange-dark);
+  color: var(--fp-white);
+}
+
 .fluffy-fallback {
   border-bottom: 1px solid rgba(242, 140, 0, 0.55);
   background: rgba(242, 140, 0, 0.18);
@@ -409,6 +422,7 @@ body:has(.fluffy-public) {
   .fluffy-header__inner {
     min-height: 76px;
     gap: 12px;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .fluffy-brand__mark {
@@ -417,11 +431,27 @@ body:has(.fluffy-public) {
   }
 
   .fluffy-brand__text strong {
+    overflow: hidden;
     font-size: 1.05rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .fluffy-header__cta,
+  /* Keep the booking action reachable on mobile (roadside = mobile-first); only the
+     desktop nav and the secondary tagline collapse into the hamburger / are hidden. */
+  .fluffy-brand__text small,
   .fluffy-nav {
+    display: none;
+  }
+
+  .fluffy-header__cta {
+    min-height: 40px;
+    font-size: 0.78rem;
+    padding: 0 16px;
+  }
+
+  /* On mobile keep just the filled "Beställ" in the header; "Boka bord" lives in the menu. */
+  .fluffy-header__cta--book {
     display: none;
   }
 

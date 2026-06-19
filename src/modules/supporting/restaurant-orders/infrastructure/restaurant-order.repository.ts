@@ -65,6 +65,8 @@ type OrderRow = {
   paymentMethod: string | null;
   fulfillmentType: string;
   customerName: string | null;
+  customerPhone: string | null;
+  deliveryAddress: string | null;
   tableLabel: string | null;
   bookingReference: string | null;
   note: string | null;
@@ -231,6 +233,8 @@ function mapOrder(row: OrderRow): RestaurantOrderView {
     paymentMethod: row.paymentMethod as RestaurantPaymentMethod | null,
     fulfillmentType: row.fulfillmentType as RestaurantFulfillmentType,
     customerName: row.customerName,
+    customerPhone: row.customerPhone,
+    deliveryAddress: row.deliveryAddress,
     tableLabel: row.tableLabel,
     bookingReference: row.bookingReference,
     note: row.note,
@@ -354,7 +358,16 @@ export const restaurantOrderRepository = {
     if (ids.length === 0) return [];
     return prisma.restaurantMenuItem.findMany({
       where: { id: { in: ids }, organizationId, deletedAt: null },
-      select: { id: true, name: true, priceCents: true, currency: true, tags: true, variants: true, modifierGroups: true },
+      select: {
+        id: true,
+        name: true,
+        priceCents: true,
+        currency: true,
+        isAvailable: true,
+        tags: true,
+        variants: true,
+        modifierGroups: true,
+      },
     }).then((rows) => rows.map((row) => {
       const parsedVariants = parseMenuVariants(row.variants);
       return {
@@ -362,6 +375,8 @@ export const restaurantOrderRepository = {
         name: row.name,
         priceCents: row.priceCents,
         currency: row.currency,
+        isAvailable: row.isAvailable,
+        tags: row.tags,
         variants: parsedVariants.length > 0 || row.priceCents !== null
           ? parsedVariants
           : deriveMenuVariantsFromPriceTags(row.tags),
@@ -373,18 +388,21 @@ export const restaurantOrderRepository = {
   async createOrder(
     organizationId: string,
     businessDayId: string,
-    actorId: string,
+    actorId: string | null,
     input: {
+      source?: RestaurantOrderSource;
       fulfillmentType: RestaurantFulfillmentType;
       customerName: string | null;
-      tableLabel: string | null;
-      bookingReference: string | null;
+      customerPhone?: string | null;
+      deliveryAddress?: string | null;
+      tableLabel?: string | null;
+      bookingReference?: string | null;
       note: string | null;
       paymentStatus: RestaurantPaymentStatus;
       paymentMethod: RestaurantPaymentMethod | null;
-      isHeld: boolean;
-      kotStatus: RestaurantKotStatus;
-      printReceipt: boolean;
+      isHeld?: boolean;
+      kotStatus?: RestaurantKotStatus;
+      printReceipt?: boolean;
       items: NormalizedOrderItem[];
       totals: RestaurantOrderTotals;
     },
@@ -404,14 +422,16 @@ export const restaurantOrderRepository = {
               organizationId,
               businessDayId,
               orderNumber,
-              source: 'portal',
+              source: input.source ?? 'portal',
               status: 'new',
               paymentStatus: input.paymentStatus,
               paymentMethod: input.paymentMethod,
               fulfillmentType: input.fulfillmentType,
               customerName: input.customerName,
-              tableLabel: input.tableLabel,
-              bookingReference: input.bookingReference,
+              customerPhone: input.customerPhone ?? null,
+              deliveryAddress: input.deliveryAddress ?? null,
+              tableLabel: input.tableLabel ?? null,
+              bookingReference: input.bookingReference ?? null,
               note: input.note,
               subtotalCents: input.totals.subtotalCents,
               discountCents: input.totals.discountCents,
@@ -419,9 +439,9 @@ export const restaurantOrderRepository = {
               taxRateBps: input.totals.taxRateBps,
               totalCents: input.totals.totalCents,
               currency: input.totals.currency,
-              isHeld: input.isHeld,
-              kotStatus: input.printReceipt ? 'printed' : input.kotStatus,
-              sentToKitchenAt: input.kotStatus !== 'not_sent' || input.printReceipt ? now : null,
+              isHeld: input.isHeld ?? false,
+              kotStatus: input.printReceipt ? 'printed' : input.kotStatus ?? 'not_sent',
+              sentToKitchenAt: ((input.kotStatus && input.kotStatus !== 'not_sent') || input.printReceipt) ? now : null,
               printedAt: input.printReceipt ? now : null,
               printCount: input.printReceipt ? 1 : 0,
               paidAt: input.paymentStatus === 'paid' ? now : null,

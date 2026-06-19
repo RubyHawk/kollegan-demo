@@ -4,11 +4,20 @@ import { Button } from '@shared/ui/button';
 import { StatusBadge, type StatusTone } from '@shared/ui/status-badge';
 import type {
   RestaurantBusinessDay,
+  RestaurantFulfillmentType,
   RestaurantOrder,
   RestaurantOrderStatus,
   RestaurantOrderSummary,
 } from '@shared/lib/api/restaurant-orders.api';
 import { money } from './kassa-helpers';
+
+const FULFILLMENT_LABELS: Record<RestaurantFulfillmentType, string> = {
+  takeaway: 'Avhämtning',
+  dine_in: 'Bordsservering',
+  counter: 'Disk',
+  booking_linked: 'Bokning',
+  delivery: 'Leverans',
+};
 
 const STATUS_LABELS: Record<RestaurantOrderStatus, string> = {
   new: 'Ny',
@@ -106,6 +115,24 @@ export function KassaActiveOrdersStrip({
                 <p className="mt-1 truncate text-xs text-[var(--ui-text-muted)]">
                   {order.items.map((item) => `${item.quantity} ${item.name}`).join(', ')}
                 </p>
+                {order.fulfillmentType === 'delivery' || order.source === 'public' || order.customerName || order.customerPhone ? (
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--ui-text-muted)]">
+                    {order.fulfillmentType === 'delivery' ? (
+                      <StatusBadge tone="warning">{FULFILLMENT_LABELS.delivery}</StatusBadge>
+                    ) : order.source === 'public' ? (
+                      <StatusBadge tone="info">{FULFILLMENT_LABELS[order.fulfillmentType]}</StatusBadge>
+                    ) : null}
+                    {order.customerName ? <span className="font-medium text-[var(--ui-text)]">{order.customerName}</span> : null}
+                    {order.customerPhone ? (
+                      <a href={`tel:${order.customerPhone.replace(/[^\d+]/g, '')}`} className="underline">
+                        {order.customerPhone}
+                      </a>
+                    ) : null}
+                  </div>
+                ) : null}
+                {order.fulfillmentType === 'delivery' && order.deliveryAddress ? (
+                  <p className="mt-0.5 text-xs font-medium text-[var(--ui-text)]">Adress: {order.deliveryAddress}</p>
+                ) : null}
               </div>
               {order.isHeld ? (
                 <Button

@@ -37,6 +37,7 @@ export {
   listReservationRequests,
   listRestaurantMenu,
   listRestaurantOpeningHours,
+  resolvePublicRestaurantOrganization,
   updatePublicSiteSettings,
   updateRestaurantEvent,
   updateRestaurantMenuCategory,

@@ -7,7 +7,7 @@ interface ApiEnvelope<T> {
 export type RestaurantOrderStatus = 'new' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 export type RestaurantPaymentStatus = 'unpaid' | 'paid' | 'refunded';
 export type RestaurantPaymentMethod = 'cash' | 'card' | 'swish' | 'other';
-export type RestaurantFulfillmentType = 'takeaway' | 'dine_in' | 'counter' | 'booking_linked';
+export type RestaurantFulfillmentType = 'takeaway' | 'dine_in' | 'counter' | 'booking_linked' | 'delivery';
 export type RestaurantKotStatus = 'not_sent' | 'sent' | 'printed';
 export type RestaurantBusinessDayStatus = 'open' | 'closed';
 
@@ -60,6 +60,8 @@ export interface RestaurantOrder {
   paymentMethod: RestaurantPaymentMethod | null;
   fulfillmentType: RestaurantFulfillmentType;
   customerName: string | null;
+  customerPhone?: string | null;
+  deliveryAddress?: string | null;
   tableLabel?: string | null;
   bookingReference?: string | null;
   note: string | null;
@@ -115,6 +117,7 @@ export interface CreateRestaurantOrderItemPayload {
   selectedModifiers?: RestaurantOrderModifierSelection[];
   modifierTotalCents?: number | null;
   unitPriceCents?: number | null;
+  variantLabel?: string | null;
   note?: string | null;
 }
 

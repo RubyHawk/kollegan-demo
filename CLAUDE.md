@@ -2,7 +2,7 @@
 
 Read [docs/AI_ENGINEERING.md](docs/AI_ENGINEERING.md) before making code, schema, API, security, public offer, signing, or architecture changes.
 
-Claude-specific skills live in [.claude/skills](.claude/skills). Use the relevant skill before touching migrations, security evidence, DDD module boundaries, API contracts, branding, theming, or frontend architecture.
+Claude-specific skills live in [.claude/skills](.claude/skills). Use the relevant skill before touching migrations, security evidence, DDD module boundaries, API contracts, branding, theming, the public marketing website, or frontend architecture.
 
 Core rules:
 

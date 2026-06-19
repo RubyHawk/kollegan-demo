@@ -2,11 +2,19 @@ import { describe, expect, it } from 'vitest';
 import {
   assertOrderStatusTransition,
   buildOrderSummary,
+  buildPublicOrderItems,
   calculateOrderTotals,
   normalizeOrderItems,
   type RestaurantBusinessDayView,
+  type RestaurantMenuItemSnapshot,
   type RestaurantOrderView,
 } from '../../src/modules/supporting/restaurant-orders/domain/restaurant-order.entity';
+
+const variantMenu = new Map<string, RestaurantMenuItemSnapshot>([
+  ['pizza', { id: 'pizza', name: '1. Det enkla', priceCents: null, currency: 'SEK', isAvailable: true, tags: ['S 69', 'M 119', 'L 199'] }],
+  ['cola', { id: 'cola', name: 'Läsk 33cl', priceCents: 2_500, currency: 'SEK', isAvailable: true, tags: [] }],
+  ['soldout', { id: 'soldout', name: 'Skagenröra', priceCents: null, currency: 'SEK', isAvailable: false, tags: ['Liten 75'] }],
+]);
 
 const businessDay: RestaurantBusinessDayView = {
   id: 'day_1',
@@ -167,6 +175,29 @@ describe('restaurant order domain rules', () => {
         unitPriceCents: 1,
       },
     ], menu)).toThrow(/inte tillgänglig/);
+  });
+
+  it('builds public order lines from menu variants, dropping unorderable lines', () => {
+    const items = buildPublicOrderItems([
+      { menuItemId: 'pizza', quantity: 2, variantLabel: 'M', unitPriceCents: 1 },
+      { menuItemId: 'cola', quantity: 1 },
+      { menuItemId: 'pizza', quantity: 1, variantLabel: 'XXL' },
+      { menuItemId: 'soldout', quantity: 1, variantLabel: 'Liten' },
+      { menuItemId: 'missing', quantity: 1 },
+    ], variantMenu);
+
+    expect(items).toMatchObject([
+      { menuItemId: 'pizza', name: '1. Det enkla (M)', quantity: 2, unitPriceCents: 11_900, lineTotalCents: 23_800, note: null, sortOrder: 0 },
+      { menuItemId: 'cola', name: 'Läsk 33cl', quantity: 1, unitPriceCents: 2_500, lineTotalCents: 2_500, note: null, sortOrder: 1 },
+    ]);
+    expect(calculateOrderTotals(items)).toEqual({
+      subtotalCents: 26_300,
+      discountCents: 0,
+      taxCents: 2_818,
+      taxRateBps: 1_200,
+      totalCents: 26_300,
+      currency: 'SEK',
+    });
   });
 
   it('allows active workflow transitions and blocks terminal rollback', () => {

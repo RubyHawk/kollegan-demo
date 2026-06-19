@@ -9,6 +9,7 @@ import './fluffys-public-menu-responsive.css';
 import './fluffys-public-hours.css';
 import './fluffys-public-footer.css';
 import './fluffys-public-forms.css';
+import './fluffys-public-order.css';
 import type { ReactNode } from 'react';
 
 export default function SiteLayout({ children }: { children: ReactNode }) {

@@ -189,8 +189,10 @@ model RestaurantOrder {
   status          String    @default("new") // new | preparing | ready | completed | cancelled
   paymentStatus   String    @default("unpaid") // unpaid | paid | refunded
   paymentMethod   String?   // cash | card | swish | other
-  fulfillmentType String    @default("takeaway") // takeaway | dine_in | counter
+  fulfillmentType String    @default("takeaway") // takeaway | dine_in | counter | booking_linked | delivery
   customerName    String?
+  customerPhone   String?   // public online orders: contact number for the kitchen
+  deliveryAddress String?   // public online orders: set when fulfillmentType = delivery
   tableLabel      String?
   bookingReference String?
   note            String?

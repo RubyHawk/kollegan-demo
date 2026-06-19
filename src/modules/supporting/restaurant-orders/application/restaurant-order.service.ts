@@ -5,15 +5,19 @@ import {
   assertOrderStatusTransition,
   buildOrderSummary,
   calculateOrderTotals,
+  buildPublicOrderItems,
   normalizeOrderItems,
   type CloseBusinessDayInput,
+  type CreatePublicRestaurantOrderInput,
   type CreateRestaurantOrderInput,
+  type CreateRestaurantOrderItemInput,
   type ListRestaurantOrdersInput,
   type RestaurantOrderSummary,
   type RestaurantOrderView,
   type StartBusinessDayInput,
   type UpdateRestaurantOrderInput,
 } from '../domain/restaurant-order.entity';
+import { resolvePublicRestaurantOrganization } from '@modules/supporting/restaurant-menu';
 import { restaurantOrderRepository } from '../infrastructure/restaurant-order.repository';
 
 const TAG = 'RestaurantOrderService';
@@ -84,7 +88,7 @@ function cleanText(value: string | null | undefined): string | null {
   return trimmed ? trimmed : null;
 }
 
-function collectMenuItemIds(input: CreateRestaurantOrderInput): string[] {
+function collectMenuItemIds(input: { items: CreateRestaurantOrderItemInput[] }): string[] {
   return Array.from(new Set(input.items.map((item) => item.menuItemId).filter((id): id is string => Boolean(id))));
 }
 
@@ -200,6 +204,65 @@ export async function createRestaurantOrder(
   });
   logger.info(TAG, 'Restaurant order created', { organizationId, actorId, orderId: order.id });
   return order;
+}
+
+/**
+ * Customer-facing online order from the public website. No auth: the organization is resolved from
+ * the request host (same resolver the public menu/reservation endpoints use). Prices are snapshotted
+ * server-side from the live menu (client prices are ignored), unavailable items are dropped, and the
+ * order is always created as `source: 'public'`, unpaid (pay on pickup/delivery). Online ordering is
+ * open only while the kitchen's POS day is started, so orders actually reach the kitchen.
+ */
+export async function createPublicRestaurantOrder(
+  host: string | null | undefined,
+  input: CreatePublicRestaurantOrderInput,
+) {
+  const organizationId = await resolvePublicRestaurantOrganization(host);
+  // Public online ordering is part of the public site: require it to be enabled (mirrors the public
+  // menu/reservation flows) as well as the POS orders module, so a POS-only org with the public site
+  // turned off does not accept external orders.
+  const publicSiteEnabled = await tenantHasModule(organizationId, 'restaurant_public_site');
+  if (!publicSiteEnabled) throw Errors.notFound('Restaurant site not found');
+  await requireOrdersModule(organizationId);
+
+  const customerName = cleanText(input.customerName);
+  const customerPhone = cleanText(input.customerPhone);
+  if (!customerName) throw Errors.validation('Namn krävs.');
+  if (!customerPhone) throw Errors.validation('Telefonnummer krävs.');
+
+  const deliveryAddress = input.fulfillmentType === 'delivery' ? cleanText(input.deliveryAddress) : null;
+  if (input.fulfillmentType === 'delivery' && !deliveryAddress) {
+    throw Errors.validation('Leveransadress krävs för leverans.');
+  }
+
+  const businessDay = await restaurantOrderRepository.getOpenBusinessDay(organizationId);
+  if (!businessDay) throw Errors.conflict('Onlinebeställningar är stängda just nu. Ring oss så hjälper vi dig.');
+
+  const menuItems = await restaurantOrderRepository.findMenuItemsByIds(organizationId, collectMenuItemIds(input));
+  const menuMap = new Map(menuItems.map((item) => [item.id, item]));
+  const items = buildPublicOrderItems(input.items, menuMap);
+  if (items.length === 0) throw Errors.validation('Beställningen behöver minst en tillgänglig rad.');
+
+  const currency = menuItems.find((item) => item.currency)?.currency ?? 'SEK';
+  const totals = calculateOrderTotals(items, currency);
+  const order = await restaurantOrderRepository.createOrder(organizationId, businessDay.id, null, {
+    source: 'public',
+    fulfillmentType: input.fulfillmentType,
+    customerName,
+    customerPhone,
+    deliveryAddress,
+    note: cleanText(input.note),
+    paymentStatus: 'unpaid',
+    paymentMethod: null,
+    items,
+    totals,
+  });
+  logger.info(TAG, 'Public restaurant order created', {
+    organizationId,
+    orderId: order.id,
+    fulfillmentType: order.fulfillmentType,
+  });
+  return { orderNumber: order.orderNumber, status: order.status, fulfillmentType: order.fulfillmentType };
 }
 
 export async function updateRestaurantOrder(

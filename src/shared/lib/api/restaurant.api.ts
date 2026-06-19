@@ -252,6 +252,30 @@ export interface PublicReservationPayload {
   message?: string | null;
 }
 
+export type PublicOrderFulfillmentType = 'takeaway' | 'delivery';
+
+export interface PublicOrderItemPayload {
+  menuItemId: string;
+  quantity: number;
+  variantLabel?: string | null;
+  note?: string | null;
+}
+
+export interface PublicOrderPayload {
+  fulfillmentType: PublicOrderFulfillmentType;
+  customerName: string;
+  customerPhone: string;
+  deliveryAddress?: string | null;
+  note?: string | null;
+  items: PublicOrderItemPayload[];
+}
+
+export interface PublicOrderResult {
+  orderNumber: number;
+  status: string;
+  fulfillmentType: PublicOrderFulfillmentType;
+}
+
 export interface ReservationListParams {
   status?: RestaurantReservationStatus;
   from?: string;
@@ -324,6 +348,11 @@ export async function saveRestaurantOpeningHour(payload: SaveOpeningHourPayload)
 export async function createPublicReservation(payload: PublicReservationPayload): Promise<{ id: string; status: string; createdAt: string }> {
   const res = await apiPost<ApiEnvelope<{ id: string; status: string; createdAt: string }>>('/api/v1/public-site/reservations', payload);
   return res.data;
+}
+
+export async function createPublicOrder(payload: PublicOrderPayload): Promise<PublicOrderResult> {
+  const res = await apiPost<ApiEnvelope<{ order: PublicOrderResult }>>('/api/v1/public-site/orders', payload);
+  return res.data.order;
 }
 
 export async function listRestaurantReservations(params: ReservationListParams = {}): Promise<RestaurantReservation[]> {

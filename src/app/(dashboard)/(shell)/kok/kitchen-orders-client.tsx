@@ -80,6 +80,7 @@ function fulfillmentLabel(order: RestaurantOrder) {
     takeaway: 'Takeaway',
     dine_in: 'Bord',
     booking_linked: 'Bokning',
+    delivery: 'Leverans',
   };
   return [base[order.fulfillmentType], order.tableLabel, order.bookingReference].filter(Boolean).join(' · ');
 }
