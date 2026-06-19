@@ -1,257 +1,147 @@
-import Link from 'next/link';
-import { CupSodaIcon, PizzaIcon, SaladIcon, SandwichIcon, SoupIcon, UtensilsIcon } from 'lucide-react';
 import type { RestaurantMenuCategoryView, RestaurantMenuItemView } from '@modules/supporting/restaurant-menu';
-import { publicSiteHref } from '../_lib/public-site-data';
 import { MenuGlyph } from './menu-glyphs';
-import { ScribbleStroke } from './scribble-stroke';
-import {
-  categoryDisplay,
-  categoryImage,
-  itemPriceFallback,
-  menuItemParts,
-  menuSlug,
-  priceParts,
-} from '../_lib/menu-visuals';
+import { MenuCategoryNav, type MenuNavCategory } from './menu-category-nav';
+import { categoryDisplay, menuItemParts, menuSlug, priceParts } from '../_lib/menu-visuals';
 
-type MenuListProps = {
-  categories: RestaurantMenuCategoryView[];
-  activeSlug?: string;
-  variant?: 'overview' | 'focused' | 'preview';
-  openAll?: boolean;
-};
-
-function tabHref(routePrefix: string, slug: string | null) {
-  const path: `/${string}` = slug ? `/meny?kategori=${encodeURIComponent(slug)}` : '/meny';
-  return publicSiteHref(routePrefix, path);
-}
-
-function CategoryBadge({ index }: { index: number }) {
-  return <span className="fluffy-category-badge">{String(index + 1).padStart(2, '0')}</span>;
-}
-
-function CategoryIcon({ iconKey }: { iconKey: string }) {
-  const props = { 'aria-hidden': true, size: 34, strokeWidth: 2 } as const;
-
-  if (iconKey === 'pizza') return <PizzaIcon {...props} />;
-  if (iconKey === 'subs') return <SandwichIcon {...props} />;
-  if (iconKey === 'panini') return <UtensilsIcon {...props} />;
-  if (iconKey === 'salad') return <SaladIcon {...props} />;
-  if (iconKey === 'sides') return <SoupIcon {...props} />;
-  if (iconKey === 'drinks') return <CupSodaIcon {...props} />;
-  return <UtensilsIcon {...props} />;
-}
-
-function PriceColumns({ item }: { item: RestaurantMenuItemView }) {
+function MenuPrice({ item }: { item: RestaurantMenuItemView }) {
   const parts = priceParts(item);
 
   if (parts.length === 0) {
-    return <span className="fluffy-menu-price-empty">Fråga oss</span>;
+    return <span className="fluffy-price fluffy-price--ask">Fråga oss</span>;
+  }
+
+  if (parts.length === 1 && parts[0]?.label === 'Pris') {
+    return (
+      <span className="fluffy-price fluffy-price--single">
+        {parts[0]?.value}
+        <i>:-</i>
+      </span>
+    );
   }
 
   return (
-    <dl className="fluffy-price-columns" aria-label="Priser">
+    <div className="fluffy-price" aria-label="Priser">
       {parts.map((part) => (
-        <div key={`${item.id}-${part.label}`} className="fluffy-price-columns__part">
-          <dt>{part.label}</dt>
-          <dd>{part.value}</dd>
-        </div>
+        <span key={part.label} className="fluffy-price__tier">
+          <abbr title={part.label}>{part.label}</abbr>
+          <b>{part.value}</b>
+        </span>
       ))}
-    </dl>
+    </div>
   );
 }
 
 function MenuItemRow({ item }: { item: RestaurantMenuItemView }) {
-  const { number, label } = menuItemParts(item.name);
+  const { label } = menuItemParts(item.name);
+  const available = item.isAvailable;
 
   return (
-    <article className="fluffy-menu-row">
-      <div className="fluffy-menu-row__name">
-        {number ? <span className="fluffy-menu-number">{number}</span> : null}
-        <div>
-          <h3>{label}</h3>
-          {item.description ? <p>{item.description}</p> : null}
-          {item.allergens.length > 0 ? <p className="fluffy-menu-allergens">Allergener: {item.allergens.join(', ')}</p> : null}
-        </div>
+    <article className="fluffy-item" data-unavailable={available ? undefined : ''}>
+      <div className="fluffy-item__text">
+        <h4 className="fluffy-item__name">
+          {label}
+          {available ? null : <span className="fluffy-item__flag">Slut för dagen</span>}
+        </h4>
+        {item.description ? <p className="fluffy-item__desc">{item.description}</p> : null}
+        {item.allergens.length > 0 ? (
+          <p className="fluffy-item__allergens">{item.allergens.join(' · ')}</p>
+        ) : null}
       </div>
-      <PriceColumns item={item} />
+      <MenuPrice item={item} />
     </article>
   );
 }
 
-function FeaturedItemCard({
-  item,
-  index,
-}: {
-  item: RestaurantMenuItemView;
-  index: number;
-}) {
-  const { number, label } = menuItemParts(item.name);
-  const price = itemPriceFallback(item);
-  const image = item.imageUrl;
-
-  if (!image) return null;
-
+function FeaturedCard({ item }: { item: RestaurantMenuItemView }) {
+  const { label } = menuItemParts(item.name);
   return (
-    <article className="fluffy-featured-item">
-      <div className="fluffy-featured-item__copy">
-        <span className="fluffy-menu-number">{number ?? String(index + 1)}</span>
-        <h3>{label}</h3>
-        {item.description ? <p>{item.description}</p> : null}
-        {price ? <strong>{price}</strong> : null}
-      </div>
-      <div className="fluffy-featured-item__media" aria-hidden="true">
+    <article className="fluffy-pop__card">
+      <div className="fluffy-pop__media" aria-hidden="true">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={image} alt="" />
+        <img src={item.imageUrl ?? ''} alt="" />
+      </div>
+      <div className="fluffy-pop__copy">
+        <h4>{label}</h4>
+        {item.description ? <p>{item.description}</p> : null}
+        <MenuPrice item={item} />
       </div>
     </article>
   );
 }
 
-function CategorySection({
-  category,
-  index,
-  focused,
-  openAll = false,
-}: {
-  category: RestaurantMenuCategoryView;
-  index: number;
-  focused: boolean;
-  openAll?: boolean;
-}) {
+function MenuSection({ category }: { category: RestaurantMenuCategoryView }) {
   const display = categoryDisplay(category);
-  const featured = focused ? category.items.filter((item) => Boolean(item.imageUrl)).slice(0, 3) : [];
-  const featuredIds = new Set(featured.map((item) => item.id));
-  const rows = focused ? category.items.filter((item) => !featuredIds.has(item.id)) : category.items;
-  const isOpen = focused || openAll || index < 3;
-
   return (
-    <details className="fluffy-menu-category" id={`cat-${menuSlug(category.name)}`} open={isOpen}>
-      <summary className="fluffy-menu-category__summary">
-        <span className="fluffy-menu-category__title">
-          <CategoryBadge index={index} />
-          <span>{display.label}</span>
+    <section id={`cat-${menuSlug(category.name)}`} className="fluffy-cat">
+      <header className="fluffy-cat__head">
+        <span className="fluffy-cat__glyph">
+          <MenuGlyph iconKey={display.iconKey} />
         </span>
-        {category.description ? <span className="fluffy-menu-category__description">{category.description}</span> : null}
-      </summary>
-
-      {category.items.length === 0 ? (
-        <p className="fluffy-menu-empty">Fler favoriter kommer snart.</p>
-      ) : (
-        <>
-          {featured.length > 0 ? (
-            <div className="fluffy-featured-grid">
-              {featured.map((item, itemIndex) => (
-                <FeaturedItemCard key={item.id} item={item} index={itemIndex} />
-              ))}
-            </div>
-          ) : null}
-
-          {rows.length > 0 ? (
-            <div className="fluffy-menu-rows">
-              {rows.map((item) => (
-                <MenuItemRow key={item.id} item={item} />
-              ))}
-            </div>
-          ) : null}
-        </>
-      )}
-    </details>
-  );
-}
-
-export function MenuTabs({
-  categories,
-  activeSlug,
-  routePrefix = '',
-}: {
-  categories: RestaurantMenuCategoryView[];
-  activeSlug?: string;
-  routePrefix?: string;
-}) {
-  return (
-    <nav className="fluffy-menu-tabs" aria-label="Menyfilter">
-      <Link href={tabHref(routePrefix, null)} aria-current={!activeSlug ? 'page' : undefined}>
-        Alla
-      </Link>
-      {categories.map((category) => {
-        const slug = menuSlug(category.name);
-        const display = categoryDisplay(category);
-        return (
-          <Link key={category.id} href={tabHref(routePrefix, slug)} aria-current={activeSlug === slug ? 'page' : undefined}>
-            <CategoryIcon iconKey={display.iconKey} />
-            {display.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
-
-export function MenuCategoryPreview({ categories }: { categories: RestaurantMenuCategoryView[] }) {
-  const preview = categories.slice(0, 5);
-
-  if (preview.length === 0) return null;
-
-  return (
-    <section className="fluffy-menu-preview" aria-labelledby="fluffy-menu-preview-title">
-      <div className="fluffy-menu-preview__intro">
-        <p id="fluffy-menu-preview-title">Menyn</p>
-        <ScribbleStroke className="fluffy-menyn-scribble" />
-        <span>Något för alla smaker. Bygg din favorit.</span>
-      </div>
-      <div className="fluffy-menu-preview__items">
-        {preview.map((category) => {
-          const display = categoryDisplay(category);
-          return (
-            <a key={category.id} href={`#cat-${menuSlug(category.name)}`} className="fluffy-menu-preview__item">
-              <span className="fluffy-menu-preview__icon">
-                <MenuGlyph iconKey={display.iconKey} />
-              </span>
-              <strong>{display.label}</strong>
-              {category.description ? <span>{category.description}</span> : null}
-            </a>
-          );
-        })}
+        <div>
+          <h3 className="fluffy-cat__name">{display.label}</h3>
+          {category.description ? <p className="fluffy-cat__desc">{category.description}</p> : null}
+        </div>
+      </header>
+      <div className="fluffy-cat__items">
+        {category.items.map((item) => (
+          <MenuItemRow key={item.id} item={item} />
+        ))}
       </div>
     </section>
   );
 }
 
-export function MenuBoardHero({ category }: { category: RestaurantMenuCategoryView | null }) {
-  const image = category ? categoryImage(category) : '/fluffys/menu/pizza-kebab-board.jpg';
+/**
+ * The full menu experience: a sticky scroll-spy category nav, an optional "Populärt" row of
+ * photographed items, and one always-visible section per category. Used on the homepage and /meny.
+ */
+export function MenuBoard({ categories }: { categories: RestaurantMenuCategoryView[] }) {
+  const cats = categories.filter((category) => category.items.length > 0);
 
-  return (
-    <div className="fluffy-menu-board-hero" aria-hidden="true">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={image} alt="" />
-    </div>
-  );
-}
-
-export function MenuList({ categories, activeSlug, variant = 'overview', openAll = false }: MenuListProps) {
-  if (categories.length === 0) {
+  if (cats.length === 0) {
     return (
-      <div className="fluffy-card fluffy-info-card">
-        <h2>Menyn laddas</h2>
-        <p>Menyn kunde inte hämtas just nu.</p>
+      <div className="fluffy-shell">
+        <div className="fluffy-menu-empty">
+          <h3>Menyn laddas</h3>
+          <p>Menyn kunde inte hämtas just nu. Försök igen om en liten stund.</p>
+        </div>
       </div>
     );
   }
 
-  const activeCategory = activeSlug ? categories.find((category) => menuSlug(category.name) === activeSlug) : null;
-  const visibleCategories = variant === 'focused' && activeCategory ? [activeCategory] : categories;
+  const navCategories: MenuNavCategory[] = cats.map((category) => {
+    const display = categoryDisplay(category);
+    return { id: category.id, slug: menuSlug(category.name), label: display.label, iconKey: display.iconKey };
+  });
+
+  const featured = cats
+    .flatMap((category) => category.items)
+    .filter((item) => item.imageUrl && item.isAvailable)
+    .slice(0, 3);
 
   return (
-    <div className={variant === 'focused' ? 'fluffy-menu-board fluffy-menu-board--focused' : 'fluffy-menu-board'}>
-      {visibleCategories.map((category) => (
-        <CategorySection
-          key={category.id}
-          category={category}
-          index={categories.findIndex((entry) => entry.id === category.id)}
-          focused={variant === 'focused' && Boolean(activeCategory)}
-          openAll={openAll}
-        />
-      ))}
-    </div>
+    <>
+      <MenuCategoryNav categories={navCategories} />
+      <div className="fluffy-menu-body">
+        <div className="fluffy-shell">
+          {featured.length >= 2 ? (
+            <section className="fluffy-pop" aria-label="Populärt just nu">
+              <h3 className="fluffy-pop__title">Populärt just nu</h3>
+              <div className="fluffy-pop__grid">
+                {featured.map((item) => (
+                  <FeaturedCard key={item.id} item={item} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <div className="fluffy-menu-cats">
+            {cats.map((category) => (
+              <MenuSection key={category.id} category={category} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
