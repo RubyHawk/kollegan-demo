@@ -79,44 +79,8 @@ textarea.fluffy-input {
   color: #8f1414;
 }
 
-.fluffy-footer {
-  border-top: 1px solid rgba(255, 250, 240, 0.14);
-  background: var(--fp-ink);
-  color: var(--fp-white);
-}
-
-.fluffy-footer__inner {
-  display: grid;
-  gap: 28px;
-  padding-block: 38px;
-}
-
-.fluffy-footer__brand {
-  margin: 0;
-  font-size: 1.55rem;
-  font-weight: 950;
-}
-
-.fluffy-footer p {
-  margin: 8px 0 0;
-}
-
-.fluffy-footer__meta {
-  color: rgba(255, 250, 240, 0.76);
-  font-size: 0.9rem;
-  line-height: 1.7;
-}
-
 @media (min-width: 720px) {
   .fluffy-form__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .fluffy-footer__inner {
-    grid-template-columns: 1fr auto;
-  }
-
-  .fluffy-footer__meta {
-    text-align: right;
   }
 }
